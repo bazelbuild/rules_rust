@@ -1,7 +1,11 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
+load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "RUSTC_ATTRS")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
@@ -12,16 +16,6 @@ load("//rust/private:utils.bzl", "can_build_metadata")
 RUST_EDITION = "2021"
 
 TOOLCHAIN_TYPE = "@rules_rust//proto/prost:toolchain_type"
-
-ProstProtoInfo = provider(
-    doc = "Rust Prost provider info",
-    fields = {
-        "dep_variant_info": "DepVariantInfo: For the compiled Rust gencode (also covers its " +
-                            "transitive dependencies)",
-        "package_info": "File: A newline delimited file of `--extern_path` values for protoc.",
-        "transitive_dep_infos": "depset[DepVariantInfo]: Transitive dependencies of the compiled crate.",
-    },
-)
 
 def _create_proto_lang_toolchain(ctx, prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
@@ -160,7 +154,7 @@ def _compile_rust(ctx, attr, crate_name, src, deps, edition):
         ctx = ctx,
         attr = attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = "rlib",
             root = src,
@@ -216,7 +210,7 @@ def _rust_prost_aspect_impl(target, ctx):
     proto_deps = getattr(ctx.rule.attr, "deps", [])
 
     direct_deps = []
-    transitive_deps = []
+    transitive_deps = [depset(runtime_deps)]
     for proto_dep in proto_deps:
         proto_info = proto_dep[ProstProtoInfo]
 
@@ -263,44 +257,14 @@ rust_prost_aspect = aspect(
     implementation = _rust_prost_aspect_impl,
     attr_aspects = ["deps"],
     attrs = {
-        "_cc_toolchain": attr.label(
-            doc = (
-                "In order to use find_cc_toolchain, your rule has to depend " +
-                "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
-                "docs for details."
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_collect_cc_coverage": attr.label(
             default = Label("//util:collect_coverage"),
             executable = True,
             cfg = "exec",
         ),
-        "_error_format": attr.label(
-            default = Label("//:error_format"),
-        ),
-        "_extra_exec_rustc_flag": attr.label(
-            default = Label("//:extra_exec_rustc_flag"),
-        ),
-        "_extra_exec_rustc_flags": attr.label(
-            default = Label("//:extra_exec_rustc_flags"),
-        ),
-        "_extra_rustc_flag": attr.label(
-            default = Label("//:extra_rustc_flag"),
-        ),
-        "_extra_rustc_flags": attr.label(
-            default = Label("//:extra_rustc_flags"),
-        ),
         "_grep_includes": attr.label(
             allow_single_file = True,
             default = Label("@bazel_tools//tools/cpp:grep-includes"),
-            cfg = "exec",
-        ),
-        "_process_wrapper": attr.label(
-            doc = "A process wrapper for running rustc on all platforms.",
-            default = Label("//util/process_wrapper"),
-            executable = True,
-            allow_single_file = True,
             cfg = "exec",
         ),
         "_prost_process_wrapper": attr.label(
@@ -309,7 +273,7 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//proto/prost/private:protoc_wrapper"),
         ),
-    },
+    } | RUSTC_ATTRS,
     fragments = ["cpp"],
     host_fragments = ["cpp"],
     toolchains = [
@@ -318,7 +282,6 @@ rust_prost_aspect = aspect(
         "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rustfmt:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_prost_library_impl(ctx):
@@ -328,6 +291,7 @@ def _rust_prost_library_impl(ctx):
 
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
+        rust_proto_info,
         rust_common.crate_group_info(
             dep_variant_infos = depset(
                 [dep_variant_info],

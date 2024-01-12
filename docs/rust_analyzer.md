@@ -78,6 +78,16 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 }
 ```
 
+#### Alternative vscode option (prototype)
+
+Add the following to your bazelrc:
+```
+build --@rules_rust//:output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
+```
+
+Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer) that automatically collects the outputs whenever you recompile.
+
+
 
 <a id="rust_analyzer_toolchain"></a>
 
@@ -119,6 +129,7 @@ Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.js
 | proc_macro_deps| String |
 | crate| String |
 | actual| String |
+| proto| String |
 
 
 **ATTRIBUTES**

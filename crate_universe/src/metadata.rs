@@ -12,14 +12,16 @@ use std::process::Command;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use crate::lockfile::Digest;
 use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
 use semver::Version;
+use tracing::debug;
 
 use crate::config::CrateId;
-use crate::utils::starlark::SelectList;
+use crate::lockfile::Digest;
+use crate::select::Select;
+use crate::utils::target_triple::TargetTriple;
 
 pub use self::dependency::*;
 pub use self::metadata_annotation::*;
@@ -74,12 +76,17 @@ impl MetadataGenerator for Generator {
             cargo_lock::Lockfile::load(lock_path)?
         };
 
+        let mut other_options = vec!["--locked".to_owned()];
+        if self.cargo_bin.is_nightly()? {
+            other_options.push("-Zbindeps".to_owned());
+        }
+
         let metadata = self
             .cargo_bin
             .metadata_command()?
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
-            .other_options(["--locked".to_owned()])
+            .other_options(other_options)
             .exec()?;
 
         Ok((metadata, lockfile))
@@ -89,7 +96,7 @@ impl MetadataGenerator for Generator {
 /// Cargo encapsulates a path to a `cargo` binary.
 /// Any invocations of `cargo` (either as a `std::process::Command` or via `cargo_metadata`) should
 /// go via this wrapper to ensure that any environment variables needed are set appropriately.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Cargo {
     path: PathBuf,
     full_version: Arc<Mutex<Option<String>>>,
@@ -107,6 +114,9 @@ impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut command = Command::new(&self.path);
         command.envs(self.env()?);
+        if self.is_nightly()? {
+            command.arg("-Zbindeps");
+        }
         Ok(command)
     }
 
@@ -129,6 +139,16 @@ impl Cargo {
             *full_version = Some(observed_version);
         }
         Ok(full_version.clone().unwrap())
+    }
+
+    pub fn is_nightly(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.pre.as_str() == "nightly");
+        }
+        bail!("Couldn't parse cargo version");
     }
 
     pub fn use_sparse_registries_for_crates_io(&self) -> Result<bool> {
@@ -264,16 +284,20 @@ impl LockGenerator {
         }
     }
 
+    #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
     pub fn generate(
         &self,
         manifest_path: &Path,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
     ) -> Result<cargo_lock::Lockfile> {
+        debug!("Generating Cargo Lockfile for {}", manifest_path.display());
+
         let manifest_dir = manifest_path.parent().unwrap();
         let generated_lockfile_path = manifest_dir.join("Cargo.lock");
 
         if let Some(lock) = existing_lock {
+            debug!("Using existing lock {}", lock.display());
             if !lock.exists() {
                 bail!(
                     "An existing lockfile path was provided but a file at '{}' does not exist",
@@ -320,6 +344,7 @@ impl LockGenerator {
                 ))
             }
         } else {
+            debug!("Generating new lockfile");
             // Simply invoke `cargo generate-lockfile`
             let output = self
                 .cargo_bin
@@ -368,8 +393,13 @@ impl VendorGenerator {
             rustc_bin,
         }
     }
-
+    #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
     pub fn generate(&self, manifest_path: &Path, output_dir: &Path) -> Result<()> {
+        debug!(
+            "Vendoring {} to {}",
+            manifest_path.display(),
+            output_dir.display()
+        );
         let manifest_dir = manifest_path.parent().unwrap();
 
         // Simply invoke `cargo generate-lockfile`
@@ -401,6 +431,7 @@ impl VendorGenerator {
             bail!(format!("Failed to vendor sources with: {}", output.status))
         }
 
+        debug!("Done");
         Ok(())
     }
 }
@@ -423,14 +454,21 @@ impl FeatureGenerator {
     }
 
     /// Computes the set of enabled features for each target triplet for each crate.
+    #[tracing::instrument(name = "FeatureGenerator::generate", skip_all)]
     pub fn generate(
         &self,
         manifest_path: &Path,
-        platform_triples: &BTreeSet<String>,
-    ) -> Result<BTreeMap<CrateId, SelectList<String>>> {
+        target_triples: &BTreeSet<TargetTriple>,
+    ) -> Result<BTreeMap<CrateId, Select<BTreeSet<String>>>> {
+        debug!(
+            "Generating features for manifest {}",
+            manifest_path.display()
+        );
+
         let manifest_dir = manifest_path.parent().unwrap();
-        let mut target_to_child = BTreeMap::new();
-        for target in platform_triples {
+        let mut target_triple_to_child = BTreeMap::new();
+        debug!("Spawning processes for {:?}", target_triples);
+        for target_triple in target_triples {
             // We use `cargo tree` here because `cargo metadata` doesn't report
             // back target-specific features (enabled with `resolver = "2"`).
             // This is unfortunately a bit of a hack. See:
@@ -450,7 +488,7 @@ impl FeatureGenerator {
                 .arg("--color=never")
                 .arg("--workspace")
                 .arg("--target")
-                .arg(target)
+                .arg(target_triple.to_cargo())
                 .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
@@ -458,20 +496,21 @@ impl FeatureGenerator {
                 .with_context(|| {
                     format!(
                         "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target,
+                        target_triple,
                         manifest_path.display()
                     )
                 })?;
-            target_to_child.insert(target, output);
+            target_triple_to_child.insert(target_triple, output);
         }
-        let mut crate_features = BTreeMap::<CrateId, BTreeMap<String, BTreeSet<String>>>::new();
-        for (target, child) in target_to_child.into_iter() {
+        let mut crate_features =
+            BTreeMap::<CrateId, BTreeMap<TargetTriple, BTreeSet<String>>>::new();
+        for (target_triple, child) in target_triple_to_child.into_iter() {
             let output = child
                 .wait_with_output()
                 .with_context(|| {
                     format!(
                         "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target,
+                        target_triple,
                         manifest_path.display()
                     )
                 })?;
@@ -480,16 +519,18 @@ impl FeatureGenerator {
                 eprintln!("{}", String::from_utf8_lossy(&output.stderr));
                 bail!(format!("Failed to run cargo tree: {}", output.status))
             }
+            debug!("Process complete for {}", target_triple);
             for (crate_id, features) in
                 parse_features_from_cargo_tree_output(output.stdout.lines())?
             {
+                debug!("\tFor {} features were: {:?}", crate_id, features);
                 crate_features
                     .entry(crate_id)
                     .or_default()
-                    .insert(target.to_owned(), features);
+                    .insert(target_triple.clone(), features);
             }
         }
-        let mut result = BTreeMap::<CrateId, SelectList<String>>::new();
+        let mut result = BTreeMap::<CrateId, Select<BTreeSet<String>>>::new();
         for (crate_id, features) in crate_features.into_iter() {
             let common = features
                 .iter()
@@ -501,18 +542,18 @@ impl FeatureGenerator {
                     },
                 )
                 .unwrap_or_default();
-            let mut select_list = SelectList::default();
-            for (target, fs) in features {
+            let mut select: Select<BTreeSet<String>> = Select::default();
+            for (target_triple, fs) in features {
                 if fs != common {
                     for f in fs {
-                        select_list.insert(f, Some(target.clone()));
+                        select.insert(f, Some(target_triple.to_bazel()));
                     }
                 }
             }
             for f in common {
-                select_list.insert(f, None);
+                select.insert(f, None);
             }
-            result.insert(crate_id, select_list);
+            result.insert(crate_id, select);
         }
         Ok(result)
     }

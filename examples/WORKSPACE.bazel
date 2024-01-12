@@ -50,6 +50,14 @@ rust_wasm_bindgen_dependencies()
 
 rust_wasm_bindgen_register_toolchains()
 
+load("@rules_rust//wasm_bindgen/rules_nodejs:repositories.bzl", "nodejs_rust_wasm_bindgen_dependencies")
+
+nodejs_rust_wasm_bindgen_dependencies()
+
+load("@rules_rust//wasm_bindgen/rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
+
+js_rust_wasm_bindgen_dependencies()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ###############################################################################
@@ -81,13 +89,28 @@ rust_repository_set(
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "c78216f5be5d451a42275b0b7dc809fb9347e2b04a68f68bad620a2b01f5c774",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.2/rules_nodejs-5.5.2.tar.gz"],
+    sha256 = "709cc0dcb51cf9028dd57c268066e5bc8f03a119ded410a13b5c3925d6e43c48",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.4/rules_nodejs-5.8.4.tar.gz"],
 )
 
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 
 node_repositories()
+
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+
+rules_js_dependencies()
+
+load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = DEFAULT_NODE_VERSION,
+)
+
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
 
 http_archive(
     name = "rules_foreign_cc",
@@ -156,3 +179,12 @@ rbe_preconfig(
     name = "buildkite_config",
     toolchain = "ubuntu1804-bazel-java11",
 )
+
+load("@build_bazel_apple_support//crosstool:setup.bzl", "apple_cc_configure")
+
+# As of Bazel 7, Bazel's bundled cc_toolchain only supports using CommandLineTools and not a full Xcode.
+# This manifests itself if you try to use anything which requires access to $DEVELOPER_DIR, such as our bindgen example which non-hermetically tries to read libc++ headers from the system.
+# On CI (and for some of our contributors), we have a full Xcode install, so this fails.
+# We register the apple_support cc_toolchain here because it supports both CommandLineTools and full Xcodes.
+# See https://github.com/bazelbuild/rules_rust/issues/2207 and https://github.com/bazelbuild/bazel/issues/20638
+apple_cc_configure()

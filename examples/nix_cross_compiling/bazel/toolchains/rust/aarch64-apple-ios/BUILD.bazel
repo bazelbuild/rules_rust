@@ -1,0 +1,43 @@
+load("@nix_config//:config.bzl", "SDK_UNIVERSAL_APPLE_IOS")
+load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
+
+rust_toolchain(
+    name = "rust_toolchain",
+    binary_ext = "",
+    cargo = "@nix_rust//:cargo",
+    clippy_driver = "@nix_rust//:clippy_driver",
+    default_edition = "2021",
+    dylib_ext = ".dylib",
+    env = {
+        "SDKROOT": SDK_UNIVERSAL_APPLE_IOS,
+    },
+    exec_triple = "x86_64-unknown-nixos-gnu",
+    extra_exec_rustc_flags = [
+        "-Clinker-flavor=ld64.lld",
+    ],
+    extra_rustc_flags = [
+        "-Clinker-flavor=ld64.lld",
+    ],
+    rust_doc = "@nix_rust//:rustdoc",
+    rust_std = "@nix_rust//:rust_std-aarch64-apple-ios",
+    rustc = "@nix_rust//:rustc",
+    rustc_lib = "@nix_rust//:rustc_lib",
+    staticlib_ext = ".a",
+    stdlib_linkflags = [],
+    tags = ["manual"],
+    target_triple = "aarch64-apple-ios",
+)
+
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:nixos",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:ios",
+    ],
+    toolchain = ":rust_toolchain",
+    toolchain_type = "@rules_rust//rust:toolchain_type",
+)

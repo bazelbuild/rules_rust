@@ -1,0 +1,30 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+
+rust_static_library(
+    name = "rust_lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+)
+
+cc_library(
+    name = "c_lib",
+    srcs = ["lib.c"],
+    hdrs = ["lib.h"],
+    deps = [":rust_lib"],
+)
+
+# Tests that cc_shared_library correctly traverses into
+# `rust_static_library` when linking.
+cc_shared_library(
+    name = "shared",
+    deps = [":c_lib"],
+)
+
+cc_test(
+    name = "test",
+    srcs = ["main.c"],
+    dynamic_deps = [":shared"],
+    linkstatic = True,
+    deps = [":c_lib"],
+)

@@ -1,6 +1,6 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute", "parse_alias_rule")
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -12,8 +12,8 @@ GENERATOR_ENV_VARS = [
 
 CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
     REPIN_ALLOWLIST_ENV_VAR,
-] + [
     CARGO_BAZEL_ISOLATED,
+    CARGO_BAZEL_DEBUG,
 ]
 
 def get_generator(repository_ctx, host_triple):
@@ -85,7 +85,9 @@ def render_config(
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
+        default_alias_rule = "alias",
         default_package_name = None,
+        generate_target_compatible_with = True,
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
         vendor_mode = None):
@@ -112,8 +114,15 @@ def render_config(
             available format keys are [`{repository}`, `{name}`, `{version}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
+        default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
+            are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string
+            representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'.
+            See '@crate_index//:alias_rules.bzl' for an example.
         default_package_name (str, optional): The default package name to use in the rendered macros. This affects the
             auto package detection of things like `all_crate_deps`.
+        generate_target_compatible_with (bool, optional):  Whether to generate `target_compatible_with` annotations on
+            the generated BUILD files.  This catches a `target_triple`being targeted that isn't declared in
+            `supported_platform_triples`.
         platforms_template (str, optional): The base template to use for platform names.
             See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format
             keys are [`{triple}`].
@@ -128,7 +137,9 @@ def render_config(
         crate_label_template = crate_label_template,
         crate_repository_template = crate_repository_template,
         crates_module_template = crates_module_template,
+        default_alias_rule = parse_alias_rule(default_alias_rule),
         default_package_name = default_package_name,
+        generate_target_compatible_with = generate_target_compatible_with,
         platforms_template = platforms_template,
         regen_command = regen_command,
         vendor_mode = vendor_mode,
@@ -228,7 +239,7 @@ def compile_config(
             `crates_repository.annotations` or `crates_vendor.annotations`.
         generate_binaries (bool): Whether to generate `rust_binary` targets for all bins.
         generate_build_scripts (bool): Whether or not to globally disable build scripts.
-        generate_target_compatible_with (bool): Whether to emit `target_compatible_with` on generated rules
+        generate_target_compatible_with (bool): DEPRECATED: Moved to `render_config`.
         cargo_config (str): The optional contents of a [Cargo config][cargo_config].
         render_config (dict): The deserialized dict of the `render_config` function.
         supported_platform_triples (list): A list of platform triples
@@ -258,10 +269,15 @@ def compile_config(
     if unexpected:
         fail("The following annotations use `additive_build_file` which is not supported for {}: {}".format(repository_name, unexpected))
 
+    # Deprecated: Apply `generate_target_compatible_with` to `render_config`.
+    if not generate_target_compatible_with:
+        # buildifier: disable=print
+        print("DEPRECATED: 'generate_target_compatible_with' has been moved to 'render_config'")
+        render_config.update({"generate_target_compatible_with": False})
+
     config = struct(
         generate_binaries = generate_binaries,
         generate_build_scripts = generate_build_scripts,
-        generate_target_compatible_with = generate_target_compatible_with,
         annotations = annotations,
         cargo_config = cargo_config,
         rendering = _update_render_config(

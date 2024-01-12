@@ -1,5 +1,5 @@
 {
-  "checksum": "6f618b87abf3d565aeff1b389c3c40ba7cc81a46d8f063d56cff03d987a027a2",
+  "checksum": "226cf2d56509f8f6ed6c882d1ddb720e2dff2a297de9dbff39730f73066d7b2c",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -441,6 +441,12 @@
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
     ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -458,6 +464,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -481,16 +489,19 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(target_os = \"linux\")": [
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-unknown-linux-gnueabi",
       "i686-unknown-linux-gnu",
       "powerpc-unknown-linux-gnu",
       "s390x-unknown-linux-gnu",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "i686-apple-darwin": [
       "i686-apple-darwin"
@@ -552,8 +563,15 @@
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
+    "x86_64-unknown-nixos-gnu": [
+      "x86_64-unknown-nixos-gnu"
+    ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "nix 0.26.2"
+  ],
+  "direct_dev_deps": []
 }

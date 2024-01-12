@@ -4,3 +4,7 @@ startup --windows_enable_symlinks
 build:windows --enable_runfiles
 
 build --incompatible_enable_cc_toolchain_resolution
+
+# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
+# https://github.com/bazelbuild/rules_rust/issues/2181
+common --noenable_bzlmod

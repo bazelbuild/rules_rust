@@ -128,11 +128,12 @@ jobs:
           # Update urls and sha256 values
           bazel ${BAZEL_STARTUP_FLAGS[@]}  run //crate_universe/tools/urls_generator -- --artifacts-dir="${ARTIFACTS_DIR}" --url-prefix="${URL_PREFIX}"
           bazel clean
-          # Build an archive of the repo contents
-          tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz --exclude=".git" --exclude=".github" --exclude="examples" --exclude="crate_universe/target" -C ${{ github.workspace }} .
+          # Build an archive of the repo contents.
+          # `examples/bzlmod` is included for the BCR presubmit; it must appear before --exclude="examples"
+          tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz -C ${{ github.workspace }} --exclude=".git" --exclude=".github" --exclude="crate_universe/target" examples/bzlmod --exclude="examples" .
           # Save the sha256 checksum of the distro archive to the environment
-          sha256="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust.tar.gz | awk '{ print $1 }')"
-          echo "ARCHIVE_SHA256=${sha256}" >> $GITHUB_ENV
+          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
+          echo "ARCHIVE_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
         env:
           CARGO_BAZEL_GENERATOR_URL: file://${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-gnu/cargo-bazel
           ARTIFACTS_DIR: ${{ github.workspace }}/crate_universe/target/artifacts
@@ -146,8 +147,8 @@ jobs:
       - name: Generate release notes
         run: |
           # Generate the release notes
-          sed 's/{version}/${{ env.RELEASE_VERSION }}/g' ${{ github.workspace }}/.github/release_notes.template \
-          | sed 's/{sha256}/${{ env.ARCHIVE_SHA256 }}/g' \
+          sed 's#{version}#${{ env.RELEASE_VERSION }}#g' ${{ github.workspace }}/.github/release_notes.template \
+          | sed 's#{sha256_base64}#${{ env.ARCHIVE_SHA256_BASE64 }}#g' \
           > ${{ github.workspace }}/.github/release_notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1

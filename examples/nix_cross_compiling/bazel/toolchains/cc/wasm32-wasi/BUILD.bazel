@@ -1,0 +1,86 @@
+load(
+    "@nix_config//:config.bzl",
+    "CLANG",
+    "CLANG_LIB",
+    "CLANG_LIB_VERSION",
+    "LIBCLANG_RT_WASM32",
+    "LLVM",
+    "SDK_WASM32_WASI",
+)
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load("//bazel/toolchain_rules:llvm_cc_toolchain_config.bzl", "llvm_cc_toolchain_config")
+
+llvm_cc_toolchain_config(
+    name = "cc_toolchain_config",
+    archive_flags = [],
+    builtin_executable_objects = [],
+    builtin_include_directories = [
+        "{}/wasi-sysroot/include/c++/v1".format(SDK_WASM32_WASI),
+        "{}/lib/clang/{}/include".format(CLANG_LIB, CLANG_LIB_VERSION),
+        "{}/wasi-sysroot/include".format(SDK_WASM32_WASI),
+    ],
+    builtin_libraries = [
+        "c",
+        "c++",
+        "c++abi",
+        "m",
+    ],
+    builtin_library_directories = [
+        "{}/wasi-sysroot/lib/wasm32-wasi".format(SDK_WASM32_WASI),
+    ],
+    clang = CLANG,
+    compile_flags = [
+        "-fno-exceptions",
+        "-Werror",
+        "-Wall",
+        "-Wthread-safety",
+        "-Wself-assign",
+    ],
+    dbg_compile_flags = [],
+    dbg_link_flags = [],
+    fastbuild_compile_flags = [],
+    fastbuild_link_flags = [],
+    link_flags = [
+        "--fatal-warnings",
+        # `wasm-ld` doesn't respect the verbatim `-l:<name>` syntax.
+        "{}/lib/wasi/libclang_rt.builtins-wasm32.a".format(LIBCLANG_RT_WASM32),
+        "{}/wasi-sysroot/lib/wasm32-wasi/crt1.o".format(SDK_WASM32_WASI),
+    ],
+    llvm = LLVM,
+    opt_compile_flags = [],
+    opt_link_flags = [
+        "--gc-sections",
+    ],
+    supports_start_end_lib = False,
+    tags = ["manual"],
+    target = "wasm32-wasi",
+)
+
+cc_toolchain(
+    name = "cc_toolchain",
+    all_files = "@nix_config//:config.bzl",
+    ar_files = "@nix_config//:config.bzl",
+    as_files = "@nix_config//:config.bzl",
+    compiler_files = "@nix_config//:config.bzl",
+    coverage_files = "@nix_config//:config.bzl",
+    dwp_files = "@nix_config//:config.bzl",
+    linker_files = "@nix_config//:config.bzl",
+    objcopy_files = "@nix_config//:config.bzl",
+    strip_files = "@nix_config//:config.bzl",
+    tags = ["manual"],
+    toolchain_config = "cc_toolchain_config",
+)
+
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:nixos",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:wasm32",
+        "@platforms//os:wasi",
+    ],
+    toolchain = ":cc_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)

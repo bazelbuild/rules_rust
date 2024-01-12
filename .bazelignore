@@ -1,3 +1,4 @@
+bzlmod
 docs
 examples
 crate_universe/private/bootstrap

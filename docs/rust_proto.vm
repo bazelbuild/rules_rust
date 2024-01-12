@@ -114,7 +114,7 @@ rust_library_group(
 )
 
 rust_prost_toolchain(
-    name = "default_prost_toolchain_impl",
+    name = "prost_toolchain_impl",
     prost_plugin = "@crates_io//:protoc-gen-prost__protoc-gen-prost",
     prost_runtime = ":prost_runtime",
     prost_types = "@crates_io//:prost-types",

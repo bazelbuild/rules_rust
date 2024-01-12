@@ -19,7 +19,6 @@ rust_binary(
 
 rust_test(
     name = "unit_test",
-    srcs = glob(["**/*.rs"]),
     crate = ":no_cargo_manifests",
     edition = "2018",
 )

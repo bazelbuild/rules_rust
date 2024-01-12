@@ -1,5 +1,5 @@
 {
-  "checksum": "0422ac2901df395fb35488b05922400a0aeef6dcfc936e69c50574dc29ab0c22",
+  "checksum": "f8b8c5dd0a160e74d433380ffae28cfad80ad0a679adbcc38c234387d73daaa5",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1296,6 +1296,12 @@
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
     ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -1313,6 +1319,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -1336,6 +1344,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(windows))": [
@@ -1345,6 +1354,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -1366,6 +1377,7 @@
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(target_os = \"emscripten\")": [],
@@ -1385,6 +1397,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -1399,7 +1413,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(windows)": [
       "aarch64-pc-windows-msvc",
@@ -1468,8 +1483,17 @@
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
+    "x86_64-unknown-nixos-gnu": [
+      "x86_64-unknown-nixos-gnu"
+    ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "clap 2.34.0",
+    "ferris-says 0.2.1",
+    "rand 0.7.3"
+  ],
+  "direct_dev_deps": []
 }

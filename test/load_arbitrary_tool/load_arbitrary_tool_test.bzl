@@ -37,3 +37,4 @@ def load_arbitrary_tool_test():
     _load_arbitrary_tool_test(
         name = "rules_rust_test_load_arbitrary_tool",
     )
+    return [struct(repo = "rules_rust_test_load_arbitrary_tool", is_dev_dep = True)]

@@ -1,5 +1,5 @@
 {
-  "checksum": "013c941ea67a7b6b78f5b2aeecec6ddf7572100018654693075d10985be2fee1",
+  "checksum": "3b8a2a4548ac651396437773894ec4dd2b8f3149a77d3ea1287fce6854664b4a",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -217,9 +217,9 @@
       },
       "license": "Apache-2.0"
     },
-    "cxxbridge-cmd 1.0.105": {
+    "cxxbridge-cmd 1.0.109": {
       "name": "cxxbridge-cmd",
-      "version": "1.0.105",
+      "version": "1.0.109",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -253,7 +253,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.105"
+        "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -784,7 +784,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "cxxbridge-cmd 1.0.105": ""
+    "cxxbridge-cmd 1.0.109": ""
   },
   "conditions": {
     "aarch64-apple-darwin": [
@@ -807,6 +807,12 @@
     ],
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
+    ],
+    "aarch64-unknown-nixos-gnu": [
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
     ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -884,8 +890,19 @@
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
+    "x86_64-unknown-nixos-gnu": [
+      "x86_64-unknown-nixos-gnu"
+    ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "clap 4.3.21",
+    "codespan-reporting 0.11.1",
+    "proc-macro2 1.0.66",
+    "quote 1.0.32",
+    "syn 2.0.28"
+  ],
+  "direct_dev_deps": []
 }

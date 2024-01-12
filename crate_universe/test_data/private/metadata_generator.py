@@ -87,4 +87,4 @@ if __name__ == "__main__":
             # Write metadata to disk
             metadata = json.loads(metadata_text)
             output = test_dir / "metadata.json"
-            output.write_text(json.dumps(metadata, indent=4) + "\n")
+            output.write_text(json.dumps(metadata, indent=4, sort_keys=True) + "\n")

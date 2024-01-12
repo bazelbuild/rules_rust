@@ -14,13 +14,19 @@
 
 """Rust Bindgen rules"""
 
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_COMPILE_ACTION_NAME",
+)
+load("@rules_cc//cc:defs.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_library")
+load("//rust:rust_common.bzl", "BuildInfo")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_cc_toolchain", "get_preferred_artifact")
+load("//rust/private:utils.bzl", "find_cc_toolchain", "get_lib_name_default", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -40,6 +46,7 @@ def rust_bindgen_library(
         header,
         cc_lib,
         bindgen_flags = None,
+        bindgen_features = None,
         clang_flags = None,
         **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library.
@@ -51,6 +58,7 @@ def rust_bindgen_library(
         header (str): The label of the .h file to generate bindings for.
         cc_lib (str): The label of the cc_library that contains the .h file. This is used to find the transitive includes.
         bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
+        bindgen_features (list, optional): The `features` attribute for the `rust_bindgen` target.
         clang_flags (list, optional): Flags to pass directly to the clang executable.
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
@@ -59,30 +67,98 @@ def rust_bindgen_library(
     if "tags" in kwargs:
         kwargs.pop("tags")
 
+    sub_tags = tags + ([] if "manual" in tags else ["manual"])
+
     deps = kwargs.get("deps") or []
     if "deps" in kwargs:
         kwargs.pop("deps")
+
+    bindgen_kwargs = {}
+    if "leak_symbols" in kwargs:
+        bindgen_kwargs.update({"leak_symbols": kwargs.pop("leak_symbols")})
 
     rust_bindgen(
         name = name + "__bindgen",
         header = header,
         cc_lib = cc_lib,
         bindgen_flags = bindgen_flags or [],
+        features = bindgen_features,
         clang_flags = clang_flags or [],
-        tags = tags,
+        tags = sub_tags,
+        **bindgen_kwargs
     )
+
+    for custom_tag in ["__bindgen", "no-clippy", "no-rustfmt"]:
+        tags = tags + ([] if custom_tag in tags else [custom_tag])
 
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        tags = tags + ["__bindgen", "noclippy"],
-        deps = deps + [cc_lib],
+        deps = deps + [name + "__bindgen"],
+        tags = tags,
         **kwargs
     )
 
-def _rust_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
+def _generate_cc_link_build_info(ctx, cc_lib):
+    """Produce the eqivilant cargo_build_script providers for use in linking the library.
 
+    Args:
+        ctx (ctx): The rule's context object
+        cc_lib (Target): The `rust_bindgen.cc_lib` target.
+
+    Returns:
+        The `BuildInfo` provider.
+    """
+    compile_data = []
+    linker_flags = []
+    linker_search_paths = []
+
+    for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
+        for lib in linker_input.libraries:
+            if lib.static_library:
+                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.static_library)))
+                linker_search_paths.append(lib.static_library.dirname)
+                compile_data.append(lib.static_library)
+            elif lib.pic_static_library:
+                linker_flags.append("-lstatic={}".format(get_lib_name_default(lib.pic_static_library)))
+                linker_search_paths.append(lib.pic_static_library.dirname)
+                compile_data.append(lib.pic_static_library)
+
+        if linker_input.user_link_flags:
+            linker_flags.append("-C")
+            linker_flags.append("link-args={}".format(" ".join(linker_input.user_link_flags)))
+
+    if not compile_data:
+        fail("No static libraries found in {}".format(
+            cc_lib.label,
+        ))
+
+    link_flags = ctx.actions.declare_file("{}.link_flags".format(ctx.label.name))
+    ctx.actions.write(
+        output = link_flags,
+        content = "\n".join(linker_flags),
+    )
+
+    link_search_paths = ctx.actions.declare_file("{}.link_search_paths".format(ctx.label.name))
+    ctx.actions.write(
+        output = link_search_paths,
+        content = "\n".join([
+            "-Lnative=${{pwd}}/{}".format(path)
+            for path in depset(linker_search_paths).to_list()
+        ]),
+    )
+
+    return BuildInfo(
+        compile_data = depset(compile_data),
+        dep_env = None,
+        flags = None,
+        link_flags = link_flags,
+        link_search_paths = link_search_paths,
+        out_dir = None,
+        rustc_env = None,
+    )
+
+def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
     header = ctx.file.header
@@ -97,13 +173,13 @@ def _rust_bindgen_impl(ctx):
     libstdcxx = toolchain.libstdcxx
 
     output = ctx.outputs.out
-    tools = depset([clang_bin])
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
+
+    tools = depset([clang_bin], transitive = [cc_toolchain.all_files])
 
     # libclang should only have 1 output file
     libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
-    include_directories = cc_lib[CcInfo].compilation_context.includes.to_list()
-    quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes.to_list()
-    system_include_directories = cc_lib[CcInfo].compilation_context.system_includes.to_list()
 
     env = {
         "CLANG_PATH": clang_bin.path,
@@ -129,25 +205,50 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Clang Arguments
     args.add("--")
-    args.add_all(include_directories, before_each = "-I")
-    args.add_all(quote_include_directories, before_each = "-iquote")
-    args.add_all(system_include_directories, before_each = "-isystem")
-    args.add_all(ctx.attr.clang_flags)
 
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    compile_variables = cc_common.create_compile_variables(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+        include_directories = cc_lib[CcInfo].compilation_context.includes,
+        quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
+        system_include_directories = cc_lib[CcInfo].compilation_context.system_includes,
+        user_compile_flags = ctx.attr.clang_flags,
+    )
+    compile_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+
+    # Bindgen forcibly uses clang.
+    # It's possible that the selected cc_toolchain isn't clang, and may specify flags which clang doesn't recognise.
+    # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
+    # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
+    # We can add extra flags here as needed.
+    flags_known_to_clang = ("-I", "-iquote", "-isystem", "--sysroot", "--gcc-toolchain")
+    open_arg = False
+    for arg in compile_flags:
+        if open_arg:
+            args.add(arg)
+            open_arg = False
+            continue
+
+        # The cc_toolchain merged these flags into its returned flags - don't strip these out.
+        if arg in ctx.attr.clang_flags:
+            args.add(arg)
+            continue
+
+        if not arg.startswith(flags_known_to_clang):
+            continue
+
+        args.add(arg)
+
+        if arg in flags_known_to_clang:
+            open_arg = True
+            continue
+
     _, _, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
-
-    # Allow sysroots configured by the toolchain to be added to Clang arguments.
-    if "no-rust-bindgen-cc-sysroot" not in ctx.features:
-        if cc_toolchain.sysroot:
-            tools = depset(transitive = [tools, cc_toolchain.all_files])
-            sysroot_args = ["--sysroot", cc_toolchain.sysroot]
-            for arg in ctx.attr.clang_flags:
-                if arg.startswith("--sysroot"):
-                    sysroot_args = []
-                    break
-            args.add_all(sysroot_args)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
     # DYLD_LIBRARY_PATH is LD_LIBRARY_PATH on macOS.
@@ -174,6 +275,21 @@ def _rust_bindgen_impl(ctx):
         tools = tools,
     )
 
+    if ctx.attr.leak_symbols:
+        # buildifier: disable=print
+        print("WARN: rust_bindgen.leak_symbols is set to True for {} - please file an issue at https://github.com/bazelbuild/rules_rust/issues explaining why this was necessary, as this support will be removed soon.".format(ctx.label))
+        providers = [cc_common.merge_cc_infos(
+            direct_cc_infos = [cc_lib[CcInfo]],
+        )]
+    else:
+        providers = [_generate_cc_link_build_info(ctx, cc_lib)]
+
+    return providers + [
+        OutputGroupInfo(
+            bindgen_bindings = depset([output]),
+        ),
+    ]
+
 rust_bindgen = rule(
     doc = "Generates a rust source file from a cc_library and a header.",
     implementation = _rust_bindgen_impl,
@@ -184,6 +300,7 @@ rust_bindgen = rule(
         "cc_lib": attr.label(
             doc = "The cc_library that contains the `.h` file. This is used to find the transitive includes.",
             providers = [CcInfo],
+            mandatory = True,
         ),
         "clang_flags": attr.string_list(
             doc = "Flags to pass directly to the clang executable.",
@@ -191,6 +308,14 @@ rust_bindgen = rule(
         "header": attr.label(
             doc = "The `.h` file to generate bindings for.",
             allow_single_file = True,
+            mandatory = True,
+        ),
+        "leak_symbols": attr.bool(
+            doc = (
+                "If True, `cc_lib` will be exposed and linked into all downstream consumers of the target vs. the " +
+                "`rust_library` directly consuming it."
+            ),
+            default = False,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -210,7 +335,6 @@ rust_bindgen = rule(
         str(Label("//rust/rustfmt:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )
 
 def _rust_bindgen_toolchain_impl(ctx):
@@ -262,6 +386,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             doc = "The label of a `clang` executable.",
             executable = True,
             cfg = "exec",
+            allow_files = True,
         ),
         "default_rustfmt": attr.bool(
             doc = "If set, `rust_bindgen` targets will always format generated sources with `rustfmt`.",
@@ -272,12 +397,14 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
             cfg = "exec",
             providers = [CcInfo],
+            allow_files = True,
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             mandatory = False,
+            allow_files = True,
         ),
     },
 )

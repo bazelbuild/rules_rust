@@ -125,6 +125,7 @@ def rustdoc_compile_action(
         remap_path_prefix = None,
         rustdoc = True,
         force_depend_on_objects = is_test,
+        skip_expanding_rustc_env = True,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
@@ -135,10 +136,6 @@ def rustdoc_compile_action(
             env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
         if "OUT_DIR" in env:
             env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
-
-        # `rustdoc` does not support the SYSROOT environment variable. To account
-        # for this, the flag must be explicitly passed to the `rustdoc` binary.
-        args.rustc_flags.add(toolchain.sysroot_short_path, format = "--sysroot=${{pwd}}/%s")
 
     return struct(
         executable = ctx.executable._process_wrapper,
@@ -347,5 +344,4 @@ rust_doc = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
 )

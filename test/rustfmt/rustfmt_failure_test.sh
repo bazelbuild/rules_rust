@@ -52,6 +52,8 @@ local_repository(
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 EOF
+  # See github.com/bazelbuild/rules_rust/issues/2317.
+  echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
 
   # Drop the 'norustfmt' tags
   if [ "$(uname)" == "Darwin" ]; then
@@ -69,6 +71,7 @@ EOF
     check_build_result $TEST_FAILED ${variant}_unformatted_2018_test
     check_build_result $TEST_OK ${variant}_formatted_2015_test
     check_build_result $TEST_OK ${variant}_formatted_2018_test
+    check_build_result $TEST_OK ${variant}_generated_test
   done
 
   # Format a specific target
@@ -81,6 +84,7 @@ EOF
     check_build_result $TEST_OK ${variant}_unformatted_2018_test
     check_build_result $TEST_OK ${variant}_formatted_2015_test
     check_build_result $TEST_OK ${variant}_formatted_2018_test
+    check_build_result $TEST_OK ${variant}_generated_test
   done
 
   # Format all targets

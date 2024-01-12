@@ -29,9 +29,72 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
+    crate_features = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "std",
+        ],
+        "//conditions:default": [],
+    }),
     crate_root = "src/lib.rs",
     edition = "2015",
     rustc_flags = ["--cap-lints=allow"],
@@ -86,9 +149,72 @@ rust_library(
 cargo_build_script(
     name = "log_build_script",
     srcs = glob(["**/*.rs"]),
-    crate_features = [
-        "std",
-    ],
+    crate_features = select({
+        "@rules_rust//rust/platform:aarch64-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-fuchsia": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:armv7-linux-androideabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-freebsd": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-darwin": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-fuchsia": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-linux-android": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "std",
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "std",
+        ],
+        "//conditions:default": [],
+    }),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(

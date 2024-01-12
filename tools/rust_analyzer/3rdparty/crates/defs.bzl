@@ -404,7 +404,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         http_archive,
         name = "rrra__aho-corasick-1.0.2",
@@ -984,3 +988,13 @@ def crate_repositories():
         strip_prefix = "windows_x86_64_msvc-0.48.0",
         build_file = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
+
+    return [
+        struct(repo = "rrra__anyhow-1.0.71", is_dev_dep = False),
+        struct(repo = "rrra__clap-4.3.11", is_dev_dep = False),
+        struct(repo = "rrra__env_logger-0.10.0", is_dev_dep = False),
+        struct(repo = "rrra__itertools-0.11.0", is_dev_dep = False),
+        struct(repo = "rrra__log-0.4.19", is_dev_dep = False),
+        struct(repo = "rrra__serde-1.0.171", is_dev_dep = False),
+        struct(repo = "rrra__serde_json-1.0.102", is_dev_dep = False),
+    ]

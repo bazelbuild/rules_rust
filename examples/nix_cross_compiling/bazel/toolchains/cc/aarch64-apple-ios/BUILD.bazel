@@ -1,0 +1,99 @@
+load(
+    "@nix_config//:config.bzl",
+    "CLANG",
+    "CLANG_LIB",
+    "CLANG_LIB_VERSION",
+    "LLVM",
+    "SDK_UNIVERSAL_APPLE_IOS",
+)
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load("//bazel/toolchain_rules:llvm_cc_toolchain_config.bzl", "llvm_cc_toolchain_config")
+
+llvm_cc_toolchain_config(
+    name = "cc_toolchain_config",
+    archive_flags = [],
+    builtin_executable_objects = [],
+    builtin_framework_directories = [
+        "{}/System/Library/Frameworks".format(SDK_UNIVERSAL_APPLE_IOS),
+    ],
+    builtin_frameworks = [],
+    builtin_include_directories = [
+        "{}/usr/include/c++/v1".format(SDK_UNIVERSAL_APPLE_IOS),
+        "{}/lib/clang/{}/include".format(CLANG_LIB, CLANG_LIB_VERSION),
+        "{}/usr/include".format(SDK_UNIVERSAL_APPLE_IOS),
+    ],
+    builtin_libraries = [],
+    builtin_library_directories = [
+        "{}/usr/lib".format(SDK_UNIVERSAL_APPLE_IOS),
+    ],
+    clang = CLANG,
+    compile_flags = [
+        "-fno-exceptions",
+        "-Werror",
+        "-Wall",
+        "-Wthread-safety",
+        "-Wself-assign",
+    ],
+    dbg_compile_flags = [
+        "-g",
+        "-fstandalone-debug",
+    ],
+    dbg_link_flags = [],
+    fastbuild_compile_flags = [],
+    fastbuild_link_flags = [],
+    link_flags = [
+        "-fatal_warnings",
+        "-arch",
+        "arm64",
+        "-platform_version",
+        "ios",
+        "16.0.0",
+        "16.2",
+        "-headerpad_max_install_names",
+        "-undefined",
+        "dynamic_lookup",
+    ],
+    llvm = LLVM,
+    opt_compile_flags = [
+        "-g0",
+        "-O2",
+        "-D_FORTIFY_SOURCE=1",
+        "-DNDEBUG",
+        "-ffunction-sections",
+        "-fdata-sections",
+    ],
+    opt_link_flags = [
+        "--gc-sections",
+    ],
+    tags = ["manual"],
+    target = "aarch64-apple-ios",
+)
+
+cc_toolchain(
+    name = "cc_toolchain",
+    all_files = "@nix_config//:config.bzl",
+    ar_files = "@nix_config//:config.bzl",
+    as_files = "@nix_config//:config.bzl",
+    compiler_files = "@nix_config//:config.bzl",
+    coverage_files = "@nix_config//:config.bzl",
+    dwp_files = "@nix_config//:config.bzl",
+    linker_files = "@nix_config//:config.bzl",
+    objcopy_files = "@nix_config//:config.bzl",
+    strip_files = "@nix_config//:config.bzl",
+    tags = ["manual"],
+    toolchain_config = "cc_toolchain_config",
+)
+
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:nixos",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:ios",
+    ],
+    toolchain = ":cc_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)

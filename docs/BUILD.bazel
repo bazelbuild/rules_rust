@@ -9,7 +9,6 @@ bzl_library(
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
         "@com_google_protobuf//:bzl_srcs",
-        "@rules_nodejs//nodejs:bzl",
     ],
     deps = [
         "@bazel_skylib//lib:paths",
@@ -152,6 +151,7 @@ PAGES = dict([
             "rust_wasm_bindgen_register_toolchains",
             "rust_wasm_bindgen_toolchain",
             "rust_wasm_bindgen",
+            "RustWasmBindgenInfo",
         ],
     ),
     page(

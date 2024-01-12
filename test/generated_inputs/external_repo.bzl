@@ -62,3 +62,4 @@ def generated_inputs_in_external_repo():
     _generated_inputs_in_external_repo(
         name = "generated_inputs_in_external_repo",
     )
+    return [struct(repo = "generated_inputs_in_external_repo", is_dev_dep = True)]

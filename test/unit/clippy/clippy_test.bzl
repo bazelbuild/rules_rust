@@ -84,7 +84,12 @@ def make_clippy_aspect_unittest(impl, **kwargs):
 binary_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_binary_clippy_aspect_action_has_warnings_flag_test_impl)
 library_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_library_clippy_aspect_action_has_warnings_flag_test_impl)
 test_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_test_clippy_aspect_action_has_warnings_flag_test_impl)
-clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(_clippy_aspect_with_explicit_flags_test_impl, config_settings = {"@//:clippy_flags": _CLIPPY_EXPLICIT_FLAGS})
+clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(
+    _clippy_aspect_with_explicit_flags_test_impl,
+    config_settings = {
+        str(Label("//:clippy_flags")): _CLIPPY_EXPLICIT_FLAGS,
+    },
+)
 
 def clippy_test_suite(name):
     """Entry-point macro called from the BUILD file.

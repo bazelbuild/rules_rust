@@ -15,6 +15,10 @@ use serde::de::value::SeqAccessDeserializer;
 use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
+use crate::select::{Select, Selectable};
+use crate::utils::starlark::Label;
+use crate::utils::target_triple::TargetTriple;
+
 /// Representations of different kinds of crate vendoring into workspaces.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -65,9 +69,18 @@ pub struct RenderConfig {
     #[serde(default = "default_crate_repository_template")]
     pub crate_repository_template: String,
 
+    /// Default alias rule to use for packages.  Can be overridden by annotations.
+    #[serde(default)]
+    pub default_alias_rule: AliasRule,
+
     /// The default of the `package_name` parameter to use for the module macros like `all_crate_deps`.
     /// In general, this should be be unset to allow the macros to do auto-detection in the analysis phase.
     pub default_package_name: Option<String>,
+
+    /// Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This
+    /// catches a `target_triple`being targeted that isn't declared in `supported_platform_triples`.
+    #[serde(default = "default_generate_target_compatible_with")]
+    pub generate_target_compatible_with: bool,
 
     /// The pattern to use for platform constraints.
     /// Eg. `@rules_rust//rust/platform:{triple}`.
@@ -92,7 +105,9 @@ impl Default for RenderConfig {
             crate_label_template: default_crate_label_template(),
             crates_module_template: default_crates_module_template(),
             crate_repository_template: default_crate_repository_template(),
+            default_alias_rule: AliasRule::default(),
             default_package_name: Option::default(),
+            generate_target_compatible_with: default_generate_target_compatible_with(),
             platforms_template: default_platforms_template(),
             regen_command: String::default(),
             vendor_mode: Option::default(),
@@ -120,6 +135,10 @@ fn default_platforms_template() -> String {
     "@rules_rust//rust/platform:{triple}".to_owned()
 }
 
+fn default_generate_target_compatible_with() -> bool {
+    true
+}
+
 /// A representation of some Git identifier used to represent the "revision" or "pin" of a checkout.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Commitish {
@@ -142,14 +161,6 @@ impl From<GitReference> for Commitish {
         }
     }
 }
-/// A value which may either be a plain String, or a dict of platform triples
-/// (or other cfg expressions understood by `crate::context::platforms::resolve_cfg_platforms`) to Strings.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(untagged)]
-pub enum StringOrSelect {
-    Value(String),
-    Select(BTreeMap<String, String>),
-}
 
 /// Information representing deterministic identifiers for some remote asset.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -169,7 +180,44 @@ pub enum Checksumish {
     },
 }
 
-#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
+pub enum AliasRule {
+    #[default]
+    #[serde(rename = "alias")]
+    Alias,
+    #[serde(rename = "dbg")]
+    Dbg,
+    #[serde(rename = "fastbuild")]
+    Fastbuild,
+    #[serde(rename = "opt")]
+    Opt,
+    #[serde(untagged)]
+    Custom { bzl: String, rule: String },
+}
+
+impl AliasRule {
+    pub fn bzl(&self) -> Option<String> {
+        match self {
+            AliasRule::Alias => None,
+            AliasRule::Dbg | AliasRule::Fastbuild | AliasRule::Opt => {
+                Some("//:alias_rules.bzl".to_owned())
+            }
+            AliasRule::Custom { bzl, .. } => Some(bzl.clone()),
+        }
+    }
+
+    pub fn rule(&self) -> String {
+        match self {
+            AliasRule::Alias => "alias".to_owned(),
+            AliasRule::Dbg => "transition_alias_dbg".to_owned(),
+            AliasRule::Fastbuild => "transition_alias_fastbuild".to_owned(),
+            AliasRule::Opt => "transition_alias_opt".to_owned(),
+            AliasRule::Custom { rule, .. } => rule.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
     pub gen_binaries: Option<GenBinaries>,
@@ -179,19 +227,19 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
-    pub deps: Option<BTreeSet<String>>,
+    pub deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
-    pub proc_macro_deps: Option<BTreeSet<String>>,
+    pub proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
-    pub crate_features: Option<BTreeSet<String>>,
+    pub crate_features: Option<Select<BTreeSet<String>>>,
 
     /// Additional data to pass to  the target's
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
-    pub data: Option<BTreeSet<String>>,
+    pub data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
@@ -199,7 +247,7 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
-    pub compile_data: Option<BTreeSet<String>>,
+    pub compile_data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
@@ -210,31 +258,31 @@ pub struct CrateAnnotations {
 
     /// Additional data to pass to  the target's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env) attribute.
-    pub rustc_env: Option<BTreeMap<String, String>>,
+    pub rustc_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional data to pass to  the target's
     /// [rustc_env_files](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env_files) attribute.
-    pub rustc_env_files: Option<BTreeSet<String>>,
+    pub rustc_env_files: Option<Select<BTreeSet<String>>>,
 
     /// Additional data to pass to the target's
     /// [rustc_flags](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_flags) attribute.
-    pub rustc_flags: Option<Vec<String>>,
+    pub rustc_flags: Option<Select<Vec<String>>>,
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
-    pub build_script_deps: Option<BTreeSet<String>>,
+    pub build_script_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
-    pub build_script_proc_macro_deps: Option<BTreeSet<String>>,
+    pub build_script_proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-data) attribute.
-    pub build_script_data: Option<BTreeSet<String>>,
+    pub build_script_data: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [tools](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-tools) attribute.
-    pub build_script_tools: Option<BTreeSet<String>>,
+    pub build_script_tools: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env) attribute.
@@ -242,18 +290,18 @@ pub struct CrateAnnotations {
 
     /// Additional environment variables to pass to a build script's
     /// [build_script_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_env: Option<BTreeMap<String, StringOrSelect>>,
+    pub build_script_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_rustc_env: Option<BTreeMap<String, String>>,
+    pub build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
-    pub build_script_toolchains: Option<BTreeSet<String>>,
+    pub build_script_toolchains: Option<BTreeSet<Label>>,
 
     /// Directory to run the crate's build script in. If not set, will run in the manifest directory, otherwise a directory relative to the exec root.
-    pub build_script_rundir: Option<String>,
+    pub build_script_rundir: Option<Select<String>>,
 
     /// A scratch pad used to write arbitrary text to target BUILD files.
     pub additive_build_file_content: Option<String>,
@@ -276,6 +324,9 @@ pub struct CrateAnnotations {
 
     /// Extra targets the should be aliased during rendering.
     pub extra_aliased_targets: Option<BTreeMap<String, String>>,
+
+    /// Transition rule to use instead of `native.alias()`.
+    pub alias_rule: Option<AliasRule>,
 }
 
 macro_rules! joined_extra_member {
@@ -301,6 +352,18 @@ impl Add for CrateAnnotations {
     type Output = CrateAnnotations;
 
     fn add(self, rhs: Self) -> Self::Output {
+        fn select_merge<T>(lhs: Option<Select<T>>, rhs: Option<Select<T>>) -> Option<Select<T>>
+        where
+            T: Selectable,
+        {
+            match (lhs, rhs) {
+                (Some(lhs), Some(rhs)) => Some(Select::merge(lhs, rhs)),
+                (Some(lhs), None) => Some(lhs),
+                (None, Some(rhs)) => Some(rhs),
+                (None, None) => None,
+            }
+        }
+
         let concat_string = |lhs: &mut String, rhs: String| {
             *lhs = format!("{lhs}{rhs}");
         };
@@ -309,24 +372,24 @@ impl Add for CrateAnnotations {
         let output = CrateAnnotations {
             gen_binaries: self.gen_binaries.or(rhs.gen_binaries),
             gen_build_script: self.gen_build_script.or(rhs.gen_build_script),
-            deps: joined_extra_member!(self.deps, rhs.deps, BTreeSet::new, BTreeSet::extend),
-            proc_macro_deps: joined_extra_member!(self.proc_macro_deps, rhs.proc_macro_deps, BTreeSet::new, BTreeSet::extend),
-            crate_features: joined_extra_member!(self.crate_features, rhs.crate_features, BTreeSet::new, BTreeSet::extend),
-            data: joined_extra_member!(self.data, rhs.data, BTreeSet::new, BTreeSet::extend),
+            deps: select_merge(self.deps, rhs.deps),
+            proc_macro_deps: select_merge(self.proc_macro_deps, rhs.proc_macro_deps),
+            crate_features: select_merge(self.crate_features, rhs.crate_features),
+            data: select_merge(self.data, rhs.data),
             data_glob: joined_extra_member!(self.data_glob, rhs.data_glob, BTreeSet::new, BTreeSet::extend),
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
-            compile_data: joined_extra_member!(self.compile_data, rhs.compile_data, BTreeSet::new, BTreeSet::extend),
+            compile_data: select_merge(self.compile_data, rhs.compile_data),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
-            rustc_env: joined_extra_member!(self.rustc_env, rhs.rustc_env, BTreeMap::new, BTreeMap::extend),
-            rustc_env_files: joined_extra_member!(self.rustc_env_files, rhs.rustc_env_files, BTreeSet::new, BTreeSet::extend),
-            rustc_flags: joined_extra_member!(self.rustc_flags, rhs.rustc_flags, Vec::new, Vec::extend),
-            build_script_deps: joined_extra_member!(self.build_script_deps, rhs.build_script_deps, BTreeSet::new, BTreeSet::extend),
-            build_script_proc_macro_deps: joined_extra_member!(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps, BTreeSet::new, BTreeSet::extend),
-            build_script_data: joined_extra_member!(self.build_script_data, rhs.build_script_data, BTreeSet::new, BTreeSet::extend),
-            build_script_tools: joined_extra_member!(self.build_script_tools, rhs.build_script_tools, BTreeSet::new, BTreeSet::extend),
+            rustc_env: select_merge(self.rustc_env, rhs.rustc_env),
+            rustc_env_files: select_merge(self.rustc_env_files, rhs.rustc_env_files),
+            rustc_flags: select_merge(self.rustc_flags, rhs.rustc_flags),
+            build_script_deps: select_merge(self.build_script_deps, rhs.build_script_deps),
+            build_script_proc_macro_deps: select_merge(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps),
+            build_script_data: select_merge(self.build_script_data, rhs.build_script_data),
+            build_script_tools: select_merge(self.build_script_tools, rhs.build_script_tools),
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
-            build_script_env: joined_extra_member!(self.build_script_env, rhs.build_script_env, BTreeMap::new, BTreeMap::extend),
-            build_script_rustc_env: joined_extra_member!(self.build_script_rustc_env, rhs.build_script_rustc_env, BTreeMap::new, BTreeMap::extend),
+            build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
+            build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
@@ -335,6 +398,7 @@ impl Add for CrateAnnotations {
             patch_tool: self.patch_tool.or(rhs.patch_tool),
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
             extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, BTreeMap::new, BTreeMap::extend),
+            alias_rule: self.alias_rule.or(rhs.alias_rule),
         };
 
         output
@@ -366,16 +430,17 @@ impl Sum for CrateAnnotations {
 #[derive(Debug, Deserialize)]
 pub struct AnnotationsProvidedByPackage {
     pub gen_build_script: Option<bool>,
-    pub data: Option<BTreeSet<String>>,
+    pub data: Option<Select<BTreeSet<Label>>>,
     pub data_glob: Option<BTreeSet<String>>,
-    pub compile_data: Option<BTreeSet<String>>,
+    pub deps: Option<Select<BTreeSet<Label>>>,
+    pub compile_data: Option<Select<BTreeSet<Label>>>,
     pub compile_data_glob: Option<BTreeSet<String>>,
-    pub rustc_env: Option<BTreeMap<String, String>>,
-    pub rustc_env_files: Option<BTreeSet<String>>,
-    pub rustc_flags: Option<Vec<String>>,
-    pub build_script_env: Option<BTreeMap<String, StringOrSelect>>,
-    pub build_script_rustc_env: Option<BTreeMap<String, String>>,
-    pub build_script_rundir: Option<String>,
+    pub rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub rustc_env_files: Option<Select<BTreeSet<String>>>,
+    pub rustc_flags: Option<Select<Vec<String>>>,
+    pub build_script_env: Option<Select<BTreeMap<String, String>>>,
+    pub build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub build_script_rundir: Option<Select<String>>,
     pub additive_build_file_content: Option<String>,
     pub extra_aliased_targets: Option<BTreeMap<String, String>>,
 }
@@ -387,6 +452,7 @@ impl CrateAnnotations {
             gen_build_script,
             data,
             data_glob,
+            deps,
             compile_data,
             compile_data_glob,
             rustc_env,
@@ -417,6 +483,7 @@ impl CrateAnnotations {
         default(&mut self.gen_build_script, gen_build_script);
         default(&mut self.data, data);
         default(&mut self.data_glob, data_glob);
+        default(&mut self.deps, deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
         default(&mut self.rustc_env, rustc_env);
@@ -542,7 +609,7 @@ impl std::fmt::Display for CrateId {
     }
 }
 
-#[derive(Debug, Hash, Clone, PartialEq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub enum GenBinaries {
     All,
     Some(BTreeSet<String>),
@@ -610,13 +677,6 @@ pub struct Config {
     /// Whether or not to generate Cargo build scripts by default
     pub generate_build_scripts: bool,
 
-    /// A set of platform triples to use in generated select statements
-    #[serde(
-        default = "default_generate_target_compatible_with",
-        skip_serializing_if = "skip_generate_target_compatible_with"
-    )]
-    pub generate_target_compatible_with: bool,
-
     /// Additional settings to apply to generated crates
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub annotations: BTreeMap<CrateId, CrateAnnotations>,
@@ -629,7 +689,7 @@ pub struct Config {
 
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub supported_platform_triples: BTreeSet<String>,
+    pub supported_platform_triples: BTreeSet<TargetTriple>,
 }
 
 impl Config {
@@ -637,13 +697,6 @@ impl Config {
         let data = fs::read_to_string(path)?;
         Ok(serde_json::from_str(&data)?)
     }
-}
-
-fn default_generate_target_compatible_with() -> bool {
-    true
-}
-fn skip_generate_target_compatible_with(value: &bool) -> bool {
-    *value
 }
 
 #[cfg(test)]
@@ -712,7 +765,7 @@ mod test {
             .unwrap();
         assert_eq!(
             annotation.crate_features,
-            Some(BTreeSet::from(["small_rng".to_owned()]))
+            Some(Select::from_value(BTreeSet::from(["small_rng".to_owned()])))
         );
 
         // Global settings

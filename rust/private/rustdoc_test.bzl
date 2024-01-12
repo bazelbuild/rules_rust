@@ -235,7 +235,6 @@ rust_doc_test = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     doc = dedent("""\
         Runs Rust documentation tests.
 
