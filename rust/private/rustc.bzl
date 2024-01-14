@@ -671,7 +671,12 @@ def collect_inputs(
     """
     linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
 
-    linker_depset = cc_toolchain.linker_files()
+    # TODO(gnish): rules_rust is not coupled with Bazel release. Remove conditional and change to
+    # _linker_files once CcToolchainInfo changes are visible to Bazel.
+    if hasattr(cc_toolchain, "_linker_files"):
+        linker_depset = cc_toolchain._linker_files
+    else:
+        linker_depset = cc_toolchain.linker_files()
     compilation_mode = ctx.var["COMPILATION_MODE"]
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
