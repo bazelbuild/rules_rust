@@ -110,7 +110,18 @@ fn parse_aquery_output_files(
     execution_root: &Path,
     aquery_stdout: &str,
 ) -> anyhow::Result<Vec<PathBuf>> {
-    let out: AqueryOutput = serde_json::from_str(aquery_stdout)?;
+    let out: AqueryOutput = serde_json::from_str(aquery_stdout).map_err(|_| {
+        // Parsing to `AqueryOutput` failed, try parsing into a `serde_json::Value`:
+        match serde_json::from_str::<serde_json::Value>(aquery_stdout) {
+            Ok(serde_json::Value::Object(_)) => {
+                // If the JSON is an object, it's likely that the aquery command failed.
+                anyhow::anyhow!("Aquery returned an empty result, are there any Rust targets in the specified paths?.")
+            }
+            _ => {
+                anyhow::anyhow!("Failed to parse aquery output as JSON")
+            }
+        }
+    })?;
 
     let artifacts = out
         .artifacts

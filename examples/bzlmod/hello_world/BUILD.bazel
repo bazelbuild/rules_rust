@@ -56,3 +56,10 @@ build_test(
         "@rules_rust//tools/rust_analyzer:gen_rust_project",
     ],
 )
+
+build_test(
+    name = "rust_fmt",
+    targets = [
+        "@rules_rust//:rustfmt",
+    ],
+)
