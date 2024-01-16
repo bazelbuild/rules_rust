@@ -16,6 +16,27 @@ rust_binary(
     deps = [],
 )
 
+[
+    sh_test(
+        name = "hello_world_{}_test".format(target),
+        srcs = ["hello_world_test.sh"],
+        args = [
+            "$(rlocationpath :hello_world_{})".format(target),
+            arch_string,
+        ],
+        data = [
+            ":hello_world_{}".format(target),
+        ],
+        deps = [
+            "@bazel_tools//tools/bash/runfiles",
+        ],
+    )
+    for (target, arch_string) in [
+        ("aarch64", "AArch64"),
+        ("x86_64", "X86-64"),
+    ]
+]
+
 platform(
     name = "linux-aarch64",
     constraint_values = [
