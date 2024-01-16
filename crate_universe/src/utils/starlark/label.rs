@@ -63,7 +63,7 @@ impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@@?[\w\d\-_\.]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
+        let re = Regex::new(r"^(@@?[\w\d\-_\.~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
         let cap = re
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {s}"))?;
@@ -444,6 +444,19 @@ mod test {
         assert_eq!(
             label.repository(),
             Some(&Repository::Canonical(String::from("repo")))
+        );
+        assert_eq!(label.package(), Some("package/sub_package"));
+        assert_eq!(label.target(), "target");
+    }
+
+    #[test]
+    fn full_label_bzlmod_with_tilde() {
+        let label = Label::from_str("@@repo~name//package/sub_package:target").unwrap();
+        assert_eq!(label.to_string(), "@@repo~name//package/sub_package:target");
+        assert!(label.is_absolute());
+        assert_eq!(
+            label.repository(),
+            Some(&Repository::Canonical(String::from("repo~name")))
         );
         assert_eq!(label.package(), Some("package/sub_package"));
         assert_eq!(label.target(), "target");
