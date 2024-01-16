@@ -581,6 +581,12 @@ tasks:
       - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L37
+      # The ndk is installed by this script 
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /opt/android-ndk-r25b
   android_examples_macos:
     name: Android Examples
     platform: macos
@@ -591,6 +597,12 @@ tasks:
       - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L42
+      # The ndk is installed by this script 
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
   ios_examples:
     name: iOS Examples
     platform: macos
