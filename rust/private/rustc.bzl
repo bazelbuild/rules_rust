@@ -674,7 +674,8 @@ def collect_inputs(
     # TODO: As of writing this comment Bazel used Java CcToolchainInfo.
     # However there is ongoing work to rewrite provider in Starlark.
     # rules_rust is not coupled with Bazel release. Remove conditional and change to
-    # _linker_files once Starlark CcToolchainInfo is visible to Bazel. 
+    # _linker_files once Starlark CcToolchainInfo is visible to Bazel.
+    # https://github.com/bazelbuild/rules_rust/issues/2425
     if hasattr(cc_toolchain, "_linker_files"):
         linker_depset = cc_toolchain._linker_files
     else:
