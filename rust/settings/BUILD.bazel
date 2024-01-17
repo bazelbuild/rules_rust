@@ -98,3 +98,10 @@ incompatible_flag(
     build_setting_default = True,
     issue = "https://github.com/bazelbuild/rules_rust/issues/2324",
 )
+
+# A flag to remove the SYSROOT environment variable from `Rustc` actions.
+incompatible_flag(
+    name = "incompatible_no_rustc_sysroot_env",
+    build_setting_default = True,
+    issue = "https://github.com/bazelbuild/rules_rust/issues/2429",
+)
