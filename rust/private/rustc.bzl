@@ -1668,6 +1668,9 @@ def _create_extra_input_args(build_info, dep_info):
         build_env_file = build_info.rustc_env
         if build_info.flags:
             build_flags_files.append(build_info.flags)
+        if build_info.linker_flags:
+            build_flags_files.append(build_info.linker_flags)
+            input_files.append(build_info.linker_flags)
 
         input_depsets.append(build_info.compile_data)
 

@@ -75,7 +75,7 @@ BuildInfo = provider(
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
         "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
-        "linker_flags": "Optional[File]: file containing flags to pass to the linker",
+        "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",
         "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
         "out_dir": "Optional[File]: directory containing the result of a build script",
         "rustc_env": "Optional[File]: file containing additional environment variables to set for rustc.",
