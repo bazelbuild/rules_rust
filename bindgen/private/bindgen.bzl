@@ -157,6 +157,8 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         compile_data = depset(compile_data),
         dep_env = None,
         flags = rustc_flags_file,
+        # linker_flags is provided via CcInfo
+        linker_flags = None,
         link_search_paths = link_search_paths,
         out_dir = None,
         rustc_env = None,
