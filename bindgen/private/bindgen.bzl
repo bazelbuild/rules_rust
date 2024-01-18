@@ -119,8 +119,6 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     """
     compile_data = []
 
-    # rustc_flags are passed directly to rustc while linker_flags are passed
-    # the linker invoked by either rustc or cc_common.link
     rustc_flags = []
     linker_search_paths = []
 
@@ -290,6 +288,13 @@ def _rust_bindgen_impl(ctx):
     else:
         providers = [
             _generate_cc_link_build_info(ctx, cc_lib),
+            # As in https://github.com/bazelbuild/rules_rust/pull/2361, we want
+            # to link cc_lib to the direct parent (rlib) using `-lstatic=<cc_lib>` rustc flag
+            # Hence, we do not need to provide the whole CcInfo of cc_lib because
+            # it will cause the downstream binary to link the cc_lib again
+            # (same effect as setting `leak_symbols` attribute above)
+            # The CcInfo here only contains the custom link flags (i.e. linkopts attribute)
+            # specified by users in cc_lib
             CcInfo(
                 linking_context = cc_common.create_linking_context(
                     linker_inputs = depset([cc_common.create_linker_input(
