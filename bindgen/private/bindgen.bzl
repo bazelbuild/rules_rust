@@ -99,6 +99,14 @@ def rust_bindgen_library(
         **kwargs
     )
 
+def _get_user_link_flags(cc_lib):
+    linker_flags = []
+
+    for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
+        linker_flags.extend(linker_input.user_link_flags)
+
+    return linker_flags
+
 def _generate_cc_link_build_info(ctx, cc_lib):
     """Produce the eqivilant cargo_build_script providers for use in linking the library.
 
@@ -114,7 +122,6 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     # rustc_flags are passed directly to rustc while linker_flags are passed
     # the linker invoked by either rustc or cc_common.link
     rustc_flags = []
-    linker_flags = []
     linker_search_paths = []
 
     for linker_input in cc_lib[CcInfo].linking_context.linker_inputs.to_list():
@@ -128,8 +135,6 @@ def _generate_cc_link_build_info(ctx, cc_lib):
                 linker_search_paths.append(lib.pic_static_library.dirname)
                 compile_data.append(lib.pic_static_library)
 
-        linker_flags.extend(linker_input.user_link_flags)
-
     if not compile_data:
         fail("No static libraries found in {}".format(
             cc_lib.label,
@@ -139,12 +144,6 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     ctx.actions.write(
         output = rustc_flags_file,
         content = "\n".join(rustc_flags),
-    )
-
-    linker_flags_file = ctx.actions.declare_file("{}.linker_flags".format(ctx.label.name))
-    ctx.actions.write(
-        output = linker_flags_file,
-        content = "\n".join(linker_flags),
     )
 
     link_search_paths = ctx.actions.declare_file("{}.link_search_paths".format(ctx.label.name))
@@ -160,7 +159,6 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         compile_data = depset(compile_data),
         dep_env = None,
         flags = rustc_flags_file,
-        linker_flags = linker_flags_file,
         link_search_paths = link_search_paths,
         out_dir = None,
         rustc_env = None,
@@ -290,7 +288,17 @@ def _rust_bindgen_impl(ctx):
             direct_cc_infos = [cc_lib[CcInfo]],
         )]
     else:
-        providers = [_generate_cc_link_build_info(ctx, cc_lib)]
+        providers = [
+            _generate_cc_link_build_info(ctx, cc_lib),
+            CcInfo(
+                linking_context = cc_common.create_linking_context(
+                    linker_inputs = depset([cc_common.create_linker_input(
+                        owner = ctx.label,
+                        user_link_flags = _get_user_link_flags(cc_lib),
+                    )]),
+                ),
+            ),
+        ]
 
     return providers + [
         OutputGroupInfo(
