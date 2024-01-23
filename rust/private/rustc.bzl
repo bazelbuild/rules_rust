@@ -804,7 +804,8 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
-        skip_expanding_rustc_env = False):
+        skip_expanding_rustc_env = False,
+        skip_setting_sysroot_from_toolchain = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -835,6 +836,9 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        skip_setting_sysroot_from_toolchain (bool): Whether to skip setting --sysroot to toolchain.sysroot.
+            This argument is needed by clippy-driver which disallows setting --sysroot and SYSROOT the same time.
+            For more details, see https://github.com/rust-lang/rust-clippy/pull/10149
 
     Returns:
         tuple: A tuple of the following items
@@ -1060,7 +1064,11 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
-    if toolchain._experimental_toolchain_generated_sysroot:
+
+    # See https://github.com/rust-lang/rust-clippy/pull/10149
+    # clippy-driver doesn't allow passing `--sysroot` if `SYSROOT` is already set.
+    if skip_setting_sysroot_from_toolchain == False and \
+       toolchain._experimental_toolchain_generated_sysroot:
         rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
     if toolchain._rename_first_party_crates:
