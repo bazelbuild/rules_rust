@@ -79,7 +79,7 @@ impl Runfiles {
                     .map(|line| {
                         let triplet: Vec<&str> = line.splitn(3, ',').collect();
                         (
-                            format!("{},{}", triplet[0].to_string(), triplet[1].to_string()),
+                            format!("{},{}", triplet[0], triplet[1]),
                             triplet[2].to_string(),
                         )
                     })
@@ -111,7 +111,7 @@ impl Runfiles {
                     .captures(caller.to_str().unwrap())
                     .map(|c| c[1].to_string())
             })
-            .unwrap_or_else(|| "".to_string())
+            .unwrap_or_default()
     }
 
     fn create_directory_based() -> io::Result<Self> {
@@ -161,7 +161,7 @@ impl Runfiles {
         let repo_mapped_path = self
             .repo_mapping
             .get(&repo_map_key)
-            .map(|v| v.clone())
+            .cloned()
             .map(|v| PathBuf::new().join(v).join(remainder));
 
         let final_path = if let Some(repo_map_entry) = repo_mapped_path {
@@ -364,9 +364,8 @@ mod test {
 
         // This check is unique to the rules_rust repository. The name
         // here is expected to be different in consumers of this library
-        // In the case where bzlmod is enabled the repository name will always be _main
         if r.current_repository() == "_main" {
-            assert!(true)
+            // In the case where bzlmod is enabled the repository name will always be _main
         } else {
             assert_eq!(r.current_repository(), "rules_rust")
         }
