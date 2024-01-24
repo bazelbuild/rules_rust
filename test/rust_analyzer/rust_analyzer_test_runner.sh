@@ -31,6 +31,9 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 rust_analyzer_dependencies()
+load("@rules_rust//tools/runfiles:deps.bzl", "runfiles_dependencies")
+runfiles_dependencies()
+
 EOF
 
     cat <<EOF >"${new_workspace}/.bazelrc"
