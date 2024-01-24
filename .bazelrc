@@ -60,8 +60,7 @@ build --nolegacy_external_runfiles
 
 # TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
 # https://github.com/bazelbuild/rules_rust/issues/2181
-common --enable_bzlmod
-common --lockfile_mode=off
+common --noenable_bzlmod
 
 ###############################################################################
 ## Custom user flags
