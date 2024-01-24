@@ -45,6 +45,10 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 
+load("@rules_rust//tools/runfiles:deps.bzl", "runfiles_dependencies")
+
+runfiles_dependencies()
+
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()

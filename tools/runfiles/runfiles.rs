@@ -43,6 +43,8 @@ const RUNFILES_DIR_ENV_VAR: &str = "RUNFILES_DIR";
 const MANIFEST_FILE_ENV_VAR: &str = "RUNFILES_MANIFEST_FILE";
 const MANIFEST_ONLY_ENV_VAR: &str = "RUNFILES_MANIFEST_ONLY";
 const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
+const EXTERNAL_GENERATED_FILE_REGEX: &str = "^bazel-out[/][^/]+/bin/external/([^/]+)/";
+const EXTERNAL_FILE_REGEX: &str = "^external/([^/]+)/";
 
 #[derive(Debug)]
 enum Mode {
@@ -53,6 +55,8 @@ enum Mode {
 #[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
+    repo_mapping: HashMap<String, String>,
+    source_repository: String,
 }
 
 impl Runfiles {
@@ -60,16 +64,61 @@ impl Runfiles {
     /// RUNFILES_MANIFEST_ONLY environment variable is present,
     /// or a directory based Runfiles object otherwise.
     pub fn create() -> io::Result<Self> {
-        if is_manifest_only() {
+        let bootstrap_runfiles = if is_manifest_only() {
             Self::create_manifest_based()
         } else {
             Self::create_directory_based()
-        }
+        };
+
+        bootstrap_runfiles.map(|r| {
+            let repo_mapping_file = r.rlocation("_repo_mapping");
+            if repo_mapping_file.exists() {
+                let repo_mapping = std::fs::read_to_string(repo_mapping_file)
+                    .expect("failed to read _repo_mapping file")
+                    .lines()
+                    .map(|line| {
+                        let triplet: Vec<&str> = line.splitn(3, ',').collect();
+                        (
+                            format!("{},{}", triplet[0].to_string(), triplet[1].to_string()),
+                            triplet[2].to_string(),
+                        )
+                    })
+                    .collect::<HashMap<_, _>>();
+                Runfiles {
+                    mode: r.mode,
+                    source_repository: r.source_repository,
+                    repo_mapping,
+                }
+            } else {
+                Runfiles {
+                    mode: r.mode,
+                    source_repository: r.source_repository,
+                    repo_mapping: HashMap::new(),
+                }
+            }
+        })
+    }
+
+    fn get_source_repository() -> String {
+        let caller = std::env::current_exe().expect("failed to get current executable path");
+        regex::Regex::new(EXTERNAL_GENERATED_FILE_REGEX)
+            .expect("failed to compile EXTERNAL_GENERATED_FILE_REGEX regex")
+            .captures(caller.to_str().unwrap())
+            .map(|c| c[1].to_string())
+            .or_else(|| {
+                regex::Regex::new(EXTERNAL_FILE_REGEX)
+                    .expect("failed to compile EXTERNAL_FILE_REGEX regex")
+                    .captures(caller.to_str().unwrap())
+                    .map(|c| c[1].to_string())
+            })
+            .unwrap_or_else(|| "".to_string())
     }
 
     fn create_directory_based() -> io::Result<Self> {
         Ok(Runfiles {
             mode: Mode::DirectoryBased(find_runfiles_dir()?),
+            repo_mapping: HashMap::new(),
+            source_repository: Self::get_source_repository(),
         })
     }
 
@@ -87,6 +136,8 @@ impl Runfiles {
             .collect::<HashMap<_, _>>();
         Ok(Runfiles {
             mode: Mode::ManifestBased(path_mapping),
+            repo_mapping: HashMap::new(),
+            source_repository: Self::get_source_repository(),
         })
     }
 
@@ -97,13 +148,32 @@ impl Runfiles {
     /// validity and that the path exists.
     pub fn rlocation(&self, path: impl AsRef<Path>) -> PathBuf {
         let path = path.as_ref();
+
         if path.is_absolute() {
             return path.to_path_buf();
         }
+
+        let mut path_components = path.components();
+        let root = PathBuf::new().join(path_components.next().unwrap());
+        let remainder = path_components.as_path();
+
+        let repo_map_key = format!("{},{}", self.source_repository, root.to_string_lossy(),);
+        let repo_mapped_path = self
+            .repo_mapping
+            .get(&repo_map_key)
+            .map(|v| v.clone())
+            .map(|v| PathBuf::new().join(v).join(remainder));
+
+        let final_path = if let Some(repo_map_entry) = repo_mapped_path {
+            repo_map_entry
+        } else {
+            path.to_path_buf()
+        };
+
         match &self.mode {
-            Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
+            Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(final_path),
             Mode::ManifestBased(path_mapping) => path_mapping
-                .get(path)
+                .get(final_path.as_path())
                 .unwrap_or_else(|| {
                     panic!("Path {} not found among runfiles.", path.to_string_lossy())
                 })
@@ -281,6 +351,8 @@ mod test {
         path_mapping.insert("a/b".into(), "c/d".into());
         let r = Runfiles {
             mode: Mode::ManifestBased(path_mapping),
+            repo_mapping: HashMap::new(),
+            source_repository: "".to_string(),
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
@@ -292,6 +364,11 @@ mod test {
 
         // This check is unique to the rules_rust repository. The name
         // here is expected to be different in consumers of this library
-        assert_eq!(r.current_repository(), "rules_rust")
+        // In the case where bzlmod is enabled the repository name will always be _main
+        if r.current_repository() == "_main" {
+            assert!(true)
+        } else {
+            assert_eq!(r.current_repository(), "rules_rust")
+        }
     }
 }
