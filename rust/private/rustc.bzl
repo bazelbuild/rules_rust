@@ -1060,6 +1060,7 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     env["SYSROOT"] = toolchain.sysroot
+    env["DYLD_LIBRARY_PATH"] = toolchain.sysroot + "/lib"
     if toolchain._experimental_toolchain_generated_sysroot:
         rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
