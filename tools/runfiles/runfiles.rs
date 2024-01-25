@@ -43,8 +43,8 @@ const RUNFILES_DIR_ENV_VAR: &str = "RUNFILES_DIR";
 const MANIFEST_FILE_ENV_VAR: &str = "RUNFILES_MANIFEST_FILE";
 const MANIFEST_ONLY_ENV_VAR: &str = "RUNFILES_MANIFEST_ONLY";
 const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
-const EXTERNAL_GENERATED_FILE_REGEX: &str = "^bazel-out[/][^/]+/bin/external/([^/]+)/";
-const EXTERNAL_FILE_REGEX: &str = "^external/([^/]+)/";
+const EXTERNAL_GENERATED_FILE_REGEX: &str = "bazel-out[/][^/]+/bin/external/([^/]+)/";
+const EXTERNAL_FILE_REGEX: &str = "external/([^/]+)/";
 
 #[derive(Debug)]
 enum Mode {
