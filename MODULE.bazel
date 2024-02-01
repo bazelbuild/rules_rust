@@ -131,7 +131,8 @@ register_toolchains(
     "@rust_toolchains//:all",
 )
 
-use_repo(rust, "rust_host_tools")
+rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
+use_repo(rust_host_tools, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
 use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
