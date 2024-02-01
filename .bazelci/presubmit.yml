@@ -667,6 +667,16 @@ tasks:
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
+  windows_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: windows
+    working_directory: examples/bzlmod/hello_world
+    run_targets:
+      - "//third-party:vendor"
+    build_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest

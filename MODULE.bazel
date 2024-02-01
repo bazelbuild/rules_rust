@@ -36,7 +36,7 @@ bazel_dep(
     repo_name = "com_google_protobuf",
 )
 
-internal_deps = use_extension("//rust/private:extensions.bzl", "internal_deps")
+internal_deps = use_extension("//rust/private:extensions.bzl", "i")
 use_repo(
     internal_deps,
     "bazelci_rules",

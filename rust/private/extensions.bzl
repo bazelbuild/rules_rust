@@ -41,7 +41,9 @@ def _internal_deps_impl(module_ctx):
         root_module_direct_dev_deps = [],
     )
 
-internal_deps = module_extension(
+# This is named a single character to reduce the size of path names when running build scripts, to reduce the chance
+# of hitting the 260 character windows path name limit.
+i = module_extension(
     doc = "Dependencies for rules_rust",
     implementation = _internal_deps_impl,
 )

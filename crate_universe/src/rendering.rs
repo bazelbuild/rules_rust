@@ -374,7 +374,7 @@ impl Renderer {
                     starlark.push(Starlark::Alias(Alias {
                         rule: AliasRule::default().rule(),
                         name: target.crate_name.clone(),
-                        actual: Label::from_str(&format!(":{}_build_script", krate.name)).unwrap(),
+                        actual: Label::from_str(&format!(":{}_bs", krate.name)).unwrap(),
                         tags: BTreeSet::from(["manual".to_owned()]),
                     }));
                 }
@@ -428,7 +428,9 @@ impl Renderer {
             // on having certain Cargo environment variables set.
             //
             // Do not change this name to "cargo_build_script".
-            name: format!("{}_build_script", krate.name),
+            //
+            // This is set to a short suffix to avoid long path name issues on windows.
+            name: format!("{}_bs", krate.name),
             aliases: SelectDict::new(self.make_aliases(krate, true, false), platforms),
             build_script_env: SelectDict::new(
                 attrs
@@ -1026,7 +1028,7 @@ mod test {
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
-        assert!(build_file_content.contains("name = \"mock_crate_build_script\""));
+        assert!(build_file_content.contains("name = \"mock_crate_bs\""));
     }
 
     #[test]

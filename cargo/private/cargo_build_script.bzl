@@ -415,8 +415,8 @@ def name_to_pkg_name(name):
     Returns:
         str: A cleaned up name for a build script target.
     """
-    if name.endswith("_build_script"):
-        return name[:-len("_build_script")]
+    if name.endswith("_bs"):
+        return name[:-len("_bs")]
     return name
 
 def _cargo_dep_env_implementation(ctx):
