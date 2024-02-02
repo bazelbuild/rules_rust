@@ -644,6 +644,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
   macos_bzlmod_bcr:
@@ -652,6 +653,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
 
