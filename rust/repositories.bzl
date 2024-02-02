@@ -858,7 +858,7 @@ rust_toolchain_set_repository = repository_rule(
 def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
     toolchain_repos = []
 
-    for target_triple in [exec_triple] + extra_target_triples:
+    for target_triple in depset([exec_triple] + extra_target_triples).to_list():
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:
