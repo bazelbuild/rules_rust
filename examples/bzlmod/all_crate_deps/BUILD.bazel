@@ -7,7 +7,7 @@ package(default_visibility = ["//visibility:public"])
 rust_binary(
     name = "all_crate_deps",
     srcs = ["src/main.rs"],
-    deps = all_crate_deps(normal=True),
+    deps = all_crate_deps(normal = True),
 )
 
 rust_doc(
@@ -17,8 +17,8 @@ rust_doc(
 
 sh_test(
     name = "all_crate_deps_test",
-    srcs = ["all_crate_deps_test.sh"],
     size = "small",
+    srcs = ["all_crate_deps_test.sh"],
     args = [
         "$(rlocationpath :all_crate_deps)",
     ],
