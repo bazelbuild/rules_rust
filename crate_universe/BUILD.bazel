@@ -4,7 +4,11 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "
 load("//crate_universe:version.bzl", "VERSION")
 
 exports_files(
-    glob(["src/**"]) + [
+    glob([
+        "src/**/*.bzl",
+        "src/**/*.j2",
+        "src/**/*.rs",
+    ]) + [
         "Cargo.toml",
         "Cargo.lock",
         "defs.bzl",
@@ -32,7 +36,11 @@ bzl_library(
 
 filegroup(
     name = "rust_srcs",
-    srcs = glob(["src/**/*"]),
+    srcs = glob([
+        "src/**/*.bzl",
+        "src/**/*.j2",
+        "src/**/*.rs",
+    ]),
     visibility = ["//:__subpackages__"],
 )
 

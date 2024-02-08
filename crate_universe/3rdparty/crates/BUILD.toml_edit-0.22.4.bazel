@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 # ])
 
 rust_library(
-    name = "serde_spanned",
+    name = "toml_edit",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -29,6 +29,8 @@ rust_library(
         ],
     ),
     crate_features = [
+        "display",
+        "parse",
         "serde",
     ],
     crate_root = "src/lib.rs",
@@ -38,7 +40,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=serde_spanned",
+        "crate-name=toml_edit",
         "manual",
         "noclippy",
         "norustfmt",
@@ -80,8 +82,12 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.6.4",
+    version = "0.22.4",
     deps = [
+        "@cui__indexmap-2.1.0//:indexmap",
         "@cui__serde-1.0.190//:serde",
+        "@cui__serde_spanned-0.6.5//:serde_spanned",
+        "@cui__toml_datetime-0.6.5//:toml_datetime",
+        "@cui__winnow-0.5.18//:winnow",
     ],
 )
