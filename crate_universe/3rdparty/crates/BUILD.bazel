@@ -177,7 +177,7 @@ alias(
 
 alias(
     name = "toml",
-    actual = "@cui__toml-0.8.6//:toml",
+    actual = "@cui__toml-0.8.10//:toml",
     tags = ["manual"],
 )
 

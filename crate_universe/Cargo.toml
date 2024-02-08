@@ -48,7 +48,7 @@ sha2 = "0.10.8"
 tempfile = "3.8.1"
 tera = "1.19.1"
 textwrap = "0.16.0"
-toml = "0.8.6"
+toml = "0.8.10"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.17"
 

@@ -68,7 +68,7 @@ use_repo(
     "cui__tempfile-3.8.1",
     "cui__tera-1.19.1",
     "cui__textwrap-0.16.0",
-    "cui__toml-0.8.6",
+    "cui__toml-0.8.10",
     "cui__tracing-0.1.40",
     "cui__tracing-subscriber-0.3.17",
     "generated_inputs_in_external_repo",

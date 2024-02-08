@@ -160,6 +160,7 @@ fn main() -> Result<(), ProcessWrapperError> {
         if let Some(tf) = opts.touch_file {
             OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .write(true)
                 .open(tf)
                 .map_err(|e| ProcessWrapperError(format!("failed to create touch file: {}", e)))?;
