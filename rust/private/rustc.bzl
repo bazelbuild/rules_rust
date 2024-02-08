@@ -1111,7 +1111,8 @@ def rustc_compile_action(
         output_hash = None,
         force_all_deps_direct = False,
         crate_info_dict = None,
-        skip_expanding_rustc_env = False):
+        skip_expanding_rustc_env = False,
+        include_coverage = True):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1124,6 +1125,7 @@ def rustc_compile_action(
             to the commandline as opposed to -L.
         crate_info_dict: A mutable dict used to create CrateInfo provider
         skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
+        include_coverage (bool, optional): Whether to generate coverage information or not.
 
     Returns:
         list: A list of the following providers:
@@ -1456,11 +1458,19 @@ def rustc_compile_action(
             runfiles = runfiles,
             executable = executable,
         ),
-        coverage_common.instrumented_files_info(
-            ctx,
-            **instrumented_files_kwargs
-        ),
     ]
+
+    # When invoked by aspects (and when running `bazel coverage`), the
+    # baseline_coverage.dat created here will conflict with the baseline_coverage.dat of the
+    # underlying target, which is a build failure. So we add an option to disable it so that this
+    # function can be invoked from aspects for rules that have its own InstrumentedFilesInfo.
+    if include_coverage:
+        providers.append(
+            coverage_common.instrumented_files_info(
+                ctx,
+                **instrumented_files_kwargs
+            ),
+        )
 
     if crate_info_dict != None:
         crate_info_dict.update({
