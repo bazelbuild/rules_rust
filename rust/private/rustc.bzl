@@ -1018,7 +1018,10 @@ def construct_arguments(
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
-            rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+
+            # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
+            # Additional context: https://github.com/rust-lang/rust/pull/36574
+            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
