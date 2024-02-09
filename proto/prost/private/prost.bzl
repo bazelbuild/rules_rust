@@ -275,7 +275,6 @@ rust_prost_aspect = aspect(
         ),
     } | RUSTC_ATTRS,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,
         "@bazel_tools//tools/cpp:toolchain_type",

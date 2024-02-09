@@ -325,7 +325,6 @@ rust_proto_library = rule(
         ),
     },
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//proto/protobuf:toolchain_type")),
         str(Label("//rust:toolchain_type")),
@@ -418,7 +417,6 @@ rust_grpc_library = rule(
         ),
     },
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//proto/protobuf:toolchain_type")),
         str(Label("//rust:toolchain_type")),
