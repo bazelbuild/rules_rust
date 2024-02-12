@@ -225,8 +225,11 @@ def generate_config_file(
         "vendor_mode": mode,
     }
 
+    # "crate_label_template" is explicitly supported above in non-local modes
+    excluded_from_key_check = ["crate_label_template"]
+
     for key in updates:
-        if render_config[key] != default_render_config[key]:
+        if (render_config[key] != default_render_config[key]) and key not in excluded_from_key_check:
             fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
                 key,
                 ctx.label,

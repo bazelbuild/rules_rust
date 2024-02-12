@@ -46,6 +46,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
 
     rendering_config = json.decode(render_config(
         regen_command = "Run 'cargo update [--workspace]'",
+        crate_label_template = "@@rules_rust~override~crate~{repository}__{name}-{version}//:{target}",
     ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
@@ -121,6 +122,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         name = cfg.name,
         contents = {
             "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
+            "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
         },
     )
 
