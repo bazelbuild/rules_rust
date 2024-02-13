@@ -127,7 +127,7 @@ def generate_splicing_manifest(packages, splicing_config, cargo_config, manifest
 
     config = json.decode(splicing_config or generate_splicing_config())
     splicing_manifest_content = {
-        "cargo_config": manifest_to_path(cargo_config) if cargo_config else None,
+        "cargo_config": str(manifest_to_path(cargo_config)) if cargo_config else None,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
     }
