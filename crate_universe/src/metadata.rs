@@ -161,6 +161,18 @@ impl Cargo {
         bail!("Couldn't parse cargo version");
     }
 
+    /// Determine if Cargo is expected to be using the new package_id spec. For
+    /// details see <https://github.com/rust-lang/cargo/pull/13311>
+    pub fn uses_new_package_id_format(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 78);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
     fn env(&self) -> Result<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 

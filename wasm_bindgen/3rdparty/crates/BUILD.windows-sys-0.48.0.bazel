@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "windows_sys",
     srcs = glob(["**/*.rs"]),
@@ -36,14 +32,16 @@ rust_library(
         "default",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "Win32_System",
-            "Win32_System_Threading",
+            "Win32_System",  # aarch64-pc-windows-msvc
+            "Win32_System_Threading",  # aarch64-pc-windows-msvc
         ],
         "//conditions:default": [],
     }),
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=windows-sys",

@@ -64,6 +64,15 @@ def rules_rust_dependencies():
         sha256 = "2037875b9a4456dce4a79d112a8ae885bbc4aad968e6587dca6e64f3a0900cdf",
         strip_prefix = "rules_cc-0.0.9",
     )
+    maybe(
+        http_archive,
+        name = "rules_license",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_license/releases/download/0.0.8/rules_license-0.0.8.tar.gz",
+            "https://github.com/bazelbuild/rules_license/releases/download/0.0.8/rules_license-0.0.8.tar.gz",
+        ],
+        sha256 = "241b06f3097fd186ff468832150d6cc142247dc42a32aaefb56d0099895fd229",
+    )
 
     maybe(
         http_archive,
@@ -858,7 +867,7 @@ rust_toolchain_set_repository = repository_rule(
 def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
     toolchain_repos = []
 
-    for target_triple in [exec_triple] + extra_target_triples:
+    for target_triple in depset([exec_triple] + extra_target_triples).to_list():
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:

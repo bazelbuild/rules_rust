@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "toml_edit",
     srcs = glob(["**/*.rs"]),
@@ -85,7 +81,7 @@ rust_library(
     deps = [
         "@cui__indexmap-2.1.0//:indexmap",
         "@cui__serde-1.0.190//:serde",
-        "@cui__serde_spanned-0.6.4//:serde_spanned",
+        "@cui__serde_spanned-0.6.5//:serde_spanned",
         "@cui__toml_datetime-0.6.5//:toml_datetime",
         "@cui__winnow-0.5.18//:winnow",
     ],

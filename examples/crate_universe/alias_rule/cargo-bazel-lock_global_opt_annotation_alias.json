@@ -1,9 +1,10 @@
 {
-  "checksum": "765f6c9dfbaf05e1008a0e1a38a35ba27384db45005c3467f09284b6657dade1",
+  "checksum": "89c15a6379f2c0c4bc3841eb09dc4b817b34368f1b6cea4a34120420845742f0",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
       "version": "0.0.1",
+      "package_url": null,
       "repository": null,
       "targets": [
         {
@@ -33,11 +34,14 @@
         "edition": "2018",
         "version": "0.0.1"
       },
-      "license": null
+      "license": null,
+      "license_ids": [],
+      "license_file": null
     },
     "test_data_passing_crate 0.1.0": {
       "name": "test_data_passing_crate",
       "version": "0.1.0",
+      "package_url": "https://github.com/bazelbuild/rules_rust",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/test_data_passing_crate/0.1.0/download",
@@ -87,6 +91,10 @@
         ]
       },
       "license": "Apache-2.0",
+      "license_ids": [
+        "Apache-2.0"
+      ],
+      "license_file": null,
       "alias_rule": "alias"
     }
   },

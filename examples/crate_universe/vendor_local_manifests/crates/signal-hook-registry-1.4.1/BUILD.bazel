@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # Apache-2.0/MIT
-# ])
-
 rust_library(
     name = "signal_hook_registry",
     srcs = glob(["**/*.rs"]),
@@ -30,7 +26,9 @@ rust_library(
     ),
     crate_root = "src/lib.rs",
     edition = "2015",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=signal-hook-registry",
@@ -77,6 +75,6 @@ rust_library(
     }),
     version = "1.4.1",
     deps = [
-        "//vendor_local_manifests/crates/libc-0.2.151:libc",
+        "//vendor_local_manifests/crates/libc-0.2.153:libc",
     ],
 )

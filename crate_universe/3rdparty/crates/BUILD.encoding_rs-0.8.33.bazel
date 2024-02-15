@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # (Apache-2.0 OR MIT) AND BSD-3-Clause
-# ])
-
 rust_library(
     name = "encoding_rs",
     srcs = glob(["**/*.rs"]),

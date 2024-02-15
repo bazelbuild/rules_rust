@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "mio",
     srcs = glob(["**/*.rs"]),
@@ -35,7 +31,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=mio",
@@ -83,89 +81,89 @@ rust_library(
     version = "0.8.10",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "//vendor_local_pkgs/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "//vendor_local_pkgs/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(target_os = "wasi")
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(target_os = "wasi")
             "//vendor_local_pkgs/crates/wasi-0.11.0-wasi-snapshot-preview1:wasi",  # cfg(target_os = "wasi")
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "//vendor_local_pkgs/crates/windows-sys-0.48.0:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "//vendor_local_pkgs/crates/libc-0.2.151:libc",  # cfg(unix)
+            "//vendor_local_pkgs/crates/libc-0.2.153:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),
