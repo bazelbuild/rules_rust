@@ -123,6 +123,7 @@ def rustdoc_compile_action(
         build_flags_files = build_flags_files,
         emit = [],
         remap_path_prefix = None,
+        rustdoc = True,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
     )

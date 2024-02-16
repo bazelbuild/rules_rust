@@ -390,7 +390,7 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths):
+def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths, rustdoc = False):
     """Gathers cc_common linker information
 
     Args:
@@ -400,6 +400,7 @@ def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configurati
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
+        rustdoc (bool, optional): Whether to add "bin" link flags to the command regardless of `crate_type`.
 
 
     Returns:
@@ -410,7 +411,7 @@ def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configurati
     """
     user_link_flags = get_cc_user_link_flags(ctx)
 
-    if crate_type in ("bin"):
+    if crate_type in ("bin") or rustdoc:
         is_linking_dynamic_library = False
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
     elif crate_type in ("dylib"):
@@ -797,6 +798,7 @@ def construct_arguments(
         build_flags_files,
         emit = ["dep-info", "link"],
         force_all_deps_direct = False,
+        rustdoc = False,
         stamp = False,
         remap_path_prefix = "",
         use_json_output = False,
@@ -825,6 +827,7 @@ def construct_arguments(
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
+        rustdoc (bool, optional): Whether to add "bin" link flags to the command regardless of `emit` and `crate_type`.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
         remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to None, no prefix will be set.
@@ -1000,7 +1003,7 @@ def construct_arguments(
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
-    if ("link" in emit and crate_info.type not in ["rlib", "lib"]):
+    if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or rustdoc:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
         # linker since it won't understand.
         compilation_mode = ctx.var["COMPILATION_MODE"]
@@ -1011,7 +1014,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths)
+            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths, rustdoc)
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
