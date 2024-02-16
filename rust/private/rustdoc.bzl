@@ -96,6 +96,7 @@ def rustdoc_compile_action(
         build_info = build_info,
         # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
         force_depend_on_objects = is_test,
+        include_link_flags = False,
     )
 
     # Since this crate is not actually producing the output described by the
@@ -123,7 +124,8 @@ def rustdoc_compile_action(
         build_flags_files = build_flags_files,
         emit = [],
         remap_path_prefix = None,
-        rustdoc = True,
+        add_flags_for_binary = True,
+        include_link_flags = False,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
     )
