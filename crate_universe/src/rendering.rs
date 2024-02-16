@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
-use indoc::formatdoc;
 use itertools::Itertools;
 
 use crate::config::{AliasRule, RenderConfig, VendorMode};
@@ -148,7 +147,7 @@ impl Renderer {
         }
 
         // Package visibility, exported bzl files.
-        let package = Package::default_visibility_public();
+        let package = Package::default_visibility_public(BTreeSet::new());
         starlark.push(Starlark::Package(package));
 
         let mut exports_files = ExportsFiles {
@@ -313,16 +312,54 @@ impl Renderer {
             items: BTreeSet::from(["selects".to_owned()]),
         }));
 
-        // Package visibility.
-        let package = Package::default_visibility_public();
-        starlark.push(Starlark::Package(package));
+        if self.config.generate_rules_license_metadata {
+            let has_license_ids = !krate.license_ids.is_empty();
+            let mut package_metadata = BTreeSet::from([Label::Relative {
+                target: "package_info".to_owned(),
+            }]);
 
-        if let Some(license) = &krate.license {
-            starlark.push(Starlark::Verbatim(formatdoc! {r#"
-                # licenses([
-                #     "TODO",  # {license}
-                # ])
-            "#}));
+            starlark.push(Starlark::Load(Load {
+                bzl: "@rules_license//rules:package_info.bzl".to_owned(),
+                items: BTreeSet::from(["package_info".to_owned()]),
+            }));
+
+            if has_license_ids {
+                starlark.push(Starlark::Load(Load {
+                    bzl: "@rules_license//rules:license.bzl".to_owned(),
+                    items: BTreeSet::from(["license".to_owned()]),
+                }));
+                package_metadata.insert(Label::Relative {
+                    target: "license".to_owned(),
+                });
+            }
+
+            let package = Package::default_visibility_public(package_metadata);
+            starlark.push(Starlark::Package(package));
+
+            starlark.push(Starlark::PackageInfo(starlark::PackageInfo {
+                name: "package_info".to_owned(),
+                package_name: krate.name.clone(),
+                package_url: krate.package_url.clone().unwrap_or_default(),
+                package_version: krate.version.clone(),
+            }));
+
+            if has_license_ids {
+                let mut license_kinds = BTreeSet::new();
+
+                krate.license_ids.clone().into_iter().for_each(|lic| {
+                    license_kinds.insert("@rules_license//licenses/spdx:".to_owned() + &lic);
+                });
+
+                starlark.push(Starlark::License(starlark::License {
+                    name: "license".to_owned(),
+                    license_kinds,
+                    license_text: krate.license_file.clone().unwrap_or_default(),
+                }));
+            }
+        } else {
+            // Package visibility.
+            let package = Package::default_visibility_public(BTreeSet::new());
+            starlark.push(Starlark::Package(package));
         }
 
         for rule in &krate.targets {
@@ -1307,6 +1344,158 @@ mod test {
                 ],
                 "//conditions:default": [],
             }),
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_without_license_ids() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                ..CrateContext::default()
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [":package_info"],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_with_license_ids() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                ..CrateContext::default()
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [
+                    ":license",
+                    ":package_info",
+                ],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+
+            license(
+                name = "license",
+                license_kinds = [
+                    "@rules_license//licenses/spdx:Apache-2.0",
+                    "@rules_license//licenses/spdx:MIT",
+                ],
+            )
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_with_license_ids_and_file() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: Some("LICENSE.txt".to_owned()),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                ..CrateContext::default()
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [
+                    ":license",
+                    ":package_info",
+                ],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+
+            license(
+                name = "license",
+                license_kinds = [
+                    "@rules_license//licenses/spdx:Apache-2.0",
+                    "@rules_license//licenses/spdx:MIT",
+                ],
+                license_text = "LICENSE.txt",
+            )
         "#};
         assert!(build_file_content
             .replace(' ', "")

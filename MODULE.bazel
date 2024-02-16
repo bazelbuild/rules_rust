@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.38.0",
+    version = "0.39.0",
 )
 
 bazel_dep(
@@ -18,12 +18,16 @@ bazel_dep(
     version = "0.0.9",
 )
 bazel_dep(
+    name = "rules_license",
+    version = "0.0.8",
+)
+bazel_dep(
     name = "rules_proto",
     version = "5.3.0-21.7",
 )
 bazel_dep(
     name = "apple_support",
-    version = "1.11.1",
+    version = "1.12.0",
     repo_name = "build_bazel_apple_support",
 )
 bazel_dep(
@@ -64,11 +68,12 @@ use_repo(
     "cui__serde_json-1.0.108",
     "cui__serde_starlark-0.1.14",
     "cui__sha2-0.10.8",
+    "cui__spdx-0.10.3",
     "cui__spectral-0.6.0",
     "cui__tempfile-3.8.1",
     "cui__tera-1.19.1",
     "cui__textwrap-0.16.0",
-    "cui__toml-0.8.6",
+    "cui__toml-0.8.10",
     "cui__tracing-0.1.40",
     "cui__tracing-subscriber-0.3.17",
     "generated_inputs_in_external_repo",

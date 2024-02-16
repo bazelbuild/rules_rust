@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "proc_macro_error",
     srcs = glob(["**/*.rs"]),
@@ -39,7 +35,9 @@ rust_library(
     proc_macro_deps = [
         "@crates_vendor__proc-macro-error-attr-1.0.4//:proc_macro_error_attr",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=proc-macro-error",
@@ -134,6 +132,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "proc-macro-error_build_script",
+    actual = ":proc-macro-error_build_script",
     tags = ["manual"],
 )

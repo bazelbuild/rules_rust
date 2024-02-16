@@ -330,6 +330,17 @@ tasks:
     platform: ubuntu2004
     run_targets:
       - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_integration_test:
+    name: Rust-Analyzer Integration Test
+    platform: ubuntu2004
+    run_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+  examples_rust_analyzer_integration_test:
+    name: Rust-Analyzer Integration Test
+    platform: ubuntu2004
+    working_directory: examples
+    run_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   ubuntu2004_examples:
     name: Examples
     platform: ubuntu2004
@@ -644,6 +655,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
   macos_bzlmod_bcr:
@@ -652,6 +664,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
 

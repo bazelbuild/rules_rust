@@ -749,6 +749,7 @@ mod test {
     use cargo_metadata::{MetadataCommand, PackageId};
     use maplit::btreeset;
 
+    use crate::splicing::Cargo;
     use crate::utils::starlark::Label;
 
     /// Clone and compare two items after calling `.sort()` on them.
@@ -1022,7 +1023,12 @@ mod test {
         (splicing_manifest, cache_dir)
     }
 
-    fn new_package_id(name: &str, workspace_root: &Path, is_root: bool) -> PackageId {
+    fn new_package_id(
+        name: &str,
+        workspace_root: &Path,
+        is_root: bool,
+        cargo: &Cargo,
+    ) -> PackageId {
         let mut workspace_root = workspace_root.display().to_string();
 
         // On windows, make sure we normalize the path to match what Cargo would
@@ -1031,13 +1037,27 @@ mod test {
             workspace_root = format!("/{}", workspace_root.replace('\\', "/"))
         };
 
+        // Cargo updated the way package id's are represented. We should make sure
+        // to render the correct version based on the current cargo binary.
+        let use_format_v2 = cargo.uses_new_package_id_format().expect(
+            "Tests should have a fully controlled environment and consistent access to cargo.",
+        );
+
         if is_root {
             PackageId {
-                repr: format!("{name} 0.0.1 (path+file://{workspace_root})"),
+                repr: if use_format_v2 {
+                    format!("path+file://{workspace_root}#{name}@0.0.1")
+                } else {
+                    format!("{name} 0.0.1 (path+file://{workspace_root})")
+                },
             }
         } else {
             PackageId {
-                repr: format!("{name} 0.0.1 (path+file://{workspace_root}/{name})"),
+                repr: if use_format_v2 {
+                    format!("path+file://{workspace_root}/{name}#0.0.1")
+                } else {
+                    format!("{name} 0.0.1 (path+file://{workspace_root}/{name})")
+                },
             }
         }
     }
@@ -1054,14 +1074,18 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("sub_pkg_a", workspace_root.as_ref(), false),
-                new_package_id("sub_pkg_b", workspace_root.as_ref(), false),
-                new_package_id("root_pkg", workspace_root.as_ref(), true),
+                new_package_id("sub_pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("sub_pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("root_pkg", workspace_root.as_ref(), true, &cargo),
             ]
         );
 
@@ -1094,14 +1118,18 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("sub_pkg_a", workspace_root.as_ref(), false),
-                new_package_id("sub_pkg_b", workspace_root.as_ref(), false),
-                new_package_id("root_pkg", workspace_root.as_ref(), true),
+                new_package_id("sub_pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("sub_pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("root_pkg", workspace_root.as_ref(), true, &cargo),
             ]
         );
 
@@ -1282,11 +1310,20 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
-            vec![new_package_id("root_pkg", workspace_root.as_ref(), true)]
+            vec![new_package_id(
+                "root_pkg",
+                workspace_root.as_ref(),
+                true,
+                &cargo
+            )]
         );
 
         // Ensure the workspace metadata annotations are not populated
@@ -1322,14 +1359,18 @@ mod test {
             Some(cargo_toml::Resolver::V1)
         );
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("pkg_a", workspace_root.as_ref(), false),
-                new_package_id("pkg_b", workspace_root.as_ref(), false),
-                new_package_id("pkg_c", workspace_root.as_ref(), false),
+                new_package_id("pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_c", workspace_root.as_ref(), false, &cargo),
             ]
         );
 
@@ -1369,14 +1410,18 @@ mod test {
             Some(cargo_toml::Resolver::V2)
         );
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("pkg_a", workspace_root.as_ref(), false),
-                new_package_id("pkg_b", workspace_root.as_ref(), false),
-                new_package_id("pkg_c", workspace_root.as_ref(), false),
+                new_package_id("pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_c", workspace_root.as_ref(), false, &cargo),
             ]
         );
 

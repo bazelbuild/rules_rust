@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # Apache-2.0
-# ])
-
 rust_library(
     name = "crates_index",
     srcs = glob(["**/*.rs"]),
@@ -95,6 +91,6 @@ rust_library(
         "@cui__serde_json-1.0.108//:serde_json",
         "@cui__smol_str-0.2.0//:smol_str",
         "@cui__thiserror-1.0.50//:thiserror",
-        "@cui__toml-0.8.6//:toml",
+        "@cui__toml-0.8.10//:toml",
     ],
 )

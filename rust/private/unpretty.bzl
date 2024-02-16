@@ -226,7 +226,6 @@ def _rust_unpretty_aspect_impl(target, ctx):
 rust_unpretty_aspect = aspect(
     implementation = _rust_unpretty_aspect_impl,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     attrs = {
         "_unpretty_modes": attr.label(
             doc = "The values to pass to `--unpretty`",

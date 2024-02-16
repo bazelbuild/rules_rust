@@ -1,9 +1,10 @@
 {
-  "checksum": "83692c647f250a898adc451d760d975e9a64ebab860e2bbb2db607a5af71110d",
+  "checksum": "b789ad8693fe893daabbe0875f38e06607bec516761081b82fc407bb5560f6d9",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
       "version": "0.1.64",
+      "package_url": "https://github.com/dtolnay/async-trait",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/async-trait/0.1.64/download",
@@ -64,11 +65,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "autocfg 1.1.0": {
       "name": "autocfg",
       "version": "1.1.0",
+      "package_url": "https://github.com/cuviper/autocfg",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/autocfg/1.1.0/download",
@@ -94,11 +101,17 @@
         "edition": "2015",
         "version": "1.1.0"
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "axum 0.4.8": {
       "name": "axum",
       "version": "0.4.8",
+      "package_url": "https://github.com/tokio-rs/axum",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/axum/0.4.8/download",
@@ -233,11 +246,16 @@
         },
         "version": "0.4.8"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "axum-core 0.1.2": {
       "name": "axum-core",
       "version": "0.1.2",
+      "package_url": "https://github.com/tokio-rs/axum",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/axum-core/0.1.2/download",
@@ -297,11 +315,16 @@
         },
         "version": "0.1.2"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "bitflags 1.3.2": {
       "name": "bitflags",
       "version": "1.3.2",
+      "package_url": "https://github.com/bitflags/bitflags",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/bitflags/1.3.2/download",
@@ -333,11 +356,17 @@
         "edition": "2018",
         "version": "1.3.2"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "bytes 1.4.0": {
       "name": "bytes",
       "version": "1.4.0",
+      "package_url": "https://github.com/tokio-rs/bytes",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/bytes/1.4.0/download",
@@ -370,11 +399,16 @@
         "edition": "2018",
         "version": "1.4.0"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "cfg-if 1.0.0": {
       "name": "cfg-if",
       "version": "1.0.0",
+      "package_url": "https://github.com/alexcrichton/cfg-if",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cfg-if/1.0.0/download",
@@ -400,11 +434,17 @@
         "edition": "2018",
         "version": "1.0.0"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
       "version": "0.0.1",
+      "package_url": null,
       "repository": null,
       "targets": [
         {
@@ -470,11 +510,14 @@
         "edition": "2018",
         "version": "0.0.1"
       },
-      "license": null
+      "license": null,
+      "license_ids": [],
+      "license_file": null
     },
     "fnv 1.0.7": {
       "name": "fnv",
       "version": "1.0.7",
+      "package_url": "https://github.com/servo/rust-fnv",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/fnv/1.0.7/download",
@@ -507,11 +550,17 @@
         "edition": "2015",
         "version": "1.0.7"
       },
-      "license": "Apache-2.0 / MIT"
+      "license": "Apache-2.0 / MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "form_urlencoded 1.1.0": {
       "name": "form_urlencoded",
       "version": "1.1.0",
+      "package_url": "https://github.com/servo/rust-url",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/form_urlencoded/1.1.0/download",
@@ -546,11 +595,17 @@
         "edition": "2018",
         "version": "1.1.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "futures-channel 0.3.26": {
       "name": "futures-channel",
       "version": "0.3.26",
+      "package_url": "https://github.com/rust-lang/futures-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/futures-channel/0.3.26/download",
@@ -611,11 +666,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "futures-core 0.3.26": {
       "name": "futures-core",
       "version": "0.3.26",
+      "package_url": "https://github.com/rust-lang/futures-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/futures-core/0.3.26/download",
@@ -672,11 +733,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "futures-sink 0.3.26": {
       "name": "futures-sink",
       "version": "0.3.26",
+      "package_url": "https://github.com/rust-lang/futures-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/futures-sink/0.3.26/download",
@@ -710,11 +777,17 @@
         "edition": "2018",
         "version": "0.3.26"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "futures-task 0.3.26": {
       "name": "futures-task",
       "version": "0.3.26",
+      "package_url": "https://github.com/rust-lang/futures-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/futures-task/0.3.26/download",
@@ -769,11 +842,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "futures-util 0.3.26": {
       "name": "futures-util",
       "version": "0.3.26",
+      "package_url": "https://github.com/rust-lang/futures-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/futures-util/0.3.26/download",
@@ -844,11 +923,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "h2 0.3.16": {
       "name": "h2",
       "version": "0.3.16",
+      "package_url": "https://github.com/hyperium/h2",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/h2/0.3.16/download",
@@ -923,11 +1008,16 @@
         "edition": "2018",
         "version": "0.3.16"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "hashbrown 0.12.3": {
       "name": "hashbrown",
       "version": "0.12.3",
+      "package_url": "https://github.com/rust-lang/hashbrown",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/hashbrown/0.12.3/download",
@@ -959,11 +1049,17 @@
         "edition": "2021",
         "version": "0.12.3"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "hermit-abi 0.2.6": {
       "name": "hermit-abi",
       "version": "0.2.6",
+      "package_url": "https://github.com/hermitcore/rusty-hermit",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/hermit-abi/0.2.6/download",
@@ -998,11 +1094,17 @@
         "edition": "2021",
         "version": "0.2.6"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "http 0.2.9": {
       "name": "http",
       "version": "0.2.9",
+      "package_url": "https://github.com/hyperium/http",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/http/0.2.9/download",
@@ -1045,11 +1147,17 @@
         "edition": "2018",
         "version": "0.2.9"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "http-body 0.4.5": {
       "name": "http-body",
       "version": "0.4.5",
+      "package_url": "https://github.com/hyperium/http-body",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/http-body/0.4.5/download",
@@ -1092,11 +1200,16 @@
         "edition": "2018",
         "version": "0.4.5"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "http-range-header 0.3.0": {
       "name": "http-range-header",
       "version": "0.3.0",
+      "package_url": "https://github.com/MarcusGrass/parse-range-headers",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/http-range-header/0.3.0/download",
@@ -1122,11 +1235,16 @@
         "edition": "2018",
         "version": "0.3.0"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "httparse 1.8.0": {
       "name": "httparse",
       "version": "1.8.0",
+      "package_url": "https://github.com/seanmonstar/httparse",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/httparse/1.8.0/download",
@@ -1182,11 +1300,17 @@
           "**"
         ]
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "httpdate 1.0.2": {
       "name": "httpdate",
       "version": "1.0.2",
+      "package_url": "https://github.com/pyfisch/httpdate",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/httpdate/1.0.2/download",
@@ -1212,11 +1336,17 @@
         "edition": "2018",
         "version": "1.0.2"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "hyper 0.14.24": {
       "name": "hyper",
       "version": "0.14.24",
+      "package_url": "https://github.com/hyperium/hyper",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/hyper/0.14.24/download",
@@ -1327,11 +1457,16 @@
         "edition": "2018",
         "version": "0.14.24"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "indexmap 1.9.2": {
       "name": "indexmap",
       "version": "1.9.2",
+      "package_url": "https://github.com/bluss/indexmap",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/indexmap/1.9.2/download",
@@ -1399,11 +1534,17 @@
           "selects": {}
         }
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "itoa 1.0.5": {
       "name": "itoa",
       "version": "1.0.5",
+      "package_url": "https://github.com/dtolnay/itoa",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/itoa/1.0.5/download",
@@ -1429,11 +1570,17 @@
         "edition": "2018",
         "version": "1.0.5"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "lazy_static 1.4.0": {
       "name": "lazy_static",
       "version": "1.4.0",
+      "package_url": "https://github.com/rust-lang-nursery/lazy-static.rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/lazy_static/1.4.0/download",
@@ -1459,11 +1606,17 @@
         "edition": "2015",
         "version": "1.4.0"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "libc 0.2.139": {
       "name": "libc",
       "version": "0.2.139",
+      "package_url": "https://github.com/rust-lang/libc",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/libc/0.2.139/download",
@@ -1519,11 +1672,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "lock_api 0.4.9": {
       "name": "lock_api",
       "version": "0.4.9",
+      "package_url": "https://github.com/Amanieu/parking_lot",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/lock_api/0.4.9/download",
@@ -1585,11 +1744,17 @@
           "selects": {}
         }
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "log 0.4.17": {
       "name": "log",
       "version": "0.4.17",
+      "package_url": "https://github.com/rust-lang/log",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/log/0.4.17/download",
@@ -1648,11 +1813,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "matchit 0.4.6": {
       "name": "matchit",
       "version": "0.4.6",
+      "package_url": "https://github.com/ibraheemdev/matchit",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/matchit/0.4.6/download",
@@ -1684,11 +1855,16 @@
         "edition": "2018",
         "version": "0.4.6"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "memchr 2.5.0": {
       "name": "memchr",
       "version": "2.5.0",
+      "package_url": "https://github.com/BurntSushi/memchr",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/memchr/2.5.0/download",
@@ -1744,11 +1920,17 @@
           "**"
         ]
       },
-      "license": "Unlicense/MIT"
+      "license": "Unlicense/MIT",
+      "license_ids": [
+        "MIT",
+        "Unlicense"
+      ],
+      "license_file": null
     },
     "mime 0.3.16": {
       "name": "mime",
       "version": "0.3.16",
+      "package_url": "https://github.com/hyperium/mime",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/mime/0.3.16/download",
@@ -1774,11 +1956,17 @@
         "edition": "2015",
         "version": "0.3.16"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "mio 0.8.6": {
       "name": "mio",
       "version": "0.8.6",
+      "package_url": "https://github.com/tokio-rs/mio",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/mio/0.8.6/download",
@@ -1845,11 +2033,16 @@
         "edition": "2018",
         "version": "0.8.6"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "nu-ansi-term 0.46.0": {
       "name": "nu-ansi-term",
       "version": "0.46.0",
+      "package_url": "https://github.com/nushell/nu-ansi-term",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/nu-ansi-term/0.46.0/download",
@@ -1891,11 +2084,16 @@
         "edition": "2018",
         "version": "0.46.0"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "num_cpus 1.15.0": {
       "name": "num_cpus",
       "version": "1.15.0",
+      "package_url": "https://github.com/seanmonstar/num_cpus",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/num_cpus/1.15.0/download",
@@ -1938,11 +2136,17 @@
         "edition": "2015",
         "version": "1.15.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "once_cell 1.17.1": {
       "name": "once_cell",
       "version": "1.17.1",
+      "package_url": "https://github.com/matklad/once_cell",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/once_cell/1.17.1/download",
@@ -1977,11 +2181,17 @@
         "edition": "2021",
         "version": "1.17.1"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "overload 0.1.1": {
       "name": "overload",
       "version": "0.1.1",
+      "package_url": "https://github.com/danaugrs/overload",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/overload/0.1.1/download",
@@ -2007,11 +2217,16 @@
         "edition": "2018",
         "version": "0.1.1"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "parking_lot 0.12.1": {
       "name": "parking_lot",
       "version": "0.12.1",
+      "package_url": "https://github.com/Amanieu/parking_lot",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/parking_lot/0.12.1/download",
@@ -2056,11 +2271,17 @@
         "edition": "2018",
         "version": "0.12.1"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "parking_lot_core 0.9.7": {
       "name": "parking_lot_core",
       "version": "0.9.7",
+      "package_url": "https://github.com/Amanieu/parking_lot",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/parking_lot_core/0.9.7/download",
@@ -2136,11 +2357,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "percent-encoding 2.2.0": {
       "name": "percent-encoding",
       "version": "2.2.0",
+      "package_url": "https://github.com/servo/rust-url/",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/percent-encoding/2.2.0/download",
@@ -2173,11 +2400,17 @@
         "edition": "2018",
         "version": "2.2.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "pin-project 1.0.12": {
       "name": "pin-project",
       "version": "1.0.12",
+      "package_url": "https://github.com/taiki-e/pin-project",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/pin-project/1.0.12/download",
@@ -2212,11 +2445,17 @@
         },
         "version": "1.0.12"
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "pin-project-internal 1.0.12": {
       "name": "pin-project-internal",
       "version": "1.0.12",
+      "package_url": "https://github.com/taiki-e/pin-project",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/pin-project-internal/1.0.12/download",
@@ -2259,11 +2498,17 @@
         "edition": "2018",
         "version": "1.0.12"
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "pin-project-lite 0.2.9": {
       "name": "pin-project-lite",
       "version": "0.2.9",
+      "package_url": "https://github.com/taiki-e/pin-project-lite",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/pin-project-lite/0.2.9/download",
@@ -2289,11 +2534,17 @@
         "edition": "2018",
         "version": "0.2.9"
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "pin-utils 0.1.0": {
       "name": "pin-utils",
       "version": "0.1.0",
+      "package_url": "https://github.com/rust-lang-nursery/pin-utils",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/pin-utils/0.1.0/download",
@@ -2319,11 +2570,17 @@
         "edition": "2018",
         "version": "0.1.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "proc-macro2 1.0.51": {
       "name": "proc-macro2",
       "version": "1.0.51",
+      "package_url": "https://github.com/dtolnay/proc-macro2",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.51/download",
@@ -2383,11 +2640,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "quote 1.0.23": {
       "name": "quote",
       "version": "1.0.23",
+      "package_url": "https://github.com/dtolnay/quote",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/quote/1.0.23/download",
@@ -2447,11 +2710,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "redox_syscall 0.2.16": {
       "name": "redox_syscall",
       "version": "0.2.16",
+      "package_url": "https://gitlab.redox-os.org/redox-os/syscall",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/redox_syscall/0.2.16/download",
@@ -2486,11 +2755,16 @@
         "edition": "2018",
         "version": "0.2.16"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "ryu 1.0.12": {
       "name": "ryu",
       "version": "1.0.12",
+      "package_url": "https://github.com/dtolnay/ryu",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/ryu/1.0.12/download",
@@ -2516,11 +2790,17 @@
         "edition": "2018",
         "version": "1.0.12"
       },
-      "license": "Apache-2.0 OR BSL-1.0"
+      "license": "Apache-2.0 OR BSL-1.0",
+      "license_ids": [
+        "Apache-2.0",
+        "BSL-1.0"
+      ],
+      "license_file": null
     },
     "scopeguard 1.1.0": {
       "name": "scopeguard",
       "version": "1.1.0",
+      "package_url": "https://github.com/bluss/scopeguard",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/scopeguard/1.1.0/download",
@@ -2546,11 +2826,17 @@
         "edition": "2015",
         "version": "1.1.0"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "serde 1.0.152": {
       "name": "serde",
       "version": "1.0.152",
+      "package_url": "https://github.com/serde-rs/serde",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/serde/1.0.152/download",
@@ -2606,11 +2892,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "serde_json 1.0.93": {
       "name": "serde_json",
       "version": "1.0.93",
+      "package_url": "https://github.com/serde-rs/json",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/serde_json/1.0.93/download",
@@ -2679,11 +2971,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "serde_urlencoded 0.7.1": {
       "name": "serde_urlencoded",
       "version": "0.7.1",
+      "package_url": "https://github.com/nox/serde_urlencoded",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/serde_urlencoded/0.7.1/download",
@@ -2730,11 +3028,17 @@
         "edition": "2018",
         "version": "0.7.1"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "sharded-slab 0.1.4": {
       "name": "sharded-slab",
       "version": "0.1.4",
+      "package_url": "https://github.com/hawkw/sharded-slab",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/sharded-slab/0.1.4/download",
@@ -2769,11 +3073,16 @@
         "edition": "2018",
         "version": "0.1.4"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "signal-hook-registry 1.4.1": {
       "name": "signal-hook-registry",
       "version": "1.4.1",
+      "package_url": "https://github.com/vorner/signal-hook",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/signal-hook-registry/1.4.1/download",
@@ -2808,11 +3117,17 @@
         "edition": "2015",
         "version": "1.4.1"
       },
-      "license": "Apache-2.0/MIT"
+      "license": "Apache-2.0/MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "slab 0.4.8": {
       "name": "slab",
       "version": "0.4.8",
+      "package_url": "https://github.com/tokio-rs/slab",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/slab/0.4.8/download",
@@ -2877,11 +3192,16 @@
           "selects": {}
         }
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "smallvec 1.10.0": {
       "name": "smallvec",
       "version": "1.10.0",
+      "package_url": "https://github.com/servo/rust-smallvec",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/smallvec/1.10.0/download",
@@ -2907,11 +3227,17 @@
         "edition": "2018",
         "version": "1.10.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "socket2 0.4.9": {
       "name": "socket2",
       "version": "0.4.9",
+      "package_url": "https://github.com/rust-lang/socket2",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/socket2/0.4.9/download",
@@ -2960,11 +3286,17 @@
         "edition": "2018",
         "version": "0.4.9"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "syn 1.0.109": {
       "name": "syn",
       "version": "1.0.109",
+      "package_url": "https://github.com/dtolnay/syn",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/syn/1.0.109/download",
@@ -3041,11 +3373,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "sync_wrapper 0.1.2": {
       "name": "sync_wrapper",
       "version": "0.1.2",
+      "package_url": "https://github.com/Actyx/sync_wrapper",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/sync_wrapper/0.1.2/download",
@@ -3071,11 +3409,16 @@
         "edition": "2018",
         "version": "0.1.2"
       },
-      "license": "Apache-2.0"
+      "license": "Apache-2.0",
+      "license_ids": [
+        "Apache-2.0"
+      ],
+      "license_file": null
     },
     "thread_local 1.1.7": {
       "name": "thread_local",
       "version": "1.1.7",
+      "package_url": "https://github.com/Amanieu/thread_local-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/thread_local/1.1.7/download",
@@ -3114,11 +3457,17 @@
         "edition": "2021",
         "version": "1.1.7"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "tokio 1.26.0": {
       "name": "tokio",
       "version": "1.26.0",
+      "package_url": "https://github.com/tokio-rs/tokio",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tokio/1.26.0/download",
@@ -3275,11 +3624,16 @@
           "selects": {}
         }
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tokio-macros 1.8.2": {
       "name": "tokio-macros",
       "version": "1.8.2",
+      "package_url": "https://github.com/tokio-rs/tokio",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tokio-macros/1.8.2/download",
@@ -3322,11 +3676,16 @@
         "edition": "2018",
         "version": "1.8.2"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tokio-util 0.7.7": {
       "name": "tokio-util",
       "version": "0.7.7",
+      "package_url": "https://github.com/tokio-rs/tokio",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tokio-util/0.7.7/download",
@@ -3389,11 +3748,16 @@
         "edition": "2018",
         "version": "0.7.7"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tower 0.4.13": {
       "name": "tower",
       "version": "0.4.13",
+      "package_url": "https://github.com/tower-rs/tower",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tower/0.4.13/download",
@@ -3478,11 +3842,16 @@
         "edition": "2018",
         "version": "0.4.13"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tower-http 0.2.5": {
       "name": "tower-http",
       "version": "0.2.5",
+      "package_url": "https://github.com/tower-rs/tower-http",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tower-http/0.2.5/download",
@@ -3572,11 +3941,16 @@
         "edition": "2018",
         "version": "0.2.5"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tower-layer 0.3.2": {
       "name": "tower-layer",
       "version": "0.3.2",
+      "package_url": "https://github.com/tower-rs/tower",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tower-layer/0.3.2/download",
@@ -3602,11 +3976,16 @@
         "edition": "2018",
         "version": "0.3.2"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tower-service 0.3.2": {
       "name": "tower-service",
       "version": "0.3.2",
+      "package_url": "https://github.com/tower-rs/tower",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tower-service/0.3.2/download",
@@ -3632,11 +4011,16 @@
         "edition": "2018",
         "version": "0.3.2"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tracing 0.1.37": {
       "name": "tracing",
       "version": "0.1.37",
+      "package_url": "https://github.com/tokio-rs/tracing",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tracing/0.1.37/download",
@@ -3702,11 +4086,16 @@
         },
         "version": "0.1.37"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tracing-attributes 0.1.23": {
       "name": "tracing-attributes",
       "version": "0.1.23",
+      "package_url": "https://github.com/tokio-rs/tracing",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tracing-attributes/0.1.23/download",
@@ -3749,11 +4138,16 @@
         "edition": "2018",
         "version": "0.1.23"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tracing-core 0.1.30": {
       "name": "tracing-core",
       "version": "0.1.30",
+      "package_url": "https://github.com/tokio-rs/tracing",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tracing-core/0.1.30/download",
@@ -3803,11 +4197,16 @@
         "edition": "2018",
         "version": "0.1.30"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tracing-log 0.1.3": {
       "name": "tracing-log",
       "version": "0.1.3",
+      "package_url": "https://github.com/tokio-rs/tracing",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tracing-log/0.1.3/download",
@@ -3857,11 +4256,16 @@
         "edition": "2018",
         "version": "0.1.3"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "tracing-subscriber 0.3.16": {
       "name": "tracing-subscriber",
       "version": "0.3.16",
+      "package_url": "https://github.com/tokio-rs/tracing",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/tracing-subscriber/0.3.16/download",
@@ -3932,11 +4336,16 @@
         "edition": "2018",
         "version": "0.3.16"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "try-lock 0.2.4": {
       "name": "try-lock",
       "version": "0.2.4",
+      "package_url": "https://github.com/seanmonstar/try-lock",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/try-lock/0.2.4/download",
@@ -3962,11 +4371,16 @@
         "edition": "2015",
         "version": "0.2.4"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "unicode-ident 1.0.6": {
       "name": "unicode-ident",
       "version": "1.0.6",
+      "package_url": "https://github.com/dtolnay/unicode-ident",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/unicode-ident/1.0.6/download",
@@ -3992,11 +4406,18 @@
         "edition": "2018",
         "version": "1.0.6"
       },
-      "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
+      "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT",
+        "Unicode-DFS-2016"
+      ],
+      "license_file": null
     },
     "valuable 0.1.0": {
       "name": "valuable",
       "version": "0.1.0",
+      "package_url": "https://github.com/tokio-rs/valuable",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/valuable/0.1.0/download",
@@ -4045,11 +4466,16 @@
           "**"
         ]
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "want 0.3.0": {
       "name": "want",
       "version": "0.3.0",
+      "package_url": "https://github.com/seanmonstar/want",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/want/0.3.0/download",
@@ -4088,11 +4514,16 @@
         "edition": "2018",
         "version": "0.3.0"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "wasi 0.11.0+wasi-snapshot-preview1": {
       "name": "wasi",
       "version": "0.11.0+wasi-snapshot-preview1",
+      "package_url": "https://github.com/bytecodealliance/wasi",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/wasi/0.11.0+wasi-snapshot-preview1/download",
@@ -4125,11 +4556,17 @@
         "edition": "2018",
         "version": "0.11.0+wasi-snapshot-preview1"
       },
-      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "winapi 0.3.9": {
       "name": "winapi",
       "version": "0.3.9",
+      "package_url": "https://github.com/retep998/winapi-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/winapi/0.3.9/download",
@@ -4203,11 +4640,17 @@
           "**"
         ]
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "winapi-i686-pc-windows-gnu 0.4.0": {
       "name": "winapi-i686-pc-windows-gnu",
       "version": "0.4.0",
+      "package_url": "https://github.com/retep998/winapi-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/winapi-i686-pc-windows-gnu/0.4.0/download",
@@ -4256,11 +4699,17 @@
           "**"
         ]
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "winapi-x86_64-pc-windows-gnu 0.4.0": {
       "name": "winapi-x86_64-pc-windows-gnu",
       "version": "0.4.0",
+      "package_url": "https://github.com/retep998/winapi-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/winapi-x86_64-pc-windows-gnu/0.4.0/download",
@@ -4309,11 +4758,17 @@
           "**"
         ]
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows-sys 0.45.0": {
       "name": "windows-sys",
       "version": "0.45.0",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows-sys/0.45.0/download",
@@ -4371,11 +4826,17 @@
         "edition": "2018",
         "version": "0.45.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows-targets 0.42.1": {
       "name": "windows-targets",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows-targets/0.42.1/download",
@@ -4478,11 +4939,17 @@
         "edition": "2018",
         "version": "0.42.1"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_aarch64_gnullvm 0.42.1": {
       "name": "windows_aarch64_gnullvm",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_aarch64_gnullvm/0.42.1/download",
@@ -4531,11 +4998,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_aarch64_msvc 0.42.1": {
       "name": "windows_aarch64_msvc",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_aarch64_msvc/0.42.1/download",
@@ -4584,11 +5057,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_i686_gnu 0.42.1": {
       "name": "windows_i686_gnu",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_i686_gnu/0.42.1/download",
@@ -4637,11 +5116,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_i686_msvc 0.42.1": {
       "name": "windows_i686_msvc",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_i686_msvc/0.42.1/download",
@@ -4690,11 +5175,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_x86_64_gnu 0.42.1": {
       "name": "windows_x86_64_gnu",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_x86_64_gnu/0.42.1/download",
@@ -4743,11 +5234,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_x86_64_gnullvm 0.42.1": {
       "name": "windows_x86_64_gnullvm",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_x86_64_gnullvm/0.42.1/download",
@@ -4796,11 +5293,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "windows_x86_64_msvc 0.42.1": {
       "name": "windows_x86_64_msvc",
       "version": "0.42.1",
+      "package_url": "https://github.com/microsoft/windows-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/windows_x86_64_msvc/0.42.1/download",
@@ -4849,7 +5352,12 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     }
   },
   "binary_crates": [],

@@ -229,7 +229,7 @@ def _create_single_crate(ctx, info):
     crate["root_module"] = path_prefix + info.crate.root.path
     crate_root = path_prefix + info.crate.root.dirname
 
-    if info.build_info != None:
+    if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
         crate["env"].update({"OUT_DIR": _EXEC_ROOT_TEMPLATE + out_dir_path})
         crate["source"] = {

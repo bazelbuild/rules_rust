@@ -797,7 +797,6 @@ rust_library = rule(
         ),
     }.items()),
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -895,7 +894,6 @@ rust_static_library = rule(
         ),
     }.items()),
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     cfg = _rust_static_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -943,7 +941,6 @@ rust_shared_library = rule(
         "_use_grep_includes": attr.bool(default = True),
     }.items()),
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -998,7 +995,6 @@ rust_proc_macro = rule(
         ),
     ),
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1077,7 +1073,6 @@ rust_binary = rule(
     }.items()),
     executable = True,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -1220,7 +1215,6 @@ rust_binary_without_process_wrapper = rule(
     }.items()),
     executable = True,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -1233,7 +1227,6 @@ rust_library_without_process_wrapper = rule(
     provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1269,7 +1262,6 @@ rust_test = rule(
     }.items()),
     executable = True,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     cfg = _rust_test_transition,
     test = True,
     toolchains = [

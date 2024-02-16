@@ -73,7 +73,7 @@ def cargo_build_script(
         # one.
         build_script_env = {
             "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
-        }
+        },
         # Optional data/tool dependencies
         data = ["@tool//:binary"],
     )
