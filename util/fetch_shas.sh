@@ -88,7 +88,7 @@ function emit_bzl_file_contents() {
   echo "}"
 }
 
-export TMPDIR="$(mktemp -d -t bazel_reload_shas_shalists)"
+export TMPDIR="$(mktemp -d -t bazel_reload_shas_shalists.XXXXXXXXXX)"
 echo "Fetching known shas..."
 echo "$(emit_bzl_file_contents $(enumerate_keys))" > "${BUILD_WORKSPACE_DIRECTORY}/rust/known_shas.bzl"
 echo "Done"

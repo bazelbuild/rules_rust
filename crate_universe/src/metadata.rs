@@ -3,15 +3,25 @@
 mod dependency;
 mod metadata_annotation;
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
+use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
+use semver::Version;
+use tracing::debug;
+
+use crate::config::CrateId;
+use crate::lockfile::Digest;
+use crate::select::Select;
+use crate::utils::target_triple::TargetTriple;
 
 pub use self::dependency::*;
 pub use self::metadata_annotation::*;
@@ -25,7 +35,7 @@ pub trait MetadataGenerator {
 /// Generates Cargo metadata and a lockfile from a provided manifest.
 pub struct Generator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
@@ -34,12 +44,14 @@ pub struct Generator {
 impl Generator {
     pub fn new() -> Self {
         Generator {
-            cargo_bin: PathBuf::from(env::var("CARGO").unwrap_or_else(|_| "cargo".to_string())),
+            cargo_bin: Cargo::new(PathBuf::from(
+                env::var("CARGO").unwrap_or_else(|_| "cargo".to_string()),
+            )),
             rustc_bin: PathBuf::from(env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string())),
         }
     }
 
-    pub fn with_cargo(mut self, cargo_bin: PathBuf) -> Self {
+    pub fn with_cargo(mut self, cargo_bin: Cargo) -> Self {
         self.cargo_bin = cargo_bin;
         self
     }
@@ -64,14 +76,113 @@ impl MetadataGenerator for Generator {
             cargo_lock::Lockfile::load(lock_path)?
         };
 
-        let metadata = MetadataCommand::new()
-            .cargo_path(&self.cargo_bin)
+        let mut other_options = vec!["--locked".to_owned()];
+        if self.cargo_bin.is_nightly()? {
+            other_options.push("-Zbindeps".to_owned());
+        }
+
+        let metadata = self
+            .cargo_bin
+            .metadata_command()?
             .current_dir(manifest_dir)
             .manifest_path(manifest_path.as_ref())
-            .other_options(["--locked".to_owned()])
+            .other_options(other_options)
             .exec()?;
 
         Ok((metadata, lockfile))
+    }
+}
+
+/// Cargo encapsulates a path to a `cargo` binary.
+/// Any invocations of `cargo` (either as a `std::process::Command` or via `cargo_metadata`) should
+/// go via this wrapper to ensure that any environment variables needed are set appropriately.
+#[derive(Debug, Clone)]
+pub struct Cargo {
+    path: PathBuf,
+    full_version: Arc<Mutex<Option<String>>>,
+}
+
+impl Cargo {
+    pub fn new(path: PathBuf) -> Cargo {
+        Cargo {
+            path,
+            full_version: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// Returns a new `Command` for running this cargo.
+    pub fn command(&self) -> Result<Command> {
+        let mut command = Command::new(&self.path);
+        command.envs(self.env()?);
+        if self.is_nightly()? {
+            command.arg("-Zbindeps");
+        }
+        Ok(command)
+    }
+
+    /// Returns a new `MetadataCommand` using this cargo.
+    pub fn metadata_command(&self) -> Result<MetadataCommand> {
+        let mut command = MetadataCommand::new();
+        command.cargo_path(&self.path);
+        for (k, v) in self.env()? {
+            command.env(k, v);
+        }
+        Ok(command)
+    }
+
+    /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
+    /// This function performs normalisation to work around `<https://github.com/rust-lang/cargo/issues/10547>`
+    pub fn full_version(&self) -> Result<String> {
+        let mut full_version = self.full_version.lock().unwrap();
+        if full_version.is_none() {
+            let observed_version = Digest::bin_version(&self.path)?;
+            *full_version = Some(observed_version);
+        }
+        Ok(full_version.clone().unwrap())
+    }
+
+    pub fn is_nightly(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.pre.as_str() == "nightly");
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
+    pub fn use_sparse_registries_for_crates_io(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 68);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
+    /// Determine if Cargo is expected to be using the new package_id spec. For
+    /// details see <https://github.com/rust-lang/cargo/pull/13311>
+    pub fn uses_new_package_id_format(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 78);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
+    fn env(&self) -> Result<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        if self.use_sparse_registries_for_crates_io()? {
+            map.insert(
+                "CARGO_REGISTRIES_CRATES_IO_PROTOCOL".into(),
+                "sparse".into(),
+            );
+        }
+        Ok(map)
     }
 }
 
@@ -136,11 +247,12 @@ impl CargoUpdateRequest {
     }
 
     /// Calls `cargo update` with arguments specific to the state of the current variant.
-    pub fn update(&self, manifest: &Path, cargo_bin: &Path, rustc_bin: &Path) -> Result<()> {
+    pub fn update(&self, manifest: &Path, cargo_bin: &Cargo, rustc_bin: &Path) -> Result<()> {
         let manifest_dir = manifest.parent().unwrap();
 
         // Simply invoke `cargo update`
-        let output = Command::new(cargo_bin)
+        let output = cargo_bin
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -170,30 +282,34 @@ impl CargoUpdateRequest {
 
 pub struct LockGenerator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
 }
 
 impl LockGenerator {
-    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
             rustc_bin,
         }
     }
 
+    #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
     pub fn generate(
         &self,
         manifest_path: &Path,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
     ) -> Result<cargo_lock::Lockfile> {
+        debug!("Generating Cargo Lockfile for {}", manifest_path.display());
+
         let manifest_dir = manifest_path.parent().unwrap();
         let generated_lockfile_path = manifest_dir.join("Cargo.lock");
 
         if let Some(lock) = existing_lock {
+            debug!("Using existing lock {}", lock.display());
             if !lock.exists() {
                 bail!(
                     "An existing lockfile path was provided but a file at '{}' does not exist",
@@ -213,7 +329,9 @@ impl LockGenerator {
 
             // Ensure the Cargo cache is up to date to simulate the behavior
             // of having just generated a new one
-            let output = Command::new(&self.cargo_bin)
+            let output = self
+                .cargo_bin
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -238,8 +356,11 @@ impl LockGenerator {
                 ))
             }
         } else {
+            debug!("Generating new lockfile");
             // Simply invoke `cargo generate-lockfile`
-            let output = Command::new(&self.cargo_bin)
+            let output = self
+                .cargo_bin
+                .command()?
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
@@ -271,25 +392,32 @@ impl LockGenerator {
 /// A generator which runs `cargo vendor` on a given manifest
 pub struct VendorGenerator {
     /// The path to a `cargo` binary
-    cargo_bin: PathBuf,
+    cargo_bin: Cargo,
 
     /// The path to a `rustc` binary
     rustc_bin: PathBuf,
 }
 
 impl VendorGenerator {
-    pub fn new(cargo_bin: PathBuf, rustc_bin: PathBuf) -> Self {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
             rustc_bin,
         }
     }
-
+    #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
     pub fn generate(&self, manifest_path: &Path, output_dir: &Path) -> Result<()> {
+        debug!(
+            "Vendoring {} to {}",
+            manifest_path.display(),
+            output_dir.display()
+        );
         let manifest_dir = manifest_path.parent().unwrap();
 
         // Simply invoke `cargo generate-lockfile`
-        let output = Command::new(&self.cargo_bin)
+        let output = self
+            .cargo_bin
+            .command()?
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
@@ -315,8 +443,190 @@ impl VendorGenerator {
             bail!(format!("Failed to vendor sources with: {}", output.status))
         }
 
+        debug!("Done");
         Ok(())
     }
+}
+
+/// A generate which computes per-platform feature sets.
+pub struct FeatureGenerator {
+    /// The path to a `cargo` binary
+    cargo_bin: Cargo,
+
+    /// The path to a `rustc` binary
+    rustc_bin: PathBuf,
+}
+
+impl FeatureGenerator {
+    pub fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
+        Self {
+            cargo_bin,
+            rustc_bin,
+        }
+    }
+
+    /// Computes the set of enabled features for each target triplet for each crate.
+    #[tracing::instrument(name = "FeatureGenerator::generate", skip_all)]
+    pub fn generate(
+        &self,
+        manifest_path: &Path,
+        target_triples: &BTreeSet<TargetTriple>,
+    ) -> Result<BTreeMap<CrateId, Select<BTreeSet<String>>>> {
+        debug!(
+            "Generating features for manifest {}",
+            manifest_path.display()
+        );
+
+        let manifest_dir = manifest_path.parent().unwrap();
+        let mut target_triple_to_child = BTreeMap::new();
+        debug!("Spawning processes for {:?}", target_triples);
+        for target_triple in target_triples {
+            // We use `cargo tree` here because `cargo metadata` doesn't report
+            // back target-specific features (enabled with `resolver = "2"`).
+            // This is unfortunately a bit of a hack. See:
+            // - https://github.com/rust-lang/cargo/issues/9863
+            // - https://github.com/bazelbuild/rules_rust/issues/1662
+            let output = self
+                .cargo_bin
+                .command()?
+                .current_dir(manifest_dir)
+                .arg("tree")
+                .arg("--locked")
+                .arg("--manifest-path")
+                .arg(manifest_path)
+                .arg("--prefix=none")
+                // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
+                .arg("--format=|{p}|{f}|")
+                .arg("--color=never")
+                .arg("--workspace")
+                .arg("--target")
+                .arg(target_triple.to_cargo())
+                .env("RUSTC", &self.rustc_bin)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .with_context(|| {
+                    format!(
+                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target_triple,
+                        manifest_path.display()
+                    )
+                })?;
+            target_triple_to_child.insert(target_triple, output);
+        }
+        let mut crate_features =
+            BTreeMap::<CrateId, BTreeMap<TargetTriple, BTreeSet<String>>>::new();
+        for (target_triple, child) in target_triple_to_child.into_iter() {
+            let output = child
+                .wait_with_output()
+                .with_context(|| {
+                    format!(
+                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target_triple,
+                        manifest_path.display()
+                    )
+                })?;
+            if !output.status.success() {
+                eprintln!("{}", String::from_utf8_lossy(&output.stdout));
+                eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                bail!(format!("Failed to run cargo tree: {}", output.status))
+            }
+            debug!("Process complete for {}", target_triple);
+            for (crate_id, features) in
+                parse_features_from_cargo_tree_output(output.stdout.lines())?
+            {
+                debug!("\tFor {} features were: {:?}", crate_id, features);
+                crate_features
+                    .entry(crate_id)
+                    .or_default()
+                    .insert(target_triple.clone(), features);
+            }
+        }
+        let mut result = BTreeMap::<CrateId, Select<BTreeSet<String>>>::new();
+        for (crate_id, features) in crate_features.into_iter() {
+            let common = features
+                .iter()
+                .fold(
+                    None,
+                    |common: Option<BTreeSet<String>>, (_, features)| match common {
+                        Some(common) => Some(common.intersection(features).cloned().collect()),
+                        None => Some(features.clone()),
+                    },
+                )
+                .unwrap_or_default();
+            let mut select: Select<BTreeSet<String>> = Select::default();
+            for (target_triple, fs) in features {
+                if fs != common {
+                    for f in fs {
+                        select.insert(f, Some(target_triple.to_bazel()));
+                    }
+                }
+            }
+            for f in common {
+                select.insert(f, None);
+            }
+            result.insert(crate_id, select);
+        }
+        Ok(result)
+    }
+}
+
+/// Parses the output of `cargo tree --format=|{p}|{f}|`. Other flags may be
+/// passed to `cargo tree` as well, but this format is critical.
+fn parse_features_from_cargo_tree_output<I, S, E>(
+    lines: I,
+) -> Result<BTreeMap<CrateId, BTreeSet<String>>>
+where
+    I: Iterator<Item = std::result::Result<S, E>>,
+    S: AsRef<str>,
+    E: std::error::Error + Sync + Send + 'static,
+{
+    let mut crate_features = BTreeMap::<CrateId, BTreeSet<String>>::new();
+    for line in lines {
+        let line = line?;
+        let line = line.as_ref();
+        if line.is_empty() {
+            continue;
+        }
+        let parts = line.split('|').collect::<Vec<_>>();
+        if parts.len() != 4 {
+            bail!("Unexpected line '{}'", line);
+        }
+        // We expect the crate id (parts[1]) to be either
+        // "<crate name> v<crate version>" or
+        // "<crate name> v<crate version> (<path>)"
+        // "<crate name> v<crate version> (proc-macro) (<path>)"
+        // https://github.com/rust-lang/cargo/blob/19f952f160d4f750d1e12fad2bf45e995719673d/src/cargo/ops/tree/mod.rs#L281
+        let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
+        if crate_id_parts.len() < 2 && crate_id_parts.len() > 4 {
+            bail!(
+                "Unexpected crate id format '{}' when parsing 'cargo tree' output.",
+                parts[1]
+            );
+        }
+        let crate_id = CrateId::new(
+            crate_id_parts[0].to_owned(),
+            crate_id_parts[1]
+                .strip_prefix('v')
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Unexpected crate version '{}' when parsing 'cargo tree' output.",
+                        crate_id_parts[1]
+                    )
+                })?
+                .to_owned(),
+        );
+        let mut features = if parts[2].is_empty() {
+            BTreeSet::new()
+        } else {
+            parts[2].split(',').map(str::to_owned).collect()
+        };
+        crate_features
+            .entry(crate_id)
+            .or_default()
+            .append(&mut features);
+    }
+    Ok(crate_features)
 }
 
 /// A helper function for writing Cargo metadata to a file.
@@ -400,6 +710,62 @@ mod test {
                 name: "cargo-bazel".to_owned(),
                 version: Some("1.2.3".to_owned())
             }
+        );
+    }
+
+    #[test]
+    fn parse_features_from_cargo_tree_output_prefix_none() {
+        assert_eq!(
+            parse_features_from_cargo_tree_output(
+                vec![
+                    Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
+                    Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
+                    Ok("|chrono v0.4.24|default,std|"),
+                    Ok("|cpufeatures v0.2.1||"),
+                    Ok("|libc v0.2.117|default,std|"),
+                    Ok("|serde_derive v1.0.152 (proc-macro) (*)||"),
+                    Ok("|chrono v0.4.24|default,std,serde|"),
+                ]
+                .into_iter()
+            )
+            .unwrap(),
+            BTreeMap::from([
+                (
+                    CrateId {
+                        name: "multi_cfg_dep".to_owned(),
+                        version: "0.1.0".to_owned()
+                    },
+                    BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "cpufeatures".to_owned(),
+                        version: "0.2.1".to_owned()
+                    },
+                    BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "libc".to_owned(),
+                        version: "0.2.117".to_owned()
+                    },
+                    BTreeSet::from(["default".to_owned(), "std".to_owned()])
+                ),
+                (
+                    CrateId {
+                        name: "serde_derive".to_owned(),
+                        version: "1.0.152".to_owned()
+                    },
+                    BTreeSet::from([])
+                ),
+                (
+                    CrateId {
+                        name: "chrono".to_owned(),
+                        version: "0.4.24".to_owned()
+                    },
+                    BTreeSet::from(["default".to_owned(), "std".to_owned(), "serde".to_owned()])
+                ),
+            ])
         );
     }
 }

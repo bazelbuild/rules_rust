@@ -1,0 +1,16 @@
+bcr_test_module:
+  module_path: ""
+  matrix:
+    platform: ["macos", "ubuntu2004"]
+    bazel: ["6.x", "7.x"]
+  tasks:
+    run_tests:
+      working_directory: examples/bzlmod/hello_world
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      run_targets:
+        - "//third-party:vendor"
+        - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+      test_targets:
+        - "//..."

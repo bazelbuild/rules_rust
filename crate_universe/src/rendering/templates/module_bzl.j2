@@ -1,6 +1,6 @@
 {#
 To keep line numbers consistent with the rendered version, empty space is
-intentionally plced here which should match the line length of `partials/header.j2`.
+intentionally placed here which should match the line length of `partials/header.j2`.
 
 Expected length = 6 lines
 #}{%- include "partials/header.j2" %}
@@ -37,7 +37,7 @@ def _flatten_dependency_maps(all_dependency_maps):
         # name of the workspace this file is defined in.
         "workspace_member_package": {
 
-            # Not all dependnecies are supported for all platforms.
+            # Not all dependencies are supported for all platforms.
             # the condition key is the condition required to be true
             # on the host platform.
             "condition": {
@@ -202,7 +202,10 @@ def all_crate_deps(
 
     crate_deps = list(dependencies.pop(_COMMON_CONDITION, {}).values())
     for condition, deps in dependencies.items():
-        crate_deps += selects.with_or({_CONDITIONS[condition]: deps.values()})
+        crate_deps += selects.with_or({
+            tuple(_CONDITIONS[condition]): deps.values(),
+            "//conditions:default": [],
+        })
 
     return crate_deps
 
@@ -274,15 +277,16 @@ def aliases(
 
     # Build a single select statement where each conditional has accounted for the
     # common set of aliases.
-    crate_aliases = {"//conditions:default": common_items}
+    crate_aliases = {"//conditions:default": dict(common_items)}
     for condition, deps in aliases.items():
         condition_triples = _CONDITIONS[condition]
-        if condition_triples in crate_aliases:
-            crate_aliases[condition_triples].update(deps)
-        else:
-            crate_aliases.update({_CONDITIONS[condition]: dict(deps.items() + common_items)})
+        for triple in condition_triples:
+            if triple in crate_aliases:
+                crate_aliases[triple].update(deps)
+            else:
+                crate_aliases.update({triple: dict(deps.items() + common_items)})
 
-    return selects.with_or(crate_aliases)
+    return select(crate_aliases)
 
 ###############################################################################
 # WORKSPACE MEMBER DEPS AND ALIASES
@@ -313,7 +317,7 @@ _BUILD_PROC_MACRO_DEPENDENCIES = {% set deps_type = "build-proc-macro" %}{% incl
 _BUILD_PROC_MACRO_ALIASES = {% set deps_type = "build-proc-macro" %}{% include "partials/module/aliases_map.j2" %}
 
 _CONDITIONS = {
-{%- for condition, triples in context.conditions %}
+{%- for condition, triples in platforms %}
     "{{ condition | addslashes }}": {{ triples | sort | json_encode | safe }},
 {%- endfor %}
 }
@@ -321,8 +325,11 @@ _CONDITIONS = {
 ###############################################################################
 
 def crate_repositories():
-    """A macro for defining repositories for all generated crates"""
-{%- if context.crates | length %}
+    """A macro for defining repositories for all generated crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
 {%- for id, crate in context.crates %}
 {%- if not crate.repository %}{% continue %}{% endif %}
 {%- for repository_type, attrs in crate.repository %}
@@ -335,7 +342,18 @@ def crate_repositories():
 {%- endif %}
 {%- endfor %}
 {%- endfor %}
-{%- else %}
-    pass
-{%- endif %}
+    return [
+        {%- for id in context.direct_deps %}
+        {%- set crate = context.crates | get(key=id) %}
+        {%- if crate.repository %}
+       struct(repo="{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = False),
+        {%- endif %}
+        {%- endfor %}
+        {%- for id in context.direct_dev_deps %}
+        {%- set crate = context.crates | get(key=id) %}
+        {%- if crate.repository %}
+         struct(repo = "{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = True),
+        {%- endif %}
+        {%- endfor %}
+    ]
 {%- endif %}

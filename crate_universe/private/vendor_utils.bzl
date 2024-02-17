@@ -14,10 +14,18 @@ _BUILDIFIER_SHA256S = {
 }
 
 def crates_vendor_deps():
+    """Define dependencies of the `crates_vendor` rule
+
+    Returns:
+        list[struct(repo=str, is_dev_dep=bool)]: List of the dependency repositories.
+    """
+    direct_deps = []
+
     for bin, sha256 in _BUILDIFIER_SHA256S.items():
+        repo = "cargo_bazel.{}".format(bin)
         maybe(
             http_file,
-            name = "cargo_bazel.{}".format(bin),
+            name = repo,
             urls = [_BUILDIFIER_URL_TEMPLATE.format(
                 bin = bin,
                 version = _BUILDIFIER_VERSION,
@@ -26,6 +34,9 @@ def crates_vendor_deps():
             downloaded_file_path = "buildifier.exe",
             executable = True,
         )
+        direct_deps.append(struct(repo = repo, is_dev_dep = False))
+
+    return direct_deps
 
 # buildifier: disable=unnamed-macro
 def crates_vendor_deps_targets():

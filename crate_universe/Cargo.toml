@@ -3,14 +3,20 @@ members = [
     "tools/cross_installer",
     "tools/urls_generator",
 ]
+exclude = ["test_data"]
 
 [package]
 name = "cargo-bazel"
-version = "0.6.0"
+version = "0.10.0"
 authors = [
     "Andre Brisco - andre.brisco@protonmail.com",
 ]
-edition = "2018"
+categories = ["development-tools"]
+description = "A collection of tools which use Cargo to generate build targets for Bazel"
+edition = "2021"
+keywords = ["bazel"]
+license = "Apache-2.0"
+repository = "https://github.com/bazelbuild/rules_rust"
 
 [features]
 cargo = []
@@ -19,28 +25,33 @@ default = ["cargo"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.66"
-cargo_metadata = "0.15.2"
-cargo_toml = "0.13.0"
-cargo-lock = "8.0.3"
-cargo-platform = "0.1.2"
-cfg-expr = "0.12.0"
-clap = { version = "4.0.29", features = ["derive", "env"] }
-crates-index = { version = "0.18.11", default-features = false }
+anyhow = "1.0.75"
+camino = "1.1.6"
+cargo_metadata = "0.18.1"
+cargo_toml = "0.17.1"
+cargo-lock = "9.0.0"
+cargo-platform = "0.1.4"
+cfg-expr = "0.15.5"
+clap = { version = "4.3.11", features = ["derive", "env"] }
+crates-index = { version = "2.2.0", default-features = false, features = ["git"] }
 hex = "0.4.3"
-indoc = "1.0.8"
-normpath = "0.3.2"
+indoc = "2.0.4"
+itertools = "0.12.0"
+normpath = "1.1.1"
 pathdiff = "0.2.1"
-regex = "1.7.0"
-semver = "1.0.14"
-serde = { version = "1.0.148", features = ["derive"] }
-serde_json = "1.0.89"
-serde_starlark = "0.1.8"
-sha2 = "0.10.6"
-tempfile = "3.3.0"
-tera = "1.17.1"
+regex = "1.10.2"
+semver = "1.0.20"
+serde = { version = "1.0.190", features = ["derive"] }
+serde_json = "1.0.108"
+serde_starlark = "0.1.14"
+sha2 = "0.10.8"
+spdx = "0.10.3"
+tempfile = "3.8.1"
+tera = "1.19.1"
 textwrap = "0.16.0"
-toml = "0.5.9"
+toml = "0.8.10"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.17"
 
 [dev-dependencies]
 maplit = "1.0.2"

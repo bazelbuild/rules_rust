@@ -1,9 +1,6 @@
 """A custom rule that wraps a crate called to_wrap."""
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:common.bzl", "rust_common")
-
-# buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
 # buildifier: disable=bzl-visibility
@@ -61,7 +58,7 @@ EOF
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
-        crate_info = rust_common.create_crate_info(
+        crate_info_dict = dict(
             name = crate_name,
             type = crate_type,
             root = rs_file,
@@ -101,6 +98,5 @@ wrap = rule(
         ),
     },
     toolchains = ["@rules_rust//rust:toolchain", "@bazel_tools//tools/cpp:toolchain_type"],
-    incompatible_use_toolchain_transition = True,
     fragments = ["cpp"],
 )

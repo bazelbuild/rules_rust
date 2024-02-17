@@ -1,5 +1,3 @@
 #include "second.h"
 
-int get_two() {
-    return 2;
-}
+int get_two() { return 2; }

@@ -3,8 +3,9 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 crates_vendor(
-    name = "crates_vendor_manifests",
+    name = "crates_vendor",
     manifests = [":Cargo.toml"],
+    repository_name = "crates_vendor_manifests",
 )
 
 rust_library(

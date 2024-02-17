@@ -1,0 +1,33 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//proto/prost:defs.bzl", "rust_prost_library")
+load("//rust:defs.bzl", "rust_test")
+
+package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
+
+proto_library(
+    name = "a_proto",
+    srcs = [
+        "a.proto",
+    ],
+    strip_import_prefix = "/proto/prost/private/tests/transitive_dependencies",
+    deps = [
+        "//proto/prost/private/tests/transitive_dependencies/b:b_proto",
+        "//proto/prost/private/tests/types:types_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "a_rs_proto",
+    proto = ":a_proto",
+)
+
+rust_test(
+    name = "a_test",
+    srcs = ["a_test.rs"],
+    edition = "2021",
+    deps = [
+        ":a_rs_proto",
+    ],
+)

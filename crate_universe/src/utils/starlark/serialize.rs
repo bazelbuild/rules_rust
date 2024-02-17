@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE, ONELINE};
 
 use super::{
-    Data, ExportsFiles, Load, Package, RustBinary, RustLibrary, RustProcMacro, SelectList,
+    Data, ExportsFiles, License, Load, Package, PackageInfo, RustBinary, RustLibrary, RustProcMacro,
 };
 
 // For structs that contain #[serde(flatten)], a quirk of how Serde processes
@@ -53,14 +53,6 @@ where
     }
 }
 
-// TODO: This can go away after SelectList's derived Serialize impl (used by
-// tera) goes away and `serialize_starlark` becomes its real Serialize impl.
-#[derive(Serialize)]
-#[serde(transparent)]
-pub struct SelectListWrapper<'a, T: Ord + Serialize>(
-    #[serde(serialize_with = "SelectList::serialize_starlark")] &'a SelectList<T>,
-);
-
 impl Serialize for Load {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -85,8 +77,42 @@ impl Serialize for Package {
     where
         S: Serializer,
     {
-        let mut call = serializer.serialize_struct("package", ONELINE)?;
+        let has_metadata = !self.default_package_metadata.is_empty();
+        let mut call = serializer
+            .serialize_struct("package", if has_metadata { MULTILINE } else { ONELINE })?;
+        if has_metadata {
+            call.serialize_field("default_package_metadata", &self.default_package_metadata)?;
+        }
         call.serialize_field("default_visibility", &self.default_visibility)?;
+        call.end()
+    }
+}
+
+impl Serialize for PackageInfo {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut call = serializer.serialize_struct("package_info", MULTILINE)?;
+        call.serialize_field("name", &self.name)?;
+        call.serialize_field("package_name", &self.package_name)?;
+        call.serialize_field("package_version", &self.package_version)?;
+        call.serialize_field("package_url", &self.package_url)?;
+        call.end()
+    }
+}
+
+impl Serialize for License {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut call = serializer.serialize_struct("license", MULTILINE)?;
+        call.serialize_field("name", &self.name)?;
+        call.serialize_field("license_kinds", &self.license_kinds)?;
+        if !self.license_text.is_empty() {
+            call.serialize_field("license_text", &self.license_text)?;
+        }
         call.end()
     }
 }
@@ -118,7 +144,7 @@ impl Serialize for Data {
             plus.serialize_field(&self.glob)?;
         }
         if !self.select.is_empty() || self.glob.is_empty() {
-            plus.serialize_field(&SelectListWrapper(&self.select))?;
+            plus.serialize_field(&self.select)?;
         }
         plus.end()
     }

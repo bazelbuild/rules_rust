@@ -16,7 +16,7 @@ rust_binary(
         ":cross",
         "@rules_rust//rust/toolchain:current_cargo_files",
     ],
-    edition = "2018",
+    edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",

@@ -1,0 +1,31 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+# Disabled targets need the user to supply a sysroot in `flake.nix` first.
+
+# Explicit filegroup as globbed `//...` will skip targets without an error if
+# `cargo-bazel` doesn't generate a target for a given platform.
+build_test(
+    name = "nix_cross_compiling",
+    targets = [
+        # "//cc_binary:cc_binary_aarch64-apple-darwin",
+        # "//cc_binary:cc_binary_aarch64-apple-ios",
+        "//cc_binary:cc_binary_aarch64-linux-android",
+        "//cc_binary:cc_binary_aarch64-unknown-linux-gnu",
+        "//cc_binary:cc_binary_wasm32-unknown-unknown",
+        "//cc_binary:cc_binary_wasm32-wasi",
+        # "//cc_binary:cc_binary_x86_64-apple-darwin",
+        # "//cc_binary:cc_binary_x86_64-pc-windows-msvc",
+        "//cc_binary:cc_binary_x86_64-unknown-linux-gnu",
+        "//cc_binary:cc_binary_x86_64-unknown-nixos-gnu",
+        # "//rust_binary:rust_binary_aarch64-apple-darwin",
+        # "//rust_binary:rust_binary_aarch64-apple-ios",
+        "//rust_binary:rust_binary_aarch64-linux-android",
+        "//rust_binary:rust_binary_aarch64-unknown-linux-gnu",
+        "//rust_binary:rust_binary_wasm32-unknown-unknown",
+        "//rust_binary:rust_binary_wasm32-wasi",
+        # "//rust_binary:rust_binary_x86_64-apple-darwin",
+        # "//rust_binary:rust_binary_x86_64-pc-windows-msvc",
+        "//rust_binary:rust_binary_x86_64-unknown-linux-gnu",
+        "//rust_binary:rust_binary_x86_64-unknown-nixos-gnu",
+    ],
+)

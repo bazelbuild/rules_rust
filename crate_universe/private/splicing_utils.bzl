@@ -1,10 +1,8 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
 
-CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
-
-def splicing_config(resolver_version = "1"):
+def splicing_config(resolver_version = "2"):
     """Various settings used to configure Cargo manifest splicing behavior.
 
     [rv]: https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
@@ -118,7 +116,7 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, cargo, rustc):
+def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, config_path, cargo, rustc):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
@@ -126,6 +124,7 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         generator (path): The `cargo-bazel` binary.
         cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
+        config_path: The path to the config file (containing `cargo_bazel::config::Config`.)
         cargo (path): The path to a Cargo binary.
         rustc (path): The Path to a Rustc binary.
 
@@ -145,6 +144,8 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         splicing_output_dir,
         "--splicing-manifest",
         splicing_manifest,
+        "--config",
+        config_path,
         "--cargo",
         cargo,
         "--rustc",

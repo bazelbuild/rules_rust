@@ -8,7 +8,7 @@
 set -euo pipefail
 
 if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
-  echo "This script should be run under Bazel"
+  >&2 echo "This script should be run under Bazel"
   exit 1
 fi
 
@@ -30,8 +30,8 @@ function check_build_result() {
   echo -n "Testing ${2}... "
   (bazel build ${@:3} //test/clippy:"${2}" &> /dev/null) || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
-    echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/clippy:${2}"
-    echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
+    >&2 echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/clippy:${2}"
+    >&2 echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
     exit 1
   elif [[ $# -ge 3 ]] && [[ "${@:3}" == *"capture_clippy_output"* ]]; then
     # Make sure that content was written to the output file
@@ -41,9 +41,9 @@ function check_build_result() {
       STATOPTS=(-c%s)
     fi
     if [[ $(stat ${STATOPTS[@]} "${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out") == 0 ]]; then
-      echo "FAIL: Output wasn't written to out file building target //test/clippy:${2}"
-      echo "  Output file: ${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out"
-      echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
+      >&2 echo "FAIL: Output wasn't written to out file building target //test/clippy:${2}"
+      >&2 echo "  Output file: ${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out"
+      >&2 echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
       exit 1
     else
       echo "OK"
@@ -83,16 +83,25 @@ EOF
 
   check_build_result $BUILD_OK ok_binary_clippy
   check_build_result $BUILD_OK ok_library_clippy
+  check_build_result $BUILD_OK ok_shared_library_clippy
+  check_build_result $BUILD_OK ok_static_library_clippy
   check_build_result $BUILD_OK ok_test_clippy
+  check_build_result $BUILD_OK ok_proc_macro_clippy
   check_build_result $BUILD_FAILED bad_binary_clippy
   check_build_result $BUILD_FAILED bad_library_clippy
+  check_build_result $BUILD_FAILED bad_shared_library_clippy
+  check_build_result $BUILD_FAILED bad_static_library_clippy
   check_build_result $BUILD_FAILED bad_test_clippy
+  check_build_result $BUILD_FAILED bad_proc_macro_clippy
 
   # When capturing output, clippy errors are treated as warnings and the build
   # should succeed.
   check_build_result $BUILD_OK bad_binary_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_library_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_shared_library_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_static_library_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_test_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_proc_macro_clippy $CAPTURE_OUTPUT
 
   # Test that we can make the ok_library_clippy fail when using an extra config file.
   # Proves that the config file is used and overrides default settings.

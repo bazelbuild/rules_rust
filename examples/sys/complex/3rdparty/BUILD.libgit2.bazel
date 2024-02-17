@@ -1,0 +1,300 @@
+# This BUILD file was written based off of the `build.rs` script for the Rust
+# crate `libgit2-sys`. For more details, see the crate's source:
+# https://github.com/rust-lang/git2-rs/tree/libgit2-sys-0.13.0/libgit2-sys
+
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+[
+    config_setting(
+        name = plat,
+        constraint_values = ["@platforms//os:{}".format(plat)],
+    )
+    for plat in [
+        "macos",
+        "ios",
+        "tvos",
+        "windows",
+    ]
+]
+
+# env::var("CARGO_FEATURE_SSH").is_ok()
+bool_flag(
+    name = "ssh",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "ssh_setting",
+    flag_values = {":ssh": "True"},
+)
+
+# target.contains("apple")
+selects.config_setting_group(
+    name = "apple",
+    match_any = [
+        ":macos",
+        ":ios",
+        ":tvos",
+    ],
+)
+
+[
+    config_setting(
+        name = "cpu_" + cpu,
+        constraint_values = ["@platforms//cpu:{}".format(cpu)],
+    )
+    for cpu in [
+        "i386",
+        "x86_32",
+    ]
+]
+
+# env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() == "32"
+selects.config_setting_group(
+    name = "pointer_width_32",
+    match_any = [
+        "cpu_i386",
+        "cpu_x86_32",
+    ],
+)
+
+# env::var("CARGO_FEATURE_HTTPS").is_ok()
+bool_flag(
+    name = "https",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "https_setting",
+    flag_values = {":https": "True"},
+)
+
+# if https && target.contains("windows")
+selects.config_setting_group(
+    name = "https_windows",
+    match_all = [
+        ":https_setting",
+        ":windows",
+    ],
+)
+
+# if https && target.contains("apple")
+selects.config_setting_group(
+    name = "https_apple",
+    match_all = [
+        ":https_setting",
+        ":apple",
+    ],
+)
+
+cc_library(
+    name = "http-parser",
+    srcs = glob(["deps/http-parser/*.c"]),
+    hdrs = glob(["deps/http-parser/*.h"]),
+    copts = select({
+        # Required in `opt` builds to solve the following error
+        # libpcre.a(pcre_compile.o): requires unsupported dynamic reloc 11; recompile with -fPIC
+        "@platforms//os:linux": ["-fPIC"],
+        "//conditions:default": [],
+    }),
+    includes = ["deps/http-parser"],
+    linkstatic = True,
+)
+
+cc_library(
+    name = "pcre",
+    srcs = glob(["deps/pcre/**/*.c"]),
+    hdrs = glob(["deps/pcre/**/*.h"]),
+    copts = select({
+        # Required in `opt` builds to solve the following error
+        # libhttp-parser.a(http_parser.o): requires unsupported dynamic reloc 11; recompile with -fPIC
+        "@platforms//os:linux": ["-fPIC"],
+        "//conditions:default": [],
+    }),
+    defines = [
+        "HAVE_STDINT_H=1",
+        "HAVE_MEMMOVE=1",
+        "NO_RECURSE=1",
+        "NEWLINE=10",
+        "POSIX_MALLOC_THRESHOLD=10",
+        "LINK_SIZE=2",
+        "PARENS_NEST_LIMIT=250",
+        "MATCH_LIMIT=10000000",
+        "MATCH_LIMIT_RECURSION=MATCH_LIMIT",
+        "MAX_NAME_SIZE=32",
+        "MAX_NAME_COUNT=10000",
+    ],
+    includes = ["deps/pcre"],
+    linkstatic = True,
+)
+
+write_file(
+    name = "configure_features",
+    out = "include/git2_features.h",
+    content = [
+        "#ifndef INCLUDE_features_h",
+        "#define INCLUDE_features_h",
+        "#define GIT_THREADS 1",
+        "#define GIT_TRACE 1",
+    ] +
+    # !target.contains("android")
+    select({
+        "@platforms//os:android": [],
+        "//conditions:default": ["#define GIT_USE_NSEC 1"],
+    }) + select({
+        ":apple": ["#define GIT_USE_STAT_MTIMESPEC 1"],
+        "//conditions:default": ["#define GIT_USE_STAT_MTIM 1"],
+    }) + select({
+        ":pointer_width_32": ["#define GIT_ARCH_32 1"],
+        "//conditions:default": ["#define GIT_ARCH_64 1"],
+    }) + [
+        "#define GIT_SHA1_COLLISIONDETECT 1",
+    ] + select({
+        ":ssh_setting": ["#define GIT_SSH 1"],
+        "//conditions:default": [],
+    }) + select({
+        ":https_apple": [
+            "#define GIT_SHA256_COMMON_CRYPTO 1",
+            "#define GIT_HTTPS 1",
+            "#define GIT_SECURE_TRANSPORT 1",
+        ],
+        ":https_setting": [
+            "#define GIT_SHA256_OPENSSL 1",
+            "#define GIT_HTTPS 1",
+            "#define GIT_OPENSSL 1",
+        ],
+        # target.contains("windows")
+        ":https_windows": [
+            "#define GIT_SHA256_WIN32 1",
+            "#define GIT_HTTPS 1",
+            "#define GIT_WINHTTP 1",
+        ],
+        "//conditions:default": [
+            "#define GIT_SHA256_BUILTIN 1",
+        ],
+    }) + select({
+        ":apple": ["#define GIT_USE_ICONV 1"],
+        "//conditions:default": [],
+    }) + [
+        "#endif",
+    ],
+)
+
+cc_library(
+    name = "include",
+    hdrs = [":configure_features"] + glob(["include/**/*.h"]),
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "git2",
+    srcs = [
+        "src/util/allocators/failalloc.c",
+        "src/util/allocators/stdalloc.c",
+        "src/util/allocators/win32_leakcheck.c",
+        # Use the CollisionDetection SHA1 implementation.
+        "src/util/hash/collisiondetect.c",
+        "src/util/hash/sha1dc/sha1.c",
+        "src/util/hash/sha1dc/ubc_check.c",
+    ] + glob(
+        include = [
+            "src/libgit2/*.c",
+            "src/util/*.c",
+            "src/libgit2/xdiff/*.c",
+            "src/libgit2/transports/*.c",
+            "src/libgit2/streams/*.c",
+        ],
+        exclude = [
+            "src/util/win32/**",
+            "src/util/unix/**",
+        ],
+    ) + select({
+        "@platforms//os:windows": glob(["src/util/win32/**/*.c"]),
+        "//conditions:default": glob(["src/util/unix/**/*.c"]),
+    }) + select({
+        ":https_setting": [],
+        "//conditions:default": [
+            "src/util/hash/builtin.c",
+            "src/util/hash/rfc6234/sha224-256.c",
+        ],
+    }),
+    hdrs = [
+        "src/util/allocators/failalloc.h",
+        "src/util/allocators/stdalloc.h",
+        "src/util/allocators/win32_leakcheck.h",
+        # Use the CollisionDetection SHA1 implementation.
+        "src/util/hash/sha1dc/sha1.h",
+        "src/util/hash/sha1dc/ubc_check.h",
+    ] + glob(
+        include = [
+            "src/libgit2/*.h",
+            "src/libgit2/streams/*.h",
+            "src/libgit2/transports/*.h",
+            "src/libgit2/xdiff/*.h",
+            "src/util/*.h",
+            "src/util/hash/*.h",
+            "src/util/hash/rfc6234/*.h",
+        ],
+        exclude = [
+            "src/util/win32/**",
+            "src/util/unix/**",
+        ],
+    ) + select({
+        "@platforms//os:windows": glob(["src/util/win32/**/*.h"]),
+        "//conditions:default": glob(["src/util/unix/**/*.h"]),
+    }),
+    copts = select({
+        "@platforms//os:linux": [
+            "-fvisibility=hidden",
+            "-fPIC",
+            "-Wall",
+            "-std=gnu90",
+            # On linux, optimization is required to avoid issues with missing (and unused) symbols:
+            # `liblibgit2.a(pack.pic.o):pack.c:function packfile_open_locked: error: undefined reference to 'fstat'`
+            #
+            # Always enabling optimization helps us avoid this though, it does seem unnecessary and this should
+            # probably be fixed.
+            "-O3",
+        ],
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "-fvisibility=hidden",
+            "-fPIC",
+            "-Wall",
+            "-std=gnu90",
+        ],
+    }),
+    defines = [
+        # Use the CollisionDetection SHA1 implementation.
+        "SHA1DC_NO_STANDARD_INCLUDES=1",
+        "SHA1DC_CUSTOM_INCLUDE_SHA1_C=\\\"common.h\\\"",
+        "SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C=\\\"common.h\\\"",
+        # Use the included PCRE regex backend.
+        "GIT_REGEX_BUILTIN=1",
+    ] + select({
+        ":windows": ["STRSAFE_NO_DEPRECATE"],
+        "//conditions:default": [],
+    }),
+    includes = [
+        "src/libgit2",
+        "src/util",
+    ],
+    linkstatic = True,
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":http-parser",
+        ":include",
+        ":pcre",
+        "@zlib",
+    ],
+)
+
+alias(
+    name = "libgit2",
+    actual = ":git2",
+    visibility = ["//visibility:public"],
+)

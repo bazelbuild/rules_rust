@@ -1,0 +1,124 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# rust_binary(
+#     name = "rust_binary_aarch64-apple-darwin",
+#     srcs = ["rust_binary.rs"],
+#     platform = "//bazel/platforms:aarch64-apple-darwin",
+#     deps = [
+#         "//cc_library",
+#         "//rust_library",
+#         "@crate_index//:anyhow",
+#         "@crate_index//:tokio",
+#     ],
+# )
+
+# rust_binary(
+#     name = "rust_binary_aarch64-apple-ios",
+#     srcs = ["rust_binary.rs"],
+#     platform = "//bazel/platforms:aarch64-apple-ios",
+#     deps = [
+#         "//cc_library",
+#         "//rust_library",
+#         "@crate_index//:anyhow",
+#         "@crate_index//:tokio",
+#     ],
+# )
+
+rust_binary(
+    name = "rust_binary_aarch64-linux-android",
+    srcs = ["rust_binary.rs"],
+    platform = "//bazel/platforms:aarch64-linux-android",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+        "@crate_index//:tokio",
+    ],
+)
+
+rust_binary(
+    name = "rust_binary_aarch64-unknown-linux-gnu",
+    srcs = ["rust_binary.rs"],
+    platform = "//bazel/platforms:aarch64-unknown-linux-gnu",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+        "@crate_index//:tokio",
+    ],
+)
+
+rust_binary(
+    name = "rust_binary_wasm32-unknown-unknown",
+    srcs = ["rust_binary_wasm32-unknown-unknown.rs"],  # See comments in `rust_binary_wasm32-unknown-unknown.rs`.
+    platform = "//bazel/platforms:wasm32-unknown-unknown",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "rust_binary_wasm32-wasi",
+    srcs = ["rust_binary_wasm32-wasi.rs"],  # See comments in `rust_binary_wasm32-wasi.rs`.
+    platform = "//bazel/platforms:wasm32-wasi",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+        # To be added once the `wasm32-wasi` version of `tokio` can `select()`
+        # over different features.
+        # "@crate_index//:tokio",
+    ],
+)
+
+# rust_binary(
+#     name = "rust_binary_x86_64-apple-darwin",
+#     srcs = ["rust_binary.rs"],
+#     platform = "//bazel/platforms:x86_64-apple-darwin",
+#     deps = [
+#         "//cc_library",
+#         "//rust_library",
+#         "@crate_index//:anyhow",
+#         "@crate_index//:tokio",
+#     ],
+# )
+
+# rust_binary(
+#     name = "rust_binary_x86_64-pc-windows-msvc",
+#     srcs = ["rust_binary.rs"],
+#     platform = "//bazel/platforms:x86_64-pc-windows-msvc",
+#     deps = [
+#         "//cc_library",
+#         "//rust_library",
+#         "@crate_index//:anyhow",
+#         "@crate_index//:tokio",
+#     ],
+# )
+
+rust_binary(
+    name = "rust_binary_x86_64-unknown-linux-gnu",
+    srcs = ["rust_binary.rs"],
+    platform = "//bazel/platforms:x86_64-unknown-linux-gnu",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+        "@crate_index//:tokio",
+    ],
+)
+
+rust_binary(
+    name = "rust_binary_x86_64-unknown-nixos-gnu",
+    srcs = ["rust_binary.rs"],
+    platform = "//bazel/platforms:x86_64-unknown-nixos-gnu",
+    deps = [
+        "//cc_library",
+        "//rust_library",
+        "@crate_index//:anyhow",
+        "@crate_index//:tokio",
+    ],
+)

@@ -18,6 +18,7 @@ mod output;
 mod rustc;
 mod util;
 
+use std::fmt;
 use std::fs::{copy, OpenOptions};
 use std::io;
 use std::process::{exit, Command, ExitStatus, Stdio};
@@ -49,11 +50,19 @@ fn status_code(status: ExitStatus, was_killed: bool) -> i32 {
     }
 }
 
-fn main() {
-    let opts = match options() {
-        Err(err) => panic!("process wrapper error: {}", err),
-        Ok(v) => v,
-    };
+#[derive(Debug)]
+struct ProcessWrapperError(String);
+
+impl fmt::Display for ProcessWrapperError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "process wrapper error: {}", self.0)
+    }
+}
+
+impl std::error::Error for ProcessWrapperError {}
+
+fn main() -> Result<(), ProcessWrapperError> {
+    let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
     let mut child = Command::new(opts.executable)
         .args(opts.child_arguments)
@@ -65,14 +74,14 @@ fn main() {
                 .truncate(true)
                 .write(true)
                 .open(stdout_file)
-                .expect("process wrapper error: unable to open stdout file")
+                .map_err(|e| ProcessWrapperError(format!("unable to open stdout file: {}", e)))?
                 .into()
         } else {
             Stdio::inherit()
         })
         .stderr(Stdio::piped())
         .spawn()
-        .expect("process wrapper error: failed to spawn child process");
+        .map_err(|e| ProcessWrapperError(format!("failed to spawn child process: {}", e)))?;
 
     let mut stderr: Box<dyn io::Write> = if let Some(stderr_file) = opts.stderr_file {
         Box::new(
@@ -81,13 +90,28 @@ fn main() {
                 .truncate(true)
                 .write(true)
                 .open(stderr_file)
-                .expect("process wrapper error: unable to open stderr file"),
+                .map_err(|e| ProcessWrapperError(format!("unable to open stderr file: {}", e)))?,
         )
     } else {
         Box::new(io::stderr())
     };
 
-    let mut child_stderr = child.stderr.take().unwrap();
+    let mut child_stderr = child.stderr.take().ok_or(ProcessWrapperError(
+        "unable to get child stderr".to_string(),
+    ))?;
+
+    let mut output_file: Option<std::fs::File> = if let Some(output_file_name) = opts.output_file {
+        Some(
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(output_file_name)
+                .map_err(|e| ProcessWrapperError(format!("Unable to open output_file: {}", e)))?,
+        )
+    } else {
+        None
+    };
 
     let mut was_killed = false;
     let result = if let Some(format) = opts.rustc_output_format {
@@ -96,13 +120,18 @@ fn main() {
         // that we emitted a metadata file.
         let mut me = false;
         let metadata_emitted = &mut me;
-        let result = process_output(&mut child_stderr, stderr.as_mut(), move |line| {
-            if quit_on_rmeta {
-                rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
-            } else {
-                rustc::process_json(line, format)
-            }
-        });
+        let result = process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| {
+                if quit_on_rmeta {
+                    rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+                } else {
+                    rustc::process_json(line, format)
+                }
+            },
+        );
         if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
             // We can safely ignore the Result from kill() as we don't care if the process already terminated.
@@ -112,13 +141,18 @@ fn main() {
         result
     } else {
         // Process output normally by forwarding stderr
-        process_output(&mut child_stderr, stderr.as_mut(), LineOutput::Message)
+        process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| Ok(LineOutput::Message(line)),
+        )
     };
-    result.expect("process wrapper error: failed to process stderr");
+    result.map_err(|e| ProcessWrapperError(format!("failed to process stderr: {}", e)))?;
 
     let status = child
         .wait()
-        .expect("process wrapper error: failed to wait for child process");
+        .map_err(|e| ProcessWrapperError(format!("failed to wait for child process: {}", e)))?;
     // If the child process is rustc and is killed after metadata generation, that's also a success.
     let code = status_code(status, was_killed);
     let success = code == 0;
@@ -126,17 +160,18 @@ fn main() {
         if let Some(tf) = opts.touch_file {
             OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .write(true)
                 .open(tf)
-                .expect("process wrapper error: failed to create touch file");
+                .map_err(|e| ProcessWrapperError(format!("failed to create touch file: {}", e)))?;
         }
         if let Some((copy_source, copy_dest)) = opts.copy_output {
-            copy(&copy_source, &copy_dest).unwrap_or_else(|_| {
-                panic!(
-                    "process wrapper error: failed to copy {} into {}",
-                    copy_source, copy_dest
-                )
-            });
+            copy(&copy_source, &copy_dest).map_err(|e| {
+                ProcessWrapperError(format!(
+                    "failed to copy {} into {}: {}",
+                    copy_source, copy_dest, e
+                ))
+            })?;
         }
     }
 

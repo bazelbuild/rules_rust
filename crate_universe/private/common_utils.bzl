@@ -8,12 +8,17 @@ get_host_triple = _get_host_triple
 
 CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
 CARGO_BAZEL_REPIN = "CARGO_BAZEL_REPIN"
+CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
 REPIN = "REPIN"
+
+CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
 
 REPIN_ENV_VARS = [
     CARGO_BAZEL_REPIN,
     REPIN,
 ]
+
+REPIN_ALLOWLIST_ENV_VAR = CARGO_BAZEL_REPIN_ONLY
 
 _EXECUTE_ERROR_MESSAGE = """\
 Command {args} failed with exit code {exit_code}.
@@ -34,10 +39,15 @@ def execute(repository_ctx, args, env = {}):
     Returns:
         struct: The results of `repository_ctx.execute`
     """
+
+    quiet = repository_ctx.attr.quiet
+    if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
+        quiet = False
+
     result = repository_ctx.execute(
         args,
         environment = env,
-        quiet = repository_ctx.attr.quiet,
+        quiet = quiet,
     )
 
     if result.return_code:
@@ -118,3 +128,33 @@ def cargo_environ(repository_ctx):
         })
 
     return env
+
+def parse_alias_rule(value):
+    """Attempts to parse an `AliasRule` from supplied string.
+
+    Args:
+        value (str): String value to be parsed.
+
+    Returns:
+        value: A Rust compatible `AliasRule`.
+    """
+    if value == None:
+        return None
+
+    if value == "alias" or value == "dbg" or value == "fastbuild" or value == "opt":
+        return value
+
+    if value.count(":") != 2:
+        fail("Invalid custom value for `alias_rule`.\n{}\nValues must be in the format '<label to .bzl>:<rule>'.".format(value))
+
+    split = value.rsplit(":", 1)
+    bzl = Label(split[0])
+    rule = split[1]
+
+    if rule == "alias":
+        fail("Custom value rule cannot be named `alias`.\n{}".format(value))
+
+    return struct(
+        bzl = str(bzl),
+        rule = rule,
+    )

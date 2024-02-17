@@ -1,6 +1,9 @@
 //! Common utilities
 
 pub mod starlark;
+pub mod target_triple;
+
+pub const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
 
 /// Convert a string into a valid crate module name by applying transforms to invalid characters
 pub fn sanitize_module_name(name: &str) -> String {

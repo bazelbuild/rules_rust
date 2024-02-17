@@ -10,13 +10,26 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
+# buildifier: disable=bzl-visibility
+load("@rules_rust//proto/prost/private:repositories.bzl", "rust_prost_dependencies", "rust_prost_register_toolchains")
 
-rust_proto_repositories()
+rust_prost_dependencies()
 
-load("@rules_rust//proto:transitive_repositories.bzl", "rust_proto_transitive_repositories")
+rust_prost_register_toolchains()
 
-rust_proto_transitive_repositories()
+load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
+
+rust_prost_transitive_repositories()
+
+load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
+
+rust_proto_protobuf_dependencies()
+
+rust_proto_protobuf_register_toolchains()
+
+load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
+
+rust_proto_protobuf_transitive_repositories()
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
@@ -24,13 +37,13 @@ rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
 
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
+
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
-
-load("@rules_rust//util/import:deps.bzl", "import_deps")
-
-import_deps()
 
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
@@ -43,6 +56,10 @@ bazel_skylib_workspace()
 load("//test:deps.bzl", "rules_rust_test_deps")
 
 rules_rust_test_deps()
+
+load("//test:deps_transitive.bzl", "rules_rust_test_deps_transitive")
+
+rules_rust_test_deps_transitive()
 
 # --- end stardoc
 
@@ -58,4 +75,4 @@ http_archive(
 # To run with RBE on Bazel CI, uncomment the following lines.
 #
 # load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")
-# rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu1604-bazel-java8")
+# rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu2004-bazel-java11")

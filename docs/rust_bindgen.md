@@ -2,10 +2,10 @@
 # Rust Bindgen
 
 * [rust_bindgen_library](#rust_bindgen_library)
+* [rust_bindgen](#rust_bindgen)
+* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
 * [rust_bindgen_dependencies](#rust_bindgen_dependencies)
 * [rust_bindgen_register_toolchains](#rust_bindgen_register_toolchains)
-* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
-* [rust_bindgen](#rust_bindgen)
 
 
 ## Overview
@@ -28,7 +28,19 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
+
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
 ```
+
+Bindgen aims to be as hermetic as possible so will end up building `libclang` from [llvm-project][llvm_proj] from
+source. If this is found to be undesirable then no Bindgen related calls should be added to your WORKSPACE and instead
+users should define their own repositories using something akin to [crate_universe][cra_uni] and define their own
+toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen_toolchain).
+
+[llvm_proj]: https://github.com/llvm/llvm-project
+[cra_uni]: https://bazelbuild.github.io/rules_rust/crate_universe.html
 
 ---
 
@@ -41,7 +53,7 @@ rust_bindgen_register_toolchains()
 ## rust_bindgen
 
 <pre>
-rust_bindgen(<a href="#rust_bindgen-name">name</a>, <a href="#rust_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen-cc_lib">cc_lib</a>, <a href="#rust_bindgen-clang_flags">clang_flags</a>, <a href="#rust_bindgen-header">header</a>, <a href="#rust_bindgen-rustfmt">rustfmt</a>)
+rust_bindgen(<a href="#rust_bindgen-name">name</a>, <a href="#rust_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen-cc_lib">cc_lib</a>, <a href="#rust_bindgen-clang_flags">clang_flags</a>, <a href="#rust_bindgen-header">header</a>, <a href="#rust_bindgen-leak_symbols">leak_symbols</a>)
 </pre>
 
 Generates a rust source file from a cc_library and a header.
@@ -53,10 +65,10 @@ Generates a rust source file from a cc_library and a header.
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_bindgen-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_bindgen-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   | List of strings | optional | <code>[]</code> |
-| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the <code>.h</code> file. This is used to find the transitive includes.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the <code>.h</code> file. This is used to find the transitive includes.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_bindgen-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   | List of strings | optional | <code>[]</code> |
-| <a id="rust_bindgen-header"></a>header |  The <code>.h</code> file to generate bindings for.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
-| <a id="rust_bindgen-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   | Boolean | optional | <code>True</code> |
+| <a id="rust_bindgen-header"></a>header |  The <code>.h</code> file to generate bindings for.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="rust_bindgen-leak_symbols"></a>leak_symbols |  If True, <code>cc_lib</code> will be exposed and linked into all downstream consumers of the target vs. the <code>rust_library</code> directly consuming it.   | Boolean | optional | <code>False</code> |
 
 
 <a id="rust_bindgen_toolchain"></a>
@@ -64,7 +76,7 @@ Generates a rust source file from a cc_library and a header.
 ## rust_bindgen_toolchain
 
 <pre>
-rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>, <a href="#rust_bindgen_toolchain-rustfmt">rustfmt</a>)
+rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-default_rustfmt">default_rustfmt</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>)
 </pre>
 
 The tools required for the `rust_bindgen` rule.
@@ -74,7 +86,7 @@ in turn depends on both a clang binary and the clang library. To obtain these de
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
 ```python
-load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen_toolchain_impl",
@@ -103,9 +115,9 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | <a id="rust_bindgen_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_bindgen_toolchain-bindgen"></a>bindgen |  The label of a <code>bindgen</code> executable.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="rust_bindgen_toolchain-clang"></a>clang |  The label of a <code>clang</code> executable.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_bindgen_toolchain-default_rustfmt"></a>default_rustfmt |  If set, <code>rust_bindgen</code> targets will always format generated sources with <code>rustfmt</code>.   | Boolean | optional | <code>True</code> |
 | <a id="rust_bindgen_toolchain-libclang"></a>libclang |  A cc_library that provides bindgen's runtime dependency on libclang.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 | <a id="rust_bindgen_toolchain-libstdcxx"></a>libstdcxx |  A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
-| <a id="rust_bindgen_toolchain-rustfmt"></a>rustfmt |  The label of a <code>rustfmt</code> executable. If this is not provided, falls back to the rust_toolchain rustfmt.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
 
 
 <a id="rust_bindgen_dependencies"></a>
@@ -119,13 +131,18 @@ rust_bindgen_dependencies()
 Declare dependencies needed for bindgen.
 
 
+**RETURNS**
+
+list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+  defined by this macro.
+
 
 <a id="rust_bindgen_library"></a>
 
 ## rust_bindgen_library
 
 <pre>
-rust_bindgen_library(<a href="#rust_bindgen_library-name">name</a>, <a href="#rust_bindgen_library-header">header</a>, <a href="#rust_bindgen_library-cc_lib">cc_lib</a>, <a href="#rust_bindgen_library-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen_library-clang_flags">clang_flags</a>, <a href="#rust_bindgen_library-rustfmt">rustfmt</a>, <a href="#rust_bindgen_library-kwargs">kwargs</a>)
+rust_bindgen_library(<a href="#rust_bindgen_library-name">name</a>, <a href="#rust_bindgen_library-header">header</a>, <a href="#rust_bindgen_library-cc_lib">cc_lib</a>, <a href="#rust_bindgen_library-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen_library-bindgen_features">bindgen_features</a>, <a href="#rust_bindgen_library-clang_flags">clang_flags</a>, <a href="#rust_bindgen_library-kwargs">kwargs</a>)
 </pre>
 
 Generates a rust source file for `header`, and builds a rust_library.
@@ -142,8 +159,8 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-header"></a>header |  The label of the .h file to generate bindings for.   |  none |
 | <a id="rust_bindgen_library-cc_lib"></a>cc_lib |  The label of the cc_library that contains the .h file. This is used to find the transitive includes.   |  none |
 | <a id="rust_bindgen_library-bindgen_flags"></a>bindgen_flags |  Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.   |  `None` |
+| <a id="rust_bindgen_library-bindgen_features"></a>bindgen_features |  The <code>features</code> attribute for the <code>rust_bindgen</code> target.   |  `None` |
 | <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  `None` |
-| <a id="rust_bindgen_library-rustfmt"></a>rustfmt |  Enable or disable running rustfmt on the generated file.   |  `True` |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying <code>rust_library</code> rule.   |  none |
 
 

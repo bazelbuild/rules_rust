@@ -1,0 +1,10 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+# A flag for which causes `cargo_build_script` to symlink the execroot of the action to
+# the `CARGO_MANIFEST_DIR` where the scripts are run.
+bool_flag(
+    name = "experimental_symlink_execroot",
+    build_setting_default = False,
+)

@@ -1,6 +1,7 @@
 """Unit tests for repository_utils.bzl."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
+load("//rust/platform:triple.bzl", "triple")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -11,6 +12,8 @@ load(
     "select_rust_version",
 )
 
+_PLATFORM_TRIPLE = triple("x86_64-unknown-linux-gnu")
+
 def _produce_tool_suburl_test_impl(ctx):
     env = unittest.begin(ctx)
     asserts.equals(
@@ -20,7 +23,7 @@ def _produce_tool_suburl_test_impl(ctx):
             iso_date = "2020-05-22",
             tool_name = "rust-std",
             version = "nightly",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
         ),
     )
     asserts.equals(
@@ -29,7 +32,7 @@ def _produce_tool_suburl_test_impl(ctx):
         produce_tool_suburl(
             tool_name = "rust-std",
             version = "nightly",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
         ),
     )
     asserts.equals(
@@ -71,7 +74,7 @@ def _produce_tool_path_test_impl(ctx):
         produce_tool_path(
             tool_name = "rust-std",
             version = "nightly",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
         ),
     )
     asserts.equals(
@@ -91,11 +94,11 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Release version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        "6a30ffca17a244ad6bfb1d257572155f4e2b08d3ca2d852c2fc7420e264c6baa",
+        "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8",
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
             version = "1.65.0",
             iso_date = "2022-11-02",
             sha256 = "",
@@ -105,11 +108,11 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Values in //rust:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
-        "6a30ffca17a244ad6bfb1d257572155f4e2b08d3ca2d852c2fc7420e264c6baa",
+        "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8",
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
             version = "1.65.0",
             iso_date = "2022-11-02",
             sha256 = "FAKE_SHA256_FROM_ARG",
@@ -119,11 +122,11 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Nightly version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        "187f7248dea1c0328e3fb26bb35ad7ba4df901cc34c1c6255260276de8fe3360",
+        "ea01d3cd6c6729cd8ebb55a7702eda2347451e304b58807361e020065a579d96",
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
             iso_date = "2022-11-02",
             sha256 = "",
@@ -137,7 +140,7 @@ def _lookup_tool_sha256_test_impl(ctx):
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
             iso_date = "2022-11-01",
             sha256 = "",
@@ -151,7 +154,7 @@ def _lookup_tool_sha256_test_impl(ctx):
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
-            target_triple = "x86_64-unknown-linux-gnu",
+            target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
             iso_date = "2022-11-01",
             sha256 = "FAKE_SHA256_FROM_ARG",

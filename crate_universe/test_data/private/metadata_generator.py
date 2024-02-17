@@ -45,20 +45,23 @@ if __name__ == "__main__":
 
             # Copy the test directory into a temp directory (and out from under a Cargo workspace)
             manifest_dir = temp_dir_path / test_dir.name
-            # manifest_dir.mkdir(parents=True, exist_ok=True)
             shutil.copytree(test_dir, manifest_dir)
 
             manifest = manifest_dir / "Cargo.toml"
-
-            # Generate Lockfile
-            proc = run_subprocess([cargo, "generate-lockfile", "--manifest-path", str(manifest)])
             lockfile = manifest_dir / "Cargo.lock"
-            if not lockfile.exists():
-                print("Faield to generate lockfile")
-                print("Args:", proc.args, file=sys.stderr)
-                print("stderr:", proc.stderr.decode("utf-8"), file=sys.stderr)
-                print("stdout:", proc.stdout.decode("utf-8"), file=sys.stderr)
-                exit(1)
+
+            if lockfile.exists():
+                proc = run_subprocess([cargo, "update", "--manifest-path", str(manifest), "--workspace"])
+            else:
+                # Generate Lockfile
+                proc = run_subprocess([cargo, "generate-lockfile", "--manifest-path", str(manifest)])
+            
+                if not lockfile.exists():
+                    print("Faield to generate lockfile")
+                    print("Args:", proc.args, file=sys.stderr)
+                    print("stderr:", proc.stderr.decode("utf-8"), file=sys.stderr)
+                    print("stdout:", proc.stdout.decode("utf-8"), file=sys.stderr)
+                    exit(1)
 
             shutil.copy2(str(lockfile), str(test_dir / "Cargo.lock"))
 
@@ -84,4 +87,4 @@ if __name__ == "__main__":
             # Write metadata to disk
             metadata = json.loads(metadata_text)
             output = test_dir / "metadata.json"
-            output.write_text(json.dumps(metadata, indent=4) + "\n")
+            output.write_text(json.dumps(metadata, indent=4, sort_keys=True) + "\n")

@@ -25,6 +25,7 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 - [crate_universe_dependencies](#crate_universe_dependencies)
 - [crate.annotation](#crateannotation)
+- [crate.select](#crateselect)
 - [crate.spec](#cratespec)
 - [crate.workspace_member](#crateworkspace_member)
 - [render_config](#render_config)

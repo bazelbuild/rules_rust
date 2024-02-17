@@ -1,0 +1,20 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "heck",
+    srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+    ],
+    crate_root = "src/lib.rs",
+    edition = "2018",
+    rustc_flags = ["--cap-lints=allow"],
+    tags = [
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "0.4.1",
+)

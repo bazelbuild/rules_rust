@@ -31,19 +31,25 @@ attach_dep_actions_aspect = rule(
 )
 
 def _enable_is_proc_macro_dep_transition_impl(_settings, _attr):
-    return {"//:is_proc_macro_dep_enabled": True}
+    return {"//rust/private:is_proc_macro_dep_enabled": True}
 
 enable_is_proc_macro_dep_transition = transition(
     inputs = [],
-    outputs = ["//:is_proc_macro_dep_enabled"],
+    outputs = ["//rust/private:is_proc_macro_dep_enabled"],
     implementation = _enable_is_proc_macro_dep_transition_impl,
 )
 
 attach_dep_actions_and_enable_is_proc_macro_dep_aspect = rule(
     implementation = _attach_dep_actions_aspect_impl,
     attrs = {
-        "dep": attr.label(aspects = [collect_dep_actions_aspect]),
-        "_allowlist_function_transition": attr.label(default = Label("//tools/allowlists/function_transition_allowlist")),
+        "dep": attr.label(
+            aspects = [collect_dep_actions_aspect],
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = Label(
+                "//tools/allowlists/function_transition_allowlist",
+            ),
+        ),
     },
     cfg = enable_is_proc_macro_dep_transition,
 )

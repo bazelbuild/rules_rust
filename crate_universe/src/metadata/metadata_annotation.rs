@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::DependencySet;
+use crate::select::Select;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
 
 pub type CargoMetadata = cargo_metadata::Metadata;
@@ -335,9 +336,9 @@ impl LockfileAnnotation {
     }
 }
 
-/// A pairring of a crate's package identifier to it's annotations.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PairredExtras {
+/// A pairing of a crate's package identifier to its annotations.
+#[derive(Debug)]
+pub struct PairedExtras {
     /// The crate's package identifier
     pub package_id: cargo_metadata::PackageId,
 
@@ -346,7 +347,7 @@ pub struct PairredExtras {
 }
 
 /// A collection of data which has been processed for optimal use in generating Bazel targets.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Annotations {
     /// Annotated Cargo metadata
     pub metadata: MetadataAnnotation,
@@ -358,7 +359,10 @@ pub struct Annotations {
     pub config: Config,
 
     /// Pairred crate annotations
-    pub pairred_extras: BTreeMap<CrateId, PairredExtras>,
+    pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
+
+    /// Feature set for each target triplet and crate.
+    pub crate_features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl Annotations {
@@ -379,7 +383,7 @@ impl Annotations {
             .packages
             .iter()
             .filter_map(|(pkg_id, pkg)| {
-                let extras: Vec<CrateAnnotations> = config
+                let mut crate_extra: CrateAnnotations = config
                     .annotations
                     .iter()
                     .filter(|(id, _)| id.matches(pkg))
@@ -387,22 +391,24 @@ impl Annotations {
                         // Mark that an annotation has been consumed
                         unused_extra_annotations.remove(id);
 
-                        // Fitler out the annotation
+                        // Filter out the annotation
                         extra
                     })
                     .cloned()
-                    .collect();
+                    .sum();
 
-                if !extras.is_empty() {
+                crate_extra.apply_defaults_from_package_metadata(&pkg.metadata);
+
+                if crate_extra == CrateAnnotations::default() {
+                    None
+                } else {
                     Some((
                         CrateId::new(pkg.name.clone(), pkg.version.to_string()),
-                        PairredExtras {
+                        PairedExtras {
                             package_id: pkg_id.clone(),
-                            crate_extra: extras.into_iter().sum(),
+                            crate_extra,
                         },
                     ))
-                } else {
-                    None
                 }
             })
             .collect();
@@ -415,12 +421,15 @@ impl Annotations {
             );
         }
 
+        let crate_features = metadata_annotation.workspace_metadata.features.clone();
+
         // Annotate metadata
         Ok(Annotations {
             metadata: metadata_annotation,
             lockfile: lockfile_annotation,
             config,
             pairred_extras,
+            crate_features,
         })
     }
 }
@@ -552,5 +561,42 @@ mod test {
         let result_str = format!("{result:?}");
         assert!(result_str.contains("Unused annotations were provided. Please remove them"));
         assert!(result_str.contains("mock-crate"));
+    }
+
+    #[test]
+    fn defaults_from_package_metadata() {
+        let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
+        let annotations = CrateAnnotations {
+            rustc_env: Some(Select::from_value(BTreeMap::from([(
+                "BAR".to_owned(),
+                "bar is set".to_owned(),
+            )]))),
+            ..CrateAnnotations::default()
+        };
+
+        let mut config = Config::default();
+        config
+            .annotations
+            .insert(crate_id.clone(), annotations.clone());
+
+        // Combine the above annotations with default values provided by the
+        // crate author in package metadata.
+        let combined_annotations = Annotations::new(
+            test::metadata::has_package_metadata(),
+            test::lockfile::has_package_metadata(),
+            config,
+        )
+        .unwrap();
+
+        let extras = &combined_annotations.pairred_extras[&crate_id].crate_extra;
+        let expected = CrateAnnotations {
+            // This comes from has_package_metadata's [package.metadata.bazel].
+            additive_build_file_content: Some("genrule(**kwargs)\n".to_owned()),
+            // The package metadata defines a default rustc_env containing FOO,
+            // but it is superseded by a rustc_env annotation containing only
+            // BAR. These dictionaries are intentionally not merged together.
+            ..annotations
+        };
+        assert_eq!(*extras, expected);
     }
 }

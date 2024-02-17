@@ -72,7 +72,7 @@ that anything directly accessible from this file is considered stable.
 `//rust/private/…` is not subject to the backwards compatibility policy. Content
 of this package is an implementation detail.
 
-`//cargo:cargo_build_script.bzl` is subject to the backwards compatibility policy.
+`//cargo:defs.bzl` is subject to the backwards compatibility policy.
 
 `//cargo`, `//util`, `//tools`, `//test`, `//examples`, `//bindgen`, `//proto`,
 `//wasm_bindgen` and any packages not mentioned by this document are by default
@@ -88,7 +88,7 @@ They should be added to `//rust:incompatible.bzl`.
 Bug fixes are not a breaking change by default. We'll use Common Sense (and we
 will pull in more maintainers and the community to discuss) if we see a certain
 bug fix is controversial. Incompatible changes to
-`//cargo:cargo_build_script.bzl` that make `cargo_build_script` more accurately
+`//cargo:defs.bzl` that make `cargo_build_script` more accurately
 follow cargo's behaviour are considered bug fixes.
 
 ## How to make a backwards incompatible change?

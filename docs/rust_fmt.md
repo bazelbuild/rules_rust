@@ -22,8 +22,12 @@ configuration options can be found in the [Rustfmt GitHub Pages][rgp].
 Formatting your Rust targets' source code requires no setup outside of loading `rules_rust`
 in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source code.
 
-In addition to this formatter, a check can be added to your build phase using the [rustfmt_aspect](#rustfmt-aspect)
-aspect. Simply add the following to a `.bazelrc` file to enable this check.
+In addition to this formatter, a simple check can be performed using the [rustfmt_aspect](#rustfmt-aspect) aspect by running
+```text
+bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
+```
+
+Add the following to a `.bazelrc` file to enable this check during the build phase.
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
@@ -41,6 +45,14 @@ file is used whenever `rustfmt` is run:
 ```text
 build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
 ```
+
+### Tips
+
+
+Any target which uses Bazel generated sources will cause the `@rules_rust//tools/rustfmt` tool to fail with
+``failed to resolve mod `MOD` ``. To avoid failures, [`skip_children = true`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=skip_chil#skip_children)
+is recommended to be set in the workspace's `rustfmt.toml` file which allows rustfmt to run on these targets
+without failing.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt#readme
 [rsg]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md
@@ -71,7 +83,7 @@ A test rule for performing `rustfmt --check` on a set of targets
 ## rustfmt_toolchain
 
 <pre>
-rustfmt_toolchain(<a href="#rustfmt_toolchain-name">name</a>, <a href="#rustfmt_toolchain-rustfmt">rustfmt</a>)
+rustfmt_toolchain(<a href="#rustfmt_toolchain-name">name</a>, <a href="#rustfmt_toolchain-rustc">rustc</a>, <a href="#rustfmt_toolchain-rustc_lib">rustc_lib</a>, <a href="#rustfmt_toolchain-rustfmt">rustfmt</a>)
 </pre>
 
 A toolchain for [rustfmt](https://rust-lang.github.io/rustfmt/)
@@ -82,7 +94,9 @@ A toolchain for [rustfmt](https://rust-lang.github.io/rustfmt/)
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rustfmt_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-| <a id="rustfmt_toolchain-rustfmt"></a>rustfmt |  The location of the <code>rustfmt</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rustfmt_toolchain-rustc"></a>rustc |  The location of the <code>rustc</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rustfmt_toolchain-rustc_lib"></a>rustc_lib |  The libraries used by rustc during compilation.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rustfmt_toolchain-rustfmt"></a>rustfmt |  The location of the <code>rustfmt</code> binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 
 
 <a id="rustfmt_aspect"></a>
@@ -97,7 +111,6 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
 - `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]

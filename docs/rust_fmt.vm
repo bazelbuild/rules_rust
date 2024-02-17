@@ -15,8 +15,12 @@ configuration options can be found in the [Rustfmt GitHub Pages][rgp].
 Formatting your Rust targets' source code requires no setup outside of loading `rules_rust`
 in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source code.
 
-In addition to this formatter, a check can be added to your build phase using the [rustfmt_aspect](#rustfmt-aspect)
-aspect. Simply add the following to a `.bazelrc` file to enable this check.
+In addition to this formatter, a simple check can be performed using the [rustfmt_aspect](#rustfmt-aspect) aspect by running
+```text
+bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
+```
+
+Add the following to a `.bazelrc` file to enable this check during the build phase.
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
@@ -34,6 +38,14 @@ file is used whenever `rustfmt` is run:
 ```text
 build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
 ```
+#[[
+### Tips
+]]#
+
+Any target which uses Bazel generated sources will cause the `@rules_rust//tools/rustfmt` tool to fail with
+``failed to resolve mod `MOD` ``. To avoid failures, [`skip_children = true`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=skip_chil#skip_children)
+is recommended to be set in the workspace's `rustfmt.toml` file which allows rustfmt to run on these targets
+without failing.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt#readme
 [rsg]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md

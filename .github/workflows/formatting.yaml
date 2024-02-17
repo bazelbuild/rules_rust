@@ -1,0 +1,31 @@
+name: Formatting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  code-format-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.14
+        with:
+          source: '.'
+          extensions: 'h,c,cc,proto'
+          clangFormatVersion: 14
+      - uses: actionsx/prettier@v2
+        with:
+          args: --config "${{ github.workspace }}/.prettierrc.toml" --write "**/*.{js,ts}"
+      # Prettier has no diff view so we must make one ourselves
+      # https://github.com/prettier/prettier/issues/6885
+      - run: |
+          git diff
+          if [[ -n "$(git status --porcelain)" ]]; then
+            exit 1
+          fi

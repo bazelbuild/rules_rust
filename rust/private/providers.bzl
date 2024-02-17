@@ -20,10 +20,11 @@ CrateInfo = provider(
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
+        "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
-        "metadata": "File: The rmeta file produced for this crate. It is optional.",
+        "metadata": "File: The output from rustc from producing the output file. It is optional.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -31,6 +32,8 @@ CrateInfo = provider(
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
+        "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
+        "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "type": (
             "str: The type of this crate " +
@@ -52,33 +55,55 @@ DepInfo = provider(
         "transitive_build_infos": "depset[BuildInfo]",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
+        "transitive_data": "depset[File]: Data of all transitive non-macro dependencies.",
         "transitive_metadata_outputs": "depset[File]: All transitive metadata dependencies (.rmeta, for crates that provide them) and all transitive object dependencies (.rlib) for crates that don't provide metadata.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+        "transitive_proc_macro_data": "depset[File]: Data of all transitive proc-macro dependencies, and non-macro dependencies of those macros.",
+    },
+)
+
+CrateGroupInfo = provider(
+    doc = "A provider containing a group of crates.",
+    fields = {
+        "dep_variant_infos": "depset[DepVariantInfo]: Dependency information from all crates in the group.",
     },
 )
 
 BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
-        "dep_env": "File: extra build script environment varibles to be set to direct dependencies.",
-        "flags": "File: file containing additional flags to pass to rustc",
-        "link_flags": "File: file containing flags to pass to the linker",
-        "link_search_paths": "File: file containing search paths to pass to the linker",
-        "out_dir": "File: directory containing the result of a build script",
-        "rustc_env": "File: file containing additional environment variables to set for rustc.",
+        "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
+        "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
+        "flags": "Optional[File]: file containing additional flags to pass to rustc",
+        "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
+        "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",
+        "out_dir": "Optional[File]: directory containing the result of a build script",
+        "rustc_env": "Optional[File]: file containing additional environment variables to set for rustc.",
     },
 )
 
 DepVariantInfo = provider(
     doc = "A wrapper provider for a dependency of a crate. The dependency can be a Rust " +
           "dependency, in which case the `crate_info` and `dep_info` fields will be populated, " +
-          "a Rust build script dependency, in which case `build_info` will be populated, or a " +
-          "C/C++ dependency, in which case `cc_info` will be populated.",
+          "a Rust build script dependency, in which case `build_info` will be populated, a C/C++" +
+          "dependency, in which case `cc_info` will be populated, or a Rust crate group, in which" +
+          "case `crate_group_info` will be populated.",
     fields = {
         "build_info": "BuildInfo: The BuildInfo of a Rust dependency",
         "cc_info": "CcInfo: The CcInfo of a C/C++ dependency",
+        "crate_group_info": "CrateGroupInfo: The CrateGroupInfo of a Rust crate group dependency",
         "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
         "dep_info": "DepInfo: The DepInfo of a Rust dependency",
+    },
+)
+
+RustcOutputDiagnosticsInfo = provider(
+    doc = (
+        "Save json diagnostics from rustc. Json diagnostics are able to be " +
+        "consumed by tools such as rust-analyzer to provide IDE integration"
+    ),
+    fields = {
+        "rustc_output_diagnostics": "bool: Whether or not to output diagnostics",
     },
 )
 
@@ -94,6 +119,7 @@ StdLibInfo = provider(
         "core_files": "List[File]: `.a` files related to the `core` and `adler` modules",
         "dot_a_files": "Depset[File]: Generated `.a` files",
         "memchr_files": "Depset[File]: `.a` files associated with the `memchr` module.",
+        "panic_files": "Depset[File]: `.a` files associated with `panic_unwind` and `panic_abort`.",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",

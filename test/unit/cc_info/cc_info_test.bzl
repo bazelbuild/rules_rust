@@ -51,7 +51,7 @@ def _collect_user_link_flags(env, tut):
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "rlib", 3)
+    _assert_cc_info_has_library_to_link(env, tut, "rlib", 4)
     return analysistest.end(env)
 
 def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(ctx):

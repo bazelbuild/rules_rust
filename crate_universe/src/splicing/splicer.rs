@@ -296,6 +296,19 @@ impl<'a> SplicerKind<'a> {
         let installations =
             Self::inject_workspace_members(&mut manifest, manifests, workspace_dir)?;
 
+        // Collect all patches from the manifests provided
+        for (_, sub_manifest) in manifests.iter() {
+            Self::inject_patches(&mut manifest, &sub_manifest.patch).with_context(|| {
+                format!(
+                    "Duplicate `[patch]` entries detected in {:#?}",
+                    manifests
+                        .keys()
+                        .map(|p| p.display().to_string())
+                        .collect::<Vec<String>>()
+                )
+            })?;
+        }
+
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, installations)?;
         workspace_metadata.inject_into(&mut manifest)?;
@@ -334,7 +347,7 @@ impl<'a> SplicerKind<'a> {
                 fs::create_dir(&dot_cargo_dir)?;
                 symlink_roots(&real_path, &dot_cargo_dir, Some(&["config", "config.toml"]))?;
             } else {
-                for config in vec![
+                for config in [
                     dot_cargo_dir.join("config"),
                     dot_cargo_dir.join("config.toml"),
                 ] {
@@ -351,7 +364,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         // Make sure no other config files exist
-        for config in vec![
+        for config in [
             workspace_dir.join("config"),
             workspace_dir.join("config.toml"),
             dot_cargo_dir.join("config"),
@@ -371,7 +384,7 @@ impl<'a> SplicerKind<'a> {
         let mut current_parent = workspace_dir.parent();
         while let Some(parent) = current_parent {
             let dot_cargo_dir = parent.join(".cargo");
-            for config in vec![
+            for config in [
                 dot_cargo_dir.join("config.toml"),
                 dot_cargo_dir.join("config"),
             ] {
@@ -467,6 +480,37 @@ impl<'a> SplicerKind<'a> {
                 name.clone(),
                 cargo_toml::Dependency::Detailed(details.clone()),
             );
+        }
+
+        Ok(())
+    }
+
+    fn inject_patches(manifest: &mut Manifest, patches: &cargo_toml::PatchSet) -> Result<()> {
+        for (registry, new_patches) in patches.iter() {
+            // If there is an existing patch entry it will need to be merged
+            if let Some(existing_patches) = manifest.patch.get_mut(registry) {
+                // Error out if there are duplicate patches
+                existing_patches.extend(
+                    new_patches
+                        .iter()
+                        .map(|(pkg, info)| {
+                            if let Some(existing_info) = existing_patches.get(pkg) {
+                                // Only error if the patches are not identical
+                                if existing_info != info {
+                                    bail!(
+                                        "Duplicate patches were found for `[patch.{}] {}`",
+                                        registry,
+                                        pkg
+                                    );
+                                }
+                            }
+                            Ok((pkg.clone(), info.clone()))
+                        })
+                        .collect::<Result<cargo_toml::DepsSet>>()?,
+                );
+            } else {
+                manifest.patch.insert(registry.clone(), new_patches.clone());
+            }
         }
 
         Ok(())
@@ -705,6 +749,7 @@ mod test {
     use cargo_metadata::{MetadataCommand, PackageId};
     use maplit::btreeset;
 
+    use crate::splicing::Cargo;
     use crate::utils::starlark::Label;
 
     /// Clone and compare two items after calling `.sort()` on them.
@@ -748,7 +793,7 @@ mod test {
 
         let (cargo_path, rustc_path) = get_cargo_and_rustc_paths();
 
-        let output = MetadataCommand::new()
+        MetadataCommand::new()
             .cargo_path(cargo_path)
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
@@ -756,25 +801,9 @@ mod test {
             .current_dir(manifest_dir)
             .manifest_path(manifest_path)
             .other_options(["--offline".to_owned()])
-            .cargo_command()
             .env("RUSTC", rustc_path)
-            .output()
-            .unwrap();
-
-        if !output.status.success() {
-            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-            assert!(output.status.success());
-        }
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-
-        assert!(stdout
-            .lines()
-            .find(|line| line.starts_with('{'))
-            .ok_or(cargo_metadata::Error::NoJson)
-            .is_ok());
-
-        MetadataCommand::parse(stdout).unwrap()
+            .exec()
+            .unwrap()
     }
 
     fn mock_cargo_toml(path: &Path, name: &str) -> cargo_toml::Manifest {
@@ -822,14 +851,16 @@ mod test {
                             "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                             "url": "https://crates.io/"
                         }
-                    }
+                    },
+                    "features": {}
                 }
             })
         } else {
             serde_json::json!({
                 "cargo-bazel": {
                     "package_prefixes": {},
-                    "sources": {}
+                    "sources": {},
+                    "features": {}
                 }
             })
         };
@@ -992,7 +1023,12 @@ mod test {
         (splicing_manifest, cache_dir)
     }
 
-    fn new_package_id(name: &str, workspace_root: &Path, is_root: bool) -> PackageId {
+    fn new_package_id(
+        name: &str,
+        workspace_root: &Path,
+        is_root: bool,
+        cargo: &Cargo,
+    ) -> PackageId {
         let mut workspace_root = workspace_root.display().to_string();
 
         // On windows, make sure we normalize the path to match what Cargo would
@@ -1001,13 +1037,27 @@ mod test {
             workspace_root = format!("/{}", workspace_root.replace('\\', "/"))
         };
 
+        // Cargo updated the way package id's are represented. We should make sure
+        // to render the correct version based on the current cargo binary.
+        let use_format_v2 = cargo.uses_new_package_id_format().expect(
+            "Tests should have a fully controlled environment and consistent access to cargo.",
+        );
+
         if is_root {
             PackageId {
-                repr: format!("{name} 0.0.1 (path+file://{workspace_root})"),
+                repr: if use_format_v2 {
+                    format!("path+file://{workspace_root}#{name}@0.0.1")
+                } else {
+                    format!("{name} 0.0.1 (path+file://{workspace_root})")
+                },
             }
         } else {
             PackageId {
-                repr: format!("{name} 0.0.1 (path+file://{workspace_root}/{name})"),
+                repr: if use_format_v2 {
+                    format!("path+file://{workspace_root}/{name}#0.0.1")
+                } else {
+                    format!("{name} 0.0.1 (path+file://{workspace_root}/{name})")
+                },
             }
         }
     }
@@ -1024,14 +1074,18 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("sub_pkg_a", workspace_root.as_ref(), false),
-                new_package_id("sub_pkg_b", workspace_root.as_ref(), false),
-                new_package_id("root_pkg", workspace_root.as_ref(), true),
+                new_package_id("sub_pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("sub_pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("root_pkg", workspace_root.as_ref(), true, &cargo),
             ]
         );
 
@@ -1064,14 +1118,18 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("sub_pkg_a", workspace_root.as_ref(), false),
-                new_package_id("sub_pkg_b", workspace_root.as_ref(), false),
-                new_package_id("root_pkg", workspace_root.as_ref(), true),
+                new_package_id("sub_pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("sub_pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("root_pkg", workspace_root.as_ref(), true, &cargo),
             ]
         );
 
@@ -1252,11 +1310,20 @@ mod test {
                 .splice_workspace(&cargo())
                 .unwrap();
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
-            vec![new_package_id("root_pkg", workspace_root.as_ref(), true)]
+            vec![new_package_id(
+                "root_pkg",
+                workspace_root.as_ref(),
+                true,
+                &cargo
+            )]
         );
 
         // Ensure the workspace metadata annotations are not populated
@@ -1292,14 +1359,18 @@ mod test {
             Some(cargo_toml::Resolver::V1)
         );
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("pkg_a", workspace_root.as_ref(), false),
-                new_package_id("pkg_b", workspace_root.as_ref(), false),
-                new_package_id("pkg_c", workspace_root.as_ref(), false),
+                new_package_id("pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_c", workspace_root.as_ref(), false, &cargo),
             ]
         );
 
@@ -1339,14 +1410,18 @@ mod test {
             Some(cargo_toml::Resolver::V2)
         );
 
+        // Locate cargo
+        let (_, cargo_path) = get_cargo_and_rustc_paths();
+        let cargo = Cargo::new(cargo_path);
+
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
-                new_package_id("pkg_a", workspace_root.as_ref(), false),
-                new_package_id("pkg_b", workspace_root.as_ref(), false),
-                new_package_id("pkg_c", workspace_root.as_ref(), false),
+                new_package_id("pkg_a", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_b", workspace_root.as_ref(), false, &cargo),
+                new_package_id("pkg_c", workspace_root.as_ref(), false, &cargo),
             ]
         );
 
@@ -1389,6 +1464,223 @@ mod test {
 
         // Due to the addition of direct deps for splicing, this package should have been added to the root manfiest.
         assert!(cargo_manifest.package.unwrap().name == DEFAULT_SPLICING_PACKAGE_NAME);
+    }
+
+    #[test]
+    fn splice_multi_package_with_patch() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        // Generate a patch entry
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            BTreeMap::from([(
+                "foo".to_owned(),
+                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+            )]),
+        )]);
+
+        // Insert the patch entry to the manifests
+        let manifest_path = cache_dir.as_ref().join("pkg_a").join("Cargo.toml");
+        let mut manifest =
+            cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+        manifest.patch.extend(expected.clone());
+        fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_multiple_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let mut expected = cargo_toml::PatchSet::new();
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                format!("{pkg}_registry"),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+            expected.extend(new_patch.clone());
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_merged_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            cargo_toml::DepsSet::from([
+                (
+                    "foo-pkg_a".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                ),
+                (
+                    "foo-pkg_b".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                ),
+            ]),
+        )]);
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    format!("foo-{pkg}"),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_merged_identical_patch_registries() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let expected = cargo_toml::PatchSet::from([(
+            "registry".to_owned(),
+            cargo_toml::DepsSet::from([(
+                "foo".to_owned(),
+                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+            )]),
+        )]);
+
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                )]),
+            )]);
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+                .unwrap()
+                .splice_workspace(&cargo())
+                .unwrap();
+
+        // Ensure the patches match the expected value
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(expected, cargo_manifest.patch);
+    }
+
+    #[test]
+    fn splice_multi_package_with_conflicting_patch() {
+        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        let mut patch = 3;
+        for pkg in ["pkg_a", "pkg_b"] {
+            // Generate a patch entry
+            let new_patch = cargo_toml::PatchSet::from([(
+                "registry".to_owned(),
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    cargo_toml::Dependency::Simple(format!("1.2.{patch}")),
+                )]),
+            )]);
+
+            // Increment the patch semver to make the patch info unique.
+            patch += 1;
+
+            // Insert the patch entry to the manifests
+            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
+            let mut manifest =
+                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
+                    .unwrap();
+            manifest.patch.extend(new_patch);
+            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
+        }
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let result = Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
+            .unwrap()
+            .splice_workspace(&cargo());
+
+        // Confirm conflicting patches have been detected
+        assert!(result.is_err());
+        let err_str = result.err().unwrap().to_string();
+        assert!(err_str.starts_with("Duplicate `[patch]` entries detected in"));
     }
 
     #[test]

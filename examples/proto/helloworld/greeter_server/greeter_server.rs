@@ -36,8 +36,8 @@ impl Greeter for GreeterImpl {
         } else {
             req.get_name()
         };
-        println!("greeting request from {}", name);
-        r.set_message(format!("Hello {}", name));
+        println!("greeting request from {name}");
+        r.set_message(format!("Hello {name}"));
         grpc::SingleResponse::completed(r)
     }
 }
@@ -50,7 +50,7 @@ fn main() {
     server.http.set_cpu_pool_threads(4);
     let server = server.build().expect("server");
     let port = server.local_addr().port().unwrap();
-    println!("greeter server started on port {}", port);
+    println!("greeter server started on port {port}");
 
     loop {
         thread::park();

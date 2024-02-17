@@ -45,7 +45,7 @@ clippy_flags = rule(
     build_setting = config.string_list(flag = True),
 )
 
-def _get_clippy_ready_crate_info(target, aspect_ctx):
+def _get_clippy_ready_crate_info(target, aspect_ctx = None):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
 
     Args:
@@ -72,10 +72,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx):
                 return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
-    if rust_common.crate_info not in target:
+    if rust_common.crate_info in target:
+        return target[rust_common.crate_info]
+    elif rust_common.test_crate_info in target:
+        return target[rust_common.test_crate_info].crate
+    else:
         return None
-
-    return target[rust_common.crate_info]
 
 def _clippy_aspect_impl(target, ctx):
     crate_info = _get_clippy_ready_crate_info(target, ctx)
@@ -124,6 +126,7 @@ def _clippy_aspect_impl(target, ctx):
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
+        skip_expanding_rustc_env = True,
     )
 
     if crate_info.is_test:
@@ -135,7 +138,7 @@ def _clippy_aspect_impl(target, ctx):
     # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--stderr-file", clippy_out.path)
+        args.process_wrapper_flags.add("--stderr-file", clippy_out)
 
         if clippy_flags:
             fail("""Combining @rules_rust//:clippy_flags with @rules_rust//:capture_clippy_output=true is currently not supported.
@@ -148,7 +151,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         # A marker file indicating clippy has executed successfully.
         # This file is necessary because "ctx.actions.run" mandates an output.
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--touch-file", clippy_out.path)
+        args.process_wrapper_flags.add("--touch-file", clippy_out)
 
         if clippy_flags:
             args.rustc_flags.add_all(clippy_flags)
@@ -176,6 +179,7 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
         tools = [toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
+        toolchain = "@rules_rust//rust:toolchain_type",
     )
 
     return [
@@ -189,7 +193,6 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
 #               //...
 rust_clippy_aspect = aspect(
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     attrs = {
         "_capture_output": attr.label(
             doc = "Value of the `capture_clippy_output` build setting",
@@ -215,8 +218,12 @@ rust_clippy_aspect = aspect(
             doc = "The desired `--error-format` flags for clippy",
             default = "//:error_format",
         ),
-        "_extra_rustc_flag": attr.label(default = "//:extra_rustc_flag"),
-        "_extra_rustc_flags": attr.label(default = "//:extra_rustc_flags"),
+        "_extra_rustc_flag": attr.label(
+            default = Label("//:extra_rustc_flag"),
+        ),
+        "_per_crate_rustc_flag": attr.label(
+            default = Label("//:experimental_per_crate_rustc_flag"),
+        ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",
             default = Label("//util/process_wrapper"),
@@ -225,11 +232,14 @@ rust_clippy_aspect = aspect(
         ),
     },
     provides = [ClippyInfo],
+    required_providers = [
+        [rust_common.crate_info],
+        [rust_common.test_crate_info],
+    ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    incompatible_use_toolchain_transition = True,
     implementation = _clippy_aspect_impl,
     doc = """\
 Executes the clippy checker on specified targets.
@@ -272,7 +282,10 @@ rust_clippy = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "Rust targets to run clippy on.",
-            providers = [rust_common.crate_info],
+            providers = [
+                [rust_common.crate_info],
+                [rust_common.test_crate_info],
+            ],
             aspects = [rust_clippy_aspect],
         ),
     },

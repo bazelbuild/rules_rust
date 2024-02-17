@@ -14,13 +14,14 @@ use sha2::{Digest as Sha2Digest, Sha256};
 
 use crate::config::Config;
 use crate::context::Context;
+use crate::metadata::Cargo;
 use crate::splicing::{SplicingManifest, SplicingMetadata};
 
 pub fn lock_context(
     mut context: Context,
     config: &Config,
     splicing_manifest: &SplicingManifest,
-    cargo_bin: &Path,
+    cargo_bin: &Cargo,
     rustc_bin: &Path,
 ) -> Result<Context> {
     // Ensure there is no existing checksum which could impact the lockfile results
@@ -35,7 +36,7 @@ pub fn lock_context(
     })
 }
 
-/// Write a [crate::planning::PlannedContext] to disk
+/// Write a [crate::context::Context] to disk
 pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
     let content = serde_json::to_string_pretty(&lockfile)?;
 
@@ -61,11 +62,11 @@ impl Digest {
         context: &Context,
         config: &Config,
         splicing_manifest: &SplicingManifest,
-        cargo_bin: &Path,
+        cargo_bin: &Cargo,
         rustc_bin: &Path,
     ) -> Result<Self> {
         let splicing_metadata = SplicingMetadata::try_from((*splicing_manifest).clone())?;
-        let cargo_version = Self::bin_version(cargo_bin)?;
+        let cargo_version = cargo_bin.full_version()?;
         let rustc_version = Self::bin_version(rustc_bin)?;
         let cargo_bazel_version = env!("CARGO_PKG_VERSION");
 
@@ -129,7 +130,7 @@ impl Digest {
         Self(hasher.finalize().encode_hex::<String>())
     }
 
-    fn bin_version(binary: &Path) -> Result<String> {
+    pub fn bin_version(binary: &Path) -> Result<String> {
         let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 
@@ -188,6 +189,7 @@ impl PartialEq<String> for Digest {
 mod test {
     use crate::config::{CrateAnnotations, CrateId};
     use crate::splicing::cargo_config::{AdditionalRegistry, CargoConfig, Registry};
+    use crate::utils::target_triple::TargetTriple;
 
     use super::*;
 
@@ -209,8 +211,8 @@ mod test {
         );
 
         assert_eq!(
+            Digest("83ad667352ca5a7cb3cc60f171a65f3bf264c7c97c6d91113d4798ca1dfb8d48".to_owned()),
             digest,
-            Digest("7be4f323ac6a4d0a45d9d430a8056967eb248ca7c86bdba44af33ad90392cb4a".to_owned())
         );
     }
 
@@ -229,15 +231,15 @@ mod test {
             )]),
             cargo_config: None,
             supported_platform_triples: BTreeSet::from([
-                "aarch64-apple-darwin".to_owned(),
-                "aarch64-unknown-linux-gnu".to_owned(),
-                "aarch64-pc-windows-msvc".to_owned(),
-                "wasm32-unknown-unknown".to_owned(),
-                "wasm32-wasi".to_owned(),
-                "x86_64-apple-darwin".to_owned(),
-                "x86_64-pc-windows-msvc".to_owned(),
-                "x86_64-unknown-freebsd".to_owned(),
-                "x86_64-unknown-linux-gnu".to_owned(),
+                TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
+                TargetTriple::from_bazel("aarch64-unknown-linux-gnu".to_owned()),
+                TargetTriple::from_bazel("aarch64-pc-windows-msvc".to_owned()),
+                TargetTriple::from_bazel("wasm32-unknown-unknown".to_owned()),
+                TargetTriple::from_bazel("wasm32-wasi".to_owned()),
+                TargetTriple::from_bazel("x86_64-apple-darwin".to_owned()),
+                TargetTriple::from_bazel("x86_64-pc-windows-msvc".to_owned()),
+                TargetTriple::from_bazel("x86_64-unknown-freebsd".to_owned()),
+                TargetTriple::from_bazel("x86_64-unknown-linux-gnu".to_owned()),
             ]),
             ..Config::default()
         };
@@ -254,8 +256,8 @@ mod test {
         );
 
         assert_eq!(
+            Digest("40a5ede6a47639166062fffab74e5dbe229b1d2508bcf70d8dfeba04b4f4ac9a".to_owned()),
             digest,
-            Digest("712442b3d89756257cf2739fa4ab58c2154d1bda3fb2c4c3647c613403351694".to_owned())
         );
     }
 
@@ -285,8 +287,8 @@ mod test {
         );
 
         assert_eq!(
+            Digest("10a1921f3122042d6c513392992e4b3982d0ed8985fdc2dee965c466f8cb00a4".to_owned()),
             digest,
-            Digest("c343bd2a351184bec7abad0016d45e1f4a89ec2fdf3f63d86e414206814ae483".to_owned())
         );
     }
 
@@ -334,8 +336,8 @@ mod test {
         );
 
         assert_eq!(
+            Digest("9e3d58a48b375bec2cf8c783d92f5d8db67306046e652ee376f30c362c882f56".to_owned()),
             digest,
-            Digest("16dc7c9c8d2e1f50e070ae10b7a06a42c962c2afa9a60a73043eb74c5fb6cd82".to_owned())
         );
     }
 }

@@ -1,3 +1,8 @@
+//! ```
+//! let contents = include_str!(concat!(env!("OUT_DIR"), "/test_content.txt"));
+//! assert_eq!("Test content", contents);
+//! ```
+
 #[cfg(test)]
 mod tests {
     use std::env;

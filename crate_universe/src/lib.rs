@@ -7,6 +7,7 @@ mod context;
 mod lockfile;
 mod metadata;
 mod rendering;
+mod select;
 mod splicing;
 mod utils;
 

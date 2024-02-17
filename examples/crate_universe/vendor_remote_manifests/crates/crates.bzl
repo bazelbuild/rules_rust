@@ -15,11 +15,18 @@ load("@examples//vendor_remote_manifests/crates:defs.bzl", _crate_repositories =
 load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
 
 def crate_repositories():
+    """Generates repositories for vendored crates.
+
+    Returns:
+      A list of repos visible to the module through the module extension.
+    """
     maybe(
         crates_vendor_remote_repository,
-        name = "crates_vendor_manifests",
+        name = "cvm",
         build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.bazel"),
         defs_module = Label("@examples//vendor_remote_manifests/crates:defs.bzl"),
     )
 
-    _crate_repositories()
+    direct_deps = [struct(repo = "cvm", is_dev_dep = False)]
+    direct_deps.extend(_crate_repositories())
+    return direct_deps

@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("//bindgen:defs.bzl", "rust_bindgen_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,18 +7,12 @@ toolchain_type(
     name = "toolchain_type",
 )
 
-alias(
-    name = "bindgen_toolchain",
-    actual = "toolchain_type",
-    deprecation = "instead use `@rules_rust//bindgen:toolchain_type`",
-    tags = ["manual"],
-)
-
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     deps = [
         "//bindgen/3rdparty:bzl_lib",
+        "//bindgen/private:bzl_lib",
         "//rust:bzl_lib",
     ],
 )
@@ -26,18 +20,8 @@ bzl_library(
 rust_bindgen_toolchain(
     name = "default_bindgen_toolchain_impl",
     bindgen = "//bindgen/3rdparty:bindgen",
-    clang = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:clang",
-        "//conditions:default": "@bindgen_clang_linux//:clang",
-    }),
-    libclang = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:libclang",
-        "//conditions:default": "@bindgen_clang_linux//:libclang",
-    }),
-    libstdcxx = select({
-        "//rust/platform:osx": "@bindgen_clang_osx//:libc++",
-        "//conditions:default": None,
-    }),
+    clang = "@llvm-project//clang:clang",
+    libclang = "@llvm-project//clang:libclang",
 )
 
 toolchain(

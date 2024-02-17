@@ -25,8 +25,8 @@ function check_build_result() {
   echo -n "Testing ${2}... "
   (bazel test //test/rustfmt:"${2}") || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
-    echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/rustfmt:${2}"
-    echo "  Run \"bazel test //test/rustfmt:${2}\" to see the output"
+    >&2 echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/rustfmt:${2}"
+    >&2 echo "  Run \"bazel test //test/rustfmt:${2}\" to see the output"
     exit 1
   else
     echo "OK"
@@ -36,6 +36,7 @@ function check_build_result() {
 function test_all_and_apply() {
   local -r TEST_OK=0
   local -r TEST_FAILED=3
+  local -r VARIANTS=(rust_binary rust_library rust_shared_library rust_static_library)
 
   temp_dir="$(mktemp -d -t ci-XXXXXXXXXX)"
   new_workspace="${temp_dir}/rules_rust_test_rustfmt"
@@ -51,6 +52,8 @@ local_repository(
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
 EOF
+  # See github.com/bazelbuild/rules_rust/issues/2317.
+  echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
 
   # Drop the 'norustfmt' tags
   if [ "$(uname)" == "Darwin" ]; then
@@ -58,30 +61,37 @@ EOF
   else
     SEDOPTS=(-i)
   fi
-  sed ${SEDOPTS[@]} 's/"norustfmt"//' "${new_workspace}/test/rustfmt/BUILD.bazel"
+  sed ${SEDOPTS[@]} 's/"norustfmt"//' "${new_workspace}/test/rustfmt/rustfmt_integration_test_suite.bzl"
+  sed ${SEDOPTS[@]} 's/"manual"//' "${new_workspace}/test/rustfmt/rustfmt_integration_test_suite.bzl"
 
   pushd "${new_workspace}"
 
-  check_build_result $TEST_FAILED test_unformatted_2015
-  check_build_result $TEST_FAILED test_unformatted_2018
-  check_build_result $TEST_OK test_formatted_2015
-  check_build_result $TEST_OK test_formatted_2018
+  for variant in ${VARIANTS[@]}; do
+    check_build_result $TEST_FAILED ${variant}_unformatted_2015_test
+    check_build_result $TEST_FAILED ${variant}_unformatted_2018_test
+    check_build_result $TEST_OK ${variant}_formatted_2015_test
+    check_build_result $TEST_OK ${variant}_formatted_2018_test
+    check_build_result $TEST_OK ${variant}_generated_test
+  done
 
   # Format a specific target
-  bazel run @rules_rust//tools/rustfmt -- //test/rustfmt:unformatted_2018
+  for variant in ${VARIANTS[@]}; do
+    bazel run @rules_rust//tools/rustfmt -- //test/rustfmt:${variant}_unformatted_2018
+  done
 
-  check_build_result $TEST_FAILED test_unformatted_2015
-  check_build_result $TEST_OK test_unformatted_2018
-  check_build_result $TEST_OK test_formatted_2015
-  check_build_result $TEST_OK test_formatted_2018
+  for variant in ${VARIANTS[@]}; do
+    check_build_result $TEST_FAILED ${variant}_unformatted_2015_test
+    check_build_result $TEST_OK ${variant}_unformatted_2018_test
+    check_build_result $TEST_OK ${variant}_formatted_2015_test
+    check_build_result $TEST_OK ${variant}_formatted_2018_test
+    check_build_result $TEST_OK ${variant}_generated_test
+  done
 
   # Format all targets
   bazel run @rules_rust//tools/rustfmt --@rules_rust//:rustfmt.toml=//test/rustfmt:test_rustfmt.toml
 
-  check_build_result $TEST_OK test_unformatted_2015
-  check_build_result $TEST_OK test_unformatted_2018
-  check_build_result $TEST_OK test_formatted_2015
-  check_build_result $TEST_OK test_formatted_2018
+  # Ensure all tests pass
+  check_build_result $TEST_OK "*"
 
   popd
 

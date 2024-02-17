@@ -13,6 +13,16 @@ load(
     "assert_list_contains_adjacent_elements",
 )
 
+def _get_toolchain(ctx):
+    return ctx.attr._toolchain[platform_common.ToolchainInfo]
+
+def _get_darwin_component(arg):
+    # path/to/darwin_x86_64-fastbuild-fastbuild/package -> darwin_x86_64-fastbuild
+    darwin_component = [x for x in arg.split("/") if x.startswith("darwin")][0]
+
+    # darwin_x86_64-fastbuild -> darwin
+    return darwin_component.split("-")[0]
+
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -27,12 +37,19 @@ def _cdylib_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
     assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
-    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep{}".format(pic_suffix)
+    if toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            native_link_arg = "-Clink-arg=native_dep.lib"
+        else:
+            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+    else:
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -41,10 +58,17 @@ def _staticlib_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    toolchain = _get_toolchain(ctx)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=staticlib")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    if toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            native_link_arg = "-Clink-arg=native_dep.lib"
+        else:
+            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+    else:
+        native_link_arg = "-Clink-arg=-lnative_dep"
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -53,12 +77,19 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
     assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
-    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep{}".format(pic_suffix)
+    if toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            native_link_arg = "-Clink-arg=native_dep.lib"
+        else:
+            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+    else:
+        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
@@ -67,115 +98,150 @@ def _bin_has_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
+    toolchain = _get_toolchain(ctx)
     assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "-lstatic=native_dep")
-    native_link_arg = "-Clink-arg=-lnative_dep.lib" if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]) else "-Clink-arg=-lnative_dep"
+    if toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            native_link_arg = "-Clink-arg=native_dep.lib"
+        else:
+            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+    else:
+        native_link_arg = "-Clink-arg=-lnative_dep"
     assert_argv_contains(env, action, native_link_arg)
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
-    return [a for a in argv if (
-        a.startswith("link-arg=") or
-        a.startswith("link-args=") or
-        a.startswith("-l") or
-        a.endswith(".lo") or
-        a.endswith(".o")
-    )]
+    return [
+        a.removeprefix("--codegen=").removeprefix("-C").removeprefix("link-arg=").removeprefix("link-args=")
+        for a in argv
+        if (
+            a.startswith("--codegen=link-arg=") or
+            a.startswith("--codegen=link-args=") or
+            a.startswith("-Clink-args=") or
+            a.startswith("-Clink-arg=") or
+            a.startswith("link-args=") or
+            a.startswith("link-arg=") or
+            a.startswith("-l") or
+            a.endswith(".lo") or
+            a.endswith(".o")
+        )
+    ]
 
 def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
+    toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
-    if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+    link_args = _extract_linker_args(action.argv)
+    if toolchain.target_os == "darwin":
+        darwin_component = _get_darwin_component(link_args[-1])
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "-lnative_dep",
+            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
         ]
-    elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
-        want = [
-            "-lstatic=native_dep",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-        ]
+        assert_list_contains_adjacent_elements(env, link_args, want)
+    elif toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+            ]
+        else:
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "-Wl,--no-whole-archive",
+            ]
     else:
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
-            "link-arg=-Wl,--no-whole-archive",
+            "-lnative_dep",
+            "-Wl,--whole-archive",
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "-Wl,--no-whole-archive",
         ]
-    individual_link_args = [
-        arg
-        for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
-    ]
-    asserts.equals(env, want, individual_link_args)
+    assert_list_contains_adjacent_elements(env, link_args, want)
     return analysistest.end(env)
 
 def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
+    toolchain = _get_toolchain(ctx)
+
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    # skipping first link-arg since it contains unrelated linker flags
-    linker_args = _extract_linker_args(action.argv)[1:]
+    linker_args = _extract_linker_args(action.argv)
 
+    toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
-    if ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]):
+    if toolchain.target_os == "darwin":
+        darwin_component = _get_darwin_component(linker_args[-1])
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
-            "link-arg=-Wl,-force_load,bazel-out/darwin-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
+            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
         ]
-    elif ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
-        want = [
-            "-lstatic=native_dep",
-            "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-        ]
+    elif toolchain.target_os == "windows":
+        if toolchain.target_triple.abi == "msvc":
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+            ]
+        else:
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "-Wl,--no-whole-archive",
+            ]
     else:
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
-            "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
-            "link-arg=-Wl,--no-whole-archive",
+            "-lnative_dep{}".format(pic_suffix),
+            "-Wl,--whole-archive",
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, linker_args)
+    assert_list_contains_adjacent_elements(env, linker_args, want)
     return analysistest.end(env)
 
 def _get_pic_suffix(ctx, compilation_mode):
-    if (ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]) or
-        ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo])):
+    toolchain = _get_toolchain(ctx)
+    if toolchain.target_os == "darwin" or toolchain.target_os == "windows":
         return ""
     return ".pic" if compilation_mode == "opt" else ""
 
 rlib_has_no_native_libs_test = analysistest.make(_rlib_has_no_native_libs_test_impl)
 staticlib_has_native_libs_test = analysistest.make(_staticlib_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 cdylib_has_native_libs_test = analysistest.make(_cdylib_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_dep_and_alwayslink_test_impl, attrs = {
-    "_macos_constraint": attr.label(default = Label("@platforms//os:macos")),
-    "_windows_constraint": attr.label(default = Label("@platforms//os:windows")),
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 
 def _native_dep_test():
@@ -279,11 +345,8 @@ def _linkopts_propagate_test_impl(ctx):
     # Consistently with cc rules, dependency linkopts take precedence over
     # dependent linkopts (i.e. dependency linkopts appear later in the command
     # line).
-    linkopt_args = [
-        arg
-        for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-args")
-    ][0].split(" ")
+
+    linkopt_args = _extract_linker_args(action.argv)
     assert_list_contains_adjacent_elements(
         env,
         linkopt_args,

@@ -12,4 +12,4 @@ def aspect_repository():
     """
     if native.repository_name() == "@":
         return ""
-    return native.repository_name()
+    return "@" + native.repository_name()
