@@ -48,6 +48,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
     canonical_label = Label(":dummy_target")
     idx = str(canonical_label).find("//")
     canonical_repository = str(canonical_label)[:idx]
+
     # The "~crate~" portion comes from the definition of the module_extension (currently at the bottom of this file)
     canonical_crate_label_metatemplate = "{}~crate~{{repository}}__{{name}}-{{version}}//:{{target}}"
     rendering_config = json.decode(render_config(
