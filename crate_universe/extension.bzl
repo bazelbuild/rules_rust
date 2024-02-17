@@ -44,9 +44,15 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
     cargo_lockfile = module_ctx.path(cfg.cargo_lockfile)
     tag_path = module_ctx.path(cfg.name)
 
+    # Get the prefix of the canonical repo name that will be used for crates
+    canonical_label = Label(":dummy_target")
+    idx = str(canonical_label).find("//")
+    canonical_repository = str(canonical_label)[:idx]
+    # The "~crate~" portion comes from the definition of the module_extension (currently at the bottom of this file)
+    canonical_crate_label_metatemplate = "{}~crate~{{repository}}__{{name}}-{{version}}//:{{target}}"
     rendering_config = json.decode(render_config(
         regen_command = "Run 'cargo update [--workspace]'",
-        crate_label_template = "@@rules_rust~override~crate~{repository}__{name}-{version}//:{target}",
+        crate_label_template = canonical_crate_label_metatemplate.format(canonical_repository),
     ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
