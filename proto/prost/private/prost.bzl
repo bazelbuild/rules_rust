@@ -5,7 +5,13 @@ load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
+load("//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
+
+# buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "RUSTC_ATTRS")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust_analyzer.bzl", "write_rust_analyzer_spec_file")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
@@ -211,6 +217,7 @@ def _rust_prost_aspect_impl(target, ctx):
 
     direct_deps = []
     transitive_deps = [depset(runtime_deps)]
+    rust_analyzer_deps = []
     for proto_dep in proto_deps:
         proto_info = proto_dep[ProstProtoInfo]
 
@@ -219,6 +226,9 @@ def _rust_prost_aspect_impl(target, ctx):
             [proto_info.dep_variant_info],
             transitive = [proto_info.transitive_dep_infos],
         ))
+
+        if RustAnalyzerInfo in proto_dep:
+            rust_analyzer_deps.append(proto_dep[RustAnalyzerInfo])
 
     deps = runtime_deps + direct_deps
 
@@ -244,12 +254,27 @@ def _rust_prost_aspect_impl(target, ctx):
         edition = RUST_EDITION,
     )
 
+    # Always add `test` & `debug_assertions`. See rust-analyzer source code:
+    # https://github.com/rust-analyzer/rust-analyzer/blob/2021-11-15/crates/project_model/src/workspace.rs#L529-L531
+    cfgs = ["test", "debug_assertions"]
+
+    rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        crate = dep_variant_info.crate_info,
+        cfgs = cfgs,
+        env = dep_variant_info.crate_info.rustc_env,
+        deps = rust_analyzer_deps,
+        crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
+        proc_macro_dylib_path = None,
+        build_info = dep_variant_info.build_info,
+    ))
+
     return [
         ProstProtoInfo(
             dep_variant_info = dep_variant_info,
             transitive_dep_infos = depset(transitive = transitive_deps),
             package_info = package_info_file,
         ),
+        rust_analyzer_info,
     ]
 
 rust_prost_aspect = aspect(
@@ -290,13 +315,13 @@ def _rust_prost_library_impl(ctx):
 
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
-        rust_proto_info,
         rust_common.crate_group_info(
             dep_variant_infos = depset(
                 [dep_variant_info],
                 transitive = [rust_proto_info.transitive_dep_infos],
             ),
         ),
+        RustAnalyzerGroupInfo(deps = [proto_dep[RustAnalyzerInfo]]),
     ]
 
 rust_prost_library = rule(

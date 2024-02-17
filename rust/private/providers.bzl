@@ -151,3 +151,23 @@ TestCrateInfo = provider(
         "crate": "CrateInfo: The underlying CrateInfo of the dependency",
     },
 )
+
+RustAnalyzerInfo = provider(
+    doc = "RustAnalyzerInfo holds rust crate metadata for targets",
+    fields = {
+        "build_info": "BuildInfo: build info for this crate if present",
+        "cfgs": "List[String]: features or other compilation `--cfg` settings",
+        "crate": "CrateInfo: Crate information.",
+        "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
+        "env": "Dict[String: String]: Environment variables, used for the `env!` macro",
+        "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
+    },
+)
+
+RustAnalyzerGroupInfo = provider(
+    doc = "RustAnalyzerGroupInfo holds multiple RustAnalyzerInfos",
+    fields = {
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
+    },
+)
