@@ -203,6 +203,7 @@ def generate_config_file(
     if render_config == None:
         render_config = default_render_config
 
+    original_crate_label_template = render_config["crate_label_template"]
     if mode == "local":
         build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel"
         crate_label_template = "//{}/{{name}}-{{version}}:{{target}}".format(
@@ -210,14 +211,14 @@ def generate_config_file(
         )
     else:
         build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
-        crate_label_template = render_config["crate_label_template"]
+        crate_label_template = original_crate_label_template
 
     updates = {
         "build_file_template": build_file_base_template.format(
             workspace_name,
             output_pkg,
         ),
-        "crate_label_template": crate_label_template,
+        "crate_label_template": crate_label_template if crate_label_template else original_crate_label_template,
         "crates_module_template": "@{}//{}:{{file}}".format(
             workspace_name,
             output_pkg,
