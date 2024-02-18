@@ -45,6 +45,7 @@ serde = { version = "1.0.190", features = ["derive"] }
 serde_json = "1.0.108"
 serde_starlark = "0.1.14"
 sha2 = "0.10.8"
+spdx = "0.10.3"
 tempfile = "3.8.1"
 tera = "1.19.1"
 textwrap = "0.16.0"

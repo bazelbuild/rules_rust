@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_proc_macro(
     name = "tracing_attributes",
     srcs = glob(["**/*.rs"]),
@@ -30,7 +26,9 @@ rust_proc_macro(
     ),
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tracing-attributes",
@@ -77,8 +75,8 @@ rust_proc_macro(
     }),
     version = "0.1.27",
     deps = [
-        "@crates_vendor_pkgs__proc-macro2-1.0.70//:proc_macro2",
-        "@crates_vendor_pkgs__quote-1.0.33//:quote",
-        "@crates_vendor_pkgs__syn-2.0.41//:syn",
+        "@crates_vendor_pkgs__proc-macro2-1.0.78//:proc_macro2",
+        "@crates_vendor_pkgs__quote-1.0.35//:quote",
+        "@crates_vendor_pkgs__syn-2.0.48//:syn",
     ],
 )

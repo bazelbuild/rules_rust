@@ -29,6 +29,8 @@ pub use target_compatible_with::*;
 pub enum Starlark {
     Load(Load),
     Package(Package),
+    PackageInfo(PackageInfo),
+    License(License),
     ExportsFiles(ExportsFiles),
     Filegroup(Filegroup),
     Alias(Alias),
@@ -50,7 +52,21 @@ pub struct Load {
 }
 
 pub struct Package {
+    pub default_package_metadata: Set<Label>,
     pub default_visibility: Set<String>,
+}
+
+pub struct PackageInfo {
+    pub name: String,
+    pub package_name: String,
+    pub package_url: String,
+    pub package_version: String,
+}
+
+pub struct License {
+    pub name: String,
+    pub license_kinds: Set<String>,
+    pub license_text: String,
 }
 
 pub struct ExportsFiles {
@@ -193,10 +209,13 @@ pub struct Data {
 }
 
 impl Package {
-    pub fn default_visibility_public() -> Self {
+    pub fn default_visibility_public(default_package_metadata: Set<Label>) -> Self {
         let mut default_visibility = Set::new();
         default_visibility.insert("//visibility:public".to_owned());
-        Package { default_visibility }
+        Package {
+            default_package_metadata,
+            default_visibility,
+        }
     }
 }
 

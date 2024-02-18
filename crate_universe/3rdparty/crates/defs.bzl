@@ -314,6 +314,7 @@ _NORMAL_DEPENDENCIES = {
             "serde_json": "@cui__serde_json-1.0.108//:serde_json",
             "serde_starlark": "@cui__serde_starlark-0.1.14//:serde_starlark",
             "sha2": "@cui__sha2-0.10.8//:sha2",
+            "spdx": "@cui__spdx-0.10.3//:spdx",
             "tempfile": "@cui__tempfile-3.8.1//:tempfile",
             "tera": "@cui__tera-1.19.1//:tera",
             "textwrap": "@cui__textwrap-0.16.0//:textwrap",
@@ -2680,6 +2681,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__spdx-0.10.3",
+        sha256 = "62bde1398b09b9f93fc2fc9b9da86e362693e999d3a54a8ac47a99a5a73f638b",
+        type = "tar.gz",
+        urls = ["https://crates.io/api/v1/crates/spdx/0.10.3/download"],
+        strip_prefix = "spdx-0.10.3",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.spdx-0.10.3.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__spectral-0.6.0",
         sha256 = "ae3c15181f4b14e52eeaac3efaeec4d2764716ce9c86da0c934c3e318649c5ba",
         type = "tar.gz",
@@ -3359,6 +3370,7 @@ def crate_repositories():
         struct(repo = "cui__serde_json-1.0.108", is_dev_dep = False),
         struct(repo = "cui__serde_starlark-0.1.14", is_dev_dep = False),
         struct(repo = "cui__sha2-0.10.8", is_dev_dep = False),
+        struct(repo = "cui__spdx-0.10.3", is_dev_dep = False),
         struct(repo = "cui__tempfile-3.8.1", is_dev_dep = False),
         struct(repo = "cui__tera-1.19.1", is_dev_dep = False),
         struct(repo = "cui__textwrap-0.16.0", is_dev_dep = False),

@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT/Apache-2.0
-# ])
-
 rust_library(
     name = "unicase",
     srcs = glob(["**/*.rs"]),
@@ -122,6 +118,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "unicase_build_script",
+    actual = ":unicase_build_script",
     tags = ["manual"],
 )

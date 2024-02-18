@@ -776,7 +776,8 @@ list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
 <pre>
 render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
               <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
-              <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>)
+              <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>,
+              <a href="#render_config-generate_rules_license_metadata">generate_rules_license_metadata</a>)
 </pre>
 
 Various settings used to configure rendered outputs
@@ -809,6 +810,7 @@ can be found below where the supported keys for each template can be found in th
 | <a id="render_config-platforms_template"></a>platforms_template |  The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [<code>{triple}</code>].   |  `"@rules_rust//rust/platform:{triple}"` |
 | <a id="render_config-regen_command"></a>regen_command |  An optional command to demonstrate how generated files should be regenerated.   |  `None` |
 | <a id="render_config-vendor_mode"></a>vendor_mode |  An optional configuration for rendirng content to be rendered into repositories.   |  `None` |
+| <a id="render_config-generate_rules_license_metadata"></a>generate_rules_license_metadata |  Whether to generate rules license metedata   |  `False` |
 
 **RETURNS**
 

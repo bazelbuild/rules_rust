@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "clap",
     srcs = glob(["**/*.rs"]),
@@ -44,7 +40,9 @@ rust_library(
     proc_macro_deps = [
         "@rrra__clap_derive-4.3.2//:clap_derive",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=clap",

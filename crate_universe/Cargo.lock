@@ -192,6 +192,7 @@ dependencies = [
  "serde_json",
  "serde_starlark",
  "sha2",
+ "spdx",
  "spectral",
  "tempfile",
  "tera",
@@ -2241,6 +2242,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "spdx"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62bde1398b09b9f93fc2fc9b9da86e362693e999d3a54a8ac47a99a5a73f638b"
+dependencies = [
+ "smallvec",
 ]
 
 [[package]]

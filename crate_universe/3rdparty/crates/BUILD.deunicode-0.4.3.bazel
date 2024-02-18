@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # BSD-3-Clause
-# ])
-
 rust_library(
     name = "deunicode",
     srcs = glob(["**/*.rs"]),

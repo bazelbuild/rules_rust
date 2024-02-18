@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "parking_lot_core",
     srcs = glob(["**/*.rs"]),
@@ -31,7 +27,9 @@ rust_library(
     ),
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=parking_lot_core",
@@ -47,6 +45,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -70,6 +70,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -77,79 +78,88 @@ rust_library(
     deps = [
         "@crates_vendor_pkgs__cfg-if-1.0.0//:cfg_if",
         "@crates_vendor_pkgs__parking_lot_core-0.9.9//:build_script_build",
-        "@crates_vendor_pkgs__smallvec-1.11.2//:smallvec",
+        "@crates_vendor_pkgs__smallvec-1.13.1//:smallvec",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@crates_vendor_pkgs__windows-targets-0.48.5//:windows_targets",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@crates_vendor_pkgs__windows-targets-0.48.5//:windows_targets",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@crates_vendor_pkgs__windows-targets-0.48.5//:windows_targets",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.150//:libc",  # cfg(unix)
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "@crates_vendor_pkgs__libc-0.2.153//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),
@@ -188,6 +198,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "parking_lot_core_build_script",
+    actual = ":parking_lot_core_build_script",
     tags = ["manual"],
 )

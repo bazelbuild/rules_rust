@@ -152,6 +152,12 @@ alias(
 )
 
 alias(
+    name = "spdx",
+    actual = "@cui__spdx-0.10.3//:spdx",
+    tags = ["manual"],
+)
+
+alias(
     name = "spectral",
     actual = "@cui__spectral-0.6.0//:spectral",
     tags = ["manual"],

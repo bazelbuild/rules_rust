@@ -310,18 +310,19 @@ def collect_deps(
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
             transitive_build_infos.append(dep_info.transitive_build_infos)
+        elif cc_info or dep_build_info:
+            if cc_info:
+                # This dependency is a cc_library
+                transitive_noncrates.append(cc_info.linking_context.linker_inputs)
 
-        elif cc_info:
-            # This dependency is a cc_library
-            transitive_noncrates.append(cc_info.linking_context.linker_inputs)
-        elif dep_build_info:
-            if build_info:
-                fail("Several deps are providing build information, " +
-                     "only one is allowed in the dependencies")
-            build_info = dep_build_info
-            transitive_build_infos.append(depset([build_info]))
-            if build_info.link_search_paths:
-                transitive_link_search_paths.append(depset([build_info.link_search_paths]))
+            if dep_build_info:
+                if build_info:
+                    fail("Several deps are providing build information, " +
+                         "only one is allowed in the dependencies")
+                build_info = dep_build_info
+                transitive_build_infos.append(depset([build_info]))
+                if build_info.link_search_paths:
+                    transitive_link_search_paths.append(depset([build_info.link_search_paths]))
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
@@ -776,7 +777,6 @@ def collect_inputs(
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
     compile_inputs = depset(build_env_files, transitive = [compile_inputs])
-
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
@@ -889,23 +889,6 @@ def construct_arguments(
     if out_dir != None:
         env["OUT_DIR"] = "${pwd}/" + out_dir
 
-    # Handle that the binary name and crate name may be different.
-    #
-    # If a target name contains a - then cargo (and rules_rust) will generate a
-    # crate name with _ instead.  Accordingly, rustc will generate a output
-    # file (executable, or rlib, or whatever) with _ not -.  But when cargo
-    # puts a binary in the target/${config} directory, and sets environment
-    # variables like `CARGO_BIN_EXE_${binary_name}` it will use the - version
-    # not the _ version.  So we rename the rustc-generated file (with _s) to
-    # have -s if needed.
-    emit_with_paths = emit
-    if crate_info.type == "bin" and crate_info.output != None:
-        generated_file = crate_info.name + toolchain.binary_ext
-        src = "/".join([crate_info.output.dirname, generated_file])
-        dst = crate_info.output.path
-        if src != dst:
-            emit_with_paths = [("link=" + dst if val == "link" else val) for val in emit]
-
     # Arguments for launching rustc from the process wrapper
     rustc_path = ctx.actions.args()
     rustc_path.add("--")
@@ -974,8 +957,15 @@ def construct_arguments(
     if remap_path_prefix != None:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
 
-    if emit:
-        rustc_flags.add_joined(emit_with_paths, format_joined = "--emit=%s", join_with = ",")
+    emit_without_paths = []
+    for kind in emit:
+        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+            rustc_flags.add(crate_info.output, format = "--emit=link=%s")
+        else:
+            emit_without_paths.append(kind)
+
+    if emit_without_paths:
+        rustc_flags.add_joined(emit_without_paths, format_joined = "--emit=%s", join_with = ",")
     if error_format != "json":
         # Color is not compatible with json output.
         rustc_flags.add("--color=always")
@@ -1018,7 +1008,10 @@ def construct_arguments(
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
-            rustc_flags.add_joined("--codegen", link_args, join_with = " ", format_joined = "link-args=%s")
+
+            # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
+            # Additional context: https://github.com/rust-lang/rust/pull/36574
+            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode)
 
@@ -1669,7 +1662,7 @@ def _create_extra_input_args(build_info, dep_info):
             - (depset[File]): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
             - (File): An optional generated environment file from a `cargo_build_script` target
-            - (depset[File]): All direct and transitive build flag files from the current build info.
+            - (depset[File]): All direct and transitive build flag files from the current build info to be passed to rustc.
     """
     input_files = []
     input_depsets = []
@@ -1687,9 +1680,10 @@ def _create_extra_input_args(build_info, dep_info):
         build_env_file = build_info.rustc_env
         if build_info.flags:
             build_flags_files.append(build_info.flags)
-        if build_info.link_flags:
-            build_flags_files.append(build_info.link_flags)
-            input_files.append(build_info.link_flags)
+        if build_info.linker_flags:
+            build_flags_files.append(build_info.linker_flags)
+            input_files.append(build_info.linker_flags)
+
         input_depsets.append(build_info.compile_data)
 
     return (

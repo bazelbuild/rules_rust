@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "tower_http",
     srcs = glob(["**/*.rs"]),
@@ -38,7 +34,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tower-http",
@@ -54,6 +52,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -77,6 +77,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -84,10 +85,10 @@ rust_library(
     deps = [
         "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
         "@crates_vendor_pkgs__bytes-1.5.0//:bytes",
-        "@crates_vendor_pkgs__futures-core-0.3.29//:futures_core",
-        "@crates_vendor_pkgs__futures-util-0.3.29//:futures_util",
+        "@crates_vendor_pkgs__futures-core-0.3.30//:futures_core",
+        "@crates_vendor_pkgs__futures-util-0.3.30//:futures_util",
         "@crates_vendor_pkgs__http-0.2.11//:http",
-        "@crates_vendor_pkgs__http-body-0.4.5//:http_body",
+        "@crates_vendor_pkgs__http-body-0.4.6//:http_body",
         "@crates_vendor_pkgs__http-range-header-0.3.1//:http_range_header",
         "@crates_vendor_pkgs__pin-project-lite-0.2.13//:pin_project_lite",
         "@crates_vendor_pkgs__tower-0.4.13//:tower",

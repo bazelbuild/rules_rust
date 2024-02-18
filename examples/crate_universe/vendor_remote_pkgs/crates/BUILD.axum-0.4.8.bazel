@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "axum",
     srcs = glob(["**/*.rs"]),
@@ -41,9 +37,11 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@crates_vendor_pkgs__async-trait-0.1.74//:async_trait",
+        "@crates_vendor_pkgs__async-trait-0.1.77//:async_trait",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=axum",
@@ -93,20 +91,20 @@ rust_library(
         "@crates_vendor_pkgs__axum-core-0.1.2//:axum_core",
         "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
         "@crates_vendor_pkgs__bytes-1.5.0//:bytes",
-        "@crates_vendor_pkgs__futures-util-0.3.29//:futures_util",
+        "@crates_vendor_pkgs__futures-util-0.3.30//:futures_util",
         "@crates_vendor_pkgs__http-0.2.11//:http",
         "@crates_vendor_pkgs__http-body-0.4.6//:http_body",
-        "@crates_vendor_pkgs__hyper-0.14.27//:hyper",
+        "@crates_vendor_pkgs__hyper-0.14.28//:hyper",
         "@crates_vendor_pkgs__matchit-0.4.6//:matchit",
-        "@crates_vendor_pkgs__memchr-2.6.4//:memchr",
+        "@crates_vendor_pkgs__memchr-2.7.1//:memchr",
         "@crates_vendor_pkgs__mime-0.3.17//:mime",
         "@crates_vendor_pkgs__percent-encoding-2.3.1//:percent_encoding",
         "@crates_vendor_pkgs__pin-project-lite-0.2.13//:pin_project_lite",
-        "@crates_vendor_pkgs__serde-1.0.193//:serde",
-        "@crates_vendor_pkgs__serde_json-1.0.108//:serde_json",
+        "@crates_vendor_pkgs__serde-1.0.196//:serde",
+        "@crates_vendor_pkgs__serde_json-1.0.113//:serde_json",
         "@crates_vendor_pkgs__serde_urlencoded-0.7.1//:serde_urlencoded",
         "@crates_vendor_pkgs__sync_wrapper-0.1.2//:sync_wrapper",
-        "@crates_vendor_pkgs__tokio-1.35.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.36.0//:tokio",
         "@crates_vendor_pkgs__tower-0.4.13//:tower",
         "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
         "@crates_vendor_pkgs__tower-layer-0.3.2//:tower_layer",
