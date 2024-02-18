@@ -31,3 +31,12 @@ This is very time consuming and in no way the recommended workflow for anything
 other than developing `rules_rust` directly.
 
 [cbr]: https://bazelbuild.github.io/rules_rust/cargo.html#cargo_bootstrap_repository
+
+## Updating vendored crates
+
+A lot of crates are vendored into this repo, e.g. in examples and tests. To
+re-vendor them all, a bash script is provided:
+
+```sh
+./util/vendor.sh
+```

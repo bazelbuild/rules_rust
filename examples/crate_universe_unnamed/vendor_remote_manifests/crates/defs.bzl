@@ -582,12 +582,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__hermit-abi-0.3.5",
-        sha256 = "d0c62115964e08cb8039170eb33c1d0e2388a256930279edca206fff675f82c3",
+        name = "crates_vendor_manifests__hermit-abi-0.3.6",
+        sha256 = "bd5256b483761cd23699d0da46cc6fd2ee3be420bbe6d020ae4a091e70b7e9fd",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/hermit-abi/0.3.5/download"],
-        strip_prefix = "hermit-abi-0.3.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.hermit-abi-0.3.5.bazel"),
+        urls = ["https://crates.io/api/v1/crates/hermit-abi/0.3.6/download"],
+        strip_prefix = "hermit-abi-0.3.6",
+        build_file = Label("@//vendor_remote_manifests/crates:BUILD.hermit-abi-0.3.6.bazel"),
     )
 
     maybe(
@@ -792,12 +792,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_manifests__syn-2.0.48",
-        sha256 = "0f3531638e407dfc0814761abb7c00a5b54992b849452a0646b7f65c9f770f3f",
+        name = "crates_vendor_manifests__syn-2.0.49",
+        sha256 = "915aea9e586f80826ee59f8453c1101f9d1c4b3964cd2460185ee8e299ada496",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/syn/2.0.48/download"],
-        strip_prefix = "syn-2.0.48",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.syn-2.0.48.bazel"),
+        urls = ["https://crates.io/api/v1/crates/syn/2.0.49/download"],
+        strip_prefix = "syn-2.0.49",
+        build_file = Label("@//vendor_remote_manifests/crates:BUILD.syn-2.0.49.bazel"),
     )
 
     maybe(
