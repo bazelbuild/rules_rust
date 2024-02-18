@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "wasm_bindgen_cli_support",
+    name = "wasm_bindgen_wasm_conventions",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -31,7 +31,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-cli-support",
+        "crate-name=wasm-bindgen-wasm-conventions",
         "manual",
         "noclippy",
         "norustfmt",
@@ -73,21 +73,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
         "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen__base64-0.9.3//:base64",
-        "@rules_rust_wasm_bindgen__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen__rustc-demangle-0.1.23//:rustc_demangle",
-        "@rules_rust_wasm_bindgen__serde_json-1.0.102//:serde_json",
-        "@rules_rust_wasm_bindgen__tempfile-3.6.0//:tempfile",
-        "@rules_rust_wasm_bindgen__unicode-ident-1.0.10//:unicode_ident",
         "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-externref-xform-0.2.89//:wasm_bindgen_externref_xform",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-multi-value-xform-0.2.89//:wasm_bindgen_multi_value_xform",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.89//:wasm_bindgen_shared",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-threads-xform-0.2.89//:wasm_bindgen_threads_xform",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-wasm-conventions-0.2.89//:wasm_bindgen_wasm_conventions",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-wasm-interpreter-0.2.89//:wasm_bindgen_wasm_interpreter",
     ],
 )

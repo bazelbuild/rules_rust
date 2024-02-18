@@ -85,7 +85,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.0.48",
+    version = "2.0.49",
     deps = [
         "@crates_vendor_pkgs__proc-macro2-1.0.78//:proc_macro2",
         "@crates_vendor_pkgs__quote-1.0.35//:quote",
