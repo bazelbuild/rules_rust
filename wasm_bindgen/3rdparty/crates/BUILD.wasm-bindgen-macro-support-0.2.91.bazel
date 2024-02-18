@@ -76,12 +76,12 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
         "@rules_rust_wasm_bindgen__proc-macro2-1.0.64//:proc_macro2",
         "@rules_rust_wasm_bindgen__quote-1.0.29//:quote",
         "@rules_rust_wasm_bindgen__syn-2.0.25//:syn",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.89//:wasm_bindgen_backend",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.89//:wasm_bindgen_shared",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.91//:wasm_bindgen_backend",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:wasm_bindgen_shared",
     ],
 )
