@@ -330,6 +330,17 @@ tasks:
     platform: ubuntu2004
     run_targets:
       - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_integration_test:
+    name: Rust-Analyzer Integration Test
+    platform: ubuntu2004
+    run_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+  examples_rust_analyzer_integration_test:
+    name: Rust-Analyzer Integration Test
+    platform: ubuntu2004
+    working_directory: examples
+    run_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   ubuntu2004_examples:
     name: Examples
     platform: ubuntu2004
@@ -581,6 +592,12 @@ tasks:
       - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L37
+      # The ndk is installed by this script 
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /opt/android-ndk-r25b
   android_examples_macos:
     name: Android Examples
     platform: macos
@@ -591,6 +608,12 @@ tasks:
       - "--android_platforms=//:arm64-v8a"
     build_targets:
       - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L42
+      # The ndk is installed by this script 
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
   ios_examples:
     name: iOS Examples
     platform: macos
@@ -620,8 +643,6 @@ tasks:
     setup:
       - curl -L https://nixos.org/nix/install | bash
       - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
-      - sudo mkdir /etc/nix
-      - echo "experimental-features = nix-command flakes" | sudo tee --append /etc/nix/nix.conf
     build_targets:
       # Root `build_test` target is called directly to catch missing platforms
       # that would otherwise be quietly skipped due to `target_compatible_with`.
@@ -634,6 +655,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
   macos_bzlmod_bcr:
@@ -642,6 +664,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     run_targets:
       - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
 

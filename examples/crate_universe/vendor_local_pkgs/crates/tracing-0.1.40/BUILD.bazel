@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "tracing",
     srcs = glob(["**/*.rs"]),
@@ -40,7 +36,9 @@ rust_library(
     proc_macro_deps = [
         "//vendor_local_pkgs/crates/tracing-attributes-0.1.27:tracing_attributes",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tracing",

@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT/Apache-2.0
-# ])
-
 rust_library(
     name = "rouille",
     srcs = glob(["**/*.rs"]),
@@ -33,7 +29,9 @@ rust_library(
     proc_macro_deps = [
         "@rules_rust_wasm_bindgen__serde_derive-1.0.171//:serde_derive",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=rouille",

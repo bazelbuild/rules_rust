@@ -27,13 +27,13 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "tempfile",
-    actual = "@cvm__tempfile-3.8.1//:tempfile",
+    actual = "@cvm__tempfile-3.10.0//:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "@cvm__tokio-1.35.0//:tokio",
+    actual = "@cvm__tokio-1.36.0//:tokio",
     tags = ["manual"],
 )
 

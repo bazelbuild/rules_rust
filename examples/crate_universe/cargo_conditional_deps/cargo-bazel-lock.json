@@ -1,9 +1,10 @@
 {
-  "checksum": "226cf2d56509f8f6ed6c882d1ddb720e2dff2a297de9dbff39730f73066d7b2c",
+  "checksum": "2d7a358a0e1c54e3234e710ce1b80d2b1032bfeeda471a1c5b80adc8465d53e3",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
       "version": "1.1.0",
+      "package_url": "https://github.com/cuviper/autocfg",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/autocfg/1.1.0/download",
@@ -29,11 +30,17 @@
         "edition": "2015",
         "version": "1.1.0"
       },
-      "license": "Apache-2.0 OR MIT"
+      "license": "Apache-2.0 OR MIT",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "bitflags 1.3.2": {
       "name": "bitflags",
       "version": "1.3.2",
+      "package_url": "https://github.com/bitflags/bitflags",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/bitflags/1.3.2/download",
@@ -65,11 +72,17 @@
         "edition": "2018",
         "version": "1.3.2"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "cfg-if 1.0.0": {
       "name": "cfg-if",
       "version": "1.0.0",
+      "package_url": "https://github.com/alexcrichton/cfg-if",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cfg-if/1.0.0/download",
@@ -95,11 +108,17 @@
         "edition": "2018",
         "version": "1.0.0"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT/Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "conditional-deps 0.1.0": {
       "name": "conditional-deps",
       "version": "0.1.0",
+      "package_url": null,
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -121,11 +140,14 @@
         "edition": "2021",
         "version": "0.1.0"
       },
-      "license": null
+      "license": null,
+      "license_ids": [],
+      "license_file": null
     },
     "libc 0.2.146": {
       "name": "libc",
       "version": "0.2.146",
+      "package_url": "https://github.com/rust-lang/libc",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/libc/0.2.146/download",
@@ -182,11 +204,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "memoffset 0.7.1": {
       "name": "memoffset",
       "version": "0.7.1",
+      "package_url": "https://github.com/Gilnaa/memoffset",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/memoffset/0.7.1/download",
@@ -250,11 +278,16 @@
           "selects": {}
         }
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "nix 0.26.2": {
       "name": "nix",
       "version": "0.26.2",
+      "package_url": "https://github.com/nix-rust/nix",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/nix/0.26.2/download",
@@ -352,11 +385,16 @@
         "edition": "2018",
         "version": "0.26.2"
       },
-      "license": "MIT"
+      "license": "MIT",
+      "license_ids": [
+        "MIT"
+      ],
+      "license_file": null
     },
     "pin-utils 0.1.0": {
       "name": "pin-utils",
       "version": "0.1.0",
+      "package_url": "https://github.com/rust-lang-nursery/pin-utils",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/pin-utils/0.1.0/download",
@@ -382,11 +420,17 @@
         "edition": "2018",
         "version": "0.1.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "static_assertions 1.1.0": {
       "name": "static_assertions",
       "version": "1.1.0",
+      "package_url": "https://github.com/nvzqz/static-assertions-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/static_assertions/1.1.0/download",
@@ -412,7 +456,12 @@
         "edition": "2015",
         "version": "1.1.0"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     }
   },
   "binary_crates": [],

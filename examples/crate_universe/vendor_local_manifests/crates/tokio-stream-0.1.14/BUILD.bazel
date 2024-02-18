@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "tokio_stream",
     srcs = glob(["**/*.rs"]),
@@ -34,7 +30,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=tokio-stream",
@@ -81,8 +79,8 @@ rust_library(
     }),
     version = "0.1.14",
     deps = [
-        "//vendor_local_manifests/crates/futures-core-0.3.29:futures_core",
+        "//vendor_local_manifests/crates/futures-core-0.3.30:futures_core",
         "//vendor_local_manifests/crates/pin-project-lite-0.2.13:pin_project_lite",
-        "//vendor_local_manifests/crates/tokio-1.35.0:tokio",
+        "//vendor_local_manifests/crates/tokio-1.36.0:tokio",
     ],
 )

@@ -1,9 +1,10 @@
 {
-  "checksum": "f4eb48db9ec90a1a1fa55a50398d39045b98dadd0fe3500bafb2d6afb8b3329b",
+  "checksum": "b23eaf7d0d91235393a475b1e85eecfd1f47511800f125e9ad162ea92c446a60",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
       "version": "1.0.82",
+      "package_url": "https://github.com/rust-lang/cc-rs",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cc/1.0.82/download",
@@ -40,11 +41,17 @@
         "edition": "2018",
         "version": "1.0.82"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "cxx 1.0.109": {
       "name": "cxx",
       "version": "1.0.109",
+      "package_url": "https://github.com/dtolnay/cxx",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cxx/1.0.109/download",
@@ -103,6 +110,11 @@
         "version": "1.0.109"
       },
       "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null,
       "additive_build_file_content": "cc_library(\n    name = \"cxx_cc\",\n    srcs = [\"src/cxx.cc\"],\n    hdrs = [\"include/cxx.h\"],\n    include_prefix = \"rust\",\n    includes = [\"include\"],\n    linkstatic = True,\n    strip_include_prefix = \"include\",\n    visibility = [\"//visibility:public\"],\n)\n",
       "extra_aliased_targets": {
         "cxx_cc": "cxx_cc"
@@ -111,6 +123,7 @@
     "cxxbridge-flags 1.0.109": {
       "name": "cxxbridge-flags",
       "version": "1.0.109",
+      "package_url": "https://github.com/dtolnay/cxx",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.109/download",
@@ -142,11 +155,17 @@
         "edition": "2021",
         "version": "1.0.109"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "cxxbridge-macro 1.0.109": {
       "name": "cxxbridge-macro",
       "version": "1.0.109",
+      "package_url": "https://github.com/dtolnay/cxx",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.109/download",
@@ -189,11 +208,17 @@
         "edition": "2021",
         "version": "1.0.109"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
       "version": "0.0.1",
+      "package_url": null,
       "repository": null,
       "targets": [
         {
@@ -223,11 +248,14 @@
         "edition": "2018",
         "version": "0.0.1"
       },
-      "license": null
+      "license": null,
+      "license_ids": [],
+      "license_file": null
     },
     "libc 0.2.147": {
       "name": "libc",
       "version": "0.2.147",
+      "package_url": "https://github.com/rust-lang/libc",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/libc/0.2.147/download",
@@ -283,11 +311,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "link-cplusplus 1.0.9": {
       "name": "link-cplusplus",
       "version": "1.0.9",
+      "package_url": "https://github.com/dtolnay/link-cplusplus",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/link-cplusplus/1.0.9/download",
@@ -352,11 +386,17 @@
         },
         "links": "cplusplus"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "proc-macro2 1.0.66": {
       "name": "proc-macro2",
       "version": "1.0.66",
+      "package_url": "https://github.com/dtolnay/proc-macro2",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.66/download",
@@ -416,11 +456,17 @@
           "**"
         ]
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "quote 1.0.32": {
       "name": "quote",
       "version": "1.0.32",
+      "package_url": "https://github.com/dtolnay/quote",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/quote/1.0.32/download",
@@ -462,11 +508,17 @@
         "edition": "2018",
         "version": "1.0.32"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "syn 2.0.28": {
       "name": "syn",
       "version": "2.0.28",
+      "package_url": "https://github.com/dtolnay/syn",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/syn/2.0.28/download",
@@ -522,11 +574,17 @@
         "edition": "2021",
         "version": "2.0.28"
       },
-      "license": "MIT OR Apache-2.0"
+      "license": "MIT OR Apache-2.0",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "license_file": null
     },
     "unicode-ident 1.0.11": {
       "name": "unicode-ident",
       "version": "1.0.11",
+      "package_url": "https://github.com/dtolnay/unicode-ident",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/unicode-ident/1.0.11/download",
@@ -552,7 +610,13 @@
         "edition": "2018",
         "version": "1.0.11"
       },
-      "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
+      "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT",
+        "Unicode-DFS-2016"
+      ],
+      "license_file": null
     }
   },
   "binary_crates": [],

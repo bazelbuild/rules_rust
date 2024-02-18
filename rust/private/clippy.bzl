@@ -193,7 +193,6 @@ See https://github.com/bazelbuild/rules_rust/pull/1264#discussion_r853241339 for
 #               //...
 rust_clippy_aspect = aspect(
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     attrs = {
         "_capture_output": attr.label(
             doc = "Value of the `capture_clippy_output` build setting",

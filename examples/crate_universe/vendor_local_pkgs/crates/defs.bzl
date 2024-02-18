@@ -294,11 +294,11 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "axum": "//vendor_local_pkgs/crates/axum-0.4.8:axum",
-            "hyper": "//vendor_local_pkgs/crates/hyper-0.14.27:hyper",
+            "hyper": "//vendor_local_pkgs/crates/hyper-0.14.28:hyper",
             "mime": "//vendor_local_pkgs/crates/mime-0.3.17:mime",
-            "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.108:serde_json",
+            "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.113:serde_json",
             "socket2": "//vendor_local_pkgs/crates/socket2-0.4.10:socket2",
-            "tokio": "//vendor_local_pkgs/crates/tokio-1.35.0:tokio",
+            "tokio": "//vendor_local_pkgs/crates/tokio-1.36.0:tokio",
             "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
             "tower-http": "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
             "tracing": "//vendor_local_pkgs/crates/tracing-0.1.40:tracing",
@@ -372,7 +372,8 @@ _CONDITIONS = {
     "aarch64-linux-android": ["@rules_rust//rust/platform:aarch64-linux-android"],
     "aarch64-pc-windows-gnullvm": [],
     "aarch64-pc-windows-msvc": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
-    "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
+    "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu"],
+    "aarch64-unknown-nixos-gnu": ["@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
     "aarch64-unknown-nto-qnx710": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
     "arm-unknown-linux-gnueabi": ["@rules_rust//rust/platform:arm-unknown-linux-gnueabi"],
     "armv7-linux-androideabi": ["@rules_rust//rust/platform:armv7-linux-androideabi"],
@@ -416,6 +417,7 @@ _CONDITIONS = {
     "x86_64-pc-windows-gnullvm": [],
     "x86_64-pc-windows-msvc": ["@rules_rust//rust/platform:x86_64-pc-windows-msvc"],
     "x86_64-unknown-freebsd": ["@rules_rust//rust/platform:x86_64-unknown-freebsd"],
-    "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
+    "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu"],
+    "x86_64-unknown-nixos-gnu": ["@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "x86_64-unknown-none": ["@rules_rust//rust/platform:x86_64-unknown-none"],
 }

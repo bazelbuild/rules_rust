@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_proc_macro(
     name = "proc_macro_error_attr",
     srcs = glob(["**/*.rs"]),
@@ -31,7 +27,9 @@ rust_proc_macro(
     ),
     crate_root = "src/lib.rs",
     edition = "2018",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=proc-macro-error-attr",
@@ -120,6 +118,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "proc-macro-error-attr_build_script",
+    actual = ":proc-macro-error-attr_build_script",
     tags = ["manual"],
 )

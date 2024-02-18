@@ -27,13 +27,13 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "tempfile",
-    actual = "@crates_vendor_manifests__tempfile-3.8.1//:tempfile",
+    actual = "@crates_vendor_manifests__tempfile-3.10.0//:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "@crates_vendor_manifests__tokio-1.34.0//:tokio",
+    actual = "@crates_vendor_manifests__tokio-1.36.0//:tokio",
     tags = ["manual"],
 )
 

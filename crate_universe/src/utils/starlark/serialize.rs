@@ -2,7 +2,9 @@ use serde::ser::{SerializeSeq, SerializeStruct, SerializeTupleStruct, Serializer
 use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE, ONELINE};
 
-use super::{Data, ExportsFiles, Load, Package, RustBinary, RustLibrary, RustProcMacro};
+use super::{
+    Data, ExportsFiles, License, Load, Package, PackageInfo, RustBinary, RustLibrary, RustProcMacro,
+};
 
 // For structs that contain #[serde(flatten)], a quirk of how Serde processes
 // that attribute is that they get serialized as a map, not struct. In Starlark
@@ -75,8 +77,42 @@ impl Serialize for Package {
     where
         S: Serializer,
     {
-        let mut call = serializer.serialize_struct("package", ONELINE)?;
+        let has_metadata = !self.default_package_metadata.is_empty();
+        let mut call = serializer
+            .serialize_struct("package", if has_metadata { MULTILINE } else { ONELINE })?;
+        if has_metadata {
+            call.serialize_field("default_package_metadata", &self.default_package_metadata)?;
+        }
         call.serialize_field("default_visibility", &self.default_visibility)?;
+        call.end()
+    }
+}
+
+impl Serialize for PackageInfo {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut call = serializer.serialize_struct("package_info", MULTILINE)?;
+        call.serialize_field("name", &self.name)?;
+        call.serialize_field("package_name", &self.package_name)?;
+        call.serialize_field("package_version", &self.package_version)?;
+        call.serialize_field("package_url", &self.package_url)?;
+        call.end()
+    }
+}
+
+impl Serialize for License {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut call = serializer.serialize_struct("license", MULTILINE)?;
+        call.serialize_field("name", &self.name)?;
+        call.serialize_field("license_kinds", &self.license_kinds)?;
+        if !self.license_text.is_empty() {
+            call.serialize_field("license_text", &self.license_text)?;
+        }
         call.end()
     }
 }

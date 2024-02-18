@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_proc_macro(
     name = "tracing_attributes",
     srcs = glob(["**/*.rs"]),

@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "wasm_bindgen",
     srcs = glob(["**/*.rs"]),
@@ -39,7 +35,9 @@ rust_library(
     proc_macro_deps = [
         "@rules_rust_wasm_bindgen__wasm-bindgen-macro-0.2.89//:wasm_bindgen_macro",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=wasm-bindgen",
@@ -129,6 +127,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "wasm-bindgen_build_script",
+    actual = ":wasm-bindgen_build_script",
     tags = ["manual"],
 )

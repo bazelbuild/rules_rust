@@ -151,7 +151,6 @@ generated source files are also ignored by this aspect.
         [rust_common.test_crate_info],
     ],
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust/rustfmt:toolchain_type")),
     ],
@@ -188,7 +187,6 @@ Output Groups:
 - `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
 """,
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     toolchains = [
         str(Label("//rust/rustfmt:toolchain_type")),
     ],
