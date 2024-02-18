@@ -107,7 +107,7 @@
                     "registry": null,
                     "rename": null,
                     "req": "*",
-                    "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0",
+                    "source": "git+https://github.com/tokio-rs/tracing.git?branch=master",
                     "target": null,
                     "uses_default_features": true
                 }
@@ -1527,7 +1527,7 @@
                     "registry": null,
                     "rename": null,
                     "req": "^0.2",
-                    "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+                    "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
                     "target": null,
                     "uses_default_features": true
                 },
@@ -1539,7 +1539,7 @@
                     "registry": null,
                     "rename": null,
                     "req": "^0.2",
-                    "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+                    "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
                     "target": null,
                     "uses_default_features": false
                 },
@@ -1647,7 +1647,7 @@
                 ]
             },
             "homepage": "https://tokio.rs",
-            "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
             "keywords": [
                 "logging",
                 "tracing",
@@ -1674,7 +1674,7 @@
             "readme": "README.md",
             "repository": "https://github.com/tokio-rs/tracing",
             "rust_version": null,
-            "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+            "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
             "targets": [
                 {
                     "crate_types": [
@@ -1979,7 +1979,7 @@
                     "registry": null,
                     "rename": null,
                     "req": "^0.2",
-                    "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+                    "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
                     "target": null,
                     "uses_default_features": true
                 },
@@ -1991,7 +1991,7 @@
                     "registry": null,
                     "rename": null,
                     "req": "^0.2",
-                    "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+                    "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
                     "target": null,
                     "uses_default_features": true
                 }
@@ -2001,7 +2001,7 @@
             "edition": "2018",
             "features": {},
             "homepage": "https://tokio.rs",
-            "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
             "keywords": [
                 "logging",
                 "tracing",
@@ -2019,7 +2019,7 @@
             "readme": "README.md",
             "repository": "https://github.com/tokio-rs/tracing",
             "rust_version": null,
-            "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+            "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
             "targets": [
                 {
                     "crate_types": [
@@ -2205,7 +2205,7 @@
                 ]
             },
             "homepage": "https://tokio.rs",
-            "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
             "keywords": [
                 "logging",
                 "tracing",
@@ -2231,7 +2231,7 @@
             "readme": "README.md",
             "repository": "https://github.com/tokio-rs/tracing",
             "rust_version": null,
-            "source": "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0",
+            "source": "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0",
             "targets": [
                 {
                     "crate_types": [
@@ -2397,7 +2397,7 @@
             },
             {
                 "dependencies": [
-                    "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                    "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
                 ],
                 "deps": [
                     {
@@ -2408,7 +2408,7 @@
                             }
                         ],
                         "name": "tracing",
-                        "pkg": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
                     }
                 ],
                 "features": [],
@@ -2525,8 +2525,8 @@
                 "dependencies": [
                     "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
                     "pin-project-lite 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
-                    "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                    "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+                    "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
                 ],
                 "deps": [
                     {
@@ -2557,7 +2557,7 @@
                             }
                         ],
                         "name": "tracing_attributes",
-                        "pkg": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
                     },
                     {
                         "dep_kinds": [
@@ -2567,7 +2567,7 @@
                             }
                         ],
                         "name": "tracing_core",
-                        "pkg": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
                     }
                 ],
                 "features": [
@@ -2577,7 +2577,7 @@
                     "std",
                     "tracing-attributes"
                 ],
-                "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
             },
             {
                 "dependencies": [
@@ -2618,7 +2618,7 @@
                     }
                 ],
                 "features": [],
-                "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
             },
             {
                 "dependencies": [
@@ -2641,7 +2641,7 @@
                     "lazy_static",
                     "std"
                 ],
-                "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
             },
             {
                 "dependencies": [],

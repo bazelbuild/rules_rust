@@ -59,7 +59,7 @@ dependencies = [
 [[package]]
 name = "tracing"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0"
+source = "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0"
 dependencies = [
  "cfg-if",
  "pin-project-lite",
@@ -70,7 +70,7 @@ dependencies = [
 [[package]]
 name = "tracing-attributes"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0"
+source = "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -80,7 +80,7 @@ dependencies = [
 [[package]]
 name = "tracing-core"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing.git?rev=1e09e50e8d15580b5929adbade9c782a6833e4a0#1e09e50e8d15580b5929adbade9c782a6833e4a0"
+source = "git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0"
 dependencies = [
  "lazy_static",
 ]
