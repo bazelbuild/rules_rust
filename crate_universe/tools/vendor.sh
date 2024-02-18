@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # A script to re-vendor all vendors crates in this repository.
 # This should be ran whenever any crate rendering changes.
 
@@ -15,7 +17,11 @@ vendor_workspace() {
     popd >/dev/null
 }
 
-workspaces="$(find -type f -name WORKSPACE.bazel -o -name WORKSPACE -o -name MODULE.bazel)"
+if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
+    cd "${BUILD_WORKSPACE_DIRECTORY:-}"
+fi
+
+workspaces="$(find . -type f -name WORKSPACE.bazel -o -name MODULE.bazel)"
 
 for workspace in $workspaces
 do

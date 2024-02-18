@@ -5,3 +5,8 @@ filegroup(
     ],
     visibility = ["//crate_universe:__subpackages__"],
 )
+
+sh_binary(
+    name = "vendor",
+    srcs = ["vendor.sh"],
+)
