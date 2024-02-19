@@ -12,7 +12,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "wasm_bindgen_shared",
+    name = "wasm_bindgen",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -25,14 +25,22 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+        "spans",
+        "std",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
+    proc_macro_deps = [
+        "@rules_rust_wasm_bindgen__wasm-bindgen-macro-0.2.91//:wasm_bindgen_macro",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-shared",
+        "crate-name=wasm-bindgen",
         "manual",
         "noclippy",
         "norustfmt",
@@ -74,15 +82,21 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
-        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.89//:build_script_build",
+        "@rules_rust_wasm_bindgen__cfg-if-1.0.0//:cfg_if",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.91//:build_script_build",
     ],
 )
 
 cargo_build_script(
-    name = "wasm-bindgen-shared_build_script",
+    name = "wasm-bindgen_build_script",
     srcs = glob(["**/*.rs"]),
+    crate_features = [
+        "default",
+        "spans",
+        "std",
+    ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
@@ -97,23 +111,22 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
-    links = "wasm_bindgen",
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-shared",
+        "crate-name=wasm-bindgen",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.89",
+    version = "0.2.91",
     visibility = ["//visibility:private"],
 )
 
 alias(
     name = "build_script_build",
-    actual = ":wasm-bindgen-shared_build_script",
+    actual = ":wasm-bindgen_build_script",
     tags = ["manual"],
 )

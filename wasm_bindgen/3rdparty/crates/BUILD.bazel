@@ -117,19 +117,19 @@ alias(
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.89//:wasm_bindgen",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.91//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-cli-support",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.89//:wasm_bindgen_cli_support",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.91//:wasm_bindgen_cli_support",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-shared",
-    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.89//:wasm_bindgen_shared",
+    actual = "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:wasm_bindgen_shared",
     tags = ["manual"],
 )
 

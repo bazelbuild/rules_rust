@@ -73,7 +73,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
         "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
         "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",

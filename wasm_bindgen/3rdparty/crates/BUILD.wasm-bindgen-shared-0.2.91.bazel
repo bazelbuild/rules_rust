@@ -6,12 +6,13 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "wasm_bindgen_wasm_conventions",
+    name = "wasm_bindgen_shared",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -31,7 +32,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-wasm-conventions",
+        "crate-name=wasm-bindgen-shared",
         "manual",
         "noclippy",
         "norustfmt",
@@ -73,9 +74,46 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
-        "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:build_script_build",
     ],
+)
+
+cargo_build_script(
+    name = "wasm-bindgen-shared_build_script",
+    srcs = glob(["**/*.rs"]),
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(
+        include = ["**"],
+        exclude = [
+            "**/* *",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    edition = "2018",
+    links = "wasm_bindgen",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-bazel",
+        "crate-name=wasm-bindgen-shared",
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "0.2.91",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "build_script_build",
+    actual = ":wasm-bindgen-shared_build_script",
+    tags = ["manual"],
 )

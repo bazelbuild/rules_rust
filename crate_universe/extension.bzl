@@ -46,7 +46,6 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
 
     rendering_config = json.decode(render_config(
         regen_command = "Run 'cargo update [--workspace]'",
-        crate_label_template = "@@rules_rust~override~crate~{repository}__{name}-{version}//:{target}",
     ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
