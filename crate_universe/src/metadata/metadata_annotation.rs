@@ -245,7 +245,10 @@ impl LockfileAnnotation {
 
             return Ok(SourceAnnotation::Git {
                 remote: source.url().to_string(),
-                commitish: Commitish::from(git_ref.clone()),
+                commitish: source
+                    .precise()
+                    .map(|rev| Commitish::Rev(rev.to_string()))
+                    .unwrap_or(Commitish::from(git_ref.clone())),
                 shallow_since: None,
                 strip_prefix,
                 patch_args: None,
@@ -544,6 +547,27 @@ mod test {
                 panic!("Wanted SourceAnnotation::Git with strip_prefix == Some(\"tracing-core\"), got: {:?}", other);
             }
         }
+    }
+
+    #[test]
+    fn resolves_commit_from_branches_and_tags() {
+        let crates =
+            LockfileAnnotation::new(test::lockfile::git_repos(), &test::metadata::git_repos())
+                .unwrap()
+                .crates;
+
+        let package_id = PackageId { repr: "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)".into() };
+        let annotation = crates.get(&package_id).unwrap();
+
+        let commitish = match annotation {
+            SourceAnnotation::Git { commitish, .. } => commitish,
+            _ => panic!("Unexpected annotation type"),
+        };
+
+        assert_eq!(
+            *commitish,
+            Commitish::Rev("1e09e50e8d15580b5929adbade9c782a6833e4a0".into())
+        );
     }
 
     #[test]

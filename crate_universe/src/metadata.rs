@@ -219,7 +219,7 @@ impl FromStr for CargoUpdateRequest {
             return Ok(Self::Workspace);
         }
 
-        let mut split = s.splitn(2, '@');
+        let mut split = s.splitn(2, '=');
         Ok(Self::Package {
             name: split.next().map(|s| s.to_owned()).unwrap(),
             version: split.next().map(|s| s.to_owned()),
@@ -707,8 +707,21 @@ mod test {
         assert_eq!(
             request,
             CargoUpdateRequest::Package {
-                name: "cargo-bazel".to_owned(),
-                version: Some("1.2.3".to_owned())
+                name: "cargo-bazel@1.2.3".to_owned(),
+                version: None
+            }
+        );
+    }
+
+    #[test]
+    fn deserialize_cargo_update_request_for_precise_pin() {
+        let request = CargoUpdateRequest::from_str("cargo-bazel@1.2.3=4.5.6").unwrap();
+
+        assert_eq!(
+            request,
+            CargoUpdateRequest::Package {
+                name: "cargo-bazel@1.2.3".to_owned(),
+                version: Some("4.5.6".to_owned()),
             }
         );
     }

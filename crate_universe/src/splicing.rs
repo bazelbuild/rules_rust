@@ -321,6 +321,8 @@ impl WorkspaceMetadata {
                     CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
                         "sparse+https://index.crates.io/",
                     )?)
+                } else if index_url.starts_with("sparse+") {
+                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url(index_url)?)
                 } else {
                     match source_kind {
                         SourceKind::Registry => {

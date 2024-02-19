@@ -6,12 +6,12 @@
 #     bazel run @//wasm_bindgen/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_proc_macro(
-    name = "wasm_bindgen_macro",
+rust_library(
+    name = "wasm_bindgen_macro_support",
     srcs = glob(["**/*.rs"]),
     compile_data = glob(
         include = ["**"],
@@ -34,7 +34,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-macro",
+        "crate-name=wasm-bindgen-macro-support",
         "manual",
         "noclippy",
         "norustfmt",
@@ -76,9 +76,12 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.89",
+    version = "0.2.91",
     deps = [
+        "@rules_rust_wasm_bindgen__proc-macro2-1.0.64//:proc_macro2",
         "@rules_rust_wasm_bindgen__quote-1.0.29//:quote",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-macro-support-0.2.89//:wasm_bindgen_macro_support",
+        "@rules_rust_wasm_bindgen__syn-2.0.25//:syn",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.91//:wasm_bindgen_backend",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:wasm_bindgen_shared",
     ],
 )
