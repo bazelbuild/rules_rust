@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "libc",
     srcs = glob(["**/*.rs"]),
@@ -36,7 +32,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2015",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=libc",
@@ -107,6 +105,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "libc_build_script",
+    actual = ":libc_build_script",
     tags = ["manual"],
 )

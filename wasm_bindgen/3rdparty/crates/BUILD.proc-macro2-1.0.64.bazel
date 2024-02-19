@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "proc_macro2",
     srcs = glob(["**/*.rs"]),
@@ -127,6 +123,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "proc-macro2_build_script",
+    actual = ":proc-macro2_build_script",
     tags = ["manual"],
 )

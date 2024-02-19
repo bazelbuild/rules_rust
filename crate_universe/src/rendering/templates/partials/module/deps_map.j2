@@ -30,7 +30,7 @@
             {%- for dep in deps_set.common %}
             {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
             {%- set crate = context.crates | get(key=dep.id) %}
-            "{{ dep | get(key="alias", default=crate.name) }}": "{{ crate_label(name = crate.name, version = crate.version, target = dep.target) }}",
+            "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ crate_label(name = crate.name, version = crate.version, target = dep.target) }}"),
             {%- endfor %}
         },
         {%- endif %}

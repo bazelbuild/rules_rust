@@ -230,7 +230,7 @@ fn write_test_runner_windows(
         .collect::<Vec<String>>()
         .join(" ");
 
-    let content = vec![
+    let content = [
         "@ECHO OFF".to_owned(),
         "".to_owned(),
         // TODO: Instead of creating a symlink to mimic the behavior of

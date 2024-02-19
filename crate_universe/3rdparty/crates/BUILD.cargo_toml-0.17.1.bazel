@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # Apache-2.0 OR MIT
-# ])
-
 rust_library(
     name = "cargo_toml",
     srcs = glob(["**/*.rs"]),
@@ -80,6 +76,6 @@ rust_library(
     version = "0.17.1",
     deps = [
         "@cui__serde-1.0.190//:serde",
-        "@cui__toml-0.8.6//:toml",
+        "@cui__toml-0.8.10//:toml",
     ],
 )

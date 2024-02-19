@@ -336,7 +336,6 @@ rust_doc = rule(
         ),
     },
     fragments = ["cpp"],
-    host_fragments = ["cpp"],
     outputs = {
         "rust_doc_zip": "%{name}.zip",
     },

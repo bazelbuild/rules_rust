@@ -161,6 +161,18 @@ impl Cargo {
         bail!("Couldn't parse cargo version");
     }
 
+    /// Determine if Cargo is expected to be using the new package_id spec. For
+    /// details see <https://github.com/rust-lang/cargo/pull/13311>
+    pub fn uses_new_package_id_format(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 78);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
     fn env(&self) -> Result<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 
@@ -207,7 +219,7 @@ impl FromStr for CargoUpdateRequest {
             return Ok(Self::Workspace);
         }
 
-        let mut split = s.splitn(2, '@');
+        let mut split = s.splitn(2, '=');
         Ok(Self::Package {
             name: split.next().map(|s| s.to_owned()).unwrap(),
             version: split.next().map(|s| s.to_owned()),
@@ -695,8 +707,21 @@ mod test {
         assert_eq!(
             request,
             CargoUpdateRequest::Package {
-                name: "cargo-bazel".to_owned(),
-                version: Some("1.2.3".to_owned())
+                name: "cargo-bazel@1.2.3".to_owned(),
+                version: None
+            }
+        );
+    }
+
+    #[test]
+    fn deserialize_cargo_update_request_for_precise_pin() {
+        let request = CargoUpdateRequest::from_str("cargo-bazel@1.2.3=4.5.6").unwrap();
+
+        assert_eq!(
+            request,
+            CargoUpdateRequest::Package {
+                name: "cargo-bazel@1.2.3".to_owned(),
+                version: Some("4.5.6".to_owned()),
             }
         );
     }

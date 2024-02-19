@@ -299,7 +299,7 @@ def _cargo_build_script_impl(ctx):
             rustc_env = env_out,
             dep_env = dep_env_out,
             flags = flags_out,
-            link_flags = link_flags,
+            linker_flags = link_flags,
             link_search_paths = link_search_paths,
             compile_data = depset([]),
         ),
@@ -445,7 +445,7 @@ def _cargo_dep_env_implementation(ctx):
         build_infos.append(BuildInfo(
             dep_env = empty_file,
             flags = empty_file,
-            link_flags = empty_file,
+            linker_flags = empty_file,
             link_search_paths = empty_file,
             out_dir = out_dir,
             rustc_env = empty_file,
@@ -464,7 +464,7 @@ def _cargo_dep_env_implementation(ctx):
         BuildInfo(
             dep_env = empty_file,
             flags = empty_file,
-            link_flags = empty_file,
+            linker_flags = empty_file,
             link_search_paths = empty_file,
             out_dir = None,
             rustc_env = empty_file,

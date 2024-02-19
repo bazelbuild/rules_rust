@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT/Apache-2.0
-# ])
-
 rust_library(
     name = "walrus",
     srcs = glob(["**/*.rs"]),
@@ -37,7 +33,9 @@ rust_library(
     proc_macro_deps = [
         "@rules_rust_wasm_bindgen__walrus-macro-0.19.0//:walrus_macro",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=walrus",

@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "textwrap",
     srcs = glob(["**/*.rs"]),
@@ -86,7 +82,7 @@ rust_library(
     version = "0.16.0",
     deps = [
         "@cui__smawk-0.3.1//:smawk",
-        "@cui__unicode-linebreak-0.1.4//:unicode_linebreak",
+        "@cui__unicode-linebreak-0.1.5//:unicode_linebreak",
         "@cui__unicode-width-0.1.10//:unicode_width",
     ],
 )

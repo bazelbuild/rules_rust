@@ -10,10 +10,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT
-# ])
-
 rust_library(
     name = "async_stream",
     srcs = glob(["**/*.rs"]),
@@ -33,7 +29,9 @@ rust_library(
     proc_macro_deps = [
         "//vendor_local_manifests/crates/async-stream-impl-0.3.5:async_stream_impl",
     ],
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=async-stream",
@@ -80,7 +78,7 @@ rust_library(
     }),
     version = "0.3.5",
     deps = [
-        "//vendor_local_manifests/crates/futures-core-0.3.29:futures_core",
+        "//vendor_local_manifests/crates/futures-core-0.3.30:futures_core",
         "//vendor_local_manifests/crates/pin-project-lite-0.2.13:pin_project_lite",
     ],
 )

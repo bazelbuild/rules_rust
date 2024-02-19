@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT/Apache-2.0
-# ])
-
 rust_library(
     name = "httpbis",
     srcs = glob(["**/*.rs"]),
@@ -31,7 +27,9 @@ rust_library(
     ),
     crate_root = "src/lib.rs",
     edition = "2015",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=httpbis",
@@ -47,6 +45,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -70,6 +70,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -110,6 +111,14 @@ rust_library(
             "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
             "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
         ],
@@ -173,6 +182,10 @@ rust_library(
             "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
             "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "@rules_rust_proto__tokio-uds-0.1.7//:tokio_uds",  # cfg(unix)
+            "@rules_rust_proto__unix_socket-0.5.0//:unix_socket",  # cfg(unix)
+        ],
         "//conditions:default": [],
     }),
 )
@@ -210,6 +223,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = "httpbis_build_script",
+    actual = ":httpbis_build_script",
     tags = ["manual"],
 )

@@ -11,10 +11,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
-# ])
-
 rust_library(
     name = "io_lifetimes",
     srcs = glob(["**/*.rs"]),
