@@ -794,7 +794,7 @@ def transform_sources(ctx, srcs, crate_root):
     if not has_generated_sources:
         return srcs, crate_root
 
-    package_root = paths.dirname(paths.join(ctx.label.workspace_root, ctx.label.package))
+    package_root = paths.join(ctx.label.workspace_root, ctx.label.package)
     generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
     generated_root = crate_root
     if crate_root:
