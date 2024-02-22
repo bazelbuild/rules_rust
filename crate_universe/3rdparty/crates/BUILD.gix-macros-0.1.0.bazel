@@ -12,9 +12,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_proc_macro(
     name = "gix_macros",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",

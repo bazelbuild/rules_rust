@@ -13,7 +13,10 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "rustix",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     aliases = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": {
             "@cui__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
@@ -100,6 +103,7 @@ rust_library(
     }),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -320,7 +324,10 @@ rust_library(
 
 cargo_build_script(
     name = "rustix_build_script",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "default",
         "io-lifetimes",
@@ -333,6 +340,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",

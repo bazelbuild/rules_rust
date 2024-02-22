@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "rayon_core",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -84,11 +88,15 @@ rust_library(
 
 cargo_build_script(
     name = "rayon-core_build_script",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",

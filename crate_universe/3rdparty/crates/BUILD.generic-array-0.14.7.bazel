@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "generic_array",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -86,7 +90,10 @@ rust_library(
 
 cargo_build_script(
     name = "generic-array_build_script",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "more_lengths",
     ],
@@ -94,6 +101,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",

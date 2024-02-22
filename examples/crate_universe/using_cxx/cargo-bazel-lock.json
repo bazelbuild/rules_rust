@@ -1,5 +1,5 @@
 {
-  "checksum": "16b73512b2012096a5fc15ca40bac421afb40ff2272eaa8ee135df0d8e391091",
+  "checksum": "f17fc799775800c4a232c296398b58013d3d9b87605fcd8fee480528b6f8c34e",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -16,9 +16,12 @@
           "Library": {
             "crate_name": "cc",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -63,9 +66,12 @@
           "Library": {
             "crate_name": "cxx",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -135,9 +141,12 @@
           "Library": {
             "crate_name": "cxxbridge_flags",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -177,9 +186,12 @@
           "ProcMacro": {
             "crate_name": "cxxbridge_macro",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -225,9 +237,12 @@
           "Library": {
             "crate_name": "direct_cargo_bazel_deps",
             "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -267,18 +282,24 @@
           "Library": {
             "crate_name": "libc",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         },
         {
           "BuildScript": {
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -333,18 +354,24 @@
           "Library": {
             "crate_name": "link_cplusplus",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         },
         {
           "BuildScript": {
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -408,18 +435,24 @@
           "Library": {
             "crate_name": "proc_macro2",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         },
         {
           "BuildScript": {
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -478,9 +511,12 @@
           "Library": {
             "crate_name": "quote",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -530,9 +566,12 @@
           "Library": {
             "crate_name": "syn",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -596,9 +635,12 @@
           "Library": {
             "crate_name": "unicode_ident",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
