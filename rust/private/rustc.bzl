@@ -958,6 +958,7 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
     rustc_flags.add(compilation_mode.debug_info, format = "--codegen=debuginfo=%s")
+    rustc_flags.add(compilation_mode.strip_level, format = "--codegen=strip=%s")
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
