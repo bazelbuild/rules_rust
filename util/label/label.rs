@@ -36,7 +36,7 @@ pub enum Label<'s> {
     },
     Absolute {
         repository: Option<Repository<'s>>,
-        package_name: Option<&'s str>,
+        package_name: &'s str,
         target_name: &'s str,
     },
 }
@@ -79,7 +79,7 @@ impl<'s> Label<'s> {
                 } else {
                     return Ok(Label::Absolute {
                         repository,
-                        package_name: None,
+                        package_name: "",
                         target_name,
                     });
                 };
@@ -100,7 +100,7 @@ impl<'s> Label<'s> {
 
         Ok(Label::Absolute {
             repository,
-            package_name,
+            package_name: package_name.unwrap_or_default(),
             target_name: name,
         })
     }
@@ -126,20 +126,10 @@ impl<'s> Label<'s> {
         }
     }
 
-    pub fn packages(&self) -> Vec<&'s str> {
-        match self {
-            Label::Relative { .. } => Vec::new(),
-            Label::Absolute { package_name, .. } => match package_name {
-                Some(package) => package.split('/').collect(),
-                None => Vec::new(),
-            },
-        }
-    }
-
     pub fn package(&self) -> Option<&'s str> {
         match self {
             Label::Relative { .. } => None,
-            Label::Absolute { package_name, .. } => *package_name,
+            Label::Absolute { package_name, .. } => Some(*package_name),
         }
     }
 
@@ -446,7 +436,7 @@ mod tests {
 
     #[test]
     fn test_package_name_parsing() -> Result<()> {
-        assert_eq!(analyze("//:baz/qux")?.package(), None);
+        assert_eq!(analyze("//:baz/qux")?.package(), Some(""));
         assert_eq!(analyze(":baz/qux")?.package(), None);
 
         assert_eq!(analyze("//foo:baz/qux")?.package(), Some("foo"));
@@ -589,7 +579,7 @@ mod tests {
             analyze("@repo")?,
             Label::Absolute {
                 repository: Some(Repository::Apparent("@repo")),
-                package_name: None,
+                package_name: "",
                 target_name: "repo",
             },
         );
@@ -599,24 +589,6 @@ mod tests {
             Err(LabelError(
                 "@ must be a legal label; invalid target name: empty target name".to_string()
             )),
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_packages() -> Result<()> {
-        assert_eq!(analyze("@repo//:baz")?.packages(), Vec::<&str>::new());
-        assert_eq!(analyze("@repo//foo:baz")?.packages(), vec!["foo"]);
-        assert_eq!(
-            analyze("@repo//foo/bar:baz")?.packages(),
-            vec!["foo", "bar"]
-        );
-
-        // Plus (+) is valid in packages
-        assert_eq!(
-            analyze("@repo//foo/bar+baz:qaz")?.packages(),
-            vec!["foo", "bar+baz"]
         );
 
         Ok(())
