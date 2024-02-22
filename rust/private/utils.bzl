@@ -24,6 +24,10 @@ UNSUPPORTED_FEATURES = [
     "use_header_modules",
     "fdo_instrument",
     "fdo_optimize",
+    # This feature is unsupported by definition. The authors of C++ toolchain
+    # configuration can place any linker flags that should not be applied when
+    # linking Rust targets in a feature with this name.
+    "rules_rust_unsupported_feature",
 ]
 
 def find_toolchain(ctx):
