@@ -130,7 +130,7 @@ impl Serialize for ExportsFiles {
 
 impl Data {
     pub fn is_empty(&self) -> bool {
-        self.glob.is_empty() && self.select.is_empty()
+        self.glob.has_any_include() && self.select.is_empty()
     }
 }
 
@@ -140,10 +140,10 @@ impl Serialize for Data {
         S: Serializer,
     {
         let mut plus = serializer.serialize_tuple_struct("+", MULTILINE)?;
-        if !self.glob.is_empty() {
+        if !self.glob.has_any_include() {
             plus.serialize_field(&self.glob)?;
         }
-        if !self.select.is_empty() || self.glob.is_empty() {
+        if !self.select.is_empty() || self.glob.has_any_include() {
             plus.serialize_field(&self.select)?;
         }
         plus.end()

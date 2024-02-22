@@ -291,7 +291,7 @@ mod test {
     }
 
     #[test]
-    fn seralization() {
+    fn serialization() {
         let context = mock_context_aliases();
 
         // Seralize and deseralize the context object

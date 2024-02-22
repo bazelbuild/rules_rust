@@ -153,6 +153,7 @@ impl Renderer {
         let mut exports_files = ExportsFiles {
             paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
             globs: Glob {
+                allow_empty: true,
                 include: BTreeSet::from(["*.bazel".to_owned()]),
                 exclude: BTreeSet::new(),
             },
@@ -165,6 +166,7 @@ impl Renderer {
         let filegroup = Filegroup {
             name: "srcs".to_owned(),
             srcs: Glob {
+                allow_empty: true,
                 include: BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()]),
                 exclude: BTreeSet::new(),
             },
@@ -873,6 +875,7 @@ fn make_data(
 
     Data {
         glob: Glob {
+            allow_empty: true,
             include: glob,
             exclude: COMMON_GLOB_EXCLUDES
                 .iter()
