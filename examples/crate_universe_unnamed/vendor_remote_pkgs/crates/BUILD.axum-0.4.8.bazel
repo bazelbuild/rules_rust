@@ -12,12 +12,16 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "axum",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = [
             "**",
             "**/*.md",
         ],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -100,8 +104,8 @@ rust_library(
         "@crates_vendor_pkgs__mime-0.3.17//:mime",
         "@crates_vendor_pkgs__percent-encoding-2.3.1//:percent_encoding",
         "@crates_vendor_pkgs__pin-project-lite-0.2.13//:pin_project_lite",
-        "@crates_vendor_pkgs__serde-1.0.196//:serde",
-        "@crates_vendor_pkgs__serde_json-1.0.113//:serde_json",
+        "@crates_vendor_pkgs__serde-1.0.197//:serde",
+        "@crates_vendor_pkgs__serde_json-1.0.114//:serde_json",
         "@crates_vendor_pkgs__serde_urlencoded-0.7.1//:serde_urlencoded",
         "@crates_vendor_pkgs__sync_wrapper-0.1.2//:sync_wrapper",
         "@crates_vendor_pkgs__tokio-1.36.0//:tokio",

@@ -293,7 +293,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_local_manifests": {
         _COMMON_CONDITION: {
-            "tokio": "//vendor_local_manifests/crates/tokio-1.36.0:tokio",
+            "tokio": Label("//vendor_local_manifests/crates/tokio-1.36.0:tokio"),
         },
     },
 }
@@ -308,8 +308,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "vendor_local_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": "//vendor_local_manifests/crates/tempfile-3.10.0:tempfile",
-            "tokio-test": "//vendor_local_manifests/crates/tokio-test-0.4.3:tokio_test",
+            "tempfile": Label("//vendor_local_manifests/crates/tempfile-3.10.0:tempfile"),
+            "tokio-test": Label("//vendor_local_manifests/crates/tokio-test-0.4.3:tokio_test"),
         },
     },
 }

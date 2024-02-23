@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "third-party": {
         _COMMON_CONDITION: {
-            "anyhow": "@vendor__anyhow-1.0.77//:anyhow",
+            "anyhow": Label("@vendor__anyhow-1.0.77//:anyhow"),
         },
     },
 }

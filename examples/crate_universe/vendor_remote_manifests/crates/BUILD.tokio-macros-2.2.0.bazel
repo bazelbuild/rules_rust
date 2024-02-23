@@ -12,9 +12,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_proc_macro(
     name = "tokio_macros",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -77,6 +81,6 @@ rust_proc_macro(
     deps = [
         "@cvm__proc-macro2-1.0.78//:proc_macro2",
         "@cvm__quote-1.0.35//:quote",
-        "@cvm__syn-2.0.49//:syn",
+        "@cvm__syn-2.0.50//:syn",
     ],
 )

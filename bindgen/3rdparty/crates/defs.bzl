@@ -295,11 +295,11 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "bindgen": "@rules_rust_bindgen__bindgen-0.69.1//:bindgen",
-            "clang-sys": "@rules_rust_bindgen__clang-sys-1.6.1//:clang_sys",
-            "clap": "@rules_rust_bindgen__clap-4.3.3//:clap",
-            "clap_complete": "@rules_rust_bindgen__clap_complete-4.3.1//:clap_complete",
-            "env_logger": "@rules_rust_bindgen__env_logger-0.10.0//:env_logger",
+            "bindgen": Label("@rules_rust_bindgen__bindgen-0.69.1//:bindgen"),
+            "clang-sys": Label("@rules_rust_bindgen__clang-sys-1.6.1//:clang_sys"),
+            "clap": Label("@rules_rust_bindgen__clap-4.3.3//:clap"),
+            "clap_complete": Label("@rules_rust_bindgen__clap_complete-4.3.1//:clap_complete"),
+            "env_logger": Label("@rules_rust_bindgen__env_logger-0.10.0//:env_logger"),
         },
     },
 }

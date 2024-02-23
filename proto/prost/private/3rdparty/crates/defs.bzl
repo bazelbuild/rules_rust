@@ -295,14 +295,14 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "h2": "@rules_rust_prost__h2-0.3.19//:h2",
-            "prost": "@rules_rust_prost__prost-0.11.9//:prost",
-            "prost-types": "@rules_rust_prost__prost-types-0.11.9//:prost_types",
-            "protoc-gen-prost": "@rules_rust_prost__protoc-gen-prost-0.2.2//:protoc_gen_prost",
-            "protoc-gen-tonic": "@rules_rust_prost__protoc-gen-tonic-0.2.2//:protoc_gen_tonic",
-            "tokio": "@rules_rust_prost__tokio-1.28.2//:tokio",
-            "tokio-stream": "@rules_rust_prost__tokio-stream-0.1.14//:tokio_stream",
-            "tonic": "@rules_rust_prost__tonic-0.9.2//:tonic",
+            "h2": Label("@rules_rust_prost__h2-0.3.19//:h2"),
+            "prost": Label("@rules_rust_prost__prost-0.11.9//:prost"),
+            "prost-types": Label("@rules_rust_prost__prost-types-0.11.9//:prost_types"),
+            "protoc-gen-prost": Label("@rules_rust_prost__protoc-gen-prost-0.2.2//:protoc_gen_prost"),
+            "protoc-gen-tonic": Label("@rules_rust_prost__protoc-gen-tonic-0.2.2//:protoc_gen_tonic"),
+            "tokio": Label("@rules_rust_prost__tokio-1.28.2//:tokio"),
+            "tokio-stream": Label("@rules_rust_prost__tokio-stream-0.1.14//:tokio_stream"),
+            "tonic": Label("@rules_rust_prost__tonic-0.9.2//:tonic"),
         },
     },
 }

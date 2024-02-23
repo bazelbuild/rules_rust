@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_proc_macro(
     name = "rustversion",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -82,11 +86,15 @@ rust_proc_macro(
 
 cargo_build_script(
     name = "rustversion_build_script",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_name = "build_script_build",
     crate_root = "build/build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",

@@ -295,8 +295,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "clap": "@crates_vendor__clap-3.1.5//:clap",
-            "rand": "@crates_vendor__rand-0.8.5//:rand",
+            "clap": Label("@crates_vendor__clap-3.1.5//:clap"),
+            "rand": Label("@crates_vendor__rand-0.8.5//:rand"),
         },
     },
 }
@@ -311,7 +311,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "version-sync": "@crates_vendor__version-sync-0.9.4//:version_sync",
+            "version-sync": Label("@crates_vendor__version-sync-0.9.4//:version_sync"),
         },
     },
 }

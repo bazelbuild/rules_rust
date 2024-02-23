@@ -12,9 +12,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "tracing_subscriber",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -91,7 +95,7 @@ rust_library(
         "//vendor_local_pkgs/crates/nu-ansi-term-0.46.0:nu_ansi_term",
         "//vendor_local_pkgs/crates/sharded-slab-0.1.7:sharded_slab",
         "//vendor_local_pkgs/crates/smallvec-1.13.1:smallvec",
-        "//vendor_local_pkgs/crates/thread_local-1.1.7:thread_local",
+        "//vendor_local_pkgs/crates/thread_local-1.1.8:thread_local",
         "//vendor_local_pkgs/crates/tracing-core-0.1.32:tracing_core",
         "//vendor_local_pkgs/crates/tracing-log-0.2.0:tracing_log",
     ],
