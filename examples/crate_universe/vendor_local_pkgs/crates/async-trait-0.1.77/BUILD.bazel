@@ -88,7 +88,7 @@ rust_proc_macro(
 )
 
 cargo_build_script(
-    name = "async-trait_build_script",
+    name = "async-trait_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -124,6 +124,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":async-trait_build_script",
+    actual = ":async-trait_bs",
     tags = ["manual"],
 )

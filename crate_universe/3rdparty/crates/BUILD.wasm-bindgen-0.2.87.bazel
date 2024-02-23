@@ -89,7 +89,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "wasm-bindgen_build_script",
+    name = "wasm-bindgen_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -125,6 +125,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":wasm-bindgen_build_script",
+    actual = ":wasm-bindgen_bs",
     tags = ["manual"],
 )

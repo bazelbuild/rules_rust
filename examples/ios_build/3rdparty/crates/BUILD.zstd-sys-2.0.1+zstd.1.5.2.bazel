@@ -91,7 +91,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "zstd-sys_build_script",
+    name = "zstd-sys_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -136,6 +136,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":zstd-sys_build_script",
+    actual = ":zstd-sys_bs",
     tags = ["manual"],
 )

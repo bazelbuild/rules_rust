@@ -91,7 +91,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "crossbeam-queue_build_script",
+    name = "crossbeam-queue_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -131,6 +131,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":crossbeam-queue_build_script",
+    actual = ":crossbeam-queue_bs",
     tags = ["manual"],
 )

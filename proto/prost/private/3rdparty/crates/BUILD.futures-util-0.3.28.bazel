@@ -92,7 +92,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "futures-util_build_script",
+    name = "futures-util_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -131,6 +131,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":futures-util_build_script",
+    actual = ":futures-util_bs",
     tags = ["manual"],
 )

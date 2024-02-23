@@ -96,7 +96,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "proc-macro-error_build_script",
+    name = "proc-macro-error_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -140,6 +140,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":proc-macro-error_build_script",
+    actual = ":proc-macro-error_bs",
     tags = ["manual"],
 )

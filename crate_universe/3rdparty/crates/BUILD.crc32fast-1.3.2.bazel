@@ -90,7 +90,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "crc32fast_build_script",
+    name = "crc32fast_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -130,6 +130,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":crc32fast_build_script",
+    actual = ":crc32fast_bs",
     tags = ["manual"],
 )

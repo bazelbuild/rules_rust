@@ -242,7 +242,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "libc_build_script",
+    name = "libc_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -435,6 +435,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":libc_build_script",
+    actual = ":libc_bs",
     tags = ["manual"],
 )

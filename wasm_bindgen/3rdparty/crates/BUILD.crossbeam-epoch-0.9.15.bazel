@@ -93,7 +93,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "crossbeam-epoch_build_script",
+    name = "crossbeam-epoch_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -136,6 +136,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":crossbeam-epoch_build_script",
+    actual = ":crossbeam-epoch_bs",
     tags = ["manual"],
 )

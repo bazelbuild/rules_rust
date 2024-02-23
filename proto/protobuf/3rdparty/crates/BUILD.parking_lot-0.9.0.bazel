@@ -90,7 +90,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "parking_lot_build_script",
+    name = "parking_lot_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -132,6 +132,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":parking_lot_build_script",
+    actual = ":parking_lot_bs",
     tags = ["manual"],
 )

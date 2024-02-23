@@ -85,7 +85,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "iana-time-zone-haiku_build_script",
+    name = "iana-time-zone-haiku_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -124,6 +124,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":iana-time-zone-haiku_build_script",
+    actual = ":iana-time-zone-haiku_bs",
     tags = ["manual"],
 )

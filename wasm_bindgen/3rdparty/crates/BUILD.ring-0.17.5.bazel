@@ -178,7 +178,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "ring_build_script",
+    name = "ring_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -223,6 +223,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":ring_build_script",
+    actual = ":ring_bs",
     tags = ["manual"],
 )

@@ -108,7 +108,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "clang-sys_build_script",
+    name = "clang-sys_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -168,6 +168,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":clang-sys_build_script",
+    actual = ":clang-sys_bs",
     tags = ["manual"],
 )

@@ -161,7 +161,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "log_build_script",
+    name = "log_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -272,6 +272,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":log_build_script",
+    actual = ":log_bs",
     tags = ["manual"],
 )

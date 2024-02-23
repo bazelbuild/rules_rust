@@ -196,7 +196,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "io-lifetimes_build_script",
+    name = "io-lifetimes_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -239,6 +239,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":io-lifetimes_build_script",
+    actual = ":io-lifetimes_bs",
     tags = ["manual"],
 )

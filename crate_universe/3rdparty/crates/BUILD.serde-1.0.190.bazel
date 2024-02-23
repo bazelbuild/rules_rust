@@ -95,7 +95,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "serde_build_script",
+    name = "serde_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -138,6 +138,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":serde_build_script",
+    actual = ":serde_bs",
     tags = ["manual"],
 )

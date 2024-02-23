@@ -90,7 +90,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "lock_api_build_script",
+    name = "lock_api_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -133,6 +133,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":lock_api_build_script",
+    actual = ":lock_api_bs",
     tags = ["manual"],
 )

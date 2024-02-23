@@ -89,7 +89,7 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "slab_build_script",
+    name = "slab_bs",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -132,6 +132,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":slab_build_script",
+    actual = ":slab_bs",
     tags = ["manual"],
 )
