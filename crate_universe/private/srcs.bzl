@@ -6,6 +6,8 @@
 # Run 'bazel run //crate_universe/private:srcs_module.install' to regenerate.
 
 CARGO_BAZEL_SRCS = [
+    Label("//crate_universe:src/api.rs"),
+    Label("//crate_universe:src/api/lockfile.rs"),
     Label("//crate_universe:src/cli.rs"),
     Label("//crate_universe:src/cli/generate.rs"),
     Label("//crate_universe:src/cli/query.rs"),

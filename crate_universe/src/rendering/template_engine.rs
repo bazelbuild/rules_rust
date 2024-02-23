@@ -133,7 +133,11 @@ impl TemplateEngine {
         Ok(header)
     }
 
-    pub fn render_module_bzl(&self, data: &Context, platforms: &Platforms) -> Result<String> {
+    pub(crate) fn render_module_bzl(
+        &self,
+        data: &Context,
+        platforms: &Platforms,
+    ) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
         context.insert("platforms", platforms);
@@ -143,7 +147,7 @@ impl TemplateEngine {
             .context("Failed to render crates module")
     }
 
-    pub fn render_vendor_module_file(&self, data: &Context) -> Result<String> {
+    pub(crate) fn render_vendor_module_file(&self, data: &Context) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
 

@@ -1,5 +1,7 @@
 #![allow(clippy::large_enum_variant)]
 
+pub mod api;
+
 pub mod cli;
 
 mod config;

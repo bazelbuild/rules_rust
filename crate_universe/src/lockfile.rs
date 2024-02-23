@@ -1,4 +1,4 @@
-//! Utility module for interracting with different kinds of lock files
+//! Utility module for interacting with the cargo-bazel lockfile.
 
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -17,7 +17,7 @@ use crate::context::Context;
 use crate::metadata::Cargo;
 use crate::splicing::{SplicingManifest, SplicingMetadata};
 
-pub fn lock_context(
+pub(crate) fn lock_context(
     mut context: Context,
     config: &Config,
     splicing_manifest: &SplicingManifest,
@@ -37,7 +37,7 @@ pub fn lock_context(
 }
 
 /// Write a [crate::context::Context] to disk
-pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
+pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
     let content = serde_json::to_string_pretty(&lockfile)?;
 
     if dry_run {
@@ -58,7 +58,7 @@ pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<(
 pub struct Digest(String);
 
 impl Digest {
-    pub fn new(
+    pub(crate) fn new(
         context: &Context,
         config: &Config,
         splicing_manifest: &SplicingManifest,

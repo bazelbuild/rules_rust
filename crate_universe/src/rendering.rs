@@ -45,7 +45,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    pub(crate) fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
         let mut output = BTreeMap::new();
 
         let platforms = self.render_platform_labels(context);
