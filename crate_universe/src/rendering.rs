@@ -954,8 +954,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -980,9 +991,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
                 disable_pipelining: true,
-                ..CrateContext::default()
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1005,14 +1026,24 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_build".to_owned(),
                     crate_root: Some("build.rs".to_owned()),
                     ..TargetAttributes::default()
                 })]),
                 // Build script attributes are required.
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
                 build_script_attrs: Some(BuildScriptAttributes::default()),
-                ..CrateContext::default()
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1040,8 +1071,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::ProcMacro(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1066,8 +1108,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1092,11 +1145,21 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
                 additive_build_file_content: Some(
                     "# Hello World from additive section!".to_owned(),
                 ),
-                ..CrateContext::default()
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1138,8 +1201,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1160,8 +1234,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1188,8 +1273,19 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1225,12 +1321,22 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
                 common_attrs: CommonAttributes {
                     rustc_flags: Select::from_value(rustc_flags.clone()),
                     ..CommonAttributes::default()
                 },
-                ..CrateContext::default()
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1325,12 +1431,22 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
                 common_attrs: CommonAttributes {
                     crate_features,
                     ..CommonAttributes::default()
                 },
-                ..CrateContext::default()
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1365,8 +1481,18 @@ mod test {
                 name: crate_id.name,
                 version: crate_id.version,
                 package_url: Some("http://www.mock_crate.com/".to_owned()),
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1408,8 +1534,17 @@ mod test {
                 version: crate_id.version,
                 package_url: Some("http://www.mock_crate.com/".to_owned()),
                 license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
             },
         );
 
@@ -1463,8 +1598,16 @@ mod test {
                 package_url: Some("http://www.mock_crate.com/".to_owned()),
                 license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
                 license_file: Some("LICENSE.txt".to_owned()),
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
             },
         );
 

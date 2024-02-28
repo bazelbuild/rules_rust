@@ -140,11 +140,22 @@ mod test {
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
             version: "0.1.0".to_owned(),
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =
@@ -186,11 +197,22 @@ mod test {
         CrateContext {
             name: "mock_crate_a".to_owned(),
             version: "0.1.0".to_owned(),
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         }
     }
 
@@ -260,11 +282,22 @@ mod test {
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
             version: "0.1.0".to_owned(),
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =
@@ -314,11 +347,22 @@ mod test {
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
             version: "0.1.0".to_owned(),
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =
