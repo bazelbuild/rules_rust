@@ -187,7 +187,7 @@ impl PartialEq<String> for Digest {
 
 #[cfg(test)]
 mod test {
-    use crate::config::{CrateAnnotations, CrateId};
+    use crate::config::{CrateAnnotations, CrateNameAndVersionReq};
     use crate::splicing::cargo_config::{AdditionalRegistry, CargoConfig, Registry};
     use crate::utils::target_triple::TargetTriple;
 
@@ -223,7 +223,7 @@ mod test {
             generate_binaries: false,
             generate_build_scripts: false,
             annotations: BTreeMap::from([(
-                CrateId::new("rustonomicon".to_owned(), "1.0.0".to_owned()),
+                CrateNameAndVersionReq::new("rustonomicon".to_owned(), "1.0.0".parse().unwrap()),
                 CrateAnnotations {
                     compile_data_glob: Some(BTreeSet::from(["arts/**".to_owned()])),
                     ..CrateAnnotations::default()

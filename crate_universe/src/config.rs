@@ -1,18 +1,21 @@
 //! A module for configuration information
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::AsRef;
+use std::fmt::Formatter;
 use std::iter::Sum;
 use std::ops::Add;
 use std::path::Path;
+use std::str::FromStr;
 use std::{fmt, fs};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use cargo_lock::package::GitReference;
 use cargo_metadata::Package;
 use semver::VersionReq;
 use serde::de::value::SeqAccessDeserializer;
-use serde::de::{Deserializer, SeqAccess, Visitor};
+use serde::de::{Deserializer, SeqAccess, Unexpected, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
 use crate::select::{Select, Selectable};
@@ -524,40 +527,6 @@ impl CrateId {
     pub fn new(name: String, version: String) -> Self {
         Self { name, version }
     }
-
-    /// Compares a [CrateId] against a [cargo_metadata::Package].
-    pub fn matches(&self, package: &Package) -> bool {
-        // If the package name does not match, it's obviously
-        // not the right package
-        if self.name != "*" && self.name != package.name {
-            return false;
-        }
-
-        // First see if the package version matches exactly
-        if package.version.to_string() == self.version {
-            return true;
-        }
-
-        // If the version provided is the wildcard "*", it matches. Do not
-        // delegate to the semver crate in this case because semver does not
-        // consider "*" to match prerelease packages. That's expected behavior
-        // in the context of declaring package dependencies, but not in the
-        // context of declaring which versions of preselected packages an
-        // annotation applies to.
-        if self.version == "*" {
-            return true;
-        }
-
-        // Next, check to see if the version provided is a semver req and
-        // check if the package matches the condition
-        if let Ok(semver) = VersionReq::parse(&self.version) {
-            if semver.matches(&package.version) {
-                return true;
-            }
-        }
-
-        false
-    }
 }
 
 impl From<&Package> for CrateId {
@@ -688,7 +657,7 @@ pub struct Config {
 
     /// Additional settings to apply to generated crates
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub annotations: BTreeMap<CrateId, CrateAnnotations>,
+    pub annotations: BTreeMap<CrateNameAndVersionReq, CrateAnnotations>,
 
     /// Settings used to determine various render info
     pub rendering: RenderConfig,
@@ -705,6 +674,178 @@ impl Config {
     pub fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path)?;
         Ok(serde_json::from_str(&data)?)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CrateNameAndVersionReq {
+    /// The name of the crate
+    pub name: String,
+
+    version_req_string: VersionReqString,
+}
+
+impl Serialize for CrateNameAndVersionReq {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!(
+            "{} {}",
+            self.name, self.version_req_string.original
+        ))
+    }
+}
+
+struct CrateNameAndVersionReqVisitor;
+impl<'de> Visitor<'de> for CrateNameAndVersionReqVisitor {
+    type Value = CrateNameAndVersionReq;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("Expected string value of `{name} {version}`.")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let (name, version) = v.rsplit_once(' ').ok_or_else(|| {
+            E::custom(format!(
+                "Expected string value of `{{name}} {{version}}`. Got '{v}'"
+            ))
+        })?;
+        version
+            .parse()
+            .map(|version| CrateNameAndVersionReq {
+                name: name.to_string(),
+                version_req_string: version,
+            })
+            .map_err(|err| E::custom(err.to_string()))
+    }
+}
+
+impl<'de> Deserialize<'de> for CrateNameAndVersionReq {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(CrateNameAndVersionReqVisitor)
+    }
+}
+
+/// A version requirement (i.e. a semver::VersionReq) which preserves the original string it was parsed from.
+/// This means that you can report back to the user whether they wrote `1` or `1.0.0` or `^1.0.0` or `>=1,<2`,
+/// and support exact round-trip serialization and deserialization.
+#[derive(Clone, Debug)]
+pub struct VersionReqString {
+    original: String,
+
+    parsed: VersionReq,
+}
+
+impl FromStr for VersionReqString {
+    type Err = anyhow::Error;
+
+    fn from_str(original: &str) -> Result<Self, Self::Err> {
+        let parsed = VersionReq::parse(original)
+            .context("VersionReqString must be a valid semver requirement")?;
+        Ok(VersionReqString {
+            original: original.to_owned(),
+            parsed,
+        })
+    }
+}
+
+impl PartialEq for VersionReqString {
+    fn eq(&self, other: &Self) -> bool {
+        self.original == other.original
+    }
+}
+
+impl Eq for VersionReqString {}
+
+impl PartialOrd for VersionReqString {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for VersionReqString {
+    fn cmp(&self, other: &Self) -> Ordering {
+        Ord::cmp(&self.original, &other.original)
+    }
+}
+
+impl Serialize for VersionReqString {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.original)
+    }
+}
+
+impl<'de> Deserialize<'de> for VersionReqString {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct StringVisitor;
+
+        impl<'de> Visitor<'de> for StringVisitor {
+            type Value = String;
+
+            fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+                formatter.write_str("string of a semver requirement")
+            }
+        }
+
+        let original = deserializer.deserialize_str(StringVisitor)?;
+        let parsed = VersionReq::parse(&original).map_err(|_| {
+            serde::de::Error::invalid_value(
+                Unexpected::Str(&original),
+                &"a valid semver requirement",
+            )
+        })?;
+        Ok(VersionReqString { original, parsed })
+    }
+}
+
+impl CrateNameAndVersionReq {
+    #[cfg(test)]
+    pub fn new(name: String, version_req_string: VersionReqString) -> CrateNameAndVersionReq {
+        CrateNameAndVersionReq {
+            name,
+            version_req_string,
+        }
+    }
+
+    /// Compares a [CrateNameAndVersionReq] against a [cargo_metadata::Package].
+    pub fn matches(&self, package: &Package) -> bool {
+        // If the package name does not match, it's obviously
+        // not the right package
+        if self.name != "*" && self.name != package.name {
+            return false;
+        }
+
+        // First see if the package version matches exactly
+        if package.version.to_string() == self.version_req_string.original {
+            return true;
+        }
+
+        // If the version provided is the wildcard "*", it matches. Do not
+        // delegate to the semver crate in this case because semver does not
+        // consider "*" to match prerelease packages. That's expected behavior
+        // in the context of declaring package dependencies, but not in the
+        // context of declaring which versions of preselected packages an
+        // annotation applies to.
+        if self.version_req_string.original == "*" {
+            return true;
+        }
+
+        // Next, check to see if the version provided is a semver req and
+        // check if the package matches the condition
+        self.version_req_string.parsed.matches(&package.version)
     }
 }
 
@@ -731,7 +872,7 @@ mod test {
     #[test]
     fn test_crate_id_matches() {
         let mut package = mock_cargo_metadata_package();
-        let id = CrateId::new("mock-pkg".to_owned(), "0.1.0".to_owned());
+        let id = CrateNameAndVersionReq::new("mock-pkg".to_owned(), "0.1.0".parse().unwrap());
 
         package.version = cargo_metadata::semver::Version::new(0, 1, 0);
         assert!(id.matches(&package));
@@ -741,19 +882,43 @@ mod test {
     }
 
     #[test]
-    fn test_crate_id_semver_matches() {
+    fn test_crate_name_and_version_req_serde() {
+        let id: CrateNameAndVersionReq = serde_json::from_str("\"crate 0.1.0\"").unwrap();
+        assert_eq!(
+            id,
+            CrateNameAndVersionReq::new(
+                "crate".to_owned(),
+                VersionReqString::from_str("0.1.0").unwrap()
+            )
+        );
+        assert_eq!(serde_json::to_string(&id).unwrap(), "\"crate 0.1.0\"");
+    }
+
+    #[test]
+    fn test_crate_name_and_version_req_serde_semver() {
+        let id: CrateNameAndVersionReq = serde_json::from_str("\"crate *\"").unwrap();
+        assert_eq!(
+            id,
+            CrateNameAndVersionReq::new(
+                "crate".to_owned(),
+                VersionReqString::from_str("*").unwrap()
+            )
+        );
+        assert_eq!(serde_json::to_string(&id).unwrap(), "\"crate *\"");
+    }
+
+    #[test]
+    fn test_crate_name_and_version_req_semver_matches() {
         let mut package = mock_cargo_metadata_package();
         package.version = cargo_metadata::semver::Version::new(1, 0, 0);
-        let mut id = CrateId::new("mock-pkg".to_owned(), "0.1.0".to_owned());
-
-        id.version = "*".to_owned();
+        let id = CrateNameAndVersionReq::new("mock-pkg".to_owned(), "*".parse().unwrap());
         assert!(id.matches(&package));
 
         let mut prerelease = mock_cargo_metadata_package();
         prerelease.version = cargo_metadata::semver::Version::parse("1.0.0-pre.0").unwrap();
         assert!(id.matches(&prerelease));
 
-        id.version = "<1".to_owned();
+        let id = CrateNameAndVersionReq::new("mock-pkg".to_owned(), "<1".parse().unwrap());
         assert!(!id.matches(&package));
     }
 
@@ -770,7 +935,10 @@ mod test {
         // Annotations
         let annotation = config
             .annotations
-            .get(&CrateId::new("rand".to_owned(), "0.8.5".to_owned()))
+            .get(&CrateNameAndVersionReq::new(
+                "rand".to_owned(),
+                "0.8.5".parse().unwrap(),
+            ))
             .unwrap();
         assert_eq!(
             annotation.crate_features,

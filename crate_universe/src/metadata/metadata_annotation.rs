@@ -471,6 +471,7 @@ fn cargo_meta_pkg_to_locked_pkg<'a>(
 
 #[cfg(test)]
 mod test {
+    use crate::config::CrateNameAndVersionReq;
     use super::*;
 
     use crate::test::*;
@@ -575,7 +576,7 @@ mod test {
         // Create a config with some random annotation
         let mut config = Config::default();
         config.annotations.insert(
-            CrateId::new("mock-crate".to_owned(), "0.1.0".to_owned()),
+            CrateNameAndVersionReq::new("mock-crate".to_owned(), "0.1.0".parse().unwrap()),
             CrateAnnotations::default(),
         );
 
@@ -590,6 +591,7 @@ mod test {
     #[test]
     fn defaults_from_package_metadata() {
         let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
+        let crate_name_and_version_req = CrateNameAndVersionReq::new("has_package_metadata".to_owned(), "0.0.0".parse().unwrap());
         let annotations = CrateAnnotations {
             rustc_env: Some(Select::from_value(BTreeMap::from([(
                 "BAR".to_owned(),
@@ -601,7 +603,7 @@ mod test {
         let mut config = Config::default();
         config
             .annotations
-            .insert(crate_id.clone(), annotations.clone());
+            .insert(crate_name_and_version_req, annotations.clone());
 
         // Combine the above annotations with default values provided by the
         // crate author in package metadata.
