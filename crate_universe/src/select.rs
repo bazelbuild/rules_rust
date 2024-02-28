@@ -3,6 +3,7 @@ use std::fmt::Debug;
 
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
+/// A wrapper around values where some values may be conditionally included (e.g. only on a certain platform), and others are unconditional.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Select<T>
 where
@@ -78,19 +79,23 @@ where
         }
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    /// Whether there zero values in this collection, common or configuration-specific.
+    pub fn is_empty(&self) -> bool {
         T::is_empty(self)
     }
 
-    pub(crate) fn configurations(&self) -> BTreeSet<String> {
+    /// A list of the configurations which have some configuration-specific value associated.
+    pub fn configurations(&self) -> BTreeSet<String> {
         self.selects.keys().cloned().collect()
     }
 
-    pub(crate) fn items(&self) -> Vec<(Option<String>, T::ItemType)> {
+    /// All values and their associated configurations, if any.
+    pub fn items(&self) -> Vec<(Option<String>, T::ItemType)> {
         T::items(self)
     }
 
-    pub(crate) fn values(&self) -> Vec<T::ItemType> {
+    /// All values, whether common or configured.
+    pub fn values(&self) -> Vec<T::ItemType> {
         T::values(self)
     }
 
