@@ -25,7 +25,7 @@ use crate::utils::target_triple::TargetTriple;
 /// Representations of different kinds of crate vendoring into workspaces.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
-pub enum VendorMode {
+pub(crate) enum VendorMode {
     /// Crates having full source being vendored into a workspace
     Local,
 
@@ -47,58 +47,58 @@ impl std::fmt::Display for VendorMode {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct RenderConfig {
+pub(crate) struct RenderConfig {
     /// The name of the repository being rendered
-    pub repository_name: String,
+    pub(crate) repository_name: String,
 
     /// The pattern to use for BUILD file names.
     /// Eg. `//:BUILD.{name}-{version}.bazel`
     #[serde(default = "default_build_file_template")]
-    pub build_file_template: String,
+    pub(crate) build_file_template: String,
 
     /// The pattern to use for a crate target.
     /// Eg. `@{repository}__{name}-{version}//:{target}`
     #[serde(default = "default_crate_label_template")]
-    pub crate_label_template: String,
+    pub(crate) crate_label_template: String,
 
     /// The pattern to use for the `defs.bzl` and `BUILD.bazel`
     /// file names used for the crates module.
     /// Eg. `//:{file}`
     #[serde(default = "default_crates_module_template")]
-    pub crates_module_template: String,
+    pub(crate) crates_module_template: String,
 
     /// The pattern used for a crate's repository name.
     /// Eg. `{repository}__{name}-{version}`
     #[serde(default = "default_crate_repository_template")]
-    pub crate_repository_template: String,
+    pub(crate) crate_repository_template: String,
 
     /// Default alias rule to use for packages.  Can be overridden by annotations.
     #[serde(default)]
-    pub default_alias_rule: AliasRule,
+    pub(crate) default_alias_rule: AliasRule,
 
     /// The default of the `package_name` parameter to use for the module macros like `all_crate_deps`.
     /// In general, this should be be unset to allow the macros to do auto-detection in the analysis phase.
-    pub default_package_name: Option<String>,
+    pub(crate) default_package_name: Option<String>,
 
     /// Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This
     /// catches a `target_triple`being targeted that isn't declared in `supported_platform_triples`.
     #[serde(default = "default_generate_target_compatible_with")]
-    pub generate_target_compatible_with: bool,
+    pub(crate) generate_target_compatible_with: bool,
 
     /// The pattern to use for platform constraints.
     /// Eg. `@rules_rust//rust/platform:{triple}`.
     #[serde(default = "default_platforms_template")]
-    pub platforms_template: String,
+    pub(crate) platforms_template: String,
 
     /// The command to use for regenerating generated files.
-    pub regen_command: String,
+    pub(crate) regen_command: String,
 
     /// An optional configuration for rendering content to be rendered into repositories.
-    pub vendor_mode: Option<VendorMode>,
+    pub(crate) vendor_mode: Option<VendorMode>,
 
     /// Whether to generate package metadata
     #[serde(default = "default_generate_rules_license_metadata")]
-    pub generate_rules_license_metadata: bool,
+    pub(crate) generate_rules_license_metadata: bool,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -153,7 +153,7 @@ fn default_generate_rules_license_metadata() -> bool {
 
 /// A representation of some Git identifier used to represent the "revision" or "pin" of a checkout.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Commitish {
+pub(crate) enum Commitish {
     /// From a tag.
     Tag(String),
 
@@ -176,7 +176,7 @@ impl From<GitReference> for Commitish {
 
 /// Information representing deterministic identifiers for some remote asset.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub enum Checksumish {
+pub(crate) enum Checksumish {
     Http {
         /// The sha256 digest of an http archive
         sha256: Option<String>,
@@ -193,7 +193,7 @@ pub enum Checksumish {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
-pub enum AliasRule {
+pub(crate) enum AliasRule {
     #[default]
     #[serde(rename = "alias")]
     Alias,
@@ -208,7 +208,7 @@ pub enum AliasRule {
 }
 
 impl AliasRule {
-    pub fn bzl(&self) -> Option<String> {
+    pub(crate) fn bzl(&self) -> Option<String> {
         match self {
             AliasRule::Alias => None,
             AliasRule::Dbg | AliasRule::Fastbuild | AliasRule::Opt => {
@@ -218,7 +218,7 @@ impl AliasRule {
         }
     }
 
-    pub fn rule(&self) -> String {
+    pub(crate) fn rule(&self) -> String {
         match self {
             AliasRule::Alias => "alias".to_owned(),
             AliasRule::Dbg => "transition_alias_dbg".to_owned(),
@@ -230,115 +230,115 @@ impl AliasRule {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CrateAnnotations {
+pub(crate) struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
-    pub gen_binaries: Option<GenBinaries>,
+    pub(crate) gen_binaries: Option<GenBinaries>,
 
     /// Determins whether or not Cargo build scripts should be generated for the current package
-    pub gen_build_script: Option<bool>,
+    pub(crate) gen_build_script: Option<bool>,
 
     /// Additional data to pass to
     /// [deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-deps) attribute.
-    pub deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-proc_macro_deps) attribute.
-    pub proc_macro_deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to  the target's
     /// [crate_features](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-crate_features) attribute.
-    pub crate_features: Option<Select<BTreeSet<String>>>,
+    pub(crate) crate_features: Option<Select<BTreeSet<String>>>,
 
     /// Additional data to pass to  the target's
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
-    pub data: Option<Select<BTreeSet<Label>>>,
+    pub(crate) data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-data) attribute.
-    pub data_glob: Option<BTreeSet<String>>,
+    pub(crate) data_glob: Option<BTreeSet<String>>,
 
     /// Additional data to pass to
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
-    pub compile_data: Option<Select<BTreeSet<Label>>>,
+    pub(crate) compile_data: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
-    pub compile_data_glob: Option<BTreeSet<String>>,
+    pub(crate) compile_data_glob: Option<BTreeSet<String>>,
 
     /// If true, disables pipelining for library targets generated for this crate.
-    pub disable_pipelining: bool,
+    pub(crate) disable_pipelining: bool,
 
     /// Additional data to pass to  the target's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env) attribute.
-    pub rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) rustc_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional data to pass to  the target's
     /// [rustc_env_files](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_env_files) attribute.
-    pub rustc_env_files: Option<Select<BTreeSet<String>>>,
+    pub(crate) rustc_env_files: Option<Select<BTreeSet<String>>>,
 
     /// Additional data to pass to the target's
     /// [rustc_flags](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-rustc_flags) attribute.
-    pub rustc_flags: Option<Select<Vec<String>>>,
+    pub(crate) rustc_flags: Option<Select<Vec<String>>>,
 
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
-    pub build_script_deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) build_script_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
-    pub build_script_proc_macro_deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) build_script_proc_macro_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-data) attribute.
-    pub build_script_data: Option<Select<BTreeSet<Label>>>,
+    pub(crate) build_script_data: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [tools](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-tools) attribute.
-    pub build_script_tools: Option<Select<BTreeSet<Label>>>,
+    pub(crate) build_script_tools: Option<Select<BTreeSet<Label>>>,
 
     /// An optional glob pattern to set on the
     /// [build_script_data](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-build_script_env) attribute.
-    pub build_script_data_glob: Option<BTreeSet<String>>,
+    pub(crate) build_script_data_glob: Option<BTreeSet<String>>,
 
     /// Additional environment variables to pass to a build script's
     /// [build_script_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
-    pub build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
-    pub build_script_toolchains: Option<BTreeSet<Label>>,
+    pub(crate) build_script_toolchains: Option<BTreeSet<Label>>,
 
     /// Directory to run the crate's build script in. If not set, will run in the manifest directory, otherwise a directory relative to the exec root.
-    pub build_script_rundir: Option<Select<String>>,
+    pub(crate) build_script_rundir: Option<Select<String>>,
 
     /// A scratch pad used to write arbitrary text to target BUILD files.
-    pub additive_build_file_content: Option<String>,
+    pub(crate) additive_build_file_content: Option<String>,
 
     /// For git sourced crates, this is a the
     /// [git_repository::shallow_since](https://docs.bazel.build/versions/main/repo/git.html#new_git_repository-shallow_since) attribute.
-    pub shallow_since: Option<String>,
+    pub(crate) shallow_since: Option<String>,
 
     /// The `patch_args` attribute of a Bazel repository rule. See
     /// [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)
-    pub patch_args: Option<Vec<String>>,
+    pub(crate) patch_args: Option<Vec<String>>,
 
     /// The `patch_tool` attribute of a Bazel repository rule. See
     /// [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)
-    pub patch_tool: Option<String>,
+    pub(crate) patch_tool: Option<String>,
 
     /// The `patches` attribute of a Bazel repository rule. See
     /// [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)
-    pub patches: Option<BTreeSet<String>>,
+    pub(crate) patches: Option<BTreeSet<String>>,
 
     /// Extra targets the should be aliased during rendering.
-    pub extra_aliased_targets: Option<BTreeMap<String, String>>,
+    pub(crate) extra_aliased_targets: Option<BTreeMap<String, String>>,
 
     /// Transition rule to use instead of `native.alias()`.
-    pub alias_rule: Option<AliasRule>,
+    pub(crate) alias_rule: Option<AliasRule>,
 }
 
 macro_rules! joined_extra_member {
@@ -440,25 +440,28 @@ impl Sum for CrateAnnotations {
 /// not specify a different value for the same annotation in their
 /// crates_repository attributes.
 #[derive(Debug, Deserialize)]
-pub struct AnnotationsProvidedByPackage {
-    pub gen_build_script: Option<bool>,
-    pub data: Option<Select<BTreeSet<Label>>>,
-    pub data_glob: Option<BTreeSet<String>>,
-    pub deps: Option<Select<BTreeSet<Label>>>,
-    pub compile_data: Option<Select<BTreeSet<Label>>>,
-    pub compile_data_glob: Option<BTreeSet<String>>,
-    pub rustc_env: Option<Select<BTreeMap<String, String>>>,
-    pub rustc_env_files: Option<Select<BTreeSet<String>>>,
-    pub rustc_flags: Option<Select<Vec<String>>>,
-    pub build_script_env: Option<Select<BTreeMap<String, String>>>,
-    pub build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
-    pub build_script_rundir: Option<Select<String>>,
-    pub additive_build_file_content: Option<String>,
-    pub extra_aliased_targets: Option<BTreeMap<String, String>>,
+pub(crate) struct AnnotationsProvidedByPackage {
+    pub(crate) gen_build_script: Option<bool>,
+    pub(crate) data: Option<Select<BTreeSet<Label>>>,
+    pub(crate) data_glob: Option<BTreeSet<String>>,
+    pub(crate) deps: Option<Select<BTreeSet<Label>>>,
+    pub(crate) compile_data: Option<Select<BTreeSet<Label>>>,
+    pub(crate) compile_data_glob: Option<BTreeSet<String>>,
+    pub(crate) rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) rustc_env_files: Option<Select<BTreeSet<String>>>,
+    pub(crate) rustc_flags: Option<Select<Vec<String>>>,
+    pub(crate) build_script_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_rundir: Option<Select<String>>,
+    pub(crate) additive_build_file_content: Option<String>,
+    pub(crate) extra_aliased_targets: Option<BTreeMap<String, String>>,
 }
 
 impl CrateAnnotations {
-    pub fn apply_defaults_from_package_metadata(&mut self, pkg_metadata: &serde_json::Value) {
+    pub(crate) fn apply_defaults_from_package_metadata(
+        &mut self,
+        pkg_metadata: &serde_json::Value,
+    ) {
         #[deny(unused_variables)]
         let AnnotationsProvidedByPackage {
             gen_build_script,
@@ -524,7 +527,7 @@ pub struct CrateId {
 
 impl CrateId {
     /// Construct a new [CrateId]
-    pub fn new(name: String, version: semver::Version) -> Self {
+    pub(crate) fn new(name: String, version: semver::Version) -> Self {
         Self { name, version }
     }
 }
@@ -592,7 +595,7 @@ impl std::fmt::Display for CrateId {
 }
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
-pub enum GenBinaries {
+pub(crate) enum GenBinaries {
     All,
     Some(BTreeSet<String>),
 }
@@ -652,30 +655,30 @@ impl<'de> Visitor<'de> for GenBinariesVisitor {
 /// Workspace specific settings to control how targets are generated
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Config {
+pub(crate) struct Config {
     /// Whether to generate `rust_binary` targets for all bins by default
-    pub generate_binaries: bool,
+    pub(crate) generate_binaries: bool,
 
     /// Whether or not to generate Cargo build scripts by default
-    pub generate_build_scripts: bool,
+    pub(crate) generate_build_scripts: bool,
 
     /// Additional settings to apply to generated crates
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub annotations: BTreeMap<CrateNameAndVersionReq, CrateAnnotations>,
+    pub(crate) annotations: BTreeMap<CrateNameAndVersionReq, CrateAnnotations>,
 
     /// Settings used to determine various render info
-    pub rendering: RenderConfig,
+    pub(crate) rendering: RenderConfig,
 
     /// The contents of a Cargo configuration file
-    pub cargo_config: Option<toml::Value>,
+    pub(crate) cargo_config: Option<toml::Value>,
 
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    pub supported_platform_triples: BTreeSet<TargetTriple>,
+    pub(crate) supported_platform_triples: BTreeSet<TargetTriple>,
 }
 
 impl Config {
-    pub fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
+    pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path)?;
         Ok(serde_json::from_str(&data)?)
     }

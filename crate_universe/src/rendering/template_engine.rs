@@ -15,13 +15,13 @@ use crate::rendering::{
 use crate::select::Select;
 use crate::utils::sanitize_repository_name;
 
-pub struct TemplateEngine {
+pub(crate) struct TemplateEngine {
     engine: Tera,
     context: tera::Context,
 }
 
 impl TemplateEngine {
-    pub fn new(render_config: &RenderConfig) -> Self {
+    pub(crate) fn new(render_config: &RenderConfig) -> Self {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
             (
@@ -123,7 +123,7 @@ impl TemplateEngine {
         self.context.clone()
     }
 
-    pub fn render_header(&self) -> Result<String> {
+    pub(crate) fn render_header(&self) -> Result<String> {
         let context = self.new_tera_ctx();
         let mut header = self
             .engine

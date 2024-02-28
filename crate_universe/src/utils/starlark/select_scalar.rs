@@ -11,7 +11,7 @@ use crate::utils::starlark::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectScalar<T>
+pub(crate) struct SelectScalar<T>
 where
     T: SelectableScalar,
 {
@@ -30,7 +30,7 @@ where
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
     /// configurations in the output SelectScalar.
-    pub fn new(select: Select<T>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
+    pub(crate) fn new(select: Select<T>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
         let (common, selects) = select.into_parts();
 
         // Map new configuration -> WithOriginalConfigurations(value, old configurations).
@@ -77,7 +77,7 @@ where
     }
 
     /// Determine whether or not the select should be serialized
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.common.is_none() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }

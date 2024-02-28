@@ -10,7 +10,7 @@ use crate::utils::target_triple::TargetTriple;
 /// Walk through all dependencies in a [CrateContext] list for all configuration specific
 /// dependencies to produce a mapping of configurations/Cargo target_triples to compatible
 /// Bazel target_triples.  Also adds mappings for all known target_triples.
-pub fn resolve_cfg_platforms(
+pub(crate) fn resolve_cfg_platforms(
     crates: Vec<&CrateContext>,
     supported_platform_triples: &BTreeSet<TargetTriple>,
 ) -> Result<BTreeMap<String, BTreeSet<TargetTriple>>> {

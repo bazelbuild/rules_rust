@@ -10,21 +10,21 @@ use super::{
 // that attribute is that they get serialized as a map, not struct. In Starlark
 // unlike in JSON, maps and structs are differently serialized, so we need to
 // help fill in the function name or else we'd get a Starlark map instead.
-pub fn rust_proc_macro<S>(rule: &RustProcMacro, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn rust_proc_macro<S>(rule: &RustProcMacro, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     FunctionCall::new("rust_proc_macro", rule).serialize(serializer)
 }
 
-pub fn rust_library<S>(rule: &RustLibrary, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn rust_library<S>(rule: &RustLibrary, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     FunctionCall::new("rust_library", rule).serialize(serializer)
 }
 
-pub fn rust_binary<S>(rule: &RustBinary, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn rust_binary<S>(rule: &RustBinary, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -34,7 +34,7 @@ where
 // Serialize an array with each element on its own line, even if there is just a
 // single element which serde_starlark would ordinarily place on the same line
 // as the array brackets.
-pub struct MultilineArray<'a, A>(pub &'a A);
+pub(crate) struct MultilineArray<'a, A>(pub(crate) &'a A);
 
 impl<'a, A, T> Serialize for MultilineArray<'a, A>
 where
@@ -129,7 +129,7 @@ impl Serialize for ExportsFiles {
 }
 
 impl Data {
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.glob.has_any_include() && self.select.is_empty()
     }
 }

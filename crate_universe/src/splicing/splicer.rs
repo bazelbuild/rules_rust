@@ -17,7 +17,7 @@ use super::{read_manifest, DirectPackageManifest, WorkspaceMetadata};
 
 /// The core splicer implementation. Each style of Bazel workspace should be represented
 /// here and a splicing implementation defined.
-pub enum SplicerKind<'a> {
+pub(crate) enum SplicerKind<'a> {
     /// Splice a manifest which is represented by a Cargo workspace
     Workspace {
         path: &'a PathBuf,
@@ -42,7 +42,7 @@ pub enum SplicerKind<'a> {
 const IGNORE_LIST: &[&str] = &[".git", "bazel-*", ".svn"];
 
 impl<'a> SplicerKind<'a> {
-    pub fn new(
+    pub(crate) fn new(
         manifests: &'a BTreeMap<PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
         cargo: &Path,
@@ -185,7 +185,7 @@ impl<'a> SplicerKind<'a> {
     }
 
     /// Performs splicing based on the current variant.
-    pub fn splice(&self, workspace_dir: &Path) -> Result<SplicedManifest> {
+    pub(crate) fn splice(&self, workspace_dir: &Path) -> Result<SplicedManifest> {
         match self {
             SplicerKind::Workspace {
                 path,
@@ -517,14 +517,14 @@ impl<'a> SplicerKind<'a> {
     }
 }
 
-pub struct Splicer {
+pub(crate) struct Splicer {
     workspace_dir: PathBuf,
     manifests: BTreeMap<PathBuf, Manifest>,
     splicing_manifest: SplicingManifest,
 }
 
 impl Splicer {
-    pub fn new(workspace_dir: PathBuf, splicing_manifest: SplicingManifest) -> Result<Self> {
+    pub(crate) fn new(workspace_dir: PathBuf, splicing_manifest: SplicingManifest) -> Result<Self> {
         // Load all manifests
         let manifests = splicing_manifest
             .manifests
@@ -544,7 +544,7 @@ impl Splicer {
     }
 
     /// Build a new workspace root
-    pub fn splice_workspace(&self, cargo: &Path) -> Result<SplicedManifest> {
+    pub(crate) fn splice_workspace(&self, cargo: &Path) -> Result<SplicedManifest> {
         SplicerKind::new(&self.manifests, &self.splicing_manifest, cargo)?
             .splice(&self.workspace_dir)
     }
@@ -553,7 +553,7 @@ impl Splicer {
 const DEFAULT_SPLICING_PACKAGE_NAME: &str = "direct-cargo-bazel-deps";
 const DEFAULT_SPLICING_PACKAGE_VERSION: &str = "0.0.1";
 
-pub fn default_cargo_package_manifest() -> cargo_toml::Manifest {
+pub(crate) fn default_cargo_package_manifest() -> cargo_toml::Manifest {
     // A manifest is generated with a fake workspace member so the [cargo_toml::Manifest::Workspace]
     // member is deseralized and is not `None`.
     cargo_toml::Manifest::from_str(
@@ -573,7 +573,7 @@ pub fn default_cargo_package_manifest() -> cargo_toml::Manifest {
     .unwrap()
 }
 
-pub fn default_splicing_package_crate_id() -> CrateId {
+pub(crate) fn default_splicing_package_crate_id() -> CrateId {
     CrateId::new(
         DEFAULT_SPLICING_PACKAGE_NAME.to_string(),
         semver::Version::parse(DEFAULT_SPLICING_PACKAGE_VERSION)
@@ -581,7 +581,7 @@ pub fn default_splicing_package_crate_id() -> CrateId {
     )
 }
 
-pub fn default_cargo_workspace_manifest(
+pub(crate) fn default_cargo_workspace_manifest(
     resolver_version: &cargo_toml::Resolver,
 ) -> cargo_toml::Manifest {
     // A manifest is generated with a fake workspace member so the [cargo_toml::Manifest::Workspace]
@@ -601,14 +601,14 @@ pub fn default_cargo_workspace_manifest(
 }
 
 /// Determine whtether or not the manifest is a workspace root
-pub fn is_workspace_root(manifest: &Manifest) -> bool {
+pub(crate) fn is_workspace_root(manifest: &Manifest) -> bool {
     // Anything with any workspace data is considered a workspace
     manifest.workspace.is_some()
 }
 
 /// Evaluates whether or not a manifest is considered a "workspace" manifest.
 /// See [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html).
-pub fn is_workspace_owned(manifest: &Manifest) -> bool {
+pub(crate) fn is_workspace_owned(manifest: &Manifest) -> bool {
     if is_workspace_root(manifest) {
         return true;
     }
@@ -621,7 +621,7 @@ pub fn is_workspace_owned(manifest: &Manifest) -> bool {
 }
 
 /// Determines whether or not a particular manifest is a workspace member to a given root manifest
-pub fn is_workspace_member(
+pub(crate) fn is_workspace_member(
     root_manifest: &Manifest,
     root_manifest_path: &Path,
     manifest_path: &Path,
@@ -642,7 +642,7 @@ pub fn is_workspace_member(
     })
 }
 
-pub fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -> Result<()> {
+pub(crate) fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -> Result<()> {
     // Remove the file in case one exists already, preventing symlinked files
     // from having their contents overwritten.
     if path.exists() {
@@ -693,7 +693,11 @@ fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
 }
 
 /// Symlinks the root contents of a source directory into a destination directory
-pub fn symlink_roots(source: &Path, dest: &Path, ignore_list: Option<&[&str]>) -> Result<()> {
+pub(crate) fn symlink_roots(
+    source: &Path,
+    dest: &Path,
+    ignore_list: Option<&[&str]>,
+) -> Result<()> {
     // Ensure the source exists and is a directory
     if !source.is_dir() {
         bail!("Source path is not a directory: {}", source.display());

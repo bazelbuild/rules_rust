@@ -55,7 +55,7 @@ pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> R
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Digest(String);
+pub(crate) struct Digest(String);
 
 impl Digest {
     pub(crate) fn new(
@@ -130,7 +130,7 @@ impl Digest {
         Self(hasher.finalize().encode_hex::<String>())
     }
 
-    pub fn bin_version(binary: &Path) -> Result<String> {
+    pub(crate) fn bin_version(binary: &Path) -> Result<String> {
         let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 

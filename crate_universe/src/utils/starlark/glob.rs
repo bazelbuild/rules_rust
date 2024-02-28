@@ -6,14 +6,14 @@ use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Glob {
-    pub allow_empty: bool,
-    pub include: BTreeSet<String>,
-    pub exclude: BTreeSet<String>,
+pub(crate) struct Glob {
+    pub(crate) allow_empty: bool,
+    pub(crate) include: BTreeSet<String>,
+    pub(crate) exclude: BTreeSet<String>,
 }
 
 impl Glob {
-    pub fn new_rust_srcs() -> Self {
+    pub(crate) fn new_rust_srcs() -> Self {
         Self {
             allow_empty: false,
             include: BTreeSet::from(["**/*.rs".to_owned()]),
@@ -21,7 +21,7 @@ impl Glob {
         }
     }
 
-    pub fn has_any_include(&self) -> bool {
+    pub(crate) fn has_any_include(&self) -> bool {
         self.include.is_empty()
         // Note: self.exclude intentionally not considered. A glob is empty if
         // there are no included globs. A glob cannot have only excludes.

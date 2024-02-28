@@ -1,6 +1,6 @@
 //! A module containing common test helpers
 
-pub fn mock_cargo_metadata_package() -> cargo_metadata::Package {
+pub(crate) fn mock_cargo_metadata_package() -> cargo_metadata::Package {
     serde_json::from_value(serde_json::json!({
         "name": "mock-pkg",
         "version": "3.3.3",
@@ -29,7 +29,7 @@ pub fn mock_cargo_metadata_package() -> cargo_metadata::Package {
     .unwrap()
 }
 
-pub fn mock_cargo_lock_package() -> cargo_lock::Package {
+pub(crate) fn mock_cargo_lock_package() -> cargo_lock::Package {
     toml::from_str(&textwrap::dedent(
         r#"
         name = "mock-pkg"
@@ -42,8 +42,8 @@ pub fn mock_cargo_lock_package() -> cargo_lock::Package {
     .unwrap()
 }
 
-pub mod metadata {
-    pub fn alias() -> cargo_metadata::Metadata {
+pub(crate) mod metadata {
+    pub(crate) fn alias() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/aliases/metadata.json"
@@ -51,7 +51,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn build_scripts() -> cargo_metadata::Metadata {
+    pub(crate) fn build_scripts() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/build_scripts/metadata.json"
@@ -59,7 +59,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn crate_types() -> cargo_metadata::Metadata {
+    pub(crate) fn crate_types() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_types/metadata.json"
@@ -67,7 +67,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn multi_cfg_dep() -> cargo_metadata::Metadata {
+    pub(crate) fn multi_cfg_dep() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/multi_cfg_dep/metadata.json"
@@ -75,7 +75,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn multi_kind_proc_macro_dep() -> cargo_metadata::Metadata {
+    pub(crate) fn multi_kind_proc_macro_dep() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/multi_kind_proc_macro_dep/metadata.json"
@@ -83,7 +83,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn no_deps() -> cargo_metadata::Metadata {
+    pub(crate) fn no_deps() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/no_deps/metadata.json"
@@ -91,7 +91,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn optional_deps_disabled() -> cargo_metadata::Metadata {
+    pub(crate) fn optional_deps_disabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_optional_deps_disabled/metadata.json"
@@ -99,7 +99,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn renamed_optional_deps_disabled() -> cargo_metadata::Metadata {
+    pub(crate) fn renamed_optional_deps_disabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_renamed_optional_deps_disabled/metadata.json"
@@ -107,7 +107,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn optional_deps_disabled_build_dep_enabled() -> cargo_metadata::Metadata {
+    pub(crate) fn optional_deps_disabled_build_dep_enabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_optional_deps_disabled_build_dep_enabled/metadata.json"
@@ -115,7 +115,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn optional_deps_enabled() -> cargo_metadata::Metadata {
+    pub(crate) fn optional_deps_enabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_optional_deps_enabled/metadata.json"
@@ -123,7 +123,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn renamed_optional_deps_enabled() -> cargo_metadata::Metadata {
+    pub(crate) fn renamed_optional_deps_enabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_renamed_optional_deps_enabled/metadata.json"
@@ -131,7 +131,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn common() -> cargo_metadata::Metadata {
+    pub(crate) fn common() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/common/metadata.json"
@@ -139,7 +139,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn git_repos() -> cargo_metadata::Metadata {
+    pub(crate) fn git_repos() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/git_repos/metadata.json"
@@ -147,7 +147,7 @@ pub mod metadata {
         .unwrap()
     }
 
-    pub fn has_package_metadata() -> cargo_metadata::Metadata {
+    pub(crate) fn has_package_metadata() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/has_package_metadata/metadata.json"
@@ -156,10 +156,10 @@ pub mod metadata {
     }
 }
 
-pub mod lockfile {
+pub(crate) mod lockfile {
     use std::str::FromStr;
 
-    pub fn alias() -> cargo_lock::Lockfile {
+    pub(crate) fn alias() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/aliases/Cargo.lock"
@@ -167,7 +167,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn build_scripts() -> cargo_lock::Lockfile {
+    pub(crate) fn build_scripts() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/build_scripts/Cargo.lock"
@@ -175,7 +175,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn crate_types() -> cargo_lock::Lockfile {
+    pub(crate) fn crate_types() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/crate_types/Cargo.lock"
@@ -183,7 +183,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn multi_cfg_dep() -> cargo_lock::Lockfile {
+    pub(crate) fn multi_cfg_dep() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/multi_cfg_dep/Cargo.lock"
@@ -191,7 +191,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn no_deps() -> cargo_lock::Lockfile {
+    pub(crate) fn no_deps() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/no_deps/Cargo.lock"
@@ -199,7 +199,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn common() -> cargo_lock::Lockfile {
+    pub(crate) fn common() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/common/Cargo.lock"
@@ -207,7 +207,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn git_repos() -> cargo_lock::Lockfile {
+    pub(crate) fn git_repos() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/git_repos/Cargo.lock"
@@ -215,7 +215,7 @@ pub mod lockfile {
         .unwrap()
     }
 
-    pub fn has_package_metadata() -> cargo_lock::Lockfile {
+    pub(crate) fn has_package_metadata() -> cargo_lock::Lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/has_package_metadata/Cargo.lock"

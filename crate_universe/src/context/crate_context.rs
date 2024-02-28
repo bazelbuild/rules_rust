@@ -27,7 +27,7 @@ pub struct CrateDependency {
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 #[serde(default)]
-pub struct TargetAttributes {
+pub(crate) struct TargetAttributes {
     /// The module name of the crate (notably, not the package name).
     //
     // This must be the first field of `TargetAttributes` to make it the
@@ -35,17 +35,17 @@ pub struct TargetAttributes {
     // by. The `Ord` impl controls the order of multiple rules of the same type
     // in the same BUILD file. In particular, this makes packages with multiple
     // bin crates generate those `rust_binary` targets in alphanumeric order.
-    pub crate_name: String,
+    pub(crate) crate_name: String,
 
     /// The path to the crate's root source file, relative to the manifest.
-    pub crate_root: Option<String>,
+    pub(crate) crate_root: Option<String>,
 
     /// A glob pattern of all source files required by the target
-    pub srcs: Glob,
+    pub(crate) srcs: Glob,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
-pub enum Rule {
+pub(crate) enum Rule {
     /// `rust_library`
     Library(TargetAttributes),
 
@@ -63,58 +63,58 @@ pub enum Rule {
 /// [core rules of `rules_rust`](https://bazelbuild.github.io/rules_rust/defs.html).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
-pub struct CommonAttributes {
+pub(crate) struct CommonAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub compile_data: Select<BTreeSet<Label>>,
+    pub(crate) compile_data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub compile_data_glob: BTreeSet<String>,
+    pub(crate) compile_data_glob: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub crate_features: Select<BTreeSet<String>>,
+    pub(crate) crate_features: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub data: Select<BTreeSet<Label>>,
+    pub(crate) data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub data_glob: BTreeSet<String>,
+    pub(crate) data_glob: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub deps: Select<BTreeSet<CrateDependency>>,
+    pub(crate) deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_deps: Select<BTreeSet<Label>>,
+    pub(crate) extra_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub deps_dev: Select<BTreeSet<CrateDependency>>,
+    pub(crate) deps_dev: Select<BTreeSet<CrateDependency>>,
 
-    pub edition: String,
+    pub(crate) edition: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub linker_script: Option<String>,
+    pub(crate) linker_script: Option<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
+    pub(crate) proc_macro_deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_proc_macro_deps: Select<BTreeSet<Label>>,
+    pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
+    pub(crate) proc_macro_deps_dev: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_env: Select<BTreeMap<String, String>>,
+    pub(crate) rustc_env: Select<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_env_files: Select<BTreeSet<String>>,
+    pub(crate) rustc_env_files: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_flags: Select<Vec<String>>,
+    pub(crate) rustc_flags: Select<Vec<String>>,
 
-    pub version: String,
+    pub(crate) version: String,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
+    pub(crate) tags: Vec<String>,
 }
 
 impl Default for CommonAttributes {
@@ -147,21 +147,21 @@ impl Default for CommonAttributes {
 // https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
-pub struct BuildScriptAttributes {
+pub(crate) struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub compile_data: Select<BTreeSet<Label>>,
+    pub(crate) compile_data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub data: Select<BTreeSet<Label>>,
+    pub(crate) data: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub data_glob: BTreeSet<String>,
+    pub(crate) data_glob: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub deps: Select<BTreeSet<CrateDependency>>,
+    pub(crate) deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_deps: Select<BTreeSet<Label>>,
+    pub(crate) extra_deps: Select<BTreeSet<Label>>,
 
     // TODO: refactor a crate with a build.rs file from two into three bazel
     // rules in order to deduplicate link_dep information. Currently as the
@@ -181,40 +181,40 @@ pub struct BuildScriptAttributes {
     // normal dependencies. This could be handled a special rule, or just using
     // a `filegroup`.
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub link_deps: Select<BTreeSet<CrateDependency>>,
+    pub(crate) link_deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_link_deps: Select<BTreeSet<Label>>,
+    pub(crate) extra_link_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub build_script_env: Select<BTreeMap<String, String>>,
+    pub(crate) build_script_env: Select<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rundir: Select<String>,
+    pub(crate) rundir: Select<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub extra_proc_macro_deps: Select<BTreeSet<Label>>,
+    pub(crate) extra_proc_macro_deps: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub proc_macro_deps: Select<BTreeSet<CrateDependency>>,
+    pub(crate) proc_macro_deps: Select<BTreeSet<CrateDependency>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_env: Select<BTreeMap<String, String>>,
+    pub(crate) rustc_env: Select<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_flags: Select<Vec<String>>,
+    pub(crate) rustc_flags: Select<Vec<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub rustc_env_files: Select<BTreeSet<String>>,
+    pub(crate) rustc_env_files: Select<BTreeSet<String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
-    pub tools: Select<BTreeSet<Label>>,
+    pub(crate) tools: Select<BTreeSet<Label>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub links: Option<String>,
+    pub(crate) links: Option<String>,
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub toolchains: BTreeSet<Label>,
+    pub(crate) toolchains: BTreeSet<Label>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -243,77 +243,77 @@ impl Default for BuildScriptAttributes {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CrateContext {
+pub(crate) struct CrateContext {
     /// The package name of the current crate
-    pub name: String,
+    pub(crate) name: String,
 
     /// The full version of the current crate
-    pub version: semver::Version,
+    pub(crate) version: semver::Version,
 
     /// The package URL of the current crate
     #[serde(default)]
-    pub package_url: Option<String>,
+    pub(crate) package_url: Option<String>,
 
     /// Optional source annotations if they were discoverable in the
     /// lockfile. Workspace Members will not have source annotations and
     /// potentially others.
     #[serde(default)]
-    pub repository: Option<SourceAnnotation>,
+    pub(crate) repository: Option<SourceAnnotation>,
 
     /// A list of all targets (lib, proc-macro, bin) associated with this package
     #[serde(default)]
-    pub targets: BTreeSet<Rule>,
+    pub(crate) targets: BTreeSet<Rule>,
 
     /// The name of the crate's root library target. This is the target that a dependent
     /// would get if they were to depend on `{crate_name}`.
     #[serde(default)]
-    pub library_target_name: Option<String>,
+    pub(crate) library_target_name: Option<String>,
 
     /// A set of attributes common to most [Rule] types or target types.
     #[serde(default)]
-    pub common_attrs: CommonAttributes,
+    pub(crate) common_attrs: CommonAttributes,
 
     /// Optional attributes for build scripts. This field is only populated if
     /// a build script (`custom-build`) target is defined for the crate.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub build_script_attrs: Option<BuildScriptAttributes>,
+    pub(crate) build_script_attrs: Option<BuildScriptAttributes>,
 
     /// The license used by the crate
     #[serde(default)]
-    pub license: Option<String>,
+    pub(crate) license: Option<String>,
 
     /// The SPDX licence IDs
     /// #[serde(default)]
-    pub license_ids: BTreeSet<String>,
+    pub(crate) license_ids: BTreeSet<String>,
 
     /// The license file
     #[serde(default)]
-    pub license_file: Option<String>,
+    pub(crate) license_file: Option<String>,
 
     /// Additional text to add to the generated BUILD file.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub additive_build_file_content: Option<String>,
+    pub(crate) additive_build_file_content: Option<String>,
 
     /// If true, disables pipelining for library targets generated for this crate
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     #[serde(default)]
-    pub disable_pipelining: bool,
+    pub(crate) disable_pipelining: bool,
 
     /// Extra targets that should be aliased.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     #[serde(default)]
-    pub extra_aliased_targets: BTreeMap<String, String>,
+    pub(crate) extra_aliased_targets: BTreeMap<String, String>,
 
     /// Transition rule to use instead of `alias`.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub alias_rule: Option<AliasRule>,
+    pub(crate) alias_rule: Option<AliasRule>,
 }
 
 impl CrateContext {
-    pub fn new(
+    pub(crate) fn new(
         annotation: &CrateAnnotation,
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,

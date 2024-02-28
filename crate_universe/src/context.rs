@@ -1,6 +1,6 @@
 //! Convert annotated metadata into a renderable context
 
-pub mod crate_context;
+pub(crate) mod crate_context;
 mod platforms;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,42 +18,42 @@ use crate::metadata::{Annotations, Dependency};
 use crate::select::Select;
 use crate::utils::target_triple::TargetTriple;
 
-pub use self::crate_context::*;
+pub(crate) use self::crate_context::*;
 
 /// A struct containing information about a Cargo dependency graph in an easily to consume
 /// format for rendering reproducible Bazel targets.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct Context {
     /// The collective checksum of all inputs to the context
-    pub checksum: Option<Digest>,
+    pub(crate) checksum: Option<Digest>,
 
     /// The collection of all crates that make up the dependency graph
-    pub crates: BTreeMap<CrateId, CrateContext>,
+    pub(crate) crates: BTreeMap<CrateId, CrateContext>,
 
     /// A subset of only crates with binary targets
-    pub binary_crates: BTreeSet<CrateId>,
+    pub(crate) binary_crates: BTreeSet<CrateId>,
 
     /// A subset of workspace members mapping to their workspace
     /// path relative to the workspace root
-    pub workspace_members: BTreeMap<CrateId, String>,
+    pub(crate) workspace_members: BTreeMap<CrateId, String>,
 
     /// A mapping of `cfg` flags to platform triples supporting the configuration
-    pub conditions: BTreeMap<String, BTreeSet<TargetTriple>>,
+    pub(crate) conditions: BTreeMap<String, BTreeSet<TargetTriple>>,
 
     /// A list of crates visible to any bazel module.
-    pub direct_deps: BTreeSet<CrateId>,
+    pub(crate) direct_deps: BTreeSet<CrateId>,
 
     /// A list of crates visible to this bazel module.
-    pub direct_dev_deps: BTreeSet<CrateId>,
+    pub(crate) direct_dev_deps: BTreeSet<CrateId>,
 }
 
 impl Context {
-    pub fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
+    pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path.as_ref())?;
         Ok(serde_json::from_str(&data)?)
     }
 
-    pub fn new(annotations: Annotations) -> Result<Self> {
+    pub(crate) fn new(annotations: Annotations) -> Result<Self> {
         // Build a map of crate contexts
         let crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
@@ -192,7 +192,7 @@ impl Context {
     }
 
     /// Create a set of all direct dependencies of workspace member crates.
-    pub fn workspace_member_deps(&self) -> BTreeSet<CrateDependency> {
+    pub(crate) fn workspace_member_deps(&self) -> BTreeSet<CrateDependency> {
         self.workspace_members
             .keys()
             .map(move |id| &self.crates[id])
@@ -208,7 +208,7 @@ impl Context {
             .collect()
     }
 
-    pub fn has_duplicate_workspace_member_dep(&self, dep: &CrateDependency) -> bool {
+    pub(crate) fn has_duplicate_workspace_member_dep(&self, dep: &CrateDependency) -> bool {
         1 < self
             .workspace_member_deps()
             .into_iter()
@@ -216,7 +216,7 @@ impl Context {
             .count()
     }
 
-    pub fn has_duplicate_binary_crate(&self, bin: &CrateId) -> bool {
+    pub(crate) fn has_duplicate_binary_crate(&self, bin: &CrateId) -> bool {
         1 < self
             .binary_crates
             .iter()

@@ -23,25 +23,25 @@ use crate::utils::starlark::Label;
 
 use self::cargo_config::CargoConfig;
 use self::crate_index_lookup::CrateIndexLookup;
-pub use self::splicer::*;
+pub(crate) use self::splicer::*;
 
 type DirectPackageManifest = BTreeMap<String, cargo_toml::DependencyDetail>;
 
 /// A collection of information used for splicing together a new Cargo manifest.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct SplicingManifest {
+pub(crate) struct SplicingManifest {
     /// A set of all packages directly written to the rule
-    pub direct_packages: DirectPackageManifest,
+    pub(crate) direct_packages: DirectPackageManifest,
 
     /// A mapping of manifest paths to the labels representing them
-    pub manifests: BTreeMap<PathBuf, Label>,
+    pub(crate) manifests: BTreeMap<PathBuf, Label>,
 
     /// The path of a Cargo config file
-    pub cargo_config: Option<PathBuf>,
+    pub(crate) cargo_config: Option<PathBuf>,
 
     /// The Cargo resolver version to use for splicing
-    pub resolver_version: cargo_toml::Resolver,
+    pub(crate) resolver_version: cargo_toml::Resolver,
 }
 
 impl FromStr for SplicingManifest {
@@ -53,12 +53,12 @@ impl FromStr for SplicingManifest {
 }
 
 impl SplicingManifest {
-    pub fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
+    pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let content = fs::read_to_string(path.as_ref())?;
         Self::from_str(&content).context("Failed to load SplicingManifest")
     }
 
-    pub fn resolve(self, workspace_dir: &Path, output_base: &Path) -> Self {
+    pub(crate) fn resolve(self, workspace_dir: &Path, output_base: &Path) -> Self {
         let Self {
             manifests,
             cargo_config,
@@ -99,15 +99,15 @@ impl SplicingManifest {
 
 /// The result of fully resolving a [SplicingManifest] in preparation for splicing.
 #[derive(Debug, Serialize, Default)]
-pub struct SplicingMetadata {
+pub(crate) struct SplicingMetadata {
     /// A set of all packages directly written to the rule
-    pub direct_packages: DirectPackageManifest,
+    pub(crate) direct_packages: DirectPackageManifest,
 
     /// A mapping of manifest paths to the labels representing them
-    pub manifests: BTreeMap<Label, cargo_toml::Manifest>,
+    pub(crate) manifests: BTreeMap<Label, cargo_toml::Manifest>,
 
     /// The path of a Cargo config file
-    pub cargo_config: Option<CargoConfig>,
+    pub(crate) cargo_config: Option<CargoConfig>,
 }
 
 impl TryFrom<SplicingManifest> for SplicingMetadata {
@@ -151,31 +151,31 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
-pub struct SourceInfo {
+pub(crate) struct SourceInfo {
     /// A url where to a `.crate` file.
-    pub url: String,
+    pub(crate) url: String,
 
     /// The `.crate` file's sha256 checksum.
-    pub sha256: String,
+    pub(crate) sha256: String,
 }
 
 /// Information about the Cargo workspace relative to the Bazel workspace
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct WorkspaceMetadata {
+pub(crate) struct WorkspaceMetadata {
     /// A mapping of crates to information about where their source can be downloaded
-    pub sources: BTreeMap<CrateId, SourceInfo>,
+    pub(crate) sources: BTreeMap<CrateId, SourceInfo>,
 
     /// The path from the root of a Bazel workspace to the root of the Cargo workspace
-    pub workspace_prefix: Option<String>,
+    pub(crate) workspace_prefix: Option<String>,
 
     /// Paths from the root of a Bazel workspace to a Cargo package
-    pub package_prefixes: BTreeMap<String, String>,
+    pub(crate) package_prefixes: BTreeMap<String, String>,
 
     /// Feature set for each target triplet and crate.
     ///
     /// We store this here because it's computed during the splicing phase via
     /// calls to "cargo tree" which need the full spliced workspace.
-    pub features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
+    pub(crate) features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl TryFrom<toml::Value> for WorkspaceMetadata {
@@ -252,7 +252,7 @@ impl WorkspaceMetadata {
         })
     }
 
-    pub fn write_registry_urls_and_feature_map(
+    pub(crate) fn write_registry_urls_and_feature_map(
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,
         features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
@@ -422,14 +422,14 @@ impl WorkspaceMetadata {
 }
 
 #[derive(Debug)]
-pub enum SplicedManifest {
+pub(crate) enum SplicedManifest {
     Workspace(PathBuf),
     Package(PathBuf),
     MultiPackage(PathBuf),
 }
 
 impl SplicedManifest {
-    pub fn as_path_buf(&self) -> &PathBuf {
+    pub(crate) fn as_path_buf(&self) -> &PathBuf {
         match self {
             SplicedManifest::Workspace(p) => p,
             SplicedManifest::Package(p) => p,
@@ -438,12 +438,12 @@ impl SplicedManifest {
     }
 }
 
-pub fn read_manifest(manifest: &Path) -> Result<Manifest> {
+pub(crate) fn read_manifest(manifest: &Path) -> Result<Manifest> {
     let content = fs::read_to_string(manifest)?;
     cargo_toml::Manifest::from_str(content.as_str()).context("Failed to deserialize manifest")
 }
 
-pub fn generate_lockfile(
+pub(crate) fn generate_lockfile(
     manifest_path: &SplicedManifest,
     existing_lock: &Option<PathBuf>,
     cargo_bin: Cargo,

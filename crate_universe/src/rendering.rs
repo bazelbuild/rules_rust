@@ -29,14 +29,17 @@ use crate::utils::{self, sanitize_repository_name};
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
 pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
-pub struct Renderer {
+pub(crate) struct Renderer {
     config: RenderConfig,
     supported_platform_triples: BTreeSet<TargetTriple>,
     engine: TemplateEngine,
 }
 
 impl Renderer {
-    pub fn new(config: RenderConfig, supported_platform_triples: BTreeSet<TargetTriple>) -> Self {
+    pub(crate) fn new(
+        config: RenderConfig,
+        supported_platform_triples: BTreeSet<TargetTriple>,
+    ) -> Self {
         let engine = TemplateEngine::new(&config);
         Self {
             config,
@@ -777,7 +780,7 @@ impl Renderer {
 }
 
 /// Write a set of [crate::context::crate_context::CrateContext] to disk.
-pub fn write_outputs(
+pub(crate) fn write_outputs(
     outputs: BTreeMap<PathBuf, String>,
     out_dir: &Path,
     dry_run: bool,
@@ -815,7 +818,7 @@ pub fn write_outputs(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_bazel_label(
+pub(crate) fn render_crate_bazel_label(
     template: &str,
     repository_name: &str,
     name: &str,
@@ -830,7 +833,7 @@ pub fn render_crate_bazel_label(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_bazel_repository(
+pub(crate) fn render_crate_bazel_repository(
     template: &str,
     repository_name: &str,
     name: &str,
@@ -843,14 +846,14 @@ pub fn render_crate_bazel_repository(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_build_file(template: &str, name: &str, version: &str) -> String {
+pub(crate) fn render_crate_build_file(template: &str, name: &str, version: &str) -> String {
     template
         .replace("{name}", name)
         .replace("{version}", version)
 }
 
 /// Render the Bazel label of a vendor module label
-pub fn render_module_label(template: &str, name: &str) -> Result<Label> {
+pub(crate) fn render_module_label(template: &str, name: &str) -> Result<Label> {
     Label::from_str(&template.replace("{file}", name))
 }
 

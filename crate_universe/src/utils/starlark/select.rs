@@ -6,14 +6,14 @@ use serde::Serialize;
 use serde_starlark::LineComment;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct WithOriginalConfigurations<T> {
-    pub value: T,
-    pub original_configurations: BTreeSet<String>,
+pub(crate) struct WithOriginalConfigurations<T> {
+    pub(crate) value: T,
+    pub(crate) original_configurations: BTreeSet<String>,
 }
 
 #[derive(Serialize)]
 #[serde(rename = "selects.NO_MATCHING_PLATFORM_TRIPLES")]
-pub struct NoMatchingPlatformTriples;
+pub(crate) struct NoMatchingPlatformTriples;
 
 impl<T> Serialize for WithOriginalConfigurations<T>
 where
@@ -36,6 +36,6 @@ where
 // We don't expect any cfg-expressions or target triples to contain //,
 // and all labels _can_ be written in a way that they contain //,
 // so we use the presence of // as an indication something is a label.
-pub fn looks_like_bazel_configuration_label(configuration: &str) -> bool {
+pub(crate) fn looks_like_bazel_configuration_label(configuration: &str) -> bool {
     configuration.contains("//")
 }

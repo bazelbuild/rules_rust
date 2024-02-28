@@ -13,32 +13,32 @@ use crate::utils::sanitize_module_name;
 
 /// A representation of a crate dependency
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Dependency {
+pub(crate) struct Dependency {
     /// The PackageId of the target
-    pub package_id: PackageId,
+    pub(crate) package_id: PackageId,
 
     /// The library target name of the dependency.
-    pub target_name: String,
+    pub(crate) target_name: String,
 
     /// The alias for the dependency from the perspective of the current package
-    pub alias: Option<String>,
+    pub(crate) alias: Option<String>,
 }
 
 /// A collection of [Dependency]s sorted by dependency kind.
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct DependencySet {
-    pub normal_deps: Select<BTreeSet<Dependency>>,
-    pub normal_dev_deps: Select<BTreeSet<Dependency>>,
-    pub proc_macro_deps: Select<BTreeSet<Dependency>>,
-    pub proc_macro_dev_deps: Select<BTreeSet<Dependency>>,
-    pub build_deps: Select<BTreeSet<Dependency>>,
-    pub build_link_deps: Select<BTreeSet<Dependency>>,
-    pub build_proc_macro_deps: Select<BTreeSet<Dependency>>,
+pub(crate) struct DependencySet {
+    pub(crate) normal_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) normal_dev_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) proc_macro_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) proc_macro_dev_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) build_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) build_link_deps: Select<BTreeSet<Dependency>>,
+    pub(crate) build_proc_macro_deps: Select<BTreeSet<Dependency>>,
 }
 
 impl DependencySet {
     /// Collect all dependencies for a given node in the resolve graph.
-    pub fn new_for_node(node: &Node, metadata: &CargoMetadata) -> Self {
+    pub(crate) fn new_for_node(node: &Node, metadata: &CargoMetadata) -> Self {
         let (normal_dev_deps, normal_deps) = {
             let (dev, normal) = node
                 .deps
