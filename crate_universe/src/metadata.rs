@@ -604,18 +604,14 @@ where
                 parts[1]
             );
         }
-        let crate_id = CrateId::new(
-            crate_id_parts[0].to_owned(),
-            crate_id_parts[1]
-                .strip_prefix('v')
-                .ok_or_else(|| {
-                    anyhow!(
-                        "Unexpected crate version '{}' when parsing 'cargo tree' output.",
-                        crate_id_parts[1]
-                    )
-                })?
-                .to_owned(),
-        );
+        let version_str = crate_id_parts[1].strip_prefix('v').ok_or_else(|| {
+            anyhow!(
+                "Unexpected crate version '{}' when parsing 'cargo tree' output.",
+                crate_id_parts[1]
+            )
+        })?;
+        let version = Version::parse(version_str).context("Failed to parse version")?;
+        let crate_id = CrateId::new(crate_id_parts[0].to_owned(), version);
         let mut features = if parts[2].is_empty() {
             BTreeSet::new()
         } else {
@@ -746,35 +742,35 @@ mod test {
                 (
                     CrateId {
                         name: "multi_cfg_dep".to_owned(),
-                        version: "0.1.0".to_owned()
+                        version: Version::new(0, 1, 0),
                     },
                     BTreeSet::from([])
                 ),
                 (
                     CrateId {
                         name: "cpufeatures".to_owned(),
-                        version: "0.2.1".to_owned()
+                        version: Version::new(0, 2, 1),
                     },
                     BTreeSet::from([])
                 ),
                 (
                     CrateId {
                         name: "libc".to_owned(),
-                        version: "0.2.117".to_owned()
+                        version: Version::new(0, 2, 117),
                     },
                     BTreeSet::from(["default".to_owned(), "std".to_owned()])
                 ),
                 (
                     CrateId {
                         name: "serde_derive".to_owned(),
-                        version: "1.0.152".to_owned()
+                        version: Version::new(1, 0, 152),
                     },
                     BTreeSet::from([])
                 ),
                 (
                     CrateId {
                         name: "chrono".to_owned(),
-                        version: "0.4.24".to_owned()
+                        version: Version::new(0, 4, 24),
                     },
                     BTreeSet::from(["default".to_owned(), "std".to_owned(), "serde".to_owned()])
                 ),

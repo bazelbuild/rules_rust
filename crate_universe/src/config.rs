@@ -519,12 +519,12 @@ pub struct CrateId {
     pub name: String,
 
     /// The crate's semantic version
-    pub version: String,
+    pub version: semver::Version,
 }
 
 impl CrateId {
     /// Construct a new [CrateId]
-    pub fn new(name: String, version: String) -> Self {
+    pub fn new(name: String, version: semver::Version) -> Self {
         Self { name, version }
     }
 }
@@ -533,7 +533,7 @@ impl From<&Package> for CrateId {
     fn from(package: &Package) -> Self {
         Self {
             name: package.name.clone(),
-            version: package.version.to_string(),
+            version: package.version.clone(),
         }
     }
 }
@@ -559,16 +559,20 @@ impl<'de> Visitor<'de> for CrateIdVisitor {
     where
         E: serde::de::Error,
     {
-        v.rsplit_once(' ')
-            .map(|(name, version)| CrateId {
-                name: name.to_string(),
-                version: version.to_string(),
-            })
-            .ok_or_else(|| {
-                E::custom(format!(
-                    "Expected string value of `{{name}} {{version}}`. Got '{v}'"
-                ))
-            })
+        let (name, version_str) = v.rsplit_once(' ').ok_or_else(|| {
+            E::custom(format!(
+                "Expected string value of `{{name}} {{version}}`. Got '{v}'"
+            ))
+        })?;
+        let version = semver::Version::parse(version_str).map_err(|err| {
+            E::custom(format!(
+                "Couldn't parse {version_str} as a semver::Version: {err}"
+            ))
+        })?;
+        Ok(CrateId {
+            name: name.to_string(),
+            version,
+        })
     }
 }
 
@@ -858,15 +862,11 @@ mod test {
     #[test]
     fn test_crate_id_serde() {
         let id: CrateId = serde_json::from_str("\"crate 0.1.0\"").unwrap();
-        assert_eq!(id, CrateId::new("crate".to_owned(), "0.1.0".to_owned()));
+        assert_eq!(
+            id,
+            CrateId::new("crate".to_owned(), semver::Version::new(0, 1, 0))
+        );
         assert_eq!(serde_json::to_string(&id).unwrap(), "\"crate 0.1.0\"");
-    }
-
-    #[test]
-    fn test_crate_id_serde_semver() {
-        let semver_id: CrateId = serde_json::from_str("\"crate *\"").unwrap();
-        assert_eq!(semver_id, CrateId::new("crate".to_owned(), "*".to_owned()));
-        assert_eq!(serde_json::to_string(&semver_id).unwrap(), "\"crate *\"");
     }
 
     #[test]

@@ -248,7 +248,7 @@ pub struct CrateContext {
     pub name: String,
 
     /// The full version of the current crate
-    pub version: String,
+    pub version: semver::Version,
 
     /// The package URL of the current crate
     #[serde(default)]
@@ -323,7 +323,7 @@ impl CrateContext {
         include_build_scripts: bool,
     ) -> Self {
         let package: &Package = &packages[&annotation.node.id];
-        let current_crate_id = CrateId::new(package.name.clone(), package.version.to_string());
+        let current_crate_id = CrateId::new(package.name.clone(), package.version.clone());
 
         let new_crate_dep = |dep: Dependency| -> CrateDependency {
             let pkg = &packages[&dep.package_id];
@@ -334,7 +334,7 @@ impl CrateContext {
             let target = sanitize_module_name(&dep.target_name);
 
             CrateDependency {
-                id: CrateId::new(pkg.name.clone(), pkg.version.to_string()),
+                id: CrateId::new(pkg.name.clone(), pkg.version.clone()),
                 target,
                 alias: dep.alias,
             }
@@ -472,7 +472,7 @@ impl CrateContext {
         // Create the crate's context and apply extra settings
         CrateContext {
             name: package.name.clone(),
-            version: package.version.to_string(),
+            version: package.version.clone(),
             license: package.license.clone(),
             license_ids,
             license_file,
@@ -840,7 +840,7 @@ mod test {
 
         let mut pairred_extras = BTreeMap::new();
         pairred_extras.insert(
-            CrateId::new("common".to_owned(), "0.1.0".to_owned()),
+            CrateId::new("common".to_owned(), semver::Version::new(0, 1, 0)),
             PairedExtras {
                 package_id,
                 crate_extra: CrateAnnotations {

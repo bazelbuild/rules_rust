@@ -576,7 +576,8 @@ pub fn default_cargo_package_manifest() -> cargo_toml::Manifest {
 pub fn default_splicing_package_crate_id() -> CrateId {
     CrateId::new(
         DEFAULT_SPLICING_PACKAGE_NAME.to_string(),
-        DEFAULT_SPLICING_PACKAGE_VERSION.to_string(),
+        semver::Version::parse(DEFAULT_SPLICING_PACKAGE_VERSION)
+            .expect("Known good version didn't parse"),
     )
 }
 

@@ -117,6 +117,8 @@ mod test {
 
     use super::*;
 
+    const VERSION_ZERO_ONE_ZERO: semver::Version = semver::Version::new(0, 1, 0);
+
     fn supported_platform_triples() -> BTreeSet<TargetTriple> {
         BTreeSet::from([
             TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
@@ -130,7 +132,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -139,7 +141,7 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
             package_url: None,
             repository: None,
             targets: BTreeSet::default(),
@@ -187,7 +189,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -196,7 +198,7 @@ mod test {
 
         CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
             package_url: None,
             repository: None,
             targets: BTreeSet::default(),
@@ -272,7 +274,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -281,7 +283,7 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
             package_url: None,
             repository: None,
             targets: BTreeSet::default(),
@@ -337,7 +339,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -346,7 +348,7 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
             package_url: None,
             repository: None,
             targets: BTreeSet::default(),

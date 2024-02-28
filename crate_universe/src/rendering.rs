@@ -192,7 +192,11 @@ impl Renderer {
                     } else {
                         rename.clone()
                     },
-                    actual: self.crate_label(&krate.name, &krate.version, library_target_name),
+                    actual: self.crate_label(
+                        &krate.name,
+                        &krate.version.to_string(),
+                        library_target_name,
+                    ),
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
@@ -201,7 +205,7 @@ impl Renderer {
                 dependencies.push(Alias {
                     rule: alias_rule.rule(),
                     name: alias.clone(),
-                    actual: self.crate_label(&krate.name, &krate.version, target),
+                    actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
@@ -242,7 +246,7 @@ impl Renderer {
                         },
                         actual: self.crate_label(
                             &krate.name,
-                            &krate.version,
+                            &krate.version.to_string(),
                             &format!("{}__bin", bin.crate_name),
                         ),
                         tags: BTreeSet::from(["manual".to_owned()]),
@@ -277,7 +281,7 @@ impl Renderer {
                 let label = match render_build_file_template(
                     &self.config.build_file_template,
                     &id.name,
-                    &id.version,
+                    &id.version.to_string(),
                 ) {
                     Ok(label) => label,
                     Err(e) => bail!(e),
@@ -342,7 +346,7 @@ impl Renderer {
                 name: "package_info".to_owned(),
                 package_name: krate.name.clone(),
                 package_url: krate.package_url.clone().unwrap_or_default(),
-                package_version: krate.version.clone(),
+                package_version: krate.version.to_string(),
             }));
 
             if has_license_ids {
@@ -715,7 +719,7 @@ impl Renderer {
                 if let Some(alias) = &dependency.alias {
                     let label = self.crate_label(
                         &dependency.id.name,
-                        &dependency.id.version,
+                        &dependency.id.version.to_string(),
                         &dependency.target,
                     );
                     aliases.insert((label, alias.clone()), configuration.clone());
@@ -731,7 +735,9 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target)),
+            deps.map(|dep| {
+                self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target)
+            }),
             extra_deps,
         )
     }
@@ -901,6 +907,8 @@ mod test {
     use crate::metadata::Annotations;
     use crate::test;
 
+    const VERSION_ZERO_ONE_ZERO: semver::Version = semver::Version::new(0, 1, 0);
+
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
             crate_name: "mock_crate".to_owned(),
@@ -948,7 +956,7 @@ mod test {
     #[test]
     fn render_rust_library() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -985,7 +993,7 @@ mod test {
     #[test]
     fn test_disable_pipelining() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1020,7 +1028,7 @@ mod test {
     #[test]
     fn render_cargo_build_script() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1065,7 +1073,7 @@ mod test {
     #[test]
     fn render_proc_macro() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1102,7 +1110,7 @@ mod test {
     #[test]
     fn render_binary() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1139,7 +1147,7 @@ mod test {
     #[test]
     fn render_additive_build_contents() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1195,7 +1203,7 @@ mod test {
     #[test]
     fn render_crate_repositories() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1228,7 +1236,7 @@ mod test {
     #[test]
     fn remote_remote_vendor_mode() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1267,7 +1275,7 @@ mod test {
     #[test]
     fn remote_local_vendor_mode() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1307,7 +1315,7 @@ mod test {
     #[test]
     fn duplicate_rustc_flags() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
 
         let rustc_flags = vec![
             "-l".to_owned(),
@@ -1422,7 +1430,7 @@ mod test {
                 .collect(),
             ..Context::default()
         };
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         let mut crate_features: Select<BTreeSet<String>> = Select::default();
         crate_features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
         crate_features.insert("bar".to_owned(), None);
@@ -1474,7 +1482,7 @@ mod test {
     #[test]
     fn crate_package_metadata_without_license_ids() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1526,7 +1534,7 @@ mod test {
     #[test]
     fn crate_package_metadata_with_license_ids() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1589,7 +1597,7 @@ mod test {
     #[test]
     fn crate_package_metadata_with_license_ids_and_file() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {

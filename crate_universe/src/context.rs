@@ -228,6 +228,7 @@ impl Context {
 #[cfg(test)]
 mod test {
     use super::*;
+    use semver::Version;
 
     use crate::config::Config;
 
@@ -264,8 +265,8 @@ mod test {
                 .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
                 .collect::<Vec<_>>(),
             [
-                (&CrateId::new("bitflags".to_owned(), "1.3.2".to_owned()), false),
-                (&CrateId::new("cfg-if".to_owned(), "1.0.0".to_owned()), false),
+                (&CrateId::new("bitflags".to_owned(), Version::new(1, 3, 2)), false),
+                (&CrateId::new("cfg-if".to_owned(), Version::new(1, 0, 0)), false),
             ],
         }
     }
@@ -281,11 +282,11 @@ mod test {
                 .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
                 .collect::<Vec<_>>(),
             [
-                (&CrateId::new("log".to_owned(), "0.3.9".to_owned()), false),
-                (&CrateId::new("log".to_owned(), "0.4.14".to_owned()), false),
-                (&CrateId::new("names".to_owned(), "0.12.1-dev".to_owned()), false),
-                (&CrateId::new("names".to_owned(), "0.13.0".to_owned()), false),
-                (&CrateId::new("value-bag".to_owned(), "1.0.0-alpha.7".to_owned()), false),
+                (&CrateId::new("log".to_owned(), Version::new(0, 3, 9)), false),
+                (&CrateId::new("log".to_owned(), Version::new(0, 4, 14)), false),
+                (&CrateId::new("names".to_owned(), Version::parse("0.12.1-dev").unwrap()), false),
+                (&CrateId::new("names".to_owned(), Version::new(0, 13, 0)), false),
+                (&CrateId::new("value-bag".to_owned(), Version::parse("1.0.0-alpha.7").unwrap()), false),
             ],
         }
     }
