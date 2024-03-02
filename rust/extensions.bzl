@@ -125,6 +125,8 @@ def _rust_host_tools_impl(module_ctx):
         **host_tools
     )
 
+    return module_ctx.extension_metadata(reproducible = True)
+
 rust_host_tools = module_extension(
     implementation = _rust_host_tools_impl,
     tag_classes = {
