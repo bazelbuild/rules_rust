@@ -1,0 +1,17 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+_BUILD_FILE_CONTENT = """filegroup(
+  name = "{name}",
+  srcs = glob(["*/**"]),
+  visibility = ["//visibility:public"],
+)
+"""
+
+http_archive(
+    name = "org_chromium_sysroot_linux_aarch64",
+    sha256 = "902d1a40a5fd8c3764a36c8d377af5945a92e3d264c6252855bda4d7ef81d3df",
+    url = "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/{}".format(
+        "41a6c8dec4c4304d6509e30cbaf9218dffb4438e/debian_bullseye_arm64_sysroot.tar.xz",
+    ),
+    build_file_content = _BUILD_FILE_CONTENT.format(name = "sysroot"),
+)

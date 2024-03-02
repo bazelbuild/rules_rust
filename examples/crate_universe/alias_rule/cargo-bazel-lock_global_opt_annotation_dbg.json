@@ -1,18 +1,22 @@
 {
-  "checksum": "88c429a439f3dc42e0d3cf2bbe4fc7d8916c6d76db0d8b5ce14975a0ff5c5487",
+  "checksum": "a8e4b52992734f8c2f9b2353c83a4aefc9b02e848b7a7644de12e2d87e63d58f",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
       "version": "0.0.1",
+      "package_url": null,
       "repository": null,
       "targets": [
         {
           "Library": {
             "crate_name": "direct_cargo_bazel_deps",
             "crate_root": ".direct_cargo_bazel_deps.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -33,11 +37,14 @@
         "edition": "2018",
         "version": "0.0.1"
       },
-      "license": null
+      "license": null,
+      "license_ids": [],
+      "license_file": null
     },
     "test_data_passing_crate 0.1.0": {
       "name": "test_data_passing_crate",
       "version": "0.1.0",
+      "package_url": "https://github.com/bazelbuild/rules_rust",
       "repository": {
         "Http": {
           "url": "https://crates.io/api/v1/crates/test_data_passing_crate/0.1.0/download",
@@ -49,18 +56,24 @@
           "Library": {
             "crate_name": "test_data_passing_crate",
             "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         },
         {
           "BuildScript": {
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
+            "srcs": {
+              "allow_empty": false,
+              "include": [
+                "**/*.rs"
+              ]
+            }
           }
         }
       ],
@@ -87,6 +100,10 @@
         ]
       },
       "license": "Apache-2.0",
+      "license_ids": [
+        "Apache-2.0"
+      ],
+      "license_file": null,
       "alias_rule": "dbg"
     }
   },

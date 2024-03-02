@@ -15,13 +15,13 @@ use crate::rendering::{
 use crate::select::Select;
 use crate::utils::sanitize_repository_name;
 
-pub struct TemplateEngine {
+pub(crate) struct TemplateEngine {
     engine: Tera,
     context: tera::Context,
 }
 
 impl TemplateEngine {
-    pub fn new(render_config: &RenderConfig) -> Self {
+    pub(crate) fn new(render_config: &RenderConfig) -> Self {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
             (
@@ -123,7 +123,7 @@ impl TemplateEngine {
         self.context.clone()
     }
 
-    pub fn render_header(&self) -> Result<String> {
+    pub(crate) fn render_header(&self) -> Result<String> {
         let context = self.new_tera_ctx();
         let mut header = self
             .engine
@@ -133,7 +133,11 @@ impl TemplateEngine {
         Ok(header)
     }
 
-    pub fn render_module_bzl(&self, data: &Context, platforms: &Platforms) -> Result<String> {
+    pub(crate) fn render_module_bzl(
+        &self,
+        data: &Context,
+        platforms: &Platforms,
+    ) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
         context.insert("platforms", platforms);
@@ -143,7 +147,7 @@ impl TemplateEngine {
             .context("Failed to render crates module")
     }
 
-    pub fn render_vendor_module_file(&self, data: &Context) -> Result<String> {
+    pub(crate) fn render_vendor_module_file(&self, data: &Context) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
 

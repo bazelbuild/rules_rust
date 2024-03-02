@@ -1,6 +1,8 @@
 """Module extension for bootstrapping cargo-bazel."""
 
 load("//crate_universe:deps_bootstrap.bzl", _cargo_bazel_bootstrap_repo_rule = "cargo_bazel_bootstrap")
+load("//rust/platform:triple.bzl", "get_host_triple")
+load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
 def _cargo_bazel_bootstrap_impl(_):
     _cargo_bazel_bootstrap_repo_rule(
@@ -23,8 +25,11 @@ def get_cargo_bazel_runner(module_ctx):
         A function that can be called to execute cargo_bazel.
     """
 
-    cargo_path = str(module_ctx.path(Label("@rust_host_tools//:bin/cargo")))
-    rustc_path = str(module_ctx.path(Label("@rust_host_tools//:bin/rustc")))
+    host_triple = get_host_triple(module_ctx)
+    binary_ext = system_to_binary_ext(host_triple.system)
+
+    cargo_path = str(module_ctx.path(Label("@rust_host_tools//:bin/cargo{}".format(binary_ext))))
+    rustc_path = str(module_ctx.path(Label("@rust_host_tools//:bin/rustc{}".format(binary_ext))))
     cargo_bazel = module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
 
     # Placing this as a nested function allows users to call this right at the

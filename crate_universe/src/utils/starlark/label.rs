@@ -9,7 +9,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum Label {
+pub(crate) enum Label {
     Relative {
         target: String,
     },
@@ -21,7 +21,7 @@ pub enum Label {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum Repository {
+pub(crate) enum Repository {
     Canonical(String), // stringifies to `@@self.0` where `self.0` may be empty
     Explicit(String),  // stringifies to `@self.0` where `self.0` may be empty
     Local,             // stringifies to the empty string
@@ -29,7 +29,7 @@ pub enum Repository {
 
 impl Label {
     #[cfg(test)]
-    pub fn is_absolute(&self) -> bool {
+    pub(crate) fn is_absolute(&self) -> bool {
         match self {
             Label::Relative { .. } => false,
             Label::Absolute { .. } => true,
@@ -37,21 +37,21 @@ impl Label {
     }
 
     #[cfg(test)]
-    pub fn repository(&self) -> Option<&Repository> {
+    pub(crate) fn repository(&self) -> Option<&Repository> {
         match self {
             Label::Relative { .. } => None,
             Label::Absolute { repository, .. } => Some(repository),
         }
     }
 
-    pub fn package(&self) -> Option<&str> {
+    pub(crate) fn package(&self) -> Option<&str> {
         match self {
             Label::Relative { .. } => None,
             Label::Absolute { package, .. } => Some(package.as_str()),
         }
     }
 
-    pub fn target(&self) -> &str {
+    pub(crate) fn target(&self) -> &str {
         match self {
             Label::Relative { target } => target.as_str(),
             Label::Absolute { target, .. } => target.as_str(),
@@ -183,7 +183,7 @@ impl Display for Label {
 impl Label {
     /// Generates a label appropriate for the passed Path by walking the filesystem to identify its
     /// workspace and package.
-    pub fn from_absolute_path(p: &Path) -> Result<Self, anyhow::Error> {
+    pub(crate) fn from_absolute_path(p: &Path) -> Result<Self, anyhow::Error> {
         let mut workspace_root = None;
         let mut package_root = None;
         for ancestor in p.ancestors().skip(1) {
@@ -287,7 +287,7 @@ impl<'de> Deserialize<'de> for Label {
 }
 
 impl Label {
-    pub fn repr(&self) -> String {
+    pub(crate) fn repr(&self) -> String {
         self.to_string()
     }
 }

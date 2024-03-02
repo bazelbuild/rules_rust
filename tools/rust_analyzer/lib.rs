@@ -20,7 +20,11 @@ pub fn generate_crate_info(
 
     let output = Command::new(bazel.as_ref())
         .current_dir(workspace.as_ref())
+        .env_remove("BAZELISK_SKIP_WRAPPER")
+        .env_remove("BUILD_WORKING_DIRECTORY")
+        .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("build")
+        .arg("--norun_validations")
         .arg(format!(
             "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
             rules_rust.as_ref()

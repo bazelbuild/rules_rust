@@ -113,13 +113,21 @@ def _bin_has_native_libs_test_impl(ctx):
     return analysistest.end(env)
 
 def _extract_linker_args(argv):
-    return [a for a in argv if (
-        a.startswith("link-arg=") or
-        a.startswith("link-args=") or
-        a.startswith("-l") or
-        a.endswith(".lo") or
-        a.endswith(".o")
-    )]
+    return [
+        a.removeprefix("--codegen=").removeprefix("-C").removeprefix("link-arg=").removeprefix("link-args=")
+        for a in argv
+        if (
+            a.startswith("--codegen=link-arg=") or
+            a.startswith("--codegen=link-args=") or
+            a.startswith("-Clink-args=") or
+            a.startswith("-Clink-arg=") or
+            a.startswith("link-args=") or
+            a.startswith("link-arg=") or
+            a.startswith("-l") or
+            a.endswith(".lo") or
+            a.endswith(".o")
+        )
+    ]
 
 def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -129,39 +137,39 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
-    individual_link_args = [
-        arg
-        for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-arg=") or arg.startswith("-lstatic=")
-    ]
+    link_args = _extract_linker_args(action.argv)
     if toolchain.target_os == "darwin":
-        darwin_component = _get_darwin_component(individual_link_args[-1])
+        darwin_component = _get_darwin_component(link_args[-1])
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
+            "-lnative_dep",
+            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
         ]
-        asserts.equals(env, want, individual_link_args)
+        assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             want = [
                 "-lstatic=native_dep",
-                "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "native_dep.lib",
+                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
             ]
         else:
             want = [
                 "-lstatic=native_dep",
-                "link-arg=-Wl,--whole-archive",
-                "link-arg=bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-                "link-arg=-Wl,--no-whole-archive",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "-Wl,--no-whole-archive",
             ]
     else:
         want = [
             "-lstatic=native_dep",
-            "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
-            "link-arg=-Wl,--no-whole-archive",
+            "-lnative_dep",
+            "-Wl,--whole-archive",
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, individual_link_args)
+    assert_list_contains_adjacent_elements(env, link_args, want)
     return analysistest.end(env)
 
 def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
@@ -171,8 +179,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
-    # skipping first link-arg since it contains unrelated linker flags
-    linker_args = _extract_linker_args(action.argv)[1:]
+    linker_args = _extract_linker_args(action.argv)
 
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
@@ -182,29 +189,33 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
         darwin_component = _get_darwin_component(linker_args[-1])
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
-            "link-arg=-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
+            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
         ]
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             want = [
                 "-lstatic=native_dep",
-                "link-arg=/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "native_dep.lib",
+                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
             ]
         else:
             want = [
                 "-lstatic=native_dep",
-                "link-arg=-Wl,--whole-archive",
-                "link-arg=bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-                "link-arg=-Wl,--no-whole-archive",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "-Wl,--no-whole-archive",
             ]
     else:
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
-            "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
-            "link-arg=-Wl,--no-whole-archive",
+            "-lnative_dep{}".format(pic_suffix),
+            "-Wl,--whole-archive",
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "-Wl,--no-whole-archive",
         ]
-    asserts.equals(env, want, linker_args)
+    assert_list_contains_adjacent_elements(env, linker_args, want)
     return analysistest.end(env)
 
 def _get_pic_suffix(ctx, compilation_mode):
@@ -334,11 +345,8 @@ def _linkopts_propagate_test_impl(ctx):
     # Consistently with cc rules, dependency linkopts take precedence over
     # dependent linkopts (i.e. dependency linkopts appear later in the command
     # line).
-    linkopt_args = [
-        arg
-        for arg in _extract_linker_args(action.argv)
-        if arg.startswith("link-args")
-    ][0].split(" ")
+
+    linkopt_args = _extract_linker_args(action.argv)
     assert_list_contains_adjacent_elements(
         env,
         linkopt_args,

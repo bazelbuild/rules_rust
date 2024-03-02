@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
-use indoc::formatdoc;
 use itertools::Itertools;
 
 use crate::config::{AliasRule, RenderConfig, VendorMode};
@@ -30,14 +29,17 @@ use crate::utils::{self, sanitize_repository_name};
 // to platform labels like "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".
 pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
-pub struct Renderer {
+pub(crate) struct Renderer {
     config: RenderConfig,
     supported_platform_triples: BTreeSet<TargetTriple>,
     engine: TemplateEngine,
 }
 
 impl Renderer {
-    pub fn new(config: RenderConfig, supported_platform_triples: BTreeSet<TargetTriple>) -> Self {
+    pub(crate) fn new(
+        config: RenderConfig,
+        supported_platform_triples: BTreeSet<TargetTriple>,
+    ) -> Self {
         let engine = TemplateEngine::new(&config);
         Self {
             config,
@@ -46,7 +48,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    pub(crate) fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
         let mut output = BTreeMap::new();
 
         let platforms = self.render_platform_labels(context);
@@ -148,12 +150,13 @@ impl Renderer {
         }
 
         // Package visibility, exported bzl files.
-        let package = Package::default_visibility_public();
+        let package = Package::default_visibility_public(BTreeSet::new());
         starlark.push(Starlark::Package(package));
 
         let mut exports_files = ExportsFiles {
             paths: BTreeSet::from(["cargo-bazel.json".to_owned(), "defs.bzl".to_owned()]),
             globs: Glob {
+                allow_empty: true,
                 include: BTreeSet::from(["*.bazel".to_owned()]),
                 exclude: BTreeSet::new(),
             },
@@ -166,6 +169,7 @@ impl Renderer {
         let filegroup = Filegroup {
             name: "srcs".to_owned(),
             srcs: Glob {
+                allow_empty: true,
                 include: BTreeSet::from(["*.bazel".to_owned(), "*.bzl".to_owned()]),
                 exclude: BTreeSet::new(),
             },
@@ -191,7 +195,11 @@ impl Renderer {
                     } else {
                         rename.clone()
                     },
-                    actual: self.crate_label(&krate.name, &krate.version, library_target_name),
+                    actual: self.crate_label(
+                        &krate.name,
+                        &krate.version.to_string(),
+                        library_target_name,
+                    ),
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
@@ -200,7 +208,7 @@ impl Renderer {
                 dependencies.push(Alias {
                     rule: alias_rule.rule(),
                     name: alias.clone(),
-                    actual: self.crate_label(&krate.name, &krate.version, target),
+                    actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
             }
@@ -241,7 +249,7 @@ impl Renderer {
                         },
                         actual: self.crate_label(
                             &krate.name,
-                            &krate.version,
+                            &krate.version.to_string(),
                             &format!("{}__bin", bin.crate_name),
                         ),
                         tags: BTreeSet::from(["manual".to_owned()]),
@@ -276,7 +284,7 @@ impl Renderer {
                 let label = match render_build_file_template(
                     &self.config.build_file_template,
                     &id.name,
-                    &id.version,
+                    &id.version.to_string(),
                 ) {
                     Ok(label) => label,
                     Err(e) => bail!(e),
@@ -313,16 +321,54 @@ impl Renderer {
             items: BTreeSet::from(["selects".to_owned()]),
         }));
 
-        // Package visibility.
-        let package = Package::default_visibility_public();
-        starlark.push(Starlark::Package(package));
+        if self.config.generate_rules_license_metadata {
+            let has_license_ids = !krate.license_ids.is_empty();
+            let mut package_metadata = BTreeSet::from([Label::Relative {
+                target: "package_info".to_owned(),
+            }]);
 
-        if let Some(license) = &krate.license {
-            starlark.push(Starlark::Verbatim(formatdoc! {r#"
-                # licenses([
-                #     "TODO",  # {license}
-                # ])
-            "#}));
+            starlark.push(Starlark::Load(Load {
+                bzl: "@rules_license//rules:package_info.bzl".to_owned(),
+                items: BTreeSet::from(["package_info".to_owned()]),
+            }));
+
+            if has_license_ids {
+                starlark.push(Starlark::Load(Load {
+                    bzl: "@rules_license//rules:license.bzl".to_owned(),
+                    items: BTreeSet::from(["license".to_owned()]),
+                }));
+                package_metadata.insert(Label::Relative {
+                    target: "license".to_owned(),
+                });
+            }
+
+            let package = Package::default_visibility_public(package_metadata);
+            starlark.push(Starlark::Package(package));
+
+            starlark.push(Starlark::PackageInfo(starlark::PackageInfo {
+                name: "package_info".to_owned(),
+                package_name: krate.name.clone(),
+                package_url: krate.package_url.clone().unwrap_or_default(),
+                package_version: krate.version.to_string(),
+            }));
+
+            if has_license_ids {
+                let mut license_kinds = BTreeSet::new();
+
+                krate.license_ids.clone().into_iter().for_each(|lic| {
+                    license_kinds.insert("@rules_license//licenses/spdx:".to_owned() + &lic);
+                });
+
+                starlark.push(Starlark::License(starlark::License {
+                    name: "license".to_owned(),
+                    license_kinds,
+                    license_text: krate.license_file.clone().unwrap_or_default(),
+                }));
+            }
+        } else {
+            // Package visibility.
+            let package = Package::default_visibility_public(BTreeSet::new());
+            starlark.push(Starlark::Package(package));
         }
 
         for rule in &krate.targets {
@@ -335,7 +381,7 @@ impl Renderer {
                     starlark.push(Starlark::Alias(Alias {
                         rule: AliasRule::default().rule(),
                         name: target.crate_name.clone(),
-                        actual: Label::from_str(&format!(":{}_build_script", krate.name)).unwrap(),
+                        actual: Label::from_str(&format!(":{}_bs", krate.name)).unwrap(),
                         tags: BTreeSet::from(["manual".to_owned()]),
                     }));
                 }
@@ -389,7 +435,9 @@ impl Renderer {
             // on having certain Cargo environment variables set.
             //
             // Do not change this name to "cargo_build_script".
-            name: format!("{}_build_script", krate.name),
+            //
+            // This is set to a short suffix to avoid long path name issues on windows.
+            name: format!("{}_bs", krate.name),
             aliases: SelectDict::new(self.make_aliases(krate, true, false), platforms),
             build_script_env: SelectDict::new(
                 attrs
@@ -674,7 +722,7 @@ impl Renderer {
                 if let Some(alias) = &dependency.alias {
                     let label = self.crate_label(
                         &dependency.id.name,
-                        &dependency.id.version,
+                        &dependency.id.version.to_string(),
                         &dependency.target,
                     );
                     aliases.insert((label, alias.clone()), configuration.clone());
@@ -690,7 +738,9 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| self.crate_label(&dep.id.name, &dep.id.version, &dep.target)),
+            deps.map(|dep| {
+                self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target)
+            }),
             extra_deps,
         )
     }
@@ -730,7 +780,7 @@ impl Renderer {
 }
 
 /// Write a set of [crate::context::crate_context::CrateContext] to disk.
-pub fn write_outputs(
+pub(crate) fn write_outputs(
     outputs: BTreeMap<PathBuf, String>,
     out_dir: &Path,
     dry_run: bool,
@@ -768,7 +818,7 @@ pub fn write_outputs(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_bazel_label(
+pub(crate) fn render_crate_bazel_label(
     template: &str,
     repository_name: &str,
     name: &str,
@@ -783,7 +833,7 @@ pub fn render_crate_bazel_label(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_bazel_repository(
+pub(crate) fn render_crate_bazel_repository(
     template: &str,
     repository_name: &str,
     name: &str,
@@ -796,14 +846,14 @@ pub fn render_crate_bazel_repository(
 }
 
 /// Render the Bazel label of a crate
-pub fn render_crate_build_file(template: &str, name: &str, version: &str) -> String {
+pub(crate) fn render_crate_build_file(template: &str, name: &str, version: &str) -> String {
     template
         .replace("{name}", name)
         .replace("{version}", version)
 }
 
 /// Render the Bazel label of a vendor module label
-pub fn render_module_label(template: &str, name: &str) -> Result<Label> {
+pub(crate) fn render_module_label(template: &str, name: &str) -> Result<Label> {
     Label::from_str(&template.replace("{file}", name))
 }
 
@@ -836,6 +886,7 @@ fn make_data(
 
     Data {
         glob: Glob {
+            allow_empty: true,
             include: glob,
             exclude: COMMON_GLOB_EXCLUDES
                 .iter()
@@ -858,6 +909,8 @@ mod test {
     use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
     use crate::metadata::Annotations;
     use crate::test;
+
+    const VERSION_ZERO_ONE_ZERO: semver::Version = semver::Version::new(0, 1, 0);
 
     fn mock_target_attributes() -> TargetAttributes {
         TargetAttributes {
@@ -906,14 +959,25 @@ mod test {
     #[test]
     fn render_rust_library() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -932,15 +996,25 @@ mod test {
     #[test]
     fn test_disable_pipelining() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
                 disable_pipelining: true,
-                ..CrateContext::default()
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -957,20 +1031,30 @@ mod test {
     #[test]
     fn render_cargo_build_script() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_build".to_owned(),
                     crate_root: Some("build.rs".to_owned()),
                     ..TargetAttributes::default()
                 })]),
                 // Build script attributes are required.
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
                 build_script_attrs: Some(BuildScriptAttributes::default()),
-                ..CrateContext::default()
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -986,20 +1070,31 @@ mod test {
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
-        assert!(build_file_content.contains("name = \"mock_crate_build_script\""));
+        assert!(build_file_content.contains("name = \"mock_crate_bs\""));
     }
 
     #[test]
     fn render_proc_macro() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::ProcMacro(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1018,14 +1113,25 @@ mod test {
     #[test]
     fn render_binary() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1044,17 +1150,27 @@ mod test {
     #[test]
     fn render_additive_build_contents() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Binary(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
                 additive_build_file_content: Some(
                     "# Hello World from additive section!".to_owned(),
                 ),
-                ..CrateContext::default()
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1090,14 +1206,25 @@ mod test {
     #[test]
     fn render_crate_repositories() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1112,14 +1239,25 @@ mod test {
     #[test]
     fn remote_remote_vendor_mode() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1140,14 +1278,25 @@ mod test {
     #[test]
     fn remote_local_vendor_mode() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
-                ..CrateContext::default()
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1169,7 +1318,7 @@ mod test {
     #[test]
     fn duplicate_rustc_flags() {
         let mut context = Context::default();
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
 
         let rustc_flags = vec![
             "-l".to_owned(),
@@ -1183,12 +1332,22 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
                 common_attrs: CommonAttributes {
                     rustc_flags: Select::from_value(rustc_flags.clone()),
                     ..CommonAttributes::default()
                 },
-                ..CrateContext::default()
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1274,7 +1433,7 @@ mod test {
                 .collect(),
             ..Context::default()
         };
-        let crate_id = CrateId::new("mock_crate".to_owned(), "0.1.0".to_owned());
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         let mut crate_features: Select<BTreeSet<String>> = Select::default();
         crate_features.insert("foo".to_owned(), Some("aarch64-apple-darwin".to_owned()));
         crate_features.insert("bar".to_owned(), None);
@@ -1283,12 +1442,22 @@ mod test {
             CrateContext {
                 name: crate_id.name,
                 version: crate_id.version,
+                package_url: None,
+                repository: None,
                 targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
                 common_attrs: CommonAttributes {
                     crate_features,
                     ..CommonAttributes::default()
                 },
-                ..CrateContext::default()
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
             },
         );
 
@@ -1307,6 +1476,185 @@ mod test {
                 ],
                 "//conditions:default": [],
             }),
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_without_license_ids() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                repository: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [":package_info"],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_with_license_ids() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [
+                    ":license",
+                    ":package_info",
+                ],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+
+            license(
+                name = "license",
+                license_kinds = [
+                    "@rules_license//licenses/spdx:Apache-2.0",
+                    "@rules_license//licenses/spdx:MIT",
+                ],
+            )
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    #[test]
+    fn crate_package_metadata_with_license_ids_and_file() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: Some("LICENSE.txt".to_owned()),
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        render_config.generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        let expected = indoc! {r#"
+            package(
+                default_package_metadata = [
+                    ":license",
+                    ":package_info",
+                ],
+                default_visibility = ["//visibility:public"],
+            )
+
+            package_info(
+                name = "package_info",
+                package_name = "mock_crate",
+                package_version = "0.1.0",
+                package_url = "http://www.mock_crate.com/",
+            )
+
+            license(
+                name = "license",
+                license_kinds = [
+                    "@rules_license//licenses/spdx:Apache-2.0",
+                    "@rules_license//licenses/spdx:MIT",
+                ],
+                license_text = "LICENSE.txt",
+            )
         "#};
         assert!(build_file_content
             .replace(' ', "")

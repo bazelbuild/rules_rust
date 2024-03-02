@@ -60,7 +60,7 @@ rust_test(
     name = "cargo_env-vars_test",
     srcs = ["tests/cargo.rs"],
     edition = "2018",
-    deps = [":cargo_build_script_env-vars_build_script"],
+    deps = [":cargo_build_script_env-vars_bs"],
 )
 
 rust_test(
@@ -68,11 +68,11 @@ rust_test(
     srcs = ["tests/custom_crate_name.rs"],
     crate_name = "custom_crate_name",
     edition = "2018",
-    deps = [":cargo_build_script_env-vars_build_script"],
+    deps = [":cargo_build_script_env-vars_bs"],
 )
 
 cargo_build_script(
-    name = "cargo_build_script_env-vars_build_script",
+    name = "cargo_build_script_env-vars_bs",
     srcs = ["src/build.rs"],
     edition = "2018",
 )

@@ -5,12 +5,12 @@ use serde::Serialize;
 use serde_starlark::{FunctionCall, MULTILINE};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct TargetCompatibleWith {
+pub(crate) struct TargetCompatibleWith {
     target_triples: BTreeSet<String>,
 }
 
 impl TargetCompatibleWith {
-    pub fn new(target_triples: BTreeSet<String>) -> Self {
+    pub(crate) fn new(target_triples: BTreeSet<String>) -> Self {
         TargetCompatibleWith { target_triples }
     }
 }

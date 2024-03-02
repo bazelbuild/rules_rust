@@ -10,15 +10,15 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# licenses([
-#     "TODO",  # MIT OR Apache-2.0
-# ])
-
 rust_library(
     name = "windows_sys",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -28,9 +28,18 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "Win32",
+        "Win32_Foundation",
+        "Win32_Storage",
+        "Win32_Storage_FileSystem",
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    rustc_flags = ["--cap-lints=allow"],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
     tags = [
         "cargo-bazel",
         "crate-name=windows-sys",
@@ -77,6 +86,6 @@ rust_library(
     }),
     version = "0.52.0",
     deps = [
-        "//vendor_local_manifests/crates/windows-targets-0.52.0:windows_targets",
+        "//vendor_local_manifests/crates/windows-targets-0.52.3:windows_targets",
     ],
 )

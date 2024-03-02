@@ -3,13 +3,13 @@ use anyhow::{Context, Result};
 use crates_index::IndexConfig;
 use hex::ToHex;
 
-pub enum CrateIndexLookup {
+pub(crate) enum CrateIndexLookup {
     Git(crates_index::GitIndex),
     Http(crates_index::SparseIndex),
 }
 
 impl CrateIndexLookup {
-    pub fn get_source_info(&self, pkg: &cargo_lock::Package) -> Result<Option<SourceInfo>> {
+    pub(crate) fn get_source_info(&self, pkg: &cargo_lock::Package) -> Result<Option<SourceInfo>> {
         let index_config = self
             .index_config()
             .context("Failed to get crate index config")?;

@@ -35,6 +35,7 @@ CrateInfo = provider(
         "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
         "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
+        "std_dylib": "File: libstd.so file",
         "type": (
             "str: The type of this crate " +
             "(see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit))."
@@ -75,8 +76,8 @@ BuildInfo = provider(
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
         "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
-        "link_flags": "Optional[File]: file containing flags to pass to the linker",
-        "link_search_paths": "Optional[File]: file containing search paths to pass to the linker",
+        "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
+        "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",
         "out_dir": "Optional[File]: directory containing the result of a build script",
         "rustc_env": "Optional[File]: file containing additional environment variables to set for rustc.",
     },
@@ -122,6 +123,7 @@ StdLibInfo = provider(
         "panic_files": "Depset[File]: `.a` files associated with `panic_unwind` and `panic_abort`.",
         "self_contained_files": "List[File]: All `.o` files from the `self-contained` directory.",
         "srcs": "List[Target]: All targets from the original `srcs` attribute.",
+        "std_dylib": "File: libstd.so file",
         "std_files": "Depset[File]: `.a` files associated with the `std` module.",
         "std_rlibs": "List[File]: All `.rlib` files",
         "test_files": "Depset[File]: `.a` files associated with the `test` module.",
@@ -149,5 +151,25 @@ TestCrateInfo = provider(
           "but rather through this provider, that rust_test understands.",
     fields = {
         "crate": "CrateInfo: The underlying CrateInfo of the dependency",
+    },
+)
+
+RustAnalyzerInfo = provider(
+    doc = "RustAnalyzerInfo holds rust crate metadata for targets",
+    fields = {
+        "build_info": "BuildInfo: build info for this crate if present",
+        "cfgs": "List[String]: features or other compilation `--cfg` settings",
+        "crate": "CrateInfo: Crate information.",
+        "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
+        "env": "Dict[String: String]: Environment variables, used for the `env!` macro",
+        "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
+    },
+)
+
+RustAnalyzerGroupInfo = provider(
+    doc = "RustAnalyzerGroupInfo holds multiple RustAnalyzerInfos",
+    fields = {
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
     },
 )

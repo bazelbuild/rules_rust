@@ -127,7 +127,7 @@ def generate_splicing_manifest(packages, splicing_config, cargo_config, manifest
 
     config = json.decode(splicing_config or generate_splicing_config())
     splicing_manifest_content = {
-        "cargo_config": manifest_to_path(cargo_config) if cargo_config else None,
+        "cargo_config": str(manifest_to_path(cargo_config)) if cargo_config else None,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
     }
@@ -225,8 +225,11 @@ def generate_config_file(
         "vendor_mode": mode,
     }
 
+    # "crate_label_template" is explicitly supported above in non-local modes
+    excluded_from_key_check = ["crate_label_template"]
+
     for key in updates:
-        if render_config[key] != default_render_config[key]:
+        if (render_config[key] != default_render_config[key]) and key not in excluded_from_key_check:
             fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
                 key,
                 ctx.label,

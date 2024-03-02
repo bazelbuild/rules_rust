@@ -15,21 +15,21 @@ struct Options {
     /// The path to an artifacts directory expecting to contain directories
     /// named after platform tripes with binaries inside.
     #[clap(long)]
-    pub artifacts_dir: PathBuf,
+    pub(crate) artifacts_dir: PathBuf,
 
     /// A url prefix where the artifacts can be found
     #[clap(long)]
-    pub url_prefix: String,
+    pub(crate) url_prefix: String,
 
     /// The path to a buildifier binary. If set, it will be ran on the module
     #[clap(long)]
-    pub buildifier: Option<PathBuf>,
+    pub(crate) buildifier: Option<PathBuf>,
 }
 
 struct Artifact {
-    pub url: String,
-    pub triple: String,
-    pub sha256: String,
+    pub(crate) url: String,
+    pub(crate) triple: String,
+    pub(crate) sha256: String,
 }
 
 fn calculate_sha256(file_path: &Path) -> String {

@@ -11,11 +11,11 @@ struct Options {
     /// The path to an artifacts directory expecting to contain directories
     /// named after platform tripes with binaries inside.
     #[clap(long)]
-    pub output: PathBuf,
+    pub(crate) output: PathBuf,
 
     /// A url prefix where the artifacts can be found
     #[clap(long)]
-    pub target: String,
+    pub(crate) target: String,
 }
 
 /// This function is required until an upstream PR lands

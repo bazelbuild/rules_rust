@@ -1,4 +1,4 @@
-//! Utility module for interracting with different kinds of lock files
+//! Utility module for interacting with the cargo-bazel lockfile.
 
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -17,7 +17,7 @@ use crate::context::Context;
 use crate::metadata::Cargo;
 use crate::splicing::{SplicingManifest, SplicingMetadata};
 
-pub fn lock_context(
+pub(crate) fn lock_context(
     mut context: Context,
     config: &Config,
     splicing_manifest: &SplicingManifest,
@@ -37,7 +37,7 @@ pub fn lock_context(
 }
 
 /// Write a [crate::context::Context] to disk
-pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
+pub(crate) fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<()> {
     let content = serde_json::to_string_pretty(&lockfile)?;
 
     if dry_run {
@@ -55,10 +55,10 @@ pub fn write_lockfile(lockfile: Context, path: &Path, dry_run: bool) -> Result<(
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Digest(String);
+pub(crate) struct Digest(String);
 
 impl Digest {
-    pub fn new(
+    pub(crate) fn new(
         context: &Context,
         config: &Config,
         splicing_manifest: &SplicingManifest,
@@ -130,7 +130,7 @@ impl Digest {
         Self(hasher.finalize().encode_hex::<String>())
     }
 
-    pub fn bin_version(binary: &Path) -> Result<String> {
+    pub(crate) fn bin_version(binary: &Path) -> Result<String> {
         let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 
@@ -187,7 +187,7 @@ impl PartialEq<String> for Digest {
 
 #[cfg(test)]
 mod test {
-    use crate::config::{CrateAnnotations, CrateId};
+    use crate::config::{CrateAnnotations, CrateNameAndVersionReq};
     use crate::splicing::cargo_config::{AdditionalRegistry, CargoConfig, Registry};
     use crate::utils::target_triple::TargetTriple;
 
@@ -211,7 +211,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("9fcd91ea8e2f7ded4c17895b41ae83b4d6c903f101911aea8bb5282135837b19".to_owned()),
+            Digest("83ad667352ca5a7cb3cc60f171a65f3bf264c7c97c6d91113d4798ca1dfb8d48".to_owned()),
             digest,
         );
     }
@@ -223,7 +223,7 @@ mod test {
             generate_binaries: false,
             generate_build_scripts: false,
             annotations: BTreeMap::from([(
-                CrateId::new("rustonomicon".to_owned(), "1.0.0".to_owned()),
+                CrateNameAndVersionReq::new("rustonomicon".to_owned(), "1.0.0".parse().unwrap()),
                 CrateAnnotations {
                     compile_data_glob: Some(BTreeSet::from(["arts/**".to_owned()])),
                     ..CrateAnnotations::default()
@@ -256,7 +256,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("2b0c255dfcd33196867b604db956aaec0f4aab344941535968e4617c346e44f4".to_owned()),
+            Digest("40a5ede6a47639166062fffab74e5dbe229b1d2508bcf70d8dfeba04b4f4ac9a".to_owned()),
             digest,
         );
     }
@@ -287,7 +287,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("b1cee7093144f3c5ed4c8b1b9a25df40da997f1b9da2d46ecfda88c67307f66d".to_owned()),
+            Digest("10a1921f3122042d6c513392992e4b3982d0ed8985fdc2dee965c466f8cb00a4".to_owned()),
             digest,
         );
     }
@@ -336,7 +336,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("487524c404739b42956cff78e5f26779902f28a61bbb3380f6210f79d1c7fceb".to_owned()),
+            Digest("9e3d58a48b375bec2cf8c783d92f5d8db67306046e652ee376f30c362c882f56".to_owned()),
             digest,
         );
     }

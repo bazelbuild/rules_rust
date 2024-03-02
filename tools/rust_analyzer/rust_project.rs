@@ -168,6 +168,23 @@ pub fn generate_rust_project(
                 skipped_crates.len(),
                 skipped_crates
             );
+            let crate_map: BTreeMap<String, &CrateSpec> = unmerged_crates
+                .iter()
+                .map(|c| (c.crate_id.to_string(), *c))
+                .collect();
+
+            for unmerged_crate in &unmerged_crates {
+                let mut path = vec![];
+                if let Some(cycle) = detect_cycle(unmerged_crate, &crate_map, &mut path) {
+                    log::warn!(
+                        "Cycle detected: {:?}",
+                        cycle
+                            .iter()
+                            .map(|c| c.crate_id.to_string())
+                            .collect::<Vec<String>>()
+                    );
+                }
+            }
             return Err(anyhow!(
                 "Failed to make progress on building crate dependency graph"
             ));
@@ -177,6 +194,38 @@ pub fn generate_rust_project(
     }
 
     Ok(project)
+}
+
+fn detect_cycle<'a>(
+    current_crate: &'a CrateSpec,
+    all_crates: &'a BTreeMap<String, &'a CrateSpec>,
+    path: &mut Vec<&'a CrateSpec>,
+) -> Option<Vec<&'a CrateSpec>> {
+    if path
+        .iter()
+        .any(|dependent_crate| dependent_crate.crate_id == current_crate.crate_id)
+    {
+        let mut cycle_path = path.clone();
+        cycle_path.push(current_crate);
+        return Some(cycle_path);
+    }
+
+    path.push(current_crate);
+
+    for dep in &current_crate.deps {
+        match all_crates.get(dep) {
+            Some(dep_crate) => {
+                if let Some(cycle) = detect_cycle(dep_crate, all_crates, path) {
+                    return Some(cycle);
+                }
+            }
+            None => log::debug!("dep {dep} not found in unmerged crate map"),
+        }
+    }
+
+    path.pop();
+
+    None
 }
 
 pub fn write_rust_project(
