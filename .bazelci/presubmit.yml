@@ -10,6 +10,8 @@ nightly_aspects_flags: &nightly_aspects_flags
   - "--//rust/toolchain/channel=nightly"
   - "--config=rustfmt"
   - "--config=clippy"
+bzlmod_flags: &bzlmod_flags
+  - "--lockfile_mode=error"
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -653,6 +655,7 @@ tasks:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
     working_directory: examples/bzlmod/hello_world
+    build_flags: *bzlmod_flags
     run_targets:
       - "//third-party:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
@@ -662,6 +665,7 @@ tasks:
     name: bzlmod BCR presubmit
     platform: macos
     working_directory: examples/bzlmod/hello_world
+    build_flags: *bzlmod_flags
     run_targets:
       - "//third-party:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
@@ -671,6 +675,7 @@ tasks:
     name: bzlmod BCR presubmit
     platform: windows
     working_directory: examples/bzlmod/hello_world
+    build_flags: *bzlmod_flags
     run_targets:
       - "//third-party:vendor"
     build_targets:
