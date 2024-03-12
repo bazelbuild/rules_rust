@@ -638,6 +638,14 @@ tasks:
   #   working_directory: examples/zig_cross_compiling
   #   build_targets:
   #     - "//..."
+  musl_cross_compiling_macos_to_linux:
+    name: Musl cross compiling test from macOS to Linux
+    platform: macos
+    working_directory: examples/musl_cross_compiling
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   nix_cross_compiling:
     name: Nix cross compiling test
     platform: ubuntu2204
