@@ -95,7 +95,7 @@ rust = module_extension(
 )
 
 # This is a separate module extension so that only the host tools are
-# marked as os and arch dependent
+# marked as reproducible and os and arch dependent
 def _rust_host_tools_impl(module_ctx):
     root = _find_root(module_ctx)
 
