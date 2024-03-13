@@ -14,3 +14,20 @@ bcr_test_module:
         - "@rules_rust//tools/rust_analyzer:gen_rust_project"
       test_targets:
         - "//..."
+# Windows is run separately because currently gen_rust_project doesn't run on windows, although it does build
+bcr_test_module_windows:
+  module_path: ""
+  matrix:
+    bazel: ["6.x", "7.x"]
+  tasks:
+    run_tests:
+      working_directory: examples/bzlmod/hello_world
+      name: "Run test module"
+      platform: windows
+      bazel: ${{ bazel }}
+      run_targets:
+        - "//third-party:vendor"
+      build_targets:
+        - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+      test_targets:
+        - "//..."

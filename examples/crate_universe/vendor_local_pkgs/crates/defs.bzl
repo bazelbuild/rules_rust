@@ -293,16 +293,16 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "axum": "//vendor_local_pkgs/crates/axum-0.4.8:axum",
-            "hyper": "//vendor_local_pkgs/crates/hyper-0.14.28:hyper",
-            "mime": "//vendor_local_pkgs/crates/mime-0.3.17:mime",
-            "serde_json": "//vendor_local_pkgs/crates/serde_json-1.0.113:serde_json",
-            "socket2": "//vendor_local_pkgs/crates/socket2-0.4.10:socket2",
-            "tokio": "//vendor_local_pkgs/crates/tokio-1.36.0:tokio",
-            "tower": "//vendor_local_pkgs/crates/tower-0.4.13:tower",
-            "tower-http": "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
-            "tracing": "//vendor_local_pkgs/crates/tracing-0.1.40:tracing",
-            "tracing-subscriber": "//vendor_local_pkgs/crates/tracing-subscriber-0.3.18:tracing_subscriber",
+            "axum": Label("//vendor_local_pkgs/crates/axum-0.4.8:axum"),
+            "hyper": Label("//vendor_local_pkgs/crates/hyper-0.14.28:hyper"),
+            "mime": Label("//vendor_local_pkgs/crates/mime-0.3.17:mime"),
+            "serde_json": Label("//vendor_local_pkgs/crates/serde_json-1.0.114:serde_json"),
+            "socket2": Label("//vendor_local_pkgs/crates/socket2-0.4.10:socket2"),
+            "tokio": Label("//vendor_local_pkgs/crates/tokio-1.36.0:tokio"),
+            "tower": Label("//vendor_local_pkgs/crates/tower-0.4.13:tower"),
+            "tower-http": Label("//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http"),
+            "tracing": Label("//vendor_local_pkgs/crates/tracing-0.1.40:tracing"),
+            "tracing-subscriber": Label("//vendor_local_pkgs/crates/tracing-subscriber-0.3.18:tracing_subscriber"),
         },
     },
 }

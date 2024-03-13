@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "crossbeam_queue",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -87,8 +91,11 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "crossbeam-queue_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "crossbeam-queue_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "alloc",
         "std",
@@ -97,6 +104,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -123,6 +131,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":crossbeam-queue_build_script",
+    actual = ":crossbeam-queue_bs",
     tags = ["manual"],
 )

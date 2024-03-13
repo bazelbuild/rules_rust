@@ -295,18 +295,18 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "anyhow": "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-            "docopt": "@rules_rust_wasm_bindgen__docopt-1.1.1//:docopt",
-            "env_logger": "@rules_rust_wasm_bindgen__env_logger-0.8.4//:env_logger",
-            "log": "@rules_rust_wasm_bindgen__log-0.4.19//:log",
-            "rouille": "@rules_rust_wasm_bindgen__rouille-3.6.2//:rouille",
-            "serde": "@rules_rust_wasm_bindgen__serde-1.0.171//:serde",
-            "serde_json": "@rules_rust_wasm_bindgen__serde_json-1.0.102//:serde_json",
-            "ureq": "@rules_rust_wasm_bindgen__ureq-2.8.0//:ureq",
-            "walrus": "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
-            "wasm-bindgen": "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.91//:wasm_bindgen",
-            "wasm-bindgen-cli-support": "@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.91//:wasm_bindgen_cli_support",
-            "wasm-bindgen-shared": "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:wasm_bindgen_shared",
+            "anyhow": Label("@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow"),
+            "docopt": Label("@rules_rust_wasm_bindgen__docopt-1.1.1//:docopt"),
+            "env_logger": Label("@rules_rust_wasm_bindgen__env_logger-0.8.4//:env_logger"),
+            "log": Label("@rules_rust_wasm_bindgen__log-0.4.19//:log"),
+            "rouille": Label("@rules_rust_wasm_bindgen__rouille-3.6.2//:rouille"),
+            "serde": Label("@rules_rust_wasm_bindgen__serde-1.0.171//:serde"),
+            "serde_json": Label("@rules_rust_wasm_bindgen__serde_json-1.0.102//:serde_json"),
+            "ureq": Label("@rules_rust_wasm_bindgen__ureq-2.8.0//:ureq"),
+            "walrus": Label("@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus"),
+            "wasm-bindgen": Label("@rules_rust_wasm_bindgen__wasm-bindgen-0.2.91//:wasm_bindgen"),
+            "wasm-bindgen-cli-support": Label("@rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.91//:wasm_bindgen_cli_support"),
+            "wasm-bindgen-shared": Label("@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.91//:wasm_bindgen_shared"),
         },
     },
 }
@@ -321,13 +321,13 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "assert_cmd": "@rules_rust_wasm_bindgen__assert_cmd-1.0.8//:assert_cmd",
-            "diff": "@rules_rust_wasm_bindgen__diff-0.1.13//:diff",
-            "predicates": "@rules_rust_wasm_bindgen__predicates-1.0.8//:predicates",
-            "rayon": "@rules_rust_wasm_bindgen__rayon-1.7.0//:rayon",
-            "tempfile": "@rules_rust_wasm_bindgen__tempfile-3.6.0//:tempfile",
-            "wasmparser": "@rules_rust_wasm_bindgen__wasmparser-0.102.0//:wasmparser",
-            "wasmprinter": "@rules_rust_wasm_bindgen__wasmprinter-0.2.60//:wasmprinter",
+            "assert_cmd": Label("@rules_rust_wasm_bindgen__assert_cmd-1.0.8//:assert_cmd"),
+            "diff": Label("@rules_rust_wasm_bindgen__diff-0.1.13//:diff"),
+            "predicates": Label("@rules_rust_wasm_bindgen__predicates-1.0.8//:predicates"),
+            "rayon": Label("@rules_rust_wasm_bindgen__rayon-1.7.0//:rayon"),
+            "tempfile": Label("@rules_rust_wasm_bindgen__tempfile-3.6.0//:tempfile"),
+            "wasmparser": Label("@rules_rust_wasm_bindgen__wasmparser-0.102.0//:wasmparser"),
+            "wasmprinter": Label("@rules_rust_wasm_bindgen__wasmprinter-0.2.60//:wasmprinter"),
         },
     },
 }
@@ -342,7 +342,7 @@ _NORMAL_DEV_ALIASES = {
 _PROC_MACRO_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde_derive": "@rules_rust_wasm_bindgen__serde_derive-1.0.171//:serde_derive",
+            "serde_derive": Label("@rules_rust_wasm_bindgen__serde_derive-1.0.171//:serde_derive"),
         },
     },
 }

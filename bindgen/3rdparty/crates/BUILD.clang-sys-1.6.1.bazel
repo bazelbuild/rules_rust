@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "clang_sys",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -104,8 +108,11 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "clang-sys_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "clang-sys_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "clang_10_0",
         "clang_11_0",
@@ -130,6 +137,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -160,6 +168,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":clang-sys_build_script",
+    actual = ":clang-sys_bs",
     tags = ["manual"],
 )

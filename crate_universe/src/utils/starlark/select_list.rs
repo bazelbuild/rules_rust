@@ -12,7 +12,7 @@ use crate::utils::starlark::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectList<T>
+pub(crate) struct SelectList<T>
 where
     T: SelectableValue,
 {
@@ -31,7 +31,10 @@ where
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
     /// configurations in the output SelectList.
-    pub fn new(select: Select<Vec<T>>, platforms: &BTreeMap<String, BTreeSet<String>>) -> Self {
+    pub(crate) fn new(
+        select: Select<Vec<T>>,
+        platforms: &BTreeMap<String, BTreeSet<String>>,
+    ) -> Self {
         let (common, selects) = select.into_parts();
 
         // Map new configuration -> WithOriginalConfigurations(value, old configuration).
@@ -84,7 +87,7 @@ where
     }
 
     /// Determine whether or not the select should be serialized
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }

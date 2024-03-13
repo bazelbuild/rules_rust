@@ -4,19 +4,19 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct TargetTriple(String);
+pub(crate) struct TargetTriple(String);
 
 impl TargetTriple {
     #[cfg(test)]
-    pub fn from_bazel(bazel: String) -> Self {
+    pub(crate) fn from_bazel(bazel: String) -> Self {
         Self(bazel)
     }
 
-    pub fn to_bazel(&self) -> String {
+    pub(crate) fn to_bazel(&self) -> String {
         self.0.clone()
     }
 
-    pub fn to_cargo(&self) -> String {
+    pub(crate) fn to_cargo(&self) -> String {
         // While Bazel is NixOS aware (via `@platforms//os:nixos`), `rustc`
         // is not, so any target triples for `nixos` get remapped to `linux`
         // for the purposes of determining `cargo metadata`, resolving `cfg`

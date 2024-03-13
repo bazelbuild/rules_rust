@@ -10,7 +10,7 @@ use crate::utils::target_triple::TargetTriple;
 /// Walk through all dependencies in a [CrateContext] list for all configuration specific
 /// dependencies to produce a mapping of configurations/Cargo target_triples to compatible
 /// Bazel target_triples.  Also adds mappings for all known target_triples.
-pub fn resolve_cfg_platforms(
+pub(crate) fn resolve_cfg_platforms(
     crates: Vec<&CrateContext>,
     supported_platform_triples: &BTreeSet<TargetTriple>,
 ) -> Result<BTreeMap<String, BTreeSet<TargetTriple>>> {
@@ -117,6 +117,8 @@ mod test {
 
     use super::*;
 
+    const VERSION_ZERO_ONE_ZERO: semver::Version = semver::Version::new(0, 1, 0);
+
     fn supported_platform_triples() -> BTreeSet<TargetTriple> {
         BTreeSet::from([
             TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
@@ -130,7 +132,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -139,12 +141,23 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =
@@ -176,7 +189,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -185,12 +198,23 @@ mod test {
 
         CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         }
     }
 
@@ -250,7 +274,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -259,12 +283,23 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =
@@ -304,7 +339,7 @@ mod test {
         let mut deps: Select<BTreeSet<CrateDependency>> = Select::default();
         deps.insert(
             CrateDependency {
-                id: CrateId::new("mock_crate_b".to_owned(), "0.1.0".to_owned()),
+                id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
             },
@@ -313,12 +348,23 @@ mod test {
 
         let context = CrateContext {
             name: "mock_crate_a".to_owned(),
-            version: "0.1.0".to_owned(),
+            version: VERSION_ZERO_ONE_ZERO,
+            package_url: None,
+            repository: None,
+            targets: BTreeSet::default(),
+            library_target_name: None,
             common_attrs: CommonAttributes {
                 deps,
                 ..CommonAttributes::default()
             },
-            ..CrateContext::default()
+            build_script_attrs: None,
+            license: None,
+            license_ids: BTreeSet::default(),
+            license_file: None,
+            additive_build_file_content: None,
+            disable_pipelining: false,
+            extra_aliased_targets: BTreeMap::default(),
+            alias_rule: None,
         };
 
         let configurations =

@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "bzip2": "@basic_sys__bzip2-0.3.3//:bzip2",
+            "bzip2": Label("@basic_sys__bzip2-0.3.3//:bzip2"),
         },
     },
 }

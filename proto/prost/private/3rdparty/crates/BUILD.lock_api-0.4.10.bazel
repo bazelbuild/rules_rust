@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "lock_api",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -86,8 +90,11 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "lock_api_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "lock_api_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "atomic_usize",
         "default",
@@ -96,6 +103,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -125,6 +133,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":lock_api_build_script",
+    actual = ":lock_api_bs",
     tags = ["manual"],
 )

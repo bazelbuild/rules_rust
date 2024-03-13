@@ -295,45 +295,45 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "anyhow": "@cui__anyhow-1.0.75//:anyhow",
-            "camino": "@cui__camino-1.1.6//:camino",
-            "cargo-lock": "@cui__cargo-lock-9.0.0//:cargo_lock",
-            "cargo-platform": "@cui__cargo-platform-0.1.4//:cargo_platform",
-            "cargo_metadata": "@cui__cargo_metadata-0.18.1//:cargo_metadata",
-            "cargo_toml": "@cui__cargo_toml-0.17.1//:cargo_toml",
-            "cfg-expr": "@cui__cfg-expr-0.15.5//:cfg_expr",
-            "clap": "@cui__clap-4.3.11//:clap",
-            "crates-index": "@cui__crates-index-2.2.0//:crates_index",
-            "hex": "@cui__hex-0.4.3//:hex",
-            "itertools": "@cui__itertools-0.12.0//:itertools",
-            "normpath": "@cui__normpath-1.1.1//:normpath",
-            "pathdiff": "@cui__pathdiff-0.2.1//:pathdiff",
-            "regex": "@cui__regex-1.10.2//:regex",
-            "semver": "@cui__semver-1.0.20//:semver",
-            "serde": "@cui__serde-1.0.190//:serde",
-            "serde_json": "@cui__serde_json-1.0.108//:serde_json",
-            "serde_starlark": "@cui__serde_starlark-0.1.14//:serde_starlark",
-            "sha2": "@cui__sha2-0.10.8//:sha2",
-            "spdx": "@cui__spdx-0.10.3//:spdx",
-            "tempfile": "@cui__tempfile-3.8.1//:tempfile",
-            "tera": "@cui__tera-1.19.1//:tera",
-            "textwrap": "@cui__textwrap-0.16.0//:textwrap",
-            "toml": "@cui__toml-0.8.10//:toml",
-            "tracing": "@cui__tracing-0.1.40//:tracing",
-            "tracing-subscriber": "@cui__tracing-subscriber-0.3.17//:tracing_subscriber",
+            "anyhow": Label("@cui__anyhow-1.0.75//:anyhow"),
+            "camino": Label("@cui__camino-1.1.6//:camino"),
+            "cargo-lock": Label("@cui__cargo-lock-9.0.0//:cargo_lock"),
+            "cargo-platform": Label("@cui__cargo-platform-0.1.4//:cargo_platform"),
+            "cargo_metadata": Label("@cui__cargo_metadata-0.18.1//:cargo_metadata"),
+            "cargo_toml": Label("@cui__cargo_toml-0.17.1//:cargo_toml"),
+            "cfg-expr": Label("@cui__cfg-expr-0.15.5//:cfg_expr"),
+            "clap": Label("@cui__clap-4.3.11//:clap"),
+            "crates-index": Label("@cui__crates-index-2.2.0//:crates_index"),
+            "hex": Label("@cui__hex-0.4.3//:hex"),
+            "itertools": Label("@cui__itertools-0.12.0//:itertools"),
+            "normpath": Label("@cui__normpath-1.1.1//:normpath"),
+            "pathdiff": Label("@cui__pathdiff-0.2.1//:pathdiff"),
+            "regex": Label("@cui__regex-1.10.2//:regex"),
+            "semver": Label("@cui__semver-1.0.20//:semver"),
+            "serde": Label("@cui__serde-1.0.190//:serde"),
+            "serde_json": Label("@cui__serde_json-1.0.108//:serde_json"),
+            "serde_starlark": Label("@cui__serde_starlark-0.1.14//:serde_starlark"),
+            "sha2": Label("@cui__sha2-0.10.8//:sha2"),
+            "spdx": Label("@cui__spdx-0.10.3//:spdx"),
+            "tempfile": Label("@cui__tempfile-3.8.1//:tempfile"),
+            "tera": Label("@cui__tera-1.19.1//:tera"),
+            "textwrap": Label("@cui__textwrap-0.16.0//:textwrap"),
+            "toml": Label("@cui__toml-0.8.10//:toml"),
+            "tracing": Label("@cui__tracing-0.1.40//:tracing"),
+            "tracing-subscriber": Label("@cui__tracing-subscriber-0.3.17//:tracing_subscriber"),
         },
     },
     "crate_universe/tools/cross_installer": {
         _COMMON_CONDITION: {
-            "clap": "@cui__clap-4.3.11//:clap",
+            "clap": Label("@cui__clap-4.3.11//:clap"),
         },
     },
     "crate_universe/tools/urls_generator": {
         _COMMON_CONDITION: {
-            "clap": "@cui__clap-4.3.11//:clap",
-            "hex": "@cui__hex-0.4.3//:hex",
-            "serde_json": "@cui__serde_json-1.0.108//:serde_json",
-            "sha2": "@cui__sha2-0.10.8//:sha2",
+            "clap": Label("@cui__clap-4.3.11//:clap"),
+            "hex": Label("@cui__hex-0.4.3//:hex"),
+            "serde_json": Label("@cui__serde_json-1.0.108//:serde_json"),
+            "sha2": Label("@cui__sha2-0.10.8//:sha2"),
         },
     },
 }
@@ -356,8 +356,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "maplit": "@cui__maplit-1.0.2//:maplit",
-            "spectral": "@cui__spectral-0.6.0//:spectral",
+            "maplit": Label("@cui__maplit-1.0.2//:maplit"),
+            "spectral": Label("@cui__spectral-0.6.0//:spectral"),
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -380,7 +380,7 @@ _NORMAL_DEV_ALIASES = {
 _PROC_MACRO_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "indoc": "@cui__indoc-2.0.4//:indoc",
+            "indoc": Label("@cui__indoc-2.0.4//:indoc"),
         },
     },
     "crate_universe/tools/cross_installer": {

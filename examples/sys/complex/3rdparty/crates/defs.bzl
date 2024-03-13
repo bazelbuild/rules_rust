@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "git2": "@complex_sys__git2-0.14.4//:git2",
+            "git2": Label("@complex_sys__git2-0.14.4//:git2"),
         },
     },
 }

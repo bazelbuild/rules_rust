@@ -14,6 +14,8 @@ load(
     "dedent",
     "dedup_expand_location",
     "find_cc_toolchain",
+    "is_exec_configuration",
+    "is_std_dylib",
     "make_static_lib_symlink",
 )
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
@@ -75,6 +77,13 @@ def _rust_stdlib_filegroup_impl(ctx):
                 print("File partitioned: {}".format(f.basename))
             fail("rust_toolchain couldn't properly partition rlibs in rust_std. Partitioned {} out of {} files. This is probably a bug in the rule implementation.".format(partitioned_files_len, len(dot_a_files)))
 
+    std_dylib = None
+
+    for file in rust_std:
+        if is_std_dylib(file):
+            std_dylib = file
+            break
+
     return [
         DefaultInfo(
             files = depset(ctx.files.srcs),
@@ -87,6 +96,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             core_files = core_files,
             between_core_and_std_files = between_core_and_std_files,
             std_files = std_files,
+            std_dylib = std_dylib,
             test_files = test_files,
             memchr_files = memchr_files,
             alloc_files = alloc_files,
@@ -237,14 +247,27 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             transitive = [memchr_inputs],
             order = "topological",
         )
-        std_inputs = depset(
-            [
-                _ltl(f, ctx, cc_toolchain, feature_configuration)
-                for f in rust_stdlib_info.std_files
-            ],
-            transitive = [between_core_and_std_inputs],
-            order = "topological",
-        )
+
+        if _experimental_link_std_dylib(ctx):
+            # std dylib has everything so that we do not need to include all std_files
+            std_inputs = depset(
+                [cc_common.create_library_to_link(
+                    actions = ctx.actions,
+                    feature_configuration = feature_configuration,
+                    cc_toolchain = cc_toolchain,
+                    dynamic_library = rust_stdlib_info.std_dylib,
+                )],
+            )
+        else:
+            std_inputs = depset(
+                [
+                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    for f in rust_stdlib_info.std_files
+                ],
+                transitive = [between_core_and_std_inputs],
+                order = "topological",
+            )
+
         test_inputs = depset(
             [
                 _ltl(f, ctx, cc_toolchain, feature_configuration)
@@ -454,6 +477,9 @@ def _generate_sysroot(
         sysroot_anchor = sysroot_anchor,
     )
 
+def _experimental_use_cc_common_link(ctx):
+    return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -477,15 +503,14 @@ def _rust_toolchain_impl(ctx):
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
     no_std = ctx.attr._no_std[BuildSettingInfo].value
 
-    experimental_use_cc_common_link = ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
     experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
-    if experimental_use_cc_common_link:
+    if _experimental_use_cc_common_link(ctx):
         if experimental_use_global_allocator and not ctx.attr.global_allocator_library:
             fail("rust_toolchain.experimental_use_cc_common_link with --@rules_rust//rust/settings:experimental_use_global_allocator " +
                  "requires rust_toolchain.global_allocator_library to be set")
         if not ctx.attr.allocator_library:
             fail("rust_toolchain.experimental_use_cc_common_link requires rust_toolchain.allocator_library to be set")
-    if experimental_use_global_allocator and not experimental_use_cc_common_link:
+    if experimental_use_global_allocator and not _experimental_use_cc_common_link(ctx):
         fail(
             "Using @rules_rust//rust/settings:experimental_use_global_allocator requires" +
             "--@rules_rust//rust/settings:experimental_use_cc_common_link to be set",
@@ -639,7 +664,8 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
-        _experimental_use_cc_common_link = experimental_use_cc_common_link,
+        _experimental_link_std_dylib = _experimental_link_std_dylib(ctx),
+        _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _experimental_toolchain_generated_sysroot = ctx.attr._experimental_toolchain_generated_sysroot[IncompatibleFlagInfo].enabled,
@@ -651,6 +677,11 @@ def _rust_toolchain_impl(ctx):
         toolchain,
         make_variable_info,
     ]
+
+def _experimental_link_std_dylib(ctx):
+    return not is_exec_configuration(ctx) and \
+           ctx.attr.experimental_link_std_dylib[BuildSettingInfo].value and \
+           ctx.attr.rust_std[rust_common.stdlib_info].std_dylib != None
 
 rust_toolchain = rule(
     implementation = _rust_toolchain_impl,
@@ -701,6 +732,10 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
             mandatory = True,
+        ),
+        "experimental_link_std_dylib": attr.label(
+            default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
+            doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
         ),
         "experimental_use_cc_common_link": attr.label(
             default = Label("//rust/settings:experimental_use_cc_common_link"),

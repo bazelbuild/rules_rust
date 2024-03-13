@@ -14,40 +14,40 @@ use crate::metadata::dependency::DependencySet;
 use crate::select::Select;
 use crate::splicing::{SourceInfo, WorkspaceMetadata};
 
-pub type CargoMetadata = cargo_metadata::Metadata;
-pub type CargoLockfile = cargo_lock::Lockfile;
+pub(crate) type CargoMetadata = cargo_metadata::Metadata;
+pub(crate) type CargoLockfile = cargo_lock::Lockfile;
 
 /// Additional information about a crate relative to other crates in a dependency graph.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CrateAnnotation {
+pub(crate) struct CrateAnnotation {
     /// The crate's node in the Cargo "resolve" graph.
-    pub node: Node,
+    pub(crate) node: Node,
 
     /// The crate's sorted dependencies.
-    pub deps: DependencySet,
+    pub(crate) deps: DependencySet,
 }
 
 /// Additional information about a Cargo workspace's metadata.
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct MetadataAnnotation {
+pub(crate) struct MetadataAnnotation {
     /// All packages found within the Cargo metadata
-    pub packages: BTreeMap<PackageId, Package>,
+    pub(crate) packages: BTreeMap<PackageId, Package>,
 
     /// All [CrateAnnotation]s for all packages
-    pub crates: BTreeMap<PackageId, CrateAnnotation>,
+    pub(crate) crates: BTreeMap<PackageId, CrateAnnotation>,
 
     /// All packages that are workspace members
-    pub workspace_members: BTreeSet<PackageId>,
+    pub(crate) workspace_members: BTreeSet<PackageId>,
 
     /// The path to the directory containing the Cargo workspace that produced the metadata.
-    pub workspace_root: PathBuf,
+    pub(crate) workspace_root: PathBuf,
 
     /// Information on the Cargo workspace.
-    pub workspace_metadata: WorkspaceMetadata,
+    pub(crate) workspace_metadata: WorkspaceMetadata,
 }
 
 impl MetadataAnnotation {
-    pub fn new(metadata: CargoMetadata) -> MetadataAnnotation {
+    pub(crate) fn new(metadata: CargoMetadata) -> MetadataAnnotation {
         // UNWRAP: The workspace metadata should be written by a controlled process. This should not return a result
         let workspace_metadata = find_workspace_metadata(&metadata).unwrap_or_default();
 
@@ -104,7 +104,7 @@ impl MetadataAnnotation {
 
 /// Additional information about how and where to acquire a crate's source code from.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub enum SourceAnnotation {
+pub(crate) enum SourceAnnotation {
     Git {
         /// The Git url where to clone the source from.
         remote: String,
@@ -160,13 +160,13 @@ pub enum SourceAnnotation {
 /// Additional information related to [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
 /// data used for improved determinism.
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
-pub struct LockfileAnnotation {
+pub(crate) struct LockfileAnnotation {
     /// A mapping of crates/packages to additional source (network location) information.
-    pub crates: BTreeMap<PackageId, SourceAnnotation>,
+    pub(crate) crates: BTreeMap<PackageId, SourceAnnotation>,
 }
 
 impl LockfileAnnotation {
-    pub fn new(lockfile: CargoLockfile, metadata: &CargoMetadata) -> Result<Self> {
+    pub(crate) fn new(lockfile: CargoLockfile, metadata: &CargoMetadata) -> Result<Self> {
         let workspace_metadata = find_workspace_metadata(metadata).unwrap_or_default();
 
         let nodes: Vec<&Node> = metadata
@@ -306,7 +306,7 @@ impl LockfileAnnotation {
         package: &cargo_lock::Package,
         metadata: &WorkspaceMetadata,
     ) -> Option<SourceInfo> {
-        let crate_id = CrateId::new(package.name.to_string(), package.version.to_string());
+        let crate_id = CrateId::new(package.name.to_string(), package.version.clone());
         metadata.sources.get(&crate_id).cloned()
     }
 
@@ -341,35 +341,35 @@ impl LockfileAnnotation {
 
 /// A pairing of a crate's package identifier to its annotations.
 #[derive(Debug)]
-pub struct PairedExtras {
+pub(crate) struct PairedExtras {
     /// The crate's package identifier
-    pub package_id: cargo_metadata::PackageId,
+    pub(crate) package_id: cargo_metadata::PackageId,
 
     /// The crate's annotations
-    pub crate_extra: CrateAnnotations,
+    pub(crate) crate_extra: CrateAnnotations,
 }
 
 /// A collection of data which has been processed for optimal use in generating Bazel targets.
 #[derive(Debug, Default)]
-pub struct Annotations {
+pub(crate) struct Annotations {
     /// Annotated Cargo metadata
-    pub metadata: MetadataAnnotation,
+    pub(crate) metadata: MetadataAnnotation,
 
     /// Annotated Cargo lockfile
-    pub lockfile: LockfileAnnotation,
+    pub(crate) lockfile: LockfileAnnotation,
 
     /// The current workspace's configuration settings
-    pub config: Config,
+    pub(crate) config: Config,
 
     /// Pairred crate annotations
-    pub pairred_extras: BTreeMap<CrateId, PairedExtras>,
+    pub(crate) pairred_extras: BTreeMap<CrateId, PairedExtras>,
 
     /// Feature set for each target triplet and crate.
-    pub crate_features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
+    pub(crate) crate_features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
 }
 
 impl Annotations {
-    pub fn new(
+    pub(crate) fn new(
         cargo_metadata: CargoMetadata,
         cargo_lockfile: CargoLockfile,
         config: Config,
@@ -406,7 +406,7 @@ impl Annotations {
                     None
                 } else {
                     Some((
-                        CrateId::new(pkg.name.clone(), pkg.version.to_string()),
+                        CrateId::new(pkg.name.clone(), pkg.version.clone()),
                         PairedExtras {
                             package_id: pkg_id.clone(),
                             crate_extra,
@@ -448,7 +448,7 @@ fn is_workspace_member(id: &PackageId, cargo_metadata: &CargoMetadata) -> bool {
     if cargo_metadata.workspace_members.contains(id) {
         if let Some(data) = find_workspace_metadata(cargo_metadata) {
             let pkg = &cargo_metadata[id];
-            let crate_id = CrateId::new(pkg.name.clone(), pkg.version.to_string());
+            let crate_id = CrateId::new(pkg.name.clone(), pkg.version.clone());
 
             !data.sources.contains_key(&crate_id)
         } else {
@@ -472,6 +472,7 @@ fn cargo_meta_pkg_to_locked_pkg<'a>(
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::config::CrateNameAndVersionReq;
 
     use crate::test::*;
 
@@ -575,7 +576,7 @@ mod test {
         // Create a config with some random annotation
         let mut config = Config::default();
         config.annotations.insert(
-            CrateId::new("mock-crate".to_owned(), "0.1.0".to_owned()),
+            CrateNameAndVersionReq::new("mock-crate".to_owned(), "0.1.0".parse().unwrap()),
             CrateAnnotations::default(),
         );
 
@@ -589,7 +590,14 @@ mod test {
 
     #[test]
     fn defaults_from_package_metadata() {
-        let crate_id = CrateId::new("has_package_metadata".to_owned(), "0.0.0".to_owned());
+        let crate_id = CrateId::new(
+            "has_package_metadata".to_owned(),
+            semver::Version::new(0, 0, 0),
+        );
+        let crate_name_and_version_req = CrateNameAndVersionReq::new(
+            "has_package_metadata".to_owned(),
+            "0.0.0".parse().unwrap(),
+        );
         let annotations = CrateAnnotations {
             rustc_env: Some(Select::from_value(BTreeMap::from([(
                 "BAR".to_owned(),
@@ -601,7 +609,7 @@ mod test {
         let mut config = Config::default();
         config
             .annotations
-            .insert(crate_id.clone(), annotations.clone());
+            .insert(crate_name_and_version_req, annotations.clone());
 
         // Combine the above annotations with default values provided by the
         // crate author in package metadata.

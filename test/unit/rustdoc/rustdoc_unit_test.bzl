@@ -42,6 +42,22 @@ def _rustdoc_for_bin_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_for_bin_with_cc_lib_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    return analysistest.end(env)
+
+def _rustdoc_for_bin_with_transitive_cc_lib_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    return analysistest.end(env)
+
 def _rustdoc_for_proc_macro_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -125,6 +141,8 @@ def _rustdoc_with_json_error_format_test_impl(ctx):
 
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
+rustdoc_for_bin_with_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_cc_lib_test_impl)
+rustdoc_for_bin_with_transitive_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_transitive_cc_lib_test_impl)
 rustdoc_for_proc_macro_test = analysistest.make(_rustdoc_for_proc_macro_test_impl)
 rustdoc_for_lib_with_proc_macro_test = analysistest.make(_rustdoc_for_lib_with_proc_macro_test_impl)
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
@@ -170,6 +188,22 @@ def _define_targets():
         rust_binary,
         name = "bin",
         srcs = ["rustdoc_bin.rs"],
+    )
+
+    _target_maker(
+        rust_binary,
+        name = "bin_with_cc",
+        srcs = ["rustdoc_bin.rs"],
+        crate_features = ["with_cc"],
+        deps = [":cc_lib"],
+    )
+
+    _target_maker(
+        rust_binary,
+        name = "bin_with_transitive_cc",
+        srcs = ["rustdoc_bin.rs"],
+        crate_features = ["with_cc"],
+        deps = [":transitive_cc_lib"],
     )
 
     _target_maker(
@@ -221,6 +255,17 @@ def _define_targets():
         name = "cc_lib",
         hdrs = ["rustdoc.h"],
         srcs = ["rustdoc.cc"],
+    )
+
+    cc_library(
+        name = "transitive_cc_lib",
+        hdrs = ["rustdoc.h"],
+        srcs = ["rustdoc.cc"],
+        deps = [":cc_lib"],
+        # This is not needed for :cc_lib, but it is needed in other
+        # circumstances to link in system libraries.
+        linkopts = ["-lcc_lib"],
+        linkstatic = True,
     )
 
     _target_maker(
@@ -311,6 +356,16 @@ def rustdoc_test_suite(name):
         target_under_test = ":bin_doc",
     )
 
+    rustdoc_for_bin_with_cc_lib_test(
+        name = "rustdoc_for_bin_with_cc_lib_test",
+        target_under_test = ":bin_with_cc_doc",
+    )
+
+    rustdoc_for_bin_with_transitive_cc_lib_test(
+        name = "rustdoc_for_bin_with_transitive_cc_lib_test",
+        target_under_test = ":bin_with_transitive_cc_doc",
+    )
+
     rustdoc_for_proc_macro_test(
         name = "rustdoc_for_proc_macro_test",
         target_under_test = ":rustdoc_proc_macro_doc",
@@ -356,6 +411,8 @@ def rustdoc_test_suite(name):
         tests = [
             ":rustdoc_for_lib_test",
             ":rustdoc_for_bin_test",
+            ":rustdoc_for_bin_with_cc_lib_test",
+            ":rustdoc_for_bin_with_transitive_cc_lib_test",
             ":rustdoc_for_proc_macro_test",
             ":rustdoc_for_lib_with_proc_macro_test",
             ":rustdoc_for_lib_with_cc_lib_test",

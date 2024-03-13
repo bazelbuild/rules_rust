@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "zstd": "@ios_build__zstd-0.11.2-zstd.1.5.2//:zstd",
+            "zstd": Label("@ios_build__zstd-0.11.2-zstd.1.5.2//:zstd"),
         },
     },
 }

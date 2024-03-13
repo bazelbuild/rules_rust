@@ -99,6 +99,12 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/2324",
 )
 
+# A flag to control whether to link libstd dynamically.
+bool_flag(
+    name = "experimental_link_std_dylib",
+    build_setting_default = False,
+)
+
 # A flag to remove the SYSROOT environment variable from `Rustc` actions.
 incompatible_flag(
     name = "incompatible_no_rustc_sysroot_env",

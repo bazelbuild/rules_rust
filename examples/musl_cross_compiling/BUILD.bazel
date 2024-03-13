@@ -1,0 +1,40 @@
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "hello",
+    srcs = ["src/main.rs"],
+    tags = ["manual"],
+)
+
+platform_transition_binary(
+    name = "hello_linux_x86_64_musl",
+    binary = ":hello",
+    target_platform = "//platforms:linux_x86_64_musl",
+)
+
+sh_test(
+    name = "hello_linux_x86_64_musl_test",
+    srcs = ["hello_linux_musl_test.sh"],
+    args = [
+        "$(rootpath :hello_linux_x86_64_musl)",
+        "'ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), static-pie linked'",
+    ],
+    data = [":hello_linux_x86_64_musl"],
+)
+
+platform_transition_binary(
+    name = "hello_linux_arm64_musl",
+    binary = ":hello",
+    target_platform = "//platforms:linux_arm64_musl",
+)
+
+sh_test(
+    name = "hello_linux_arm64_musl_test",
+    srcs = ["hello_linux_musl_test.sh"],
+    args = [
+        "$(rootpath :hello_linux_arm64_musl)",
+        "'ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked'",
+    ],
+    data = [":hello_linux_arm64_musl"],
+)

@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "backtrace",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -271,12 +275,16 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "backtrace_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "backtrace_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -300,12 +308,12 @@ cargo_build_script(
     version = "0.3.69",
     visibility = ["//visibility:private"],
     deps = [
-        "@crates_vendor_pkgs__cc-1.0.83//:cc",
+        "@crates_vendor_pkgs__cc-1.0.86//:cc",
     ],
 )
 
 alias(
     name = "build_script_build",
-    actual = ":backtrace_build_script",
+    actual = ":backtrace_bs",
     tags = ["manual"],
 )

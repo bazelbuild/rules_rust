@@ -295,13 +295,13 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "grpc": "@rules_rust_proto__grpc-0.6.2//:grpc",
-            "grpc-compiler": "@rules_rust_proto__grpc-compiler-0.6.2//:grpc_compiler",
-            "log": "@rules_rust_proto__log-0.4.17//:log",
-            "protobuf": "@rules_rust_proto__protobuf-2.8.2//:protobuf",
-            "protobuf-codegen": "@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen",
-            "tls-api": "@rules_rust_proto__tls-api-0.1.22//:tls_api",
-            "tls-api-stub": "@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub",
+            "grpc": Label("@rules_rust_proto__grpc-0.6.2//:grpc"),
+            "grpc-compiler": Label("@rules_rust_proto__grpc-compiler-0.6.2//:grpc_compiler"),
+            "log": Label("@rules_rust_proto__log-0.4.17//:log"),
+            "protobuf": Label("@rules_rust_proto__protobuf-2.8.2//:protobuf"),
+            "protobuf-codegen": Label("@rules_rust_proto__protobuf-codegen-2.8.2//:protobuf_codegen"),
+            "tls-api": Label("@rules_rust_proto__tls-api-0.1.22//:tls_api"),
+            "tls-api-stub": Label("@rules_rust_proto__tls-api-stub-0.1.22//:tls_api_stub"),
         },
     },
 }

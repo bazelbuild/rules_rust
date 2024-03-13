@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_proc_macro(
     name = "async_trait",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -79,17 +83,21 @@ rust_proc_macro(
         "//vendor_local_pkgs/crates/async-trait-0.1.77:build_script_build",
         "//vendor_local_pkgs/crates/proc-macro2-1.0.78:proc_macro2",
         "//vendor_local_pkgs/crates/quote-1.0.35:quote",
-        "//vendor_local_pkgs/crates/syn-2.0.49:syn",
+        "//vendor_local_pkgs/crates/syn-2.0.50:syn",
     ],
 )
 
 cargo_build_script(
-    name = "async-trait_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "async-trait_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -116,6 +124,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":async-trait_build_script",
+    actual = ":async-trait_bs",
     tags = ["manual"],
 )

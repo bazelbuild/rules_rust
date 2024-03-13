@@ -12,7 +12,7 @@ use crate::utils::starlark::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct SelectSet<T>
+pub(crate) struct SelectSet<T>
 where
     T: SelectableOrderedValue,
 {
@@ -33,7 +33,7 @@ where
     /// Re-keys the provided Select by the given configuration mapping.
     /// This mapping maps from configurations in the input Select to sets of
     /// configurations in the output SelectSet.
-    pub fn new(
+    pub(crate) fn new(
         select: Select<BTreeSet<T>>,
         platforms: &BTreeMap<String, BTreeSet<String>>,
     ) -> Self {
@@ -102,7 +102,7 @@ where
     }
 
     /// Determine whether or not the select should be serialized
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.common.is_empty() && self.selects.is_empty() && self.unmapped.is_empty()
     }
 }

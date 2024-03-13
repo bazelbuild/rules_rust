@@ -13,7 +13,10 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "rustix",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     aliases = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": {
             "@crates_vendor_manifests__errno-0.3.8//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))
@@ -100,6 +103,7 @@ rust_library(
     }),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -310,8 +314,11 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "rustix_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "rustix_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = [
         "alloc",
         "default",
@@ -323,6 +330,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -349,6 +357,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":rustix_build_script",
+    actual = ":rustix_bs",
     tags = ["manual"],
 )

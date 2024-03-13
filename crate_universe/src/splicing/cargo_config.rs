@@ -12,25 +12,25 @@ use serde::{Deserialize, Serialize};
 /// The [`[registry]`](https://doc.rust-lang.org/cargo/reference/config.html#registry)
 /// table controls the default registry used when one is not specified.
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Registry {
+pub(crate) struct Registry {
     /// name of the default registry
-    pub default: String,
+    pub(crate) default: String,
 
     /// authentication token for crates.io
-    pub token: Option<String>,
+    pub(crate) token: Option<String>,
 }
 
 /// The [`[source]`](https://doc.rust-lang.org/cargo/reference/config.html#source)
 /// table defines the registry sources available.
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Source {
+pub(crate) struct Source {
     /// replace this source with the given named source
     #[serde(rename = "replace-with")]
-    pub replace_with: Option<String>,
+    pub(crate) replace_with: Option<String>,
 
     /// URL to a registry source
     #[serde(default = "default_registry_url")]
-    pub registry: String,
+    pub(crate) registry: String,
 }
 
 /// This is the default registry url per what's defined by Cargo.
@@ -40,12 +40,12 @@ fn default_registry_url() -> String {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 /// registries other than crates.io
-pub struct AdditionalRegistry {
+pub(crate) struct AdditionalRegistry {
     /// URL of the registry index
-    pub index: String,
+    pub(crate) index: String,
 
     /// authentication token for the registry
-    pub token: Option<String>,
+    pub(crate) token: Option<String>,
 }
 
 /// A subset of a Cargo configuration file. The schema here is only what
@@ -53,17 +53,17 @@ pub struct AdditionalRegistry {
 /// See [cargo docs](https://doc.rust-lang.org/cargo/reference/config.html#configuration-format)
 /// for more details.
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct CargoConfig {
+pub(crate) struct CargoConfig {
     /// registries other than crates.io
     #[serde(default = "default_registries")]
-    pub registries: BTreeMap<String, AdditionalRegistry>,
+    pub(crate) registries: BTreeMap<String, AdditionalRegistry>,
 
     #[serde(default = "default_registry")]
-    pub registry: Registry,
+    pub(crate) registry: Registry,
 
     /// source definition and replacement
     #[serde(default = "BTreeMap::new")]
-    pub source: BTreeMap<String, Source>,
+    pub(crate) source: BTreeMap<String, Source>,
 }
 
 /// Each Cargo config is expected to have a default `crates-io` registry.
@@ -116,13 +116,13 @@ impl FromStr for CargoConfig {
 
 impl CargoConfig {
     /// Load a Cargo config from a path to a file on disk.
-    pub fn try_from_path(path: &Path) -> Result<Self> {
+    pub(crate) fn try_from_path(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)?;
         Self::from_str(&content)
     }
 
     /// Look up a registry [Source] by its url.
-    pub fn get_source_from_url(&self, url: &str) -> Option<&Source> {
+    pub(crate) fn get_source_from_url(&self, url: &str) -> Option<&Source> {
         if let Some(found) = self.source.values().find(|v| v.registry == url) {
             Some(found)
         } else if url == utils::CRATES_IO_INDEX_URL {
@@ -132,7 +132,7 @@ impl CargoConfig {
         }
     }
 
-    pub fn get_registry_index_url_by_name(&self, name: &str) -> Option<&str> {
+    pub(crate) fn get_registry_index_url_by_name(&self, name: &str) -> Option<&str> {
         if let Some(registry) = self.registries.get(name) {
             Some(&registry.index)
         } else if let Some(source) = self.source.get(name) {
@@ -142,7 +142,7 @@ impl CargoConfig {
         }
     }
 
-    pub fn resolve_replacement_url<'a>(&'a self, url: &'a str) -> Result<&'a str> {
+    pub(crate) fn resolve_replacement_url<'a>(&'a self, url: &'a str) -> Result<&'a str> {
         if let Some(source) = self.get_source_from_url(url) {
             if let Some(replace_with) = &source.replace_with {
                 if let Some(replacement) = self.get_registry_index_url_by_name(replace_with) {

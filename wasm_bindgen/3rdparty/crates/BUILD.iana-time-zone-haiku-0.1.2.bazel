@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "iana_time_zone_haiku",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -81,12 +85,16 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "iana-time-zone-haiku_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "iana-time-zone-haiku_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -116,6 +124,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":iana-time-zone-haiku_build_script",
+    actual = ":iana-time-zone-haiku_bs",
     tags = ["manual"],
 )

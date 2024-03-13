@@ -13,9 +13,13 @@ package(default_visibility = ["//visibility:public"])
 
 rust_library(
     name = "libc",
-    srcs = glob(["**/*.rs"]),
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     compile_data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -233,8 +237,11 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "libc_build_script",
-    srcs = glob(["**/*.rs"]),
+    name = "libc_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = False,
+    ),
     crate_features = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "default",  # aarch64-apple-darwin
@@ -391,6 +398,7 @@ cargo_build_script(
     crate_root = "build.rs",
     data = glob(
         include = ["**"],
+        allow_empty = True,
         exclude = [
             "**/* *",
             ".tmp_git_root/**/*",
@@ -417,6 +425,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":libc_build_script",
+    actual = ":libc_bs",
     tags = ["manual"],
 )

@@ -77,6 +77,9 @@ pub fn get_crate_specs(
 
     let aquery_output = Command::new(bazel)
         .current_dir(workspace)
+        .env_remove("BAZELISK_SKIP_WRAPPER")
+        .env_remove("BUILD_WORKING_DIRECTORY")
+        .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("aquery")
         .arg("--include_aspects")
         .arg("--include_artifacts")
@@ -85,7 +88,7 @@ pub fn get_crate_specs(
         ))
         .arg("--output_groups=rust_analyzer_crate_spec")
         .arg(format!(
-            r#"outputs(".*[.]rust_analyzer_crate_spec",{target_pattern})"#
+            r#"outputs(".*\.rust_analyzer_crate_spec\.json",{target_pattern})"#
         ))
         .arg("--output=jsonproto")
         .output()?;

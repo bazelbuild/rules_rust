@@ -3,6 +3,7 @@ use std::fmt::Debug;
 
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
+/// A wrapper around values where some values may be conditionally included (e.g. only on a certain platform), and others are unconditional.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Select<T>
 where
@@ -49,7 +50,7 @@ where
 
 impl<T> SelectableOrderedValue for T where T: SelectableValue + PartialOrd + Ord {}
 
-pub trait SelectableScalar
+pub(crate) trait SelectableScalar
 where
     Self: SelectableValue,
 {
@@ -64,45 +65,49 @@ impl<T> Select<T>
 where
     T: Selectable,
 {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             common: T::CommonType::default(),
             selects: BTreeMap::new(),
         }
     }
 
-    pub fn from_value(value: T::CommonType) -> Self {
+    pub(crate) fn from_value(value: T::CommonType) -> Self {
         Self {
             common: value,
             selects: BTreeMap::new(),
         }
     }
 
+    /// Whether there zero values in this collection, common or configuration-specific.
     pub fn is_empty(&self) -> bool {
         T::is_empty(self)
     }
 
+    /// A list of the configurations which have some configuration-specific value associated.
     pub fn configurations(&self) -> BTreeSet<String> {
         self.selects.keys().cloned().collect()
     }
 
+    /// All values and their associated configurations, if any.
     pub fn items(&self) -> Vec<(Option<String>, T::ItemType)> {
         T::items(self)
     }
 
+    /// All values, whether common or configured.
     pub fn values(&self) -> Vec<T::ItemType> {
         T::values(self)
     }
 
-    pub fn insert(&mut self, value: T::ItemType, configuration: Option<String>) {
+    pub(crate) fn insert(&mut self, value: T::ItemType, configuration: Option<String>) {
         T::insert(self, value, configuration);
     }
 
-    pub fn into_parts(self) -> (T::CommonType, BTreeMap<String, T::SelectsType>) {
+    pub(crate) fn into_parts(self) -> (T::CommonType, BTreeMap<String, T::SelectsType>) {
         (self.common, self.selects)
     }
 
-    pub fn merge(lhs: Self, rhs: Self) -> Self {
+    pub(crate) fn merge(lhs: Self, rhs: Self) -> Self {
         T::merge(lhs, rhs)
     }
 }
@@ -367,7 +372,7 @@ impl<T> Select<BTreeSet<T>>
 where
     T: SelectableOrderedValue,
 {
-    pub fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
+    pub(crate) fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
     where
         U: SelectableOrderedValue,
         F: Copy + FnMut(T) -> U,
