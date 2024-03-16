@@ -191,7 +191,7 @@ def rust_register_toolchains(
     rust_analyzer_repo_name = "rust_analyzer_{}".format(rust_analyzer_version.replace("/", "-"))
     rust_analyzer_iso_date = None
     if rust_analyzer_version.startswith(("beta", "nightly")):
-        rust_analyzer_version, _, rust_analyzer_iso_date = rustfmt_version.partition("/")
+        rust_analyzer_version, _, rust_analyzer_iso_date = rust_analyzer_version.partition("/")
 
     toolchain_names = []
     toolchain_labels = {}
