@@ -478,7 +478,7 @@ impl<'a> SplicerKind<'a> {
         for (name, details) in direct_packages_manifest.iter() {
             manifest.dependencies.insert(
                 name.clone(),
-                cargo_toml::Dependency::Detailed(details.clone()),
+                cargo_toml::Dependency::Detailed(Box::new(details.clone())),
             );
         }
 

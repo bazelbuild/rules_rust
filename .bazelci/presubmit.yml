@@ -362,21 +362,22 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  ubuntu2004_examples_clang_lld:
-    name: Examples with Clang and LLD
-    platform: ubuntu2004
-    shell_commands:
-      - "sudo apt -y update && sudo apt -y install lld"
-    working_directory: examples
-    build_flags:
-      - "--repo_env=CC=clang"
-      - "--linkopt=-fuse-ld=lld"
-      - "--config=rustfmt"
-      - "--config=clippy"
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2554
+  # ubuntu2004_examples_clang_lld:
+  #   name: Examples with Clang and LLD
+  #   platform: ubuntu2004
+  #   shell_commands:
+  #     - "sudo apt -y update && sudo apt -y install lld"
+  #   working_directory: examples
+  #   build_flags:
+  #     - "--repo_env=CC=clang"
+  #     - "--linkopt=-fuse-ld=lld"
+  #     - "--config=rustfmt"
+  #     - "--config=clippy"
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
   ubuntu2004_examples_rolling:
     name: "Examples with Rolling Bazel Version"
     platform: ubuntu2004
