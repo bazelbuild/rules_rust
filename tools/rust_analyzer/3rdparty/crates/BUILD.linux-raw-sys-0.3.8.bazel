@@ -36,6 +36,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "errno",  # aarch64-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "errno",  # aarch64-unknown-nixos-gnu
+        ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "errno",  # arm-unknown-linux-gnueabi
         ],
@@ -47,6 +50,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "errno",  # x86_64-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "errno",  # x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
@@ -66,6 +72,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -79,6 +86,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.3.8",
