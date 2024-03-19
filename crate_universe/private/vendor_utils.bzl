@@ -41,45 +41,14 @@ def crates_vendor_deps():
 # buildifier: disable=unnamed-macro
 def crates_vendor_deps_targets():
     """Define dependencies of the `crates_vendor` rule"""
-
-    native.config_setting(
-        name = "linux_amd64",
-        constraint_values = ["@platforms//os:linux", "@platforms//cpu:x86_64"],
-        visibility = ["//visibility:public"],
-    )
-
-    native.config_setting(
-        name = "linux_arm64",
-        constraint_values = ["@platforms//os:linux", "@platforms//cpu:arm64"],
-        visibility = ["//visibility:public"],
-    )
-
-    native.config_setting(
-        name = "macos_amd64",
-        constraint_values = ["@platforms//os:macos", "@platforms//cpu:x86_64"],
-        visibility = ["//visibility:public"],
-    )
-
-    native.config_setting(
-        name = "macos_arm64",
-        constraint_values = ["@platforms//os:macos", "@platforms//cpu:arm64"],
-        visibility = ["//visibility:public"],
-    )
-
-    native.config_setting(
-        name = "windows",
-        constraint_values = ["@platforms//os:windows"],
-        visibility = ["//visibility:public"],
-    )
-
     native.alias(
         name = "buildifier",
         actual = select({
-            ":linux_amd64": "@cargo_bazel.buildifier-linux-amd64//file",
-            ":linux_arm64": "@cargo_bazel.buildifier-linux-arm64//file",
-            ":macos_amd64": "@cargo_bazel.buildifier-darwin-amd64//file",
-            ":macos_arm64": "@cargo_bazel.buildifier-darwin-arm64//file",
-            ":windows": "@cargo_bazel.buildifier-windows-amd64.exe//file",
+            "@bazel_tools//src/conditions:darwin_arm64": "@cargo_bazel.buildifier-darwin-arm64//file",
+            "@bazel_tools//src/conditions:darwin_x86_64": "@cargo_bazel.buildifier-darwin-amd64//file",
+            "@bazel_tools//src/conditions:linux_aarch64": "@cargo_bazel.buildifier-linux-arm64//file",
+            "@bazel_tools//src/conditions:linux_x86_64": "@cargo_bazel.buildifier-linux-amd64//file",
+            "@platforms//os:windows": "@cargo_bazel.buildifier-windows-amd64.exe//file",
         }),
         visibility = ["//visibility:public"],
     )
