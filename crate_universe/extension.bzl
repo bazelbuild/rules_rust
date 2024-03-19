@@ -40,8 +40,35 @@ _generate_repo = repository_rule(
     ),
 )
 
-def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
-    cargo_lockfile = module_ctx.path(cfg.cargo_lockfile)
+def _annotations_for_repo(module_annotations, repo_specific_annotations):
+    """Merges the set of global annotations with the repo-specific ones
+
+    Args:
+        module_annotations (dict): The annotation tags that apply to all repos, keyed by crate.
+        repo_specific_annotations (dict): The annotation tags that apply to only this repo, keyed by crate.
+    """
+
+    if not repo_specific_annotations:
+        return module_annotations
+
+    annotations = dict(module_annotations)
+    for crate, values in repo_specific_annotations.items():
+        _get_or_insert(annotations, crate, []).extend(values)
+    return annotations
+
+def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations, cargo_lockfile = None, manifests = {}, packages = {}):
+    """Generates repositories for the transitive closure of crates defined by manifests and packages.
+
+    Args:
+        module_ctx (module_ctx): The module context object.
+        cargo_bazel (function): A function that can be called to execute cargo_bazel.
+        cfg (object): The module tag from `from_cargo` or `from_specs`
+        annotations (dict): The set of annotation tag classes that apply to this closure, keyed by crate name.
+        cargo_lockfile (path): Path to Cargo.lock, if we have one. This is optional for `from_specs` closures.
+        manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
+        packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
+    """
+
     tag_path = module_ctx.path(cfg.name)
 
     rendering_config = json.decode(render_config(
@@ -67,22 +94,21 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         ),
     )
 
-    manifests = {module_ctx.path(m): m for m in cfg.manifests}
     splicing_manifest = tag_path.get_child("splicing_manifest.json")
     module_ctx.file(
         splicing_manifest,
         executable = False,
         content = generate_splicing_manifest(
-            packages = {},
+            packages = packages,
             splicing_config = "",
             cargo_config = cfg.cargo_config,
-            manifests = {str(k): str(v) for k, v in manifests.items()},
+            manifests = manifests,
             manifest_to_path = module_ctx.path,
         ),
     )
 
     splicing_output_dir = tag_path.get_child("splicing-output")
-    cargo_bazel([
+    splice_args = [
         "splice",
         "--output-dir",
         splicing_output_dir,
@@ -90,9 +116,13 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         config_file,
         "--splicing-manifest",
         splicing_manifest,
-        "--cargo-lockfile",
-        cargo_lockfile,
-    ])
+    ]
+    if cargo_lockfile:
+        splice_args.extend([
+            "--cargo-lockfile",
+            cargo_lockfile,
+        ])
+    cargo_bazel(splice_args)
 
     # Create a lockfile, since we need to parse it to generate spoke
     # repos.
@@ -102,7 +132,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
     cargo_bazel([
         "generate",
         "--cargo-lockfile",
-        cargo_lockfile,
+        cargo_lockfile or splicing_output_dir.get_child("Cargo.lock"),
         "--config",
         config_file,
         "--splicing-manifest",
@@ -181,6 +211,15 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         else:
             fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
 
+def _package_to_json(p):
+    # Avoid adding unspecified properties.
+    # If we add them as empty strings, cargo-bazel will be unhappy.
+    return json.encode({
+        k: v
+        for k, v in structs.to_dict(p).items()
+        if v
+    })
+
 def _crate_impl(module_ctx):
     cargo_bazel = get_cargo_bazel_runner(module_ctx)
     all_repos = []
@@ -216,18 +255,33 @@ def _crate_impl(module_ctx):
                 ).append(annotation)
 
         local_repos = []
-        for cfg in mod.tags.from_cargo:
+
+        for cfg in mod.tags.from_cargo + mod.tags.from_specs:
             if cfg.name in local_repos:
                 fail("Defined two crate universes with the same name in the same MODULE.bazel file. Use the name tag to give them different names.")
             elif cfg.name in all_repos:
                 fail("Defined two crate universes with the same name in different MODULE.bazel files. Either give one a different name, or use use_extension(isolate=True)")
-
-            annotations = {k: v for k, v in module_annotations.items()}
-            for crate, values in repo_specific_annotations.get(cfg.name, {}).items():
-                _get_or_insert(annotations, crate, []).extend(values)
-            _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations)
             all_repos.append(cfg.name)
             local_repos.append(cfg.name)
+
+        for cfg in mod.tags.from_cargo:
+            annotations = _annotations_for_repo(
+                module_annotations,
+                repo_specific_annotations.get(cfg.name),
+            )
+
+            cargo_lockfile = module_ctx.path(cfg.cargo_lockfile)
+            manifests = {str(module_ctx.path(m)): str(m) for m in cfg.manifests}
+            _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations, cargo_lockfile = cargo_lockfile, manifests = manifests)
+
+        for cfg in mod.tags.from_specs:
+            annotations = _annotations_for_repo(
+                module_annotations,
+                repo_specific_annotations.get(cfg.name),
+            )
+
+            packages = {p.package: _package_to_json(p) for p in mod.tags.spec}
+            _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations, packages = packages)
 
         for repo in repo_specific_annotations:
             if repo not in local_repos:
@@ -290,10 +344,60 @@ _annotation = tag_class(
     ),
 )
 
+_from_specs = tag_class(
+    doc = "Generates a repo @crates from the defined `spec` tags",
+    attrs = dict(
+        name = attr.string(doc = "The name of the repo to generate", default = "crates"),
+        cargo_config = CRATES_VENDOR_ATTRS["cargo_config"],
+        generate_binaries = CRATES_VENDOR_ATTRS["generate_binaries"],
+        generate_build_scripts = CRATES_VENDOR_ATTRS["generate_build_scripts"],
+        supported_platform_triples = CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    ),
+)
+
+# This should be kept in sync with crate_universe/private/crate.bzl.
+_spec = tag_class(
+    attrs = dict(
+        package = attr.string(
+            doc = "The explicit name of the package.",
+            mandatory = True,
+        ),
+        version = attr.string(
+            doc = "The exact version of the crate. Cannot be used with `git`.",
+        ),
+        artifact = attr.string(
+            doc = "Set to 'bin' to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.",
+        ),
+        lib = attr.bool(
+            doc = "If using `artifact = 'bin'`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.",
+        ),
+        default_features = attr.bool(
+            doc = "Maps to the `default-features` flag.",
+        ),
+        features = attr.string_list(
+            doc = "A list of features to use for the crate.",
+        ),
+        git = attr.string(
+            doc = "The Git url to use for the crate. Cannot be used with `version`.",
+        ),
+        branch = attr.string(
+            doc = "The git branch of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.",
+        ),
+        tag = attr.string(
+            doc = "The git tag of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.",
+        ),
+        rev = attr.string(
+            doc = "The git revision of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified.",
+        ),
+    ),
+)
+
 crate = module_extension(
     implementation = _crate_impl,
     tag_classes = dict(
         from_cargo = _from_cargo,
         annotation = _annotation,
+        from_specs = _from_specs,
+        spec = _spec,
     ),
 )

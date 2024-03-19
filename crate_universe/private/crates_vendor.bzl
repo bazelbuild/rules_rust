@@ -118,7 +118,7 @@ def _write_splicing_manifest(ctx):
     return args, runfiles
 
 def generate_splicing_manifest(packages, splicing_config, cargo_config, manifests, manifest_to_path):
-    # Deserialize information about direct packges
+    # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
         pkg: kebab_case_keys(dict(json.decode(data)))
