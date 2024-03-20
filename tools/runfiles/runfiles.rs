@@ -19,13 +19,13 @@
 //!     use runfiles::Runfiles;
 //!     ```
 //!
-//! 3.  Create a Runfiles object and use rlocation to look up runfile paths:
+//! 3.  Create a Runfiles object and use Rlocation! to look up runfile paths:
 //!     ```ignore -- This doesn't work under rust_doc_test because argv[0] is not what we expect.
 //!
-//!     use runfiles::Runfiles;
+//!     use runfiles::{Runfiles, RLocation};
 //!
 //!     let r = Runfiles::create().unwrap();
-//!     let path = r.rlocation("my_workspace/path/to/my/data.txt");
+//!     let path = Rlocation!(r, "my_workspace/path/to/my/data.txt");
 //!
 //!     let f = File::open(path).unwrap();
 //!     // ...
@@ -44,15 +44,26 @@ const MANIFEST_FILE_ENV_VAR: &str = "RUNFILES_MANIFEST_FILE";
 const MANIFEST_ONLY_ENV_VAR: &str = "RUNFILES_MANIFEST_ONLY";
 const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
 
+#[macro_export]
+macro_rules! Rlocation {
+    ($r:ident, $path:expr) => {
+        $r.rlocation_from($path, env!("REPOSITORY_NAME"))
+    };
+}
+
 #[derive(Debug)]
 enum Mode {
     DirectoryBased(PathBuf),
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+type RepoMappingKey = (String, String);
+type RepoMapping = HashMap<RepoMappingKey, String>;
+
 #[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
+    repo_mapping: RepoMapping,
 }
 
 impl Runfiles {
@@ -60,20 +71,22 @@ impl Runfiles {
     /// RUNFILES_MANIFEST_ONLY environment variable is present,
     /// or a directory based Runfiles object otherwise.
     pub fn create() -> io::Result<Self> {
-        if is_manifest_only() {
+        let mode = if is_manifest_only() {
             Self::create_manifest_based()
         } else {
             Self::create_directory_based()
-        }
+        }?;
+
+        let repo_mapping = parse_repo_mapping(raw_rlocation(&mode, "_repo_mapping"))?;
+
+        Ok(Runfiles { mode, repo_mapping })
     }
 
-    fn create_directory_based() -> io::Result<Self> {
-        Ok(Runfiles {
-            mode: Mode::DirectoryBased(find_runfiles_dir()?),
-        })
+    fn create_directory_based() -> io::Result<Mode> {
+        Ok(Mode::DirectoryBased(find_runfiles_dir()?))
     }
 
-    fn create_manifest_based() -> io::Result<Self> {
+    fn create_manifest_based() -> io::Result<Mode> {
         let manifest_path = find_manifest_path()?;
         let manifest_content = std::fs::read_to_string(manifest_path)?;
         let path_mapping = manifest_content
@@ -85,9 +98,7 @@ impl Runfiles {
                 (pair.0.into(), pair.1.into())
             })
             .collect::<HashMap<_, _>>();
-        Ok(Runfiles {
-            mode: Mode::ManifestBased(path_mapping),
-        })
+        Ok(Mode::ManifestBased(path_mapping))
     }
 
     /// Returns the runtime path of a runfile.
@@ -95,20 +106,36 @@ impl Runfiles {
     /// Runfiles are data-dependencies of Bazel-built binaries and tests.
     /// The returned path may not be valid. The caller should check the path's
     /// validity and that the path exists.
+    /// @deprecated - this is not bzlmod-aware. Prefer the `Rlocation!` macro or `rlocation_from`
     pub fn rlocation(&self, path: impl AsRef<Path>) -> PathBuf {
         let path = path.as_ref();
         if path.is_absolute() {
             return path.to_path_buf();
         }
-        match &self.mode {
-            Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
-            Mode::ManifestBased(path_mapping) => path_mapping
-                .get(path)
-                .unwrap_or_else(|| {
-                    panic!("Path {} not found among runfiles.", path.to_string_lossy())
-                })
-                .clone(),
+        raw_rlocation(&self.mode, path)
+    }
+
+    /// Returns the runtime path of a runfile.
+    ///
+    /// Runfiles are data-dependencies of Bazel-built binaries and tests.
+    /// The returned path may not be valid. The caller should check the path's
+    /// validity and that the path exists.
+    ///
+    /// Typically this should be used via the `RLocation!` macro to properly set source_repo.
+    pub fn rlocation_from(&self, path: impl AsRef<Path>, source_repo: &str) -> PathBuf {
+        let path = path.as_ref();
+        if path.is_absolute() {
+            return path.to_path_buf();
         }
+
+        let parts: Vec<&str> = path.to_str().expect("Should be valid UTF8").splitn(2, '/').collect();
+        if parts.len() == 2 {
+            let key: (String, String) = (source_repo.into(), parts[0].into());
+            if let Some(target_repo_directory) = self.repo_mapping.get(&key) {
+                return raw_rlocation(&self.mode, target_repo_directory.to_owned() + "/" + parts[1]);
+            };
+        }
+        raw_rlocation(&self.mode, path)
     }
 
     /// Returns the canonical name of the caller's Bazel repository.
@@ -117,6 +144,29 @@ impl Runfiles {
         // which can be found in `@rules_rust//tools/runfiles/private:workspace_name.bzl`
         env!("RULES_RUST_RUNFILES_WORKSPACE_NAME")
     }
+}
+
+fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> PathBuf {
+    let path = path.as_ref();
+    match mode {
+        Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
+        Mode::ManifestBased(path_mapping) => path_mapping
+            .get(path)
+            .unwrap_or_else(|| {
+                panic!("Path {} not found among runfiles.", path.to_string_lossy())
+            })
+            .clone(),
+    }
+}
+
+fn parse_repo_mapping(path: PathBuf) -> io::Result<RepoMapping> {
+    Ok(std::fs::read_to_string(path)?
+            .lines()
+            .map(|line| {
+                let parts: Vec<String> = line.splitn(3, ',').map(String::from).collect();
+                ((parts[0].clone(), parts[1].clone()), parts[2].clone())
+            })
+            .collect::<RepoMapping>())
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
@@ -281,6 +331,7 @@ mod test {
         path_mapping.insert("a/b".into(), "c/d".into());
         let r = Runfiles {
             mode: Mode::ManifestBased(path_mapping),
+            repo_mapping: RepoMapping::new(),
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
