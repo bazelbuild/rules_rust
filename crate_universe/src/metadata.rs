@@ -169,7 +169,7 @@ impl Cargo {
         let version_str = full_version.split(' ').nth(1);
         if let Some(version_str) = version_str {
             let version = Version::parse(version_str).context("Failed to parse cargo version")?;
-            return Ok(version.major >= 1 && version.minor >= 78);
+            return Ok(version.major >= 1 && version.minor >= 77);
         }
         bail!("Couldn't parse cargo version");
     }
