@@ -271,10 +271,6 @@ pub fn write_rust_project(
 mod tests {
     use super::*;
 
-    use std::collections::BTreeSet;
-
-    use crate::aquery::CrateSpec;
-
     /// A simple example with a single crate and no dependencies.
     #[test]
     fn generate_rust_project_single() {

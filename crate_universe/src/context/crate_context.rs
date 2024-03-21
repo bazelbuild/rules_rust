@@ -629,7 +629,7 @@ impl CrateContext {
 
             // Git shallow_since
             if let Some(SourceAnnotation::Git { shallow_since, .. }) = &mut self.repository {
-                *shallow_since = crate_extra.shallow_since.clone()
+                shallow_since.clone_from(&crate_extra.shallow_since);
             }
 
             // Patch attributes
@@ -641,9 +641,9 @@ impl CrateContext {
                         patches,
                         ..
                     } => {
-                        *patch_args = crate_extra.patch_args.clone();
-                        *patch_tool = crate_extra.patch_tool.clone();
-                        *patches = crate_extra.patches.clone();
+                        patch_args.clone_from(&crate_extra.patch_args);
+                        patch_tool.clone_from(&crate_extra.patch_tool);
+                        patches.clone_from(&crate_extra.patches);
                     }
                     SourceAnnotation::Http {
                         patch_args,
@@ -651,9 +651,9 @@ impl CrateContext {
                         patches,
                         ..
                     } => {
-                        *patch_args = crate_extra.patch_args.clone();
-                        *patch_tool = crate_extra.patch_tool.clone();
-                        *patches = crate_extra.patches.clone();
+                        patch_args.clone_from(&crate_extra.patch_args);
+                        patch_tool.clone_from(&crate_extra.patch_tool);
+                        patches.clone_from(&crate_extra.patches);
                     }
                 }
             }

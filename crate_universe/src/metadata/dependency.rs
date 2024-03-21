@@ -285,8 +285,6 @@ fn get_target_alias(target_name: &str, package: &Package) -> Option<String> {
 
 #[cfg(test)]
 mod test {
-    use std::collections::BTreeSet;
-
     use super::*;
 
     use crate::test::*;
