@@ -21,20 +21,12 @@ pub struct RustfmtConfig {
 pub fn parse_rustfmt_config() -> RustfmtConfig {
     let runfiles = runfiles::Runfiles::create().unwrap();
 
-    let rustfmt = runfiles.rlocation(format!(
-        "{}/{}",
-        runfiles.current_repository(),
-        env!("RUSTFMT")
-    ));
+    let rustfmt = runfiles::rlocation!(runfiles, env!("RUSTFMT"));
     if !rustfmt.exists() {
         panic!("rustfmt does not exist at: {}", rustfmt.display());
     }
 
-    let config = runfiles.rlocation(format!(
-        "{}/{}",
-        runfiles.current_repository(),
-        env!("RUSTFMT_CONFIG")
-    ));
+    let config = runfiles::rlocation!(runfiles, env!("RUSTFMT_CONFIG"));
     if !config.exists() {
         panic!(
             "rustfmt config file does not exist at: {}",
@@ -79,7 +71,7 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
         edition,
         sources: lines
             .into_iter()
-            .map(|src| runfiles.rlocation(format!("{}/{}", runfiles.current_repository(), src)))
+            .map(|src| runfiles::rlocation!(runfiles, format!("rules_rust/{}", src)))
             .collect(),
     }
 }
@@ -100,11 +92,10 @@ pub fn find_manifests() -> Vec<PathBuf> {
             var.split(PATH_ENV_SEP)
                 .filter_map(|path| match path.is_empty() {
                     true => None,
-                    false => Some(runfiles.rlocation(format!(
-                        "{}/{}",
-                        runfiles.current_repository(),
-                        path
-                    ))),
+                    false => Some(runfiles::rlocation!(
+                        runfiles,
+                        format!("rules_rust/{}", path)
+                    )),
                 })
                 .collect()
         })
