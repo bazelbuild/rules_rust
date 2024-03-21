@@ -4,7 +4,6 @@ mod template_engine;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::iter::FromIterator;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -902,11 +901,9 @@ mod test {
     use super::*;
 
     use indoc::indoc;
-    use std::collections::BTreeSet;
 
-    use crate::config::{Config, CrateId, VendorMode};
-    use crate::context::crate_context::{CrateContext, Rule};
-    use crate::context::{BuildScriptAttributes, CommonAttributes, Context, TargetAttributes};
+    use crate::config::{Config, CrateId};
+    use crate::context::{BuildScriptAttributes, CommonAttributes};
     use crate::metadata::Annotations;
     use crate::test;
 
@@ -1312,7 +1309,7 @@ mod test {
         assert!(!defs_module.contains("def crate_repositories():"));
 
         // Local vendoring does not produce a `crates.bzl` file.
-        assert!(output.get(&PathBuf::from("crates.bzl")).is_none());
+        assert!(!output.contains_key(&PathBuf::from("crates.bzl")));
     }
 
     #[test]

@@ -1,7 +1,6 @@
 //! Collect and store information from Cargo metadata specific to Bazel's needs
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use anyhow::{bail, Result};

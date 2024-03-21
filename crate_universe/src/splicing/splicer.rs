@@ -747,15 +747,13 @@ pub(crate) fn symlink_roots(
 mod test {
     use super::*;
 
-    use std::fs;
     use std::fs::File;
     use std::str::FromStr;
 
-    use cargo_metadata::{MetadataCommand, PackageId};
+    use cargo_metadata::PackageId;
     use maplit::btreeset;
 
     use crate::splicing::Cargo;
-    use crate::utils::starlark::Label;
 
     /// Clone and compare two items after calling `.sort()` on them.
     macro_rules! assert_sort_eq {

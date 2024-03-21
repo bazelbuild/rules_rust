@@ -1,7 +1,6 @@
 //! Utility module for interacting with the cargo-bazel lockfile.
 
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
@@ -193,7 +192,7 @@ mod test {
 
     use super::*;
 
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeSet;
 
     #[test]
     fn simple_digest() {
