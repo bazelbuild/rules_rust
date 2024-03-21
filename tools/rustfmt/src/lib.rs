@@ -71,7 +71,7 @@ pub fn parse_rustfmt_manifest(manifest: &Path) -> RustfmtManifest {
         edition,
         sources: lines
             .into_iter()
-            .map(|src| runfiles::rlocation!(runfiles, format!("rules_rust/{}", src)))
+            .map(|src| runfiles::rlocation!(runfiles, src))
             .collect(),
     }
 }
@@ -90,13 +90,7 @@ pub fn find_manifests() -> Vec<PathBuf> {
     std::env::var("RUSTFMT_MANIFESTS")
         .map(|var| {
             var.split(PATH_ENV_SEP)
-                .filter_map(|path| match path.is_empty() {
-                    true => None,
-                    false => Some(runfiles::rlocation!(
-                        runfiles,
-                        format!("rules_rust/{}", path)
-                    )),
-                })
+                .map(|path| runfiles::rlocation!(runfiles, path))
                 .collect()
         })
         .unwrap_or_default()
