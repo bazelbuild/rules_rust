@@ -24,8 +24,8 @@ rust_library(
     ],
     edition = "2018",
     rustc_env = {
-        "RUSTFMT": "$(rootpath //rust/toolchain:current_rustfmt_toolchain)",
-        "RUSTFMT_CONFIG": "$(rootpath //:rustfmt.toml)",
+        "RUSTFMT": "$(rlocationpath //rust/toolchain:current_rustfmt_toolchain)",
+        "RUSTFMT_CONFIG": "$(rlocationpath //:rustfmt.toml)",
     },
     deps = [
         "//tools/runfiles",
