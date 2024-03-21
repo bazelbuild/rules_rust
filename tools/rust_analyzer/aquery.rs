@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::option::Option;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
