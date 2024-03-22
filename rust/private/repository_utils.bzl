@@ -36,10 +36,10 @@ filegroup(
     srcs = glob(
         [
             "bin/*{dylib_ext}",
-            "lib/*{dylib_ext}",
+            "lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
             "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
-            "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
+            "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
         ],
         allow_empty = True,
     ),
@@ -193,7 +193,7 @@ rust_stdlib_filegroup(
     srcs = glob(
         [
             "lib/rustlib/{target_triple}/lib/*.rlib",
-            "lib/rustlib/{target_triple}/lib/*{dylib_ext}",
+            "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
             "lib/rustlib/{target_triple}/lib/self-contained/**",
         ],
@@ -858,7 +858,9 @@ toolchain_repository_hub = repository_rule(
             doc = "The name of the toolchain implementation target, keyed by toolchain name.",
             mandatory = True,
         ),
-        "toolchain_names": attr.string_list(mandatory = True),
+        "toolchain_names": attr.string_list(
+            mandatory = True,
+        ),
         "toolchain_types": attr.string_dict(
             doc = "The toolchain type of the toolchain to declare, keyed by toolchain name.",
             mandatory = True,

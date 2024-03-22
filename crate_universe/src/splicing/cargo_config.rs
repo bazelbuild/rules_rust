@@ -163,8 +163,6 @@ impl CargoConfig {
 mod test {
     use super::*;
 
-    use std::fs;
-
     #[test]
     fn registry_settings() {
         let temp_dir = tempfile::tempdir().unwrap();

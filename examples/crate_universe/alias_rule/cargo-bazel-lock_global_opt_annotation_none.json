@@ -1,5 +1,5 @@
 {
-  "checksum": "f0b40c08fea2a32274119fabd0fe0a1249565eaa8833b50377a2e099f39b9da9",
+  "checksum": "620ec96c83b0f41f7965c1c4e3c2ac9a3588f79eb37233c76d3ac309487c3215",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -47,7 +47,7 @@
       "package_url": "https://github.com/bazelbuild/rules_rust",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/test_data_passing_crate/0.1.0/download",
+          "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download",
           "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286"
         }
       },
