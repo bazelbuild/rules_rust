@@ -234,7 +234,7 @@ def _get_generator(module_ctx):
     return output
 
 def _crate_impl(module_ctx):
-    cargo_bazel = get_generator(module_ctx)
+    cargo_bazel = _get_generator(module_ctx)
     all_repos = []
     for mod in module_ctx.modules:
         module_annotations = {}
