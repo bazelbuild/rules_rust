@@ -181,8 +181,60 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         else:
             fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
 
+
+def _get_generator(module_ctx):
+    """ Query Network Resources to local a `cargo-bazel` binary.  Based off get_generator in 
+    crates_universe/private/generate_utils.bzl
+
+    Args: 
+        module_ctx (module_ctx):  The rules context object
+
+    Returns:
+        tuple(path, dict) The path to a 'cargo-bazel' binary.  
+	The pairing (dict) may be `None` if there is not need to update the attribute
+    """
+    host_triple = get_host_triple(module_ctx)
+    use_environ = False
+    for var in GENERATOR_ENV_VARS:
+        if var in module_ctx.os.environ:
+            use_environ = True
+
+    output = module_ctx.path("cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel")
+
+    if use_environ:
+        generator_sha256 = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_SHA256)
+        generator_url = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_URL)
+    else:
+        generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple)
+        generator_url = CARGO_BAZEL_URLS.get(host_triple)
+
+    if not generator_url:
+        fail((
+            "No generator URL was found either in the `CARGO_BAZEL_GENERATOR_URL` " +
+            "environment variable or for the `{}` triple in the `generator_urls` attribute"
+        ).format(host_triple))
+
+    # Download the file into place
+    if generator_sha256:
+        module_ctx.download(
+            output = output,
+            url = generator_url,
+            sha256 = generator_sha256,
+            executable = True,
+        )
+        return output
+
+    result = module_ctx.download(
+        output = output,
+        url = generator_url,
+        executable = True,
+    )
+
+    return output
+
+
 def _crate_impl(module_ctx):
-    cargo_bazel = get_cargo_bazel_runner(module_ctx)
+    cargo_bazel = get_generator(module_ctx)
     all_repos = []
     for mod in module_ctx.modules:
         module_annotations = {}
