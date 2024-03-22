@@ -83,6 +83,7 @@ def _rust_impl(module_ctx):
 
     iso_date = None
     version = host_tools.version or rust_common.default_version
+
     # Any version containing a slash is expected to be a nightly/beta release with iso date. E.g. `nightly/2024-03-21`
     if "/" in version:
         version, _, iso_date = version.partition("/")
