@@ -184,7 +184,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
             fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
 
 def _get_generator(module_ctx):
-    """ Query Network Resources to local a `cargo-bazel` binary.  Based off get_generator in 
+    """Query Network Resources to local a `cargo-bazel` binary.  Based off get_generator in 
     crates_universe/private/generate_utils.bzl
 
     Args:
@@ -216,21 +216,16 @@ def _get_generator(module_ctx):
         ).format(host_triple))
 
     # Download the file into place
+    download_kwargs = {
+        "output": output,
+        "url": generator_url,
+        "executable": True,
+    }
+
     if generator_sha256:
-        module_ctx.download(
-            output = output,
-            url = generator_url,
-            sha256 = generator_sha256,
-            executable = True,
-        )
-        return output
+        download_kwargs.update({"sha256": generator_sha256})
 
-    result = module_ctx.download(
-        output = output,
-        url = generator_url,
-        executable = True,
-    )
-
+    module_ctx.download(**download_kwargs)
     return output
 
 def _crate_impl(module_ctx):

@@ -662,6 +662,9 @@ tasks:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
     working_directory: examples/bzlmod/hello_world
+    build_flags:
+            - '--repo_env=CARGO_BAZEL_GENERATOR_URL="https://github.com/bazelbuild/rules_rust/releases/download/0.40.0/cargo-bazel-x86_64-unknown-linux-gnu"'
+            - "--repo_envCARGO_BAZEL_GENERATOR_SHA256=572bed88d08cd5da72c312b6dad285008083c256470b490c016b756eb89ad52d"
     run_targets:
       - "//third-party:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
