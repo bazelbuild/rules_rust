@@ -83,10 +83,9 @@ def _rust_impl(module_ctx):
 
     iso_date = None
     version = host_tools.version or rust_common.default_version
-    version_array = version.split("/")
-    if len(version_array) > 1:
-        version = version_array[0]
-        iso_date = version_array[1]
+    # Any version containing a slash is expected to be a nightly/beta release with iso date. E.g. `nightly/2024-03-21`
+    if "/" in version:
+        version, _, iso_date = version.partition("/")
 
     rust_toolchain_tools_repository(
         name = "rust_host_tools",
