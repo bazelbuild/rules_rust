@@ -5,8 +5,10 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//crate_universe:defs.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
-load("//crate_universe/private:generate_utils.bzl", "render_config")
+load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
 load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner")
+load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
+load("//rust/platform:triple.bzl", "get_host_triple")
 
 # A list of labels which may be relative (and if so, is within the repo the rule is generated in).
 #
@@ -181,16 +183,15 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations):
         else:
             fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
 
-
 def _get_generator(module_ctx):
     """ Query Network Resources to local a `cargo-bazel` binary.  Based off get_generator in 
     crates_universe/private/generate_utils.bzl
 
-    Args: 
+    Args:
         module_ctx (module_ctx):  The rules context object
 
     Returns:
-        tuple(path, dict) The path to a 'cargo-bazel' binary.  
+        tuple(path, dict) The path to a 'cargo-bazel' binary.
 	The pairing (dict) may be `None` if there is not need to update the attribute
     """
     host_triple = get_host_triple(module_ctx)
@@ -231,7 +232,6 @@ def _get_generator(module_ctx):
     )
 
     return output
-
 
 def _crate_impl(module_ctx):
     cargo_bazel = get_generator(module_ctx)
