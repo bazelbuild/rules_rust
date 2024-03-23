@@ -1,5 +1,6 @@
 """Module extension for generating third-party crates for use in bazel."""
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -275,6 +276,8 @@ def _crate_impl(module_ctx):
     cargo_bazel = get_cargo_bazel_runner(module_ctx, cargo_bazel_output)
 
     all_repos = []
+    reproducible = True
+
     for mod in module_ctx.modules:
         module_annotations = {}
         repo_specific_annotations = {}
@@ -327,6 +330,11 @@ def _crate_impl(module_ctx):
             _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations, cargo_lockfile = cargo_lockfile, manifests = manifests)
 
         for cfg in mod.tags.from_specs:
+            # We don't have a Cargo.lock so the resolution can change.
+            # We could maybe make this reproducible by using `-minimal-version` during resolution.
+            # See https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#minimal-versions
+            reproducible = False
+
             annotations = _annotations_for_repo(
                 module_annotations,
                 repo_specific_annotations.get(cfg.name),
@@ -338,6 +346,12 @@ def _crate_impl(module_ctx):
         for repo in repo_specific_annotations:
             if repo not in local_repos:
                 fail("Annotation specified for repo %s, but the module defined repositories %s" % (repo, local_repos))
+
+    metadata_kwargs = {}
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        metadata_kwargs["reproducible"] = reproducible
+
+    return module_ctx.extension_metadata(**metadata_kwargs)
 
 _from_cargo = tag_class(
     doc = "Generates a repo @crates from a Cargo.toml / Cargo.lock pair",
