@@ -80,6 +80,14 @@ def _rust_impl(module_ctx):
         fail("Multiple host_tools were defined in your root MODULE.bazel")
 
     host_triple = get_host_triple(module_ctx)
+
+    iso_date = None
+    version = host_tools.version or rust_common.default_version
+
+    # Any version containing a slash is expected to be a nightly/beta release with iso date. E.g. `nightly/2024-03-21`
+    if "/" in version:
+        version, _, iso_date = version.partition("/")
+
     rust_toolchain_tools_repository(
         name = "rust_host_tools",
         exec_triple = host_triple.str,
@@ -90,7 +98,8 @@ def _rust_impl(module_ctx):
         rustfmt_version = host_tools.rustfmt_version,
         sha256s = host_tools.sha256s,
         urls = host_tools.urls,
-        version = host_tools.version or rust_common.default_version,
+        version = version,
+        iso_date = iso_date,
     )
 
     for toolchain in toolchains:
