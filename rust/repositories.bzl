@@ -301,28 +301,35 @@ def rust_repositories(**kwargs):
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
 
-    check_version_valid(ctx.attr.version, ctx.attr.iso_date)
+    iso_date = ctx.attr.iso_date
+    version = ctx.attr.version
+    version_array = version.split("/")
+    if len(version_array) > 1:
+        version = version_array[0]
+        iso_date = version_array[1]
+
+    check_version_valid(ctx.attr.version, iso_date)
 
     exec_triple = triple(ctx.attr.exec_triple)
 
     build_components = [
         load_rust_compiler(
             ctx = ctx,
-            iso_date = ctx.attr.iso_date,
+            iso_date = iso_date,
             target_triple = exec_triple,
-            version = ctx.attr.version,
+            version = version,
         ),
         load_clippy(
             ctx = ctx,
-            iso_date = ctx.attr.iso_date,
+            iso_date = iso_date,
             target_triple = exec_triple,
-            version = ctx.attr.version,
+            version = version,
         ),
         load_cargo(
             ctx = ctx,
-            iso_date = ctx.attr.iso_date,
+            iso_date = iso_date,
             target_triple = exec_triple,
-            version = ctx.attr.version,
+            version = version,
         ),
     ]
 
@@ -330,8 +337,8 @@ def _rust_toolchain_tools_repository_impl(ctx):
         rustfmt_version = ctx.attr.rustfmt_version
         rustfmt_iso_date = None
         if rustfmt_version in ("nightly", "beta"):
-            if ctx.attr.iso_date:
-                rustfmt_iso_date = ctx.attr.iso_date
+            if iso_date:
+                rustfmt_iso_date = iso_date
             else:
                 fail("`rustfmt_version` does not include an iso_date. The following reposiotry should either set `iso_date` or update `rustfmt_version` to include an iso_date suffix: {}".format(
                     ctx.name,
@@ -346,7 +353,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         ))
 
     # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    include_llvm_tools = ctx.attr.version >= "1.45.0" or (ctx.attr.version == "nightly" and ctx.attr.iso_date > "2020-05-22")
+    include_llvm_tools = version >= "1.45.0" or (version == "nightly" and iso_date > "2020-05-22")
     if include_llvm_tools:
         build_components.append(load_llvm_tools(
             ctx = ctx,
