@@ -201,8 +201,6 @@ def _get_generator(module_ctx):
         if var in module_ctx.os.environ:
             use_environ = True
 
-    output = module_ctx.path("cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel")
-
     if use_environ:
         generator_sha256 = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_SHA256)
         generator_url = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_URL)
@@ -218,6 +216,8 @@ def _get_generator(module_ctx):
             "environment variable or for the `{}` triple in the `generator_urls` attribute"
         ).format(host_triple))
 
+    
+    output = module_ctx.path("cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel")
     # Download the file into place
     download_kwargs = {
         "executable": True,
