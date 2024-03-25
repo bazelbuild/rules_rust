@@ -205,6 +205,8 @@ def _get_generator(module_ctx):
     if use_environ:
         generator_sha256 = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_SHA256)
         generator_url = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_URL)
+    elif len(CARGO_BAZEL_URLS) == 0:
+        return module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
     else:
         generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple)
         generator_url = CARGO_BAZEL_URLS.get(host_triple)
