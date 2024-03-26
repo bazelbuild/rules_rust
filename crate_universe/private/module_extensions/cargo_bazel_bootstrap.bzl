@@ -20,7 +20,7 @@ def get_cargo_bazel_runner(module_ctx, cargo_bazel):
 
     Args:
         module_ctx: The module extension's context.
-	cargo_bazel (Path): The path to a `cargo-bazel` binary
+	cargo_bazel: Path The path to a `cargo-bazel` binary
     Returns:
         A function that can be called to execute cargo_bazel.
     """
