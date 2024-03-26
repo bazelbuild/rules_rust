@@ -493,6 +493,9 @@ def get_import_macro_deps(ctx):
         list of Targets. Either empty (if the fake import macro implementation
         is being used), or a singleton list with the real implementation.
     """
+    if not hasattr(ctx.attr, "_import_macro_dep"):
+        return []
+
     if ctx.attr._import_macro_dep.label.name == "fake_import_macro_impl":
         return []
 
