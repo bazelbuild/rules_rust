@@ -102,6 +102,7 @@ EOF
   check_build_result $BUILD_OK bad_static_library_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_test_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_proc_macro_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK ok_library_clippy $CAPTURE_OUTPUT --@rules_rust//:clippy_flags=-Dclippy::pedantic
 
   # Test that we can make the ok_library_clippy fail when using an extra config file.
   # Proves that the config file is used and overrides default settings.
