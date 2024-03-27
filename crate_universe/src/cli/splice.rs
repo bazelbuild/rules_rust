@@ -61,7 +61,8 @@ pub struct SpliceOptions {
 /// Combine a set of disjoint manifests into a single workspace.
 pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Load the all config files required for splicing a workspace
-    let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
+    let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)
+        .context("Failed to parse splicing manifest")?;
 
     // Determine the splicing workspace
     let temp_dir;
@@ -77,7 +78,9 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
 
     // Splice together the manifest
-    let manifest_path = splicer.splice_workspace(&opt.cargo)?;
+    let manifest_path = splicer
+        .splice_workspace(&opt.cargo)
+        .context("Failed to splice workspace")?;
 
     let cargo = Cargo::new(opt.cargo);
 
@@ -88,14 +91,17 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         cargo.clone(),
         &opt.rustc,
         &opt.repin,
-    )?;
+    )
+    .context("Failed to generate lockfile")?;
 
-    let config = Config::try_from_path(&opt.config)?;
+    let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
-    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone()).generate(
-        manifest_path.as_path_buf(),
-        &config.supported_platform_triples,
-    )?;
+    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone())
+        .generate(
+            manifest_path.as_path_buf(),
+            &config.supported_platform_triples,
+        )
+        .context("Failed to generate features")?;
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(
         &cargo,
@@ -103,7 +109,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         feature_map,
         manifest_path.as_path_buf(),
         manifest_path.as_path_buf(),
-    )?;
+    )
+    .context("Failed to write registry URLs and feature map")?;
 
     let output_dir = opt.output_dir.clone();
 
@@ -111,7 +118,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let (cargo_metadata, _) = Generator::new()
         .with_cargo(cargo)
         .with_rustc(opt.rustc)
-        .generate(manifest_path.as_path_buf())?;
+        .generate(manifest_path.as_path_buf())
+        .context("Failed to generate cargo metadata")?;
 
     let cargo_lockfile_path = manifest_path
         .as_path_buf()
@@ -128,7 +136,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     std::fs::create_dir_all(&output_dir)
         .with_context(|| format!("Failed to create directories for {}", &output_dir.display()))?;
 
-    write_metadata(&opt.output_dir.join("metadata.json"), &cargo_metadata)?;
+    write_metadata(&opt.output_dir.join("metadata.json"), &cargo_metadata)
+        .context("Failed to write metadata")?;
 
     std::fs::copy(cargo_lockfile_path, output_dir.join("Cargo.lock"))
         .context("Failed to copy lockfile")?;
