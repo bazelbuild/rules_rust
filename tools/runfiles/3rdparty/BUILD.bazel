@@ -1,0 +1,45 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "regex": crate.spec(
+            version = "1.10.3",
+        ),
+    },
+    # Short for 'rules_rust runfile'. Keep this short to reduce
+    # the risk to bump into absolute path length issues on Windows. See:
+    # https://github.com/bazelbuild/rules_rust/issues/1120
+    repository_name = "rrr",
+    supported_platform_triples = [
+        "i686-apple-darwin",
+        "i686-pc-windows-msvc",
+        "i686-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "aarch64-apple-darwin",
+        "aarch64-pc-windows-msvc",
+        "aarch64-unknown-linux-gnu",
+        "arm-unknown-linux-gnueabi",
+        "armv7-unknown-linux-gnueabi",
+        "armv7-linux-androideabi",
+        "i686-unknown-freebsd",
+        "powerpc-unknown-linux-gnu",
+        "s390x-unknown-linux-gnu",
+        "x86_64-unknown-freebsd",
+    ],
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//tools/runfiles/3rdparty/crates:crates.bzl",
+        "//tools/runfiles/3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//tools/runfiles:__pkg__"],
+)

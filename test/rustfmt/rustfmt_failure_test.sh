@@ -51,6 +51,9 @@ local_repository(
 )
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 rust_repositories()
+load("@rules_rust//tools/runfiles:deps.bzl", "runfiles_dependencies")
+runfiles_dependencies()
+
 EOF
   # See github.com/bazelbuild/rules_rust/issues/2317.
   echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"

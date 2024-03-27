@@ -18,6 +18,9 @@ rust_library(
         ":workspace_name.env",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tools/runfiles/3rdparty/crates:regex",
+    ],
 )
 
 rust_test(

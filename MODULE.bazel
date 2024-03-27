@@ -79,6 +79,7 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "llvm-raw",
+    "rrr__regex-1.10.3",
     "rrra__anyhow-1.0.71",
     "rrra__clap-4.3.11",
     "rrra__env_logger-0.10.0",
