@@ -16,7 +16,6 @@ Simply add the following to the `.bazelrc` file in the root of your workspace:
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
-build --output_groups=+clippy_checks
 ```
 
 This will enable clippy on all [Rust targets](./defs.md).

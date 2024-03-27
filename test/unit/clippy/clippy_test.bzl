@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_clippy_aspect")
+load("//rust:rust_common.bzl", "ClippyInfo")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements")
 
 def _find_clippy_action(actions):
@@ -24,7 +25,7 @@ def _clippy_aspect_action_has_flag_impl(ctx, flags):
             flag,
         )
 
-    clippy_checks = target[OutputGroupInfo].clippy_checks.to_list()
+    clippy_checks = target[ClippyInfo].output.to_list()
     if len(clippy_checks) != 1:
         fail("clippy_checks is only expected to contain 1 file")
 
