@@ -23,7 +23,26 @@ rust_library(
 rust_test(
     name = "runfiles_test",
     crate = ":runfiles",
-    data = ["data/sample.txt"],
+    data = glob(["data/**"]),
+)
+
+rust_library(
+    name = "runfiles_root_module",
+    srcs = ["runfiles.rs"],
+    edition = "2018",
+    rustc_env = {
+        "RULES_RUST_RUNFILES_WORKSPACE_NAME": "_main",
+    },
+)
+
+rust_test(
+    name = "runfiles_root_module_test",
+    crate = ":runfiles_root_module",
+    data = glob(["data/**"]),
+    rustc_env = {
+        "RULES_RUST_RUNFILES_WORKSPACE_NAME": "_main",
+    },
+    rustc_flags = ["--cfg=bazel_root_module"],
 )
 
 rust_doc(
