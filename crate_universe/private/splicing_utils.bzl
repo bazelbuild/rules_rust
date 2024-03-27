@@ -34,7 +34,7 @@ def kebab_case_keys(data):
     }
 
 def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, packages):
-    """Produce a manifest containing required components for splciing a new Cargo workspace
+    """Produce a manifest containing required components for splicing a new Cargo workspace
 
     [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
     [cargo_toml]: https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -56,14 +56,14 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
         for (pkg, data) in packages.items()
     }
 
-    # Auto-generated splicier manifest values
+    # Auto-generated splicer manifest values
     splicing_manifest_content = {
         "cargo_config": cargo_config_path,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
     }
 
-    return dict(splicing_config.items() + splicing_manifest_content.items())
+    return splicing_config | splicing_manifest_content
 
 def _no_at_label(label):
     """Strips leading '@'s for stringified labels in the main repository for backwards-comaptibility reasons."""
@@ -75,7 +75,7 @@ def _no_at_label(label):
     return s
 
 def create_splicing_manifest(repository_ctx):
-    """Produce a manifest containing required components for splciing a new Cargo workspace
+    """Produce a manifest containing required components for splicing a new Cargo workspace
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
@@ -94,9 +94,7 @@ def create_splicing_manifest(repository_ctx):
     # Load user configurable splicing settings
     config = json.decode(repository_ctx.attr.splicing_config or splicing_config())
 
-    repo_dir = repository_ctx.path(".")
-
-    splicing_manifest = repository_ctx.path("{}/splicing_manifest.json".format(repo_dir))
+    splicing_manifest = repository_ctx.path("splicing_manifest.json")
 
     data = compile_splicing_manifest(
         splicing_config = config,
@@ -132,7 +130,6 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         path: The path to a Cargo metadata json file found in the spliced workspace root.
     """
     repository_ctx.report_progress("Splicing Cargo workspace.")
-    repo_dir = repository_ctx.path(".")
 
     splicing_output_dir = repository_ctx.path("splicing-output")
 
@@ -159,7 +156,7 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
     if CARGO_BAZEL_DEBUG in repository_ctx.os.environ:
         arguments.extend([
             "--workspace-dir",
-            repository_ctx.path("{}/splicing-workspace".format(repo_dir)),
+            repository_ctx.path("splicing-workspace"),
         ])
 
     env = {
@@ -170,10 +167,10 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
 
     # Ensure the short hand repin variable is set to the full name.
     if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
-        env.update({CARGO_BAZEL_REPIN: repository_ctx.os.environ[REPIN]})
+        env["CARGO_BAZEL_REPIN"] = repository_ctx.os.environ[REPIN]
 
     # Add any Cargo environment variables to the `cargo-bazel` execution
-    env.update(cargo_environ(repository_ctx))
+    env |= cargo_environ(repository_ctx)
 
     execute(
         repository_ctx = repository_ctx,
@@ -182,11 +179,11 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
     )
 
     # This file must have been produced by the execution above.
-    spliced_lockfile = repository_ctx.path("{}/Cargo.lock".format(splicing_output_dir))
+    spliced_lockfile = repository_ctx.path(splicing_output_dir.get_child("Cargo.lock"))
     if not spliced_lockfile.exists:
-        fail("Lockfile file does not exist: {}".format(spliced_lockfile))
-    spliced_metadata = repository_ctx.path("{}/metadata.json".format(splicing_output_dir))
+        fail("Lockfile file does not exist: " + str(spliced_lockfile))
+    spliced_metadata = repository_ctx.path(splicing_output_dir.get_child("metadata.json"))
     if not spliced_metadata.exists:
-        fail("Metadata file does not exist: {}".format(spliced_metadata))
+        fail("Metadata file does not exist: " + str(spliced_metadata))
 
     return spliced_metadata
