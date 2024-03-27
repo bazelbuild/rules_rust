@@ -218,7 +218,7 @@ def _create_single_crate(ctx, attrs, info):
     # TODO: Some folks may want to override this for vendored dependencies.
     is_external = info.crate.root.path.startswith("external/")
     is_generated = not info.crate.root.is_source
-    path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else ""
+    path_prefix = _OUTPUT_BASE_TEMPLATE if is_external or is_generated else ""
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
     crate_root = path_prefix + info.crate.root.dirname
