@@ -1268,7 +1268,10 @@ def rustc_compile_action(
     output_o = None
     if experimental_use_cc_common_link:
         obj_ext = ".o"
-        output_o = ctx.actions.declare_file(crate_info.name + obj_ext, sibling = crate_info.output)
+        if output_hash != None:
+            output_o = ctx.actions.declare_file(crate_info.name + "-" + output_hash + obj_ext, sibling = crate_info.output)
+        else:
+            output_o = ctx.actions.declare_file(crate_info.name + obj_ext, sibling = crate_info.output)
         outputs = [output_o]
 
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
