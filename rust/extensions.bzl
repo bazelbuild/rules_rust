@@ -117,25 +117,60 @@ def _rust_impl(module_ctx):
         )
 
 _COMMON_TAG_KWARGS = dict(
-    allocator_library = attr.string(default = "@rules_rust//ffi/cc/allocator_library"),
-    dev_components = attr.bool(default = False),
-    edition = attr.string(),
-    rustfmt_version = attr.string(default = DEFAULT_NIGHTLY_VERSION),
-    sha256s = attr.string_dict(),
-    urls = attr.string_list(default = DEFAULT_STATIC_RUST_URL_TEMPLATES),
+    allocator_library = attr.string(
+        doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
+        default = "@rules_rust//ffi/cc/allocator_library",
+    ),
+    dev_components = attr.bool(
+        doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
+        default = False,
+    ),
+    edition = attr.string(
+        doc = (
+            "The rust edition to be used by default (2015, 2018, or 2021). " +
+            "If absent, every rule is required to specify its `edition` attribute."
+        ),
+    ),
+    rustfmt_version = attr.string(
+        doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
+        default = DEFAULT_NIGHTLY_VERSION,
+    ),
+    sha256s = attr.string_dict(
+        doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+    ),
+    urls = attr.string_list(
+        doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
+        default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+    ),
 )
 
-_RUST_TOOLCHAIN_TAG = tag_class(attrs = dict(
-    extra_target_triples = attr.string_list(default = DEFAULT_EXTRA_TARGET_TRIPLES),
-    rust_analyzer_version = attr.string(),
-    versions = attr.string_list(default = []),
-    **_COMMON_TAG_KWARGS
-))
+_RUST_TOOLCHAIN_TAG = tag_class(
+    attrs = dict(
+        extra_target_triples = attr.string_list(
+            default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        rust_analyzer_version = attr.string(
+            doc = "The version of Rustc to pair with rust-analyzer.",
+        ),
+        versions = attr.string_list(
+            doc = (
+                "A list of toolchain versions to download. This paramter only accepts one versions " +
+                "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`."
+            ),
+            default = [],
+        ),
+        **_COMMON_TAG_KWARGS
+    ),
+)
 
-_RUST_HOST_TOOLS_TAG = tag_class(attrs = dict(
-    version = attr.string(),
-    **_COMMON_TAG_KWARGS
-))
+_RUST_HOST_TOOLS_TAG = tag_class(
+    attrs = dict(
+        version = attr.string(
+            doc = "The version of Rust to use for tools executed on the Bazel host.",
+        ),
+        **_COMMON_TAG_KWARGS
+    ),
+)
 
 rust = module_extension(
     implementation = _rust_impl,
