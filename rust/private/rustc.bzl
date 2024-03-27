@@ -1070,6 +1070,9 @@ def construct_arguments(
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
+    if crate_info.type in toolchain.extra_rustc_flags_for_crate_types.keys():
+        rustc_flags.add_all(toolchain.extra_rustc_flags_for_crate_types[crate_info.type])
+
     if is_exec_configuration(ctx):
         rustc_flags.add_all(toolchain.extra_exec_rustc_flags)
     else:
