@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "quote",
+    name = "bytes",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = False,
@@ -30,7 +30,7 @@ rust_library(
     ),
     crate_features = [
         "default",
-        "proc-macro",
+        "std",
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
@@ -39,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=quote",
+        "crate-name=bytes",
         "manual",
         "noclippy",
         "norustfmt",
@@ -81,8 +81,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.0.35",
-    deps = [
-        "//vendor_local_manifests/crates/proc-macro2-1.0.79:proc_macro2",
-    ],
+    version = "1.6.0",
 )

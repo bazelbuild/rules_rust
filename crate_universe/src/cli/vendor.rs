@@ -16,6 +16,7 @@ use crate::metadata::FeatureGenerator;
 use crate::metadata::{Annotations, Cargo, Generator, MetadataGenerator, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
+use crate::utils::sanitize_repository_name;
 
 /// Command line options for the `vendor` subcommand
 #[derive(Parser, Debug)]
@@ -177,9 +178,6 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     )
     .render(&context)?;
 
-    // Cache the file names for potential use with buildifier
-    let file_names: BTreeSet<PathBuf> = outputs.keys().cloned().collect();
-
     // First ensure vendoring and rendering happen in a clean directory
     let vendor_dir_label = render_module_label(&config.rendering.crates_module_template, "BUILD")?;
     let vendor_dir = opt.workspace_dir.join(vendor_dir_label.package().unwrap());
@@ -194,12 +192,25 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
             .context("Failed to write Cargo.lock file back to the workspace.")?;
     }
 
-    // Vendor the crates from the spliced workspace
-    if matches!(config.rendering.vendor_mode, Some(VendorMode::Local)) {
-        VendorGenerator::new(cargo, opt.rustc.clone())
-            .generate(manifest_path.as_path_buf(), &vendor_dir)
-            .context("Failed to vendor dependencies")?;
-    }
+    // Vendor the crates from the spliced workspace.  If its a local vendor type, we need
+    // to change the file names for buildifier to work, because of (+). Cache the file names for
+    // potential use with buildifier
+    let file_names: BTreeSet<PathBuf> =
+        if matches!(config.rendering.vendor_mode, Some(VendorMode::Local)) {
+            VendorGenerator::new(cargo, opt.rustc.clone())
+                .generate(manifest_path.as_path_buf(), &vendor_dir)
+                .context("Failed to vendor dependencies")?;
+            outputs
+                .keys()
+                .cloned()
+                .map(|p| {
+                    let p_str = sanitize_repository_name(p.to_str().unwrap());
+                    PathBuf::from(p_str)
+                })
+                .collect()
+        } else {
+            outputs.keys().cloned().collect()
+        };
 
     // Write outputs
     write_outputs(outputs, &opt.workspace_dir, opt.dry_run)
