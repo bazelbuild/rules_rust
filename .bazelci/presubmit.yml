@@ -409,6 +409,9 @@ tasks:
     name: Examples
     platform: macos
     working_directory: examples
+    build_flags:
+      # Required for //ffi/rust_calling_c:matrix_dylib_test
+      - "--incompatible_macos_set_install_name"
     build_targets:
       - "//..."
     test_targets:
