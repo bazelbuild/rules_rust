@@ -149,11 +149,11 @@ def _rust_host_tools_impl(module_ctx):
             "allocator_library": attrs.allocator_library,
             "dev_components": attrs.dev_components,
             "edition": attrs.edition,
+            "iso_date": iso_date,
             "rustfmt_version": attrs.rustfmt_version,
             "sha256s": attrs.sha256s,
             "urls": attrs.urls,
             "version": version,
-            "iso_date": iso_date,
         }
     elif root == None or not root.tags.host_tools:
         host_tools = {
