@@ -1,10 +1,9 @@
-//! A template engine backed by [Tera] for rendering Files.
+//! A template engine backed by [tera::Tera] for rendering Files.
 
 use std::collections::HashMap;
 
 use anyhow::{Context as AnyhowContext, Result};
 use serde_json::{from_value, to_value, Value};
-use tera::{self, Tera};
 
 use crate::config::RenderConfig;
 use crate::context::Context;
@@ -16,13 +15,13 @@ use crate::select::Select;
 use crate::utils::sanitize_repository_name;
 
 pub(crate) struct TemplateEngine {
-    engine: Tera,
+    engine: tera::Tera,
     context: tera::Context,
 }
 
 impl TemplateEngine {
     pub(crate) fn new(render_config: &RenderConfig) -> Self {
-        let mut tera = Tera::default();
+        let mut tera = tera::Tera::default();
         tera.add_raw_templates(vec![
             (
                 "partials/module/aliases_map.j2",

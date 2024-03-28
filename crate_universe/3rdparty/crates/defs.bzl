@@ -300,7 +300,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo-lock": Label("@cui__cargo-lock-9.0.0//:cargo_lock"),
             "cargo-platform": Label("@cui__cargo-platform-0.1.4//:cargo_platform"),
             "cargo_metadata": Label("@cui__cargo_metadata-0.18.1//:cargo_metadata"),
-            "cargo_toml": Label("@cui__cargo_toml-0.17.1//:cargo_toml"),
+            "cargo_toml": Label("@cui__cargo_toml-0.19.2//:cargo_toml"),
             "cfg-expr": Label("@cui__cfg-expr-0.15.5//:cfg_expr"),
             "clap": Label("@cui__clap-4.3.11//:clap"),
             "crates-index": Label("@cui__crates-index-2.2.0//:crates_index"),
@@ -781,12 +781,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo_toml-0.17.1",
-        sha256 = "4d1ece59890e746567b467253aea0adbe8a21784d0b025d8a306f66c391c2957",
+        name = "cui__cargo_toml-0.19.2",
+        sha256 = "a98356df42a2eb1bd8f1793ae4ee4de48e384dd974ce5eac8eee802edb7492be",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.17.1/download"],
-        strip_prefix = "cargo_toml-0.17.1",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.17.1.bazel"),
+        urls = ["https://crates.io/api/v1/crates/cargo_toml/0.19.2/download"],
+        strip_prefix = "cargo_toml-0.19.2",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cargo_toml-0.19.2.bazel"),
     )
 
     maybe(
@@ -3355,7 +3355,7 @@ def crate_repositories():
         struct(repo = "cui__cargo-lock-9.0.0", is_dev_dep = False),
         struct(repo = "cui__cargo-platform-0.1.4", is_dev_dep = False),
         struct(repo = "cui__cargo_metadata-0.18.1", is_dev_dep = False),
-        struct(repo = "cui__cargo_toml-0.17.1", is_dev_dep = False),
+        struct(repo = "cui__cargo_toml-0.19.2", is_dev_dep = False),
         struct(repo = "cui__cfg-expr-0.15.5", is_dev_dep = False),
         struct(repo = "cui__clap-4.3.11", is_dev_dep = False),
         struct(repo = "cui__crates-index-2.2.0", is_dev_dep = False),

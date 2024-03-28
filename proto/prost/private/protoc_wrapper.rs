@@ -886,8 +886,7 @@ mod test {
 
     use super::*;
 
-    use prost_types::{FieldDescriptorProto, FileDescriptorProto, ServiceDescriptorProto};
-    use std::collections::BTreeMap;
+    use prost_types::{FieldDescriptorProto, ServiceDescriptorProto};
 
     #[test]
     fn oneof_type_to_extern_paths_test() {

@@ -32,27 +32,3 @@ selects = struct(
     with_unmapped = _with_unmapped,
     NO_MATCHING_PLATFORM_TRIPLES = _SENTINEL,
 )
-
-# TODO: No longer used by the serde_starlark-based renderer. Delete after all
-# BUILD files using it have been regenerated.
-#
-# buildifier: disable=function-docstring
-def select_with_or(input_dict, no_match_error = ""):
-    output_dict = {}
-    for (key, value) in input_dict.items():
-        if type(key) == type(()):
-            for config_setting in key:
-                if config_setting in output_dict:
-                    output_dict[config_setting].extend(value)
-                else:
-                    output_dict[config_setting] = list(value)
-        elif key in output_dict:
-            output_dict[key].extend(value)
-        else:
-            output_dict[key] = list(value)
-
-    # return a dict with deduped lists
-    return select(
-        {key: depset(value).to_list() for key, value in output_dict.items()},
-        no_match_error = no_match_error,
-    )

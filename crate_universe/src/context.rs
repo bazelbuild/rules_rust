@@ -11,7 +11,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
-use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};

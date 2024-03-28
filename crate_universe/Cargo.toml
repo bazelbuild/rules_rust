@@ -1,16 +1,11 @@
 [workspace]
-members = [
-    "tools/cross_installer",
-    "tools/urls_generator",
-]
+members = ["tools/cross_installer", "tools/urls_generator"]
 exclude = ["test_data"]
 
 [package]
 name = "cargo-bazel"
 version = "0.11.0"
-authors = [
-    "Andre Brisco - andre.brisco@protonmail.com",
-]
+authors = ["Andre Brisco - andre.brisco@protonmail.com"]
 categories = ["development-tools"]
 description = "A collection of tools which use Cargo to generate build targets for Bazel"
 edition = "2021"
@@ -28,12 +23,14 @@ default = ["cargo"]
 anyhow = "1.0.75"
 camino = "1.1.6"
 cargo_metadata = "0.18.1"
-cargo_toml = "0.17.1"
+cargo_toml = "0.19.2"
 cargo-lock = "9.0.0"
 cargo-platform = "0.1.4"
 cfg-expr = "0.15.5"
 clap = { version = "4.3.11", features = ["derive", "env"] }
-crates-index = { version = "2.2.0", default-features = false, features = ["git"] }
+crates-index = { version = "2.2.0", default-features = false, features = [
+    "git",
+] }
 hex = "0.4.3"
 indoc = "2.0.4"
 itertools = "0.12.0"

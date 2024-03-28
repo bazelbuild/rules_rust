@@ -2,9 +2,13 @@
 
 module(
     name = "rules_rust",
-    version = "0.40.0",
+    version = "0.41.0",
 )
 
+bazel_dep(
+    name = "bazel_features",
+    version = "1.9.1",
+)
 bazel_dep(
     name = "bazel_skylib",
     version = "1.5.0",
@@ -52,7 +56,7 @@ use_repo(
     "cui__cargo-lock-9.0.0",
     "cui__cargo-platform-0.1.4",
     "cui__cargo_metadata-0.18.1",
-    "cui__cargo_toml-0.17.1",
+    "cui__cargo_toml-0.19.2",
     "cui__cfg-expr-0.15.5",
     "cui__clap-4.3.11",
     "cui__crates-index-2.2.0",
