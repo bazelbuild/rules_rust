@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_package = "org.pubref.rules_protobuf.examples";
+option java_outer_classname = "CommonProto";
+
+package common;
+
+// A configuration object.  This is used to test the viability of
+// protobuf imports.
+message Config {
+    bool verbose = 1;
+}

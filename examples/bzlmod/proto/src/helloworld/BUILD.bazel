@@ -1,0 +1,39 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//proto/protobuf:defs.bzl", "rust_grpc_library", "rust_proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+proto_library(
+    name = "helloworld",
+    srcs = [
+        "helloworld.proto",
+    ],
+    deps = [
+        "//src:common",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+rust_proto_library(
+    name = "helloworld_rust",
+    deps = [":helloworld"],
+)
+
+rust_grpc_library(
+    name = "libhelloworld_proto",
+    crate_name = "helloworld_proto",
+    # tags = ["manual"],
+    visibility = ["//proto/helloworld:__subpackages__"],
+    deps = [":helloworld"],
+)
+
+rust_test(
+    name = "helloworld_test",
+    srcs = ["helloworld_test.rs"],
+    data = [
+        "//proto/helloworld/greeter_client",
+        "//proto/helloworld/greeter_server",
+    ],
+    tags = ["manual"],
+    deps = ["@rules_rust//tools/runfiles"],
+)

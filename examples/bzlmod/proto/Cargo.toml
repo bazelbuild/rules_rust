@@ -1,0 +1,14 @@
+[workspace]
+[package]
+name = "protobuf-example"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "/dev/null"
+
+[dependencies]
+anyhow = "1.0.79"
+grpc = "0.6.2"
+protobuf-codegen = "2.8.2"

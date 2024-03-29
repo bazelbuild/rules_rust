@@ -1,0 +1,54 @@
+"""bazelbuild/rules_rust - bzlmod example"""
+
+module(
+    name = "protobuf-example",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "platforms", version = "0.0.8")
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.5.0",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "5.3.0-21.7",
+)
+
+bazel_dep(
+    name = "protobuf",
+     version = "21.7",
+    repo_name="com_google_protobuf",
+)
+bazel_dep(
+    name = "rules_rust",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(
+    rust,
+    "rust_toolchains",
+)
+
+register_toolchains("@rust_toolchains//:all")
+register_toolchains("@rules_rust//proto/protobuf:all")
+
+# To do third party dependencies, you have multiple options:
+
+# Option 1: Fully transient (Cargo.toml / Cargo.lock as source of truth).
+crate = use_extension(
+    "@rules_rust//crate_universe:extension.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//third-party:Cargo.lock",
+    manifests = ["//third-party:Cargo.toml"],
+)
+use_repo(crate, "crates")
