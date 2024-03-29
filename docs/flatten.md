@@ -1875,11 +1875,22 @@ This macro should be called immediately after the `rust_protobuf_dependencies` m
 ## rust_proto_protobuf_dependencies
 
 <pre>
-rust_proto_protobuf_dependencies()
+rust_proto_protobuf_dependencies(<a href="#rust_proto_protobuf_dependencies-bzlmod">bzlmod</a>)
 </pre>
 
+Declares repositories needed for protobuf.
+
+**PARAMETERS**
 
 
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_proto_protobuf_dependencies-bzlmod"></a>bzlmod |  Whether bzlmod is enabled.   |  `False` |
+
+**RETURNS**
+
+list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+  defined by this macro.
 
 
 <a id="rust_proto_protobuf_register_toolchains"></a>
