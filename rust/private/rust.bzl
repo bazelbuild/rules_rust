@@ -528,10 +528,6 @@ RUSTC_ATTRS = {
     "_extra_rustc_flags": attr.label(
         default = Label("//:extra_rustc_flags"),
     ),
-    "_import_macro_dep": attr.label(
-        default = Label("//util/import"),
-        cfg = "exec",
-    ),
     "_is_proc_macro_dep": attr.label(
         default = Label("//rust/private:is_proc_macro_dep"),
     ),

@@ -686,6 +686,12 @@ tasks:
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
+  bzlmod_no_cargo:
+    name: Cargo-less bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/hello_world_no_cargo
+    build_targets:
+      - "//..."
 
 buildifier:
   version: latest
