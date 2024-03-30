@@ -69,13 +69,13 @@ def rust_bindgen_library(
 
     sub_tags = tags + ([] if "manual" in tags else ["manual"])
 
-    deps = kwargs.get("deps") or []
-    if "deps" in kwargs:
-        kwargs.pop("deps")
-
     bindgen_kwargs = {}
-    if "leak_symbols" in kwargs:
-        bindgen_kwargs.update({"leak_symbols": kwargs.pop("leak_symbols")})
+    for shared in (
+        "target_compatible_with",
+        "exec_compatible_with",
+    ):
+        if shared in kwargs:
+            bindgen_kwargs.update({shared: kwargs[shared]})
 
     rust_bindgen(
         name = name + "__bindgen",
@@ -88,8 +88,11 @@ def rust_bindgen_library(
         **bindgen_kwargs
     )
 
-    for custom_tag in ["__bindgen", "no-clippy", "no-rustfmt"]:
-        tags = tags + ([] if custom_tag in tags else [custom_tag])
+    tags = depset(tags + ["__bindgen", "no-clippy", "no-rustfmt"]).to_list()
+
+    deps = kwargs.get("deps") or []
+    if "deps" in kwargs:
+        kwargs.pop("deps")
 
     rust_library(
         name = name,
@@ -281,33 +284,22 @@ def _rust_bindgen_impl(ctx):
         tools = tools,
     )
 
-    if ctx.attr.leak_symbols:
-        # buildifier: disable=print
-        print("WARN: rust_bindgen.leak_symbols is set to True for {} - please file an issue at https://github.com/bazelbuild/rules_rust/issues explaining why this was necessary, as this support will be removed soon.".format(ctx.label))
-        providers = [cc_common.merge_cc_infos(
-            direct_cc_infos = [cc_lib[CcInfo]],
-        )]
-    else:
-        providers = [
-            _generate_cc_link_build_info(ctx, cc_lib),
-            # As in https://github.com/bazelbuild/rules_rust/pull/2361, we want
-            # to link cc_lib to the direct parent (rlib) using `-lstatic=<cc_lib>` rustc flag
-            # Hence, we do not need to provide the whole CcInfo of cc_lib because
-            # it will cause the downstream binary to link the cc_lib again
-            # (same effect as setting `leak_symbols` attribute above)
-            # The CcInfo here only contains the custom link flags (i.e. linkopts attribute)
-            # specified by users in cc_lib
-            CcInfo(
-                linking_context = cc_common.create_linking_context(
-                    linker_inputs = depset([cc_common.create_linker_input(
-                        owner = ctx.label,
-                        user_link_flags = _get_user_link_flags(cc_lib),
-                    )]),
-                ),
+    return [
+        _generate_cc_link_build_info(ctx, cc_lib),
+        # As in https://github.com/bazelbuild/rules_rust/pull/2361, we want
+        # to link cc_lib to the direct parent (rlib) using `-lstatic=<cc_lib>`
+        # rustc flag. Hence, we do not need to provide the whole CcInfo of
+        # cc_lib because it will cause the downstream binary to link the cc_lib
+        # again. The CcInfo here only contains the custom link flags (i.e.
+        # linkopts attribute) specified by users in cc_lib.
+        CcInfo(
+            linking_context = cc_common.create_linking_context(
+                linker_inputs = depset([cc_common.create_linker_input(
+                    owner = ctx.label,
+                    user_link_flags = _get_user_link_flags(cc_lib),
+                )]),
             ),
-        ]
-
-    return providers + [
+        ),
         OutputGroupInfo(
             bindgen_bindings = depset([output]),
         ),
@@ -332,13 +324,6 @@ rust_bindgen = rule(
             doc = "The `.h` file to generate bindings for.",
             allow_single_file = True,
             mandatory = True,
-        ),
-        "leak_symbols": attr.bool(
-            doc = (
-                "If True, `cc_lib` will be exposed and linked into all downstream consumers of the target vs. the " +
-                "`rust_library` directly consuming it."
-            ),
-            default = False,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
