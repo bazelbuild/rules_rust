@@ -650,6 +650,7 @@ def _rust_toolchain_impl(ctx):
         staticlib_ext = ctx.attr.staticlib_ext,
         stdlib_linkflags = stdlib_linkflags_cc_info,
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
+        extra_rustc_flags_for_crate_types = ctx.attr.extra_rustc_flags_for_crate_types,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
@@ -746,6 +747,9 @@ rust_toolchain = rule(
         ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "extra_rustc_flags_for_crate_types": attr.string_list_dict(
+            doc = "Extra flags to pass to rustc based on crate type",
         ),
         "global_allocator_library": attr.label(
             doc = "Target that provides allocator functions for when a global allocator is present.",
