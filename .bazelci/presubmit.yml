@@ -690,6 +690,13 @@ tasks:
     working_directory: examples/bzlmod/hello_world_no_cargo
     build_targets:
       - "//..."
+  compile_one_dependency:
+    name: --compile_one_dependency flag
+    platform: ubuntu2004
+    build_flags:
+      - "--compile_one_dependency"
+    build_targets:
+      - "tools/rust_analyzer/main.rs"
 
 buildifier:
   version: latest
