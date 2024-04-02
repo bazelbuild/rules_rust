@@ -143,8 +143,8 @@ mod test {
         };
 
         let runfiles = runfiles::Runfiles::create().unwrap();
-        let path = runfiles
-            .rlocation("rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json");
+        let path = runfiles::rlocation!(
+            runfiles, "rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json");
 
         let parsed = parse(&path).unwrap();
         assert_eq!(parsed.workspace_members(), want_workspace_member_names);
