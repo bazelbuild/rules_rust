@@ -285,6 +285,7 @@ mod test {
                 (&CrateId::new("log".to_owned(), Version::new(0, 4, 21)), false),
                 (&CrateId::new("names".to_owned(), Version::parse("0.12.1-dev").unwrap()), false),
                 (&CrateId::new("names".to_owned(), Version::new(0, 13, 0)), false),
+                (&CrateId::new("surrealdb".to_owned(), Version::new(1, 3, 1)), false),
                 (&CrateId::new("value-bag".to_owned(), Version::parse("1.0.0-alpha.7").unwrap()), false),
             ],
         }
