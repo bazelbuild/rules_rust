@@ -69,8 +69,8 @@ impl Runfiles {
     /// RUNFILES_MANIFEST_ONLY environment variable is present,
     /// or a directory based Runfiles object otherwise.
     pub fn create() -> io::Result<Self> {
-        let mode = if let Ok(manifest_file) = std::env::var(MANIFEST_FILE_ENV_VAR) {
-            Self::create_manifest_based(&PathBuf::from(manifest_file))?
+        let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+            Self::create_manifest_based(&Path::new(&manifest_file))?
         } else {
             Mode::DirectoryBased(find_runfiles_dir()?)
         };
@@ -103,7 +103,7 @@ impl Runfiles {
     /// Runfiles are data-dependencies of Bazel-built binaries and tests.
     /// The returned path may not be valid. The caller should check the path's
     /// validity and that the path exists.
-    /// @deprecated - this is not bzlmod-aware. Prefer the `Rlocation!` macro or `rlocation_from`
+    /// @deprecated - this is not bzlmod-aware. Prefer the `rlocation!` macro or `rlocation_from`
     pub fn rlocation(&self, path: impl AsRef<Path>) -> PathBuf {
         let path = path.as_ref();
         if path.is_absolute() {
@@ -155,13 +155,17 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> PathBuf {
 }
 
 fn parse_repo_mapping(path: PathBuf) -> io::Result<RepoMapping> {
-    Ok(std::fs::read_to_string(path)?
-        .lines()
-        .map(|line| {
-            let parts: Vec<String> = line.splitn(3, ',').map(String::from).collect();
-            ((parts[0].clone(), parts[1].clone()), parts[2].clone())
-        })
-        .collect::<RepoMapping>())
+    let mut repo_mapping = RepoMapping::new();
+
+    for line in std::fs::read_to_string(path)?.lines() {
+        let parts: Vec<&str> = line.splitn(3, ',').collect();
+        if parts.len() < 3 {
+            return Err(make_io_error("Malformed repo_mapping file"));
+        }
+        repo_mapping.insert((parts[0].into(), parts[1].into()), parts[2].into());
+    }
+
+    Ok(repo_mapping)
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
