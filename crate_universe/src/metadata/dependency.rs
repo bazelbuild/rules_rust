@@ -197,10 +197,10 @@ fn is_lib_package(package: &Package) -> bool {
 }
 
 fn is_proc_macro_package(package: &Package) -> bool {
-    package
-        .targets
-        .iter()
-        .any(|target| target.crate_types.iter().any(|t| t == "proc-macro"))
+    package.targets.iter().any(|target| {
+        target.crate_types.iter().any(|t| t == "proc-macro")
+            && !target.kind.iter().any(|t| t == "example")
+    })
 }
 
 fn is_dev_dependency(node_dep: &NodeDep) -> bool {
@@ -423,6 +423,30 @@ mod test {
                 pkg.name == name
             })
             .unwrap()
+    }
+
+    #[test]
+    fn example_proc_macro_dep() {
+        let metadata = metadata::example_proc_macro_dep();
+
+        let node = find_metadata_node("example-proc-macro-dep", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        let normal_deps: Vec<_> = dependencies
+            .normal_deps
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
+            .collect();
+        assert_eq!(normal_deps, vec!["proc-macro-rules"]);
+
+        let proc_macro_deps: Vec<_> = dependencies
+            .proc_macro_deps
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
+            .collect();
+        assert_eq!(proc_macro_deps, Vec::<&str>::new());
     }
 
     #[test]
