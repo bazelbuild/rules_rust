@@ -15,7 +15,7 @@
             "edition": "2015",
             "features": {},
             "homepage": null,
-            "id": "autocfg 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0",
             "keywords": [
                 "rustc",
                 "build",
@@ -170,7 +170,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "pin-project-lite 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9",
             "keywords": [
                 "pin",
                 "macros"
@@ -333,7 +333,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "target_cfg_features 0.1.0 (path+file://{TEMP_DIR}/target_cfg_features)",
+            "id": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -848,7 +848,7 @@
                 ]
             },
             "homepage": "https://tokio.rs",
-            "id": "tokio 1.25.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0",
             "keywords": [
                 "io",
                 "async",
@@ -3676,7 +3676,7 @@
                 "deprecated": []
             },
             "homepage": null,
-            "id": "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3727,7 +3727,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_aarch64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3791,7 +3791,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_aarch64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3855,7 +3855,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_i686_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3919,7 +3919,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_i686_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3983,7 +3983,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_x86_64_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -4047,7 +4047,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_x86_64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -4111,7 +4111,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "windows_x86_64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -4170,17 +4170,17 @@
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "autocfg 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "pin-project-lite 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9"
             },
             {
                 "dependencies": [
-                    "tokio 1.25.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
                 ],
                 "deps": [
                     {
@@ -4195,17 +4195,17 @@
                             }
                         ],
                         "name": "tokio",
-                        "pkg": "tokio 1.25.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
                     }
                 ],
                 "features": [],
-                "id": "target_cfg_features 0.1.0 (path+file://{TEMP_DIR}/target_cfg_features)"
+                "id": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
             },
             {
                 "dependencies": [
-                    "autocfg 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pin-project-lite 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
                 ],
                 "deps": [
                     {
@@ -4216,7 +4216,7 @@
                             }
                         ],
                         "name": "autocfg",
-                        "pkg": "autocfg 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0"
                     },
                     {
                         "dep_kinds": [
@@ -4226,7 +4226,7 @@
                             }
                         ],
                         "name": "pin_project_lite",
-                        "pkg": "pin-project-lite 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9"
                     },
                     {
                         "dep_kinds": [
@@ -4236,24 +4236,24 @@
                             }
                         ],
                         "name": "windows_sys",
-                        "pkg": "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
                     }
                 ],
                 "features": [
                     "default",
                     "fs"
                 ],
-                "id": "tokio 1.25.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
             },
             {
                 "dependencies": [
-                    "windows_aarch64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_aarch64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_i686_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_i686_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_x86_64_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_x86_64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "windows_x86_64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
                 ],
                 "deps": [
                     {
@@ -4264,7 +4264,7 @@
                             }
                         ],
                         "name": "windows_aarch64_gnullvm",
-                        "pkg": "windows_aarch64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4278,7 +4278,7 @@
                             }
                         ],
                         "name": "windows_aarch64_msvc",
-                        "pkg": "windows_aarch64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4292,7 +4292,7 @@
                             }
                         ],
                         "name": "windows_i686_gnu",
-                        "pkg": "windows_i686_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4306,7 +4306,7 @@
                             }
                         ],
                         "name": "windows_i686_msvc",
-                        "pkg": "windows_i686_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4320,7 +4320,7 @@
                             }
                         ],
                         "name": "windows_x86_64_gnu",
-                        "pkg": "windows_x86_64_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4330,7 +4330,7 @@
                             }
                         ],
                         "name": "windows_x86_64_gnullvm",
-                        "pkg": "windows_x86_64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1"
                     },
                     {
                         "dep_kinds": [
@@ -4344,7 +4344,7 @@
                             }
                         ],
                         "name": "windows_x86_64_msvc",
-                        "pkg": "windows_x86_64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
                     }
                 ],
                 "features": [
@@ -4354,60 +4354,60 @@
                     "Win32_Security_Authorization",
                     "default"
                 ],
-                "id": "windows-sys 0.42.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_aarch64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_aarch64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_i686_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_i686_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_x86_64_gnu 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_x86_64_gnullvm 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "windows_x86_64_msvc 0.42.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
             }
         ],
-        "root": "target_cfg_features 0.1.0 (path+file://{TEMP_DIR}/target_cfg_features)"
+        "root": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
     },
     "target_directory": "{TEMP_DIR}/target_cfg_features/target",
     "version": 1,
     "workspace_default_members": [
-        "target_cfg_features 0.1.0 (path+file://{TEMP_DIR}/target_cfg_features)"
+        "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
     ],
     "workspace_members": [
-        "target_cfg_features 0.1.0 (path+file://{TEMP_DIR}/target_cfg_features)"
+        "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/target_cfg_features"
 }

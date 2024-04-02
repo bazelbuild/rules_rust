@@ -802,7 +802,7 @@ mod test {
         let annotations = common_annotations();
 
         let crate_annotation = &annotations.metadata.crates[&PackageId {
-            repr: "common 0.1.0 (path+file://{TEMP_DIR}/common)".to_owned(),
+            repr: "path+file://{TEMP_DIR}/common#0.1.0".to_owned(),
         }];
 
         let include_binaries = false;
@@ -833,7 +833,7 @@ mod test {
         let annotations = common_annotations();
 
         let package_id = PackageId {
-            repr: "common 0.1.0 (path+file://{TEMP_DIR}/common)".to_owned(),
+            repr: "path+file://{TEMP_DIR}/common#0.1.0".to_owned(),
         };
 
         let crate_annotation = &annotations.metadata.crates[&package_id];
@@ -908,7 +908,7 @@ mod test {
         let annotations = build_script_annotations();
 
         let package_id = PackageId {
-            repr: "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+            repr: "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                 .to_owned(),
         };
 
@@ -953,7 +953,7 @@ mod test {
         let annotations = build_script_annotations();
 
         let package_id = PackageId {
-            repr: "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+            repr: "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                 .to_owned(),
         };
 
@@ -988,8 +988,7 @@ mod test {
         let annotations = crate_type_annotations();
 
         let package_id = PackageId {
-            repr: "sysinfo 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)"
-                .to_owned(),
+            repr: "registry+https://github.com/rust-lang/crates.io-index#sysinfo@0.22.5".to_owned(),
         };
 
         let crate_annotation = &annotations.metadata.crates[&package_id];
@@ -1024,7 +1023,7 @@ mod test {
     ) {
         let mut annotations = common_annotations();
         let crate_annotation = &annotations.metadata.crates[&PackageId {
-            repr: "common 0.1.0 (path+file://{TEMP_DIR}/common)".to_owned(),
+            repr: "path+file://{TEMP_DIR}/common#0.1.0".to_owned(),
         }];
         let include_binaries = false;
         let include_build_scripts = false;

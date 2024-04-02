@@ -959,6 +959,7 @@ def construct_arguments(
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
     rustc_flags.add(compilation_mode.debug_info, format = "--codegen=debuginfo=%s")
+    rustc_flags.add(compilation_mode.strip_level, format = "--codegen=strip=%s")
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
@@ -1288,12 +1289,15 @@ def rustc_compile_action(
     if rustc_output:
         action_outputs.append(rustc_output)
 
+    # Get the compilation mode for the current target.
+    compilation_mode = get_compilation_mode_opts(ctx, toolchain)
+
     # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin"):
-        if toolchain.target_os == "windows":
+        if toolchain.target_os == "windows" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
         elif toolchain.target_os == "darwin":
