@@ -70,7 +70,7 @@ impl Runfiles {
     /// or a directory based Runfiles object otherwise.
     pub fn create() -> io::Result<Self> {
         let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-            Self::create_manifest_based(&Path::new(&manifest_file))?
+            Self::create_manifest_based(Path::new(&manifest_file))?
         } else {
             Mode::DirectoryBased(find_runfiles_dir()?)
         };
