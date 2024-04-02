@@ -369,10 +369,10 @@ def load_rustfmt(ctx, target_triple, version, iso_date):
         iso_date (str): The date of the tool (or None, if the version is a specific version).
 
     Returns:
-        str: The BUILD file contents for this rustfmt binary
+        Tuple[str, Dict[str, str]]: The BUILD file contents for this rustfmt binary and sha256 of it's artifact.
     """
 
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = iso_date,
         target_triple = target_triple,
@@ -381,7 +381,7 @@ def load_rustfmt(ctx, target_triple, version, iso_date):
         version = version,
     )
 
-    return BUILD_for_rustfmt(target_triple)
+    return BUILD_for_rustfmt(target_triple), sha256
 
 def load_rust_compiler(ctx, iso_date, target_triple, version):
     """Loads a rust compiler and yields corresponding BUILD for it
@@ -393,10 +393,11 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
-        str: The BUILD file contents for this compiler and compiler library
+        Tuple[str, Dict[str, str]]: The BUILD file contents for this compiler and compiler library
+            and sha256 of it's artifact.
     """
 
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = iso_date,
         target_triple = target_triple,
@@ -405,7 +406,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
         version = version,
     )
 
-    return BUILD_for_compiler(target_triple)
+    return BUILD_for_compiler(target_triple), sha256
 
 def load_clippy(ctx, iso_date, target_triple, version):
     """Loads Clippy and yields corresponding BUILD for it
@@ -417,9 +418,9 @@ def load_clippy(ctx, iso_date, target_triple, version):
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
-        str: The BUILD file contents for Clippy
+        Tuple[str, str]: The BUILD file contents for Clippy and the sha256 of it's artifact
     """
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = iso_date,
         target_triple = target_triple,
@@ -428,7 +429,7 @@ def load_clippy(ctx, iso_date, target_triple, version):
         version = version,
     )
 
-    return BUILD_for_clippy(target_triple)
+    return BUILD_for_clippy(target_triple), sha256
 
 def load_cargo(ctx, iso_date, target_triple, version):
     """Loads Cargo and yields corresponding BUILD for it
@@ -440,10 +441,10 @@ def load_cargo(ctx, iso_date, target_triple, version):
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
 
     Returns:
-        str: The BUILD file contents for Cargo
+        Tuple[str, Dict[str, str]]: The BUILD file contents for Cargo and the sha256 of its artifact.
     """
 
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = iso_date,
         target_triple = target_triple,
@@ -452,7 +453,7 @@ def load_cargo(ctx, iso_date, target_triple, version):
         version = version,
     )
 
-    return BUILD_for_cargo(target_triple)
+    return BUILD_for_cargo(target_triple), sha256
 
 def includes_rust_analyzer_proc_macro_srv(version, iso_date):
     """Determine whether or not the rust_analyzer_proc_macro_srv binary in available in the given version of Rust.
@@ -474,7 +475,7 @@ def includes_rust_analyzer_proc_macro_srv(version, iso_date):
 
     return False
 
-def load_rust_src(ctx, iso_date, version, sha256 = ""):
+def load_rust_src(ctx, iso_date, version, sha256 = None):
     """Loads the rust source code. Used by the rust-analyzer rust-project.json generator.
 
     Args:
@@ -482,14 +483,25 @@ def load_rust_src(ctx, iso_date, version, sha256 = ""):
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         iso_date (str): The date of the tool (or None, if the version is a specific version).
         sha256 (str): The sha256 value for the `rust-src` artifact
+
+    Returns:
+        Dict[str, str]: A mapping of the artifact name to sha256
     """
     tool_suburl = produce_tool_suburl("rust-src", None, version, iso_date)
     url = ctx.attr.urls[0].format(tool_suburl)
 
     tool_path = produce_tool_path("rust-src", version, None)
     archive_path = tool_path + _get_tool_extension(getattr(ctx.attr, "urls", None))
-    sha256 = sha256 or getattr(ctx.attr, "sha256s", {}).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or ""
-    ctx.download_and_extract(
+
+    is_reproducible = True
+    if sha256 == None:
+        sha256s = getattr(ctx.attr, "sha256s", {})
+        sha256 = sha256s.get(archive_path, None) or FILE_KEY_TO_SHA.get(archive_path, None)
+        if not sha256:
+            sha256 = ""
+            is_reproducible = False
+
+    result = ctx.download_and_extract(
         url,
         output = "lib/rustlib/src",
         sha256 = sha256,
@@ -505,6 +517,11 @@ filegroup(
     visibility = ["//visibility:public"],
 )""",
     )
+
+    if is_reproducible:
+        return {}
+
+    return {archive_path: result.sha256}
 
 _build_file_for_rust_analyzer_toolchain_template = """\
 load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
@@ -553,10 +570,10 @@ def load_rust_stdlib(ctx, target_triple):
         target_triple (struct): The rust-style target triple of the tool
 
     Returns:
-        str: The BUILD file contents for this stdlib
+        Tuple[str, Dict[str, str]]: The BUILD file contents for this stdlib and the sha256 of the artifact.
     """
 
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
@@ -565,7 +582,7 @@ def load_rust_stdlib(ctx, target_triple):
         version = ctx.attr.version,
     )
 
-    return BUILD_for_stdlib(target_triple)
+    return BUILD_for_stdlib(target_triple), sha256
 
 def load_rustc_dev_nightly(ctx, target_triple):
     """Loads the nightly rustc dev component
@@ -573,13 +590,16 @@ def load_rustc_dev_nightly(ctx, target_triple):
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+
+    Returns:
+        Dict[str, str]: The sha256 value of the rustc-dev artifact.
     """
 
     subdir_name = "rustc-dev"
     if ctx.attr.iso_date < "2020-12-24":
         subdir_name = "rustc-dev-{}".format(target_triple)
 
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
@@ -588,14 +608,19 @@ def load_rustc_dev_nightly(ctx, target_triple):
         version = ctx.attr.version,
     )
 
+    return sha256
+
 def load_llvm_tools(ctx, target_triple):
     """Loads the llvm tools
 
     Args:
-        ctx: A repository_ctx.
-        target_triple: The rust-style target triple of the tool
+        ctx (repository_ctx): A repository_ctx.
+        target_triple (struct): The rust-style target triple of the tool
+
+    Returns:
+        Tuple[str, Dict[str, str]]: The BUILD.bazel content and sha256 value of the llvm tools artifact.
     """
-    load_arbitrary_tool(
+    sha256 = load_arbitrary_tool(
         ctx,
         iso_date = ctx.attr.iso_date,
         target_triple = target_triple,
@@ -604,7 +629,7 @@ def load_llvm_tools(ctx, target_triple):
         version = ctx.attr.version,
     )
 
-    return BUILD_for_llvm_tools(target_triple)
+    return BUILD_for_llvm_tools(target_triple), sha256
 
 def check_version_valid(version, iso_date, param_prefix = ""):
     """Verifies that the provided rust version and iso_date make sense.
@@ -659,31 +684,52 @@ def produce_tool_path(tool_name, version, target_triple = None):
 
     return "-".join([e for e in [tool_name, version, platform_triple] if e])
 
-def lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256):
+def lookup_tool_sha256(
+        repository_ctx,
+        tool_name,
+        target_triple,
+        version,
+        iso_date):
     """Looks up the sha256 hash of a specific tool archive.
 
     The lookup order is:
 
     1. The sha256s dict in the context attributes;
-    2. The list of sha256 hashes populated in //rust:known_shas.bzl;
-    3. The sha256 argument to the function
+    2. The list of sha256 hashes populated in `//rust:known_shas.bzl`;
 
     Args:
-        ctx (repository_ctx): A repository_ctx (no attrs required).
+        repository_ctx (repository_ctx): A repository_ctx (no attrs required).
         tool_name (str): The name of the given tool per the archive naming.
         target_triple (struct): The rust-style target triple of the tool.
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         iso_date (str): The date of the tool (ignored if the version is a specific version).
-        sha256 (str): The expected hash of hash of the Rust tool.
 
     Returns:
         str: The sha256 of the tool archive, or an empty string if the hash could not be found.
     """
     tool_suburl = produce_tool_suburl(tool_name, target_triple, version, iso_date)
-    archive_path = tool_suburl + _get_tool_extension(getattr(ctx.attr, "urls", None))
-    return getattr(ctx.attr, "sha256s", dict()).get(archive_path) or FILE_KEY_TO_SHA.get(archive_path) or sha256
+    urls = getattr(repository_ctx.attr, "urls", None)
+    archive_path = tool_suburl + _get_tool_extension(urls)
+    sha256s = getattr(repository_ctx.attr, "sha256s", dict())
 
-def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, target_triple, sha256 = ""):
+    from_attr = sha256s.get(archive_path, None)
+    if from_attr:
+        return archive_path, from_attr
+
+    from_builtin = FILE_KEY_TO_SHA.get(archive_path, None)
+    if from_builtin:
+        return archive_path, from_builtin
+
+    return archive_path, ""
+
+def load_arbitrary_tool(
+        ctx,
+        tool_name,
+        tool_subdirectories,
+        version,
+        iso_date,
+        target_triple,
+        sha256 = None):
     """Loads a Rust tool, downloads, and extracts into the common workspace.
 
     This function sources the tool from the Rust-lang static file server. The index is available at:
@@ -710,6 +756,10 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         iso_date (str): The date of the tool (ignored if the version is a specific version).
         target_triple (struct): The rust-style target triple of the tool.
         sha256 (str, optional): The expected hash of hash of the Rust tool. Defaults to "".
+
+    Returns:
+        Dict[str, str]: A mapping of the tool name to it's sha256 value if the requested tool does not have
+            enough information in the repository_ctx to be reproducible.
     """
     check_version_valid(version, iso_date, param_prefix = tool_name + "_")
 
@@ -725,7 +775,12 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
 
     tool_path = produce_tool_path(tool_name, version, target_triple)
 
-    sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date, sha256)
+    archive_path, ctx_sha256 = lookup_tool_sha256(ctx, tool_name, target_triple, version, iso_date)
+
+    is_reproducible = True
+    if sha256 == None:
+        sha256 = ctx_sha256
+        is_reproducible = bool(ctx_sha256)
 
     for subdirectory in tool_subdirectories:
         # As long as the sha256 value is consistent accross calls here the
@@ -741,6 +796,13 @@ def load_arbitrary_tool(ctx, tool_name, tool_subdirectories, version, iso_date, 
         # downloaded item so subsequent downloads use a cached artifact.
         if not sha256:
             sha256 = result.sha256
+
+    # If the artifact is reproducibly downloadable then return an
+    # empty dict to inform consumers no attributes require updating.
+    if is_reproducible:
+        return {}
+
+    return {archive_path: sha256}
 
 def _make_auth_dict(ctx, urls):
     auth = getattr(ctx.attr, "auth", {})
