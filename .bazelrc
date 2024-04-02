@@ -28,7 +28,7 @@ common --experimental_cc_shared_library
 ## Unique configuration groups
 ###############################################################################
 
-# Enable use of the nightly toolchains by default.
+# Enable use of the nightly toolchains.
 build:nightly --//rust/toolchain/channel=nightly
 
 # Enable rustfmt for all targets in the workspace
