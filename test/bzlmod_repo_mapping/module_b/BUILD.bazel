@@ -4,6 +4,6 @@ rust_library(
     name = "lib_b",
     srcs = ["lib.rs"],
     data = ["@aliased_c//:MODULE.bazel"],
-    deps = ["@rules_rust//tools/runfiles"],
     visibility = ["//visibility:public"],
+    deps = ["@rules_rust//tools/runfiles"],
 )
