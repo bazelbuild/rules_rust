@@ -36,7 +36,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TEMP_DIR}/multi_kind_proc_macro_dep)",
+            "id": "path+file://{TEMP_DIR}/multi_kind_proc_macro_dep#multi-kind-proc-macro-dep@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -122,7 +122,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.14",
             "keywords": [
                 "macros"
             ],
@@ -255,7 +255,7 @@
         "nodes": [
             {
                 "dependencies": [
-                    "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.14"
                 ],
                 "deps": [
                     {
@@ -270,28 +270,28 @@
                             }
                         ],
                         "name": "paste",
-                        "pkg": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.14"
                     }
                 ],
                 "features": [],
-                "id": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TEMP_DIR}/multi_kind_proc_macro_dep)"
+                "id": "path+file://{TEMP_DIR}/multi_kind_proc_macro_dep#multi-kind-proc-macro-dep@0.1.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "paste 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.14"
             }
         ],
-        "root": "multi-kind-proc-macro-dep 0.1.0 (path+file://{TEMP_DIR}/multi_kind_proc_macro_dep)"
+        "root": "path+file://{TEMP_DIR}/multi_kind_proc_macro_dep#multi-kind-proc-macro-dep@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/multi_kind_proc_macro_dep/target",
     "version": 1,
     "workspace_default_members": [
-        "multi-kind-proc-macro-dep 0.1.0 (path+file://{TEMP_DIR}/multi_kind_proc_macro_dep)"
+        "path+file://{TEMP_DIR}/multi_kind_proc_macro_dep#multi-kind-proc-macro-dep@0.1.0"
     ],
     "workspace_members": [
-        "multi-kind-proc-macro-dep 0.1.0 (path+file://{TEMP_DIR}/multi_kind_proc_macro_dep)"
+        "path+file://{TEMP_DIR}/multi_kind_proc_macro_dep#multi-kind-proc-macro-dep@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/multi_kind_proc_macro_dep"
 }

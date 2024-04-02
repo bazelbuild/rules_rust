@@ -282,7 +282,7 @@ mod test {
                 .collect::<Vec<_>>(),
             [
                 (&CrateId::new("log".to_owned(), Version::new(0, 3, 9)), false),
-                (&CrateId::new("log".to_owned(), Version::new(0, 4, 14)), false),
+                (&CrateId::new("log".to_owned(), Version::new(0, 4, 21)), false),
                 (&CrateId::new("names".to_owned(), Version::parse("0.12.1-dev").unwrap()), false),
                 (&CrateId::new("names".to_owned(), Version::new(0, 13, 0)), false),
                 (&CrateId::new("value-bag".to_owned(), Version::parse("1.0.0-alpha.7").unwrap()), false),

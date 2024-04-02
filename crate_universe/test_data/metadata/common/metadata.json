@@ -125,7 +125,7 @@
                 ]
             },
             "homepage": "https://github.com/bitflags/bitflags",
-            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
             "keywords": [
                 "bit",
                 "bitmask",
@@ -245,7 +245,7 @@
                 ]
             },
             "homepage": "https://github.com/alexcrichton/cfg-if",
-            "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -325,7 +325,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "common 0.1.0 (path+file://{TEMP_DIR}/common)",
+            "id": "path+file://{TEMP_DIR}/common#0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -393,18 +393,18 @@
                 "features": [
                     "default"
                 ],
-                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
             },
             {
                 "dependencies": [
-                    "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
+                    "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                 ],
                 "deps": [
                     {
@@ -415,7 +415,7 @@
                             }
                         ],
                         "name": "bitflags",
-                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
                     },
                     {
                         "dep_kinds": [
@@ -425,22 +425,22 @@
                             }
                         ],
                         "name": "cfg_if",
-                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                     }
                 ],
                 "features": [],
-                "id": "common 0.1.0 (path+file://{TEMP_DIR}/common)"
+                "id": "path+file://{TEMP_DIR}/common#0.1.0"
             }
         ],
-        "root": "common 0.1.0 (path+file://{TEMP_DIR}/common)"
+        "root": "path+file://{TEMP_DIR}/common#0.1.0"
     },
     "target_directory": "{TEMP_DIR}/common/target",
     "version": 1,
     "workspace_default_members": [
-        "common 0.1.0 (path+file://{TEMP_DIR}/common)"
+        "path+file://{TEMP_DIR}/common#0.1.0"
     ],
     "workspace_members": [
-        "common 0.1.0 (path+file://{TEMP_DIR}/common)"
+        "path+file://{TEMP_DIR}/common#0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/common"
 }

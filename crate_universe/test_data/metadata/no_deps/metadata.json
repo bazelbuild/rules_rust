@@ -11,7 +11,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "no-deps 0.1.0 (path+file://{TEMP_DIR}/no_deps)",
+            "id": "path+file://{TEMP_DIR}/no_deps#no-deps@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -49,18 +49,18 @@
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "no-deps 0.1.0 (path+file://{TEMP_DIR}/no_deps)"
+                "id": "path+file://{TEMP_DIR}/no_deps#no-deps@0.1.0"
             }
         ],
-        "root": "no-deps 0.1.0 (path+file://{TEMP_DIR}/no_deps)"
+        "root": "path+file://{TEMP_DIR}/no_deps#no-deps@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/no_deps/target",
     "version": 1,
     "workspace_default_members": [
-        "no-deps 0.1.0 (path+file://{TEMP_DIR}/no_deps)"
+        "path+file://{TEMP_DIR}/no_deps#no-deps@0.1.0"
     ],
     "workspace_members": [
-        "no-deps 0.1.0 (path+file://{TEMP_DIR}/no_deps)"
+        "path+file://{TEMP_DIR}/no_deps#no-deps@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/no_deps"
 }

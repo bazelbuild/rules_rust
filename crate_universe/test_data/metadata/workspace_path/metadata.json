@@ -11,7 +11,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "child_a 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_a)",
+            "id": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -66,7 +66,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "child_b 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_b)",
+            "id": "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -107,7 +107,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "parent 0.1.0 (path+file://{TEMP_DIR}/workspace_path)",
+            "id": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -145,11 +145,11 @@
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "child_a 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_a)"
+                "id": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
             },
             {
                 "dependencies": [
-                    "child_a 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_a)"
+                    "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
                 ],
                 "deps": [
                     {
@@ -160,30 +160,30 @@
                             }
                         ],
                         "name": "child_a",
-                        "pkg": "child_a 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_a)"
+                        "pkg": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
                     }
                 ],
                 "features": [],
-                "id": "child_b 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_b)"
+                "id": "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "parent 0.1.0 (path+file://{TEMP_DIR}/workspace_path)"
+                "id": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
             }
         ],
-        "root": "parent 0.1.0 (path+file://{TEMP_DIR}/workspace_path)"
+        "root": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/workspace_path/target",
     "version": 1,
     "workspace_default_members": [
-        "parent 0.1.0 (path+file://{TEMP_DIR}/workspace_path)"
+        "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
     ],
     "workspace_members": [
-        "child_a 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_a)",
-        "child_b 0.1.0 (path+file://{TEMP_DIR}/workspace_path/child_b)",
-        "parent 0.1.0 (path+file://{TEMP_DIR}/workspace_path)"
+        "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0",
+        "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0",
+        "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/workspace_path"
 }

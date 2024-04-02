@@ -533,7 +533,7 @@ mod test {
                 .crates;
         let tracing_core = crates
             .iter()
-            .find(|(k, _)| k.repr.starts_with("tracing-core "))
+            .find(|(k, _)| k.repr.contains("#tracing-core@"))
             .map(|(_, v)| v)
             .unwrap();
         match tracing_core {
@@ -556,7 +556,9 @@ mod test {
                 .unwrap()
                 .crates;
 
-        let package_id = PackageId { repr: "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)".into() };
+        let package_id = PackageId {
+            repr: "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0".into(),
+        };
         let annotation = crates.get(&package_id).unwrap();
 
         let commitish = match annotation {

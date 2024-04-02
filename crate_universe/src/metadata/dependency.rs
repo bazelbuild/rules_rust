@@ -500,10 +500,10 @@ mod test {
 
         assert_eq!(
             BTreeSet::from([
-                "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     .to_owned(),
-                "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)".to_owned()
+                "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15".to_owned()
             ]),
             build_deps,
         );
@@ -518,9 +518,9 @@ mod test {
 
         assert_eq!(
             BTreeSet::from([
-                "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     .to_owned(),
             ]),
             normal_deps,
