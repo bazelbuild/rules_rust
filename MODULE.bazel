@@ -163,6 +163,16 @@ register_toolchains(
     dev_dependency = True,
 )
 
+register_toolchains(
+    "//proto/prost:default_prost_toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "//bindgen:default_bindgen_toolchain",
+    dev_dependency = True,
+)
+
 use_repo(rust, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")

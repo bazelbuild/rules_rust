@@ -18,4 +18,4 @@ def rust_prost_register_toolchains(register_toolchains = True):
     """
 
     if register_toolchains:
-        native.register_toolchains(str(Label("//proto/prost/private:default_prost_toolchain")))
+        native.register_toolchains(str(Label("//proto/prost:default_prost_toolchain")))
