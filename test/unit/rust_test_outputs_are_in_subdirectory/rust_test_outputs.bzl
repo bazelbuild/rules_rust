@@ -50,7 +50,7 @@ def rust_test_outputs_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
     Args:
-      name: Name of the macro.
+        name: Name of the macro.
     """
 
     _rust_test_outputs_targets()

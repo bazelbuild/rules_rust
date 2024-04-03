@@ -2,18 +2,20 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//rust:defs.bzl", "rust_library")
+load("//rust:defs.bzl", "rust_library", "rust_shared_library")
 load("//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
 
 EXEC_TOOLCHAIN_FLAG = "missing"
 TOOLCHAIN_FLAG = "before"
 CONFIG_FLAG = "after"
+CRATE_FLAGS = {"cdylib": ["cdylib_flag"], "rlib": ["rlib_flag"]}
 
-def _toolchain_adds_rustc_flags_impl(ctx):
+def _toolchain_adds_rustc_flags_impl(ctx, crate_type):
     """ Tests adding extra_rustc_flags on the toolchain, asserts that:
 
     - extra_rustc_flags added by the toolchain are applied BEFORE flags added by a config on the commandline
     - The exec flags from the toolchain don't go on the commandline for a non-exec target
+    - crate type rustc flags are added
     """
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
@@ -29,6 +31,27 @@ def _toolchain_adds_rustc_flags_impl(ctx):
             [TOOLCHAIN_FLAG, CONFIG_FLAG],
         ),
     )
+
+    asserts.true(
+        env,
+        action.argv[-3] == CRATE_FLAGS[crate_type][0],
+        "Unexpected rustc flags: {}\nShould have contained: {}".format(
+            action.argv,
+            CRATE_FLAGS["rlib"],
+        ),
+    )
+
+    for type in CRATE_FLAGS.keys():
+        if type == crate_type:
+            continue
+        asserts.false(
+            env,
+            CRATE_FLAGS[type][0] in action.argv,
+            "Unexpected rustc flags: {}\nShould not contain: {}".format(
+                action.argv,
+                CRATE_FLAGS[type],
+            ),
+        )
 
     asserts.true(
         env,
@@ -48,8 +71,22 @@ def _toolchain_adds_rustc_flags_impl(ctx):
 
     return analysistest.end(env)
 
-toolchain_adds_rustc_flags_test = analysistest.make(
-    _toolchain_adds_rustc_flags_impl,
+def _toolchain_adds_rustc_flags_lib_impl(ctx):
+    return _toolchain_adds_rustc_flags_impl(ctx, "rlib")
+
+def _toolchain_adds_rustc_flags_shared_lib_impl(ctx):
+    return _toolchain_adds_rustc_flags_impl(ctx, "cdylib")
+
+toolchain_adds_rustc_flags_lib_test = analysistest.make(
+    _toolchain_adds_rustc_flags_lib_impl,
+    config_settings = {
+        str(Label("//:extra_rustc_flags")): [CONFIG_FLAG],
+        str(Label("//rust/settings:experimental_toolchain_generated_sysroot")): True,
+    },
+)
+
+toolchain_adds_rustc_flags_shared_lib_test = analysistest.make(
+    _toolchain_adds_rustc_flags_shared_lib_impl,
     config_settings = {
         str(Label("//:extra_rustc_flags")): [CONFIG_FLAG],
         str(Label("//rust/settings:experimental_toolchain_generated_sysroot")): True,
@@ -105,6 +142,12 @@ def _define_targets():
         edition = "2021",
     )
 
+    rust_shared_library(
+        name = "shared_lib",
+        srcs = ["lib.rs"],
+        edition = "2021",
+    )
+
     native.filegroup(
         name = "stdlib_srcs",
         srcs = ["config.txt"],
@@ -139,6 +182,7 @@ def _define_targets():
         stdlib_linkflags = [],
         extra_rustc_flags = [TOOLCHAIN_FLAG],
         extra_exec_rustc_flags = [EXEC_TOOLCHAIN_FLAG],
+        extra_rustc_flags_for_crate_types = CRATE_FLAGS,
         visibility = ["//visibility:public"],
     )
 
@@ -151,6 +195,11 @@ def _define_targets():
     extra_toolchain_wrapper(
         name = "lib_with_extra_toolchain",
         dep = ":lib",
+    )
+
+    extra_toolchain_wrapper(
+        name = "shared_lib_with_extra_toolchain",
+        dep = ":shared_lib",
     )
 
 def _rust_stdlib_filegroup_provides_runfiles_test_impl(ctx):
@@ -166,11 +215,21 @@ rust_stdlib_filegroup_provides_runfiles_test = analysistest.make(
 )
 
 def toolchain_test_suite(name):
+    """ Instantiates tests for rust toolchains.
+
+    Args:
+        name: a name for the test suite
+    """
     _define_targets()
 
-    toolchain_adds_rustc_flags_test(
-        name = "toolchain_adds_rustc_flags_test",
+    toolchain_adds_rustc_flags_lib_test(
+        name = "toolchain_adds_rustc_flags_lib_test",
         target_under_test = ":lib_with_extra_toolchain",
+    )
+
+    toolchain_adds_rustc_flags_shared_lib_test(
+        name = "toolchain_adds_rustc_flags_shared_lib_test",
+        target_under_test = ":shared_lib_with_extra_toolchain",
     )
 
     rust_stdlib_filegroup_provides_runfiles_test(
@@ -181,7 +240,8 @@ def toolchain_test_suite(name):
     native.test_suite(
         name = name,
         tests = [
-            ":toolchain_adds_rustc_flags_test",
+            ":toolchain_adds_rustc_flags_lib_test",
+            ":toolchain_adds_rustc_flags_shared_lib_test",
             ":rust_stdlib_filegroup_provides_runfiles_test",
         ],
     )

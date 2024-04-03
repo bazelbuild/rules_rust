@@ -5,7 +5,6 @@ mod crate_index_lookup;
 mod splicer;
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -480,8 +479,6 @@ pub(crate) fn generate_lockfile(
 #[cfg(test)]
 mod test {
     use super::*;
-
-    use std::path::PathBuf;
 
     #[test]
     fn deserialize_splicing_manifest() {

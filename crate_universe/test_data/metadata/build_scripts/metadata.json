@@ -125,7 +125,7 @@
                 ]
             },
             "homepage": "https://github.com/bitflags/bitflags",
-            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
             "keywords": [
                 "bit",
                 "bitmask",
@@ -232,7 +232,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "build-scripts 0.1.0 (path+file://{TEMP_DIR}/build_scripts)",
+            "id": "path+file://{TEMP_DIR}/build_scripts#build-scripts@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -309,7 +309,7 @@
                 ]
             },
             "homepage": "https://github.com/alexcrichton/cc-rs",
-            "id": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72",
             "keywords": [
                 "build-dependencies"
             ],
@@ -460,7 +460,7 @@
                 ]
             },
             "homepage": "https://github.com/alexcrichton/cfg-if",
-            "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -530,7 +530,7 @@
             "edition": "2015",
             "features": {},
             "homepage": null,
-            "id": "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#foreign-types@0.3.2",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -573,7 +573,7 @@
             "edition": "2015",
             "features": {},
             "homepage": null,
-            "id": "foreign-types-shared 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#foreign-types-shared@0.1.1",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -629,7 +629,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "form_urlencoded 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#form_urlencoded@1.1.0",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -830,7 +830,7 @@
                 ]
             },
             "homepage": null,
-            "id": "git2 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#git2@0.17.1",
             "keywords": [
                 "git"
             ],
@@ -1200,7 +1200,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "idna 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#idna@0.3.0",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -1358,7 +1358,7 @@
             "edition": "2018",
             "features": {},
             "homepage": "https://github.com/alexcrichton/jobserver-rs",
-            "id": "jobserver 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#jobserver@0.1.26",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -1506,7 +1506,7 @@
                 ]
             },
             "homepage": "https://github.com/rust-lang/libc",
-            "id": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
             "keywords": [
                 "libc",
                 "ffi",
@@ -1692,7 +1692,7 @@
                 ]
             },
             "homepage": null,
-            "id": "libgit2-sys 0.15.1+1.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libgit2-sys@0.15.1+1.6.4",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -1851,7 +1851,7 @@
                 ]
             },
             "homepage": null,
-            "id": "libssh2-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libssh2-sys@0.3.0",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -1991,7 +1991,7 @@
                 ]
             },
             "homepage": null,
-            "id": "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8",
             "keywords": [
                 "zlib",
                 "zlib-ng"
@@ -2209,7 +2209,7 @@
                 ]
             },
             "homepage": null,
-            "id": "log 0.4.17 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#log@0.4.17",
             "keywords": [
                 "logging"
             ],
@@ -2404,7 +2404,7 @@
                 "unstable": []
             },
             "homepage": null,
-            "id": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.9.0",
             "keywords": [
                 "lazy",
                 "static"
@@ -2704,7 +2704,7 @@
                 ]
             },
             "homepage": null,
-            "id": "openssl 0.10.52 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#openssl@0.10.52",
             "keywords": [
                 "crypto",
                 "tls",
@@ -2817,7 +2817,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "openssl-macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-macros@0.1.1",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -2860,7 +2860,7 @@
             "edition": "2015",
             "features": {},
             "homepage": "https://github.com/alexcrichton/openssl-probe",
-            "id": "openssl-probe 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-probe@0.1.5",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -3024,7 +3024,7 @@
                 ]
             },
             "homepage": null,
-            "id": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87",
             "keywords": [],
             "license": "MIT",
             "license_file": null,
@@ -3090,7 +3090,7 @@
                 ]
             },
             "homepage": null,
-            "id": "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -3146,7 +3146,7 @@
             "edition": "2015",
             "features": {},
             "homepage": null,
-            "id": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24",
             "keywords": [
                 "build-dependencies"
             ],
@@ -3252,7 +3252,7 @@
                 "span-locations": []
             },
             "homepage": null,
-            "id": "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56",
             "keywords": [
                 "macros",
                 "syn"
@@ -3467,7 +3467,7 @@
                 ]
             },
             "homepage": null,
-            "id": "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26",
             "keywords": [
                 "macros",
                 "syn"
@@ -3790,7 +3790,7 @@
                 "visit-mut": []
             },
             "homepage": null,
-            "id": "syn 2.0.15 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.15",
             "keywords": [
                 "macros",
                 "syn"
@@ -4378,7 +4378,7 @@
                 ]
             },
             "homepage": null,
-            "id": "tinyvec 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec@1.6.0",
             "keywords": [
                 "vec",
                 "no_std",
@@ -4519,7 +4519,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "tinyvec_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec_macros@0.1.1",
             "keywords": [],
             "license": "MIT OR Apache-2.0 OR Zlib",
             "license_file": null,
@@ -4642,7 +4642,7 @@
                 ]
             },
             "homepage": null,
-            "id": "unicode-bidi 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-bidi@0.3.13",
             "keywords": [
                 "rtl",
                 "unicode",
@@ -4786,7 +4786,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8",
             "keywords": [
                 "unicode",
                 "xid"
@@ -4903,7 +4903,7 @@
                 "std": []
             },
             "homepage": "https://github.com/unicode-rs/unicode-normalization",
-            "id": "unicode-normalization 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-normalization@0.1.22",
             "keywords": [
                 "text",
                 "unicode",
@@ -5076,7 +5076,7 @@
                 ]
             },
             "homepage": null,
-            "id": "url 2.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#url@2.3.1",
             "keywords": [
                 "url",
                 "parser"
@@ -5208,7 +5208,7 @@
             "edition": "2015",
             "features": {},
             "homepage": null,
-            "id": "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15",
             "keywords": [
                 "build-dependencies",
                 "windows",
@@ -5253,12 +5253,12 @@
                 "features": [
                     "default"
                 ],
-                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
             },
             {
                 "dependencies": [
-                    "git2 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl 0.10.52 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#git2@0.17.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl@0.10.52"
                 ],
                 "deps": [
                     {
@@ -5269,7 +5269,7 @@
                             }
                         ],
                         "name": "git2",
-                        "pkg": "git2 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#git2@0.17.1"
                     },
                     {
                         "dep_kinds": [
@@ -5279,15 +5279,15 @@
                             }
                         ],
                         "name": "openssl",
-                        "pkg": "openssl 0.10.52 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl@0.10.52"
                     }
                 ],
                 "features": [],
-                "id": "build-scripts 0.1.0 (path+file://{TEMP_DIR}/build_scripts)"
+                "id": "path+file://{TEMP_DIR}/build_scripts#build-scripts@0.1.0"
             },
             {
                 "dependencies": [
-                    "jobserver 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#jobserver@0.1.26"
                 ],
                 "deps": [
                     {
@@ -5298,24 +5298,24 @@
                             }
                         ],
                         "name": "jobserver",
-                        "pkg": "jobserver 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#jobserver@0.1.26"
                     }
                 ],
                 "features": [
                     "jobserver",
                     "parallel"
                 ],
-                "id": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
             },
             {
                 "dependencies": [
-                    "foreign-types-shared 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#foreign-types-shared@0.1.1"
                 ],
                 "deps": [
                     {
@@ -5326,21 +5326,21 @@
                             }
                         ],
                         "name": "foreign_types_shared",
-                        "pkg": "foreign-types-shared 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#foreign-types-shared@0.1.1"
                     }
                 ],
                 "features": [],
-                "id": "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#foreign-types@0.3.2"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "foreign-types-shared 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#foreign-types-shared@0.1.1"
             },
             {
                 "dependencies": [
-                    "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0"
                 ],
                 "deps": [
                     {
@@ -5351,21 +5351,21 @@
                             }
                         ],
                         "name": "percent_encoding",
-                        "pkg": "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0"
                     }
                 ],
                 "features": [],
-                "id": "form_urlencoded 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#form_urlencoded@1.1.0"
             },
             {
                 "dependencies": [
-                    "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libgit2-sys 0.15.1+1.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "log 0.4.17 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-probe 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "url 2.3.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#libgit2-sys@0.15.1+1.6.4",
+                    "registry+https://github.com/rust-lang/crates.io-index#log@0.4.17",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-probe@0.1.5",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87",
+                    "registry+https://github.com/rust-lang/crates.io-index#url@2.3.1"
                 ],
                 "deps": [
                     {
@@ -5376,7 +5376,7 @@
                             }
                         ],
                         "name": "bitflags",
-                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
                     },
                     {
                         "dep_kinds": [
@@ -5386,7 +5386,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5396,7 +5396,7 @@
                             }
                         ],
                         "name": "libgit2_sys",
-                        "pkg": "libgit2-sys 0.15.1+1.6.4 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libgit2-sys@0.15.1+1.6.4"
                     },
                     {
                         "dep_kinds": [
@@ -5406,7 +5406,7 @@
                             }
                         ],
                         "name": "log",
-                        "pkg": "log 0.4.17 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#log@0.4.17"
                     },
                     {
                         "dep_kinds": [
@@ -5416,7 +5416,7 @@
                             }
                         ],
                         "name": "openssl_probe",
-                        "pkg": "openssl-probe 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-probe@0.1.5"
                     },
                     {
                         "dep_kinds": [
@@ -5426,7 +5426,7 @@
                             }
                         ],
                         "name": "openssl_sys",
-                        "pkg": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     },
                     {
                         "dep_kinds": [
@@ -5436,7 +5436,7 @@
                             }
                         ],
                         "name": "url",
-                        "pkg": "url 2.3.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#url@2.3.1"
                     }
                 ],
                 "features": [
@@ -5447,12 +5447,12 @@
                     "ssh",
                     "ssh_key_from_memory"
                 ],
-                "id": "git2 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#git2@0.17.1"
             },
             {
                 "dependencies": [
-                    "unicode-bidi 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "unicode-normalization 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-bidi@0.3.13",
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-normalization@0.1.22"
                 ],
                 "deps": [
                     {
@@ -5463,7 +5463,7 @@
                             }
                         ],
                         "name": "unicode_bidi",
-                        "pkg": "unicode-bidi 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-bidi@0.3.13"
                     },
                     {
                         "dep_kinds": [
@@ -5473,15 +5473,15 @@
                             }
                         ],
                         "name": "unicode_normalization",
-                        "pkg": "unicode-normalization 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-normalization@0.1.22"
                     }
                 ],
                 "features": [],
-                "id": "idna 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#idna@0.3.0"
             },
             {
                 "dependencies": [
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                 ],
                 "deps": [
                     {
@@ -5492,11 +5492,11 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     }
                 ],
                 "features": [],
-                "id": "jobserver 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#jobserver@0.1.26"
             },
             {
                 "dependencies": [],
@@ -5505,16 +5505,16 @@
                     "default",
                     "std"
                 ],
-                "id": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
             },
             {
                 "dependencies": [
-                    "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libssh2-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#libssh2-sys@0.3.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87",
+                    "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                 ],
                 "deps": [
                     {
@@ -5525,7 +5525,7 @@
                             }
                         ],
                         "name": "cc",
-                        "pkg": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72"
                     },
                     {
                         "dep_kinds": [
@@ -5535,7 +5535,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5545,7 +5545,7 @@
                             }
                         ],
                         "name": "libssh2_sys",
-                        "pkg": "libssh2-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libssh2-sys@0.3.0"
                     },
                     {
                         "dep_kinds": [
@@ -5555,7 +5555,7 @@
                             }
                         ],
                         "name": "libz_sys",
-                        "pkg": "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8"
                     },
                     {
                         "dep_kinds": [
@@ -5565,7 +5565,7 @@
                             }
                         ],
                         "name": "openssl_sys",
-                        "pkg": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     },
                     {
                         "dep_kinds": [
@@ -5575,7 +5575,7 @@
                             }
                         ],
                         "name": "pkg_config",
-                        "pkg": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     }
                 ],
                 "features": [
@@ -5585,16 +5585,16 @@
                     "ssh",
                     "ssh_key_from_memory"
                 ],
-                "id": "libgit2-sys 0.15.1+1.6.4 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libgit2-sys@0.15.1+1.6.4"
             },
             {
                 "dependencies": [
-                    "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87",
+                    "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24",
+                    "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                 ],
                 "deps": [
                     {
@@ -5605,7 +5605,7 @@
                             }
                         ],
                         "name": "cc",
-                        "pkg": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72"
                     },
                     {
                         "dep_kinds": [
@@ -5615,7 +5615,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5625,7 +5625,7 @@
                             }
                         ],
                         "name": "libz_sys",
-                        "pkg": "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8"
                     },
                     {
                         "dep_kinds": [
@@ -5635,7 +5635,7 @@
                             }
                         ],
                         "name": "openssl_sys",
-                        "pkg": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     },
                     {
                         "dep_kinds": [
@@ -5645,7 +5645,7 @@
                             }
                         ],
                         "name": "pkg_config",
-                        "pkg": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     },
                     {
                         "dep_kinds": [
@@ -5655,18 +5655,18 @@
                             }
                         ],
                         "name": "vcpkg",
-                        "pkg": "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                     }
                 ],
                 "features": [],
-                "id": "libssh2-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libssh2-sys@0.3.0"
             },
             {
                 "dependencies": [
-                    "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24",
+                    "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                 ],
                 "deps": [
                     {
@@ -5677,7 +5677,7 @@
                             }
                         ],
                         "name": "cc",
-                        "pkg": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72"
                     },
                     {
                         "dep_kinds": [
@@ -5687,7 +5687,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5697,7 +5697,7 @@
                             }
                         ],
                         "name": "pkg_config",
-                        "pkg": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     },
                     {
                         "dep_kinds": [
@@ -5707,17 +5707,17 @@
                             }
                         ],
                         "name": "vcpkg",
-                        "pkg": "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                     }
                 ],
                 "features": [
                     "libc"
                 ],
-                "id": "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8"
             },
             {
                 "dependencies": [
-                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                 ],
                 "deps": [
                     {
@@ -5728,11 +5728,11 @@
                             }
                         ],
                         "name": "cfg_if",
-                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                     }
                 ],
                 "features": [],
-                "id": "log 0.4.17 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#log@0.4.17"
             },
             {
                 "dependencies": [],
@@ -5743,17 +5743,17 @@
                     "race",
                     "std"
                 ],
-                "id": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.9.0"
             },
             {
                 "dependencies": [
-                    "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
+                    "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#foreign-types@0.3.2",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.9.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-macros@0.1.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                 ],
                 "deps": [
                     {
@@ -5764,7 +5764,7 @@
                             }
                         ],
                         "name": "bitflags",
-                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
                     },
                     {
                         "dep_kinds": [
@@ -5774,7 +5774,7 @@
                             }
                         ],
                         "name": "cfg_if",
-                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                     },
                     {
                         "dep_kinds": [
@@ -5784,7 +5784,7 @@
                             }
                         ],
                         "name": "foreign_types",
-                        "pkg": "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#foreign-types@0.3.2"
                     },
                     {
                         "dep_kinds": [
@@ -5794,7 +5794,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5804,7 +5804,7 @@
                             }
                         ],
                         "name": "once_cell",
-                        "pkg": "once_cell 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.9.0"
                     },
                     {
                         "dep_kinds": [
@@ -5814,7 +5814,7 @@
                             }
                         ],
                         "name": "openssl_macros",
-                        "pkg": "openssl-macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-macros@0.1.1"
                     },
                     {
                         "dep_kinds": [
@@ -5824,19 +5824,19 @@
                             }
                         ],
                         "name": "ffi",
-                        "pkg": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     }
                 ],
                 "features": [
                     "default"
                 ],
-                "id": "openssl 0.10.52 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#openssl@0.10.52"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "syn 2.0.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26",
+                    "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.15"
                 ],
                 "deps": [
                     {
@@ -5847,7 +5847,7 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56"
                     },
                     {
                         "dep_kinds": [
@@ -5857,7 +5857,7 @@
                             }
                         ],
                         "name": "quote",
-                        "pkg": "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26"
                     },
                     {
                         "dep_kinds": [
@@ -5867,24 +5867,24 @@
                             }
                         ],
                         "name": "syn",
-                        "pkg": "syn 2.0.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.15"
                     }
                 ],
                 "features": [],
-                "id": "openssl-macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-macros@0.1.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "openssl-probe 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-probe@0.1.5"
             },
             {
                 "dependencies": [
-                    "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72",
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112",
+                    "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24",
+                    "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                 ],
                 "deps": [
                     {
@@ -5895,7 +5895,7 @@
                             }
                         ],
                         "name": "cc",
-                        "pkg": "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72"
                     },
                     {
                         "dep_kinds": [
@@ -5905,7 +5905,7 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112"
                     },
                     {
                         "dep_kinds": [
@@ -5915,7 +5915,7 @@
                             }
                         ],
                         "name": "pkg_config",
-                        "pkg": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     },
                     {
                         "dep_kinds": [
@@ -5925,11 +5925,11 @@
                             }
                         ],
                         "name": "vcpkg",
-                        "pkg": "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
                     }
                 ],
                 "features": [],
-                "id": "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
             },
             {
                 "dependencies": [],
@@ -5938,17 +5938,17 @@
                     "alloc",
                     "default"
                 ],
-                "id": "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
             },
             {
                 "dependencies": [
-                    "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8"
                 ],
                 "deps": [
                     {
@@ -5959,18 +5959,18 @@
                             }
                         ],
                         "name": "unicode_ident",
-                        "pkg": "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8"
                     }
                 ],
                 "features": [
                     "default",
                     "proc-macro"
                 ],
-                "id": "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56"
                 ],
                 "deps": [
                     {
@@ -5981,20 +5981,20 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56"
                     }
                 ],
                 "features": [
                     "default",
                     "proc-macro"
                 ],
-                "id": "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26",
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8"
                 ],
                 "deps": [
                     {
@@ -6005,7 +6005,7 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.56"
                     },
                     {
                         "dep_kinds": [
@@ -6015,7 +6015,7 @@
                             }
                         ],
                         "name": "quote",
-                        "pkg": "quote 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.26"
                     },
                     {
                         "dep_kinds": [
@@ -6025,7 +6025,7 @@
                             }
                         ],
                         "name": "unicode_ident",
-                        "pkg": "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8"
                     }
                 ],
                 "features": [
@@ -6038,11 +6038,11 @@
                     "proc-macro",
                     "quote"
                 ],
-                "id": "syn 2.0.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.15"
             },
             {
                 "dependencies": [
-                    "tinyvec_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#tinyvec_macros@0.1.1"
                 ],
                 "deps": [
                     {
@@ -6053,7 +6053,7 @@
                             }
                         ],
                         "name": "tinyvec_macros",
-                        "pkg": "tinyvec_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#tinyvec_macros@0.1.1"
                     }
                 ],
                 "features": [
@@ -6061,13 +6061,13 @@
                     "default",
                     "tinyvec_macros"
                 ],
-                "id": "tinyvec 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec@1.6.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "tinyvec_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec_macros@0.1.1"
             },
             {
                 "dependencies": [],
@@ -6077,17 +6077,17 @@
                     "hardcoded-data",
                     "std"
                 ],
-                "id": "unicode-bidi 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-bidi@0.3.13"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "unicode-ident 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.8"
             },
             {
                 "dependencies": [
-                    "tinyvec 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#tinyvec@1.6.0"
                 ],
                 "deps": [
                     {
@@ -6098,20 +6098,20 @@
                             }
                         ],
                         "name": "tinyvec",
-                        "pkg": "tinyvec 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#tinyvec@1.6.0"
                     }
                 ],
                 "features": [
                     "default",
                     "std"
                 ],
-                "id": "unicode-normalization 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-normalization@0.1.22"
             },
             {
                 "dependencies": [
-                    "form_urlencoded 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "idna 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#form_urlencoded@1.1.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#idna@0.3.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0"
                 ],
                 "deps": [
                     {
@@ -6122,7 +6122,7 @@
                             }
                         ],
                         "name": "form_urlencoded",
-                        "pkg": "form_urlencoded 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#form_urlencoded@1.1.0"
                     },
                     {
                         "dep_kinds": [
@@ -6132,7 +6132,7 @@
                             }
                         ],
                         "name": "idna",
-                        "pkg": "idna 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#idna@0.3.0"
                     },
                     {
                         "dep_kinds": [
@@ -6142,30 +6142,30 @@
                             }
                         ],
                         "name": "percent_encoding",
-                        "pkg": "percent-encoding 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.2.0"
                     }
                 ],
                 "features": [
                     "default"
                 ],
-                "id": "url 2.3.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#url@2.3.1"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15"
             }
         ],
-        "root": "build-scripts 0.1.0 (path+file://{TEMP_DIR}/build_scripts)"
+        "root": "path+file://{TEMP_DIR}/build_scripts#build-scripts@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/build_scripts/target",
     "version": 1,
     "workspace_default_members": [
-        "build-scripts 0.1.0 (path+file://{TEMP_DIR}/build_scripts)"
+        "path+file://{TEMP_DIR}/build_scripts#build-scripts@0.1.0"
     ],
     "workspace_members": [
-        "build-scripts 0.1.0 (path+file://{TEMP_DIR}/build_scripts)"
+        "path+file://{TEMP_DIR}/build_scripts#build-scripts@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/build_scripts"
 }

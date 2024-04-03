@@ -15,12 +15,12 @@ cargo_bazel_bootstrap = module_extension(
     doc = """Module extension to generate the cargo_bazel binary.""",
 )
 
-def get_cargo_bazel_runner(module_ctx):
+def get_cargo_bazel_runner(module_ctx, cargo_bazel):
     """A helper function to allow executing cargo_bazel in module extensions.
 
     Args:
         module_ctx: The module extension's context.
-
+        cargo_bazel: Path The path to a `cargo-bazel` binary
     Returns:
         A function that can be called to execute cargo_bazel.
     """
@@ -30,7 +30,6 @@ def get_cargo_bazel_runner(module_ctx):
 
     cargo_path = str(module_ctx.path(Label("@rust_host_tools//:bin/cargo{}".format(binary_ext))))
     rustc_path = str(module_ctx.path(Label("@rust_host_tools//:bin/rustc{}".format(binary_ext))))
-    cargo_bazel = module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
 
     # Placing this as a nested function allows users to call this right at the
     # start of a module extension, thus triggering any restarts as early as

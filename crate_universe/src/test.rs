@@ -139,6 +139,14 @@ pub(crate) mod metadata {
         .unwrap()
     }
 
+    pub(crate) fn example_proc_macro_dep() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/example_proc_macro_dep/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub(crate) fn git_repos() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

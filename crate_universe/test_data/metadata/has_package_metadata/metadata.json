@@ -11,7 +11,7 @@
             "edition": "2021",
             "features": {},
             "homepage": null,
-            "id": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)",
+            "id": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -56,18 +56,18 @@
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+                "id": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
             }
         ],
-        "root": "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+        "root": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
     },
     "target_directory": "{TEMP_DIR}/has_package_metadata/target",
     "version": 1,
     "workspace_default_members": [
-        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+        "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
     ],
     "workspace_members": [
-        "has_package_metadata 0.0.0 (path+file://{TEMP_DIR}/has_package_metadata)"
+        "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
     ],
     "workspace_root": "{TEMP_DIR}/has_package_metadata"
 }

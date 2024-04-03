@@ -1,0 +1,3 @@
+common --experimental_enable_bzlmod
+common --noenable_workspace
+common --enable_runfiles

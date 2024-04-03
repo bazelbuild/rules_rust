@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::iter::FromIterator;
 
 use serde::ser::Serializer;
 use serde::Serialize;
