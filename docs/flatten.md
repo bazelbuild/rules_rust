@@ -1876,11 +1876,17 @@ This macro should be called immediately after the `rust_protobuf_dependencies` m
 ## rust_proto_protobuf_dependencies
 
 <pre>
-rust_proto_protobuf_dependencies()
+rust_proto_protobuf_dependencies(<a href="#rust_proto_protobuf_dependencies-bzlmod">bzlmod</a>)
 </pre>
 
 
 
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="rust_proto_protobuf_dependencies-bzlmod"></a>bzlmod |  <p align="center"> - </p>   |  `False` |
 
 
 <a id="rust_proto_protobuf_register_toolchains"></a>
