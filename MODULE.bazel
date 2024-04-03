@@ -40,6 +40,17 @@ bazel_dep(
     repo_name = "com_google_protobuf",
 )
 
+bazel_dep(
+    name = "rules_python",
+    version = "0.31.0",
+    dev_dependency = True,
+)
+bazel_dep(
+    name = "rules_testing",
+    version = "0.6.0",
+    dev_dependency = True,
+)
+
 internal_deps = use_extension("//rust/private:extensions.bzl", "i")
 use_repo(
     internal_deps,
