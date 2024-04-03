@@ -62,6 +62,9 @@ build --nolegacy_external_runfiles
 # https://github.com/bazelbuild/rules_rust/issues/2181
 common --noenable_bzlmod
 
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off
+
 ###############################################################################
 ## Custom user flags
 ##
