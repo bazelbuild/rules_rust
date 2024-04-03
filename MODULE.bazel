@@ -106,6 +106,13 @@ use_repo(
     "rules_rust_prost__tokio-1.28.2",
     "rules_rust_prost__tokio-stream-0.1.14",
     "rules_rust_prost__tonic-0.9.2",
+    "rules_rust_proto__grpc-0.6.2",
+    "rules_rust_proto__grpc-compiler-0.6.2",
+    "rules_rust_proto__log-0.4.17",
+    "rules_rust_proto__protobuf-2.8.2",
+    "rules_rust_proto__protobuf-codegen-2.8.2",
+    "rules_rust_proto__tls-api-0.1.22",
+    "rules_rust_proto__tls-api-stub-0.1.22",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_tinyjson",
     "rules_rust_toolchain_test_target_json",
@@ -138,6 +145,11 @@ use_repo(rust, "rust_toolchains")
 
 register_toolchains(
     "@rust_toolchains//:all",
+)
+
+register_toolchains(
+    "//proto/protobuf:default-proto-toolchain",
+    dev_dependency = True,
 )
 
 use_repo(rust, "rust_host_tools")
