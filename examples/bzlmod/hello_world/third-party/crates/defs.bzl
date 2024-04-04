@@ -407,7 +407,7 @@ def crate_repositories():
         name = "vendor__anyhow-1.0.77",
         sha256 = "c9d19de80eff169429ac1e9f48fffb163916b448a44e8e046186232046d9e1f9",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/anyhow/1.0.77/download"],
+        urls = ["https://static.crates.io/crates/anyhow/1.0.77/download"],
         strip_prefix = "anyhow-1.0.77",
         build_file = Label("@//third-party/crates:BUILD.anyhow-1.0.77.bazel"),
     )

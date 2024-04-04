@@ -589,7 +589,6 @@ tasks:
     name: Android Examples
     platform: ubuntu2004
     working_directory: examples/android
-    bazel: "last_green"
     build_flags:
       - "--incompatible_enable_android_toolchain_resolution"
       - "--android_platforms=//:arm64-v8a"
@@ -605,7 +604,6 @@ tasks:
     name: Android Examples
     platform: macos
     working_directory: examples/android
-    bazel: "last_green"
     build_flags:
       - "--incompatible_enable_android_toolchain_resolution"
       - "--android_platforms=//:arm64-v8a"
@@ -697,6 +695,13 @@ tasks:
     working_directory: examples/bzlmod/hello_world_no_cargo
     build_targets:
       - "//..."
+  compile_one_dependency:
+    name: --compile_one_dependency flag
+    platform: ubuntu2004
+    build_flags:
+      - "--compile_one_dependency"
+    build_targets:
+      - "tools/rust_analyzer/main.rs"
 
 buildifier:
   version: latest

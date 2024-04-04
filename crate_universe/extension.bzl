@@ -251,14 +251,14 @@ def _get_generator(module_ctx):
     elif len(CARGO_BAZEL_URLS) == 0:
         return module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
     else:
-        generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple)
-        generator_url = CARGO_BAZEL_URLS.get(host_triple)
+        generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple.str)
+        generator_url = CARGO_BAZEL_URLS.get(host_triple.str)
 
     if not generator_url:
         fail((
             "No generator URL was found either in the `CARGO_BAZEL_GENERATOR_URL` " +
             "environment variable or for the `{}` triple in the `generator_urls` attribute"
-        ).format(host_triple))
+        ).format(host_triple.str))
 
     output = module_ctx.path("cargo-bazel.exe" if "win" in module_ctx.os.name else "cargo-bazel")
 

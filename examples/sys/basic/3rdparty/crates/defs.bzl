@@ -407,7 +407,7 @@ def crate_repositories():
         name = "basic_sys__bzip2-0.3.3",
         sha256 = "42b7c3cbf0fa9c1b82308d57191728ca0256cb821220f4e2fd410a72ade26e3b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/bzip2/0.3.3/download"],
+        urls = ["https://static.crates.io/crates/bzip2/0.3.3/download"],
         strip_prefix = "bzip2-0.3.3",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.bzip2-0.3.3.bazel"),
     )
@@ -417,7 +417,7 @@ def crate_repositories():
         name = "basic_sys__bzip2-sys-0.1.11-1.0.8",
         sha256 = "736a955f3fa7875102d57c82b8cac37ec45224a07fd32d58f9f7a186b6cd4cdc",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/bzip2-sys/0.1.11+1.0.8/download"],
+        urls = ["https://static.crates.io/crates/bzip2-sys/0.1.11+1.0.8/download"],
         strip_prefix = "bzip2-sys-0.1.11+1.0.8",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.bzip2-sys-0.1.11+1.0.8.bazel"),
     )
@@ -427,7 +427,7 @@ def crate_repositories():
         name = "basic_sys__cc-1.0.77",
         sha256 = "e9f73505338f7d905b19d18738976aae232eb46b8efc15554ffc56deb5d9ebe4",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cc/1.0.77/download"],
+        urls = ["https://static.crates.io/crates/cc/1.0.77/download"],
         strip_prefix = "cc-1.0.77",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.cc-1.0.77.bazel"),
     )
@@ -437,7 +437,7 @@ def crate_repositories():
         name = "basic_sys__libc-0.2.137",
         sha256 = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libc/0.2.137/download"],
+        urls = ["https://static.crates.io/crates/libc/0.2.137/download"],
         strip_prefix = "libc-0.2.137",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.libc-0.2.137.bazel"),
     )
@@ -447,7 +447,7 @@ def crate_repositories():
         name = "basic_sys__pkg-config-0.3.26",
         sha256 = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/pkg-config/0.3.26/download"],
+        urls = ["https://static.crates.io/crates/pkg-config/0.3.26/download"],
         strip_prefix = "pkg-config-0.3.26",
         build_file = Label("@examples//sys/basic/3rdparty/crates:BUILD.pkg-config-0.3.26.bazel"),
     )

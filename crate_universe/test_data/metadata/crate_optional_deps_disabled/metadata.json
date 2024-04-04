@@ -125,7 +125,7 @@
                 ]
             },
             "homepage": "https://github.com/bitflags/bitflags",
-            "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
             "keywords": [
                 "bit",
                 "bitmask",
@@ -502,7 +502,7 @@
                 ]
             },
             "homepage": null,
-            "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#clap@4.1.1",
             "keywords": [
                 "argument",
                 "cli",
@@ -1557,7 +1557,7 @@
             "edition": "2021",
             "features": {},
             "homepage": null,
-            "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#clap_lex@0.3.3",
             "keywords": [
                 "argument",
                 "cli",
@@ -1659,7 +1659,7 @@
             "edition": "2021",
             "features": {},
             "homepage": null,
-            "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)",
+            "id": "path+file://{TEMP_DIR}/crate_optional_deps_disabled#crate-with-optional-deps@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -1773,7 +1773,7 @@
                 ]
             },
             "homepage": null,
-            "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#os_str_bytes@6.5.0",
             "keywords": [
                 "bytes",
                 "osstr",
@@ -1833,12 +1833,12 @@
                 "features": [
                     "default"
                 ],
-                "id": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
             },
             {
                 "dependencies": [
-                    "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2",
+                    "registry+https://github.com/rust-lang/crates.io-index#clap_lex@0.3.3"
                 ],
                 "deps": [
                     {
@@ -1849,7 +1849,7 @@
                             }
                         ],
                         "name": "bitflags",
-                        "pkg": "bitflags 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#bitflags@1.3.2"
                     },
                     {
                         "dep_kinds": [
@@ -1859,15 +1859,15 @@
                             }
                         ],
                         "name": "clap_lex",
-                        "pkg": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#clap_lex@0.3.3"
                     }
                 ],
                 "features": [],
-                "id": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#clap@4.1.1"
             },
             {
                 "dependencies": [
-                    "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#os_str_bytes@6.5.0"
                 ],
                 "deps": [
                     {
@@ -1878,15 +1878,15 @@
                             }
                         ],
                         "name": "os_str_bytes",
-                        "pkg": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#os_str_bytes@6.5.0"
                     }
                 ],
                 "features": [],
-                "id": "clap_lex 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#clap_lex@0.3.3"
             },
             {
                 "dependencies": [
-                    "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#clap@4.1.1"
                 ],
                 "deps": [
                     {
@@ -1897,11 +1897,11 @@
                             }
                         ],
                         "name": "clap",
-                        "pkg": "clap 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#clap@4.1.1"
                     }
                 ],
                 "features": [],
-                "id": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+                "id": "path+file://{TEMP_DIR}/crate_optional_deps_disabled#crate-with-optional-deps@0.1.0"
             },
             {
                 "dependencies": [],
@@ -1909,18 +1909,18 @@
                 "features": [
                     "raw_os_str"
                 ],
-                "id": "os_str_bytes 6.5.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#os_str_bytes@6.5.0"
             }
         ],
-        "root": "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+        "root": "path+file://{TEMP_DIR}/crate_optional_deps_disabled#crate-with-optional-deps@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/crate_optional_deps_disabled/target",
     "version": 1,
     "workspace_default_members": [
-        "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+        "path+file://{TEMP_DIR}/crate_optional_deps_disabled#crate-with-optional-deps@0.1.0"
     ],
     "workspace_members": [
-        "crate-with-optional-deps 0.1.0 (path+file://{TEMP_DIR}/crate_optional_deps_disabled)"
+        "path+file://{TEMP_DIR}/crate_optional_deps_disabled#crate-with-optional-deps@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/crate_optional_deps_disabled"
 }

@@ -53,7 +53,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7",
             "keywords": [
                 "cpuid",
                 "target-feature"
@@ -162,7 +162,7 @@
                 ]
             },
             "homepage": "https://github.com/rust-lang/libc",
-            "id": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117",
             "keywords": [
                 "libc",
                 "ffi",
@@ -259,7 +259,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)",
+            "id": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -295,7 +295,7 @@
         "nodes": [
             {
                 "dependencies": [
-                    "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
                 ],
                 "deps": [
                     {
@@ -314,11 +314,11 @@
                             }
                         ],
                         "name": "libc",
-                        "pkg": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
                     }
                 ],
                 "features": [],
-                "id": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
             },
             {
                 "dependencies": [],
@@ -327,11 +327,11 @@
                     "default",
                     "std"
                 ],
-                "id": "libc 0.2.117 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
             },
             {
                 "dependencies": [
-                    "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
                 ],
                 "deps": [
                     {
@@ -342,22 +342,22 @@
                             }
                         ],
                         "name": "cpufeatures",
-                        "pkg": "cpufeatures 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
                     }
                 ],
                 "features": [],
-                "id": "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)"
+                "id": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
             }
         ],
-        "root": "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)"
+        "root": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
     },
     "target_directory": "{TEMP_DIR}/multi_cfg_dep/target",
     "version": 1,
     "workspace_default_members": [
-        "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)"
+        "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
     ],
     "workspace_members": [
-        "multi_cfg_dep 0.1.0 (path+file://{TEMP_DIR}/multi_cfg_dep)"
+        "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/multi_cfg_dep"
 }

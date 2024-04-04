@@ -490,11 +490,13 @@ def _rust_toolchain_impl(ctx):
         list: A list containing the target's toolchain Provider info
     """
     compilation_mode_opts = {}
-    for k, v in ctx.attr.opt_level.items():
+    for k, opt_level in ctx.attr.opt_level.items():
         if not k in ctx.attr.debug_info:
             fail("Compilation mode {} is not defined in debug_info but is defined opt_level".format(k))
-        compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = v)
-    for k, v in ctx.attr.debug_info.items():
+        if not k in ctx.attr.strip_level:
+            fail("Compilation mode {} is not defined in strip_level but is defined opt_level".format(k))
+        compilation_mode_opts[k] = struct(debug_info = ctx.attr.debug_info[k], opt_level = opt_level, strip_level = ctx.attr.strip_level[k])
+    for k in ctx.attr.debug_info.keys():
         if not k in ctx.attr.opt_level:
             fail("Compilation mode {} is not defined in opt_level but is defined debug_info".format(k))
 
@@ -816,6 +818,17 @@ rust_toolchain = rule(
                 "to the srcs of the `rust_std` attribute."
             ),
             mandatory = True,
+        ),
+        "strip_level": attr.string_dict(
+            doc = (
+                "Rustc strip levels. For all potential options, see " +
+                "https://doc.rust-lang.org/rustc/codegen-options/index.html#strip"
+            ),
+            default = {
+                "dbg": "none",
+                "fastbuild": "none",
+                "opt": "debuginfo",
+            },
         ),
         "target_json": attr.string(
             doc = ("Override the target_triple with a custom target specification. " +
