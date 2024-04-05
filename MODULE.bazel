@@ -40,6 +40,17 @@ bazel_dep(
     repo_name = "com_google_protobuf",
 )
 
+bazel_dep(
+    name = "rules_python",
+    version = "0.31.0",
+    dev_dependency = True,
+)
+bazel_dep(
+    name = "rules_testing",
+    version = "0.6.0",
+    dev_dependency = True,
+)
+
 internal_deps = use_extension("//rust/private:extensions.bzl", "i")
 use_repo(
     internal_deps,
@@ -106,6 +117,13 @@ use_repo(
     "rules_rust_prost__tokio-1.28.2",
     "rules_rust_prost__tokio-stream-0.1.14",
     "rules_rust_prost__tonic-0.9.2",
+    "rules_rust_proto__grpc-0.6.2",
+    "rules_rust_proto__grpc-compiler-0.6.2",
+    "rules_rust_proto__log-0.4.17",
+    "rules_rust_proto__protobuf-2.8.2",
+    "rules_rust_proto__protobuf-codegen-2.8.2",
+    "rules_rust_proto__tls-api-0.1.22",
+    "rules_rust_proto__tls-api-stub-0.1.22",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_tinyjson",
     "rules_rust_toolchain_test_target_json",
@@ -140,7 +158,23 @@ register_toolchains(
     "@rust_toolchains//:all",
 )
 
-use_repo(rust, "rust_host_tools")
+register_toolchains(
+    "//proto/protobuf:default-proto-toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "//proto/prost:default_prost_toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "//bindgen:default_bindgen_toolchain",
+    dev_dependency = True,
+)
+
+rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
+use_repo(rust_host_tools, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
 use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
