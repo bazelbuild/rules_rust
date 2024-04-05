@@ -170,10 +170,22 @@ def _generate_cc_link_build_info(ctx, cc_lib):
 def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
-    header = ctx.file.header
+
+    hdr = getattr(ctx.file, "header")
+    hdrs = getattr(ctx.files, "headers")
+    if hdr and hdrs:
+        fail("Providing both 'header' and 'headers' is not supported.")
+    elif hdr:
+        headers = [hdr]
+    elif hdrs:
+        headers = hdrs
+    else:
+        fail("Must provide 'headers'.")
+    
     cc_header_list = ctx.attr.cc_lib[CcInfo].compilation_context.headers.to_list()
-    if header not in cc_header_list:
-        fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
+    for header in headers:
+        if header not in cc_header_list:
+            fail("Header {} is not in {}'s transitive headers.".format(header, cc_lib), "header")
 
     toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
     bindgen_bin = toolchain.bindgen
@@ -200,7 +212,7 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
-    args.add(header)
+    args.add_all(headers)
     args.add("--output", output)
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
@@ -268,7 +280,7 @@ def _rust_bindgen_impl(ctx):
     ctx.actions.run(
         executable = bindgen_bin,
         inputs = depset(
-            [header],
+            headers,
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
                 _get_libs_for_static_executable(libclang),
@@ -278,7 +290,7 @@ def _rust_bindgen_impl(ctx):
         ),
         outputs = [output],
         mnemonic = "RustBindgen",
-        progress_message = "Generating bindings for {}..".format(header.path),
+        progress_message = "Generating bindings for {}..".format(headers),
         env = env,
         arguments = [args],
         tools = tools,
@@ -306,7 +318,7 @@ def _rust_bindgen_impl(ctx):
     ]
 
 rust_bindgen = rule(
-    doc = "Generates a rust source file from a cc_library and a header.",
+    doc = "Generates a rust source file from a cc_library and set of headers.",
     implementation = _rust_bindgen_impl,
     attrs = {
         "bindgen_flags": attr.string_list(
@@ -321,9 +333,13 @@ rust_bindgen = rule(
             doc = "Flags to pass directly to the clang executable.",
         ),
         "header": attr.label(
-            doc = "The `.h` file to generate bindings for.",
+            doc = "DEPRECATED: Moved to `headers`.",
             allow_single_file = True,
-            mandatory = True,
+        ),
+        "headers": attr.label_list(
+            doc = "The `.h` files to generate bindings for.",
+            allow_empty = False,
+            allow_files = True,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
