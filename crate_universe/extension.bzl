@@ -224,7 +224,7 @@ def _package_to_json(p):
     return json.encode({
         k: v
         for k, v in structs.to_dict(p).items()
-        if v or type(v) == "bool"
+        if v or k == "default_features"
     })
 
 def _get_generator(module_ctx):
