@@ -22,5 +22,13 @@ crate.spec(
     package = "anyhow",
     version = "1.0.77",
 )
+crate.spec(
+    # NOTE: v4 is not available in no-std and by default, std is enabled in uuid
+    # so if this fails to build, then default_features default value is False
+    # see https://docs.rs/uuid/1.8.0/uuid/#embedded
+    features = ["v4"],
+    package = "uuid",
+    version = "1.8.0",
+)
 crate.from_specs()
 use_repo(crate, "crates")
