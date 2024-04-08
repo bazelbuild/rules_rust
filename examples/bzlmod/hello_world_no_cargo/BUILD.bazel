@@ -7,5 +7,6 @@ rust_binary(
     srcs = ["src/main.rs"],
     deps = [
         "@crates//:anyhow",
+        "@crates//:uuid",
     ],
 )
