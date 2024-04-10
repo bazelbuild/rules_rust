@@ -60,9 +60,3 @@ rust_prost_toolchain(
     tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
     tonic_runtime = ":tonic_runtime",
 )
-
-toolchain(
-    name = "default_prost_toolchain",
-    toolchain = "default_prost_toolchain_impl",
-    toolchain_type = "//proto/prost:toolchain_type",
-)

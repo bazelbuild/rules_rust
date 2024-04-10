@@ -18,34 +18,35 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
 
-def rust_proto_protobuf_dependencies():
-    maybe(
-        http_archive,
-        name = "rules_proto",
-        sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
-        strip_prefix = "rules_proto-5.3.0-21.7",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
-            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
-        ],
-    )
+def rust_proto_protobuf_dependencies(bzlmod = False):
+    if not bzlmod:
+        maybe(
+            http_archive,
+            name = "rules_proto",
+            sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
+            strip_prefix = "rules_proto-5.3.0-21.7",
+            urls = [
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
+                "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
+            ],
+        )
 
-    maybe(
-        http_archive,
-        name = "com_google_protobuf",
-        sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
-        strip_prefix = "protobuf-3.10.0",
-        urls = [
-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
-            "https://github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
-        ],
-        patch_args = ["-p1"],
-        patches = [
-            Label("//proto/protobuf/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
-        ],
-    )
+        maybe(
+            http_archive,
+            name = "com_google_protobuf",
+            sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
+            strip_prefix = "protobuf-3.10.0",
+            urls = [
+                "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
+            ],
+            patch_args = ["-p1"],
+            patches = [
+                Label("//proto/protobuf/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
+            ],
+        )
 
-    crate_repositories()
+    return crate_repositories()
 
 # buildifier: disable=unnamed-macro
 def rust_proto_protobuf_register_toolchains(register_toolchains = True):

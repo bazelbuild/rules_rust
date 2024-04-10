@@ -679,6 +679,10 @@ _common_attrs = {
             is the root of the crate to be passed to rustc to build this crate.
         """),
         allow_files = [".rs"],
+        # Allow use of --compile_one_dependency with rust targets. Support for this feature for
+        # non-builtin rulesets is undocumented outside of the bazel source:
+        # https://github.com/bazelbuild/bazel/blob/7.1.1/src/main/java/com/google/devtools/build/lib/packages/Attribute.java#L102
+        flags = ["DIRECT_COMPILE_TIME_INPUT"],
     ),
     "stamp": _stamp_attribute(
         default_value = 0,

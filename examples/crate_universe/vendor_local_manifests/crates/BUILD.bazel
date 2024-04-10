@@ -32,18 +32,18 @@ filegroup(
 # Workspace Member Dependencies
 alias(
     name = "tempfile",
-    actual = "//vendor_local_manifests/crates/tempfile-3.10.0:tempfile",
+    actual = "//vendor_local_manifests/crates/tempfile-3.10.1:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "//vendor_local_manifests/crates/tokio-1.36.0:tokio",
+    actual = "//vendor_local_manifests/crates/tokio-1.37.0:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio-test",
-    actual = "//vendor_local_manifests/crates/tokio-test-0.4.3:tokio_test",
+    actual = "//vendor_local_manifests/crates/tokio-test-0.4.4:tokio_test",
     tags = ["manual"],
 )
