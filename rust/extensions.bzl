@@ -171,16 +171,20 @@ def _rust_host_tools_impl(module_ctx):
         **host_tools
     )
 
+    metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
-        return module_ctx.extension_metadata(reproducible = True)
-    else:
-        return None
+        metadata_kwargs["reproducible"] = True
+    return module_ctx.extension_metadata(**metadata_kwargs)
+
+_conditional_rust_host_tools_args = {
+    "arch_dependent": True,
+    "os_dependent": True,
+} if bazel_features.external_deps.module_extension_has_os_arch_dependent else {}
 
 rust_host_tools = module_extension(
     implementation = _rust_host_tools_impl,
     tag_classes = {
         "host_tools": _RUST_HOST_TOOLS_TAG,
     },
-    os_dependent = True,
-    arch_dependent = True,
+    **_conditional_rust_host_tools_args
 )
