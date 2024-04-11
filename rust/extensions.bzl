@@ -1,5 +1,6 @@
 "Module extensions for using rules_rust with bzlmod"
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:repositories.bzl", "rust_register_toolchains", "rust_toolchain_tools_repository")
 load("//rust/platform:triple.bzl", "get_host_triple")
@@ -170,7 +171,10 @@ def _rust_host_tools_impl(module_ctx):
         **host_tools
     )
 
-    return module_ctx.extension_metadata(reproducible = True)
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        return module_ctx.extension_metadata(reproducible = True)
+    else:
+        return None
 
 rust_host_tools = module_extension(
     implementation = _rust_host_tools_impl,
