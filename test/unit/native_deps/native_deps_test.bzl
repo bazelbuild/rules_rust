@@ -161,6 +161,13 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
                 "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
+    elif toolchain.target_arch == "s390x":
+        want = [
+            "-lstatic=native_dep",
+            "link-arg=-Wl,--whole-archive",
+            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "link-arg=-Wl,--no-whole-archive",
+        ]
     else:
         want = [
             "-lstatic=native_dep",
@@ -207,6 +214,13 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
                 "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
+    elif toolchain.target_arch == "s390x":
+        want = [
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "link-arg=-Wl,--whole-archive",
+            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "link-arg=-Wl,--no-whole-archive",
+        ]
     else:
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
