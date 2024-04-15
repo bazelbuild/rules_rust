@@ -49,7 +49,7 @@
                 ]
             },
             "homepage": "https://github.com/alexcrichton/cfg-if",
-            "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0",
             "keywords": [],
             "license": "MIT/Apache-2.0",
             "license_file": null,
@@ -117,7 +117,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "git-repos 0.1.0 (path+file://{TEMP_DIR}/git_repos)",
+            "id": "path+file://{TEMP_DIR}/git_repos#git-repos@0.1.0",
             "keywords": [],
             "license": null,
             "license_file": null,
@@ -196,7 +196,7 @@
                 ]
             },
             "homepage": null,
-            "id": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#lazy_static@1.4.0",
             "keywords": [
                 "macro",
                 "lazy",
@@ -321,7 +321,7 @@
             "edition": "2018",
             "features": {},
             "homepage": null,
-            "id": "pin-project-lite 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.8",
             "keywords": [
                 "pin",
                 "macros"
@@ -494,7 +494,7 @@
                 "span-locations": []
             },
             "homepage": null,
-            "id": "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36",
             "keywords": [
                 "macros"
             ],
@@ -694,7 +694,7 @@
                 ]
             },
             "homepage": null,
-            "id": "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14",
             "keywords": [
                 "syn"
             ],
@@ -989,7 +989,7 @@
                 "visit-mut": []
             },
             "homepage": null,
-            "id": "syn 1.0.85 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#syn@1.0.85",
             "keywords": [],
             "license": "MIT OR Apache-2.0",
             "license_file": null,
@@ -1647,7 +1647,7 @@
                 ]
             },
             "homepage": "https://tokio.rs",
-            "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0",
             "keywords": [
                 "logging",
                 "tracing",
@@ -2001,7 +2001,7 @@
             "edition": "2018",
             "features": {},
             "homepage": "https://tokio.rs",
-            "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-attributes@0.2.0",
             "keywords": [
                 "logging",
                 "tracing",
@@ -2205,7 +2205,7 @@
                 ]
             },
             "homepage": "https://tokio.rs",
-            "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
+            "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-core@0.2.0",
             "keywords": [
                 "logging",
                 "tracing",
@@ -2323,7 +2323,7 @@
                 "no_std": []
             },
             "homepage": "https://github.com/unicode-rs/unicode-xid",
-            "id": "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2",
             "keywords": [
                 "text",
                 "unicode",
@@ -2393,11 +2393,11 @@
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
             },
             {
                 "dependencies": [
-                    "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                    "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0"
                 ],
                 "deps": [
                     {
@@ -2408,27 +2408,27 @@
                             }
                         ],
                         "name": "tracing",
-                        "pkg": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0"
                     }
                 ],
                 "features": [],
-                "id": "git-repos 0.1.0 (path+file://{TEMP_DIR}/git_repos)"
+                "id": "path+file://{TEMP_DIR}/git_repos#git-repos@0.1.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#lazy_static@1.4.0"
             },
             {
                 "dependencies": [],
                 "deps": [],
                 "features": [],
-                "id": "pin-project-lite 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.8"
             },
             {
                 "dependencies": [
-                    "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2"
                 ],
                 "deps": [
                     {
@@ -2439,18 +2439,18 @@
                             }
                         ],
                         "name": "unicode_xid",
-                        "pkg": "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2"
                     }
                 ],
                 "features": [
                     "default",
                     "proc-macro"
                 ],
-                "id": "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36"
                 ],
                 "deps": [
                     {
@@ -2461,20 +2461,20 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36"
                     }
                 ],
                 "features": [
                     "default",
                     "proc-macro"
                 ],
-                "id": "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14",
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2"
                 ],
                 "deps": [
                     {
@@ -2485,7 +2485,7 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36"
                     },
                     {
                         "dep_kinds": [
@@ -2495,7 +2495,7 @@
                             }
                         ],
                         "name": "quote",
-                        "pkg": "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14"
                     },
                     {
                         "dep_kinds": [
@@ -2505,7 +2505,7 @@
                             }
                         ],
                         "name": "unicode_xid",
-                        "pkg": "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2"
                     }
                 ],
                 "features": [
@@ -2519,14 +2519,14 @@
                     "visit",
                     "visit-mut"
                 ],
-                "id": "syn 1.0.85 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#syn@1.0.85"
             },
             {
                 "dependencies": [
-                    "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "pin-project-lite 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)",
-                    "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                    "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.8",
+                    "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-attributes@0.2.0",
+                    "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-core@0.2.0"
                 ],
                 "deps": [
                     {
@@ -2537,7 +2537,7 @@
                             }
                         ],
                         "name": "cfg_if",
-                        "pkg": "cfg-if 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.0"
                     },
                     {
                         "dep_kinds": [
@@ -2547,7 +2547,7 @@
                             }
                         ],
                         "name": "pin_project_lite",
-                        "pkg": "pin-project-lite 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.8"
                     },
                     {
                         "dep_kinds": [
@@ -2557,7 +2557,7 @@
                             }
                         ],
                         "name": "tracing_attributes",
-                        "pkg": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-attributes@0.2.0"
                     },
                     {
                         "dep_kinds": [
@@ -2567,7 +2567,7 @@
                             }
                         ],
                         "name": "tracing_core",
-                        "pkg": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                        "pkg": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-core@0.2.0"
                     }
                 ],
                 "features": [
@@ -2577,13 +2577,13 @@
                     "std",
                     "tracing-attributes"
                 ],
-                "id": "tracing 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0"
             },
             {
                 "dependencies": [
-                    "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
-                    "syn 1.0.85 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14",
+                    "registry+https://github.com/rust-lang/crates.io-index#syn@1.0.85"
                 ],
                 "deps": [
                     {
@@ -2594,7 +2594,7 @@
                             }
                         ],
                         "name": "proc_macro2",
-                        "pkg": "proc-macro2 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.36"
                     },
                     {
                         "dep_kinds": [
@@ -2604,7 +2604,7 @@
                             }
                         ],
                         "name": "quote",
-                        "pkg": "quote 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.14"
                     },
                     {
                         "dep_kinds": [
@@ -2614,15 +2614,15 @@
                             }
                         ],
                         "name": "syn",
-                        "pkg": "syn 1.0.85 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#syn@1.0.85"
                     }
                 ],
                 "features": [],
-                "id": "tracing-attributes 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-attributes@0.2.0"
             },
             {
                 "dependencies": [
-                    "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                    "registry+https://github.com/rust-lang/crates.io-index#lazy_static@1.4.0"
                 ],
                 "deps": [
                     {
@@ -2633,7 +2633,7 @@
                             }
                         ],
                         "name": "lazy_static",
-                        "pkg": "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)"
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#lazy_static@1.4.0"
                     }
                 ],
                 "features": [
@@ -2641,7 +2641,7 @@
                     "lazy_static",
                     "std"
                 ],
-                "id": "tracing-core 0.2.0 (git+https://github.com/tokio-rs/tracing.git?branch=master#1e09e50e8d15580b5929adbade9c782a6833e4a0)"
+                "id": "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing-core@0.2.0"
             },
             {
                 "dependencies": [],
@@ -2649,18 +2649,18 @@
                 "features": [
                     "default"
                 ],
-                "id": "unicode-xid 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)"
+                "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-xid@0.2.2"
             }
         ],
-        "root": "git-repos 0.1.0 (path+file://{TEMP_DIR}/git_repos)"
+        "root": "path+file://{TEMP_DIR}/git_repos#git-repos@0.1.0"
     },
     "target_directory": "{TEMP_DIR}/git_repos/target",
     "version": 1,
     "workspace_default_members": [
-        "git-repos 0.1.0 (path+file://{TEMP_DIR}/git_repos)"
+        "path+file://{TEMP_DIR}/git_repos#git-repos@0.1.0"
     ],
     "workspace_members": [
-        "git-repos 0.1.0 (path+file://{TEMP_DIR}/git_repos)"
+        "path+file://{TEMP_DIR}/git_repos#git-repos@0.1.0"
     ],
     "workspace_root": "{TEMP_DIR}/git_repos"
 }

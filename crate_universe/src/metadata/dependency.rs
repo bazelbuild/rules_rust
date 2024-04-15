@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 use anyhow::{bail, Result};
 use cargo_metadata::{
-    DependencyKind, Metadata as CargoMetadata, Node, NodeDep, Package, PackageId,
+    DependencyKind, Metadata as CargoMetadata, Node, NodeDep, Package, PackageId, Target,
 };
 use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
@@ -187,20 +187,29 @@ fn collect_deps_selectable(
     select
 }
 
+/// Packages may have targets that match aliases of dependents. This function
+/// checks a target to see if it's an unexpected type for a dependency.
+fn is_ignored_package_target(target: &Target) -> bool {
+    target
+        .kind
+        .iter()
+        .any(|t| ["example", "bench", "test"].contains(&t.as_str()))
+}
+
 fn is_lib_package(package: &Package) -> bool {
     package.targets.iter().any(|target| {
         target
             .crate_types
             .iter()
             .any(|t| ["lib", "rlib"].contains(&t.as_str()))
+            && !is_ignored_package_target(target)
     })
 }
 
 fn is_proc_macro_package(package: &Package) -> bool {
-    package
-        .targets
-        .iter()
-        .any(|target| target.crate_types.iter().any(|t| t == "proc-macro"))
+    package.targets.iter().any(|target| {
+        target.crate_types.iter().any(|t| t == "proc-macro") && !is_ignored_package_target(target)
+    })
 }
 
 fn is_dev_dependency(node_dep: &NodeDep) -> bool {
@@ -238,8 +247,13 @@ fn is_workspace_member(node_dep: &NodeDep, metadata: &CargoMetadata) -> bool {
 
 fn get_library_target_name(package: &Package, potential_name: &str) -> Result<String> {
     // If the potential name is not an alias in a dependent's package, a target's name
-    // should match which means we already know what the target library name is.
-    if package.targets.iter().any(|t| t.name == potential_name) {
+    // should match which means we already know what the target library name is. The
+    // only exception is for targets that are otherwise ignored (like benchmarks or examples).
+    if package
+        .targets
+        .iter()
+        .any(|t| t.name == potential_name && !is_ignored_package_target(t))
+    {
         return Ok(potential_name.to_string());
     }
 
@@ -271,11 +285,13 @@ fn get_library_target_name(package: &Package, potential_name: &str) -> Result<St
 /// for targets where packages (packages[#].targets[#].name) uses crate names. In order to
 /// determine whether or not a dependency is aliased, we compare it with all available targets
 /// on it's package. Note that target names are not guaranteed to be module names where Node
-/// dependencies are, so we need to do a conversion to check for this
+/// dependencies are, so we need to do a conversion to check for this. This function will
+/// return the name of a target's alias in the content of the current dependent if it is aliased.
 fn get_target_alias(target_name: &str, package: &Package) -> Option<String> {
     match package
         .targets
         .iter()
+        .filter(|t| !is_ignored_package_target(t))
         .all(|t| sanitize_module_name(&t.name) != target_name)
     {
         true => Some(target_name.to_string()),
@@ -426,6 +442,54 @@ mod test {
     }
 
     #[test]
+    fn example_proc_macro_dep() {
+        let metadata = metadata::example_proc_macro_dep();
+
+        let node = find_metadata_node("example-proc-macro-dep", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        let normal_deps: Vec<_> = dependencies
+            .normal_deps
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
+            .collect();
+        assert_eq!(normal_deps, vec!["proc-macro-rules"]);
+
+        let proc_macro_deps: Vec<_> = dependencies
+            .proc_macro_deps
+            .items()
+            .into_iter()
+            .map(|(_, dep)| dep.target_name)
+            .collect();
+        assert_eq!(proc_macro_deps, Vec::<&str>::new());
+    }
+
+    #[test]
+    fn bench_name_alias_dep() {
+        let metadata = metadata::alias();
+
+        let node = find_metadata_node("surrealdb-core", &metadata);
+        let dependencies = DependencySet::new_for_node(node, &metadata);
+
+        println!("{:#?}", dependencies);
+
+        let bindings = dependencies.normal_deps.items();
+
+        // It's critical that the dep be found with the correct name and not the
+        // alias that the `aliases` package is using that coincidentally matches the
+        // `bench` target `executor` in the `async-executor` package.
+        let async_executor = bindings
+            .iter()
+            .find(|(_, dep)| dep.target_name == "async-executor")
+            .map(|(_, dep)| dep)
+            .unwrap();
+
+        // Ensure alias data is still tracked.
+        assert_eq!(async_executor.alias, Some("executor".to_owned()));
+    }
+
+    #[test]
     fn sys_dependencies() {
         let metadata = metadata::build_scripts();
 
@@ -476,10 +540,10 @@ mod test {
 
         assert_eq!(
             BTreeSet::from([
-                "cc 1.0.72 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "pkg-config 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)"
+                "registry+https://github.com/rust-lang/crates.io-index#cc@1.0.72".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#pkg-config@0.3.24"
                     .to_owned(),
-                "vcpkg 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)".to_owned()
+                "registry+https://github.com/rust-lang/crates.io-index#vcpkg@0.2.15".to_owned()
             ]),
             build_deps,
         );
@@ -494,9 +558,9 @@ mod test {
 
         assert_eq!(
             BTreeSet::from([
-                "libc 0.2.112 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "libz-sys 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)".to_owned(),
-                "openssl-sys 0.9.87 (registry+https://github.com/rust-lang/crates.io-index)"
+                "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.112".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#libz-sys@1.1.8".to_owned(),
+                "registry+https://github.com/rust-lang/crates.io-index#openssl-sys@0.9.87"
                     .to_owned(),
             ]),
             normal_deps,
