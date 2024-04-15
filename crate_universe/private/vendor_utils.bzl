@@ -84,7 +84,7 @@ def crates_vendor_deps_targets():
         actual = select({
             ":linux_amd64": "@cargo_bazel.buildifier-linux-amd64//file",
             ":linux_arm64": "@cargo_bazel.buildifier-linux-arm64//file",
-            ":linux_s390x": "@cargo_bazel.buildifier-linux-s390x//file"
+            ":linux_s390x": "@cargo_bazel.buildifier-linux-s390x//file",
             ":macos_amd64": "@cargo_bazel.buildifier-darwin-amd64//file",
             ":macos_arm64": "@cargo_bazel.buildifier-darwin-arm64//file",
             ":windows": "@cargo_bazel.buildifier-windows-amd64.exe//file",
