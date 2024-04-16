@@ -1,0 +1,4 @@
+_repo_mapping bzlmod/_repo_mapping
+_main/sample.txt bzlmod/_main/sample.txt
+my_module~tinyjson/sample.txt bzlmod/my_module~tinyjson/sample.txt
+rules_rust~tinyjson/sample.txt bzlmod/rules_rust~tinyjson/sample.txt

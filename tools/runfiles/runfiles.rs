@@ -50,9 +50,28 @@ enum Mode {
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+type RepoMapping = HashMap<(String, String), String>;
+
 #[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
+    repo_mapping: Option<RepoMapping>,
+}
+
+fn parse_repo_mapping(contents: String) -> io::Result<RepoMapping> {
+    contents
+        .lines()
+        .map(|line| match line.splitn(3, ',').collect::<Vec<_>>()[..] {
+            [current_canonical, target_local, target_canonical] => Ok((
+                (current_canonical.to_string(), target_local.to_string()),
+                target_canonical.to_string(),
+            )),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Repo mapping file contained unexpected content",
+            )),
+        })
+        .collect::<io::Result<RepoMapping>>()
 }
 
 impl Runfiles {
@@ -68,8 +87,15 @@ impl Runfiles {
     }
 
     fn create_directory_based() -> io::Result<Self> {
+        let runfiles_dir = find_runfiles_dir()?;
+        let repo_mapping = match std::fs::read_to_string(runfiles_dir.join("_repo_mapping")) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(e),
+            Ok(contents) => Some(parse_repo_mapping(contents)?),
+        };
         Ok(Runfiles {
-            mode: Mode::DirectoryBased(find_runfiles_dir()?),
+            repo_mapping,
+            mode: Mode::DirectoryBased(runfiles_dir),
         })
     }
 
@@ -86,6 +112,10 @@ impl Runfiles {
             })
             .collect::<HashMap<_, _>>();
         Ok(Runfiles {
+            repo_mapping: match path_mapping.get(&PathBuf::from("_repo_mapping")) {
+                Some(path) => Some(parse_repo_mapping(std::fs::read_to_string(path)?)?),
+                None => None,
+            },
             mode: Mode::ManifestBased(path_mapping),
         })
     }
@@ -100,10 +130,39 @@ impl Runfiles {
         if path.is_absolute() {
             return path.to_path_buf();
         }
+
+        let path = self
+            .repo_mapping
+            .as_ref()
+            .and_then(|mapping| {
+                let mut components = path.components();
+                if let Some(std::path::Component::Normal(target_local)) = components.next() {
+                    if let Some(target_local) = target_local.to_str() {
+                        let current_canonical = self.current_repository();
+                        // With bzlmod, the current repository for the main directory is always "_main",
+                        // but in the repo mapping it's listed as the empty string.
+                        let current_canonical_or_blank = match current_canonical {
+                            "_main" => "",
+                            other => other,
+                        };
+                        let target_canonical = mapping
+                            .get(&(current_canonical_or_blank.into(), target_local.into()))
+                            .unwrap_or_else(|| {
+                                panic!(
+                                    "Repo {} is not visible from {} in the repo mapping",
+                                    target_local, current_canonical
+                                );
+                            });
+                        return Some(Path::new(target_canonical).join(components.as_path()));
+                    }
+                }
+                None
+            })
+            .unwrap_or_else(|| path.to_path_buf());
         match &self.mode {
             Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
             Mode::ManifestBased(path_mapping) => path_mapping
-                .get(path)
+                .get(&path)
                 .unwrap_or_else(|| {
                     panic!("Path {} not found among runfiles.", path.to_string_lossy())
                 })
@@ -273,6 +332,55 @@ mod test {
             env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir);
             env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir);
         }
+
+        // Because rules_rust currently doesn't work with modules, we need to pretend that we're
+        // using rules_rust in a repo that has bzlmod enabled.
+        env::set_current_dir(
+            Runfiles::create()
+                .unwrap()
+                .rlocation("rules_rust/tools/runfiles/data"),
+        )
+        .unwrap();
+        let module_runfiles = [
+            {
+                env::set_var(RUNFILES_DIR_ENV_VAR, "bzlmod");
+                let r = Runfiles::create_directory_based().unwrap();
+                env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir);
+                ("directory", r)
+            },
+            {
+                env::set_var(MANIFEST_FILE_ENV_VAR, "bzlmod_manifest");
+                env::set_var(MANIFEST_ONLY_ENV_VAR, "1");
+                let r = Runfiles::create_manifest_based().unwrap();
+                env::remove_var(MANIFEST_ONLY_ENV_VAR);
+                ("manifest", r)
+            },
+        ];
+
+        for (name, r) in module_runfiles {
+            // TODO: we are unable to change what current_repository() returns
+            #[cfg(not(bazel_root_module))]
+            {
+                assert_eq!(
+                    r.rlocation("tinyjson/sample.txt"),
+                    PathBuf::from("bzlmod/rules_rust~tinyjson/sample.txt"),
+                    "{name}",
+                )
+            }
+            #[cfg(bazel_root_module)]
+            {
+                assert_eq!(
+                    r.rlocation("tinyjson/sample.txt"),
+                    PathBuf::from("bzlmod/my_module~tinyjson/sample.txt"),
+                    "{name}",
+                );
+                assert_eq!(
+                    r.rlocation("my_module/sample.txt"),
+                    PathBuf::from("bzlmod/_main/sample.txt"),
+                    "{name}",
+                );
+            }
+        }
     }
 
     #[test]
@@ -281,6 +389,7 @@ mod test {
         path_mapping.insert("a/b".into(), "c/d".into());
         let r = Runfiles {
             mode: Mode::ManifestBased(path_mapping),
+            repo_mapping: None,
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
@@ -292,6 +401,10 @@ mod test {
 
         // This check is unique to the rules_rust repository. The name
         // here is expected to be different in consumers of this library
-        assert_eq!(r.current_repository(), "rules_rust")
+        #[cfg(not(bazel_root_module))]
+        assert_eq!(r.current_repository(), "rules_rust");
+
+        #[cfg(bazel_root_module)]
+        assert_eq!(r.current_repository(), "_main");
     }
 }

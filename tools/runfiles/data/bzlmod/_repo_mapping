@@ -1,0 +1,4 @@
+,my_module,_main
+,tinyjson,my_module~tinyjson
+rules_rust,my_module,_main
+rules_rust,tinyjson,rules_rust~tinyjson
