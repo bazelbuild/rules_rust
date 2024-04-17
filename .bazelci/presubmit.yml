@@ -1,4 +1,5 @@
 ---
+minimum_bazel_version: &minimum_bazel_version "6.3.0"
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -232,7 +233,7 @@ tasks:
   ubuntu1804:
     name: "Min Bazel Version"
     # If updating the minimum bazel version, please also update /docs/index.md
-    bazel: "6.3.0"
+    bazel: *minimum_bazel_version
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -240,7 +241,7 @@ tasks:
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
-    bazel: "6.3.0"
+    bazel: *minimum_bazel_version
     platform: ubuntu1804
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -663,6 +664,19 @@ tasks:
     platform: ubuntu2004
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_flags
+    run_targets:
+      - "//third-party:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  ubuntu2004_bzlmod_minimum_bazel_bcr:
+    name: bzlmod BCR presubmit minimal bazel
+    bazel: *minimum_bazel_version
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/hello_world
+    test_flags: *bzlmod_flags
+    shell_commands:
+      - "rm MODULE.bazel.lock"
     run_targets:
       - "//third-party:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
