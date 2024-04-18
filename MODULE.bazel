@@ -39,6 +39,10 @@ bazel_dep(
     version = "21.7",
     repo_name = "com_google_protobuf",
 )
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "1.39.0",
+)
 
 bazel_dep(
     name = "rules_python",
