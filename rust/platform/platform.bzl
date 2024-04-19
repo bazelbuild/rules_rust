@@ -26,6 +26,7 @@ _SUPPORTED_SYSTEMS = [
     "darwin",
     "freebsd",
     "ios",
+    "visionos",
     "linux",
     "windows",
     "nto",
