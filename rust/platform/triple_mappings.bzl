@@ -51,6 +51,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
 
 SUPPORTED_T3_PLATFORM_TRIPLES = [
     "aarch64-unknown-nto-qnx710",
+    "aarch64-apple-visionos-sim",
+    "aarch64-apple-visionos",
 ]
 
 SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES + SUPPORTED_T3_PLATFORM_TRIPLES
@@ -106,6 +108,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "openbsd": "openbsd",
     "solaris": None,
     "unknown": None,
+    "visionos": "visionos",
     "wasi": None,
     "windows": "windows",
 }
@@ -127,6 +130,7 @@ _SYSTEM_TO_BINARY_EXT = {
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
+    "visionos": "",
     "wasi": ".wasm",
     "windows": ".exe",
 }
@@ -145,6 +149,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "none": ".a",
     "nto": ".a",
     "unknown": "",
+    "visionos": ".a",
     "wasi": "",
     "windows": ".lib",
 }
@@ -163,6 +168,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "none": ".so",
     "nto": ".a",
     "unknown": ".wasm",
+    "visionos": ".dylib",
     "wasi": ".wasm",
     "windows": ".dll",
 }
@@ -209,6 +215,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
     "unknown": [],
     "uwp": ["ws2_32.lib"],
+    "visionos": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
     "wasi": [],
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
@@ -270,8 +277,8 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     # if abi == "musl" and system == "linux" and arch == "x86_64":
     # all_abi_constraints.append("//rust/platform/constraints:musl_on")
 
-    # add constraints for iOS + watchOS simulator and device triples
-    if system in ["ios", "watchos"]:
+    # add constraints for iOS + watchOS + visionOS simulator and device triples
+    if system in ["ios", "watchos", "visionos"]:
         if arch == "x86_64" or abi == "sim":
             all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
         else:

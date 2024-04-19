@@ -59,6 +59,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -144,6 +146,12 @@ rust_library(
             "@cui__unicode-normalization-0.1.22//:unicode_normalization",  # cfg(target_vendor = "apple")
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@cui__unicode-normalization-0.1.22//:unicode_normalization",  # cfg(target_vendor = "apple")
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "@cui__unicode-normalization-0.1.22//:unicode_normalization",  # cfg(target_vendor = "apple")
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
             "@cui__unicode-normalization-0.1.22//:unicode_normalization",  # cfg(target_vendor = "apple")
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
