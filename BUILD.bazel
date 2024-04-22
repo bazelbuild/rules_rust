@@ -3,6 +3,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load(
     "//rust:defs.bzl",
     "capture_clippy_output",
+    "clippy_flag",
     "clippy_flags",
     "error_format",
     "extra_exec_rustc_flag",
@@ -46,6 +47,12 @@ rustc_output_diagnostics(
 clippy_flags(
     name = "clippy_flags",
     build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+clippy_flag(
+    name = "clippy_flag",
+    build_setting_default = "",
     visibility = ["//visibility:public"],
 )
 
