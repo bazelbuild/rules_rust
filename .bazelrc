@@ -28,6 +28,9 @@ common --experimental_cc_shared_library
 ## Unique configuration groups
 ###############################################################################
 
+# Enable use of the nightly toolchains.
+build:nightly --//rust/toolchain/channel=nightly
+
 # Enable rustfmt for all targets in the workspace
 build:rustfmt --aspects=//rust:defs.bzl%rustfmt_aspect
 build:rustfmt --output_groups=+rustfmt_checks
@@ -42,7 +45,7 @@ build:unpretty --output_groups=+rust_unpretty
 
 # `unpretty` requires the nightly toolchain. See tracking issue:
 # https://github.com/rust-lang/rust/issues/43364
-build:unpretty --//rust/toolchain/channel=nightly
+build:unpretty --config=nightly
 
 ###############################################################################
 ## Incompatibility flags
@@ -61,6 +64,9 @@ build --nolegacy_external_runfiles
 # TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
 # https://github.com/bazelbuild/rules_rust/issues/2181
 common --noenable_bzlmod
+
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off
 
 ###############################################################################
 ## Custom user flags

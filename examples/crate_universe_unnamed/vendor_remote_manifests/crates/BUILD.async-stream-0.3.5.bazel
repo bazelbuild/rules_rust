@@ -83,6 +83,6 @@ rust_library(
     version = "0.3.5",
     deps = [
         "@crates_vendor_manifests__futures-core-0.3.30//:futures_core",
-        "@crates_vendor_manifests__pin-project-lite-0.2.13//:pin_project_lite",
+        "@crates_vendor_manifests__pin-project-lite-0.2.14//:pin_project_lite",
     ],
 )

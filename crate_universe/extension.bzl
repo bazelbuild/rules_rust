@@ -224,7 +224,7 @@ def _package_to_json(p):
     return json.encode({
         k: v
         for k, v in structs.to_dict(p).items()
-        if v
+        if v or k == "default_features"
     })
 
 def _get_generator(module_ctx):
@@ -515,6 +515,7 @@ _spec = tag_class(
         ),
         default_features = attr.bool(
             doc = "Maps to the `default-features` flag.",
+            default = True,
         ),
         features = attr.string_list(
             doc = "A list of features to use for the crate.",

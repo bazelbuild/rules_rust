@@ -1,5 +1,5 @@
 {
-  "checksum": "ba25958007103d1dab35908ed528d064bc4250c7048484837f543d4c8bcacc61",
+  "checksum": "092c453c3785631719794c1085dbf2de4a9dad934537a780b41aac08599e3f21",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -47,7 +47,7 @@
       "package_url": "https://github.com/daniel5151/libc_alloc",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc_alloc/1.0.4/download",
+          "url": "https://static.crates.io/crates/libc_alloc/1.0.4/download",
           "sha256": "6a090348b66d90d8507e30f0d2bd88e5a5c454bd1733fc6d617cbc3471bf69ea"
         }
       },
@@ -77,7 +77,7 @@
       "license_ids": [
         "MIT"
       ],
-      "license_file": null
+      "license_file": "LICENSE"
     }
   },
   "binary_crates": [],
