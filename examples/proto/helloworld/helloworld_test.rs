@@ -36,12 +36,14 @@ macro_rules! assert_contains {
 impl ServerInfo {
     fn new() -> ServerInfo {
         let r = Runfiles::create().unwrap();
-        let mut c =
-            Command::new(r.rlocation("examples/proto/helloworld/greeter_server/greeter_server"))
-                .arg("0")
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect("Unable to start server");
+        let mut c = Command::new(runfiles::rlocation!(
+            r,
+            "examples/proto/helloworld/greeter_server/greeter_server"
+        ))
+        .arg("0")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Unable to start server");
         let mut port: u16 = 0;
         {
             let mut stdout = BufReader::new(c.stdout.as_mut().expect("Failed to open stdout"));
@@ -65,8 +67,10 @@ impl ServerInfo {
     fn run_client_impl(&self, arg: Option<String>) -> String {
         let r = Runfiles::create().unwrap();
 
-        let mut cmd0 =
-            Command::new(r.rlocation("examples/proto/helloworld/greeter_client/greeter_client"));
+        let mut cmd0 = Command::new(runfiles::rlocation!(
+            r,
+            "examples/proto/helloworld/greeter_client/greeter_client"
+        ));
         let cmd = cmd0.arg(format!("-p={}", self.port));
 
         let output = if let Some(s) = arg { cmd.arg(s) } else { cmd }

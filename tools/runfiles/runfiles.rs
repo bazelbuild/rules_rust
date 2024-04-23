@@ -19,13 +19,13 @@
 //!     use runfiles::Runfiles;
 //!     ```
 //!
-//! 3.  Create a Runfiles object and use rlocation to look up runfile paths:
+//! 3.  Create a Runfiles object and use `rlocation!`` to look up runfile paths:
 //!     ```ignore -- This doesn't work under rust_doc_test because argv[0] is not what we expect.
 //!
-//!     use runfiles::Runfiles;
+//!     use runfiles::{Runfiles, rlocation};
 //!
 //!     let r = Runfiles::create().unwrap();
-//!     let path = r.rlocation("my_workspace/path/to/my/data.txt");
+//!     let path = rlocation!(r, "my_workspace/path/to/my/data.txt");
 //!
 //!     let f = File::open(path).unwrap();
 //!     // ...
@@ -33,7 +33,6 @@
 
 use std::collections::HashMap;
 use std::env;
-use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -41,8 +40,14 @@ use std::path::PathBuf;
 
 const RUNFILES_DIR_ENV_VAR: &str = "RUNFILES_DIR";
 const MANIFEST_FILE_ENV_VAR: &str = "RUNFILES_MANIFEST_FILE";
-const MANIFEST_ONLY_ENV_VAR: &str = "RUNFILES_MANIFEST_ONLY";
 const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
+
+#[macro_export]
+macro_rules! rlocation {
+    ($r:ident, $path:expr) => {
+        $r.rlocation_from($path, env!("REPOSITORY_NAME"))
+    };
+}
 
 #[derive(Debug)]
 enum Mode {
@@ -50,9 +55,13 @@ enum Mode {
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+type RepoMappingKey = (String, String);
+type RepoMapping = HashMap<RepoMappingKey, String>;
+
 #[derive(Debug)]
 pub struct Runfiles {
     mode: Mode,
+    repo_mapping: RepoMapping,
 }
 
 impl Runfiles {
@@ -60,21 +69,22 @@ impl Runfiles {
     /// RUNFILES_MANIFEST_ONLY environment variable is present,
     /// or a directory based Runfiles object otherwise.
     pub fn create() -> io::Result<Self> {
-        if is_manifest_only() {
-            Self::create_manifest_based()
+        let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+            Self::create_manifest_based(Path::new(&manifest_file))?
         } else {
-            Self::create_directory_based()
-        }
+            Mode::DirectoryBased(find_runfiles_dir()?)
+        };
+
+        let repo_mapping = parse_repo_mapping(raw_rlocation(&mode, "_repo_mapping"))
+            .unwrap_or_else(|_| {
+                println!("No repo mapping found!");
+                RepoMapping::new()
+            });
+
+        Ok(Runfiles { mode, repo_mapping })
     }
 
-    fn create_directory_based() -> io::Result<Self> {
-        Ok(Runfiles {
-            mode: Mode::DirectoryBased(find_runfiles_dir()?),
-        })
-    }
-
-    fn create_manifest_based() -> io::Result<Self> {
-        let manifest_path = find_manifest_path()?;
+    fn create_manifest_based(manifest_path: &Path) -> io::Result<Mode> {
         let manifest_content = std::fs::read_to_string(manifest_path)?;
         let path_mapping = manifest_content
             .lines()
@@ -85,9 +95,7 @@ impl Runfiles {
                 (pair.0.into(), pair.1.into())
             })
             .collect::<HashMap<_, _>>();
-        Ok(Runfiles {
-            mode: Mode::ManifestBased(path_mapping),
-        })
+        Ok(Mode::ManifestBased(path_mapping))
     }
 
     /// Returns the runtime path of a runfile.
@@ -95,36 +103,74 @@ impl Runfiles {
     /// Runfiles are data-dependencies of Bazel-built binaries and tests.
     /// The returned path may not be valid. The caller should check the path's
     /// validity and that the path exists.
+    /// @deprecated - this is not bzlmod-aware. Prefer the `rlocation!` macro or `rlocation_from`
     pub fn rlocation(&self, path: impl AsRef<Path>) -> PathBuf {
         let path = path.as_ref();
         if path.is_absolute() {
             return path.to_path_buf();
         }
-        match &self.mode {
-            Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
-            Mode::ManifestBased(path_mapping) => path_mapping
-                .get(path)
-                .unwrap_or_else(|| {
-                    panic!("Path {} not found among runfiles.", path.to_string_lossy())
-                })
-                .clone(),
-        }
+        raw_rlocation(&self.mode, path)
     }
 
-    /// Returns the canonical name of the caller's Bazel repository.
-    pub fn current_repository(&self) -> &str {
-        // This value must match the value of `_RULES_RUST_RUNFILES_WORKSPACE_NAME`
-        // which can be found in `@rules_rust//tools/runfiles/private:workspace_name.bzl`
-        env!("RULES_RUST_RUNFILES_WORKSPACE_NAME")
+    /// Returns the runtime path of a runfile.
+    ///
+    /// Runfiles are data-dependencies of Bazel-built binaries and tests.
+    /// The returned path may not be valid. The caller should check the path's
+    /// validity and that the path exists.
+    ///
+    /// Typically this should be used via the `rlocation!` macro to properly set source_repo.
+    pub fn rlocation_from(&self, path: impl AsRef<Path>, source_repo: &str) -> PathBuf {
+        let path = path.as_ref();
+        if path.is_absolute() {
+            return path.to_path_buf();
+        }
+
+        let parts: Vec<&str> = path
+            .to_str()
+            .expect("Should be valid UTF8")
+            .splitn(2, '/')
+            .collect();
+        if parts.len() == 2 {
+            let key: (String, String) = (source_repo.into(), parts[0].into());
+            if let Some(target_repo_directory) = self.repo_mapping.get(&key) {
+                return raw_rlocation(
+                    &self.mode,
+                    target_repo_directory.to_owned() + "/" + parts[1],
+                );
+            };
+        }
+        raw_rlocation(&self.mode, path)
     }
+}
+
+fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> PathBuf {
+    let path = path.as_ref();
+    match mode {
+        Mode::DirectoryBased(runfiles_dir) => runfiles_dir.join(path),
+        Mode::ManifestBased(path_mapping) => path_mapping
+            .get(path)
+            .unwrap_or_else(|| panic!("Path {} not found among runfiles.", path.to_string_lossy()))
+            .clone(),
+    }
+}
+
+fn parse_repo_mapping(path: PathBuf) -> io::Result<RepoMapping> {
+    let mut repo_mapping = RepoMapping::new();
+
+    for line in std::fs::read_to_string(path)?.lines() {
+        let parts: Vec<&str> = line.splitn(3, ',').collect();
+        if parts.len() < 3 {
+            return Err(make_io_error("Malformed repo_mapping file"));
+        }
+        repo_mapping.insert((parts[0].into(), parts[1].into()), parts[2].into());
+    }
+
+    Ok(repo_mapping)
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> io::Result<PathBuf> {
-    assert_ne!(
-        std::env::var_os(MANIFEST_ONLY_ENV_VAR).unwrap_or_else(|| OsString::from("0")),
-        "1"
-    );
+    assert!(std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none());
 
     // If bazel told us about the runfiles dir, use that without looking further.
     if let Some(runfiles_dir) = std::env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
@@ -187,26 +233,6 @@ fn make_io_error(msg: &str) -> io::Error {
     io::Error::new(io::ErrorKind::Other, msg)
 }
 
-fn is_manifest_only() -> bool {
-    match std::env::var(MANIFEST_ONLY_ENV_VAR) {
-        Ok(val) => val == "1",
-        Err(_) => false,
-    }
-}
-
-fn find_manifest_path() -> io::Result<PathBuf> {
-    assert_eq!(
-        std::env::var_os(MANIFEST_ONLY_ENV_VAR).expect("RUNFILES_MANIFEST_ONLY was not set"),
-        OsString::from("1")
-    );
-    match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-        Some(path) => Ok(path.into()),
-        None => Err(
-            make_io_error(
-                "RUNFILES_MANIFEST_ONLY was set to '1', but RUNFILES_MANIFEST_FILE was not set. Did Bazel change?"))
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -217,7 +243,7 @@ mod test {
     #[test]
     fn test_can_read_data_from_runfiles() {
         // We want to run multiple test cases with different environment variables set. Since
-        // environment variables are global state, we need to ensure the two test cases do not run
+        // environment variables are global state, we need to ensure the test cases do not run
         // concurrently. Rust runs tests in parallel and does not provide an easy way to synchronise
         // them, so we run all test cases in the same #[test] function.
 
@@ -225,10 +251,12 @@ mod test {
             env::var_os(TEST_SRCDIR_ENV_VAR).expect("bazel did not provide TEST_SRCDIR");
         let runfiles_dir =
             env::var_os(RUNFILES_DIR_ENV_VAR).expect("bazel did not provide RUNFILES_DIR");
+        let runfiles_manifest_file = env::var_os(MANIFEST_FILE_ENV_VAR).unwrap_or("".into());
 
         // Test case 1: Only $RUNFILES_DIR is set.
         {
             env::remove_var(TEST_SRCDIR_ENV_VAR);
+            env::remove_var(MANIFEST_FILE_ENV_VAR);
             let r = Runfiles::create().unwrap();
 
             let mut f =
@@ -238,11 +266,13 @@ mod test {
             f.read_to_string(&mut buffer).unwrap();
 
             assert_eq!("Example Text!", buffer);
-            env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir)
+            env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir);
+            env::set_var(MANIFEST_FILE_ENV_VAR, &runfiles_manifest_file);
         }
         // Test case 2: Only $TEST_SRCDIR is set.
         {
             env::remove_var(RUNFILES_DIR_ENV_VAR);
+            env::remove_var(MANIFEST_FILE_ENV_VAR);
             let r = Runfiles::create().unwrap();
 
             let mut f =
@@ -252,13 +282,15 @@ mod test {
             f.read_to_string(&mut buffer).unwrap();
 
             assert_eq!("Example Text!", buffer);
-            env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir)
+            env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir);
+            env::set_var(MANIFEST_FILE_ENV_VAR, &runfiles_manifest_file);
         }
 
         // Test case 3: Neither are set
         {
             env::remove_var(RUNFILES_DIR_ENV_VAR);
             env::remove_var(TEST_SRCDIR_ENV_VAR);
+            env::remove_var(MANIFEST_FILE_ENV_VAR);
 
             let r = Runfiles::create().unwrap();
 
@@ -272,6 +304,7 @@ mod test {
 
             env::set_var(TEST_SRCDIR_ENV_VAR, &test_srcdir);
             env::set_var(RUNFILES_DIR_ENV_VAR, &runfiles_dir);
+            env::set_var(MANIFEST_FILE_ENV_VAR, &runfiles_manifest_file);
         }
     }
 
@@ -281,17 +314,9 @@ mod test {
         path_mapping.insert("a/b".into(), "c/d".into());
         let r = Runfiles {
             mode: Mode::ManifestBased(path_mapping),
+            repo_mapping: RepoMapping::new(),
         };
 
         assert_eq!(r.rlocation("a/b"), PathBuf::from("c/d"));
-    }
-
-    #[test]
-    fn test_current_repository() {
-        let r = Runfiles::create().unwrap();
-
-        // This check is unique to the rules_rust repository. The name
-        // here is expected to be different in consumers of this library
-        assert_eq!(r.current_repository(), "rules_rust")
     }
 }

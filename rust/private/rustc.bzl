@@ -1099,6 +1099,9 @@ def construct_arguments(
     if _is_no_std(ctx, toolchain, crate_info):
         rustc_flags.add('--cfg=feature="no_std"')
 
+    # Needed for bzlmod-aware runfiles resolution.
+    env["REPOSITORY_NAME"] = ctx.label.workspace_name
+
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
     args = struct(

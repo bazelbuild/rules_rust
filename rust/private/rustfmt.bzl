@@ -13,7 +13,7 @@ def _get_rustfmt_ready_crate_info(target):
     """
 
     # Ignore external targets
-    if target.label.workspace_root.startswith("external"):
+    if target.label.workspace_name:
         return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
@@ -53,16 +53,19 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
     return srcs
 
 def _generate_manifest(edition, srcs, ctx):
+    workspace = ctx.label.workspace_name or ctx.workspace_name
+
     # Gather the source paths to non-generated files
-    src_paths = [src.path for src in srcs]
+    content = ctx.actions.args()
+    content.set_param_file_format("multiline")
+    content.add_all(srcs, format_each = workspace + "/%s")
+    content.add(edition)
 
     # Write the rustfmt manifest
     manifest = ctx.actions.declare_file(ctx.label.name + ".rustfmt")
     ctx.actions.write(
         output = manifest,
-        content = "\n".join(src_paths + [
-            edition,
-        ]),
+        content = content,
     )
 
     return manifest
@@ -224,7 +227,7 @@ def _rustfmt_test_impl(ctx):
         ctx.attr._runner[DefaultInfo].default_runfiles,
     )
 
-    path_env_sep = ";" if is_windows else ":"
+    workspace = ctx.label.workspace_name or ctx.workspace_name
 
     return [
         DefaultInfo(
@@ -233,8 +236,8 @@ def _rustfmt_test_impl(ctx):
             executable = runner,
         ),
         testing.TestEnvironment({
-            "RUSTFMT_MANIFESTS": path_env_sep.join([
-                manifest.short_path
+            "RUSTFMT_MANIFESTS": ctx.configuration.host_path_separator.join([
+                workspace + "/" + manifest.short_path
                 for manifest in sorted(manifests.to_list())
             ]),
             "RUST_BACKTRACE": "1",

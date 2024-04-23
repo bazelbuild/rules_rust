@@ -927,8 +927,10 @@ mod test {
     #[test]
     fn deserialize_config() {
         let runfiles = runfiles::Runfiles::create().unwrap();
-        let path = runfiles
-            .rlocation("rules_rust/crate_universe/test_data/serialized_configs/config.json");
+        let path = runfiles::rlocation!(
+            runfiles,
+            "rules_rust/crate_universe/test_data/serialized_configs/config.json"
+        );
 
         let content = std::fs::read_to_string(path).unwrap();
 

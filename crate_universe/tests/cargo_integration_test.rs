@@ -54,7 +54,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
     /*
     let manifest_path = scratch.path().join("Cargo.toml");
     fs::copy(
-        runfiles.rlocation(manifest),
+        runfiles::rlocation!(runfiles, manifest),
         manifest_path,
     )
     .unwrap();
@@ -94,7 +94,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
 
     splice(SpliceOptions {
         splicing_manifest,
-        cargo_lockfile: Some(runfiles.rlocation(lockfile)),
+        cargo_lockfile: Some(runfiles::rlocation!(runfiles, lockfile)),
         repin: None,
         workspace_dir: None,
         output_dir: scratch.path().join("out"),
@@ -127,16 +127,16 @@ fn feature_generator() {
         return;
     }
 
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "target_feature_test",
         HashMap::from([(
-            runfiles
-                .rlocation(
-                    "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml",
-                )
-                .to_string_lossy()
-                .to_string(),
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml"
+            )
+            .to_string_lossy()
+            .to_string(),
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.lock",
@@ -180,16 +180,16 @@ fn feature_generator_cfg_features() {
         return;
     }
 
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "target_cfg_features_test",
         HashMap::from([(
-            runfiles
-                .rlocation(
-                    "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml",
-                )
-                .to_string_lossy()
-                .to_string(),
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml"
+            )
+            .to_string_lossy()
+            .to_string(),
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.lock",
@@ -235,24 +235,26 @@ fn feature_generator_workspace() {
         return;
     }
 
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "workspace_test",
         HashMap::from([
             (
-                runfiles
-                    .rlocation("rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml")
-                    .to_string_lossy()
-                    .to_string(),
+                runfiles::rlocation!(
+                    r,
+                    "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"
+                )
+                .to_string_lossy()
+                .to_string(),
                 "//:test_input".to_string(),
             ),
             (
-                runfiles
-                    .rlocation(
-                        "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml",
-                    )
-                    .to_string_lossy()
-                    .to_string(),
+                runfiles::rlocation!(
+                    r,
+                    "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml"
+                )
+                .to_string_lossy()
+                .to_string(),
                 "//crate_universe:test_data/metadata/workspace/child/Cargo.toml".to_string(),
             ),
         ]),
@@ -274,18 +276,18 @@ fn feature_generator_crate_combined_features() {
         return;
     }
 
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "crate_combined_features",
-        HashMap::from([
-            (
-                runfiles
-                    .rlocation("rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.toml")
-                    .to_string_lossy()
-                    .to_string(),
-                "//:test_input".to_string(),
+        HashMap::from([(
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.toml"
             )
-        ]),
+            .to_string_lossy()
+            .to_string(),
+            "//:test_input".to_string(),
+        )]),
         "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.lock",
     );
 
