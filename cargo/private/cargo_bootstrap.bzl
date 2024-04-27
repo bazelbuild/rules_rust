@@ -177,12 +177,13 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
     # Pretend to Bazel that this rule's input files have been used, so that it will re-run the rule if they change.
     _detect_changes(repository_ctx)
 
-    if repository_ctx.attr.version in ("beta", "nightly"):
-        channel = repository_ctx.attr.version
-        version = repository_ctx.attr.iso_date
+    # Expects something like `1.56.0`, or `nightly/2021-09-08`.
+    version, _, iso_date = repository_ctx.attr.version.partition("/")
+    if iso_date:
+        channel = version
+        version = iso_date
     else:
         channel = "stable"
-        version = repository_ctx.attr.version
 
     host_triple = get_host_triple(repository_ctx)
     cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
@@ -260,9 +261,6 @@ cargo_bootstrap_repository = repository_rule(
                 "Additionally, the platform triple `*` applies to all platforms."
             ),
         ),
-        "iso_date": attr.string(
-            doc = "The iso_date of cargo binary the resolver should use. Note: This can only be set if `version` is `beta` or `nightly`",
-        ),
         "rust_toolchain_cargo_template": attr.string(
             doc = (
                 "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
@@ -290,11 +288,8 @@ cargo_bootstrap_repository = repository_rule(
             default = 600,
         ),
         "version": attr.string(
-            doc = "The version of cargo the resolver should use",
+            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
             default = rust_common.default_version,
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
 )
