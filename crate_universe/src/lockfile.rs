@@ -141,6 +141,8 @@ impl Digest {
             .with_context(|| format!("Failed to run {} to get its version", binary.display()))?;
 
         if !output.status.success() {
+            eprintln!("{}", String::from_utf8_lossy(&output.stdout));
+            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
             bail!("Failed to query cargo version")
         }
 

@@ -251,6 +251,9 @@ impl WorkspaceMetadata {
         })
     }
 
+    /// Update an existing Cargo manifest with metadata about registry urls and target
+    /// features that are needed in generator steps beyond splicing.
+    #[tracing::instrument(skip_all)]
     pub(crate) fn write_registry_urls_and_feature_map(
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,

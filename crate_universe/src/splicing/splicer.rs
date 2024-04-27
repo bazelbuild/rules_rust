@@ -185,6 +185,7 @@ impl<'a> SplicerKind<'a> {
     }
 
     /// Performs splicing based on the current variant.
+    #[tracing::instrument(skip_all)]
     pub(crate) fn splice(&self, workspace_dir: &Path) -> Result<SplicedManifest> {
         match self {
             SplicerKind::Workspace {
@@ -205,6 +206,7 @@ impl<'a> SplicerKind<'a> {
     }
 
     /// Implementation for splicing Cargo workspaces
+    #[tracing::instrument(skip_all)]
     fn splice_workspace(
         workspace_dir: &Path,
         path: &&PathBuf,
@@ -241,6 +243,7 @@ impl<'a> SplicerKind<'a> {
     }
 
     /// Implementation for splicing individual Cargo packages
+    #[tracing::instrument(skip_all)]
     fn splice_package(
         workspace_dir: &Path,
         path: &&PathBuf,
@@ -283,6 +286,7 @@ impl<'a> SplicerKind<'a> {
     }
 
     /// Implementation for splicing together multiple Cargo packages/workspaces
+    #[tracing::instrument(skip_all)]
     fn splice_multi_package(
         workspace_dir: &Path,
         manifests: &&BTreeMap<PathBuf, Manifest>,
@@ -656,8 +660,13 @@ pub(crate) fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -
 
     // TODO(https://gitlab.com/crates.rs/cargo_toml/-/issues/3)
     let value = toml::Value::try_from(manifest)?;
-    fs::write(path, toml::to_string(&value)?)
-        .context(format!("Failed to write manifest to {}", path.display()))
+    let content = toml::to_string(&value)?;
+    tracing::debug!(
+        "Writing Cargo manifest '{}':\n```toml\n{}```",
+        path.display(),
+        content
+    );
+    fs::write(path, content).context(format!("Failed to write manifest to {}", path.display()))
 }
 
 /// Create a symlink file on unix systems
