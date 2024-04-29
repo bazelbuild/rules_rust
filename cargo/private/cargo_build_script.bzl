@@ -61,7 +61,7 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
-def _pwd_flags(args):
+def _pwd_flags_sysroot(args):
     """Prefix execroot-relative paths of known arguments with ${pwd}.
 
     Args:
@@ -78,6 +78,30 @@ def _pwd_flags(args):
         else:
             res.append(arg)
     return res
+
+def _pwd_flags_isystem(args):
+    """Prefix execroot-relative paths of known arguments with ${pwd}.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list.
+    """
+    res = []
+    fix_next_arg = False
+    for arg in args:
+        if fix_next_arg and not paths.is_absolute(arg):
+            res.append("${{pwd}}/{}".format(arg))
+        else:
+            res.append(arg)
+
+        fix_next_arg = arg == "-isystem"
+
+    return res
+
+def _pwd_flags(args):
+    return _pwd_flags_isystem(_pwd_flags_sysroot(args))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
