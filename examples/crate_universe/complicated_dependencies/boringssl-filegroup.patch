@@ -1,0 +1,14 @@
+diff --git a/BUILD b/BUILD
+index 206786442..75a79107a 100644
+--- a/BUILD
++++ b/BUILD
+@@ -162,3 +162,9 @@ cc_binary(
+     visibility = ["//visibility:public"],
+     deps = [":ssl"],
+ )
++
++filegroup(
++    name = "headers",
++    srcs = glob(["src/include/**"]),
++    visibility = ["//visibility:public"],
++)
