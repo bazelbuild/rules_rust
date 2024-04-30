@@ -1,5 +1,5 @@
 ---
-minimum_bazel_version: &minimum_bazel_version "6.3.0"
+minimum_bazel_version: &minimum_bazel_version "6.4.0"
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
