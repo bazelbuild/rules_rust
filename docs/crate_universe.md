@@ -250,6 +250,36 @@ convenient accessors to larger sections of the dependency graph.
 - [all_crate_deps](#all_crate_deps)
 - [crate_repositories](#crate_repositories)
 
+## Building crates with complicated dependencies
+
+Some crates have build.rs scripts which are complicated to run. Typically these build C++ (or other languages), or attempt to find pre-installed libraries on the build machine.
+
+There are a few approaches to making sure these run:
+
+### Some things work without intervention
+
+Some build scripts will happily run without any support needed.
+
+rules_rust already supplies a configured C++ toolchain as input to build script execution, and sets variables like `CC`, `CXX`, `LD`, `LDFLAGS`, etc as needed. Many crates which invoke a compiler with the default environment, or forward these env vars, will Just Work (e.g. if using [`cc-rs`][cc-rs]).
+
+rules_rust is open to PRs which make build scripts more likely to work by default with intervention assuming they're broadly applicable (e.g. setting extra widely-known env vars is probably fine, wiring up additional toolchains like `cmake` that aren't present by default for most Bazel users probably isn't).
+
+### Supplying extra tools to build
+
+Some build scripts can be made to work by pulling in some extra files and making them available to the build script.
+
+Commonly this is done by passing the file to the `build_script_data` annotation for the crate, and using `build_script_env` to tell the build script where the file is. That env var may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A
+
+There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds libz-ng-sys.
+
+### Building with Bazel and supplying via an override
+
+Some build scripts have hooks to allow replacing parts that are complicated to build with output prepared by Bazel.
+
+We can use those hooks by specifying paths (generally using the `build_script_data` and `build_script_env` annotations) and pointing them at labels which Bazel will then build. These env vars may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).
+
+There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
+
 ---
 
 ---
@@ -258,6 +288,7 @@ convenient accessors to larger sections of the dependency graph.
 [cc]: https://docs.bazel.build/versions/main/be/c-cpp.html
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
+[cc-rs]: https://github.com/rust-lang/cc-rs
 
 
 <a id="crates_repository"></a>
