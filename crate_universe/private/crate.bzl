@@ -1,4 +1,4 @@
-"""Macros used for represeting crates or annotations for existing crates"""
+"""Macros used for representing crates or annotations for existing crates"""
 
 load(":common_utils.bzl", "parse_alias_rule")
 
