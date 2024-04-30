@@ -315,6 +315,8 @@ def _cargo_build_script_impl(ctx):
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
+        # Set use_default_shell_env so that $PATH is set, as tools like cmake may want to probe $PATH for helper tools.
+        use_default_shell_env = True,
     )
 
     return [
