@@ -3,14 +3,14 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
-_BUILDIFIER_VERSION = "5.0.1"
-_BUILDIFIER_URL_TEMPLATE = "https://github.com/bazelbuild/buildtools/releases/download/{version}/{bin}"
-_BUILDIFIER_SHA256S = {
-    "buildifier-darwin-amd64": "2cb0a54683633ef6de4e0491072e22e66ac9c6389051432b76200deeeeaf93fb",
-    "buildifier-darwin-arm64": "4da23315f0dccabf878c8227fddbccf35545b23b3cb6225bfcf3107689cc4364",
-    "buildifier-linux-amd64": "3ed7358c7c6a1ca216dc566e9054fd0b97a1482cb0b7e61092be887d42615c5d",
-    "buildifier-linux-arm64": "c657c628fca72b7e0446f1a542231722a10ba4321597bd6f6249a5da6060b6ff",
-    "buildifier-windows-amd64.exe": "45e13b2951e4c611d346dacdaf0aafaa484045a3e7300fbc5dd01a896a688177",
+_BUILDIFIER_VERSION = "7.1.1"
+_BUILDIFIER_URL_TEMPLATE = "https://github.com/bazelbuild/buildtools/releases/download/v{version}/{bin}"
+_BUILDIFIER_INTEGRITY = {
+    "buildifier-darwin-amd64": "sha256-d0YNlXr3oCi7GK223EP6ZLbgAGTkc+rINoq4pwOzp0M=",
+    "buildifier-darwin-arm64": "sha256-yZD0sDsn1qDYb/6TAUcypZwYurDE86TMVjS9OxYp/OM=",
+    "buildifier-linux-amd64": "sha256-VLfyzo8idhz60mRBbpEgVq6chkX1nrZYO4RrSGSh7oM=",
+    "buildifier-linux-arm64": "sha256-HZrx9pVqQ5/KKHii+/dguXyl3wD2aeXRlTvrDEYHrHE=",
+    "buildifier-windows-amd64.exe": "sha256-Mx2IPnyjbIu+KKHoUoqccRAvS+Yj+Tn6PSCk2PAEvqs=",
 }
 
 def crates_vendor_deps():
@@ -21,7 +21,7 @@ def crates_vendor_deps():
     """
     direct_deps = []
 
-    for bin, sha256 in _BUILDIFIER_SHA256S.items():
+    for bin, integrity in _BUILDIFIER_INTEGRITY.items():
         repo = "cargo_bazel.{}".format(bin)
         maybe(
             http_file,
@@ -30,8 +30,8 @@ def crates_vendor_deps():
                 bin = bin,
                 version = _BUILDIFIER_VERSION,
             )],
-            sha256 = sha256,
-            downloaded_file_path = "buildifier.exe",
+            integrity = integrity,
+            downloaded_file_path = "buildifier.exe" if bin.endswith(".exe") else "buildifier",
             executable = True,
         )
         direct_deps.append(struct(repo = repo, is_dev_dep = False))
