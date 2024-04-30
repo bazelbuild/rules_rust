@@ -680,7 +680,6 @@ tasks:
     bazel: *minimum_bazel_version
     platform: ubuntu2004
     working_directory: examples/bzlmod/hello_world
-    test_flags: *bzlmod_flags
     shell_commands:
       - "rm MODULE.bazel.lock"
     run_targets:
