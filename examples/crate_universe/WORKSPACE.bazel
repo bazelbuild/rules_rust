@@ -648,7 +648,12 @@ git_repository(
     name = "boringssl",
     commit = "44b3df6f03d85c901767250329c571db405122d5",
     patch_args = ["-p1"],
-    patches = ["//complicated_dependencies:boringssl-filegroup.patch"],
+    patches = [
+        "//complicated_dependencies:boringssl-filegroup.patch",
+        # On the macOS bazelci builders, there's a system-installed openssl, and that takes priority over -isystem flags, which is what cc_library.includes uses.
+        # This forces our local system-includes to be chosen with higher priority, which avoids conflicts.
+        "//complicated_dependencies:boringssl-system-includes.patch",
+    ],
     remote = "https://github.com/google/boringssl.git",
 )
 
