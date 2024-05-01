@@ -19,6 +19,7 @@ extern crate cargo_build_script_output_parser;
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
 use std::collections::BTreeMap;
 use std::env;
+use std::ffi::OsString;
 use std::fs::{create_dir_all, read_to_string, write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -119,14 +120,7 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     if let Some(ar_path) = env::var_os("AR") {
-        // The default OSX toolchain uses libtool as ar_executable not ar.
-        // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
-        // /usr/bin/ar which is probably good enough.
-        if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
-            command.env_remove("AR");
-        } else {
-            command.env("AR", exec_root.join(ar_path));
-        }
+        patch_env_for_ar(&mut command, &exec_root, ar_path, env::var_os("PATH"));
     }
 
     // replace env vars with a ${pwd} prefix with the exec_root
@@ -202,6 +196,38 @@ fn should_symlink_exec_root() -> bool {
     env::var("RULES_RUST_SYMLINK_EXEC_ROOT")
         .map(|s| s == "1")
         .unwrap_or(false)
+}
+
+#[cfg(target_os = "macos")]
+fn patch_env_for_ar(command: &mut Command, exec_root: &Path, ar_path: OsString, path_env_var: Option<OsString>) {
+    // The default macOS C++ toolchain uses libtool as ar_executable not ar.
+    // ar is a well-established binary with a consistent interface, so we'll try to make things work transparently despite this.
+    if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
+        command.env_remove("AR");
+        let real_ar = Path::new("/usr/bin/ar");
+        if path_env_var.is_none() {
+            if let Ok(metadata) = std::fs::metadata(&real_ar) {
+                use std::os::unix::fs::PermissionsExt;
+                if metadata.is_file() && metadata.permissions().mode() & 0o100 == 0o100 {
+                    // Some tools look directly for AR - try to provide a value likely to work.
+                    // (This can be overridden by a rule author specifying a value for AR that isn't named libtool).
+                    command.env("AR", real_ar);
+                    // Other tools (like cmake - see https://gitlab.kitware.com/cmake/cmake/-/issues/18277) probe $PATH for ar, but don't follow $AR itself.
+                    // If no $PATH is set, set up a reasonable default that will find ar.
+                    // Unfortunately we need to make this slightly broader, because cmake will also probe $PATH for some other foundational tools if it's set.
+                    // This can be overridden by a rule author specifying their own value for $PATH.
+                    command.env("PATH", "/bin:/usr/bin");
+                }
+            }
+        }
+    } else {
+        command.env("AR", exec_root.join(ar_path));
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn patch_env_for_ar(command: &mut Command, exec_root: &Path, ar_path: OsString, path_env_var: Option<OsString>) {
+    command.env("AR", exec_root.join(ar_path));
 }
 
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.
