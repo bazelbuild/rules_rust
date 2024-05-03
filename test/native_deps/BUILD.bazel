@@ -5,22 +5,32 @@ load(
     "rust_test",
 )
 
+# TODO: These targets started failing on windows after the Rust 1.78.0 upgrade.
+# https://github.com/bazelbuild/rules_rust/issues/2640
+INCOMPATIBLE_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 rust_library(
     name = "transitive",
     srcs = ["transitive.rs"],
     edition = "2018",
+    target_compatible_with = INCOMPATIBLE_WINDOWS,
 )
 
 cc_library(
     name = "direct",
     srcs = ["direct.cc"],
     hdrs = ["direct.h"],
-    deps = ["transitive"],
+    target_compatible_with = INCOMPATIBLE_WINDOWS,
+    deps = [":transitive"],
 )
 
 rust_test(
     name = "main",
     srcs = ["main.rs"],
     edition = "2018",
-    deps = ["direct"],
+    target_compatible_with = INCOMPATIBLE_WINDOWS,
+    deps = [":direct"],
 )
