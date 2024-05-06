@@ -1391,13 +1391,18 @@ def rustc_compile_action(
 
         # The path to the package dir, including a trailing "/".
         package_dir = ctx.bin_dir.path + "/"
-        if ctx.label.workspace_root:
+
+        # For external repositories, workspace root is not part of the output
+        # path when sibling repository layout is used (the repository name is
+        # part of the bin_dir). This scenario happens when the workspace root
+        # starts with "../"
+        if ctx.label.workspace_root and not ctx.label.workspace_root.startswith("../"):
             package_dir = package_dir + ctx.label.workspace_root + "/"
         if ctx.label.package:
             package_dir = package_dir + ctx.label.package + "/"
 
         if not crate_info.output.path.startswith(package_dir):
-            fail("The package dir path {} should be a prefix of the crate_info.output.path {}", package_dir, crate_info.output.path)
+            fail("The package dir path", package_dir, "should be a prefix of the crate_info.output.path", crate_info.output.path)
 
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
