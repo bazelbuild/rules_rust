@@ -92,13 +92,6 @@ incompatible_flag(
     issue = "https://github.com/bazelbuild/rules_rust/issues/2039",
 )
 
-# A flag to make `rust_test.crate` and `rust_test.srcs` mutually exclusive.
-incompatible_flag(
-    name = "incompatible_test_attr_crate_and_srcs_mutually_exclusive",
-    build_setting_default = True,
-    issue = "https://github.com/bazelbuild/rules_rust/issues/2324",
-)
-
 # A flag to control whether to link libstd dynamically.
 bool_flag(
     name = "experimental_link_std_dylib",
