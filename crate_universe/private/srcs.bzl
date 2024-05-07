@@ -16,6 +16,7 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/config.rs"),
     Label("//crate_universe:src/context.rs"),
     Label("//crate_universe:src/context/crate_context.rs"),
+    Label("//crate_universe:src/context/deps.rs"),
     Label("//crate_universe:src/context/platforms.rs"),
     Label("//crate_universe:src/lib.rs"),
     Label("//crate_universe:src/lockfile.rs"),

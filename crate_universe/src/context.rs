@@ -1,6 +1,7 @@
 //! Convert annotated metadata into a renderable context
 
 pub(crate) mod crate_context;
+pub(crate) mod deps;
 mod platforms;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -11,6 +12,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
+use crate::context::deps::resolve_cfg_deps;
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
@@ -59,7 +61,7 @@ impl Context {
             .crates
             .values()
             .map(|annotation| {
-                let context = CrateContext::new(
+                let mut context = CrateContext::new(
                     annotation,
                     &annotations.metadata.packages,
                     &annotations.lockfile.crates,
@@ -69,6 +71,7 @@ impl Context {
                     annotations.config.generate_build_scripts,
                 );
                 let id = CrateId::new(context.name.clone(), context.version.clone());
+                resolve_cfg_deps(&mut context);
                 (id, context)
             })
             .collect();

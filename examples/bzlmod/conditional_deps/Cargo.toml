@@ -1,0 +1,12 @@
+[package]
+name = "conditional_deps"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "/dev/null"
+
+[dependencies]
+anyhow = "1.0.79"
+tokio = { version = "1.28.2", features = ["full", "tracing"] }

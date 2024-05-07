@@ -351,12 +351,13 @@ impl CrateContext {
             .map(new_crate_dep);
 
         // Gather all "common" attributes
+        // #ERIC LOOK Do we need to look at rustc_flags here
+        // to decide on crate_features?
         let mut common_attrs = CommonAttributes {
             crate_features: crate_features
                 .get(&current_crate_id)
                 .cloned()
                 .unwrap_or_default(),
-
             deps,
             deps_dev,
             edition: package.edition.as_str().to_string(),
