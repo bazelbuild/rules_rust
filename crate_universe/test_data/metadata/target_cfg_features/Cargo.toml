@@ -13,3 +13,6 @@ tokio = "1.25.0"
 
 [target.'cfg(unix)'.dependencies.tokio]
 features = ["fs"]
+# A version is currently required as of 2024/05/02.
+# see https://github.com/rust-lang/cargo/issues/13854
+version = "1.25.0"
