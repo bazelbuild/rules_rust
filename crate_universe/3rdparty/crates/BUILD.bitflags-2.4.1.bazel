@@ -48,7 +48,7 @@ rust_library(
             "std",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "std",  # aarch64-unknown-nixos-gnu
+            "std",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "std",  # aarch64-unknown-nto-qnx710
@@ -102,7 +102,7 @@ rust_library(
             "std",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "std",  # x86_64-unknown-nixos-gnu
+            "std",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

@@ -84,6 +84,6 @@ rust_library(
     version = "2.2.6",
     deps = [
         "@crates_vendor_pkgs__equivalent-1.0.1//:equivalent",
-        "@crates_vendor_pkgs__hashbrown-0.14.3//:hashbrown",
+        "@crates_vendor_pkgs__hashbrown-0.14.5//:hashbrown",
     ],
 )

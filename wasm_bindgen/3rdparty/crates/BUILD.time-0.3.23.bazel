@@ -88,100 +88,100 @@ rust_library(
         "@rules_rust_wasm_bindgen__time-core-0.1.1//:time_core",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-apple-darwin
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-apple-ios
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-apple-ios-sim
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-fuchsia
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-linux-android
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-unknown-linux-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # aarch64-unknown-nto-qnx710
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # arm-unknown-linux-gnueabi
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # armv7-linux-androideabi
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # armv7-unknown-linux-gnueabi
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # i686-apple-darwin
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # i686-linux-android
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # i686-unknown-freebsd
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # i686-unknown-linux-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # powerpc-unknown-linux-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # s390x-unknown-linux-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-apple-darwin
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-apple-ios
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-fuchsia
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-linux-android
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-unknown-freebsd
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-unknown-linux-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # cfg(target_family = "unix")
-            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # cfg(target_family = "unix")
+            "@rules_rust_wasm_bindgen__libc-0.2.150//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rules_rust_wasm_bindgen__num_threads-0.1.6//:num_threads",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

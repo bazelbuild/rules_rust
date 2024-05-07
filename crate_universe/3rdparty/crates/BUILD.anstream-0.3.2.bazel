@@ -92,13 +92,13 @@ rust_library(
         "@cui__utf8parse-0.2.1//:utf8parse",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # cfg(windows)
+            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # cfg(windows)
+            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # cfg(windows)
+            "@cui__anstyle-wincon-1.0.1//:anstyle_wincon",  # x86_64-pc-windows-msvc
         ],
         "//conditions:default": [],
     }),

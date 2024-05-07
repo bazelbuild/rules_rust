@@ -52,7 +52,7 @@ rust_library(
             "extra_traits",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "extra_traits",  # aarch64-unknown-nixos-gnu
+            "extra_traits",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "extra_traits",  # aarch64-unknown-nto-qnx710
@@ -106,7 +106,7 @@ rust_library(
             "extra_traits",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "extra_traits",  # x86_64-unknown-nixos-gnu
+            "extra_traits",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
@@ -194,7 +194,7 @@ cargo_build_script(
             "extra_traits",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "extra_traits",  # aarch64-unknown-nixos-gnu
+            "extra_traits",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "extra_traits",  # aarch64-unknown-nto-qnx710
@@ -248,7 +248,7 @@ cargo_build_script(
             "extra_traits",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "extra_traits",  # x86_64-unknown-nixos-gnu
+            "extra_traits",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
