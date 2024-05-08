@@ -9,7 +9,9 @@ vendor_workspace() {
     workspace="$1"
     echo "Vendoring all targets in workspace $workspace"
     pushd $workspace >/dev/null
+    set +e
     targets="$(bazel query 'kind("crates_vendor", //...)' 2>/dev/null)"
+    set -e
     for target in $targets
     do
         bazel run $target
@@ -21,7 +23,7 @@ if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
     cd "${BUILD_WORKSPACE_DIRECTORY:-}"
 fi
 
-workspaces="$(find . -type f -name WORKSPACE.bazel -o -name MODULE.bazel)"
+workspaces="$(find . -type f -name WORKSPACE.bazel -o -name MODULE.bazel | sort)"
 
 for workspace in $workspaces
 do

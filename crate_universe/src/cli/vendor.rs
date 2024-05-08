@@ -12,7 +12,7 @@ use clap::Parser;
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
 use crate::metadata::CargoUpdateRequest;
-use crate::metadata::FeatureGenerator;
+use crate::metadata::TreeResolver;
 use crate::metadata::{Annotations, Cargo, Generator, MetadataGenerator, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
@@ -145,7 +145,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     // Load the config from disk
     let config = Config::try_from_path(&opt.config)?;
 
-    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone()).generate(
+    let resolver_data = TreeResolver::new(cargo.clone(), opt.rustc.clone()).generate(
         manifest_path.as_path_buf(),
         &config.supported_platform_triples,
     )?;
@@ -154,7 +154,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     WorkspaceMetadata::write_registry_urls_and_feature_map(
         &cargo,
         &cargo_lockfile,
-        feature_map,
+        resolver_data,
         manifest_path.as_path_buf(),
         manifest_path.as_path_buf(),
     )?;

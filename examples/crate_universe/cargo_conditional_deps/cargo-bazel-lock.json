@@ -1,5 +1,5 @@
 {
-  "checksum": "e4d513a0bfd7167cdf5ce6f8379e958ae8a9478b46fdcb9794774115ae255893",
+  "checksum": "945a24f2caf67b72776c1e1184f5225ed3730c8e1b0ea26dc14405e9e818d7e8",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -389,6 +389,10 @@
               "target": "libc"
             },
             {
+              "id": "memoffset 0.7.1",
+              "target": "memoffset"
+            },
+            {
               "id": "pin-utils 0.1.0",
               "target": "pin_utils"
             },
@@ -397,14 +401,7 @@
               "target": "static_assertions"
             }
           ],
-          "selects": {
-            "cfg(not(target_os = \"redox\"))": [
-              {
-                "id": "memoffset 0.7.1",
-                "target": "memoffset"
-              }
-            ]
-          }
+          "selects": {}
         },
         "edition": "2018",
         "version": "0.26.2"
@@ -534,42 +531,6 @@
     ],
     "armv7-unknown-linux-gnueabi": [
       "armv7-unknown-linux-gnueabi"
-    ],
-    "cfg(not(target_os = \"redox\"))": [
-      "aarch64-apple-darwin",
-      "aarch64-apple-ios",
-      "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
-      "aarch64-linux-android",
-      "aarch64-pc-windows-msvc",
-      "aarch64-unknown-linux-gnu",
-      "aarch64-unknown-nixos-gnu",
-      "aarch64-unknown-nto-qnx710",
-      "arm-unknown-linux-gnueabi",
-      "armv7-linux-androideabi",
-      "armv7-unknown-linux-gnueabi",
-      "i686-apple-darwin",
-      "i686-linux-android",
-      "i686-pc-windows-msvc",
-      "i686-unknown-freebsd",
-      "i686-unknown-linux-gnu",
-      "powerpc-unknown-linux-gnu",
-      "riscv32imc-unknown-none-elf",
-      "riscv64gc-unknown-none-elf",
-      "s390x-unknown-linux-gnu",
-      "thumbv7em-none-eabi",
-      "thumbv8m.main-none-eabi",
-      "wasm32-unknown-unknown",
-      "wasm32-wasi",
-      "x86_64-apple-darwin",
-      "x86_64-apple-ios",
-      "x86_64-fuchsia",
-      "x86_64-linux-android",
-      "x86_64-pc-windows-msvc",
-      "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu",
-      "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
     ],
     "cfg(target_os = \"linux\")": [
       "aarch64-unknown-linux-gnu",

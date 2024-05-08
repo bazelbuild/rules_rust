@@ -20,7 +20,7 @@ pub fn parse(path: &Path) -> Result<impl CargoBazelLockfile> {
     Ok(lockfile)
 }
 
-/// CargoBazelLockfile provides a view over cargo-bazel's lockfile format,
+/// `CargoBazelLockfile` provides a view over `cargo-bazel`'s lockfile format,
 /// providing information about the third-party dependencies of a workspace.
 /// While the lockfile's format doesn't provide any kind of compatibility guarantees over time,
 /// this type offers an interface which is likely to be publicly supportable.

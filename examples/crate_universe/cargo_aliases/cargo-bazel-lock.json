@@ -1,5 +1,5 @@
 {
-  "checksum": "109a210262c7b985d737d08b28703c66fe4ed05f1c7782f939d97c67ebf177a2",
+  "checksum": "aff5d296232e27a2be31e0c924d2d6b270f90a1ed3ac991a15a1f635d7fff553",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1938,7 +1938,145 @@
             }
           ],
           "selects": {
-            "cfg(unix)": [
+            "aarch64-apple-darwin": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-apple-ios": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-apple-ios-sim": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-fuchsia": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-linux-android": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "armv7-linux-androideabi": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "i686-apple-darwin": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "i686-linux-android": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "i686-unknown-freebsd": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-apple-ios": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-fuchsia": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-linux-android": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
               {
                 "id": "libc 0.2.139",
                 "target": "libc"
@@ -2902,7 +3040,8 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
@@ -3014,7 +3153,8 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"

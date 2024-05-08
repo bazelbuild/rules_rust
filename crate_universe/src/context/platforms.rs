@@ -245,7 +245,7 @@ mod test {
             assert_eq!(
                 configurations,
                 BTreeMap::from([
-                    (configuration, expectation,),
+                    (configuration, expectation),
                     // All known triples.
                     (
                         "aarch64-apple-darwin".to_owned(),

@@ -408,7 +408,7 @@ def crate_repositories():
         name = "ios_build__cc-1.0.73",
         sha256 = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/cc/1.0.73/download"],
+        urls = ["https://static.crates.io/crates/cc/1.0.73/download"],
         strip_prefix = "cc-1.0.73",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.cc-1.0.73.bazel"),
     )
@@ -418,7 +418,7 @@ def crate_repositories():
         name = "ios_build__jobserver-0.1.25",
         sha256 = "068b1ee6743e4d11fb9c6a1e6064b3693a1b600e7f5f5988047d98b3dc9fb90b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/jobserver/0.1.25/download"],
+        urls = ["https://static.crates.io/crates/jobserver/0.1.25/download"],
         strip_prefix = "jobserver-0.1.25",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.jobserver-0.1.25.bazel"),
     )
@@ -428,7 +428,7 @@ def crate_repositories():
         name = "ios_build__libc-0.2.134",
         sha256 = "329c933548736bc49fd575ee68c89e8be4d260064184389a5b77517cddd99ffb",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/libc/0.2.134/download"],
+        urls = ["https://static.crates.io/crates/libc/0.2.134/download"],
         strip_prefix = "libc-0.2.134",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.libc-0.2.134.bazel"),
     )
@@ -438,7 +438,7 @@ def crate_repositories():
         name = "ios_build__zstd-0.11.2-zstd.1.5.2",
         sha256 = "20cc960326ece64f010d2d2107537f26dc589a6573a316bd5b1dba685fa5fde4",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/zstd/0.11.2+zstd.1.5.2/download"],
+        urls = ["https://static.crates.io/crates/zstd/0.11.2+zstd.1.5.2/download"],
         strip_prefix = "zstd-0.11.2+zstd.1.5.2",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.zstd-0.11.2+zstd.1.5.2.bazel"),
     )
@@ -448,7 +448,7 @@ def crate_repositories():
         name = "ios_build__zstd-safe-5.0.2-zstd.1.5.2",
         sha256 = "1d2a5585e04f9eea4b2a3d1eca508c4dee9592a89ef6f450c11719da0726f4db",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/zstd-safe/5.0.2+zstd.1.5.2/download"],
+        urls = ["https://static.crates.io/crates/zstd-safe/5.0.2+zstd.1.5.2/download"],
         strip_prefix = "zstd-safe-5.0.2+zstd.1.5.2",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.zstd-safe-5.0.2+zstd.1.5.2.bazel"),
     )
@@ -458,7 +458,7 @@ def crate_repositories():
         name = "ios_build__zstd-sys-2.0.1-zstd.1.5.2",
         sha256 = "9fd07cbbc53846d9145dbffdf6dd09a7a0aa52be46741825f5c97bdd4f73f12b",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/zstd-sys/2.0.1+zstd.1.5.2/download"],
+        urls = ["https://static.crates.io/crates/zstd-sys/2.0.1+zstd.1.5.2/download"],
         strip_prefix = "zstd-sys-2.0.1+zstd.1.5.2",
         build_file = Label("@rules_rust_examples_ios_build//3rdparty/crates:BUILD.zstd-sys-2.0.1+zstd.1.5.2.bazel"),
     )

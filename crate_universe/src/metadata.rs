@@ -16,11 +16,12 @@ use anyhow::{anyhow, bail, Context, Result};
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
 use semver::Version;
+use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use crate::config::CrateId;
 use crate::lockfile::Digest;
-use crate::select::Select;
+use crate::select::{Select, SelectableScalar};
 use crate::utils::target_triple::TargetTriple;
 
 pub(crate) use self::dependency::*;
@@ -454,8 +455,42 @@ impl VendorGenerator {
     }
 }
 
-/// A generate which computes per-platform feature sets.
-pub(crate) struct FeatureGenerator {
+/// Feature resolver info about a given crate.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub(crate) struct CargoTreeEntry {
+    /// The set of features active on a given crate.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub features: BTreeSet<String>,
+
+    /// The dependencies of a given crate based on feature resolution.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub deps: BTreeSet<CrateId>,
+}
+
+impl CargoTreeEntry {
+    pub fn new() -> Self {
+        Self {
+            features: BTreeSet::new(),
+            deps: BTreeSet::new(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.features.is_empty() && self.deps.is_empty()
+    }
+}
+
+impl SelectableScalar for CargoTreeEntry {}
+
+/// Feature and dependency metadata generated from [TreeResolver].
+pub(crate) type TreeResolverMetadata = BTreeMap<CrateId, Select<CargoTreeEntry>>;
+
+/// Generates metadata about a Cargo workspace tree which supplements the inaccuracies in
+/// standard [Cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html)
+/// due lack of [Feature resolver 2](https://doc.rust-lang.org/cargo/reference/resolver.html#feature-resolver-version-2)
+/// support. This generator can be removed if the following is resolved:
+/// <https://github.com/rust-lang/cargo/issues/9863>
+pub(crate) struct TreeResolver {
     /// The path to a `cargo` binary
     cargo_bin: Cargo,
 
@@ -463,7 +498,7 @@ pub(crate) struct FeatureGenerator {
     rustc_bin: PathBuf,
 }
 
-impl FeatureGenerator {
+impl TreeResolver {
     pub(crate) fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
         Self {
             cargo_bin,
@@ -472,12 +507,12 @@ impl FeatureGenerator {
     }
 
     /// Computes the set of enabled features for each target triplet for each crate.
-    #[tracing::instrument(name = "FeatureGenerator::generate", skip_all)]
+    #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
         &self,
         manifest_path: &Path,
         target_triples: &BTreeSet<TargetTriple>,
-    ) -> Result<BTreeMap<CrateId, Select<BTreeSet<String>>>> {
+    ) -> Result<TreeResolverMetadata> {
         debug!(
             "Generating features for manifest {}",
             manifest_path.display()
@@ -500,7 +535,9 @@ impl FeatureGenerator {
                 .arg("--locked")
                 .arg("--manifest-path")
                 .arg(manifest_path)
-                .arg("--prefix=none")
+                .arg("--edges")
+                .arg("normal,build,dev")
+                .arg("--prefix=depth")
                 // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
                 .arg("--format=|{p}|{f}|")
                 .arg("--color=never")
@@ -520,8 +557,8 @@ impl FeatureGenerator {
                 })?;
             target_triple_to_child.insert(target_triple, output);
         }
-        let mut crate_features =
-            BTreeMap::<CrateId, BTreeMap<TargetTriple, BTreeSet<String>>>::new();
+        let mut metadata: BTreeMap<CrateId, BTreeMap<TargetTriple, CargoTreeEntry>> =
+            BTreeMap::new();
         for (target_triple, child) in target_triple_to_child.into_iter() {
             let output = child
                 .wait_with_output()
@@ -538,38 +575,64 @@ impl FeatureGenerator {
                 bail!(format!("Failed to run cargo tree: {}", output.status))
             }
             debug!("Process complete for {}", target_triple);
-            for (crate_id, features) in
+            for (crate_id, tree_data) in
                 parse_features_from_cargo_tree_output(output.stdout.lines())?
             {
-                debug!("\tFor {} features were: {:?}", crate_id, features);
-                crate_features
-                    .entry(crate_id)
+                debug!(
+                    "\tFor {}\n\t\tfeatures: {:?}\n\t\tdeps: {:?}",
+                    crate_id, tree_data.features, tree_data.deps
+                );
+                metadata
+                    .entry(crate_id.clone())
                     .or_default()
-                    .insert(target_triple.clone(), features);
+                    .insert(target_triple.clone(), tree_data);
             }
         }
-        let mut result = BTreeMap::<CrateId, Select<BTreeSet<String>>>::new();
-        for (crate_id, features) in crate_features.into_iter() {
-            let common = features
-                .iter()
-                .fold(
-                    None,
-                    |common: Option<BTreeSet<String>>, (_, features)| match common {
-                        Some(common) => Some(common.intersection(features).cloned().collect()),
-                        None => Some(features.clone()),
-                    },
-                )
-                .unwrap_or_default();
-            let mut select: Select<BTreeSet<String>> = Select::default();
-            for (target_triple, fs) in features {
-                if fs != common {
-                    for f in fs {
-                        select.insert(f, Some(target_triple.to_bazel()));
-                    }
+        let mut result = TreeResolverMetadata::new();
+        for (crate_id, tree_data) in metadata.into_iter() {
+            let common = CargoTreeEntry {
+                features: tree_data
+                    .iter()
+                    .fold(
+                        None,
+                        |common: Option<BTreeSet<String>>, (_, data)| match common {
+                            Some(common) => {
+                                Some(common.intersection(&data.features).cloned().collect())
+                            }
+                            None => Some(data.features.clone()),
+                        },
+                    )
+                    .unwrap_or_default(),
+                deps: tree_data
+                    .iter()
+                    .fold(
+                        None,
+                        |common: Option<BTreeSet<CrateId>>, (_, data)| match common {
+                            Some(common) => {
+                                Some(common.intersection(&data.deps).cloned().collect())
+                            }
+                            None => Some(data.deps.clone()),
+                        },
+                    )
+                    .unwrap_or_default(),
+            };
+            let mut select: Select<CargoTreeEntry> = Select::default();
+            for (target_triple, data) in tree_data {
+                let mut entry = CargoTreeEntry::new();
+                entry.features.extend(
+                    data.features
+                        .into_iter()
+                        .filter(|f| !common.features.contains(f)),
+                );
+                entry
+                    .deps
+                    .extend(data.deps.into_iter().filter(|d| !common.deps.contains(d)));
+                if !entry.is_empty() {
+                    select.insert(entry, Some(target_triple.to_bazel()));
                 }
             }
-            for f in common {
-                select.insert(f, None);
+            if !common.is_empty() {
+                select.insert(common, None);
             }
             result.insert(crate_id, select);
         }
@@ -581,19 +644,21 @@ impl FeatureGenerator {
 /// passed to `cargo tree` as well, but this format is critical.
 fn parse_features_from_cargo_tree_output<I, S, E>(
     lines: I,
-) -> Result<BTreeMap<CrateId, BTreeSet<String>>>
+) -> Result<BTreeMap<CrateId, CargoTreeEntry>>
 where
     I: Iterator<Item = std::result::Result<S, E>>,
     S: AsRef<str>,
     E: std::error::Error + Sync + Send + 'static,
 {
-    let mut crate_features = BTreeMap::<CrateId, BTreeSet<String>>::new();
+    let mut tree_data = BTreeMap::<CrateId, CargoTreeEntry>::new();
+    let mut parents: Vec<CrateId> = Vec::new();
     for line in lines {
         let line = line?;
         let line = line.as_ref();
         if line.is_empty() {
             continue;
         }
+
         let parts = line.split('|').collect::<Vec<_>>();
         if parts.len() != 4 {
             bail!("Unexpected line '{}'", line);
@@ -618,17 +683,61 @@ where
         })?;
         let version = Version::parse(version_str).context("Failed to parse version")?;
         let crate_id = CrateId::new(crate_id_parts[0].to_owned(), version);
+
+        // Update bookkeeping for dependency tracking.
+        let depth = parts[0]
+            .parse::<usize>()
+            .with_context(|| format!("Unexpected numeric value from cargo tree: {:?}", parts))?;
+        if (depth + 1) <= parents.len() {
+            // Drain parents until we get down to the right depth
+            let range = parents.len() - (depth + 1);
+            for _ in 0..range {
+                parents.pop();
+            }
+
+            // If the current parent does not have the same Crate ID, then
+            // it's likely we have moved to a different crate. This can happen
+            // in the following case
+            // ```
+            // ├── proc-macro2 v1.0.81
+            // │   └── unicode-ident v1.0.12
+            // ├── quote v1.0.36
+            // │   └── proc-macro2 v1.0.81 (*)
+            // ```
+            if parents.last() != Some(&crate_id) {
+                parents.pop();
+                parents.push(crate_id.clone());
+            }
+        } else {
+            // Start tracking the current crate as the new parent for any
+            // crates that represent a new depth in the dep tree.
+            parents.push(crate_id.clone());
+        }
+
+        // Attribute any dependency that is not the root to it's parent.
+        if depth > 0 {
+            // Access the last item in the list of parents.
+            if let Some(parent) = parents.iter().rev().nth(1) {
+                tree_data
+                    .entry(parent.clone())
+                    .or_default()
+                    .deps
+                    .insert(crate_id.clone());
+            }
+        }
+
         let mut features = if parts[2].is_empty() {
             BTreeSet::new()
         } else {
             parts[2].split(',').map(str::to_owned).collect()
         };
-        crate_features
+        tree_data
             .entry(crate_id)
             .or_default()
+            .features
             .append(&mut features);
     }
-    Ok(crate_features)
+    Ok(tree_data)
 }
 
 /// A helper function for writing Cargo metadata to a file.
@@ -730,57 +839,302 @@ mod test {
 
     #[test]
     fn parse_features_from_cargo_tree_output_prefix_none() {
+        let autocfg_id = CrateId {
+            name: "autocfg".to_owned(),
+            version: Version::new(1, 2, 0),
+        };
+        let chrono_id = CrateId {
+            name: "chrono".to_owned(),
+            version: Version::new(0, 4, 24),
+        };
+        let core_foundation_sys_id = CrateId {
+            name: "core-foundation-sys".to_owned(),
+            version: Version::new(0, 8, 6),
+        };
+        let cpufeatures_id = CrateId {
+            name: "cpufeatures".to_owned(),
+            version: Version::new(0, 2, 7),
+        };
+        let iana_time_zone_id = CrateId {
+            name: "iana-time-zone".to_owned(),
+            version: Version::new(0, 1, 60),
+        };
+        let libc_id = CrateId {
+            name: "libc".to_owned(),
+            version: Version::new(0, 2, 153),
+        };
+        let num_integer_id = CrateId {
+            name: "num-integer".to_owned(),
+            version: Version::new(0, 1, 46),
+        };
+        let num_traits_id = CrateId {
+            name: "num-traits".to_owned(),
+            version: Version::new(0, 2, 18),
+        };
+        let proc_macro2_id = CrateId {
+            name: "proc-macro2".to_owned(),
+            version: Version::new(1, 0, 81),
+        };
+        let quote_id = CrateId {
+            name: "quote".to_owned(),
+            version: Version::new(1, 0, 36),
+        };
+        let serde_derive_id = CrateId {
+            name: "serde_derive".to_owned(),
+            version: Version::new(1, 0, 152),
+        };
+        let syn_id = CrateId {
+            name: "syn".to_owned(),
+            version: Version::new(1, 0, 109),
+        };
+        let time_id = CrateId {
+            name: "time".to_owned(),
+            version: Version::new(0, 1, 45),
+        };
+        let tree_data_id = CrateId {
+            name: "tree-data".to_owned(),
+            version: Version::new(0, 1, 0),
+        };
+        let unicode_ident_id = CrateId {
+            name: "unicode-ident".to_owned(),
+            version: Version::new(1, 0, 12),
+        };
+
+        // |tree-data v0.1.0 (/rules_rust/crate_universe/test_data/metadata/tree_data)||
+        // ├── |chrono v0.4.24|clock,default,iana-time-zone,js-sys,oldtime,std,time,wasm-bindgen,wasmbind,winapi|
+        // │   ├── |iana-time-zone v0.1.60|fallback|
+        // │   │   └── |core-foundation-sys v0.8.6|default,link|
+        // │   ├── |num-integer v0.1.46||
+        // │   │   └── |num-traits v0.2.18|i128|
+        // │   │       [build-dependencies]
+        // │   │       └── |autocfg v1.2.0||
+        // │   ├── |num-traits v0.2.18|i128| (*)
+        // │   └── |time v0.1.45||
+        // │       └── |libc v0.2.153|default,std|
+        // ├── |cpufeatures v0.2.7||
+        // │   └── |libc v0.2.153|default,std|
+        // └── |serde_derive v1.0.152 (proc-macro)|default|
+        //     ├── |proc-macro2 v1.0.81|default,proc-macro|
+        //     │   └── |unicode-ident v1.0.12||
+        //     ├── |quote v1.0.36|default,proc-macro|
+        //     │   └── |proc-macro2 v1.0.81|default,proc-macro| (*)
+        //     └── |syn v1.0.109|clone-impls,default,derive,parsing,printing,proc-macro,quote|
+        //         ├── |proc-macro2 v1.0.81|default,proc-macro| (*)
+        //         ├── |quote v1.0.36|default,proc-macro| (*)
+        //         └── |unicode-ident v1.0.12||
+        let output = parse_features_from_cargo_tree_output(
+            vec![
+                Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
+                Ok("0|tree-data v0.1.0 (/rules_rust/crate_universe/test_data/metadata/tree_data)||"),
+                Ok("1|chrono v0.4.24|clock,default,iana-time-zone,js-sys,oldtime,std,time,wasm-bindgen,wasmbind,winapi|"),
+                Ok("2|iana-time-zone v0.1.60|fallback|"),
+                Ok("3|core-foundation-sys v0.8.6|default,link|"),
+                Ok("2|num-integer v0.1.46||"),
+                Ok("3|num-traits v0.2.18|i128|"),
+                Ok("4|autocfg v1.2.0||"),
+                Ok("2|num-traits v0.2.18|i128| (*)"),
+                Ok("2|time v0.1.45||"),
+                Ok("3|libc v0.2.153|default,std|"),
+                Ok("1|cpufeatures v0.2.7||"),
+                Ok("2|libc v0.2.153|default,std|"),
+                Ok("1|serde_derive v1.0.152 (proc-macro)|default|"),
+                Ok("2|proc-macro2 v1.0.81|default,proc-macro|"),
+                Ok("3|unicode-ident v1.0.12||"),
+                Ok("2|quote v1.0.36|default,proc-macro|"),
+                Ok("3|proc-macro2 v1.0.81|default,proc-macro| (*)"),
+                Ok("2|syn v1.0.109|clone-impls,default,derive,parsing,printing,proc-macro,quote|"),
+                Ok("3|proc-macro2 v1.0.81|default,proc-macro| (*)"),
+                Ok("3|quote v1.0.36|default,proc-macro| (*)"),
+                Ok("3|unicode-ident v1.0.12||"),
+            ]
+            .into_iter()
+        )
+        .unwrap();
         assert_eq!(
-            parse_features_from_cargo_tree_output(
-                vec![
-                    Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
-                    Ok("|multi_cfg_dep v0.1.0 (/private/tmp/ct)||"),
-                    Ok("|chrono v0.4.24|default,std|"),
-                    Ok("|cpufeatures v0.2.1||"),
-                    Ok("|libc v0.2.117|default,std|"),
-                    Ok("|serde_derive v1.0.152 (proc-macro) (*)||"),
-                    Ok("|chrono v0.4.24|default,std,serde|"),
-                ]
-                .into_iter()
-            )
-            .unwrap(),
             BTreeMap::from([
                 (
-                    CrateId {
-                        name: "multi_cfg_dep".to_owned(),
-                        version: Version::new(0, 1, 0),
+                    autocfg_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::new(),
                     },
-                    BTreeSet::from([])
                 ),
                 (
-                    CrateId {
-                        name: "cpufeatures".to_owned(),
-                        version: Version::new(0, 2, 1),
-                    },
-                    BTreeSet::from([])
+                    chrono_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from([
+                            "clock".to_owned(),
+                            "default".to_owned(),
+                            "iana-time-zone".to_owned(),
+                            "js-sys".to_owned(),
+                            "oldtime".to_owned(),
+                            "std".to_owned(),
+                            "time".to_owned(),
+                            "wasm-bindgen".to_owned(),
+                            "wasmbind".to_owned(),
+                            "winapi".to_owned(),
+                        ]),
+                        deps: BTreeSet::from([
+                            iana_time_zone_id.clone(),
+                            num_integer_id.clone(),
+                            num_traits_id.clone(),
+                            time_id.clone(),
+                        ]),
+                    }
                 ),
                 (
-                    CrateId {
-                        name: "libc".to_owned(),
-                        version: Version::new(0, 2, 117),
-                    },
-                    BTreeSet::from(["default".to_owned(), "std".to_owned()])
+                    core_foundation_sys_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "link".to_owned()]),
+                        deps: BTreeSet::new(),
+                    }
                 ),
                 (
-                    CrateId {
-                        name: "serde_derive".to_owned(),
-                        version: Version::new(1, 0, 152),
+                    cpufeatures_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([libc_id.clone()]),
                     },
-                    BTreeSet::from([])
                 ),
                 (
-                    CrateId {
-                        name: "chrono".to_owned(),
-                        version: Version::new(0, 4, 24),
-                    },
-                    BTreeSet::from(["default".to_owned(), "std".to_owned(), "serde".to_owned()])
+                    iana_time_zone_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["fallback".to_owned()]),
+                        deps: BTreeSet::from([core_foundation_sys_id]),
+                    }
                 ),
-            ])
+                (
+                    libc_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "std".to_owned()]),
+                        deps: BTreeSet::new(),
+                    }
+                ),
+                (
+                    num_integer_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([num_traits_id.clone()]),
+                    },
+                ),
+                (
+                    num_traits_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["i128".to_owned()]),
+                        deps: BTreeSet::from([autocfg_id]),
+                    }
+                ),
+                (
+                    proc_macro2_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
+                        deps: BTreeSet::from([unicode_ident_id.clone()])
+                    }
+                ),
+                (
+                    quote_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
+                        deps: BTreeSet::from([proc_macro2_id.clone()]),
+                    }
+                ),
+                (
+                    serde_derive_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned()]),
+                        deps: BTreeSet::from([
+                            proc_macro2_id.clone(),
+                            quote_id.clone(),
+                            syn_id.clone()
+                        ]),
+                    }
+                ),
+                (
+                    syn_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::from([
+                            "clone-impls".to_owned(),
+                            "default".to_owned(),
+                            "derive".to_owned(),
+                            "parsing".to_owned(),
+                            "printing".to_owned(),
+                            "proc-macro".to_owned(),
+                            "quote".to_owned(),
+                        ]),
+                        deps: BTreeSet::from([proc_macro2_id, quote_id, unicode_ident_id.clone(),]),
+                    }
+                ),
+                (
+                    time_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([libc_id]),
+                    }
+                ),
+                (
+                    tree_data_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([chrono_id, cpufeatures_id, serde_derive_id,]),
+                    }
+                ),
+                (
+                    unicode_ident_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::new()
+                    }
+                )
+            ]),
+            output,
         );
+    }
+
+    #[test]
+    fn serde_cargo_tree_entry() {
+        {
+            let entry: CargoTreeEntry = serde_json::from_str("{}").unwrap();
+            assert_eq!(CargoTreeEntry::new(), entry);
+        }
+        {
+            let entry: CargoTreeEntry =
+                serde_json::from_str(r#"{"features": ["default"]}"#).unwrap();
+            assert_eq!(
+                CargoTreeEntry {
+                    features: BTreeSet::from(["default".to_owned()]),
+                    deps: BTreeSet::new(),
+                },
+                entry
+            );
+        }
+        {
+            let entry: CargoTreeEntry =
+                serde_json::from_str(r#"{"deps": ["common 1.2.3"]}"#).unwrap();
+            assert_eq!(
+                CargoTreeEntry {
+                    features: BTreeSet::new(),
+                    deps: BTreeSet::from([CrateId::new(
+                        "common".to_owned(),
+                        Version::new(1, 2, 3)
+                    )]),
+                },
+                entry
+            );
+        }
+        {
+            let entry: CargoTreeEntry =
+                serde_json::from_str(r#"{"features": ["default"], "deps": ["common 1.2.3"]}"#)
+                    .unwrap();
+            assert_eq!(
+                CargoTreeEntry {
+                    features: BTreeSet::from(["default".to_owned()]),
+                    deps: BTreeSet::from([CrateId::new(
+                        "common".to_owned(),
+                        Version::new(1, 2, 3)
+                    )]),
+                },
+                entry
+            );
+        }
     }
 }
