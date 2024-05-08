@@ -8,7 +8,7 @@ use clap::Parser;
 use crate::cli::Result;
 use crate::config::Config;
 use crate::metadata::{
-    write_metadata, Cargo, CargoUpdateRequest, FeatureGenerator, Generator, MetadataGenerator,
+    write_metadata, Cargo, CargoUpdateRequest, Generator, MetadataGenerator, TreeResolver,
 };
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
@@ -96,7 +96,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
-    let feature_map = FeatureGenerator::new(cargo.clone(), opt.rustc.clone())
+    let resolver_data = TreeResolver::new(cargo.clone(), opt.rustc.clone())
         .generate(
             manifest_path.as_path_buf(),
             &config.supported_platform_triples,
@@ -106,7 +106,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     WorkspaceMetadata::write_registry_urls_and_feature_map(
         &cargo,
         &cargo_lockfile,
-        feature_map,
+        resolver_data,
         manifest_path.as_path_buf(),
         manifest_path.as_path_buf(),
     )

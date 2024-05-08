@@ -864,7 +864,7 @@ mod test {
                             "url": "https://crates.io/"
                         }
                     },
-                    "features": {}
+                    "tree_metadata": {}
                 }
             })
         } else {
@@ -872,7 +872,7 @@ mod test {
                 "cargo-bazel": {
                     "package_prefixes": {},
                     "sources": {},
-                    "features": {}
+                    "tree_metadata": {}
                 }
             })
         };

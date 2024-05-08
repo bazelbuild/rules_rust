@@ -15,8 +15,7 @@ use cargo_toml::Manifest;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
-use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator};
-use crate::select::Select;
+use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator, TreeResolverMetadata};
 use crate::utils;
 use crate::utils::starlark::Label;
 
@@ -174,7 +173,7 @@ pub(crate) struct WorkspaceMetadata {
     ///
     /// We store this here because it's computed during the splicing phase via
     /// calls to "cargo tree" which need the full spliced workspace.
-    pub(crate) features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
+    pub(crate) tree_metadata: TreeResolverMetadata,
 }
 
 impl TryFrom<toml::Value> for WorkspaceMetadata {
@@ -197,7 +196,7 @@ impl TryFrom<serde_json::Value> for WorkspaceMetadata {
     fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
         match value.get("cargo-bazel") {
             Some(value) => {
-                serde_json::from_value(value.to_owned()).context("Faield to deserialize json value")
+                serde_json::from_value(value.to_owned()).context("Failed to deserialize json value")
             }
             None => bail!("cargo-bazel workspace metadata not found"),
         }
@@ -247,7 +246,7 @@ impl WorkspaceMetadata {
             sources: BTreeMap::new(),
             workspace_prefix,
             package_prefixes,
-            features: BTreeMap::new(),
+            tree_metadata: TreeResolverMetadata::new(),
         })
     }
 
@@ -257,7 +256,7 @@ impl WorkspaceMetadata {
     pub(crate) fn write_registry_urls_and_feature_map(
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,
-        features: BTreeMap<CrateId, Select<BTreeSet<String>>>,
+        resolver_data: TreeResolverMetadata,
         input_manifest_path: &Path,
         output_manifest_path: &Path,
     ) -> Result<()> {
@@ -393,7 +392,7 @@ impl WorkspaceMetadata {
                         source_info.map(|source_info| (crate_id, source_info))
                     }),
             );
-        workspace_metaata.features = features;
+        workspace_metaata.tree_metadata = resolver_data;
         workspace_metaata.inject_into(&mut manifest)?;
 
         write_root_manifest(output_manifest_path, manifest)?;

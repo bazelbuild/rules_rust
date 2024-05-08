@@ -6,7 +6,9 @@ use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
-use crate::metadata::{CrateAnnotation, Dependency, PairedExtras, SourceAnnotation};
+use crate::metadata::{
+    CrateAnnotation, Dependency, PairedExtras, SourceAnnotation, TreeResolverMetadata,
+};
 use crate::select::Select;
 use crate::utils::sanitize_module_name;
 use crate::utils::starlark::{Glob, Label};
@@ -318,7 +320,7 @@ impl CrateContext {
         packages: &BTreeMap<PackageId, Package>,
         source_annotations: &BTreeMap<PackageId, SourceAnnotation>,
         extras: &BTreeMap<CrateId, PairedExtras>,
-        crate_features: &BTreeMap<CrateId, Select<BTreeSet<String>>>,
+        resolver_data: &TreeResolverMetadata,
         include_binaries: bool,
         include_build_scripts: bool,
     ) -> Self {
@@ -350,13 +352,22 @@ impl CrateContext {
             .clone()
             .map(new_crate_dep);
 
+        let crate_features = resolver_data
+            .get(&current_crate_id)
+            .map(|tree_data| {
+                let mut select = Select::<BTreeSet<String>>::new();
+                for (config, data) in tree_data.items() {
+                    for feature in data.features {
+                        select.insert(feature, config.clone());
+                    }
+                }
+                select
+            })
+            .unwrap_or_default();
+
         // Gather all "common" attributes
         let mut common_attrs = CommonAttributes {
-            crate_features: crate_features
-                .get(&current_crate_id)
-                .cloned()
-                .unwrap_or_default(),
-
+            crate_features,
             deps,
             deps_dev,
             edition: package.edition.as_str().to_string(),
@@ -785,8 +796,10 @@ impl CrateContext {
 mod test {
     use super::*;
 
+    use semver::Version;
+
     use crate::config::CrateAnnotations;
-    use crate::metadata::Annotations;
+    use crate::metadata::{Annotations, CargoTreeEntry};
 
     fn common_annotations() -> Annotations {
         Annotations::new(
@@ -812,7 +825,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -858,7 +871,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -921,7 +934,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -966,7 +979,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -1000,7 +1013,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -1040,7 +1053,7 @@ mod test {
             &annotations.metadata.packages,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
-            &annotations.crate_features,
+            &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
         );
@@ -1071,7 +1084,7 @@ mod test {
                 package.license = Some("NonSPDXLicenseID".to_owned());
             },
             |context| {
-                assert_eq!(context.license_ids, BTreeSet::default(),);
+                assert_eq!(context.license_ids, BTreeSet::default());
             },
         );
     }
@@ -1083,7 +1096,7 @@ mod test {
                 package.license_file = Some("LICENSE.txt".into());
             },
             |context| {
-                assert_eq!(context.license_file, Some("LICENSE.txt".to_owned()),);
+                assert_eq!(context.license_file, Some("LICENSE.txt".to_owned()));
             },
         );
     }
@@ -1134,5 +1147,50 @@ mod test {
                 );
             },
         );
+    }
+
+    #[test]
+    fn crate_context_features_from_annotations() {
+        let mut annotations = common_annotations();
+
+        // Crate a fake feature to track
+        let mut select = Select::new();
+        select.insert(
+            CargoTreeEntry {
+                features: BTreeSet::from(["unique_feature".to_owned()]),
+                deps: BTreeSet::new(),
+            },
+            // The common config
+            None,
+        );
+        annotations
+            .metadata
+            .workspace_metadata
+            .tree_metadata
+            .insert(
+                CrateId::new("common".to_owned(), Version::new(0, 1, 0)),
+                select,
+            );
+
+        let crate_annotation = &annotations.metadata.crates[&PackageId {
+            repr: "path+file://{TEMP_DIR}/common#0.1.0".to_owned(),
+        }];
+        let include_binaries = false;
+        let include_build_scripts = false;
+
+        let context = CrateContext::new(
+            crate_annotation,
+            &annotations.metadata.packages,
+            &annotations.lockfile.crates,
+            &annotations.pairred_extras,
+            &annotations.metadata.workspace_metadata.tree_metadata,
+            include_binaries,
+            include_build_scripts,
+        );
+
+        let mut expected = Select::new();
+        expected.insert("unique_feature".to_owned(), None);
+
+        assert_eq!(context.common_attrs.crate_features, expected);
     }
 }
