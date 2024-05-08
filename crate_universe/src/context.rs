@@ -83,7 +83,7 @@ impl Context {
             .collect();
 
         // Given a list of all conditional dependencies, build a set of platform
-        // triples which satsify the conditions.
+        // triples which satisfy the conditions.
         let conditions = resolve_cfg_platforms(
             crates.values().collect(),
             &annotations.config.supported_platform_triples,
@@ -254,7 +254,7 @@ mod test {
     }
 
     #[test]
-    fn workspace_member_deps() {
+    fn workspace_member_deps_collection() {
         let context = mock_context_common();
         let workspace_member_deps = context.workspace_member_deps();
 
@@ -295,7 +295,7 @@ mod test {
     fn serialization() {
         let context = mock_context_aliases();
 
-        // Seralize and deseralize the context object
+        // Serialize and deserialize the context object
         let json_text = serde_json::to_string(&context).unwrap();
         let deserialized_context: Context = serde_json::from_str(&json_text).unwrap();
 

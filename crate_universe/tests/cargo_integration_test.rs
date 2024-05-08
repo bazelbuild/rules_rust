@@ -1,3 +1,5 @@
+//! cargo_bazel integration tests that run Cargo to test generating metadata.
+
 extern crate cargo_bazel;
 extern crate serde_json;
 extern crate tempfile;
@@ -38,9 +40,10 @@ fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
     env::set_var("CARGO_HOME", cargo_home.as_os_str());
     fs::create_dir_all(&cargo_home)?;
 
-    println!("$RUSTC={}", rustc.display());
-    println!("$CARGO={}", cargo.display());
-    println!("$CARGO_HOME={}", cargo_home.display());
+    println!("Environment:");
+    println!("\tRUSTC={}", rustc.display());
+    println!("\tCARGO={}", cargo.display());
+    println!("\tCARGO_HOME={}", cargo_home.display());
 
     Ok((cargo, rustc))
 }
@@ -50,15 +53,6 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
 
     let scratch = tempfile::tempdir().unwrap();
     let runfiles = runfiles::Runfiles::create().unwrap();
-
-    /*
-    let manifest_path = scratch.path().join("Cargo.toml");
-    fs::copy(
-        runfiles::rlocation!(runfiles, manifest),
-        manifest_path,
-    )
-    .unwrap();
-    */
 
     let splicing_manifest = scratch.path().join("splicing_manifest.json");
     fs::write(

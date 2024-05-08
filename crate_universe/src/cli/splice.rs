@@ -45,7 +45,7 @@ pub struct SpliceOptions {
     #[clap(long)]
     pub cargo_config: Option<PathBuf>,
 
-    /// The path to the config file (containing `cargo_bazel::config::Config`.)
+    /// The path to the config file (containing [crate::config::Config].)
     #[clap(long)]
     pub config: PathBuf,
 
