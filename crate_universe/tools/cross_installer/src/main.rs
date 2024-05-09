@@ -18,15 +18,9 @@ struct Options {
     pub(crate) target: String,
 }
 
-/// This function is required until an upstream PR lands
-/// https://github.com/rust-embedded/cross/pull/597
+/// Prepare cross for building.
 fn prepare_workspace(workspace_root: &Path) {
-    let src = PathBuf::from(env!("CROSS_CONFIG"));
-    let dest = workspace_root.join("Cross.toml");
-    println!("{src:?} -> {dest:?}");
-    fs::copy(src, dest).unwrap();
-
-    // Unfortunately, cross runs into issues when cross compiling incramentally.
+    // Unfortunately, cross runs into issues when cross compiling incrementally.
     // To avoid this, the workspace must be cleaned
     let cargo = env::current_dir().unwrap().join(env!("CARGO"));
     Command::new(cargo)
@@ -47,6 +41,8 @@ fn execute_cross(working_dir: &Path, target_triple: &str) {
         .arg("--bin")
         .arg("cargo-bazel")
         .arg(format!("--target={target_triple}"))
+        // https://github.com/cross-rs/cross/issues/1447
+        .env("CROSS_NO_WARNINGS", "0")
         .status()
         .unwrap();
 

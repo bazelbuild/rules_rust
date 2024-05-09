@@ -16,6 +16,9 @@ bzlmod_flags: &bzlmod_flags
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
+  # TODO: Remove this and replace `cargo_bootstrap_repository` with a
+  # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
+  - "-//crate_universe/tools/cross_installer/..."
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
   - "-//test/unpretty/..."

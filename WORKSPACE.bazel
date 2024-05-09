@@ -10,6 +10,10 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
+load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
+
+cross_installer_deps()
+
 # buildifier: disable=bzl-visibility
 load("@rules_rust//proto/prost/private:repositories.bzl", "rust_prost_dependencies", "rust_prost_register_toolchains")
 

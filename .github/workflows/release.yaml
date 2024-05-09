@@ -46,6 +46,7 @@ jobs:
     needs: validation
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # Create a job for each target triple
         include:
@@ -55,7 +56,7 @@ jobs:
           - os: ubuntu-20.04
             env:
               TARGET: "aarch64-unknown-linux-gnu"
-          - os: windows-2019
+          - os: windows-2022
             env:
               TARGET: "aarch64-pc-windows-msvc"
           - os: macos-11
@@ -64,7 +65,7 @@ jobs:
           - os: ubuntu-20.04
             env:
               TARGET: "x86_64-pc-windows-gnu"
-          - os: windows-2019
+          - os: windows-2022
             env:
               TARGET: "x86_64-pc-windows-msvc"
           - os: ubuntu-20.04
@@ -81,7 +82,8 @@ jobs:
           version="$(grep 'DEFAULT_RUST_VERSION =' ./rust/private/common.bzl | grep -o '[[:digit:].]\+')"
           rustup override set "${version}"
           rustup target add ${TARGET}
-          rustup update stable && rustup default stable
+          rustup update stable --no-self-update --force-non-host
+          rustup default stable
         env:
           TARGET: "${{ matrix.env.TARGET }}"
       - name: Setup macos build tooling
