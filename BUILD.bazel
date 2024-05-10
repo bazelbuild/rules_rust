@@ -110,7 +110,7 @@ label_flag(
 
 alias(
     name = "rustfmt",
-    actual = "//tools/rustfmt",
+    actual = "//tools/rustfmt:target_aware_rustfmt",
     visibility = ["//visibility:public"],
 )
 
