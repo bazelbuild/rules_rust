@@ -396,6 +396,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
         repository_ctx = repository_ctx,
         args = args,
         env = env,
+        allow_fail = True,
     )
 
     # If it was determined repinning should occur but there was no
