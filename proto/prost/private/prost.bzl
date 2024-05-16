@@ -275,6 +275,7 @@ def _rust_prost_aspect_impl(target, ctx):
             package_info = package_info_file,
         ),
         rust_analyzer_info,
+        OutputGroupInfo(rust_generated_srcs = [lib_rs]),
     ]
 
 rust_prost_aspect = aspect(
