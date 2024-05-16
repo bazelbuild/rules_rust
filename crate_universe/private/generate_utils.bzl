@@ -402,7 +402,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # If it was determined repinning should occur but there was no
     # flag indicating repinning was requested, an error is raised
     # since repinning should be an explicit action
-    if result.stdout.strip().lower() == "repin":
+    if result.return_code:
         fail(("\n".join([
             result.stderr,
             (
