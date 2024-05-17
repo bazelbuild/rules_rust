@@ -112,7 +112,7 @@ def rust_register_toolchains(
         global_allocator_library = None,
         iso_date = None,
         register_toolchains = True,
-        rustfmt_version = DEFAULT_NIGHTLY_VERSION,
+        rustfmt_version = None,
         rust_analyzer_version = None,
         sha256s = None,
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
@@ -146,7 +146,7 @@ def rust_register_toolchains(
         global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
         iso_date (str, optional):  **Deprecated**: Use `versions` instead.
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
-        rustfmt_version (str, optional): The version of rustfmt.
+        rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
@@ -175,6 +175,12 @@ def rust_register_toolchains(
             versions = [version]
         else:
             versions = _RUST_TOOLCHAIN_VERSIONS
+
+    if not rustfmt_version:
+        if len(versions) == 1:
+            rustfmt_version = versions[0]
+        else:
+            rustfmt_version = DEFAULT_NIGHTLY_VERSION
 
     if dev_components:
         has_nightly = False
