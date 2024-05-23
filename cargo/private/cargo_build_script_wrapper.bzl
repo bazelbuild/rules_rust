@@ -31,6 +31,7 @@ def cargo_build_script(
         visibility = None,
         tags = None,
         aliases = None,
+        pkg_name = None,
         **kwargs):
     """Compile and execute a rust build script to generate build attributes
 
@@ -92,7 +93,7 @@ def cargo_build_script(
 
     Args:
         name (str): The name for the underlying rule. This should be the name of the package
-            being compiled, optionally with a suffix of `_build_script`.
+            being compiled, optionally with a suffix of `_bs`. Otherwise, you can set the package name via `pkg_name`.
         edition (str): The rust edition to use for the internal binary crate.
         crate_name (str): Crate name to use for build script.
         crate_root (label): The file that will be passed to rustc to be used for building this crate.
@@ -100,6 +101,7 @@ def cargo_build_script(
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The build-dependencies of the crate.
+        pkg_name (string, optional): Override the package name used for the build script. This is useful if the build target name gets too long otherwise.
         link_deps (list, optional): The subset of the (normal) dependencies of the crate that have the
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
@@ -131,9 +133,12 @@ def cargo_build_script(
     # available both when we invoke rustc (this code) and when we run the compiled build
     # script (_cargo_build_script_impl). https://github.com/bazelbuild/rules_rust/issues/661
     # will hopefully remove this duplication.
+    if pkg_name == None:
+        pkg_name = name_to_pkg_name(name)
+
     rustc_env = dict(rustc_env)
     if "CARGO_PKG_NAME" not in rustc_env:
-        rustc_env["CARGO_PKG_NAME"] = name_to_pkg_name(name)
+        rustc_env["CARGO_PKG_NAME"] = pkg_name
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(name_to_pkg_name(name))
 
@@ -173,5 +178,6 @@ def cargo_build_script(
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,
+        pkg_name = pkg_name,
         **kwargs
     )

@@ -484,6 +484,7 @@ impl Renderer {
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
+            pkg_name: Some(krate.name.clone()),
             proc_macro_deps: SelectSet::new(
                 self.make_deps(
                     attrs

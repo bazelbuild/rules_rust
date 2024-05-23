@@ -151,7 +151,9 @@ def _cargo_build_script_impl(ctx):
         stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
     )
 
-    pkg_name = name_to_pkg_name(ctx.label.name)
+    pkg_name = ctx.attr.pkg_name
+    if pkg_name == "":
+        pkg_name = name_to_pkg_name(ctx.label.name)
 
     toolchain_tools = [toolchain.all_files]
 
@@ -368,6 +370,9 @@ cargo_build_script = rule(
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
         ),
+        "pkg_name": attr.string(
+            doc = "The name of package being compiled, if not derived from `name`.",
+        ),
         "rundir": attr.string(
             default = "",
             doc = dedent("""\
@@ -383,7 +388,7 @@ cargo_build_script = rule(
                 List of compiler flags passed to `rustc`.
 
                 These strings are subject to Make variable expansion for predefined
-                source/output path variables like `$location`, `$execpath`, and 
+                source/output path variables like `$location`, `$execpath`, and
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """),
