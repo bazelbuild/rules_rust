@@ -8,8 +8,6 @@ use runfiles::Runfiles;
 mod aquery;
 mod rust_project;
 
-const SYSROOT_SRC_FILE_RUNFILES_PREFIX: &str = "rules_rust";
-
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
@@ -61,15 +59,10 @@ pub fn write_rust_project(
         rules_rust_name.as_ref(),
     )?;
 
-    let workspace_name = match rules_rust_name.as_ref().trim_start_matches('@') {
-        "" => SYSROOT_SRC_FILE_RUNFILES_PREFIX,
-        s => s,
-    };
-    let toolchain_info_path = format!(
-        "{workspace_name}/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
+    let path = runfiles::rlocation!(
+        Runfiles::create()?,
+        "rules_rust/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
     );
-    let r = Runfiles::create()?;
-    let path = r.rlocation(toolchain_info_path);
     let toolchain_info: HashMap<String, String> =
         serde_json::from_str(&std::fs::read_to_string(path)?)?;
 
