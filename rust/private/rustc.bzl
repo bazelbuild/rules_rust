@@ -1444,8 +1444,18 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
+    dynamic_libraries = [
+        library_to_link.dynamic_library
+        for dep in getattr(ctx.attr, "deps", [])
+        if CcInfo in dep
+        for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
+        for library_to_link in linker_input.libraries
+        if _is_dylib(library_to_link)
+    ]
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) + ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
+        files = getattr(ctx.files, "data", []) +
+                ([] if experimental_use_coverage_metadata_files else coverage_runfiles) +
+                dynamic_libraries,
         collect_data = True,
     )
     if getattr(ctx.attr, "crate", None):
