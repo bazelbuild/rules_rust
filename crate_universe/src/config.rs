@@ -338,6 +338,9 @@ pub(crate) struct CrateAnnotations {
 
     /// Transition rule to use instead of `native.alias()`.
     pub(crate) alias_rule: Option<AliasRule>,
+
+    /// The crates to use instead of the generated one.
+    pub(crate) override_targets: Option<BTreeMap<String, Label>>,
 }
 
 macro_rules! joined_extra_member {
@@ -410,6 +413,7 @@ impl Add for CrateAnnotations {
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
             extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, BTreeMap::new, BTreeMap::extend),
             alias_rule: self.alias_rule.or(rhs.alias_rule),
+            override_targets: self.override_targets.or(rhs.override_targets),
         };
 
         output

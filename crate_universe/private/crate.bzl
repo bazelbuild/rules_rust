@@ -113,7 +113,8 @@ def _annotation(
         rustc_env = None,
         rustc_env_files = None,
         rustc_flags = None,
-        shallow_since = None):
+        shallow_since = None,
+        override_targets = None):
     """A collection of extra attributes and settings for a particular crate
 
     Args:
@@ -166,6 +167,8 @@ def _annotation(
         rustc_flags (list, optional): A list of strings to set on a crate's `rust_library::rustc_flags` attribute.
         shallow_since (str, optional): An optional timestamp used for crates originating from a git repository
             instead of a crate registry. This flag optimizes fetching the source code.
+        override_targets (dict, optional): A dictionary of alternate tagets to use when something depends on this crate to allow
+            the parent repo to provide its own version of this dependency. Keys can be `proc_marco`, `build_script`, `lib`, `bin`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
@@ -209,6 +212,7 @@ def _annotation(
             rustc_env_files = _stringify_list(rustc_env_files),
             rustc_flags = rustc_flags,
             shallow_since = shallow_since,
+            override_targets = override_targets,
         ),
     ))
 

@@ -312,6 +312,12 @@ pub(crate) struct CrateContext {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub(crate) alias_rule: Option<AliasRule>,
+
+    /// Targets to use instead of the default target for the crate.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
+    pub(crate) override_targets: BTreeMap<String, Label>,
+
 }
 
 impl CrateContext {
@@ -497,6 +503,7 @@ impl CrateContext {
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::new(),
             alias_rule: None,
+            override_targets: BTreeMap::new(),
         }
         .with_overrides(extras)
     }
@@ -668,7 +675,12 @@ impl CrateContext {
                     }
                 }
             }
+
+            if let Some(override_targets) = &crate_extra.override_targets {
+                self.override_targets.extend(override_targets.clone());
+            }
         }
+
 
         self
     }
