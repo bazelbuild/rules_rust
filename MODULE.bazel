@@ -45,6 +45,11 @@ bazel_dep(
 )
 
 bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+bazel_dep(
     name = "rules_python",
     version = "0.31.0",
     dev_dependency = True,
@@ -58,7 +63,6 @@ bazel_dep(
 internal_deps = use_extension("//rust/private:extensions.bzl", "i")
 use_repo(
     internal_deps,
-    "bazelci_rules",
     "cargo_bazel.buildifier-darwin-amd64",
     "cargo_bazel.buildifier-darwin-arm64",
     "cargo_bazel.buildifier-linux-amd64",

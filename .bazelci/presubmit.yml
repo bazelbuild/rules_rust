@@ -63,7 +63,7 @@ tasks:
       - //test:query_test_binary
   rbe_ubuntu2004:
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -126,7 +126,7 @@ tasks:
     name: With Aspects
     platform: rbe_ubuntu2004
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_flags: *aspects_flags
     build_targets: *default_linux_targets
@@ -135,7 +135,7 @@ tasks:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -406,7 +406,7 @@ tasks:
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *rbe_examples_targets
     test_targets: *rbe_examples_targets
@@ -463,7 +463,7 @@ tasks:
     platform: rbe_ubuntu2004
     working_directory: examples/crate_universe
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
@@ -476,7 +476,7 @@ tasks:
     platform: rbe_ubuntu2004
     working_directory: examples/crate_universe_unnamed
     shell_commands:
-      - sed -i 's/^# load("@bazelci_rules/load("@bazelci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:

@@ -27,14 +27,6 @@ def _internal_deps_impl(module_ctx):
     direct_deps.extend(rust_wasm_bindgen_dependencies())
     direct_deps.extend(rules_rust_test_deps())
 
-    http_archive(
-        name = "bazelci_rules",
-        sha256 = "eca21884e6f66a88c358e580fd67a6b148d30ab57b1680f62a96c00f9bc6a07e",
-        strip_prefix = "bazelci_rules-1.0.0",
-        url = "https://github.com/bazelbuild/continuous-integration/releases/download/rules-1.0.0/bazelci_rules-1.0.0.tar.gz",
-    )
-    direct_deps.append(struct(repo = "bazelci_rules", is_dev_dep = True))
-
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
     # by other MODULES.
