@@ -296,6 +296,31 @@ def _crate_impl(module_ctx):
             if annotation_dict.pop("gen_all_binaries"):
                 annotation_dict["gen_binaries"] = True
             annotation_dict["gen_build_script"] = _OPT_BOOL_VALUES[annotation_dict["gen_build_script"]]
+
+            # Process the override targets for the annotation.
+            # In the non-bzlmod approach, this is given as a dict
+            # with the possible keys "`proc_macro`, `build_script`, `lib`, `bin`".
+            # With the tag-based approach used in Bzlmod, we run into an issue
+            # where there is no dict type that takes a string as a key and a Label as the value.
+            # To work around this, we split the override option into four, and reconstruct the
+            # dictionary here during processing
+            annotation_dict["override_targets"] = dict()
+            replacement = annotation_dict.pop("override_target_lib")
+            if replacement:
+                annotation_dict["override_targets"]["lib"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_proc_macro")
+            if replacement:
+                annotation_dict["override_targets"]["proc_macro"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_build_script")
+            if replacement:
+                annotation_dict["override_targets"]["build_script"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_bin")
+            if replacement:
+                annotation_dict["override_targets"]["bin"] = str(replacement)
+
             annotation = _crate_universe_crate.annotation(**{
                 k: v
                 for k, v in annotation_dict.items()
@@ -482,6 +507,18 @@ _annotation = tag_class(
         ),
         shallow_since = attr.string(
             doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
+        ),
+        override_target_lib = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_proc_macro = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_build_script = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_bin = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
         ),
     ),
 )
