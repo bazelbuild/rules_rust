@@ -93,7 +93,7 @@ impl BuildScriptOutput {
                 // cargo:KEY=VALUE — Metadata, used by links scripts.
                 Some(BuildScriptOutput::DepEnv(format!(
                     "{}={}",
-                    key_split[1].to_uppercase(),
+                    key_split[1].to_uppercase().replace('-', "_"),
                     param
                 )))
             }
