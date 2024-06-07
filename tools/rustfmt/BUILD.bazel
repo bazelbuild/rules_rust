@@ -55,10 +55,7 @@ rust_binary(
         "ASPECT_REPOSITORY": aspect_repository(),
         "RUST_DEFAULT_EDITION": "$(RUST_DEFAULT_EDITION)",
     },
-    toolchains = [
-        "@rules_rust//rust/toolchain:current_rust_toolchain",
-        "@rules_rust//rust/toolchain:current_rustfmt_toolchain",
-    ],
+    toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
     visibility = ["//visibility:public"],
     deps = [
         ":rustfmt_lib",
@@ -99,10 +96,7 @@ rust_binary(
     rustc_env = {
         "RUSTFMT": "$(rlocationpath //rust/toolchain:current_rustfmt_toolchain)",
     },
-    toolchains = [
-        "@rules_rust//rust/toolchain:current_rust_toolchain",
-        "@rules_rust//rust/toolchain:current_rustfmt_toolchain",
-    ],
+    toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
     visibility = ["//visibility:public"],
     deps = [
         "//tools/runfiles",
