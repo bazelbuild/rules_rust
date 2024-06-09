@@ -717,6 +717,14 @@ tasks:
     working_directory: examples/bzlmod/hello_world_no_cargo
     build_targets:
       - "//..."
+  bzlmod_override_targets:
+    name: Override Targets bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/override_target
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   compile_one_dependency:
     name: --compile_one_dependency flag
     platform: ubuntu2004
