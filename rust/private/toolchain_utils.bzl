@@ -53,7 +53,7 @@ def _toolchain_files_impl(ctx):
     )]
 
 toolchain_files = rule(
-    doc = "A rule for fetching files from a rust toolchain.",
+    doc = "A rule for fetching files from a rust toolchain for the exec platform.",
     implementation = _toolchain_files_impl,
     attrs = {
         "tool": attr.string(
@@ -94,4 +94,33 @@ current_rust_toolchain = rule(
     toolchains = [
         str(Label("@rules_rust//rust:toolchain_type")),
     ],
+)
+
+def _transition_to_target_impl(settings, _attr):
+    return {
+        # String conversion is needed to prevent a crash with Bazel 6.x.
+        "//command_line_option:extra_execution_platforms": [
+            str(platform)
+            for platform in settings["//command_line_option:platforms"]
+        ],
+    }
+
+_transition_to_target = transition(
+    implementation = _transition_to_target_impl,
+    inputs = ["//command_line_option:platforms"],
+    outputs = ["//command_line_option:extra_execution_platforms"],
+)
+
+def _toolchain_files_for_target_impl(ctx):
+    return [ctx.attr.toolchain_files[0][DefaultInfo]]
+
+toolchain_files_for_target = rule(
+    doc = "A rule for fetching files from a rust toolchain for the target platform.",
+    implementation = _toolchain_files_for_target_impl,
+    attrs = {
+        "toolchain_files": attr.label(cfg = _transition_to_target, mandatory = True),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    },
 )
