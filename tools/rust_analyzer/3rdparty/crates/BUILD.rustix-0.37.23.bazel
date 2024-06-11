@@ -15,7 +15,7 @@ rust_library(
     name = "rustix",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     aliases = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": {
@@ -178,10 +178,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "rustix_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "default",
@@ -206,6 +206,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "rustix",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -222,6 +223,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":rustix_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

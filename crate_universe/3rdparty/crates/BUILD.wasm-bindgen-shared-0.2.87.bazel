@@ -15,7 +15,7 @@ rust_library(
     name = "wasm_bindgen_shared",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -85,10 +85,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "wasm-bindgen-shared_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -106,6 +106,7 @@ cargo_build_script(
     ),
     edition = "2018",
     links = "wasm_bindgen",
+    pkg_name = "wasm-bindgen-shared",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -122,6 +123,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":wasm-bindgen-shared_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

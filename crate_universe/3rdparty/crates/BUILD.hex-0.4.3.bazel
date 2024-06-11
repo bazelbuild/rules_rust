@@ -14,7 +14,7 @@ rust_library(
     name = "hex",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
