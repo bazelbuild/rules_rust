@@ -22,7 +22,7 @@ use crate::utils::starlark::Label;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -119,6 +119,12 @@ impl Default for RenderConfig {
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
         }
+    }
+}
+
+impl RenderConfig {
+    pub(crate) fn are_sources_present(&self) -> bool {
+        self.vendor_mode == Some(VendorMode::Local)
     }
 }
 
