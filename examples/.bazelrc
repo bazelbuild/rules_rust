@@ -21,6 +21,11 @@ common --noenable_bzlmod
 # This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
 build --incompatible_disallow_empty_glob
 
+build --java_runtime_version=remotejdk_21
+build --java_language_version=21
+build --tool_java_runtime_version=remotejdk_21
+build --tool_java_language_version=21
+
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc
