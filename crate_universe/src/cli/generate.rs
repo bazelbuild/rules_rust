@@ -111,7 +111,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
 
     // Generate renderable contexts for each package
-    let context = Context::new(annotations)?;
+    let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
     // Render build files
     let outputs = Renderer::new(

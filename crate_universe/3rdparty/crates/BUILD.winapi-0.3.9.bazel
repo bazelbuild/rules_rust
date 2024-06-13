@@ -15,7 +15,7 @@ rust_library(
     name = "winapi",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -103,10 +103,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "winapi_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "consoleapi",
@@ -141,6 +141,7 @@ cargo_build_script(
         ],
     ),
     edition = "2015",
+    pkg_name = "winapi",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -157,6 +158,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":winapi_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

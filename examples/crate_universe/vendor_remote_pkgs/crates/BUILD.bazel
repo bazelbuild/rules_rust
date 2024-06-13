@@ -39,7 +39,7 @@ alias(
 
 alias(
     name = "hyper",
-    actual = "@crates_vendor_pkgs__hyper-0.14.28//:hyper",
+    actual = "@crates_vendor_pkgs__hyper-0.14.29//:hyper",
     tags = ["manual"],
 )
 

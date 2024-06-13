@@ -514,12 +514,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__cc-1.0.98",
-        sha256 = "41c270e7540d725e65ac7f1b212ac8ce349719624d7bcff99f8e2e488e8cf03f",
+        name = "cvm__cc-1.0.99",
+        sha256 = "96c51067fd44124faa7f870b4b1c969379ad32b2ba805aa959430ceaa384f695",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cc/1.0.98/download"],
-        strip_prefix = "cc-1.0.98",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.cc-1.0.98.bazel"),
+        urls = ["https://static.crates.io/crates/cc/1.0.99/download"],
+        strip_prefix = "cc-1.0.99",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.cc-1.0.99.bazel"),
     )
 
     maybe(

@@ -294,7 +294,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "axum": Label("//vendor_local_pkgs/crates/axum-0.4.8:axum"),
-            "hyper": Label("//vendor_local_pkgs/crates/hyper-0.14.28:hyper"),
+            "hyper": Label("//vendor_local_pkgs/crates/hyper-0.14.29:hyper"),
             "mime": Label("//vendor_local_pkgs/crates/mime-0.3.17:mime"),
             "serde_json": Label("//vendor_local_pkgs/crates/serde_json-1.0.117:serde_json"),
             "socket2": Label("//vendor_local_pkgs/crates/socket2-0.4.10:socket2"),
