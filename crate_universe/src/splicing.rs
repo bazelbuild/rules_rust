@@ -96,7 +96,7 @@ impl SplicingManifest {
 }
 
 /// The result of fully resolving a [SplicingManifest] in preparation for splicing.
-#[derive(Debug, Serialize, Default)]
+#[derive(Clone, Debug, Serialize, Default)]
 pub(crate) struct SplicingMetadata {
     /// A set of all packages directly written to the rule
     pub(crate) direct_packages: DirectPackageManifest,
@@ -145,6 +145,27 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
             manifests,
             cargo_config,
         })
+    }
+}
+
+impl SplicingMetadata {
+    // Calculates a string which can be digested to represent the splicing metadata.
+    // This allows us to strip out actions which may create noise when hashing otherwise causing spurious rebuilds.
+    // Things should only be stripped out if we are very confident they aren't used as part of resolving or rendering.
+    pub(crate) fn as_digestable_str(&self) -> String {
+        let mut copy = self.clone();
+        use cargo_toml::Dependency::*;
+        for (_, v) in copy.manifests.iter_mut() {
+            // Strip path dependencies.
+            // They don't end up factoring into what we generate, so we pretend they don't exist.
+            // This avoids people who are using both Cargo and Bazel needing to spuriously repin just because they edited Cargo-only dependency information.
+            v.dependencies.retain(|_, dep| match dep {
+                Detailed(details) => details.path.is_none(),
+                Simple(..) => true,
+                Inherited(..) => true,
+            })
+        }
+        serde_json::to_string(&copy).unwrap()
     }
 }
 
@@ -227,7 +248,7 @@ impl WorkspaceMetadata {
             })
             .collect();
 
-        // It is invald for toml maps to use empty strings as keys. In the case
+        // It is invalid for toml maps to use empty strings as keys. In the case
         // the empty key is expected to be the root package. If the root package
         // has a prefix, then all other packages will as well (even if no other
         // manifest represents them). The value is then saved as a separate value
@@ -651,6 +672,58 @@ mod test {
         assert!(
             !metadata.contains(workspace_path.to_str().unwrap()),
             "serialized metadata should not contain absolute path"
+        );
+    }
+
+    #[test]
+    fn splicing_metadata_digest_ignores_path_deps() {
+        let cargo_toml_manifest_with_path_dep_str = r#"[package]
+name = "pkg"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+local_pkg = { path = "local_pkg" }
+termcolor = "1.4.1"
+"#;
+
+        let cargo_toml_manifest_without_path_dep_str = r#"[package]
+name = "pkg"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+termcolor = "1.4.1"
+"#;
+
+        let label = Label::from_str("//pkg:Cargo.toml").unwrap();
+
+        let mut manifests_with_path_dep = BTreeMap::new();
+        manifests_with_path_dep.insert(
+            label.clone(),
+            cargo_toml::Manifest::from_str(cargo_toml_manifest_with_path_dep_str).unwrap(),
+        );
+
+        let mut manifests_without_path_dep = BTreeMap::new();
+        manifests_without_path_dep.insert(
+            label,
+            cargo_toml::Manifest::from_str(cargo_toml_manifest_without_path_dep_str).unwrap(),
+        );
+
+        let metadata_with_path_dep = SplicingMetadata {
+            direct_packages: DirectPackageManifest::new(),
+            manifests: manifests_with_path_dep,
+            cargo_config: None,
+        };
+        let metadata_without_path_dep = SplicingMetadata {
+            direct_packages: DirectPackageManifest::new(),
+            manifests: manifests_without_path_dep,
+            cargo_config: None,
+        };
+
+        assert_eq!(
+            metadata_with_path_dep.as_digestable_str(),
+            metadata_without_path_dep.as_digestable_str()
         );
     }
 }

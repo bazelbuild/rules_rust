@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 /// The [`[registry]`](https://doc.rust-lang.org/cargo/reference/config.html#registry)
 /// table controls the default registry used when one is not specified.
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct Registry {
     /// name of the default registry
     pub(crate) default: String,
@@ -22,7 +22,7 @@ pub(crate) struct Registry {
 
 /// The [`[source]`](https://doc.rust-lang.org/cargo/reference/config.html#source)
 /// table defines the registry sources available.
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct Source {
     /// replace this source with the given named source
     #[serde(rename = "replace-with")]
@@ -38,7 +38,7 @@ fn default_registry_url() -> String {
     utils::CRATES_IO_INDEX_URL.to_owned()
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 /// registries other than crates.io
 pub(crate) struct AdditionalRegistry {
     /// URL of the registry index
@@ -52,7 +52,7 @@ pub(crate) struct AdditionalRegistry {
 /// is required for parsing registry information.
 /// See [cargo docs](https://doc.rust-lang.org/cargo/reference/config.html#configuration-format)
 /// for more details.
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct CargoConfig {
     /// registries other than crates.io
     #[serde(default = "default_registries")]
