@@ -6,12 +6,12 @@
 #     bazel run @//crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "gix_date",
+rust_proc_macro(
+    name = "time_macros",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,6 +28,10 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "formatting",
+        "parsing",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -35,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=gix-date",
+        "crate-name=time-macros",
         "manual",
         "noclippy",
         "norustfmt",
@@ -77,11 +81,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.8.0",
+    version = "0.2.18",
     deps = [
-        "@cui__bstr-1.6.0//:bstr",
-        "@cui__itoa-1.0.8//:itoa",
-        "@cui__thiserror-1.0.50//:thiserror",
-        "@cui__time-0.3.36//:time",
+        "@cui__num-conv-0.1.0//:num_conv",
+        "@cui__time-core-0.1.2//:time_core",
     ],
 )
