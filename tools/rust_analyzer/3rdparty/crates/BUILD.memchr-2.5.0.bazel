@@ -15,7 +15,7 @@ rust_library(
     name = "memchr",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -73,10 +73,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "memchr_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "default",
@@ -97,6 +97,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "memchr",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -113,6 +114,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":memchr_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )
