@@ -1,9 +1,9 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("//rust:defs.bzl", "rust_test")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
+load("//util/process_wrapper/private:bootstrap_process_wrapper.bzl", "bootstrap_process_wrapper")
 
 config_setting(
     name = "compilation_mode_opt",
@@ -52,15 +52,11 @@ rust_test(
     edition = "2018",
 )
 
-native_binary(
+bootstrap_process_wrapper(
     name = "bootstrap_process_wrapper",
-    src = select({
-        "@platforms//os:windows": "process_wrapper.bat",
-        "//conditions:default": "process_wrapper.sh",
-    }),
-    out = select({
-        "@platforms//os:windows": "process_wrapper.bat",
-        "//conditions:default": "process_wrapper.sh",
+    is_windows = select({
+        "@platforms//os:windows": True,
+        "//conditions:default": False,
     }),
     visibility = ["//visibility:public"],
 )

@@ -8,7 +8,7 @@ load("//crate_universe:defs.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
 load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
-load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner")
+load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner", "get_host_cargo_rustc")
 load("//rust/platform:triple.bzl", "get_host_triple")
 
 # A list of labels which may be relative (and if so, is within the repo the rule is generated in).
@@ -228,7 +228,7 @@ def _package_to_json(p):
     })
 
 def _get_generator(module_ctx):
-    """Query Network Resources to local a `cargo-bazel` binary.  
+    """Query Network Resources to local a `cargo-bazel` binary.
 
     Based off get_generator in crates_universe/private/generate_utils.bzl
 
@@ -276,6 +276,16 @@ def _get_generator(module_ctx):
     return output
 
 def _crate_impl(module_ctx):
+    # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
+    # function of the module extension, so we want to trigger all restarts before we start the actual work.
+    # Once https://github.com/bazelbuild/bazel/issues/22729 has been fixed, this code can be removed.
+    get_host_cargo_rustc(module_ctx)
+    for mod in module_ctx.modules:
+        for cfg in mod.tags.from_cargo:
+            module_ctx.path(cfg.cargo_lockfile)
+            for m in cfg.manifests:
+                module_ctx.path(m)
+
     cargo_bazel_output = _get_generator(module_ctx)
     cargo_bazel = get_cargo_bazel_runner(module_ctx, cargo_bazel_output)
 

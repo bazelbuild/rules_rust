@@ -104,3 +104,10 @@ incompatible_flag(
     build_setting_default = True,
     issue = "https://github.com/bazelbuild/rules_rust/issues/2429",
 )
+
+# A flag to control whether the shell path from a shell toolchain (`@bazel_tools//tools/sh:toolchain_type`)
+# is embedded into the bootstrap process wrapper for the `.sh` file.
+bool_flag(
+    name = "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
+    build_setting_default = False,
+)

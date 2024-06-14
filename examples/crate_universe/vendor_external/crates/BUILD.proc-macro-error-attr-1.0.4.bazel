@@ -15,7 +15,7 @@ rust_proc_macro(
     name = "proc_macro_error_attr",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -87,10 +87,10 @@ rust_proc_macro(
 )
 
 cargo_build_script(
-    name = "proc-macro-error-attr_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -107,6 +107,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "proc-macro-error-attr",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -126,6 +127,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":proc-macro-error-attr_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

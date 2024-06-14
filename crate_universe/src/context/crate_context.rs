@@ -342,6 +342,7 @@ pub(crate) struct CrateContext {
 }
 
 impl CrateContext {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         annotation: &CrateAnnotation,
         packages: &BTreeMap<PackageId, Package>,
@@ -350,6 +351,7 @@ impl CrateContext {
         resolver_data: &TreeResolverMetadata,
         include_binaries: bool,
         include_build_scripts: bool,
+        sources_are_present: bool,
     ) -> Self {
         let package: &Package = &packages[&annotation.node.id];
         let current_crate_id = CrateId::new(package.name.clone(), package.version.clone());
@@ -427,6 +429,7 @@ impl CrateContext {
             packages,
             gen_binaries,
             include_build_scripts,
+            sources_are_present,
         );
 
         // Parse the library crate name from the set of included targets
@@ -751,6 +754,7 @@ impl CrateContext {
         packages: &BTreeMap<PackageId, Package>,
         gen_binaries: &GenBinaries,
         include_build_scripts: bool,
+        sources_are_present: bool,
     ) -> BTreeSet<Rule> {
         let package = &packages[&node.id];
 
@@ -781,7 +785,7 @@ impl CrateContext {
                         return Some(Rule::BuildScript(TargetAttributes {
                             crate_name,
                             crate_root,
-                            srcs: Glob::new_rust_srcs(),
+                            srcs: Glob::new_rust_srcs(!sources_are_present),
                         }));
                     }
 
@@ -790,7 +794,7 @@ impl CrateContext {
                         return Some(Rule::ProcMacro(TargetAttributes {
                             crate_name,
                             crate_root,
-                            srcs: Glob::new_rust_srcs(),
+                            srcs: Glob::new_rust_srcs(!sources_are_present),
                         }));
                     }
 
@@ -799,7 +803,7 @@ impl CrateContext {
                         return Some(Rule::Library(TargetAttributes {
                             crate_name,
                             crate_root,
-                            srcs: Glob::new_rust_srcs(),
+                            srcs: Glob::new_rust_srcs(!sources_are_present),
                         }));
                     }
 
@@ -813,7 +817,7 @@ impl CrateContext {
                         return Some(Rule::Binary(TargetAttributes {
                             crate_name: target.name.clone(),
                             crate_root,
-                            srcs: Glob::new_rust_srcs(),
+                            srcs: Glob::new_rust_srcs(!sources_are_present),
                         }));
                     }
 
@@ -852,6 +856,7 @@ mod test {
 
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
@@ -860,6 +865,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "common");
@@ -868,7 +874,7 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "common".to_owned(),
                 crate_root: Some("lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(),
+                srcs: Glob::new_rust_srcs(!are_sources_present),
             })]),
         );
     }
@@ -898,6 +904,7 @@ mod test {
 
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
@@ -906,6 +913,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "common");
@@ -915,12 +923,12 @@ mod test {
                 Rule::Library(TargetAttributes {
                     crate_name: "common".to_owned(),
                     crate_root: Some("lib.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
+                    srcs: Glob::new_rust_srcs(!are_sources_present),
                 }),
                 Rule::Binary(TargetAttributes {
                     crate_name: "common-bin".to_owned(),
                     crate_root: Some("main.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
+                    srcs: Glob::new_rust_srcs(!are_sources_present),
                 }),
             ]),
         );
@@ -961,6 +969,7 @@ mod test {
 
         let include_binaries = false;
         let include_build_scripts = true;
+        let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
@@ -969,6 +978,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "openssl-sys");
@@ -979,12 +989,12 @@ mod test {
                 Rule::Library(TargetAttributes {
                     crate_name: "openssl_sys".to_owned(),
                     crate_root: Some("src/lib.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
+                    srcs: Glob::new_rust_srcs(!are_sources_present),
                 }),
                 Rule::BuildScript(TargetAttributes {
                     crate_name: "build_script_main".to_owned(),
                     crate_root: Some("build/main.rs".to_owned()),
-                    srcs: Glob::new_rust_srcs(),
+                    srcs: Glob::new_rust_srcs(!are_sources_present),
                 })
             ]),
         );
@@ -1006,6 +1016,7 @@ mod test {
 
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
@@ -1014,6 +1025,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "openssl-sys");
@@ -1023,7 +1035,7 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "openssl_sys".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(),
+                srcs: Glob::new_rust_srcs(!are_sources_present),
             })]),
         );
     }
@@ -1040,6 +1052,7 @@ mod test {
 
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
         let context = CrateContext::new(
             crate_annotation,
             &annotations.metadata.packages,
@@ -1048,6 +1061,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "sysinfo");
@@ -1057,7 +1071,7 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "sysinfo".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(),
+                srcs: Glob::new_rust_srcs(!are_sources_present),
             })]),
         );
     }
@@ -1072,6 +1086,7 @@ mod test {
         }];
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
 
         let package = annotations
             .metadata
@@ -1088,6 +1103,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         assert_eq!(context.name, "common");
@@ -1209,6 +1225,7 @@ mod test {
         }];
         let include_binaries = false;
         let include_build_scripts = false;
+        let are_sources_present = false;
 
         let context = CrateContext::new(
             crate_annotation,
@@ -1218,6 +1235,7 @@ mod test {
             &annotations.metadata.workspace_metadata.tree_metadata,
             include_binaries,
             include_build_scripts,
+            are_sources_present,
         );
 
         let mut expected = Select::new();

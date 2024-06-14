@@ -13,9 +13,9 @@ pub(crate) struct Glob {
 }
 
 impl Glob {
-    pub(crate) fn new_rust_srcs() -> Self {
+    pub(crate) fn new_rust_srcs(allow_empty: bool) -> Self {
         Self {
-            allow_empty: false,
+            allow_empty,
             include: BTreeSet::from(["**/*.rs".to_owned()]),
             exclude: BTreeSet::new(),
         }
