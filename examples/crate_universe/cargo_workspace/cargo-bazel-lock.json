@@ -1,5 +1,5 @@
 {
-  "checksum": "216a686dd8be7aa09756d62e5f52a3d126db37172c1615b193d0626cdf3a4cbe",
+  "checksum": "54fcbb81d2c815bfc6eb2668a2fe1e6431577c2b932c7dac5fc96379b36edb62",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -17,7 +17,7 @@
             "crate_name": "ansi_term",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -66,7 +66,7 @@
             "crate_name": "atty",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -127,7 +127,7 @@
             "crate_name": "bitflags",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -172,7 +172,7 @@
             "crate_name": "cfg_if",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -211,7 +211,7 @@
             "crate_name": "clap",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -477,7 +477,7 @@
             "crate_name": "ferris_says",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -533,7 +533,7 @@
             "crate_name": "getrandom",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -545,7 +545,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -621,7 +621,7 @@
             "crate_name": "hermit_abi",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -669,7 +669,7 @@
             "crate_name": "libc",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -681,7 +681,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -761,7 +761,7 @@
             "crate_name": "ppv_lite86",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -802,7 +802,7 @@
             "crate_name": "printer",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -847,7 +847,7 @@
             "crate_name": "rand",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1068,7 +1068,7 @@
             "crate_name": "rand_chacha",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1126,7 +1126,7 @@
             "crate_name": "rand_core",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1182,7 +1182,7 @@
             "crate_name": "rand_hc",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1225,7 +1225,7 @@
             "crate_name": "rng",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1270,7 +1270,7 @@
             "crate_name": "smallvec",
             "crate_root": "lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1315,7 +1315,7 @@
             "crate_name": "smawk",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1353,7 +1353,7 @@
             "crate_name": "strsim",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1391,7 +1391,7 @@
             "crate_name": "textwrap",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1438,7 +1438,7 @@
             "crate_name": "textwrap",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1497,7 +1497,7 @@
             "crate_name": "unicode_width",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1542,7 +1542,7 @@
             "crate_name": "vec_map",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1581,7 +1581,7 @@
             "crate_name": "wasi",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1627,7 +1627,7 @@
             "crate_name": "winapi",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1639,7 +1639,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1718,7 +1718,7 @@
             "crate_name": "winapi_i686_pc_windows_gnu",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1730,7 +1730,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1783,7 +1783,7 @@
             "crate_name": "winapi_x86_64_pc_windows_gnu",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -1795,7 +1795,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]

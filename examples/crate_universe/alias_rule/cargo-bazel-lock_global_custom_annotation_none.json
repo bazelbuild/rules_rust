@@ -1,5 +1,5 @@
 {
-  "checksum": "d20475427f0affb980d87014b52aaed6b8816aeb60a26257f92f0d108ac9b15d",
+  "checksum": "4377d7288f513e779ba74874e3a94eebaf33796a0b7d649323a707e1b8b6b5f0",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -12,7 +12,7 @@
             "crate_name": "direct_cargo_bazel_deps",
             "crate_root": ".direct_cargo_bazel_deps.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -57,7 +57,7 @@
             "crate_name": "test_data_passing_crate",
             "crate_root": "src/lib.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]
@@ -69,7 +69,7 @@
             "crate_name": "build_script_build",
             "crate_root": "build.rs",
             "srcs": {
-              "allow_empty": false,
+              "allow_empty": true,
               "include": [
                 "**/*.rs"
               ]

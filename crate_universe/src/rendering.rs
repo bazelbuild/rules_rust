@@ -1197,7 +1197,7 @@ mod test {
         };
         let annotations =
             Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
-        let context = Context::new(annotations).unwrap();
+        let context = Context::new(annotations, false).unwrap();
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
@@ -1403,7 +1403,7 @@ mod test {
         let lockfile = test::lockfile::multi_cfg_dep();
 
         let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
-        let context = Context::new(annotations).unwrap();
+        let context = Context::new(annotations, false).unwrap();
 
         let renderer = Renderer::new(config.rendering, config.supported_platform_triples);
         let output = renderer.render(&context).unwrap();

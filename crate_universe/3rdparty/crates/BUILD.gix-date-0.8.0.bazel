@@ -14,7 +14,7 @@ rust_library(
     name = "gix_date",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -82,6 +82,6 @@ rust_library(
         "@cui__bstr-1.6.0//:bstr",
         "@cui__itoa-1.0.8//:itoa",
         "@cui__thiserror-1.0.50//:thiserror",
-        "@cui__time-0.3.30//:time",
+        "@cui__time-0.3.36//:time",
     ],
 )
