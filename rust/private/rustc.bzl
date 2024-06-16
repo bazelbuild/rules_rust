@@ -240,6 +240,7 @@ def collect_deps(
                 crate_deps.append(struct(
                     crate_info = dep_variant_info.crate_info,
                     dep_info = dep_variant_info.dep_info,
+                    cc_info = dep_variant_info.cc_info,
                 ))
 
     aliases = {k.label: v for k, v in aliases.items()}
