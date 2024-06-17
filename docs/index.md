@@ -13,7 +13,23 @@ This repository provides rules for building [Rust][rust] projects with [Bazel][b
 
 ## Setup
 
-To use the Rust rules, add the following to your `WORKSPACE` file to add the external repositories for the Rust toolchain:
+The rules are released, and releases can be found on [the GitHub Releases page](https://github.com/bazelbuild/rules_rust/releases). We recommend using the latest release from that page.
+
+### Bzlmod
+
+Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.
+
+To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
+
+```python
+bazel_dep(name = "rules_rust", version = "0.46.0")
+```
+
+Don't forget to substitute in your desired release's version number.
+
+### WORKSPACE
+
+To use `rules_rust` in a project using a WORKSPACE file, add the following to your `WORKSPACE` file to add the external repositories for the Rust toolchain:
 
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -22,8 +38,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    sha256 = "36ab8f9facae745c9c9c1b33d225623d976e78f2cc3f729b7973d8c20934ab95",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.31.0/rules_rust-v0.31.0.tar.gz"],
+    integrity = "sha256-F8U7+AC5MvMtPKGdLLnorVM84cDXKfDRgwd7/dq3rUY=",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.46.0/rules_rust-v0.46.0.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -33,7 +49,7 @@ rules_rust_dependencies()
 rust_register_toolchains()
 ```
 
-The rules are released, and releases can be found on [the GitHub Releases page](https://github.com/bazelbuild/rules_rust/releases). We recommend using the latest release from that page.
+Don't forget to substitute in your desired release's version number and integrity hash.
 
 ## Rules
 
@@ -45,7 +61,8 @@ The rules are released, and releases can be found on [the GitHub Releases page](
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 - [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
-- [crate_universe](crate_universe.md): Rules for generating Bazel targets for external crate dependencies.
+- [crate_universe (bzlmod)](crate_universe_bzlmod.md): Rules for generating Bazel targets for external crate dependencies when using bzlmod.
+- [crate_universe (WORKSPACE)](crate_universe.md): Rules for generating Bazel targets for external crate dependencies when using WORKSPACE files.
 
 You can also browse the [full API in one page](flatten.md).
 
