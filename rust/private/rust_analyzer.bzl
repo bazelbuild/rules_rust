@@ -70,6 +70,19 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
 
     return rust_analyzer_info
 
+def _accumulate_rust_analyzer_info(dep_infos_to_accumulate, dep):
+    if dep == None:
+        return
+    if RustAnalyzerInfo in dep:
+        dep_infos_to_accumulate.append(dep[RustAnalyzerInfo])
+    if RustAnalyzerGroupInfo in dep:
+        for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
+            dep_infos_to_accumulate.append(expanded_dep)
+
+def _accumulate_rust_analyzer_infos(dep_infos_to_accumulate, deps_attr):
+    for dep in deps_attr:
+        _accumulate_rust_analyzer_info(dep_infos_to_accumulate, dep)
+
 def _rust_analyzer_aspect_impl(target, ctx):
     if (rust_common.crate_info not in target and
         rust_common.test_crate_info not in target and
@@ -91,37 +104,18 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     build_info = None
     dep_infos = []
-    if hasattr(ctx.rule.attr, "deps"):
-        for dep in ctx.rule.attr.deps:
-            # Save BuildInfo if we find any (for build script output)
-            if BuildInfo in dep:
-                build_info = dep[BuildInfo]
-        dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
+    labels_to_rais = {}
 
-        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.deps if RustAnalyzerGroupInfo in dep]
-        for group_info in group_infos:
-            dep_infos.extend(group_info.deps)
+    for dep in getattr(ctx.rule.attr, "deps", []):
+        # Save BuildInfo if we find any (for build script output)
+        if BuildInfo in dep:
+            build_info = dep[BuildInfo]
 
-    if hasattr(ctx.rule.attr, "proc_macro_deps"):
-        dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
+    _accumulate_rust_analyzer_infos(dep_infos, getattr(ctx.rule.attr, "deps", []))
+    _accumulate_rust_analyzer_infos(dep_infos, getattr(ctx.rule.attr, "proc_macro_deps", []))
 
-        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerGroupInfo in dep]
-        for group_info in group_infos:
-            dep_infos.extend(group_info.deps)
-
-    if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
-        if RustAnalyzerInfo in ctx.rule.attr.crate:
-            dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
-
-        if RustAnalyzerGroupInfo in ctx.rule.attr.crate:
-            dep_infos.extend(ctx.rule.attr.crate[RustAnalyzerGroupInfo])
-
-    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None:
-        if RustAnalyzerInfo in ctx.rule.attr.actual:
-            dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
-
-        if RustAnalyzerGroupInfo in ctx.rule.attr.actual:
-            dep_infos.extend(ctx.rule.attr.actual[RustAnalyzerGroupInfo])
+    _accumulate_rust_analyzer_info(dep_infos, getattr(ctx.rule.attr, "crate", None))
+    _accumulate_rust_analyzer_info(dep_infos, getattr(ctx.rule.attr, "actual", None))
 
     if rust_common.crate_group_info in target:
         return [RustAnalyzerGroupInfo(deps = dep_infos)]
