@@ -137,14 +137,16 @@ pub fn generate_rust_project(
                                 .get(dep)
                                 .expect("failed to find dependency on second lookup");
                             let dep_crate = &project.crates[crate_index];
-                            Dependency {
-                                crate_index,
-                                name: dep_crate
+                            let name = if let Some(alias) = c.aliases.get(dep) {
+                                alias.clone()
+                            } else {
+                                dep_crate
                                     .display_name
                                     .as_ref()
                                     .expect("all crates should have display_name")
-                                    .clone(),
-                            }
+                                    .clone()
+                            };
+                            Dependency { crate_index, name }
                         })
                         .collect(),
                     is_workspace_member: Some(c.is_workspace_member),
@@ -278,6 +280,7 @@ mod tests {
             "sysroot",
             "sysroot_src",
             &BTreeSet::from([CrateSpec {
+                aliases: BTreeMap::new(),
                 crate_id: "ID-example".into(),
                 display_name: "example".into(),
                 edition: "2018".into(),
@@ -309,6 +312,7 @@ mod tests {
             "sysroot_src",
             &BTreeSet::from([
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-example".into(),
                     display_name: "example".into(),
                     edition: "2018".into(),
@@ -323,6 +327,7 @@ mod tests {
                     crate_type: "rlib".into(),
                 },
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-dep_a".into(),
                     display_name: "dep_a".into(),
                     edition: "2018".into(),
@@ -337,6 +342,7 @@ mod tests {
                     crate_type: "rlib".into(),
                 },
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-dep_b".into(),
                     display_name: "dep_b".into(),
                     edition: "2018".into(),
