@@ -106,7 +106,7 @@ Failure to do so will result in rules attempting to match a `stable` toolchain w
 
 ## External Dependencies
 
-[crate_universe](crate_universe.md) is a tool built into `rules_rust` that can be used to fetch dependencies. Additionally, [cargo-raze](https://github.com/google/cargo-raze) is an older third-party which can also fetch dependencies.
+[crate_universe](crate_universe.md) ([crate_universe bzlmod](crate_universe_bzlmod.md)) is a tool built into `rules_rust` that can be used to fetch dependencies.
 
 ## Supported bazel versions
 
