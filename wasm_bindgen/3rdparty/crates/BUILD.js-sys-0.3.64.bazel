@@ -14,7 +14,7 @@ rust_library(
     name = "js_sys",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.3.64",
     deps = [
-        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.91//:wasm_bindgen",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-0.2.92//:wasm_bindgen",
     ],
 )

@@ -11,10 +11,10 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "wasm_bindgen_threads_xform",
+    name = "wasm_bindgen_macro_support",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -28,6 +28,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "spans",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = [
@@ -35,7 +38,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=wasm-bindgen-threads-xform",
+        "crate-name=wasm-bindgen-macro-support",
         "manual",
         "noclippy",
         "norustfmt",
@@ -77,10 +80,12 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.91",
+    version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen__walrus-0.20.3//:walrus",
-        "@rules_rust_wasm_bindgen__wasm-bindgen-wasm-conventions-0.2.91//:wasm_bindgen_wasm_conventions",
+        "@rules_rust_wasm_bindgen__proc-macro2-1.0.64//:proc_macro2",
+        "@rules_rust_wasm_bindgen__quote-1.0.29//:quote",
+        "@rules_rust_wasm_bindgen__syn-2.0.25//:syn",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-backend-0.2.92//:wasm_bindgen_backend",
+        "@rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.92//:wasm_bindgen_shared",
     ],
 )

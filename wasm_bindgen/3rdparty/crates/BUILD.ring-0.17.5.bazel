@@ -15,7 +15,7 @@ rust_library(
     name = "ring",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -178,10 +178,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "ring_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "alloc",
@@ -204,6 +204,7 @@ cargo_build_script(
     ),
     edition = "2021",
     links = "ring_core_0_17_5",
+    pkg_name = "ring",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -223,6 +224,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":ring_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )
