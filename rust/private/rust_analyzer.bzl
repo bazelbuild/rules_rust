@@ -46,6 +46,7 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
     """
     crate_spec = ctx.actions.declare_file("{}.rust_analyzer_crate_spec.json".format(owner.name))
 
+    # Recreate the provider with the spec file embedded in it.
     rust_analyzer_info = RustAnalyzerInfo(
         aliases = base_info.aliases,
         crate = base_info.crate,
@@ -224,16 +225,24 @@ def _create_single_crate(ctx, attrs, info):
     path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else ""
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
-    crate_root = path_prefix + info.crate.root.dirname
+    crate["source"] = {"exclude_dirs": [], "include_dirs": []}
+
+    if is_generated:
+        srcs = getattr(ctx.rule.files, "srcs", [])
+        src_map = {src.short_path: src for src in srcs if src.is_source}
+        if info.crate.root.short_path in src_map:
+            crate["root_module"] = src_map[info.crate.root.short_path].path
+            crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
         crate["env"].update({"OUT_DIR": _EXEC_ROOT_TEMPLATE + out_dir_path})
-        crate["source"] = {
-            # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
-            "exclude_dirs": [],
-            "include_dirs": [crate_root, _EXEC_ROOT_TEMPLATE + out_dir_path],
-        }
+
+        # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
+        crate["source"]["include_dirs"].extend([
+            path_prefix + info.crate.root.dirname,
+            _EXEC_ROOT_TEMPLATE + out_dir_path,
+        ])
 
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
     # macro like include_bytes!. Other use cases might exist that require more complex logic.
