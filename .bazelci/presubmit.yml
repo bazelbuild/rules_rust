@@ -668,6 +668,32 @@ tasks:
       - "//:nix_cross_compiling"
     test_targets:
       - "//..."
+  bzlmod_all_crate_deps:
+    name: Cargo dependencies with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/all_crate_deps
+    build_targets:
+      - "//..."
+  bzlmod_all_deps_vendor:
+    name: Vendored dependencies with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/all_deps_vendor
+    run_targets:
+      - "//basic/3rdparty:crates_vendor"
+    build_targets:
+      - "//..."
+  bzlmod_compile_opt:
+    name: Compiler optimization with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/compile_opt
+    build_targets:
+      - "//..."
+  bzlmod_ffi:
+    name: FFI with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/ffi
+    build_targets:
+      - "//..."
   ubuntu2004_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
@@ -717,6 +743,20 @@ tasks:
     working_directory: examples/bzlmod/hello_world_no_cargo
     build_targets:
       - "//..."
+  bzlmod_musl_cross_compiling:
+    name: MUSL cross compiling with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/musl_cross_compiling
+    build_targets:
+      - "//..."
+      - "//musl_scratch:multi_arch_images"
+  bzlmod_oci_container:
+    name: OCI Container with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/oci_container
+    build_targets:
+      - "//..."
+      - "//tokio_oci:image"
   bzlmod_override_targets:
     name: Override Targets bzlmod
     platform: ubuntu2004
@@ -724,6 +764,12 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "//..."
+  bzlmod_proto:
+    name: Proto and Prost with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/proto
+    build_targets:
       - "//..."
   compile_one_dependency:
     name: --compile_one_dependency flag
