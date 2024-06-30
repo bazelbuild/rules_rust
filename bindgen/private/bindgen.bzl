@@ -198,6 +198,22 @@ def _rust_bindgen_impl(ctx):
 
     args = ctx.actions.args()
 
+    executable = bindgen_bin
+
+    # When running on darwin, we have to forward the SDKROOT environment variable,
+    # otherwise some system include files may not be found if the clang compiled
+    # from source is being used.
+    # Since the sdk directory given by the apple toolchain[1] may be a dummy
+    # variable, we have to use the process_wrapper.
+    #
+    # [1]: https://bazel.build/rules/lib/builtins/apple_toolchain.html#sdk_dir
+    if apple_common != None:
+        args.add_all(["--subst", "SDKROOT=${SDKROOT}"])
+        args.add_all(["--subst", "DEVELOPER_DIR=${DEVELOPER_DIR}"])
+        args.add_all(["--", bindgen_bin])
+        tools = depset([bindgen_bin], transitive = [tools])
+        executable = ctx.executable._process_wrapper
+
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
     args.add(header)
@@ -266,7 +282,7 @@ def _rust_bindgen_impl(ctx):
         env["DYLD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"]
 
     ctx.actions.run(
-        executable = bindgen_bin,
+        executable = executable,
         inputs = depset(
             [header],
             transitive = [
@@ -359,7 +375,7 @@ rust_bindgen_toolchain = rule(
     doc = """\
 The tools required for the `rust_bindgen` rule.
 
-This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it 
+This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it
 in turn depends on both a clang binary and the clang library. To obtain these dependencies,
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
