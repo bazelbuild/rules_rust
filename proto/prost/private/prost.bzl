@@ -73,9 +73,13 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
         additional_args.add_all(prost_toolchain.tonic_opts, format_each = "--tonic_opt=%s")
         tools = depset([tonic_plugin.executable], transitive = [tools])
 
-    if rustfmt_toolchain:
-        additional_args.add("--rustfmt={}".format(rustfmt_toolchain.rustfmt.path))
-        tools = depset(transitive = [tools, rustfmt_toolchain.all_files])
+    if prost_toolchain.prost_serde_plugin:
+        prost_serde_plugin = prost_toolchain.prost_serde_plugin[DefaultInfo].files_to_run
+        additional_args.add(prost_toolchain.prost_serde_plugin_flag % prost_serde_plugin.executable.path)
+        additional_args.add("--prost-serde_opt=no_include")
+        additional_args.add("--is_prost_serde")
+        additional_args.add_all(prost_toolchain.prost_serde_opts, format_each = "--prost-serde_opt=%s")
+        tools = depset([prost_serde_plugin.executable], transitive = [tools])
 
     additional_inputs = depset([deps_info_file, proto_info.direct_descriptor_set] + [dep[ProstProtoInfo].package_info for dep in deps])
 
@@ -361,6 +365,9 @@ def _rust_prost_toolchain_impl(ctx):
         tonic_plugin = ctx.attr.tonic_plugin,
         tonic_plugin_flag = ctx.attr.tonic_plugin_flag,
         tonic_runtime = ctx.attr.tonic_runtime,
+        prost_serde_opts = ctx.attr.prost_serde_opts,
+        prost_serde_plugin = ctx.attr.prost_serde_plugin,
+        prost_serde_plugin_flag = ctx.attr.prost_serde_plugin_flag,
     )]
 
 rust_prost_toolchain = rule(
@@ -385,6 +392,18 @@ rust_prost_toolchain = rule(
             doc = "The Prost runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
             mandatory = True,
+        ),
+        "prost_serde_opts": attr.string_list(
+            doc = "Additional options to add to prost-serde.",
+        ),
+        "prost_serde_plugin": attr.label(
+            doc = "Additional plugins to add to prost-serde.",
+            cfg = "exec",
+            executable = True,
+        ),
+        "prost_serde_plugin_flag": attr.string(
+            doc = "prost-serde plugin flag format. (e.g. `--plugin=protoc-gen-prost-serde=%s`))",
+            default = "--plugin=protoc-gen-prost-serde=%s",
         ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
