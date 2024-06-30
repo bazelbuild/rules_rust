@@ -1,8 +1,44 @@
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{anyhow, Context, Result};
-use cfg_expr::targets::{get_builtin_target_by_triple, TargetInfo};
+use cfg_expr::targets::Abi;
+use cfg_expr::targets::{
+    get_builtin_target_by_triple, Arch, Endian, Families, HasAtomics, Os, Panic, TargetInfo,
+    Triple, Vendor,
+};
 use cfg_expr::{Expression, Predicate};
+
+// since we use binary_search_by on it, the array must be sorted.
+// NOTE: can be removed once, the visionos target is added to cfg_expr
+pub const TARGET_INFO: &[TargetInfo] = &[
+    TargetInfo {
+        triple: Triple::new_const("aarch64-apple-visionos"),
+        os: Some(Os(Cow::Borrowed("visionos"))),
+        abi: None,
+        arch: Arch::aarch64,
+        env: None,
+        vendor: Some(Vendor::apple),
+        families: Families::unix,
+        pointer_width: 64,
+        endian: Endian::little,
+        has_atomics: HasAtomics::atomic_8_16_32_64_128_ptr,
+        panic: Panic::unwind,
+    },
+    TargetInfo {
+        triple: Triple::new_const("aarch64-apple-visionos-sim"),
+        os: Some(Os(Cow::Borrowed("visionos"))),
+        abi: Some(Abi::new_const("sim")),
+        arch: Arch::aarch64,
+        env: None,
+        vendor: Some(Vendor::apple),
+        families: Families::unix,
+        pointer_width: 64,
+        endian: Endian::little,
+        has_atomics: HasAtomics::atomic_8_16_32_64_128_ptr,
+        panic: Panic::unwind,
+    },
+];
 
 use crate::context::CrateContext;
 use crate::utils::target_triple::TargetTriple;
@@ -39,15 +75,20 @@ pub(crate) fn resolve_cfg_platforms(
     // Generate target information for each triple string
     let target_infos = supported_platform_triples
         .iter()
-        .map(
-            |target_triple| match get_builtin_target_by_triple(&target_triple.to_cargo()) {
+        .map(|target_triple| {
+            match get_builtin_target_by_triple(&target_triple.to_cargo()).or_else(|| {
+                TARGET_INFO
+                    .binary_search_by(|ti| ti.triple.as_ref().cmp(&target_triple.to_cargo()))
+                    .map(|i| &TARGET_INFO[i])
+                    .ok()
+            }) {
                 Some(info) => Ok((target_triple, info)),
                 None => Err(anyhow!(
                     "Invalid platform triple in supported platforms: {}",
                     target_triple
                 )),
-            },
-        )
+            }
+        })
         .collect::<Result<BTreeMap<&TargetTriple, &'static TargetInfo>>>()?;
 
     // `cfg-expr` does not understand configurations that are simply platform triples
