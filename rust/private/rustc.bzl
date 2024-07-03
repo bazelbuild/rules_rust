@@ -40,6 +40,12 @@ load(
 )
 load(":utils.bzl", "is_std_dylib")
 
+# This feature is disabled unless one of the dependencies is a cc_library.
+# Authors of C++ toolchains can place linker flags that should only be applied
+# when linking with C objects in a feature with this name, or require this
+# feature from other features which needs to be disabled together.
+RUST_LINK_CC_FEATURE = "rules_rust_link_cc"
+
 BuildInfo = _BuildInfo
 
 AliasableDepInfo = provider(
@@ -1150,7 +1156,10 @@ def rustc_compile_action(
     rustc_output = crate_info_dict.get("rustc_output", None)
     rustc_rmeta_output = crate_info_dict.get("rustc_rmeta_output", None)
 
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    extra_disabled_features = [RUST_LINK_CC_FEATURE]
+    if crate_info_dict["type"] in ["bin", "cdylib"] and any([d.cc_info for d in crate_info_dict["deps"].to_list()]):
+        extra_disabled_features = []
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
 
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
