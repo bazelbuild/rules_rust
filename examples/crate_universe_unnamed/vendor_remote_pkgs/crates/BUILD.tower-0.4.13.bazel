@@ -14,7 +14,7 @@ rust_library(
     name = "tower",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -98,7 +98,7 @@ rust_library(
         "@crates_vendor_pkgs__futures-util-0.3.30//:futures_util",
         "@crates_vendor_pkgs__pin-project-1.1.5//:pin_project",
         "@crates_vendor_pkgs__pin-project-lite-0.2.14//:pin_project_lite",
-        "@crates_vendor_pkgs__tokio-1.37.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.38.0//:tokio",
         "@crates_vendor_pkgs__tokio-util-0.7.11//:tokio_util",
         "@crates_vendor_pkgs__tower-layer-0.3.2//:tower_layer",
         "@crates_vendor_pkgs__tower-service-0.3.2//:tower_service",

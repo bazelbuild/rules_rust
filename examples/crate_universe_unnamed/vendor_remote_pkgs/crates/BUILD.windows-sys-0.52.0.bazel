@@ -14,7 +14,7 @@ rust_library(
     name = "windows_sys",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -90,6 +90,6 @@ rust_library(
     }),
     version = "0.52.0",
     deps = [
-        "@crates_vendor_pkgs__windows-targets-0.52.5//:windows_targets",
+        "@crates_vendor_pkgs__windows-targets-0.52.6//:windows_targets",
     ],
 )

@@ -14,7 +14,7 @@ rust_library(
     name = "h2",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -87,7 +87,7 @@ rust_library(
         "@crates_vendor_pkgs__http-0.2.12//:http",
         "@crates_vendor_pkgs__indexmap-2.2.6//:indexmap",
         "@crates_vendor_pkgs__slab-0.4.9//:slab",
-        "@crates_vendor_pkgs__tokio-1.37.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.38.0//:tokio",
         "@crates_vendor_pkgs__tokio-util-0.7.11//:tokio_util",
         "@crates_vendor_pkgs__tracing-0.1.40//:tracing",
     ],
