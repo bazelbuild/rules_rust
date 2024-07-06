@@ -82,9 +82,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.0.203",
+    version = "1.0.204",
     deps = [
-        "@crates_vendor_pkgs__serde-1.0.203//:build_script_build",
+        "@crates_vendor_pkgs__serde-1.0.204//:build_script_build",
     ],
 )
 
@@ -124,7 +124,7 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "1.0.203",
+    version = "1.0.204",
     visibility = ["//visibility:private"],
 )
 

@@ -439,7 +439,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/addr2line/0.22.0/download"],
         strip_prefix = "addr2line-0.22.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.addr2line-0.22.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.addr2line-0.22.0.bazel"),
     )
 
     maybe(
@@ -449,7 +449,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/adler/1.0.2/download"],
         strip_prefix = "adler-1.0.2",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.adler-1.0.2.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.adler-1.0.2.bazel"),
     )
 
     maybe(
@@ -459,7 +459,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/async-stream/0.3.5/download"],
         strip_prefix = "async-stream-0.3.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.async-stream-0.3.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.async-stream-0.3.5.bazel"),
     )
 
     maybe(
@@ -469,7 +469,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/async-stream-impl/0.3.5/download"],
         strip_prefix = "async-stream-impl-0.3.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.async-stream-impl-0.3.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.async-stream-impl-0.3.5.bazel"),
     )
 
     maybe(
@@ -479,7 +479,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/autocfg/1.3.0/download"],
         strip_prefix = "autocfg-1.3.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.autocfg-1.3.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.autocfg-1.3.0.bazel"),
     )
 
     maybe(
@@ -489,7 +489,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/backtrace/0.3.73/download"],
         strip_prefix = "backtrace-0.3.73",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.backtrace-0.3.73.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.backtrace-0.3.73.bazel"),
     )
 
     maybe(
@@ -499,7 +499,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/bitflags/2.6.0/download"],
         strip_prefix = "bitflags-2.6.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.bitflags-2.6.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.bitflags-2.6.0.bazel"),
     )
 
     maybe(
@@ -509,7 +509,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/bytes/1.6.0/download"],
         strip_prefix = "bytes-1.6.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.bytes-1.6.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.bytes-1.6.0.bazel"),
     )
 
     maybe(
@@ -519,7 +519,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/cc/1.0.104/download"],
         strip_prefix = "cc-1.0.104",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.cc-1.0.104.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.cc-1.0.104.bazel"),
     )
 
     maybe(
@@ -529,7 +529,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/cfg-if/1.0.0/download"],
         strip_prefix = "cfg-if-1.0.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.cfg-if-1.0.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.cfg-if-1.0.0.bazel"),
     )
 
     maybe(
@@ -539,7 +539,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/errno/0.3.9/download"],
         strip_prefix = "errno-0.3.9",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.errno-0.3.9.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.errno-0.3.9.bazel"),
     )
 
     maybe(
@@ -549,7 +549,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/fastrand/2.1.0/download"],
         strip_prefix = "fastrand-2.1.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.fastrand-2.1.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.fastrand-2.1.0.bazel"),
     )
 
     maybe(
@@ -559,7 +559,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/futures-core/0.3.30/download"],
         strip_prefix = "futures-core-0.3.30",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.futures-core-0.3.30.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.futures-core-0.3.30.bazel"),
     )
 
     maybe(
@@ -569,7 +569,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/gimli/0.29.0/download"],
         strip_prefix = "gimli-0.29.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.gimli-0.29.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.gimli-0.29.0.bazel"),
     )
 
     maybe(
@@ -579,7 +579,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/hermit-abi/0.3.9/download"],
         strip_prefix = "hermit-abi-0.3.9",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.hermit-abi-0.3.9.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.hermit-abi-0.3.9.bazel"),
     )
 
     maybe(
@@ -589,7 +589,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/libc/0.2.155/download"],
         strip_prefix = "libc-0.2.155",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.libc-0.2.155.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.libc-0.2.155.bazel"),
     )
 
     maybe(
@@ -599,7 +599,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/linux-raw-sys/0.4.14/download"],
         strip_prefix = "linux-raw-sys-0.4.14",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.linux-raw-sys-0.4.14.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.linux-raw-sys-0.4.14.bazel"),
     )
 
     maybe(
@@ -609,7 +609,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/lock_api/0.4.12/download"],
         strip_prefix = "lock_api-0.4.12",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.lock_api-0.4.12.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.lock_api-0.4.12.bazel"),
     )
 
     maybe(
@@ -619,7 +619,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/memchr/2.7.4/download"],
         strip_prefix = "memchr-2.7.4",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.memchr-2.7.4.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.memchr-2.7.4.bazel"),
     )
 
     maybe(
@@ -629,7 +629,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/miniz_oxide/0.7.4/download"],
         strip_prefix = "miniz_oxide-0.7.4",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.miniz_oxide-0.7.4.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.miniz_oxide-0.7.4.bazel"),
     )
 
     maybe(
@@ -639,7 +639,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/mio/0.8.11/download"],
         strip_prefix = "mio-0.8.11",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.mio-0.8.11.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.mio-0.8.11.bazel"),
     )
 
     maybe(
@@ -649,7 +649,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/num_cpus/1.16.0/download"],
         strip_prefix = "num_cpus-1.16.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.num_cpus-1.16.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.num_cpus-1.16.0.bazel"),
     )
 
     maybe(
@@ -659,7 +659,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/object/0.36.1/download"],
         strip_prefix = "object-0.36.1",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.object-0.36.1.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.object-0.36.1.bazel"),
     )
 
     maybe(
@@ -669,7 +669,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/parking_lot/0.12.3/download"],
         strip_prefix = "parking_lot-0.12.3",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.parking_lot-0.12.3.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.parking_lot-0.12.3.bazel"),
     )
 
     maybe(
@@ -679,7 +679,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/parking_lot_core/0.9.10/download"],
         strip_prefix = "parking_lot_core-0.9.10",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.parking_lot_core-0.9.10.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.parking_lot_core-0.9.10.bazel"),
     )
 
     maybe(
@@ -689,7 +689,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/pin-project-lite/0.2.14/download"],
         strip_prefix = "pin-project-lite-0.2.14",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.pin-project-lite-0.2.14.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.pin-project-lite-0.2.14.bazel"),
     )
 
     maybe(
@@ -699,7 +699,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/proc-macro2/1.0.86/download"],
         strip_prefix = "proc-macro2-1.0.86",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.proc-macro2-1.0.86.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.proc-macro2-1.0.86.bazel"),
     )
 
     maybe(
@@ -709,7 +709,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/quote/1.0.36/download"],
         strip_prefix = "quote-1.0.36",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.quote-1.0.36.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.quote-1.0.36.bazel"),
     )
 
     maybe(
@@ -719,7 +719,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/redox_syscall/0.5.2/download"],
         strip_prefix = "redox_syscall-0.5.2",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.2.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.2.bazel"),
     )
 
     maybe(
@@ -729,7 +729,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/rustc-demangle/0.1.24/download"],
         strip_prefix = "rustc-demangle-0.1.24",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.rustc-demangle-0.1.24.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.rustc-demangle-0.1.24.bazel"),
     )
 
     maybe(
@@ -739,7 +739,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/rustix/0.38.34/download"],
         strip_prefix = "rustix-0.38.34",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.rustix-0.38.34.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.rustix-0.38.34.bazel"),
     )
 
     maybe(
@@ -749,7 +749,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/scopeguard/1.2.0/download"],
         strip_prefix = "scopeguard-1.2.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.scopeguard-1.2.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.scopeguard-1.2.0.bazel"),
     )
 
     maybe(
@@ -759,7 +759,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/signal-hook-registry/1.4.2/download"],
         strip_prefix = "signal-hook-registry-1.4.2",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.signal-hook-registry-1.4.2.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.signal-hook-registry-1.4.2.bazel"),
     )
 
     maybe(
@@ -769,7 +769,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/smallvec/1.13.2/download"],
         strip_prefix = "smallvec-1.13.2",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.smallvec-1.13.2.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.smallvec-1.13.2.bazel"),
     )
 
     maybe(
@@ -779,7 +779,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/socket2/0.5.7/download"],
         strip_prefix = "socket2-0.5.7",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.socket2-0.5.7.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.socket2-0.5.7.bazel"),
     )
 
     maybe(
@@ -789,7 +789,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/syn/2.0.68/download"],
         strip_prefix = "syn-2.0.68",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.syn-2.0.68.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.syn-2.0.68.bazel"),
     )
 
     maybe(
@@ -799,7 +799,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/tempfile/3.10.1/download"],
         strip_prefix = "tempfile-3.10.1",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.tempfile-3.10.1.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tempfile-3.10.1.bazel"),
     )
 
     maybe(
@@ -809,7 +809,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/tokio/1.38.0/download"],
         strip_prefix = "tokio-1.38.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.tokio-1.38.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-1.38.0.bazel"),
     )
 
     maybe(
@@ -819,7 +819,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/tokio-macros/2.3.0/download"],
         strip_prefix = "tokio-macros-2.3.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.tokio-macros-2.3.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-macros-2.3.0.bazel"),
     )
 
     maybe(
@@ -829,7 +829,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/tokio-stream/0.1.15/download"],
         strip_prefix = "tokio-stream-0.1.15",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.tokio-stream-0.1.15.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-stream-0.1.15.bazel"),
     )
 
     maybe(
@@ -839,7 +839,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/tokio-test/0.4.4/download"],
         strip_prefix = "tokio-test-0.4.4",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.tokio-test-0.4.4.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-test-0.4.4.bazel"),
     )
 
     maybe(
@@ -849,7 +849,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/unicode-ident/1.0.12/download"],
         strip_prefix = "unicode-ident-1.0.12",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.unicode-ident-1.0.12.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.unicode-ident-1.0.12.bazel"),
     )
 
     maybe(
@@ -859,7 +859,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/wasi/0.11.0+wasi-snapshot-preview1/download"],
         strip_prefix = "wasi-0.11.0+wasi-snapshot-preview1",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.wasi-0.11.0+wasi-snapshot-preview1.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.wasi-0.11.0+wasi-snapshot-preview1.bazel"),
     )
 
     maybe(
@@ -869,7 +869,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows-sys/0.48.0/download"],
         strip_prefix = "windows-sys-0.48.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows-sys-0.48.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows-sys-0.48.0.bazel"),
     )
 
     maybe(
@@ -879,7 +879,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows-sys/0.52.0/download"],
         strip_prefix = "windows-sys-0.52.0",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows-sys-0.52.0.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows-sys-0.52.0.bazel"),
     )
 
     maybe(
@@ -889,7 +889,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows-targets/0.48.5/download"],
         strip_prefix = "windows-targets-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows-targets-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows-targets-0.48.5.bazel"),
     )
 
     maybe(
@@ -899,7 +899,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows-targets/0.52.6/download"],
         strip_prefix = "windows-targets-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows-targets-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows-targets-0.52.6.bazel"),
     )
 
     maybe(
@@ -909,7 +909,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_aarch64_gnullvm/0.48.5/download"],
         strip_prefix = "windows_aarch64_gnullvm-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_aarch64_gnullvm-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_aarch64_gnullvm-0.48.5.bazel"),
     )
 
     maybe(
@@ -919,7 +919,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_aarch64_gnullvm/0.52.6/download"],
         strip_prefix = "windows_aarch64_gnullvm-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_aarch64_gnullvm-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_aarch64_gnullvm-0.52.6.bazel"),
     )
 
     maybe(
@@ -929,7 +929,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_aarch64_msvc/0.48.5/download"],
         strip_prefix = "windows_aarch64_msvc-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.48.5.bazel"),
     )
 
     maybe(
@@ -939,7 +939,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_aarch64_msvc/0.52.6/download"],
         strip_prefix = "windows_aarch64_msvc-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_aarch64_msvc-0.52.6.bazel"),
     )
 
     maybe(
@@ -949,7 +949,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_i686_gnu/0.48.5/download"],
         strip_prefix = "windows_i686_gnu-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.48.5.bazel"),
     )
 
     maybe(
@@ -959,7 +959,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_i686_gnu/0.52.6/download"],
         strip_prefix = "windows_i686_gnu-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_i686_gnu-0.52.6.bazel"),
     )
 
     maybe(
@@ -969,7 +969,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_i686_gnullvm/0.52.6/download"],
         strip_prefix = "windows_i686_gnullvm-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_i686_gnullvm-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_i686_gnullvm-0.52.6.bazel"),
     )
 
     maybe(
@@ -979,7 +979,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_i686_msvc/0.48.5/download"],
         strip_prefix = "windows_i686_msvc-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.48.5.bazel"),
     )
 
     maybe(
@@ -989,7 +989,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_i686_msvc/0.52.6/download"],
         strip_prefix = "windows_i686_msvc-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_i686_msvc-0.52.6.bazel"),
     )
 
     maybe(
@@ -999,7 +999,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_gnu/0.48.5/download"],
         strip_prefix = "windows_x86_64_gnu-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.48.5.bazel"),
     )
 
     maybe(
@@ -1009,7 +1009,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_gnu/0.52.6/download"],
         strip_prefix = "windows_x86_64_gnu-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnu-0.52.6.bazel"),
     )
 
     maybe(
@@ -1019,7 +1019,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_gnullvm/0.48.5/download"],
         strip_prefix = "windows_x86_64_gnullvm-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnullvm-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnullvm-0.48.5.bazel"),
     )
 
     maybe(
@@ -1029,7 +1029,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_gnullvm/0.52.6/download"],
         strip_prefix = "windows_x86_64_gnullvm-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnullvm-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_gnullvm-0.52.6.bazel"),
     )
 
     maybe(
@@ -1039,7 +1039,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_msvc/0.48.5/download"],
         strip_prefix = "windows_x86_64_msvc-0.48.5",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.48.5.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.48.5.bazel"),
     )
 
     maybe(
@@ -1049,7 +1049,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/windows_x86_64_msvc/0.52.6/download"],
         strip_prefix = "windows_x86_64_msvc-0.52.6",
-        build_file = Label("@//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.52.6.bazel"),
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.windows_x86_64_msvc-0.52.6.bazel"),
     )
 
     return [

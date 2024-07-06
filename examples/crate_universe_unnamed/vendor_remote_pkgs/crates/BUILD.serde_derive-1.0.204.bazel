@@ -77,7 +77,7 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.0.203",
+    version = "1.0.204",
     deps = [
         "@crates_vendor_pkgs__proc-macro2-1.0.86//:proc_macro2",
         "@crates_vendor_pkgs__quote-1.0.36//:quote",
