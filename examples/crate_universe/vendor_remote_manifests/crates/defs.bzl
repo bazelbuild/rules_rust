@@ -784,12 +784,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__syn-2.0.68",
-        sha256 = "901fa70d88b9d6c98022e23b4136f9f3e54e4662c3bc1bd1d84a42a9a0f0c1e9",
+        name = "cvm__syn-2.0.69",
+        sha256 = "201fcda3845c23e8212cd466bfebf0bd20694490fc0356ae8e428e0824a915a6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.68/download"],
-        strip_prefix = "syn-2.0.68",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.68.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.69/download"],
+        strip_prefix = "syn-2.0.69",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.69.bazel"),
     )
 
     maybe(
