@@ -2,6 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bindgen:repositories.bzl", "rust_bindgen_dependencies")
+load("//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
 load("//crate_universe:repositories.bzl", "crate_universe_dependencies")
 load("//proto/prost:repositories.bzl", "rust_prost_dependencies")
 load("//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
@@ -19,6 +20,7 @@ def _internal_deps_impl(module_ctx):
     direct_deps = [struct(repo = "rules_rust_tinyjson", is_dev_dep = False)]
     http_archive(**TINYJSON_KWARGS)
 
+    direct_deps.extend(ctve_crate_repositories())
     direct_deps.extend(crate_universe_dependencies())
     direct_deps.extend(rust_prost_dependencies(bzlmod = True))
     direct_deps.extend(rust_proto_protobuf_dependencies(bzlmod = True))
