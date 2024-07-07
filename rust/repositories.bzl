@@ -115,7 +115,7 @@ def rust_register_toolchains(
         rustfmt_version = None,
         rust_analyzer_version = None,
         sha256s = None,
-        extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
+        extra_target_triples = None,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
@@ -233,13 +233,18 @@ def rust_register_toolchains(
         rustfmt_version_or_channel, _, rustfmt_iso_date = rustfmt_version.partition("/")
 
     for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
+        if extra_target_triples == None:
+            specific_extra_target_triples = [exec_triple] + DEFAULT_EXTRA_TARGET_TRIPLES
+        else:
+            specific_extra_target_triples = extra_target_triples
+
         maybe(
             rust_repository_set,
             name = name,
             dev_components = dev_components,
             edition = edition,
             exec_triple = exec_triple,
-            extra_target_triples = extra_target_triples,
+            extra_target_triples = specific_extra_target_triples,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
             iso_date = iso_date,
@@ -270,7 +275,7 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+        for toolchain in _get_toolchain_repositories(name, exec_triple, specific_extra_target_triples, versions, iso_date):
             toolchain_names.append(toolchain.name)
             toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
