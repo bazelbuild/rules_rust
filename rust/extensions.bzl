@@ -11,6 +11,8 @@ load(
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
 
+_DEFAULT_STRING_LIST_PLACEHOLDER = ["RULES_RUST DEFAULT BECAUSE NONE IS NOT ALLOWED"]
+
 def _find_modules(module_ctx):
     root = None
     our_module = None
@@ -35,6 +37,9 @@ def _rust_impl(module_ctx):
     toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
+        extra_target_triples = toolchain.extra_target_triples
+        if extra_target_triples == _DEFAULT_STRING_LIST_PLACEHOLDER:
+            extra_target_triples = None
         rust_register_toolchains(
             dev_components = toolchain.dev_components,
             edition = toolchain.edition,
@@ -42,7 +47,7 @@ def _rust_impl(module_ctx):
             rustfmt_version = toolchain.rustfmt_version,
             rust_analyzer_version = toolchain.rust_analyzer_version,
             sha256s = toolchain.sha256s,
-            extra_target_triples = toolchain.extra_target_triples,
+            extra_target_triples = extra_target_triples,
             urls = toolchain.urls,
             versions = toolchain.versions,
             register_toolchains = False,
@@ -79,7 +84,7 @@ _COMMON_TAG_KWARGS = dict(
 _RUST_TOOLCHAIN_TAG = tag_class(
     attrs = dict(
         extra_target_triples = attr.string_list(
-            default = DEFAULT_EXTRA_TARGET_TRIPLES,
+            default = _DEFAULT_STRING_LIST_PLACEHOLDER,
         ),
         rust_analyzer_version = attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
