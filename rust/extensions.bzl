@@ -6,7 +6,6 @@ load("//rust:repositories.bzl", "rust_register_toolchains", "rust_toolchain_tool
 load("//rust/platform:triple.bzl", "get_host_triple")
 load(
     "//rust/private:repository_utils.bzl",
-    "DEFAULT_EXTRA_TARGET_TRIPLES",
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
