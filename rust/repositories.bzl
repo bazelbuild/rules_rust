@@ -965,7 +965,7 @@ def _get_toolchain_repositories(name, exec_triple, extra_target_triples, version
     target_triples = depset(extra_target_triples).to_list()
     if not target_triples:
         target_triples = [exec_triple]
-    for target_triple in depset(extra_target_triples).to_list():
+    for target_triple in target_triples:
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:
