@@ -52,6 +52,12 @@ single_rust_channel_min_version_targets: &single_rust_channel_min_version_target
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
+default_rbe_targets: &default_rbe_targets
+  - "--"
+  - "//..."
+  # These require the upstream tools wrapper to include a stdlib, which doesn't currently work on RBE.
+  # We should fix this. See https://github.com/bazelbuild/rules_rust/issues/3252
+  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
@@ -75,6 +81,7 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//rust/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
+  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -106,8 +113,8 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   macos:
     platform: macos_arm64
     build_targets: *default_macos_targets
@@ -133,8 +140,8 @@ tasks:
     platform: rbe_ubuntu2004
     bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_rbe_shell_commands
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   macos_no_bzlmod:
     name: No Bzlmod
     platform: macos_arm64
@@ -214,16 +221,16 @@ tasks:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_flags: *aspects_flags
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
