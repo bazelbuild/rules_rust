@@ -46,7 +46,9 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
     """
     crate_spec = ctx.actions.declare_file("{}.rust_analyzer_crate_spec.json".format(owner.name))
 
+    # Recreate the provider with the spec file embedded in it.
     rust_analyzer_info = RustAnalyzerInfo(
+        aliases = base_info.aliases,
         crate = base_info.crate,
         cfgs = base_info.cfgs,
         env = base_info.env,
@@ -70,6 +72,21 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
 
     return rust_analyzer_info
 
+def _accumulate_rust_analyzer_info(dep_infos_to_accumulate, label_index_to_accumulate, dep):
+    if dep == None:
+        return
+    if RustAnalyzerInfo in dep:
+        label_index_to_accumulate[dep.label] = dep[RustAnalyzerInfo]
+        dep_infos_to_accumulate.append(dep[RustAnalyzerInfo])
+    if RustAnalyzerGroupInfo in dep:
+        for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
+            label_index_to_accumulate[expanded_dep.crate.owner] = expanded_dep
+            dep_infos_to_accumulate.append(expanded_dep)
+
+def _accumulate_rust_analyzer_infos(dep_infos_to_accumulate, label_index_to_accumulate, deps_attr):
+    for dep in deps_attr:
+        _accumulate_rust_analyzer_info(dep_infos_to_accumulate, label_index_to_accumulate, dep)
+
 def _rust_analyzer_aspect_impl(target, ctx):
     if (rust_common.crate_info not in target and
         rust_common.test_crate_info not in target and
@@ -91,37 +108,18 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     build_info = None
     dep_infos = []
-    if hasattr(ctx.rule.attr, "deps"):
-        for dep in ctx.rule.attr.deps:
-            # Save BuildInfo if we find any (for build script output)
-            if BuildInfo in dep:
-                build_info = dep[BuildInfo]
-        dep_infos = [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.deps if RustAnalyzerInfo in dep]
+    labels_to_rais = {}
 
-        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.deps if RustAnalyzerGroupInfo in dep]
-        for group_info in group_infos:
-            dep_infos.extend(group_info.deps)
+    for dep in getattr(ctx.rule.attr, "deps", []):
+        # Save BuildInfo if we find any (for build script output)
+        if BuildInfo in dep:
+            build_info = dep[BuildInfo]
 
-    if hasattr(ctx.rule.attr, "proc_macro_deps"):
-        dep_infos += [dep[RustAnalyzerInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerInfo in dep]
+    _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "deps", []))
+    _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "proc_macro_deps", []))
 
-        group_infos = [dep[RustAnalyzerGroupInfo] for dep in ctx.rule.attr.proc_macro_deps if RustAnalyzerGroupInfo in dep]
-        for group_info in group_infos:
-            dep_infos.extend(group_info.deps)
-
-    if hasattr(ctx.rule.attr, "crate") and ctx.rule.attr.crate != None:
-        if RustAnalyzerInfo in ctx.rule.attr.crate:
-            dep_infos.append(ctx.rule.attr.crate[RustAnalyzerInfo])
-
-        if RustAnalyzerGroupInfo in ctx.rule.attr.crate:
-            dep_infos.extend(ctx.rule.attr.crate[RustAnalyzerGroupInfo])
-
-    if hasattr(ctx.rule.attr, "actual") and ctx.rule.attr.actual != None:
-        if RustAnalyzerInfo in ctx.rule.attr.actual:
-            dep_infos.append(ctx.rule.attr.actual[RustAnalyzerInfo])
-
-        if RustAnalyzerGroupInfo in ctx.rule.attr.actual:
-            dep_infos.extend(ctx.rule.attr.actual[RustAnalyzerGroupInfo])
+    _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "crate", None))
+    _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "actual", None))
 
     if rust_common.crate_group_info in target:
         return [RustAnalyzerGroupInfo(deps = dep_infos)]
@@ -132,7 +130,13 @@ def _rust_analyzer_aspect_impl(target, ctx):
     else:
         fail("Unexpected target type: {}".format(target))
 
+    aliases = {}
+    for aliased_target, aliased_name in getattr(ctx.rule.attr, "aliases", {}).items():
+        if aliased_target.label in labels_to_rais:
+            aliases[labels_to_rais[aliased_target.label]] = aliased_name
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        aliases = aliases,
         crate = crate_info,
         cfgs = cfgs,
         env = crate_info.rustc_env,
@@ -221,16 +225,24 @@ def _create_single_crate(ctx, attrs, info):
     path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else ""
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
-    crate_root = path_prefix + info.crate.root.dirname
+    crate["source"] = {"exclude_dirs": [], "include_dirs": []}
+
+    if is_generated:
+        srcs = getattr(ctx.rule.files, "srcs", [])
+        src_map = {src.short_path: src for src in srcs if src.is_source}
+        if info.crate.root.short_path in src_map:
+            crate["root_module"] = src_map[info.crate.root.short_path].path
+            crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
         crate["env"].update({"OUT_DIR": _EXEC_ROOT_TEMPLATE + out_dir_path})
-        crate["source"] = {
-            # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
-            "exclude_dirs": [],
-            "include_dirs": [crate_root, _EXEC_ROOT_TEMPLATE + out_dir_path],
-        }
+
+        # We have to tell rust-analyzer about our out_dir since it's not under the crate root.
+        crate["source"]["include_dirs"].extend([
+            path_prefix + info.crate.root.dirname,
+            _EXEC_ROOT_TEMPLATE + out_dir_path,
+        ])
 
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
     # macro like include_bytes!. Other use cases might exist that require more complex logic.
@@ -249,6 +261,7 @@ def _create_single_crate(ctx, attrs, info):
     # the crate being processed, we don't add it as a dependency to itself. This is
     # common and expected - `rust_test.crate` pointing to the `rust_library`.
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
+    crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases.items()}
     crate["cfg"] = info.cfgs
     crate["target"] = find_toolchain(ctx).target_triple.str
     if info.proc_macro_dylib_path != None:

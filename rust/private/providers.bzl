@@ -157,6 +157,7 @@ TestCrateInfo = provider(
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
     fields = {
+        "aliases": "Dict[RustAnalyzerInfo, String]: Replacement names these targets should be known as in Rust code",
         "build_info": "BuildInfo: build info for this crate if present",
         "cfgs": "List[String]: features or other compilation `--cfg` settings",
         "crate": "CrateInfo: Crate information.",

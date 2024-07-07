@@ -49,7 +49,7 @@ def rust_bindgen_dependencies():
         name = bindgen_name,
         integrity = "sha256-iFZe4JEQqZ54KZiX+/7VA7mqAwZThu6MGBl/yvIotQE=",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/bindgen-cli/{}/download".format(BINDGEN_VERSION)],
+        urls = ["https://static.crates.io/crates/bindgen-cli/bindgen-cli-{}.crate".format(BINDGEN_VERSION)],
         strip_prefix = "bindgen-cli-{}".format(BINDGEN_VERSION),
         build_file = Label("//bindgen/3rdparty:BUILD.bindgen-cli.bazel"),
     )

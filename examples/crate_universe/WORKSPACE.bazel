@@ -552,7 +552,7 @@ rust_binary(
     sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
     strip_prefix = "cxxbridge-cmd-1.0.109",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.109.crate"],
 )
 
 crates_repository(

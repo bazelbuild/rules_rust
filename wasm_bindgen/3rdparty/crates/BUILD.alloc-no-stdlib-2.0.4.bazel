@@ -14,7 +14,7 @@ rust_library(
     name = "alloc_no_stdlib",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

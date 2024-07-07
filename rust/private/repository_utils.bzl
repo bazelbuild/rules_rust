@@ -24,7 +24,7 @@ DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
     sha256 = "9ab95735ea2c8fd51154d01e39cf13912a78071c2d89abc49a7ef102a7dd725a",
-    url = "https://crates.io/api/v1/crates/tinyjson/2.5.1/download",
+    url = "https://static.crates.io/crates/tinyjson/tinyjson-2.5.1.crate",
     strip_prefix = "tinyjson-2.5.1",
     type = "tar.gz",
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
@@ -122,14 +122,6 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(target_triple.system),
     )
 
-_build_file_for_clippy_template = """\
-filegroup(
-    name = "clippy_driver_bin",
-    srcs = ["bin/clippy-driver{binary_ext}"],
-    visibility = ["//visibility:public"],
-)
-"""
-
 _build_file_for_rust_analyzer_proc_macro_srv = """\
 filegroup(
    name = "rust_analyzer_proc_macro_srv",
@@ -149,6 +141,19 @@ def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     return _build_file_for_rust_analyzer_proc_macro_srv.format(
         binary_ext = system_to_binary_ext(exec_triple.system),
     )
+
+_build_file_for_clippy_template = """\
+filegroup(
+    name = "clippy_driver_bin",
+    srcs = ["bin/clippy-driver{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+filegroup(
+    name = "cargo_clippy_bin",
+    srcs = ["bin/cargo-clippy{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
@@ -244,6 +249,7 @@ rust_toolchain(
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
+    cargo_clippy = "//:cargo_clippy_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     rustc_lib = "//:rustc_lib",

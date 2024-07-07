@@ -49,7 +49,7 @@ def rust_prost_dependencies(bzlmod = False):
         name = "rules_rust_prost__heck",
         sha256 = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8",
         type = "tar.gz",
-        urls = ["https://crates.io/api/v1/crates/heck/0.4.1/download"],
+        urls = ["https://static.crates.io/crates/heck/heck-0.4.1.crate"],
         strip_prefix = "heck-0.4.1",
         build_file = Label("@rules_rust//proto/prost/private/3rdparty/crates:BUILD.heck-0.4.1.bazel"),
     )

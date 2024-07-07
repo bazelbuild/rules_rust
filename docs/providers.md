@@ -35,14 +35,14 @@ A provider containing general Crate information.
 | <a id="CrateInfo-owner"></a>owner |  Label: The label of the target that produced this CrateInfo    |
 | <a id="CrateInfo-proc_macro_deps"></a>proc_macro_deps |  depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.    |
 | <a id="CrateInfo-root"></a>root |  File: The source File entrypoint to this crate, eg. lib.rs    |
-| <a id="CrateInfo-rustc_env"></a>rustc_env |  Dict[String, String]: Additional <code>"key": "value"</code> environment variables to set for rustc.    |
+| <a id="CrateInfo-rustc_env"></a>rustc_env |  Dict[String, String]: Additional `"key": "value"` environment variables to set for rustc.    |
 | <a id="CrateInfo-rustc_env_files"></a>rustc_env_files |  [File]: Files containing additional environment variables to set for rustc.    |
 | <a id="CrateInfo-rustc_output"></a>rustc_output |  File: The output from rustc from producing the output file. It is optional.    |
 | <a id="CrateInfo-rustc_rmeta_output"></a>rustc_rmeta_output |  File: The rmeta file produced for this crate. It is optional.    |
 | <a id="CrateInfo-srcs"></a>srcs |  depset[File]: All source Files that are part of the crate.    |
 | <a id="CrateInfo-std_dylib"></a>std_dylib |  File: libstd.so file    |
 | <a id="CrateInfo-type"></a>type |  str: The type of this crate (see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit)).    |
-| <a id="CrateInfo-wrapped_crate_type"></a>wrapped_crate_type |  str, optional: The original crate type for targets generated using a previously defined crate (typically tests using the <code>rust_test::crate</code> attribute)    |
+| <a id="CrateInfo-wrapped_crate_type"></a>wrapped_crate_type |  str, optional: The original crate type for targets generated using a previously defined crate (typically tests using the `rust_test::crate` attribute)    |
 
 
 <a id="DepInfo"></a>
@@ -91,18 +91,18 @@ A collection of files either found within the `rust-stdlib` artifact or generate
 
 | Name  | Description |
 | :------------- | :------------- |
-| <a id="StdLibInfo-alloc_files"></a>alloc_files |  List[File]: <code>.a</code> files related to the <code>alloc</code> module.    |
-| <a id="StdLibInfo-between_alloc_and_core_files"></a>between_alloc_and_core_files |  List[File]: <code>.a</code> files related to the <code>compiler_builtins</code> module.    |
-| <a id="StdLibInfo-between_core_and_std_files"></a>between_core_and_std_files |  List[File]: <code>.a</code> files related to all modules except <code>adler</code>, <code>alloc</code>, <code>compiler_builtins</code>, <code>core</code>, and <code>std</code>.    |
-| <a id="StdLibInfo-core_files"></a>core_files |  List[File]: <code>.a</code> files related to the <code>core</code> and <code>adler</code> modules    |
-| <a id="StdLibInfo-dot_a_files"></a>dot_a_files |  Depset[File]: Generated <code>.a</code> files    |
-| <a id="StdLibInfo-memchr_files"></a>memchr_files |  Depset[File]: <code>.a</code> files associated with the <code>memchr</code> module.    |
-| <a id="StdLibInfo-panic_files"></a>panic_files |  Depset[File]: <code>.a</code> files associated with <code>panic_unwind</code> and <code>panic_abort</code>.    |
-| <a id="StdLibInfo-self_contained_files"></a>self_contained_files |  List[File]: All <code>.o</code> files from the <code>self-contained</code> directory.    |
-| <a id="StdLibInfo-srcs"></a>srcs |  List[Target]: All targets from the original <code>srcs</code> attribute.    |
+| <a id="StdLibInfo-alloc_files"></a>alloc_files |  List[File]: `.a` files related to the `alloc` module.    |
+| <a id="StdLibInfo-between_alloc_and_core_files"></a>between_alloc_and_core_files |  List[File]: `.a` files related to the `compiler_builtins` module.    |
+| <a id="StdLibInfo-between_core_and_std_files"></a>between_core_and_std_files |  List[File]: `.a` files related to all modules except `adler`, `alloc`, `compiler_builtins`, `core`, and `std`.    |
+| <a id="StdLibInfo-core_files"></a>core_files |  List[File]: `.a` files related to the `core` and `adler` modules    |
+| <a id="StdLibInfo-dot_a_files"></a>dot_a_files |  Depset[File]: Generated `.a` files    |
+| <a id="StdLibInfo-memchr_files"></a>memchr_files |  Depset[File]: `.a` files associated with the `memchr` module.    |
+| <a id="StdLibInfo-panic_files"></a>panic_files |  Depset[File]: `.a` files associated with `panic_unwind` and `panic_abort`.    |
+| <a id="StdLibInfo-self_contained_files"></a>self_contained_files |  List[File]: All `.o` files from the `self-contained` directory.    |
+| <a id="StdLibInfo-srcs"></a>srcs |  List[Target]: All targets from the original `srcs` attribute.    |
 | <a id="StdLibInfo-std_dylib"></a>std_dylib |  File: libstd.so file    |
-| <a id="StdLibInfo-std_files"></a>std_files |  Depset[File]: <code>.a</code> files associated with the <code>std</code> module.    |
-| <a id="StdLibInfo-std_rlibs"></a>std_rlibs |  List[File]: All <code>.rlib</code> files    |
-| <a id="StdLibInfo-test_files"></a>test_files |  Depset[File]: <code>.a</code> files associated with the <code>test</code> module.    |
+| <a id="StdLibInfo-std_files"></a>std_files |  Depset[File]: `.a` files associated with the `std` module.    |
+| <a id="StdLibInfo-std_rlibs"></a>std_rlibs |  List[File]: All `.rlib` files    |
+| <a id="StdLibInfo-test_files"></a>test_files |  Depset[File]: `.a` files associated with the `test` module.    |
 
 

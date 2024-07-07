@@ -6,44 +6,12 @@
 * [cargo_dep_env](#cargo_dep_env)
 * [cargo_env](#cargo_env)
 
-<a id="cargo_bootstrap_repository"></a>
-
-## cargo_bootstrap_repository
-
-<pre>
-cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>,
-                           <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>,
-                           <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
-</pre>
-
-A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="cargo_bootstrap_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-| <a id="cargo_bootstrap_repository-binary"></a>binary |  The binary to build (the <code>--bin</code> parameter for Cargo). If left empty, the repository name will be used.   | String | optional | <code>""</code> |
-| <a id="cargo_bootstrap_repository-build_mode"></a>build_mode |  The build mode the binary should be built with   | String | optional | <code>"release"</code> |
-| <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-| <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the crate_universe resolver manifest (<code>Cargo.toml</code> file)   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-| <a id="cargo_bootstrap_repository-env"></a>env |  A mapping of platform triple to a set of environment variables. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple <code>*</code> applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
-| <a id="cargo_bootstrap_repository-env_label"></a>env_label |  A mapping of platform triple to a set of environment variables. This attribute differs from <code>env</code> in that all variables passed here must be fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple <code>*</code> applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional | <code>{}</code> |
-| <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  A dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.&lt;p&gt;For example, an entry <code>"@foo": "@bar"</code> declares that, for any time this repository depends on <code>@foo</code> (such as a dependency on <code>@foo//some:target</code>, it should actually resolve that dependency within globally-declared <code>@bar</code> (<code>@bar//some:target</code>).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | required |  |
-| <a id="cargo_bootstrap_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
-| <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional | <code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code> |
-| <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional | <code>[]</code> |
-| <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional | <code>600</code> |
-| <a id="cargo_bootstrap_repository-version"></a>version |  The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code>   | String | optional | <code>"1.79.0"</code> |
-
-
 <a id="cargo_dep_env"></a>
 
 ## cargo_dep_env
 
 <pre>
-cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>, <a href="#cargo_dep_env-src">src</a>)
+cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-src">src</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>)
 </pre>
 
 A rule for generating variables for dependent `cargo_build_script`s without a build script. This is useful for using Bazel rules instead of a build script, while also generating configuration information for build scripts which depend on this crate.
@@ -54,8 +22,8 @@ A rule for generating variables for dependent `cargo_build_script`s without a bu
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="cargo_dep_env-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-| <a id="cargo_dep_env-out_dir"></a>out_dir |  Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints puts files into <code>$OUT_DIR</code>, but without requiring a build script.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
-| <a id="cargo_dep_env-src"></a>src |  File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints <code>cargo:VAR=VALUE</code> lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_dep_env-src"></a>src |  File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a `cargo_build_script` which prints `cargo:VAR=VALUE` lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format `NAME=value`, and newlines may be included in a value by ending a line with a trailing back-slash (`\\`).   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_dep_env-out_dir"></a>out_dir |  Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a `cargo_build_script` which prints puts files into `$OUT_DIR`, but without requiring a build script.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 
 
 <a id="cargo_build_script"></a>
@@ -132,7 +100,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of <code>_bs</code>. Otherwise, you can set the package name via <code>pkg_name</code>.   |  none |
+| <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of `_bs`. Otherwise, you can set the package name via `pkg_name`.   |  none |
 | <a id="cargo_build_script-edition"></a>edition |  The rust edition to use for the internal binary crate.   |  `None` |
 | <a id="cargo_build_script-crate_name"></a>crate_name |  Crate name to use for build script.   |  `None` |
 | <a id="cargo_build_script-crate_root"></a>crate_root |  The file that will be passed to rustc to be used for building this crate.   |  `None` |
@@ -147,15 +115,15 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-compile_data"></a>compile_data |  Files needed for the compilation of the build script.   |  `[]` |
 | <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  `[]` |
 | <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  `None` |
-| <a id="cargo_build_script-rundir"></a>rundir |  A directory to <code>cd</code> to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to <code>.</code>, the cargo build script will run in the exec root.   |  `None` |
+| <a id="cargo_build_script-rundir"></a>rundir |  A directory to `cd` to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to `.`, the cargo build script will run in the exec root.   |  `None` |
 | <a id="cargo_build_script-rustc_env"></a>rustc_env |  Environment variables to set in rustc when compiling the build script.   |  `{}` |
 | <a id="cargo_build_script-rustc_env_files"></a>rustc_env_files |  Files containing additional environment variables to set for rustc when building the build script.   |  `[]` |
-| <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to <code>rustc</code>.   |  `[]` |
+| <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to `rustc`.   |  `[]` |
 | <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  `None` |
 | <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  `None` |
-| <a id="cargo_build_script-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target.             These are other <code>rust_library</code> targets and will be presented as the new name given.   |  `None` |
+| <a id="cargo_build_script-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target.             These are other `rust_library` targets and will be presented as the new name given.   |  `None` |
 | <a id="cargo_build_script-pkg_name"></a>pkg_name |  Override the package name used for the build script. This is useful if the build target name gets too long otherwise.   |  `None` |
-| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying <code>rust_binary</code> rule. An exception is the <code>compatible_with</code> attribute, which shouldn't be forwarded to the <code>rust_binary</code>, as the <code>rust_binary</code> is only built and used in <code>exec</code> mode. We propagate the <code>compatible_with</code> attribute to the <code>_build_scirpt_run</code> target.   |  none |
+| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying `rust_binary` rule. An exception is the `compatible_with` attribute, which shouldn't be forwarded to the `rust_binary`, as the `rust_binary` is only built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_scirpt_run` target.   |  none |
 
 
 <a id="cargo_env"></a>
@@ -203,5 +171,37 @@ cargo_bootstrap_repository(
 **RETURNS**
 
 str: A json encoded string of the environment variables
+
+
+<a id="cargo_bootstrap_repository"></a>
+
+## cargo_bootstrap_repository
+
+<pre>
+cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>, <a href="#cargo_bootstrap_repository-env">env</a>,
+                           <a href="#cargo_bootstrap_repository-env_label">env_label</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>,
+                           <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
+</pre>
+
+A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="cargo_bootstrap_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
+| <a id="cargo_bootstrap_repository-binary"></a>binary |  The binary to build (the `--bin` parameter for Cargo). If left empty, the repository name will be used.   | String | optional |  `""`  |
+| <a id="cargo_bootstrap_repository-build_mode"></a>build_mode |  The build mode the binary should be built with   | String | optional |  `"release"`  |
+| <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the crate_universe resolver manifest (`Cargo.toml` file)   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-env"></a>env |  A mapping of platform triple to a set of environment variables. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
+| <a id="cargo_bootstrap_repository-env_label"></a>env_label |  A mapping of platform triple to a set of environment variables. This attribute differs from `env` in that all variables passed here must be fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
+| <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  In `WORKSPACE` context only: a dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.<br><br>For example, an entry `"@foo": "@bar"` declares that, for any time this repository depends on `@foo` (such as a dependency on `@foo//some:target`, it should actually resolve that dependency within globally-declared `@bar` (`@bar//some:target`).<br><br>This attribute is _not_ supported in `MODULE.bazel` context (when invoking a repository rule inside a module extension's implementation function).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  |
+| <a id="cargo_bootstrap_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
+| <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
+| <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional |  `600`  |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`   | String | optional |  `"1.79.0"`  |
 
 

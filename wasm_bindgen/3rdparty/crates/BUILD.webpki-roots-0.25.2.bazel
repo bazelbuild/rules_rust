@@ -14,7 +14,7 @@ rust_library(
     name = "webpki_roots",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
