@@ -120,8 +120,8 @@ aspect_bazel_lib_register_toolchains()
 
 http_archive(
     name = "musl_toolchains",
-    sha256 = "f9f077b9ae74a0545f7cb7108462cb061593eef10fd09d25db4554e281ee880b",
-    url = "https://github.com/bazel-contrib/musl-toolchain/releases/download/v0.1.7/musl_toolchain-v0.1.7.tar.gz",
+    sha256 = "3932d11fc916c5b5b186e46fc057660cc3cb36ab2461835edca37f790b9f8e06",
+    url = "https://github.com/bazel-contrib/musl-toolchain/releases/download/v0.1.16/musl_toolchain-v0.1.16.tar.gz",
 )
 
 load("@musl_toolchains//:repositories.bzl", "load_musl_toolchains")
