@@ -220,7 +220,10 @@ def _rust_bindgen_impl(ctx):
         feature_configuration = feature_configuration,
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
-        system_include_directories = cc_lib[CcInfo].compilation_context.system_includes,
+        system_include_directories = depset(
+            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            direct = cc_toolchain.built_in_include_directories,
+        ),
         user_compile_flags = ctx.attr.clang_flags,
     )
     compile_flags = cc_common.get_memory_inefficient_command_line(
