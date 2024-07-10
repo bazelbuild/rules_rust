@@ -1454,7 +1454,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     for src in srcs:
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
-        
+
         if src in shared_srcs:
             continue
 
