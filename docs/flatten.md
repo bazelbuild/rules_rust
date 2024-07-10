@@ -1934,7 +1934,7 @@ Assembles a remote repository for the given toolchain params, produces a proxy r
 ## rust_test_suite
 
 <pre>
-rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
+rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-shared_srcs">shared_srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
 </pre>
 
 A rule for creating a test suite for a set of `rust_test` targets.
@@ -1954,6 +1954,8 @@ directory structure:
         integrated_test_c.rs
         patterns/
             fibonacci_test.rs
+        helpers/
+            mod.rs
 ```
 
 The rule can be used to generate [rust_test](#rust_test) targets for each source file under `tests`
@@ -1975,6 +1977,7 @@ rust_binary(
 rust_test_suite(
     name = "integrated_tests_suite",
     srcs = glob(["tests/**"]),
+    shared_srcs=glob(["tests/helpers/**"]),
     deps = [":math_lib"],
 )
 ```
@@ -1990,6 +1993,7 @@ rust_test_suite(
 | :------------- | :------------- | :------------- |
 | <a id="rust_test_suite-name"></a>name |  The name of the `test_suite`.   |  none |
 | <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically `glob(["tests/**/*.rs"])`.   |  none |
+| <a id="rust_test_suite-shared_srcs"></a>shared_srcs |  Optional argument for sources shared among tests, typically helper functions.   |  `[]` |
 | <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The `tags` argument is also passed to the generated `test_suite` target.   |  none |
 
 
