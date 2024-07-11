@@ -2164,18 +2164,18 @@ rustc_output_diagnostics = rule(
 )
 
 def _extra_rustc_flags_impl(ctx):
-    return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
+    return ExtraRustcFlagsInfo(extra_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
 
 extra_rustc_flags = rule(
     doc = (
         "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
-        "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
+        "These flags are not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
         "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
-    build_setting = config.string_list(flag = True),
+    build_setting = config.string(flag = True, allow_multiple = True),
 )
 
 def _extra_rustc_flag_impl(ctx):
