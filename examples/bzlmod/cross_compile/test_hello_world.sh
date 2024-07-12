@@ -23,16 +23,13 @@ fail() {
 
 # MARK - Args
 
-if [[ "$#" -ne 2 ]]; then
-  fail "Usage: $0 /path/to/hello_world expected_arch"
+if [[ "$#" -ne 1 ]]; then
+  fail "Usage: $0 /path/to/hello_world"
 fi
 HELLO_WORLD="$(rlocation "$1")"
-ARCH_STRING="$2"
 
 # MARK - Test
 
-OUTPUT="$(readelf -h "${HELLO_WORLD}")"
-
-# Match the architecture string with grep.
-echo "${OUTPUT}" | grep -E "Machine:(.+)${ARCH_STRING}" ||
-  fail "Expected '${ARCH_STRING}' in ${OUTPUT}"
+OUTPUT="$("${HELLO_WORLD}")"
+[[ "${OUTPUT}" == "Hello, cross compiled world!" ]] ||
+  fail 'Expected "Hello, world!", but was' "${OUTPUT}"
