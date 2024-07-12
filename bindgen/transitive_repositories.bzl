@@ -8,7 +8,6 @@ def rust_bindgen_transitive_dependencies():
 
     llvm_configure(
         name = "llvm-project",
-        repo_mapping = {"@llvm_zlib": "@zlib"},
         targets = [
             "AArch64",
             "X86",
