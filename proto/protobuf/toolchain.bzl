@@ -86,14 +86,14 @@ def rust_generate_proto(
         args.add_all([
             "--",
             proto_toolchain.protoc,
-            "--plugin=protoc-gen-grpc-rust=" + proto_toolchain.grpc_plugin.path,
-            "--grpc-rust_out=" + output_directory,
+            "--plugin=protoc-gen-grpc-rules_rust=" + proto_toolchain.grpc_plugin.path,
+            "--grpc-rules_rust_out=" + output_directory,
         ])
         executable = ctx.executable._optional_output_wrapper
 
     args.add_all([
-        "--plugin=protoc-gen-rust=" + proto_toolchain.proto_plugin.path,
-        "--rust_out=" + output_directory,
+        "--plugin=protoc-gen-rules_rust=" + proto_toolchain.proto_plugin.path,
+        "--rules_rust_out=" + output_directory,
     ])
 
     args.add_joined(
