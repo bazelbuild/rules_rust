@@ -16,6 +16,8 @@
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
+load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
+load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 
 def generated_file_stem(file_path):
     """Returns the basename of a file without any extensions.
@@ -118,13 +120,22 @@ def rust_generate_proto(
     return outs
 
 def _rust_proto_toolchain_impl(ctx):
+    if ctx.attr.protoc:
+        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
+
+    proto_toolchain = proto_toolchains.find_toolchain(
+        ctx,
+        legacy_attr = "_legacy_proto_toolchain",
+        toolchain_type = "@rules_proto//proto:toolchain_type",
+    )
+
     return platform_common.ToolchainInfo(
         edition = ctx.attr.edition,
         grpc_compile_deps = ctx.attr.grpc_compile_deps,
-        grpc_plugin = ctx.file.grpc_plugin,
+        grpc_plugin = ctx.attr.protoc or ctx.file.grpc_plugin,
         proto_compile_deps = ctx.attr.proto_compile_deps,
         proto_plugin = ctx.file.proto_plugin,
-        protoc = ctx.executable.protoc,
+        protoc = ctx.executable.protoc or proto_toolchain.proto_compiler,
     )
 
 # Default dependencies needed to compile protobuf stubs.
@@ -141,7 +152,7 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
 
 rust_proto_toolchain = rule(
     implementation = _rust_proto_toolchain_impl,
-    attrs = {
+    attrs = dict({
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",
         ),
@@ -168,12 +179,15 @@ rust_proto_toolchain = rule(
             default = Label("//proto/protobuf/3rdparty/crates:protobuf-codegen__protoc-gen-rust"),
         ),
         "protoc": attr.label(
-            doc = "The location of the `protoc` binary. It should be an executable target.",
+            doc = "The location of the `protoc` binary. It should be an executable target. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.",
             executable = True,
             cfg = "exec",
-            default = Label("@com_google_protobuf//:protoc"),
         ),
-    },
+    }, **proto_toolchains.if_legacy_toolchain({
+        "_legacy_proto_toolchain": attr.label(
+            default = "//proto/protobuf:legacy_proto_toolchain",
+        ),
+    })),
     doc = """\
 Declares a Rust Proto toolchain for use.
 

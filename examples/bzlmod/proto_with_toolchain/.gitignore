@@ -1,0 +1,5 @@
+/bazel-*
+.DS_Store
+/proto/.DS_Store
+/proto/grpc_server/.DS_Store
+/proto/proto_bindings/.DS_Store
