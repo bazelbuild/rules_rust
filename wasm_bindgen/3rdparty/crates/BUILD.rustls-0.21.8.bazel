@@ -15,7 +15,7 @@ rust_library(
     name = "rustls",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -95,10 +95,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "rustls_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "default",
@@ -124,6 +124,7 @@ cargo_build_script(
     link_deps = [
         "@rules_rust_wasm_bindgen__ring-0.17.5//:ring",
     ],
+    pkg_name = "rustls",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -140,6 +141,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":rustls_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

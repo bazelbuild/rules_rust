@@ -194,7 +194,8 @@ impl Label {
             }
             if workspace_root.is_none()
                 && (ancestor.join("WORKSPACE").exists()
-                    || ancestor.join("WORKSPACE.bazel").exists())
+                    || ancestor.join("WORKSPACE.bazel").exists()
+                    || ancestor.join("MODULE.bazel").exists())
             {
                 workspace_root = Some(ancestor);
                 break;

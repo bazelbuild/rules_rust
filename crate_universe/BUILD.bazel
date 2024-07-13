@@ -12,7 +12,8 @@ exports_files(
         "Cargo.toml",
         "Cargo.lock",
         "defs.bzl",
-        "docs.bzl",
+        "docs_bzlmod.bzl",
+        "docs_workspace.bzl",
     ],
     visibility = ["//visibility:public"],
 )

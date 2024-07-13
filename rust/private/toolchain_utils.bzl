@@ -13,6 +13,16 @@ def _toolchain_files_impl(ctx):
             ],
             transitive_files = toolchain.rustc_lib,
         )
+    elif ctx.attr.tool == "cargo-clippy":
+        files = depset([toolchain.cargo_clippy])
+        runfiles = ctx.runfiles(
+            files = [
+                toolchain.cargo_clippy,
+                toolchain.clippy_driver,
+                toolchain.rustc,
+            ],
+            transitive_files = toolchain.rustc_lib,
+        )
     elif ctx.attr.tool == "clippy":
         files = depset([toolchain.clippy_driver])
         runfiles = ctx.runfiles(
@@ -60,6 +70,7 @@ toolchain_files = rule(
             doc = "The desired tool to get form the current rust_toolchain",
             values = [
                 "cargo",
+                "cargo-clippy",
                 "clippy",
                 "rust_lib",
                 "rust_std",

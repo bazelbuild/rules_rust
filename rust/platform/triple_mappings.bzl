@@ -263,16 +263,23 @@ def abi_to_constraints(abi, *, arch = None, system = None):
         List: A list of labels to constraint values
     """
 
+    all_abi_constraints = []
+
+    # add constraints for MUSL static compilation and linking
+    # to separate the MUSL from the non-MUSL toolchain on x86_64
+    # if abi == "musl" and system == "linux" and arch == "x86_64":
+    # all_abi_constraints.append("//rust/platform/constraints:musl_on")
+
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:
         if arch == "x86_64" or abi == "sim":
-            return ["@build_bazel_apple_support//constraints:simulator"]
+            all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
         else:
-            return ["@build_bazel_apple_support//constraints:device"]
+            all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
-    return []
+    return all_abi_constraints
 
 def triple_to_system(target_triple):
     """Returns a system name for a given platform triple

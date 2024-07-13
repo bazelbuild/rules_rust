@@ -14,6 +14,11 @@ toolchain_files(
 )
 
 toolchain_files(
+    name = "current_cargo_clippy_files",
+    tool = "cargo-clippy",
+)
+
+toolchain_files(
     name = "current_rustc_files",
     tool = "rustc",
 )

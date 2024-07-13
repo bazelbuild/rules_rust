@@ -1,0 +1,50 @@
+"Tests for upstream wrappers."
+
+sh_test(
+    name = "upstream_cargo_test",
+    size = "small",
+    srcs = ["cargo_test.sh"],
+    args = [
+        "$(rlocationpath @rules_rust//tools/upstream_wrapper:cargo)",
+    ],
+    data = [
+        "Cargo.lock",
+        "Cargo.toml",
+        "//rust/hello_world:Cargo.toml",
+        "//rust/hello_world:src/main.rs",
+        "@rules_rust//tools/upstream_wrapper:cargo",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "upstream_rustc_test",
+    size = "small",
+    srcs = ["rustc_test.sh"],
+    args = [
+        "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustc)",
+    ],
+    data = [
+        "@rules_rust//tools/upstream_wrapper:rustc",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "upstream_rustfmt_test",
+    size = "small",
+    srcs = ["rustfmt_test.sh"],
+    args = [
+        "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustfmt)",
+    ],
+    data = [
+        "@rules_rust//tools/upstream_wrapper:rustfmt",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)

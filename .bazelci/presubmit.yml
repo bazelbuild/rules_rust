@@ -668,6 +668,40 @@ tasks:
       - "//:nix_cross_compiling"
     test_targets:
       - "//..."
+  bzlmod_all_crate_deps:
+    name: Cargo dependencies with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/all_crate_deps
+    build_targets:
+      - "//..."
+  bzlmod_all_deps_vendor:
+    name: Vendored dependencies with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/all_deps_vendor
+    run_targets:
+      - "//basic/3rdparty:crates_vendor"
+    build_targets:
+      - "//..."
+  bzlmod_compile_opt:
+    name: Compiler optimization with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/compile_opt
+    build_targets:
+      - "//..."
+  bzlmod_cross_compile:
+    name: Cross compilation with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/cross_compile
+    build_targets:
+      - "//:all"
+    test_targets:
+      - "//..."
+  bzlmod_ffi:
+    name: FFI with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/ffi
+    build_targets:
+      - "//..."
   ubuntu2004_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
@@ -724,6 +758,12 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "//..."
+  bzlmod_proto:
+    name: Proto and Prost with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/proto
+    build_targets:
       - "//..."
   compile_one_dependency:
     name: --compile_one_dependency flag

@@ -259,6 +259,7 @@ def _rust_prost_aspect_impl(target, ctx):
     cfgs = ["test", "debug_assertions"]
 
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        aliases = {},
         crate = dep_variant_info.crate_info,
         cfgs = cfgs,
         env = dep_variant_info.crate_info.rustc_env,

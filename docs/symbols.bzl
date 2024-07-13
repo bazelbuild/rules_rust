@@ -21,7 +21,7 @@ load(
     _cargo_env = "cargo_env",
 )
 load(
-    "@rules_rust//crate_universe:docs.bzl",
+    "@rules_rust//crate_universe:docs_workspace.bzl",
     _crate = "crate",
     _crate_universe_dependencies = "crate_universe_dependencies",
     _crates_repository = "crates_repository",

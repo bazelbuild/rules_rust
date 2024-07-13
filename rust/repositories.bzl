@@ -31,7 +31,7 @@ load(
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
-# Reexport `load_arbitrary_tool` as it's currently in use in https://github.com/google/cargo-raze
+# Re-export `load_arbitrary_tool` as it's historically been used in external repositories.
 load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.

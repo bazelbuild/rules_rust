@@ -33,6 +33,7 @@ pub struct RustProject {
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Debug, Serialize)]
+#[serde(default)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,8 +53,8 @@ pub struct Crate {
     is_workspace_member: Option<bool>,
 
     /// Optionally specify the (super)set of `.rs` files comprising this crate.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    source: Option<Source>,
+    #[serde(skip_serializing_if = "Source::is_empty")]
+    source: Source,
 
     /// The set of cfgs activated for a given crate, like
     /// `["unix", "feature=\"foo\"", "feature=\"bar\""]`.
@@ -75,10 +76,17 @@ pub struct Crate {
     proc_macro_dylib_path: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct Source {
     include_dirs: Vec<String>,
     exclude_dirs: Vec<String>,
+}
+
+impl Source {
+    /// Returns true if no include information has been added.
+    fn is_empty(&self) -> bool {
+        self.include_dirs.is_empty() && self.exclude_dirs.is_empty()
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -137,21 +145,26 @@ pub fn generate_rust_project(
                                 .get(dep)
                                 .expect("failed to find dependency on second lookup");
                             let dep_crate = &project.crates[crate_index];
-                            Dependency {
-                                crate_index,
-                                name: dep_crate
+                            let name = if let Some(alias) = c.aliases.get(dep) {
+                                alias.clone()
+                            } else {
+                                dep_crate
                                     .display_name
                                     .as_ref()
                                     .expect("all crates should have display_name")
-                                    .clone(),
-                            }
+                                    .clone()
+                            };
+                            Dependency { crate_index, name }
                         })
                         .collect(),
                     is_workspace_member: Some(c.is_workspace_member),
-                    source: c.source.as_ref().map(|s| Source {
-                        exclude_dirs: s.exclude_dirs.clone(),
-                        include_dirs: s.include_dirs.clone(),
-                    }),
+                    source: match &c.source {
+                        Some(s) => Source {
+                            exclude_dirs: s.exclude_dirs.clone(),
+                            include_dirs: s.include_dirs.clone(),
+                        },
+                        None => Source::default(),
+                    },
                     cfg: c.cfg.clone(),
                     target: Some(c.target.clone()),
                     env: Some(c.env.clone()),
@@ -256,7 +269,7 @@ pub fn write_rust_project(
 
     // Render the `rust-project.json` file and replace the exec root
     // placeholders with the path to the local exec root.
-    let rust_project_content = serde_json::to_string(rust_project)?
+    let rust_project_content = serde_json::to_string_pretty(rust_project)?
         .replace("${pwd}", execution_root)
         .replace("__EXEC_ROOT__", execution_root)
         .replace("__OUTPUT_BASE__", output_base);
@@ -278,6 +291,7 @@ mod tests {
             "sysroot",
             "sysroot_src",
             &BTreeSet::from([CrateSpec {
+                aliases: BTreeMap::new(),
                 crate_id: "ID-example".into(),
                 display_name: "example".into(),
                 edition: "2018".into(),
@@ -309,6 +323,7 @@ mod tests {
             "sysroot_src",
             &BTreeSet::from([
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-example".into(),
                     display_name: "example".into(),
                     edition: "2018".into(),
@@ -323,6 +338,7 @@ mod tests {
                     crate_type: "rlib".into(),
                 },
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-dep_a".into(),
                     display_name: "dep_a".into(),
                     edition: "2018".into(),
@@ -337,6 +353,7 @@ mod tests {
                     crate_type: "rlib".into(),
                 },
                 CrateSpec {
+                    aliases: BTreeMap::new(),
                     crate_id: "ID-dep_b".into(),
                     display_name: "dep_b".into(),
                     edition: "2018".into(),

@@ -377,6 +377,7 @@ def _generate_sysroot(
         rustc_lib,
         cargo = None,
         clippy = None,
+        cargo_clippy = None,
         llvm_tools = None,
         rust_std = None,
         rustfmt = None):
@@ -388,6 +389,7 @@ def _generate_sysroot(
         rustdoc (File): The path to a `rustdoc` executable.
         rustc_lib (Target): A collection of Files containing dependencies of `rustc`.
         cargo (File, optional): The path to a `cargo` executable.
+        cargo_clippy (File, optional): The path to a `cargo-clippy` executable.
         clippy (File, optional): The path to a `clippy-driver` executable.
         llvm_tools (Target, optional): A collection of llvm tools used by `rustc`.
         rust_std (Target, optional): A collection of Files containing Rust standard library components.
@@ -428,6 +430,12 @@ def _generate_sysroot(
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
         direct_files.extend([sysroot_cargo])
 
+    # Cargo-clippy
+    sysroot_cargo_clippy = None
+    if cargo_clippy:
+        sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
+        direct_files.extend([sysroot_cargo_clippy])
+
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
@@ -453,6 +461,7 @@ def _generate_sysroot(
         content = "\n".join([
             "cargo: {}".format(cargo),
             "clippy: {}".format(clippy),
+            "cargo-clippy: {}".format(cargo_clippy),
             "llvm_tools: {}".format(llvm_tools),
             "rust_std: {}".format(rust_std),
             "rustc_lib: {}".format(rustc_lib),
@@ -469,6 +478,7 @@ def _generate_sysroot(
         all_files = all_files,
         cargo = sysroot_cargo,
         clippy = sysroot_clippy,
+        cargo_clippy = sysroot_cargo_clippy,
         rust_std = sysroot_rust_std,
         rustc = sysroot_rustc,
         rustc_lib = sysroot_rustc_lib,
@@ -529,6 +539,7 @@ def _rust_toolchain_impl(ctx):
         rustfmt = ctx.file.rustfmt,
         clippy = ctx.file.clippy_driver,
         cargo = ctx.file.cargo,
+        cargo_clippy = ctx.file.cargo_clippy,
         llvm_tools = ctx.attr.llvm_tools,
     )
 
@@ -571,6 +582,7 @@ def _rust_toolchain_impl(ctx):
         "RUSTDOC": sysroot.rustdoc.path,
         "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
         "RUST_SYSROOT": sysroot_path,
+        "RUST_SYSROOT_SHORT": sysroot_short_path,
     }
 
     if sysroot.cargo:
@@ -631,6 +643,7 @@ def _rust_toolchain_impl(ctx):
         binary_ext = ctx.attr.binary_ext,
         cargo = sysroot.cargo,
         clippy_driver = sysroot.clippy,
+        cargo_clippy = sysroot.cargo_clippy,
         compilation_mode_opts = compilation_mode_opts,
         crosstool_files = ctx.files._cc_toolchain,
         default_edition = ctx.attr.default_edition,
@@ -699,6 +712,11 @@ rust_toolchain = rule(
         ),
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        "cargo_clippy": attr.label(
+            doc = "The location of the `cargo_clippy` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
             cfg = "exec",
         ),

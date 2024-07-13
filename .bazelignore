@@ -5,3 +5,4 @@ crate_universe/private/bootstrap
 test/bzlmod_repo_mapping
 test/cc_common_link
 test/no_std
+.direnv
