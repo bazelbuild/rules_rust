@@ -351,6 +351,7 @@ def _rust_prost_toolchain_impl(ctx):
         fail("When one tonic attribute is added, all must be added")
 
     if ctx.attr.proto_compiler:
+        # buildifier: disable=print
         print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
 
     proto_toolchain = proto_toolchains.find_toolchain(

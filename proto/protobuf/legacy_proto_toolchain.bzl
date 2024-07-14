@@ -1,7 +1,8 @@
-# Helper that wraps --proto_compiler into a ProtoLangToolchainInfo for backwards
-# compatibility with --noincompatible_enable_proto_toolchain_resolution.
-#
-# Borrowed from https://github.com/bazelbuild/rules_go/pull/3919
+"""Helper that wraps --proto_compiler into a ProtoLangToolchainInfo for backwards
+compatibility with --noincompatible_enable_proto_toolchain_resolution.
+
+Borrowed from https://github.com/bazelbuild/rules_go/pull/3919
+"""
 
 load(
     "@rules_proto//proto:proto_common.bzl",

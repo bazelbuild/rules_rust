@@ -19,6 +19,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def rust_proto_protobuf_dependencies(bzlmod = False):
+    """Sets up dependencies for rules_rust's proto support."""
     if not bzlmod:
         maybe(
             http_archive,
