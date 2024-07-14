@@ -55,6 +55,16 @@ def rules_rust_test_deps():
 
     maybe(
         http_archive,
+        name = "com_google_googleapis",
+        urls = [
+            "https://github.com/googleapis/googleapis/archive/18becb1d1426feb7399db144d7beeb3284f1ccb0.zip",
+        ],
+        strip_prefix = "googleapis-18becb1d1426feb7399db144d7beeb3284f1ccb0",
+        sha256 = "b8c487191eb942361af905e40172644eab490190e717c3d09bf83e87f3994fff",
+    )
+
+    maybe(
+        http_archive,
         name = "rules_python",
         sha256 = "778aaeab3e6cfd56d681c89f5c10d7ad6bf8d2f1a72de9de55b23081b2d31618",
         strip_prefix = "rules_python-0.34.0",
@@ -64,6 +74,7 @@ def rules_rust_test_deps():
     direct_deps.extend([
         struct(repo = "libc", is_dev_dep = True),
         struct(repo = "rules_rust_toolchain_test_target_json", is_dev_dep = True),
+        struct(repo = "com_google_googleapis", is_dev_dep = True),
         struct(repo = "rules_python", is_dev_dep = True),
     ])
 
