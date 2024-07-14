@@ -16,7 +16,6 @@
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
-load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 
 def generated_file_stem(file_path):
@@ -121,6 +120,7 @@ def rust_generate_proto(
 
 def _rust_proto_toolchain_impl(ctx):
     if ctx.attr.protoc:
+        # buildifier: disable=print
         print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
 
     proto_toolchain = proto_toolchains.find_toolchain(
