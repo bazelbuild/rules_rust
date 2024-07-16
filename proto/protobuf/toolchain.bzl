@@ -73,6 +73,10 @@ def rust_generate_proto(
     outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
     output_directory = outs[0].dirname
 
+    # Throughout we use rules_rust as the name as the plugin, not rust, because rust is an unstable builtin language in protoc.
+    # If we use rust as the plugin name, it triggers protoc to try to use its in-built support, which is experimental.
+    # The naming here doesn't matter, it's arbitrary, just the plugin name and the out dir need to match, so we pick rules_rust.
+
     if is_grpc:
         # Add grpc stubs to the list of outputs
         grpc_files = [ctx.actions.declare_file(path + "_grpc.rs") for path in paths]
