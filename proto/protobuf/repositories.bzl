@@ -19,7 +19,15 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def rust_proto_protobuf_dependencies(bzlmod = False):
-    """Sets up dependencies for rules_rust's proto support."""
+    """Sets up dependencies for rules_rust's proto support.
+
+    Args:
+        bzlmod (bool): Whether this function is being called from a bzlmod context rather than a workspace context.
+
+    Returns:
+        A list of structs containing information about root module deps to report to bzlmod's extension_metadata.
+
+    """
     if not bzlmod:
         maybe(
             http_archive,
