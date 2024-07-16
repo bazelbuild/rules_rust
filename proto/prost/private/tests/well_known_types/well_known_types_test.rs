@@ -1,8 +1,5 @@
 //! Tests the Google well-known types.
 
-// This seems to have been renamed between rules_proto 5.3.0 and rules_proto 6.0.2.
-//use plugin_proto as compiler_plugin_proto;
-
 use any_proto::google::protobuf::Any;
 use api_proto::google::protobuf::{Api, Method, Mixin};
 use compiler_plugin_proto::google::protobuf::compiler::Version;
