@@ -14,11 +14,30 @@ rust_bindgen_library(
 
 rust_binary(
     name = "simple_example",
-    srcs = ["main.rs"],
+    srcs = ["simple.rs"],
     deps = [":simple_bindgen"],
 )
 
 rust_test(
     name = "simple_test",
     crate = ":simple_example",
+)
+
+rust_bindgen_library(
+    name = "hello_c_bindgen",
+    bindgen_flags = [
+        "--allowlist-function=hello",
+    ],
+    cc_lib = "//bindgen/shared:hello_c",
+    crate_name = "hello_c",
+    header = "//bindgen/shared:hello.h",
+)
+
+rust_binary(
+    name = "shared_example",
+    srcs = ["shared.rs"],
+    deps = [
+        ":hello_c_bindgen",
+        "//bindgen/shared:hello_rs",
+    ],
 )
