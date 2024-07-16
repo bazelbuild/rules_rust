@@ -14,9 +14,10 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
+load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
-load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 
 def generated_file_stem(file_path):
     """Returns the basename of a file without any extensions.

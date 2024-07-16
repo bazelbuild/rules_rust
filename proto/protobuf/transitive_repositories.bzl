@@ -1,8 +1,8 @@
 """Definitions for loading transitive `@rules_rust//proto/protobuf` dependencies"""
 
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 def rust_proto_protobuf_transitive_repositories():
