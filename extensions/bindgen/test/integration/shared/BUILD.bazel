@@ -1,0 +1,36 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_rust//bindgen:defs.bzl", "rust_bindgen")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//bindgen:__pkg__"])
+
+cc_library(
+    name = "greeting",
+    hdrs = ["greeting.h"],
+)
+
+rust_bindgen(
+    name = "greeting_bindgen",
+    bindgen_flags = [
+        "--allowlist-var=GREETING",
+        "--generate-cstr",
+    ],
+    cc_lib = ":greeting",
+    header = "greeting.h",
+)
+
+rust_library(
+    name = "hello_rs",
+    srcs = [
+        "hello.rs",
+        ":greeting_bindgen",
+    ],
+    crate_root = "hello.rs",
+)
+
+cc_library(
+    name = "hello_c",
+    srcs = ["hello.c"],
+    hdrs = ["hello.h"],
+    deps = [":greeting"],
+)
