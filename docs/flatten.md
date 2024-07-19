@@ -809,7 +809,7 @@ Rust Prost toolchain rule.
 | <a id="rust_prost_toolchain-prost_plugin_flag"></a>prost_plugin_flag |  Prost plugin flag format. (e.g. `--plugin=protoc-gen-prost=%s`)   | String | optional |  `"--plugin=protoc-gen-prost=%s"`  |
 | <a id="rust_prost_toolchain-prost_runtime"></a>prost_runtime |  The Prost runtime crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_prost_toolchain-prost_types"></a>prost_types |  The Prost types crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-| <a id="rust_prost_toolchain-proto_compiler"></a>proto_compiler |  The protoc compiler to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="rust_prost_toolchain-proto_compiler"></a>proto_compiler |  The protoc compiler to use. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="rust_prost_toolchain-tonic_opts"></a>tonic_opts |  Additional options to add to Tonic.   | List of strings | optional |  `[]`  |
 | <a id="rust_prost_toolchain-tonic_plugin"></a>tonic_plugin |  Additional plugins to add to Tonic.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="rust_prost_toolchain-tonic_plugin_flag"></a>tonic_plugin_flag |  Tonic plugin flag format. (e.g. `--plugin=protoc-gen-tonic=%s`))   | String | optional |  `"--plugin=protoc-gen-tonic=%s"`  |
@@ -1778,14 +1778,18 @@ This macro should be called immediately after the `rust_protobuf_dependencies` m
 rust_proto_protobuf_dependencies(<a href="#rust_proto_protobuf_dependencies-bzlmod">bzlmod</a>)
 </pre>
 
-
+Sets up dependencies for rules_rust's proto support.
 
 **PARAMETERS**
 
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="rust_proto_protobuf_dependencies-bzlmod"></a>bzlmod |  <p align="center"> - </p>   |  `False` |
+| <a id="rust_proto_protobuf_dependencies-bzlmod"></a>bzlmod |  Whether this function is being called from a bzlmod context rather than a workspace context.   |  `False` |
+
+**RETURNS**
+
+A list of structs containing information about root module deps to report to bzlmod's extension_metadata.
 
 
 <a id="rust_proto_protobuf_register_toolchains"></a>

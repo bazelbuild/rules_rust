@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.47.1",
+    version = "0.48.0",
 )
 
 bazel_dep(
@@ -27,7 +27,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_proto",
-    version = "5.3.0-21.7",
+    version = "6.0.2",
 )
 bazel_dep(
     name = "apple_support",
@@ -68,7 +68,6 @@ use_repo(
     "cargo_bazel.buildifier-linux-amd64",
     "cargo_bazel.buildifier-linux-arm64",
     "cargo_bazel.buildifier-windows-amd64.exe",
-    "com_google_googleapis",
     "cui",
     "cui__anyhow-1.0.75",
     "cui__camino-1.1.6",

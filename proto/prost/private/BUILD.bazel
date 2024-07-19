@@ -55,7 +55,6 @@ rust_prost_toolchain(
     prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
     prost_runtime = ":prost_runtime",
     prost_types = "//proto/prost/private/3rdparty/crates:prost-types",
-    proto_compiler = "@com_google_protobuf//:protoc",
     tonic_plugin = "//proto/prost/private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
     tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
     tonic_runtime = ":tonic_runtime",

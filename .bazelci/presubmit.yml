@@ -765,6 +765,12 @@ tasks:
     working_directory: examples/bzlmod/proto
     build_targets:
       - "//..."
+  bzlmod_proto:
+    name: Proto and Prost with prebuilt protoc with bzlmod
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/proto_with_toolchain
+    build_targets:
+      - "//..."
   compile_one_dependency:
     name: --compile_one_dependency flag
     platform: ubuntu2004

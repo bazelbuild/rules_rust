@@ -201,16 +201,17 @@ def _rust_bindgen_impl(ctx):
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
 
-    tools = depset([clang_bin], transitive = [cc_toolchain.all_files])
+    tools = depset(([clang_bin] if clang_bin else []), transitive = [cc_toolchain.all_files])
 
     # libclang should only have 1 output file
     libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
 
     env = {
-        "CLANG_PATH": clang_bin.path,
         "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+    if clang_bin:
+        env["CLANG_PATH"] = clang_bin.path
 
     args = ctx.actions.args()
 
@@ -234,7 +235,7 @@ def _rust_bindgen_impl(ctx):
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
     rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
-    if toolchain.default_rustfmt:
+    if rustfmt_toolchain and toolchain.default_rustfmt:
         # Bindgen is able to find rustfmt using the RUSTFMT environment variable
         env.update({"RUSTFMT": rustfmt_toolchain.rustfmt.path})
         tools = depset(transitive = [tools, rustfmt_toolchain.all_files])
@@ -314,6 +315,9 @@ def _rust_bindgen_impl(ctx):
         env = env,
         arguments = [args],
         tools = tools,
+        # ctx.actions.run now require (through a buildifier check) that we
+        # specify this
+        toolchain = None,
     )
 
     return [
@@ -375,10 +379,10 @@ rust_bindgen = rule(
     outputs = {"out": "%{name}.rs"},
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//bindgen:toolchain_type")),
-        str(Label("//rust:toolchain_type")),
-        str(Label("//rust/rustfmt:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("//bindgen:toolchain_type"),
+        config_common.toolchain_type("//rust:toolchain_type"),
+        config_common.toolchain_type("//rust/rustfmt:toolchain_type", mandatory = False),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type"),
     ],
 )
 
