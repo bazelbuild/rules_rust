@@ -81,7 +81,7 @@ rust_library(
     deps = [
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-trace-0.1.3//:gix_trace",
-        "@cui__once_cell-1.18.0//:once_cell",
+        "@cui__once_cell-1.19.0//:once_cell",
         "@cui__thiserror-1.0.50//:thiserror",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

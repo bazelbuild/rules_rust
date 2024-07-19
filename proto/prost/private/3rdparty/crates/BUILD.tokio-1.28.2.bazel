@@ -15,7 +15,7 @@ rust_library(
     name = "tokio",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -276,10 +276,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "tokio_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "bytes",
@@ -330,6 +330,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    pkg_name = "tokio",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -349,6 +350,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":tokio_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

@@ -14,7 +14,7 @@ rust_library(
     name = "tls_api_stub",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

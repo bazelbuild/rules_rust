@@ -87,7 +87,7 @@ rust_library(
         "@cui__gix-ref-0.37.0//:gix_ref",
         "@cui__gix-sec-0.10.0//:gix_sec",
         "@cui__memchr-2.6.4//:memchr",
-        "@cui__once_cell-1.18.0//:once_cell",
+        "@cui__once_cell-1.19.0//:once_cell",
         "@cui__smallvec-1.11.0//:smallvec",
         "@cui__thiserror-1.0.50//:thiserror",
         "@cui__unicode-bom-2.0.2//:unicode_bom",

@@ -307,6 +307,7 @@ _NORMAL_DEPENDENCIES = {
             "hex": Label("@cui__hex-0.4.3//:hex"),
             "itertools": Label("@cui__itertools-0.12.0//:itertools"),
             "normpath": Label("@cui__normpath-1.1.1//:normpath"),
+            "once_cell": Label("@cui__once_cell-1.19.0//:once_cell"),
             "pathdiff": Label("@cui__pathdiff-0.2.1//:pathdiff"),
             "regex": Label("@cui__regex-1.10.2//:regex"),
             "semver": Label("@cui__semver-1.0.20//:semver"),
@@ -2119,12 +2120,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__once_cell-1.18.0",
-        sha256 = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d",
+        name = "cui__once_cell-1.19.0",
+        sha256 = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/once_cell/1.18.0/download"],
-        strip_prefix = "once_cell-1.18.0",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.18.0.bazel"),
+        urls = ["https://static.crates.io/crates/once_cell/1.19.0/download"],
+        strip_prefix = "once_cell-1.19.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.once_cell-1.19.0.bazel"),
     )
 
     maybe(
@@ -3371,6 +3372,7 @@ def crate_repositories():
         struct(repo = "cui__indoc-2.0.4", is_dev_dep = False),
         struct(repo = "cui__itertools-0.12.0", is_dev_dep = False),
         struct(repo = "cui__normpath-1.1.1", is_dev_dep = False),
+        struct(repo = "cui__once_cell-1.19.0", is_dev_dep = False),
         struct(repo = "cui__pathdiff-0.2.1", is_dev_dep = False),
         struct(repo = "cui__regex-1.10.2", is_dev_dep = False),
         struct(repo = "cui__semver-1.0.20", is_dev_dep = False),
