@@ -336,7 +336,7 @@ def get_lockfiles(repository_ctx):
         bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
     )
 
-def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_manifest, cargo, rustc):
+def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_manifest, cargo, rustc, repin_instructions = None):
     """Use the `cargo-bazel` binary to determine whether or not dpeendencies need to be re-pinned
 
     Args:
@@ -347,6 +347,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
         lockfile_path (path): The path to a "lock" file for reproducible outputs.
         cargo (path): The path to a Cargo binary.
         rustc (path): The path to a Rustc binary.
+        repin_instructions (optional string): Instructions to re-pin dependencies in your repository. Will be shown when re-pinning is required.
 
     Returns:
         bool: True if dependencies need to be re-pinned
@@ -403,14 +404,22 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
     # flag indicating repinning was requested, an error is raised
     # since repinning should be an explicit action
     if result.return_code:
-        fail(("\n".join([
-            result.stderr,
-            (
-                "The current `lockfile` is out of date for '{}'. Please re-run " +
-                "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
-                "and the lockfile should be updated."
-            ).format(repository_ctx.name),
-        ])))
+        if repin_instructions:
+            msg = ("\n".join([
+                result.stderr,
+                "The current `lockfile` is out of date for '{}'.".format(repository_ctx.name),
+                repin_instructions,
+            ]))
+        else:
+            msg = ("\n".join([
+                result.stderr,
+                (
+                    "The current `lockfile` is out of date for '{}'. Please re-run " +
+                    "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
+                    "and the lockfile should be updated."
+                ).format(repository_ctx.name),
+            ]))
+        fail(msg)
 
     return False
 
