@@ -179,24 +179,6 @@ impl From<GitReference> for Commitish {
     }
 }
 
-/// Information representing deterministic identifiers for some remote asset.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub(crate) enum Checksumish {
-    Http {
-        /// The sha256 digest of an http archive
-        sha256: Option<String>,
-    },
-    Git {
-        /// The revision of the git repository
-        commitsh: Commitish,
-
-        /// An optional date, not after the specified commit; the argument is
-        /// not allowed if a tag is specified (which allows cloning with depth
-        /// 1).
-        shallow_since: Option<String>,
-    },
-}
-
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
 pub(crate) enum AliasRule {
     #[default]
