@@ -54,8 +54,8 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
 
     js_out = [ctx.actions.declare_file(ctx.label.name + ".js")]
     ts_out = []
-        if not "--no-typescript" in bindgen_flags:
-            ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
+    if not "--no-typescript" in bindgen_flags:
+        ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
 
     if target_output == "bundler":
         js_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.js"))
