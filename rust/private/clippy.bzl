@@ -97,7 +97,10 @@ def _clippy_aspect_impl(target, ctx):
         return [ClippyInfo(output = depset([]))]
 
     toolchain = find_toolchain(ctx)
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, mandatory=False)
+
+    if toolchain == None or cc_toolchain == None:
+        return [ClippyInfo(output = depset([]))]
 
     dep_info, build_info, linkstamps = collect_deps(
         deps = crate_info.deps,
@@ -217,7 +220,7 @@ rust_clippy_aspect = aspect(
                 "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@bazel_tools//tools/cpp:optional_current_cc_toolchain"),
         ),
         "_clippy_flag": attr.label(
             doc = "Arguments to pass to clippy." +
@@ -256,8 +259,8 @@ rust_clippy_aspect = aspect(
         [rust_common.test_crate_info],
     ],
     toolchains = [
-        str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type(str(Label("//rust:toolchain_type")), mandatory = False),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     implementation = _clippy_aspect_impl,
     doc = """\
