@@ -97,7 +97,7 @@ def _clippy_aspect_impl(target, ctx):
         return [ClippyInfo(output = depset([]))]
 
     toolchain = find_toolchain(ctx)
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, mandatory=False)
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, mandatory = False)
 
     if toolchain == None or cc_toolchain == None:
         return [ClippyInfo(output = depset([]))]

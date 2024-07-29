@@ -51,7 +51,7 @@ def find_cc_toolchain(ctx, mandatory = True):
     Returns:
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
     """
-    cc_toolchain = find_rules_cc_toolchain(ctx, mandatory=mandatory)
+    cc_toolchain = find_rules_cc_toolchain(ctx, mandatory = mandatory)
     if cc_toolchain == None:
         return (None, None)
 
