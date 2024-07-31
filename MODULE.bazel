@@ -83,6 +83,7 @@ use_repo(
     "cui__itertools-0.12.0",
     "cui__maplit-1.0.2",
     "cui__normpath-1.1.1",
+    "cui__once_cell-1.19.0",
     "cui__pathdiff-0.2.1",
     "cui__regex-1.10.2",
     "cui__semver-1.0.20",
