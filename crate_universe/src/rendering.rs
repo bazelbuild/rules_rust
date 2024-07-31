@@ -371,33 +371,43 @@ impl Renderer {
         }
 
         for rule in &krate.targets {
-            match rule {
-                Rule::BuildScript(target) => {
-                    load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
-                    let cargo_build_script =
-                        self.make_cargo_build_script(platforms, krate, target)?;
-                    starlark.push(Starlark::CargoBuildScript(cargo_build_script));
-                    starlark.push(Starlark::Alias(Alias {
-                        rule: AliasRule::default().rule(),
-                        name: target.crate_name.clone(),
-                        actual: Label::from_str(&format!(":{}_bs", krate.name)).unwrap(),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    }));
-                }
-                Rule::ProcMacro(target) => {
-                    load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
-                    let rust_proc_macro = self.make_rust_proc_macro(platforms, krate, target)?;
-                    starlark.push(Starlark::RustProcMacro(rust_proc_macro));
-                }
-                Rule::Library(target) => {
-                    load("@rules_rust//rust:defs.bzl", "rust_library");
-                    let rust_library = self.make_rust_library(platforms, krate, target)?;
-                    starlark.push(Starlark::RustLibrary(rust_library));
-                }
-                Rule::Binary(target) => {
-                    load("@rules_rust//rust:defs.bzl", "rust_binary");
-                    let rust_binary = self.make_rust_binary(platforms, krate, target)?;
-                    starlark.push(Starlark::RustBinary(rust_binary));
+            if let Some(override_target) = krate.override_targets.get(rule.override_target_key()) {
+                starlark.push(Starlark::Alias(Alias {
+                    rule: AliasRule::default().rule(),
+                    name: rule.crate_name().to_owned(),
+                    actual: override_target.clone(),
+                    tags: BTreeSet::from(["manual".to_owned()]),
+                }));
+            } else {
+                match rule {
+                    Rule::BuildScript(target) => {
+                        load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
+                        let cargo_build_script =
+                            self.make_cargo_build_script(platforms, krate, target)?;
+                        starlark.push(Starlark::CargoBuildScript(cargo_build_script));
+                        starlark.push(Starlark::Alias(Alias {
+                            rule: AliasRule::default().rule(),
+                            name: target.crate_name.clone(),
+                            actual: Label::from_str("_bs").unwrap(),
+                            tags: BTreeSet::from(["manual".to_owned()]),
+                        }));
+                    }
+                    Rule::ProcMacro(target) => {
+                        load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
+                        let rust_proc_macro =
+                            self.make_rust_proc_macro(platforms, krate, target)?;
+                        starlark.push(Starlark::RustProcMacro(rust_proc_macro));
+                    }
+                    Rule::Library(target) => {
+                        load("@rules_rust//rust:defs.bzl", "rust_library");
+                        let rust_library = self.make_rust_library(platforms, krate, target)?;
+                        starlark.push(Starlark::RustLibrary(rust_library));
+                    }
+                    Rule::Binary(target) => {
+                        load("@rules_rust//rust:defs.bzl", "rust_binary");
+                        let rust_binary = self.make_rust_binary(platforms, krate, target)?;
+                        starlark.push(Starlark::RustBinary(rust_binary));
+                    }
                 }
             }
         }
@@ -435,8 +445,8 @@ impl Renderer {
             //
             // Do not change this name to "cargo_build_script".
             //
-            // This is set to a short suffix to avoid long path name issues on windows.
-            name: format!("{}_bs", krate.name),
+            // This is set to a short name to avoid long path name issues on windows.
+            name: "_bs".to_string(),
             aliases: SelectDict::new(self.make_aliases(krate, true, false), platforms),
             build_script_env: SelectDict::new(
                 attrs
@@ -484,6 +494,7 @@ impl Renderer {
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
+            pkg_name: Some(krate.name.clone()),
             proc_macro_deps: SelectSet::new(
                 self.make_deps(
                     attrs
@@ -966,6 +977,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1003,6 +1015,7 @@ mod test {
                 disable_pipelining: true,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1043,6 +1056,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1058,7 +1072,7 @@ mod test {
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
 
         // Ensure `cargo_build_script` requirements are met
-        assert!(build_file_content.contains("name = \"mock_crate_bs\""));
+        assert!(build_file_content.contains("name = \"_bs\""));
     }
 
     #[test]
@@ -1083,6 +1097,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1120,6 +1135,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1159,6 +1175,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1180,7 +1197,7 @@ mod test {
         };
         let annotations =
             Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
-        let context = Context::new(annotations).unwrap();
+        let context = Context::new(annotations, false).unwrap();
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
         let output = renderer.render(&context).unwrap();
@@ -1213,6 +1230,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1246,6 +1264,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1285,6 +1304,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1336,6 +1356,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1382,7 +1403,7 @@ mod test {
         let lockfile = test::lockfile::multi_cfg_dep();
 
         let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
-        let context = Context::new(annotations).unwrap();
+        let context = Context::new(annotations, false).unwrap();
 
         let renderer = Renderer::new(config.rendering, config.supported_platform_triples);
         let output = renderer.render(&context).unwrap();
@@ -1446,6 +1467,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1492,6 +1514,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1544,6 +1567,7 @@ mod test {
                 repository: None,
                 license: None,
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1607,6 +1631,7 @@ mod test {
                 repository: None,
                 license: None,
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 
@@ -1677,6 +1702,7 @@ mod test {
                 disable_pipelining: false,
                 extra_aliased_targets: BTreeMap::default(),
                 alias_rule: None,
+                override_targets: BTreeMap::default(),
             },
         );
 

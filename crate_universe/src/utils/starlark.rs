@@ -114,6 +114,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) linker_script: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) links: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) pkg_name: Option<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectScalar::is_empty")]

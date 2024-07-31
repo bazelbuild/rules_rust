@@ -158,6 +158,7 @@ mod test {
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::default(),
             alias_rule: None,
+            override_targets: BTreeMap::default(),
         };
 
         let configurations =
@@ -215,6 +216,7 @@ mod test {
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::default(),
             alias_rule: None,
+            override_targets: BTreeMap::default(),
         }
     }
 
@@ -245,7 +247,7 @@ mod test {
             assert_eq!(
                 configurations,
                 BTreeMap::from([
-                    (configuration, expectation,),
+                    (configuration, expectation),
                     // All known triples.
                     (
                         "aarch64-apple-darwin".to_owned(),
@@ -300,6 +302,7 @@ mod test {
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::default(),
             alias_rule: None,
+            override_targets: BTreeMap::default(),
         };
 
         let configurations =
@@ -365,6 +368,7 @@ mod test {
             disable_pipelining: false,
             extra_aliased_targets: BTreeMap::default(),
             alias_rule: None,
+            override_targets: BTreeMap::default(),
         };
 
         let configurations =

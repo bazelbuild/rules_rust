@@ -240,6 +240,7 @@ def collect_deps(
                 crate_deps.append(struct(
                     crate_info = dep_variant_info.crate_info,
                     dep_info = dep_variant_info.dep_info,
+                    cc_info = dep_variant_info.cc_info,
                 ))
 
     aliases = {k.label: v for k, v in aliases.items()}
@@ -1099,6 +1100,9 @@ def construct_arguments(
     if _is_no_std(ctx, toolchain, crate_info):
         rustc_flags.add('--cfg=feature="no_std"')
 
+    # Needed for bzlmod-aware runfiles resolution.
+    env["REPOSITORY_NAME"] = ctx.label.workspace_name
+
     # Create a struct which keeps the arguments separate so each may be tuned or
     # replaced where necessary
     args = struct(
@@ -1388,13 +1392,18 @@ def rustc_compile_action(
 
         # The path to the package dir, including a trailing "/".
         package_dir = ctx.bin_dir.path + "/"
-        if ctx.label.workspace_root:
+
+        # For external repositories, workspace root is not part of the output
+        # path when sibling repository layout is used (the repository name is
+        # part of the bin_dir). This scenario happens when the workspace root
+        # starts with "../"
+        if ctx.label.workspace_root and not ctx.label.workspace_root.startswith("../"):
             package_dir = package_dir + ctx.label.workspace_root + "/"
         if ctx.label.package:
             package_dir = package_dir + ctx.label.package + "/"
 
         if not crate_info.output.path.startswith(package_dir):
-            fail("The package dir path {} should be a prefix of the crate_info.output.path {}", package_dir, crate_info.output.path)
+            fail("The package dir path", package_dir, "should be a prefix of the crate_info.output.path", crate_info.output.path)
 
         output_relative_to_package = crate_info.output.path[len(package_dir):]
 
@@ -1436,8 +1445,18 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
+    dynamic_libraries = [
+        library_to_link.dynamic_library
+        for dep in getattr(ctx.attr, "deps", [])
+        if CcInfo in dep
+        for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
+        for library_to_link in linker_input.libraries
+        if _is_dylib(library_to_link)
+    ]
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) + ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
+        files = getattr(ctx.files, "data", []) +
+                ([] if experimental_use_coverage_metadata_files else coverage_runfiles) +
+                dynamic_libraries,
         collect_data = True,
     )
     if getattr(ctx.attr, "crate", None):
@@ -1597,7 +1616,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         # bazel hard-codes a check for endswith((".a", ".pic.a",
         # ".lib")) in create_library_to_link, so we work around that
         # by creating a symlink to the .rlib with a .a extension.
-        dot_a = make_static_lib_symlink(ctx.actions, crate_info.output)
+        dot_a = make_static_lib_symlink(ctx.label.package, ctx.actions, crate_info.output)
 
         # TODO(hlopko): handle PIC/NOPIC correctly
         library_to_link = cc_common.create_library_to_link(

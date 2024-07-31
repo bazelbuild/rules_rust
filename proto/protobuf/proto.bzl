@@ -209,7 +209,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         ),
     )
 
-    return rustc_compile_action(
+    providers = rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -233,6 +233,8 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         ),
         output_hash = output_hash,
     )
+    providers.append(OutputGroupInfo(rust_generated_srcs = srcs))
+    return providers
 
 def _rust_protogrpc_library_impl(ctx, is_grpc):
     """Implementation of the rust_(proto|grpc)_library.

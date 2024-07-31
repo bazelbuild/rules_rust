@@ -15,7 +15,7 @@ rust_library(
     name = "zstd_sys",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -91,10 +91,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "zstd-sys_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "legacy",
@@ -117,6 +117,7 @@ cargo_build_script(
     ),
     edition = "2018",
     links = "zstd",
+    pkg_name = "zstd-sys",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -136,6 +137,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":zstd-sys_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

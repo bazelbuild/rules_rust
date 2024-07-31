@@ -12,7 +12,8 @@ exports_files(
         "Cargo.toml",
         "Cargo.lock",
         "defs.bzl",
-        "docs.bzl",
+        "docs_bzlmod.bzl",
+        "docs_workspace.bzl",
     ],
     visibility = ["//visibility:public"],
 )
@@ -128,6 +129,7 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
+    tags = ["requires-network"],
     deps = [
         ":cargo_bazel",
         "@rules_rust//tools/runfiles",

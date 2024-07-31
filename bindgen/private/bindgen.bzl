@@ -18,7 +18,7 @@ load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_COMPILE_ACTION_NAME",
 )
-load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_library")
 load("//rust:defs.bzl", "rust_library")
 load("//rust:rust_common.bzl", "BuildInfo")
 
@@ -48,6 +48,7 @@ def rust_bindgen_library(
         bindgen_flags = None,
         bindgen_features = None,
         clang_flags = None,
+        wrap_static_fns = False,
         **kwargs):
     """Generates a rust source file for `header`, and builds a rust_library.
 
@@ -60,6 +61,7 @@ def rust_bindgen_library(
         bindgen_flags (list, optional): Flags to pass directly to the bindgen executable. See https://rust-lang.github.io/rust-bindgen/ for details.
         bindgen_features (list, optional): The `features` attribute for the `rust_bindgen` target.
         clang_flags (list, optional): Flags to pass directly to the clang executable.
+        wrap_static_fns (bool): Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains",
         **kwargs: Arguments to forward to the underlying `rust_library` rule.
     """
 
@@ -85,6 +87,7 @@ def rust_bindgen_library(
         features = bindgen_features,
         clang_flags = clang_flags or [],
         tags = sub_tags,
+        wrap_static_fns = wrap_static_fns,
         **bindgen_kwargs
     )
 
@@ -94,10 +97,23 @@ def rust_bindgen_library(
     if "deps" in kwargs:
         kwargs.pop("deps")
 
+    if wrap_static_fns:
+        native.filegroup(
+            name = name + "__bindgen_c_thunks",
+            srcs = [":" + name + "__bindgen"],
+            output_group = "bindgen_c_thunks",
+        )
+
+        cc_library(
+            name = name + "__bindgen_c_thunks_library",
+            srcs = [":" + name + "__bindgen_c_thunks"],
+            deps = [cc_lib],
+        )
+
     rust_library(
         name = name,
         srcs = [name + "__bindgen.rs"],
-        deps = deps + [name + "__bindgen"],
+        deps = deps + [":" + name + "__bindgen"] + ([":" + name + "__bindgen_c_thunks_library"] if wrap_static_fns else []),
         tags = tags,
         **kwargs
     )
@@ -185,16 +201,17 @@ def _rust_bindgen_impl(ctx):
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx = ctx)
 
-    tools = depset([clang_bin], transitive = [cc_toolchain.all_files])
+    tools = depset(([clang_bin] if clang_bin else []), transitive = [cc_toolchain.all_files])
 
     # libclang should only have 1 output file
     libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
 
     env = {
-        "CLANG_PATH": clang_bin.path,
         "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+    if clang_bin:
+        env["CLANG_PATH"] = clang_bin.path
 
     args = ctx.actions.args()
 
@@ -203,9 +220,22 @@ def _rust_bindgen_impl(ctx):
     args.add(header)
     args.add("--output", output)
 
+    wrap_static_fns = getattr(ctx.attr, "wrap_static_fns", False)
+
+    c_output = None
+    if wrap_static_fns:
+        if "--wrap-static-fns" in ctx.attr.bindgen_flags:
+            fail("Do not pass `--wrap-static-fns` to `bindgen_flags, it's added automatically." +
+                 "The generated C file is accesible in the `bindgen_c_thunks` output group.")
+        c_output = ctx.actions.declare_file(ctx.label.name + ".bindgen_c_thunks.c")
+        args.add("--experimental")
+        args.add("--wrap-static-fns")
+        args.add("--wrap-static-fns-path")
+        args.add(c_output.path)
+
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
     rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
-    if toolchain.default_rustfmt:
+    if rustfmt_toolchain and toolchain.default_rustfmt:
         # Bindgen is able to find rustfmt using the RUSTFMT environment variable
         env.update({"RUSTFMT": rustfmt_toolchain.rustfmt.path})
         tools = depset(transitive = [tools, rustfmt_toolchain.all_files])
@@ -220,7 +250,10 @@ def _rust_bindgen_impl(ctx):
         feature_configuration = feature_configuration,
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
-        system_include_directories = cc_lib[CcInfo].compilation_context.system_includes,
+        system_include_directories = depset(
+            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            direct = cc_toolchain.built_in_include_directories,
+        ),
         user_compile_flags = ctx.attr.clang_flags,
     )
     compile_flags = cc_common.get_memory_inefficient_command_line(
@@ -276,12 +309,15 @@ def _rust_bindgen_impl(ctx):
                 _get_libs_for_static_executable(libstdcxx),
             ] if libstdcxx else []),
         ),
-        outputs = [output],
+        outputs = [output] + ([c_output] if wrap_static_fns else []),
         mnemonic = "RustBindgen",
         progress_message = "Generating bindings for {}..".format(header.path),
         env = env,
         arguments = [args],
         tools = tools,
+        # ctx.actions.run now require (through a buildifier check) that we
+        # specify this
+        toolchain = None,
     )
 
     return [
@@ -302,6 +338,7 @@ def _rust_bindgen_impl(ctx):
         ),
         OutputGroupInfo(
             bindgen_bindings = depset([output]),
+            bindgen_c_thunks = depset(([c_output] if wrap_static_fns else [])),
         ),
     ]
 
@@ -325,6 +362,10 @@ rust_bindgen = rule(
             allow_single_file = True,
             mandatory = True,
         ),
+        "wrap_static_fns": attr.bool(
+            doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
+            default = False,
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
@@ -338,10 +379,10 @@ rust_bindgen = rule(
     outputs = {"out": "%{name}.rs"},
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//bindgen:toolchain_type")),
-        str(Label("//rust:toolchain_type")),
-        str(Label("//rust/rustfmt:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("//bindgen:toolchain_type"),
+        config_common.toolchain_type("//rust:toolchain_type"),
+        config_common.toolchain_type("//rust/rustfmt:toolchain_type", mandatory = False),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type"),
     ],
 )
 

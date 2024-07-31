@@ -68,10 +68,17 @@ _CLIPPY_EXPLICIT_FLAGS = [
     "clippy::needless_return",
 ]
 
+_CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS = [
+    "-A",
+    "clippy::new_without_default",
+    "-A",
+    "clippy::needless_range_loop",
+]
+
 def _clippy_aspect_with_explicit_flags_test_impl(ctx):
     return _clippy_aspect_action_has_flag_impl(
         ctx,
-        _CLIPPY_EXPLICIT_FLAGS,
+        _CLIPPY_EXPLICIT_FLAGS + _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
     )
 
 def make_clippy_aspect_unittest(impl, **kwargs):
@@ -87,6 +94,7 @@ test_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_
 clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(
     _clippy_aspect_with_explicit_flags_test_impl,
     config_settings = {
+        str(Label("//:clippy_flag")): _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
         str(Label("//:clippy_flags")): _CLIPPY_EXPLICIT_FLAGS,
     },
 )

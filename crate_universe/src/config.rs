@@ -22,7 +22,7 @@ use crate::utils::starlark::Label;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -122,6 +122,12 @@ impl Default for RenderConfig {
     }
 }
 
+impl RenderConfig {
+    pub(crate) fn are_sources_present(&self) -> bool {
+        self.vendor_mode == Some(VendorMode::Local)
+    }
+}
+
 fn default_build_file_template() -> String {
     "//:BUILD.{name}-{version}.bazel".to_owned()
 }
@@ -171,24 +177,6 @@ impl From<GitReference> for Commitish {
             GitReference::Rev(v) => Self::Rev(v),
         }
     }
-}
-
-/// Information representing deterministic identifiers for some remote asset.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub(crate) enum Checksumish {
-    Http {
-        /// The sha256 digest of an http archive
-        sha256: Option<String>,
-    },
-    Git {
-        /// The revision of the git repository
-        commitsh: Commitish,
-
-        /// An optional date, not after the specified commit; the argument is
-        /// not allowed if a tag is specified (which allows cloning with depth
-        /// 1).
-        shallow_since: Option<String>,
-    },
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -338,6 +326,9 @@ pub(crate) struct CrateAnnotations {
 
     /// Transition rule to use instead of `native.alias()`.
     pub(crate) alias_rule: Option<AliasRule>,
+
+    /// The crates to use instead of the generated one.
+    pub(crate) override_targets: Option<BTreeMap<String, Label>>,
 }
 
 macro_rules! joined_extra_member {
@@ -410,6 +401,7 @@ impl Add for CrateAnnotations {
             patches: joined_extra_member!(self.patches, rhs.patches, BTreeSet::new, BTreeSet::extend),
             extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, BTreeMap::new, BTreeMap::extend),
             alias_rule: self.alias_rule.or(rhs.alias_rule),
+            override_targets: self.override_targets.or(rhs.override_targets),
         };
 
         output
@@ -927,8 +919,10 @@ mod test {
     #[test]
     fn deserialize_config() {
         let runfiles = runfiles::Runfiles::create().unwrap();
-        let path = runfiles
-            .rlocation("rules_rust/crate_universe/test_data/serialized_configs/config.json");
+        let path = runfiles::rlocation!(
+            runfiles,
+            "rules_rust/crate_universe/test_data/serialized_configs/config.json"
+        );
 
         let content = std::fs::read_to_string(path).unwrap();
 

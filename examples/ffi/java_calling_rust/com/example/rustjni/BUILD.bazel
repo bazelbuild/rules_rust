@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
+
+java_library(
+    name = "rustjni",
+    srcs = ["RustStringLength.java"],
+    data = ["//ffi/java_calling_rust/rust-crate:rstrlen"],
+    deps = [
+        "@bazel_tools//tools/java/runfiles",
+        "@maven//:net_java_dev_jna_jna",
+    ],
+)
+
+java_test(
+    name = "rustjni_test",
+    srcs = ["RustJniTest.java"],
+    test_class = "com.example.rustjni.RustJniTest",
+    deps = [
+        ":rustjni",
+        "@maven//:org_hamcrest_hamcrest",
+    ],
+)

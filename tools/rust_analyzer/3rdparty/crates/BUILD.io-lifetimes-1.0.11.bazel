@@ -15,7 +15,7 @@ rust_library(
     name = "io_lifetimes",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -74,68 +74,68 @@ rust_library(
         "@rrra__io-lifetimes-1.0.11//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rrra__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrra__windows-sys-0.48.0//:windows_sys",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rrra__libc-0.2.147//:libc",  # cfg(not(windows))
+            "@rrra__libc-0.2.147//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
 )
 
 cargo_build_script(
-    name = "io-lifetimes_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "close",
@@ -159,6 +159,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "io-lifetimes",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -175,6 +176,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":io-lifetimes_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

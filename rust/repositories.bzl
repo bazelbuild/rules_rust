@@ -31,7 +31,7 @@ load(
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
 
-# Reexport `load_arbitrary_tool` as it's currently in use in https://github.com/google/cargo-raze
+# Re-export `load_arbitrary_tool` as it's historically been used in external repositories.
 load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
@@ -113,7 +113,7 @@ def rust_register_toolchains(
         global_allocator_library = None,
         iso_date = None,
         register_toolchains = True,
-        rustfmt_version = DEFAULT_NIGHTLY_VERSION,
+        rustfmt_version = None,
         rust_analyzer_version = None,
         sha256s = None,
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
@@ -147,7 +147,7 @@ def rust_register_toolchains(
         global_allocator_library (str, optional): Target that provides allocator functions when global allocator is used with cc_common.link.
         iso_date (str, optional):  **Deprecated**: Use `versions` instead.
         register_toolchains (bool): If true, repositories will be generated to produce and register `rust_toolchain` targets.
-        rustfmt_version (str, optional): The version of rustfmt.
+        rustfmt_version (str, optional): The version of rustfmt. If none is supplied and only a single version in `versions` is given, then this defaults to that version, otherwise will default to the default nightly version.
         rust_analyzer_version (str, optional): The version of Rustc to pair with rust-analyzer.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
@@ -176,6 +176,12 @@ def rust_register_toolchains(
             versions = [version]
         else:
             versions = _RUST_TOOLCHAIN_VERSIONS
+
+    if not rustfmt_version:
+        if len(versions) == 1:
+            rustfmt_version = versions[0]
+        else:
+            rustfmt_version = DEFAULT_NIGHTLY_VERSION
 
     if dev_components:
         has_nightly = False
@@ -310,6 +316,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
             "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
         ),
     ),
+    "auth_patterns": attr.string_list(
+        doc = "A list of patterns to match against urls for which the auth object should be used.",
+    ),
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
@@ -336,6 +345,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
     "iso_date": attr.string(
         doc = "The date of the tool (or None, if the version is a specific version).",
+    ),
+    "netrc": attr.string(
+        doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive",
     ),
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
@@ -552,7 +564,9 @@ def rust_toolchain_repository(
         opt_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        auth = None):
+        auth = None,
+        netrc = None,
+        auth_patterns = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -581,6 +595,8 @@ def rust_toolchain_repository(
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
+        auth_patterns (list, optional): A list of patterns to match against urls for which the auth object should be used.
 
     Returns:
         str: The name of the registerable toolchain created by this rule.
@@ -616,6 +632,8 @@ def rust_toolchain_repository(
         sha256s = sha256s,
         urls = urls,
         auth = auth,
+        netrc = netrc,
+        auth_patterns = auth_patterns,
     )
 
     channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
@@ -640,8 +658,14 @@ _RUST_ANALYZER_TOOLCHAIN_TOOLS_REPOSITORY_ATTRS = {
             "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
         ),
     ),
+    "auth_patterns": attr.string_list(
+        doc = "A list of patterns to match against urls for which the auth object should be used.",
+    ),
     "iso_date": attr.string(
         doc = "The date of the tool (or None, if the version is a specific version).",
+    ),
+    "netrc": attr.string(
+        doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive",
     ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
@@ -717,7 +741,9 @@ def rust_analyzer_toolchain_repository(
         iso_date = None,
         sha256s = None,
         urls = None,
-        auth = None):
+        auth = None,
+        netrc = None,
+        auth_patterns = None):
     """Assemble a remote rust_analyzer_toolchain target based on the given params.
 
     Args:
@@ -731,6 +757,8 @@ def rust_analyzer_toolchain_repository(
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
+        auth_patterns (dict, optional): Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive
 
     Returns:
         str: The name of a registerable rust_analyzer_toolchain.
@@ -742,6 +770,8 @@ def rust_analyzer_toolchain_repository(
         sha256s = sha256s,
         urls = urls,
         auth = auth,
+        netrc = netrc,
+        auth_patterns = auth_patterns,
     )
 
     toolchain_repository_proxy(
@@ -763,12 +793,18 @@ _RUSTFMT_TOOLCHAIN_TOOLS_ATTRS = {
             "See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details."
         ),
     ),
+    "auth_patterns": attr.string_dict(
+        doc = "Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive",
+    ),
     "exec_triple": attr.string(
         doc = "The Rust-style triple Rustfmt is expected to run on.",
         mandatory = True,
     ),
     "iso_date": attr.string(
         doc = "The date of the tool (or None, if the version is a specific version).",
+    ),
+    "netrc": attr.string(
+        doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive",
     ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
@@ -848,7 +884,9 @@ def rustfmt_toolchain_repository(
         channel = None,
         sha256s = None,
         urls = None,
-        auth = None):
+        auth = None,
+        netrc = None,
+        auth_patterns = None):
     """Assemble a remote rustfmt_toolchain target based on the given params.
 
     Args:
@@ -864,6 +902,8 @@ def rustfmt_toolchain_repository(
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
+        auth_patterns (dict, optional): Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive
 
     Returns:
         str: The name of a registerable rustfmt_toolchain.
@@ -878,6 +918,8 @@ def rustfmt_toolchain_repository(
         sha256s = sha256s,
         urls = urls,
         auth = auth,
+        netrc = netrc,
+        auth_patterns = auth_patterns,
         exec_triple = exec_triple,
     )
 
@@ -971,6 +1013,8 @@ def rust_repository_set(
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
+        netrc = None,
+        auth_patterns = None,
         register_toolchain = True,
         exec_compatible_with = None,
         default_target_compatible_with = None):
@@ -1005,6 +1049,9 @@ def rust_repository_set(
             must contain the '{}' used to substitute the tool being fetched (using .format).
         auth (dict): Auth object compatible with repository_ctx.download to use when downloading files.
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
+        netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
+        auth_patterns (dict, optional): Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive
+
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
@@ -1041,17 +1088,29 @@ def rust_repository_set(
         elif type(extra_target_triples) == "dict":
             target_compatible_with = extra_target_triples.get(toolchain.target_triple)
 
+        # Infer toolchain-specific rustc flags depending on the type (list, dict, optional) of extra_rustc_flags
+        if extra_rustc_flags == None:
+            toolchain_extra_rustc_flags = []
+        elif type(extra_rustc_flags) == "list":
+            toolchain_extra_rustc_flags = extra_rustc_flags
+        elif type(extra_rustc_flags) == "dict":
+            toolchain_extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple)
+        else:
+            fail("extra_rustc_flags should be a list or a dict")
+
         all_toolchain_names.append(rust_toolchain_repository(
             name = toolchain.name,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
             auth = auth,
+            netrc = netrc,
+            auth_patterns = auth_patterns,
             channel = toolchain.channel.name,
             dev_components = dev_components,
             edition = edition,
             exec_triple = exec_triple,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
-            extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple) if extra_rustc_flags != None else None,
+            extra_rustc_flags = toolchain_extra_rustc_flags,
             opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
             target_settings = target_settings,
             iso_date = toolchain.channel.iso_date,

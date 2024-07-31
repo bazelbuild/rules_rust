@@ -52,7 +52,7 @@ impl Context {
         Ok(serde_json::from_str(&data)?)
     }
 
-    pub(crate) fn new(annotations: Annotations) -> Result<Self> {
+    pub(crate) fn new(annotations: Annotations, sources_are_present: bool) -> Result<Self> {
         // Build a map of crate contexts
         let crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
@@ -64,9 +64,10 @@ impl Context {
                     &annotations.metadata.packages,
                     &annotations.lockfile.crates,
                     &annotations.pairred_extras,
-                    &annotations.crate_features,
+                    &annotations.metadata.workspace_metadata.tree_metadata,
                     annotations.config.generate_binaries,
                     annotations.config.generate_build_scripts,
+                    sources_are_present,
                 );
                 let id = CrateId::new(context.name.clone(), context.version.clone());
                 (id, context)
@@ -83,7 +84,7 @@ impl Context {
             .collect();
 
         // Given a list of all conditional dependencies, build a set of platform
-        // triples which satsify the conditions.
+        // triples which satisfy the conditions.
         let conditions = resolve_cfg_platforms(
             crates.values().collect(),
             &annotations.config.supported_platform_triples,
@@ -239,7 +240,7 @@ mod test {
         )
         .unwrap();
 
-        Context::new(annotations).unwrap()
+        Context::new(annotations, false).unwrap()
     }
 
     fn mock_context_aliases() -> Context {
@@ -250,11 +251,11 @@ mod test {
         )
         .unwrap();
 
-        Context::new(annotations).unwrap()
+        Context::new(annotations, false).unwrap()
     }
 
     #[test]
-    fn workspace_member_deps() {
+    fn workspace_member_deps_collection() {
         let context = mock_context_common();
         let workspace_member_deps = context.workspace_member_deps();
 
@@ -295,7 +296,7 @@ mod test {
     fn serialization() {
         let context = mock_context_aliases();
 
-        // Seralize and deseralize the context object
+        // Serialize and deserialize the context object
         let json_text = serde_json::to_string(&context).unwrap();
         let deserialized_context: Context = serde_json::from_str(&json_text).unwrap();
 

@@ -19,15 +19,6 @@ local_path_override(
     path = "../../..",
 )
 
-rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
-rust.toolchain(edition = "2021")
-use_repo(
-    rust,
-    "rust_toolchains",
-)
-
-register_toolchains("@rust_toolchains//:all")
-
 # To do third party dependencies, you have multiple options:
 
 # Option 1: Fully transient (Cargo.toml / Cargo.lock as source of truth).

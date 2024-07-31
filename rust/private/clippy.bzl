@@ -34,6 +34,18 @@ ClippyFlagsInfo = provider(
     fields = {"clippy_flags": "List[string] Flags to pass to clippy"},
 )
 
+def _clippy_flag_impl(ctx):
+    return ClippyFlagsInfo(clippy_flags = [f for f in ctx.build_setting_value if f != ""])
+
+clippy_flag = rule(
+    doc = (
+        "Add a custom clippy flag from the command line with `--@rules_rust//:clippy_flag`." +
+        "Multiple uses are accumulated and appended after the extra_rustc_flags."
+    ),
+    implementation = _clippy_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = True),
+)
+
 def _clippy_flags_impl(ctx):
     return ClippyFlagsInfo(clippy_flags = ctx.build_setting_value)
 
@@ -134,6 +146,9 @@ def _clippy_aspect_impl(target, ctx):
 
     clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
 
+    if hasattr(ctx.attr, "_clippy_flag"):
+        clippy_flags = clippy_flags + ctx.attr._clippy_flag[ClippyFlagsInfo].clippy_flags
+
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
     if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
@@ -203,6 +218,11 @@ rust_clippy_aspect = aspect(
                 "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
             ),
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_clippy_flag": attr.label(
+            doc = "Arguments to pass to clippy." +
+                  "Multiple uses are accumulated and appended after the extra_rustc_flags.",
+            default = Label("//:clippy_flag"),
         ),
         "_clippy_flags": attr.label(
             doc = "Arguments to pass to clippy",

@@ -1,6 +1,7 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
+load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
 
@@ -49,7 +50,7 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     package_info_file = ctx.actions.declare_file(ctx.label.name + ".prost_package_info")
     lib_rs = ctx.actions.declare_file("{}.lib.rs".format(ctx.label.name))
 
-    proto_compiler = prost_toolchain.proto_compiler[DefaultInfo].files_to_run
+    proto_compiler = prost_toolchain.proto_compiler
     tools = depset([proto_compiler.executable])
 
     additional_args = ctx.actions.args()
@@ -259,6 +260,7 @@ def _rust_prost_aspect_impl(target, ctx):
     cfgs = ["test", "debug_assertions"]
 
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        aliases = {},
         crate = dep_variant_info.crate_info,
         cfgs = cfgs,
         env = dep_variant_info.crate_info.rustc_env,
@@ -275,6 +277,7 @@ def _rust_prost_aspect_impl(target, ctx):
             package_info = package_info_file,
         ),
         rust_analyzer_info,
+        OutputGroupInfo(rust_generated_srcs = [lib_rs]),
     ]
 
 rust_prost_aspect = aspect(
@@ -347,13 +350,23 @@ def _rust_prost_toolchain_impl(ctx):
     if any(tonic_attrs) and not all(tonic_attrs):
         fail("When one tonic attribute is added, all must be added")
 
+    if ctx.attr.proto_compiler:
+        # buildifier: disable=print
+        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
+
+    proto_toolchain = proto_toolchains.find_toolchain(
+        ctx,
+        legacy_attr = "_legacy_proto_toolchain",
+        toolchain_type = "@rules_proto//proto:toolchain_type",
+    )
+
     return [platform_common.ToolchainInfo(
         prost_opts = ctx.attr.prost_opts,
         prost_plugin = ctx.attr.prost_plugin,
         prost_plugin_flag = ctx.attr.prost_plugin_flag,
         prost_runtime = ctx.attr.prost_runtime,
         prost_types = ctx.attr.prost_types,
-        proto_compiler = ctx.attr.proto_compiler,
+        proto_compiler = ctx.attr.proto_compiler or proto_toolchain.proto_compiler,
         protoc_opts = ctx.fragments.proto.experimental_protoc_opts,
         tonic_opts = ctx.attr.tonic_opts,
         tonic_plugin = ctx.attr.tonic_plugin,
@@ -365,7 +378,7 @@ rust_prost_toolchain = rule(
     implementation = _rust_prost_toolchain_impl,
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
-    attrs = {
+    attrs = dict({
         "prost_opts": attr.string_list(
             doc = "Additional options to add to Prost.",
         ),
@@ -390,10 +403,9 @@ rust_prost_toolchain = rule(
             mandatory = True,
         ),
         "proto_compiler": attr.label(
-            doc = "The protoc compiler to use.",
+            doc = "The protoc compiler to use. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.",
             cfg = "exec",
             executable = True,
-            mandatory = True,
         ),
         "tonic_opts": attr.string_list(
             doc = "Additional options to add to Tonic.",
@@ -411,7 +423,12 @@ rust_prost_toolchain = rule(
             doc = "The Tonic runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
         ),
-    },
+    }, **proto_toolchains.if_legacy_toolchain({
+        "_legacy_proto_toolchain": attr.label(
+            default = "//proto/protobuf:legacy_proto_toolchain",
+        ),
+    })),
+    toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),
 )
 
 def _current_prost_runtime_impl(ctx):

@@ -1,4 +1,4 @@
-//! A reimplementation of https://github.com/rustls/rustls/blob/v/0.20.8/rustls/tests/client_cert_verifier.rs
+//! A re-implementation of https://github.com/rustls/rustls/blob/v/0.20.8/rustls/tests/client_cert_verifier.rs
 
 use std::io;
 use std::sync::Arc;
@@ -160,7 +160,7 @@ mod test {
 
     use std::convert::TryInto;
     use std::io;
-    use std::ops::{Deref, DerefMut};
+    use std::ops::DerefMut;
     use std::sync::Arc;
 
     use rustls::internal::msgs::base::PayloadU16;
@@ -231,8 +231,8 @@ mod test {
     }
 
     fn transfer(
-        left: &mut (impl DerefMut + Deref<Target = ConnectionCommon<impl SideData>>),
-        right: &mut (impl DerefMut + Deref<Target = ConnectionCommon<impl SideData>>),
+        left: &mut impl DerefMut<Target = ConnectionCommon<impl SideData>>,
+        right: &mut impl DerefMut<Target = ConnectionCommon<impl SideData>>,
     ) -> usize {
         let mut buf = [0u8; 262144];
         let mut total = 0;

@@ -14,7 +14,7 @@ rust_library(
     name = "linux_raw_sys",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -38,8 +38,8 @@ rust_library(
             "errno",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "elf",  # aarch64-unknown-nixos-gnu
-            "errno",  # aarch64-unknown-nixos-gnu
+            "elf",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "errno",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "elf",  # arm-unknown-linux-gnueabi
@@ -62,8 +62,8 @@ rust_library(
             "errno",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "elf",  # x86_64-unknown-nixos-gnu
-            "errno",  # x86_64-unknown-nixos-gnu
+            "elf",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "errno",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

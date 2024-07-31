@@ -14,6 +14,8 @@
 
 """Toolchain for compiling rust stubs from protobuf and gRPC."""
 
+load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:utils.bzl", "name_to_crate_name")
 
@@ -71,6 +73,10 @@ def rust_generate_proto(
     outs = [ctx.actions.declare_file(path + ".rs") for path in paths]
     output_directory = outs[0].dirname
 
+    # Throughout we use rules_rust as the name as the plugin, not rust, because rust is an unstable builtin language in protoc.
+    # If we use rust as the plugin name, it triggers protoc to try to use its in-built support, which is experimental.
+    # The naming here doesn't matter, it's arbitrary, just the plugin name and the out dir need to match, so we pick rules_rust.
+
     if is_grpc:
         # Add grpc stubs to the list of outputs
         grpc_files = [ctx.actions.declare_file(path + "_grpc.rs") for path in paths]
@@ -84,14 +90,14 @@ def rust_generate_proto(
         args.add_all([
             "--",
             proto_toolchain.protoc,
-            "--plugin=protoc-gen-grpc-rust=" + proto_toolchain.grpc_plugin.path,
-            "--grpc-rust_out=" + output_directory,
+            "--plugin=protoc-gen-grpc-rules_rust=" + proto_toolchain.grpc_plugin.path,
+            "--grpc-rules_rust_out=" + output_directory,
         ])
         executable = ctx.executable._optional_output_wrapper
 
     args.add_all([
-        "--plugin=protoc-gen-rust=" + proto_toolchain.proto_plugin.path,
-        "--rust_out=" + output_directory,
+        "--plugin=protoc-gen-rules_rust=" + proto_toolchain.proto_plugin.path,
+        "--rules_rust_out=" + output_directory,
     ])
 
     args.add_joined(
@@ -118,13 +124,23 @@ def rust_generate_proto(
     return outs
 
 def _rust_proto_toolchain_impl(ctx):
+    if ctx.attr.protoc:
+        # buildifier: disable=print
+        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
+
+    proto_toolchain = proto_toolchains.find_toolchain(
+        ctx,
+        legacy_attr = "_legacy_proto_toolchain",
+        toolchain_type = "@rules_proto//proto:toolchain_type",
+    )
+
     return platform_common.ToolchainInfo(
         edition = ctx.attr.edition,
         grpc_compile_deps = ctx.attr.grpc_compile_deps,
-        grpc_plugin = ctx.file.grpc_plugin,
+        grpc_plugin = ctx.attr.protoc or ctx.file.grpc_plugin,
         proto_compile_deps = ctx.attr.proto_compile_deps,
         proto_plugin = ctx.file.proto_plugin,
-        protoc = ctx.executable.protoc,
+        protoc = ctx.executable.protoc or proto_toolchain.proto_compiler,
     )
 
 # Default dependencies needed to compile protobuf stubs.
@@ -141,7 +157,7 @@ GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
 
 rust_proto_toolchain = rule(
     implementation = _rust_proto_toolchain_impl,
-    attrs = {
+    attrs = dict({
         "edition": attr.string(
             doc = "The edition used by the generated rust source.",
         ),
@@ -168,12 +184,15 @@ rust_proto_toolchain = rule(
             default = Label("//proto/protobuf/3rdparty/crates:protobuf-codegen__protoc-gen-rust"),
         ),
         "protoc": attr.label(
-            doc = "The location of the `protoc` binary. It should be an executable target.",
+            doc = "The location of the `protoc` binary. It should be an executable target. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.",
             executable = True,
             cfg = "exec",
-            default = Label("@com_google_protobuf//:protoc"),
         ),
-    },
+    }, **proto_toolchains.if_legacy_toolchain({
+        "_legacy_proto_toolchain": attr.label(
+            default = "//proto/protobuf:legacy_proto_toolchain",
+        ),
+    })),
     doc = """\
 Declares a Rust Proto toolchain for use.
 

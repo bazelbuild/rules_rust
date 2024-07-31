@@ -37,7 +37,7 @@ rust_library(
             "errno",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "errno",  # aarch64-unknown-nixos-gnu
+            "errno",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "errno",  # arm-unknown-linux-gnueabi
@@ -52,7 +52,7 @@ rust_library(
             "errno",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "errno",  # x86_64-unknown-nixos-gnu
+            "errno",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

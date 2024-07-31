@@ -1,10 +1,14 @@
 load("@cui//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load(":cross_installer_deps.bzl", "cross_binary")
 
 exports_files(
     ["Cargo.toml"],
     visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "cross",
+    actual = "@cross_rs_host_bin//:cross",
 )
 
 rust_binary(
@@ -25,8 +29,6 @@ rust_binary(
     },
     deps = all_crate_deps(normal = True),
 )
-
-cross_binary(name = "cross")
 
 filegroup(
     name = "bzl_srcs",

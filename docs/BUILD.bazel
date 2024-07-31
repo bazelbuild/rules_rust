@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
 load("//:page.bzl", "gen_header", "page")
 
 package(default_visibility = ["//visibility:private"])
@@ -11,8 +11,11 @@ bzl_library(
         "@com_google_protobuf//:bzl_srcs",
     ],
     deps = [
+        "@bazel_features//:deps",
+        "@bazel_features//:features",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:selects",
+        "@bazel_skylib//lib:structs",
         "@bazel_skylib//rules:common_settings",
         "@rules_proto//proto:defs",
         "@rules_proto//proto:repositories",
@@ -27,6 +30,7 @@ bzl_library(
         "@rules_rust//bindgen:bzl_lib",
         "@rules_rust//cargo:bzl_lib",
         "@rules_rust//crate_universe:bzl_lib",
+        "@rules_rust//crate_universe/private/module_extensions:bzl_lib",
         "@rules_rust//proto:bzl_lib",
         "@rules_rust//rust:bzl_lib",
         "@rules_rust//wasm_bindgen:bzl_lib",
@@ -197,9 +201,16 @@ stardoc(
 )
 
 stardoc(
-    name = "crate_universe",
+    name = "crate_universe_workspace",
     out = "crate_universe.md",
-    input = "@rules_rust//crate_universe:docs.bzl",
+    input = "@rules_rust//crate_universe:docs_workspace.bzl",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe_bzlmod",
+    out = "crate_universe_bzlmod.md",
+    input = "@rules_rust//crate_universe:docs_bzlmod.bzl",
     deps = [":all_docs"],
 )
 

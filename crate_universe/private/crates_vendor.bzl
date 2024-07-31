@@ -204,24 +204,32 @@ def generate_config_file(
         render_config = default_render_config
 
     if mode == "local":
-        build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel"
+        build_file_base_template = "//{}/{{name}}-{{version}}:BUILD.bazel".format(output_pkg)
+        if workspace_name != "":
+            build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel".format(workspace_name, output_pkg)
         crate_label_template = "//{}/{{name}}-{{version}}:{{target}}".format(
             output_pkg,
         )
     else:
-        build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
+        build_file_base_template = "//{}:BUILD.{{name}}-{{version}}.bazel".format(output_pkg)
+        if workspace_name != "":
+            build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel".format(workspace_name, output_pkg)
         crate_label_template = render_config["crate_label_template"]
 
+    # If `workspace_name` is blank (such as when using modules), the `@{}//{}:{{file}}` template would generate
+    # a reference like `Label(@//<stuff>)`. This causes issues if the module doing the `crates_vendor`ing is not the root module.
+    # See: https://github.com/bazelbuild/rules_rust/issues/2661
+    crates_module_template_value = "//{}:{{file}}".format(output_pkg)
+    if workspace_name != "":
+        crates_module_template_value = "@{}//{}:{{file}}".format(
+            workspace_name,
+            output_pkg,
+        )
+
     updates = {
-        "build_file_template": build_file_base_template.format(
-            workspace_name,
-            output_pkg,
-        ),
+        "build_file_template": build_file_base_template,
         "crate_label_template": crate_label_template,
-        "crates_module_template": "@{}//{}:{{file}}".format(
-            workspace_name,
-            output_pkg,
-        ),
+        "crates_module_template": crates_module_template_value,
         "vendor_mode": mode,
     }
 

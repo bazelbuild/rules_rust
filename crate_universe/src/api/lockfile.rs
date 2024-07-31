@@ -20,7 +20,7 @@ pub fn parse(path: &Path) -> Result<impl CargoBazelLockfile> {
     Ok(lockfile)
 }
 
-/// CargoBazelLockfile provides a view over cargo-bazel's lockfile format,
+/// `CargoBazelLockfile` provides a view over `cargo-bazel`'s lockfile format,
 /// providing information about the third-party dependencies of a workspace.
 /// While the lockfile's format doesn't provide any kind of compatibility guarantees over time,
 /// this type offers an interface which is likely to be publicly supportable.
@@ -122,7 +122,7 @@ mod test {
     use std::collections::BTreeSet;
 
     #[test]
-    fn test() {
+    fn exercise_public_lockfile_api() {
         let pkg_a = CrateId {
             name: String::from("pkg_a"),
             version: Version::new(0, 1, 0),
@@ -143,8 +143,8 @@ mod test {
         };
 
         let runfiles = runfiles::Runfiles::create().unwrap();
-        let path = runfiles
-            .rlocation("rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json");
+        let path = runfiles::rlocation!(
+            runfiles, "rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json");
 
         let parsed = parse(&path).unwrap();
         assert_eq!(parsed.workspace_members(), want_workspace_member_names);

@@ -28,13 +28,14 @@ STDERR ------------------------------------------------------------------------
 {stderr}
 """
 
-def execute(repository_ctx, args, env = {}):
+def execute(repository_ctx, args, env = {}, allow_fail = False):
     """A heler macro for executing some arguments and displaying nicely formatted errors
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
         args (list): A list of strings which act as `argv` for execution.
         env (dict, optional): Environment variables to set in the execution environment.
+        allow_fail (bool, optional): Allow the process to fail.
 
     Returns:
         struct: The results of `repository_ctx.execute`
@@ -50,7 +51,7 @@ def execute(repository_ctx, args, env = {}):
         quiet = quiet,
     )
 
-    if result.return_code:
+    if result.return_code and not allow_fail:
         fail(_EXECUTE_ERROR_MESSAGE.format(
             args = args,
             exit_code = result.return_code,

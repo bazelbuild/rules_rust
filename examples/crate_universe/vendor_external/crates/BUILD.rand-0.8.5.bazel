@@ -14,7 +14,7 @@ rust_library(
     name = "rand",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -92,76 +92,76 @@ rust_library(
         "@crates_vendor__rand_core-0.6.3//:rand_core",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@crates_vendor__libc-0.2.119//:libc",  # cfg(unix)
+            "@crates_vendor__libc-0.2.119//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

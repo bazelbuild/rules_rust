@@ -552,7 +552,7 @@ rust_binary(
     sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
     strip_prefix = "cxxbridge-cmd-1.0.109",
     type = "tar.gz",
-    urls = ["https://crates.io/api/v1/crates/cxxbridge-cmd/1.0.109/download"],
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.109.crate"],
 )
 
 crates_repository(
@@ -612,6 +612,144 @@ load(
 )
 
 crates_vendor_packages_repositories()
+
+###############################################################################
+# C O M P L I C A T E D   D E P E N D E N C I E S
+###############################################################################
+
+http_archive(
+    name = "rules_foreign_cc",
+    sha256 = "1eee5d216a3cec7a4c731f71ed731ac353290b1db61ab68b79440655bcb9acaa",
+    strip_prefix = "rules_foreign_cc-7ce62009557d73da9aa0d2a1ca7eded49078b3cf",
+    # Pulls in https://github.com/bazelbuild/rules_foreign_cc/pull/1163 and https://github.com/bazelbuild/rules_foreign_cc/pull/1199 which aren't currently in a release.
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/7ce62009557d73da9aa0d2a1ca7eded49078b3cf.tar.gz",
+)
+
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
+http_archive(
+    name = "aspect_bazel_lib",
+    sha256 = "f5ea76682b209cc0bd90d0f5a3b26d2f7a6a2885f0c5f615e72913f4805dbb0d",
+    strip_prefix = "bazel-lib-2.5.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.5.0/bazel-lib-v2.5.0.tar.gz",
+)
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
+
+aspect_bazel_lib_dependencies()
+
+aspect_bazel_lib_register_toolchains()
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "boringssl",
+    commit = "44b3df6f03d85c901767250329c571db405122d5",
+    patch_args = ["-p1"],
+    patches = [
+        "//complicated_dependencies:boringssl-filegroup.patch",
+        # On the macOS bazelci builders, there's a system-installed openssl, and that takes priority over -isystem flags, which is what cc_library.includes uses.
+        # This forces our local system-includes to be chosen with higher priority, which avoids conflicts.
+        "//complicated_dependencies:boringssl-system-includes.patch",
+    ],
+    remote = "https://github.com/google/boringssl.git",
+)
+
+crates_repository(
+    name = "complicated_dependencies",
+    annotations = {
+        # boringssl natively builds with Bazel, but boring-sys tries to build it with cmake.
+        # We could pass boring-sys a cmake binary it can invoke, but the boring-sys build script wouldn't get to exploit the caching and parallelism of full Bazel builds of boringssl.
+        # Instead, we use the build script env var hooks to point the build script at the output of Bazel building boringssl.
+        "boring-sys": [
+            crate.annotation(
+                build_script_data = [
+                    "@//complicated_dependencies:boringssl_gen_dir",
+                    "@boringssl//:headers",
+                ],
+                build_script_env = {
+                    # Ideally this would use an execpath macro, but we need to point at a directory and that's fiddly. We could probably copy the directory somewhere and point at that... For now, this works.
+                    "BORING_BSSL_INCLUDE_PATH": "$${pwd}/external/boringssl/src/include",
+                    "BORING_BSSL_PATH": "$(execpath @//complicated_dependencies:boringssl_gen_dir)",
+                },
+                compile_data = [
+                    "@//complicated_dependencies:boringssl_gen_dir",
+                    "@boringssl//:headers",
+                ],
+            ),
+        ],
+        # zlib-ng-sys's build script invokes cmake, so we need to make cmake available.
+        # Fortunately, rules_foreign_cc has a cmake toolchain we can use.
+        "libz-ng-sys": [crate.annotation(
+            # Setting build_script_data makes the files available on disk when the rule runs.
+            build_script_data = ["@rules_foreign_cc//toolchains:current_cmake_toolchain"],
+            build_script_env = {
+                # The toolchain supplies a value of $(CMAKE) which is an execroot-relative path, so we need to prefix it with $${pwd}/ because build scripts don't typically run in the execroot unlike most bazel rules, for improved compatibility with Cargo.
+                "CMAKE": "$${pwd}/$(CMAKE)",
+            },
+            # Setting build_script_toolchains makes makefile variable substitution work so that we can reference $(CNAME) in attributes.
+            build_script_toolchains = ["@rules_foreign_cc//toolchains:current_cmake_toolchain"],
+        )],
+    },
+    cargo_lockfile = "//complicated_dependencies:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//complicated_dependencies:cargo-bazel-lock.json",
+    packages = {
+        "boring": crate.spec(
+            version = "3.0.4",
+        ),
+        "libz-ng-sys": crate.spec(
+            version = "=1.1.15",
+        ),
+    },
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+)
+
+load(
+    "@complicated_dependencies//:defs.bzl",
+    complicated_dependencies_crate_repositories = "crate_repositories",
+)
+
+complicated_dependencies_crate_repositories()
+
+###############################################################################
+# O V E R R I D E  T A R G E T
+###############################################################################
+
+crates_repository(
+    name = "override_target",
+    annotations = {
+        "foo": [crate.annotation(
+            override_targets = {"lib": "@//override_target:foo"},
+        )],
+    },
+    cargo_lockfile = "//override_target:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//override_target:cargo-bazel-lock.json",
+    packages = {
+        "foo": crate.spec(
+            version = "0.0.0",
+        ),
+    },
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+)
+
+load(
+    "@override_target//:defs.bzl",
+    override_target_crate_repositories = "crate_repositories",
+)
+
+override_target_crate_repositories()
 
 ###############################################################################
 

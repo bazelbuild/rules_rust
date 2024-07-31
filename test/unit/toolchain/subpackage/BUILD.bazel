@@ -1,0 +1,11 @@
+genrule(
+    name = "dummy_rlib",
+    outs = ["core.rlib"],
+    cmd = "touch $@",
+)
+
+filegroup(
+    name = "std_libs_srcs",
+    srcs = [":dummy_rlib"],
+    visibility = ["//test/unit/toolchain:__subpackages__"],
+)

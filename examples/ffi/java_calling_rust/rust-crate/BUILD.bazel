@@ -1,0 +1,8 @@
+load("@rules_rust//rust:defs.bzl", "rust_shared_library")
+
+rust_shared_library(
+    name = "rstrlen",
+    srcs = ["rust_string_length.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)

@@ -125,151 +125,151 @@ rust_library(
         "@rules_rust_prost__tokio-1.28.2//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-apple-darwin
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-apple-darwin
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-apple-ios
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-apple-ios
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-apple-ios-sim
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-apple-ios-sim
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-fuchsia
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-fuchsia
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-linux-android
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-linux-android
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-pc-windows-msvc
+            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-unknown-linux-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-unknown-linux-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # aarch64-unknown-nto-qnx710
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # aarch64-unknown-nto-qnx710
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # arm-unknown-linux-gnueabi
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # arm-unknown-linux-gnueabi
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # armv7-linux-androideabi
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # armv7-linux-androideabi
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # armv7-unknown-linux-gnueabi
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # armv7-unknown-linux-gnueabi
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # i686-apple-darwin
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # i686-apple-darwin
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # i686-linux-android
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # i686-linux-android
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # i686-pc-windows-msvc
+            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # i686-unknown-freebsd
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # i686-unknown-freebsd
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # i686-unknown-linux-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # i686-unknown-linux-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # powerpc-unknown-linux-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # powerpc-unknown-linux-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # riscv32imc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # riscv64gc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # s390x-unknown-linux-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # s390x-unknown-linux-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # thumbv7em-none-eabi
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # thumbv8m.main-none-eabi
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-apple-darwin
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-apple-darwin
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-apple-ios
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-apple-ios
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-fuchsia
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-fuchsia
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-linux-android
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-linux-android
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
-            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-pc-windows-msvc
+            "@rules_rust_prost__windows-sys-0.48.0//:windows_sys",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-unknown-freebsd
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-unknown-freebsd
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-unknown-linux-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-unknown-linux-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rules_rust_prost__libc-0.2.146//:libc",  # cfg(unix)
-            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # cfg(unix)
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__libc-0.2.146//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rules_rust_prost__signal-hook-registry-1.4.1//:signal_hook_registry",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "@rules_rust_prost__socket2-0.4.9//:socket2",  # cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))
+            "@rules_rust_prost__socket2-0.4.9//:socket2",  # x86_64-unknown-none
         ],
         "//conditions:default": [],
     }),

@@ -8,7 +8,7 @@ load("//crate_universe:defs.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
 load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
-load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner")
+load("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "get_cargo_bazel_runner", "get_host_cargo_rustc")
 load("//rust/platform:triple.bzl", "get_host_triple")
 
 # A list of labels which may be relative (and if so, is within the repo the rule is generated in).
@@ -228,7 +228,7 @@ def _package_to_json(p):
     })
 
 def _get_generator(module_ctx):
-    """Query Network Resources to local a `cargo-bazel` binary.  
+    """Query Network Resources to local a `cargo-bazel` binary.
 
     Based off get_generator in crates_universe/private/generate_utils.bzl
 
@@ -276,6 +276,16 @@ def _get_generator(module_ctx):
     return output
 
 def _crate_impl(module_ctx):
+    # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
+    # function of the module extension, so we want to trigger all restarts before we start the actual work.
+    # Once https://github.com/bazelbuild/bazel/issues/22729 has been fixed, this code can be removed.
+    get_host_cargo_rustc(module_ctx)
+    for mod in module_ctx.modules:
+        for cfg in mod.tags.from_cargo:
+            module_ctx.path(cfg.cargo_lockfile)
+            for m in cfg.manifests:
+                module_ctx.path(m)
+
     cargo_bazel_output = _get_generator(module_ctx)
     cargo_bazel = get_cargo_bazel_runner(module_ctx, cargo_bazel_output)
 
@@ -296,6 +306,31 @@ def _crate_impl(module_ctx):
             if annotation_dict.pop("gen_all_binaries"):
                 annotation_dict["gen_binaries"] = True
             annotation_dict["gen_build_script"] = _OPT_BOOL_VALUES[annotation_dict["gen_build_script"]]
+
+            # Process the override targets for the annotation.
+            # In the non-bzlmod approach, this is given as a dict
+            # with the possible keys "`proc_macro`, `build_script`, `lib`, `bin`".
+            # With the tag-based approach used in Bzlmod, we run into an issue
+            # where there is no dict type that takes a string as a key and a Label as the value.
+            # To work around this, we split the override option into four, and reconstruct the
+            # dictionary here during processing
+            annotation_dict["override_targets"] = dict()
+            replacement = annotation_dict.pop("override_target_lib")
+            if replacement:
+                annotation_dict["override_targets"]["lib"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_proc_macro")
+            if replacement:
+                annotation_dict["override_targets"]["proc_macro"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_build_script")
+            if replacement:
+                annotation_dict["override_targets"]["build_script"] = str(replacement)
+
+            replacement = annotation_dict.pop("override_target_bin")
+            if replacement:
+                annotation_dict["override_targets"]["bin"] = str(replacement)
+
             annotation = _crate_universe_crate.annotation(**{
                 k: v
                 for k, v in annotation_dict.items()
@@ -482,6 +517,18 @@ _annotation = tag_class(
         ),
         shallow_since = attr.string(
             doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
+        ),
+        override_target_lib = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_proc_macro = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_build_script = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+        ),
+        override_target_bin = attr.label(
+            doc = "An optional alternate taget to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
         ),
     ),
 )

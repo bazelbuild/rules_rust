@@ -14,7 +14,7 @@ rust_proc_macro(
     name = "async_stream_impl",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,8 +79,8 @@ rust_proc_macro(
     }),
     version = "0.3.5",
     deps = [
-        "@cvm__proc-macro2-1.0.78//:proc_macro2",
-        "@cvm__quote-1.0.35//:quote",
-        "@cvm__syn-2.0.50//:syn",
+        "@cvm__proc-macro2-1.0.86//:proc_macro2",
+        "@cvm__quote-1.0.36//:quote",
+        "@cvm__syn-2.0.69//:syn",
     ],
 )

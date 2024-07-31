@@ -34,6 +34,17 @@ load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitiv
 
 rust_bindgen_transitive_dependencies()
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# We need to load rules_java before anything proto-related happens because otherwise it will pull in its own rules_java which isn't compatible with rules_jvm_external.
+http_archive(
+    name = "rules_java",
+    sha256 = "f8ae9ed3887df02f40de9f4f7ac3873e6dd7a471f9cddf63952538b94b59aeb3",
+    urls = [
+        "https://github.com/bazelbuild/rules_java/releases/download/7.6.1/rules_java-7.6.1.tar.gz",
+    ],
+)
+
 load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
 
 rust_proto_protobuf_dependencies()
@@ -57,8 +68,6 @@ nodejs_rust_wasm_bindgen_dependencies()
 load("@rules_rust//wasm_bindgen/rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
 
 js_rust_wasm_bindgen_dependencies()
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ###############################################################################
 # Workspace examples
@@ -161,16 +170,49 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = "08ea921df02ffe9924123b0686dc04fd0ff875710bfadb7ad42badb931b0fd50",
+    strip_prefix = "rules_jvm_external-6.1",
+    url = "https://github.com/bazelbuild/rules_jvm_external/releases/download/6.1/rules_jvm_external-6.1.tar.gz",
+)
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    name = "maven",
+    artifacts = [
+        "net.java.dev.jna:jna:5.14.0",
+        "org.hamcrest:hamcrest:2.2",
+    ],
+    maven_install_json = "@//:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()
+
 ###############################################################################
 
 http_archive(
-    name = "bazelci_rules",
+    name = "bazel_ci_rules",
     sha256 = "eca21884e6f66a88c358e580fd67a6b148d30ab57b1680f62a96c00f9bc6a07e",
     strip_prefix = "bazelci_rules-1.0.0",
     url = "https://github.com/bazelbuild/continuous-integration/releases/download/rules-1.0.0/bazelci_rules-1.0.0.tar.gz",
 )
 
-load("@bazelci_rules//:rbe_repo.bzl", "rbe_preconfig")
+load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 
 # Creates a default toolchain config for RBE.
 # Use this as is if you are using the rbe_ubuntu16_04 container,

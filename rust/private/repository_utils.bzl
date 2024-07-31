@@ -1,5 +1,11 @@
 """Utility macros for use in rules_rust repository rules"""
 
+load(
+    "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    "read_netrc",
+    "read_user_netrc",
+    "use_netrc",
+)
 load("//rust:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(
     "//rust/platform:triple_mappings.bzl",
@@ -18,7 +24,7 @@ DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
     sha256 = "9ab95735ea2c8fd51154d01e39cf13912a78071c2d89abc49a7ef102a7dd725a",
-    url = "https://crates.io/api/v1/crates/tinyjson/2.5.1/download",
+    url = "https://static.crates.io/crates/tinyjson/tinyjson-2.5.1.crate",
     strip_prefix = "tinyjson-2.5.1",
     type = "tar.gz",
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
@@ -116,14 +122,6 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(target_triple.system),
     )
 
-_build_file_for_clippy_template = """\
-filegroup(
-    name = "clippy_driver_bin",
-    srcs = ["bin/clippy-driver{binary_ext}"],
-    visibility = ["//visibility:public"],
-)
-"""
-
 _build_file_for_rust_analyzer_proc_macro_srv = """\
 filegroup(
    name = "rust_analyzer_proc_macro_srv",
@@ -143,6 +141,19 @@ def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     return _build_file_for_rust_analyzer_proc_macro_srv.format(
         binary_ext = system_to_binary_ext(exec_triple.system),
     )
+
+_build_file_for_clippy_template = """\
+filegroup(
+    name = "clippy_driver_bin",
+    srcs = ["bin/clippy-driver{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+filegroup(
+    name = "cargo_clippy_bin",
+    srcs = ["bin/cargo-clippy{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
@@ -238,6 +249,7 @@ rust_toolchain(
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
+    cargo_clippy = "//:cargo_clippy_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     rustc_lib = "//:rustc_lib",
@@ -804,10 +816,39 @@ def load_arbitrary_tool(
 
     return {archive_path: sha256}
 
+# The function is copied from the main branch of bazel_tools.
+# It should become available there from version 7.1.0,
+# We should remove this function when we upgrade minimum supported
+# version to 7.1.0.
+# https://github.com/bazelbuild/bazel/blob/d37762b494a4e122d46a5a71e3a8cc77fa15aa25/tools/build_defs/repo/utils.bzl#L424-L446
+def _get_auth(ctx, urls):
+    """Utility function to obtain the correct auth dict for a list of urls from .netrc file.
+
+    Support optional netrc and auth_patterns attributes if available.
+
+    Args:
+      ctx: The repository context of the repository rule calling this utility
+        function.
+      urls: the list of urls to read
+
+    Returns:
+      the auth dict which can be passed to repository_ctx.download
+    """
+    if hasattr(ctx.attr, "netrc") and ctx.attr.netrc:
+        netrc = read_netrc(ctx, ctx.attr.netrc)
+    elif "NETRC" in ctx.os.environ:
+        netrc = read_netrc(ctx, ctx.os.environ["NETRC"])
+    else:
+        netrc = read_user_netrc(ctx)
+    auth_patterns = {}
+    if hasattr(ctx.attr, "auth_patterns") and ctx.attr.auth_patterns:
+        auth_patterns = ctx.attr.auth_patterns
+    return use_netrc(netrc, urls, auth_patterns)
+
 def _make_auth_dict(ctx, urls):
     auth = getattr(ctx.attr, "auth", {})
     if not auth:
-        return {}
+        return _get_auth(ctx, urls)
     ret = {}
     for url in urls:
         ret[url] = auth

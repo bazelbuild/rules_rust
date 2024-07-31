@@ -14,7 +14,7 @@ rust_library(
     name = "sharded_slab",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.1.7",
     deps = [
-        "@crates_vendor_pkgs__lazy_static-1.4.0//:lazy_static",
+        "@crates_vendor_pkgs__lazy_static-1.5.0//:lazy_static",
     ],
 )

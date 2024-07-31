@@ -12,7 +12,7 @@ import tempfile
 
 
 def run_subprocess(command: List[str]) -> subprocess.CompletedProcess[str]:
-    proc = subprocess.run(command, capture_output=True)
+    proc = subprocess.run(command, capture_output=True, check=False)
 
     if proc.returncode:
         print("Subcommand exited with error", proc.returncode, file=sys.stderr)
@@ -24,11 +24,14 @@ def run_subprocess(command: List[str]) -> subprocess.CompletedProcess[str]:
     return proc
 
 
-if __name__ == "__main__":
-
+def main() -> None:
+    """The main entrypoint."""
     workspace_root = Path(
-        os.environ.get("BUILD_WORKSPACE_DIRECTORY",
-                       str(Path(__file__).parent.parent.parent.parent.parent)))
+        os.environ.get(
+            "BUILD_WORKSPACE_DIRECTORY",
+            str(Path(__file__).parent.parent.parent.parent.parent),
+        )
+    )
     metadata_dir = workspace_root / "crate_universe/test_data/metadata"
     cargo = os.getenv("CARGO", "cargo")
 
@@ -51,11 +54,15 @@ if __name__ == "__main__":
             lockfile = manifest_dir / "Cargo.lock"
 
             if lockfile.exists():
-                proc = run_subprocess([cargo, "update", "--manifest-path", str(manifest), "--workspace"])
+                proc = run_subprocess(
+                    [cargo, "update", "--manifest-path", str(manifest), "--workspace"]
+                )
             else:
                 # Generate Lockfile
-                proc = run_subprocess([cargo, "generate-lockfile", "--manifest-path", str(manifest)])
-            
+                proc = run_subprocess(
+                    [cargo, "generate-lockfile", "--manifest-path", str(manifest)]
+                )
+
                 if not lockfile.exists():
                     print("Faield to generate lockfile")
                     print("Args:", proc.args, file=sys.stderr)
@@ -66,16 +73,16 @@ if __name__ == "__main__":
             shutil.copy2(str(lockfile), str(test_dir / "Cargo.lock"))
 
             # Generate metadata
-            proc = subprocess.run(
-                [cargo, "metadata", "--format-version", "1", "--manifest-path", str(manifest)],
-                capture_output=True)
-
-            if proc.returncode:
-                print("Subcommand exited with error", proc.returncode, file=sys.stderr)
-                print("Args:", proc.args, file=sys.stderr)
-                print("stderr:", proc.stderr.decode("utf-8"), file=sys.stderr)
-                print("stdout:", proc.stdout.decode("utf-8"), file=sys.stderr)
-                exit(proc.returncode)
+            proc = run_subprocess(
+                [
+                    cargo,
+                    "metadata",
+                    "--format-version",
+                    "1",
+                    "--manifest-path",
+                    str(manifest),
+                ]
+            )
 
             cargo_home = os.environ.get("CARGO_HOME", str(Path.home() / ".cargo"))
 
@@ -88,3 +95,7 @@ if __name__ == "__main__":
             metadata = json.loads(metadata_text)
             output = test_dir / "metadata.json"
             output.write_text(json.dumps(metadata, indent=4, sort_keys=True) + "\n")
+
+
+if __name__ == "__main__":
+    main()

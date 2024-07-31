@@ -11,47 +11,28 @@ load(
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
 
-_EXAMPLE_TOOLCHAIN = """
-rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
-rust.toolchain(
-    edition = "2021",
-    versions = ["1.70.2"],
-)
-use_repo(rust, "rust_toolchains")
-register_toolchains("@rust_toolchains//:all")"""
-
-_TRANSITIVE_DEP_ERR = """
-Your transitive dependency %s is using rules_rust, so you need to define a rust toolchain.
-To do so, you will need to add the following to your root MODULE.bazel. For example:
-
-bazel_dep(name = "rules_rust", version = "<rules_rust version>")
-""" + _EXAMPLE_TOOLCHAIN
-
-_TOOLCHAIN_ERR = """
-Please add at least one toolchain to your root MODULE.bazel. For example:
-""" + _EXAMPLE_TOOLCHAIN
-
-def _find_root(module_ctx):
+def _find_modules(module_ctx):
     root = None
+    our_module = None
     for mod in module_ctx.modules:
         if mod.is_root:
             root = mod
+        if mod.name == "rules_rust":
+            our_module = mod
+    if root == None:
+        root = our_module
+    if our_module == None:
+        fail("Unable to find rules_rust module")
 
-    return root
+    return root, our_module
 
 def _rust_impl(module_ctx):
-    # Toolchain configuration is only allowed in the root module.
-    # It would be very confusing (and a security concern) if I was using the
-    # default rust toolchains, then when I added a module built on rust, I was
-    # suddenly using a custom rustc.
-    root = _find_root(module_ctx)
+    # Toolchain configuration is only allowed in the root module, or in
+    # rules_rust.
+    # See https://github.com/bazelbuild/bazel/discussions/22024 for discussion.
+    root, rules_rust = _find_modules(module_ctx)
 
-    if not root:
-        fail(_TRANSITIVE_DEP_ERR % module_ctx.modules[0].name)
-
-    toolchains = root.tags.toolchain
-    if not toolchains:
-        fail(_TOOLCHAIN_ERR)
+    toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
         rust_register_toolchains(
@@ -134,9 +115,9 @@ rust = module_extension(
 # This is a separate module extension so that only the host tools are
 # marked as reproducible and os and arch dependent
 def _rust_host_tools_impl(module_ctx):
-    root = _find_root(module_ctx)
+    root, _ = _find_modules(module_ctx)
 
-    if root != None and len(root.tags.host_tools) == 1:
+    if len(root.tags.host_tools) == 1:
         attrs = root.tags.host_tools[0]
 
         iso_date = None
@@ -156,7 +137,7 @@ def _rust_host_tools_impl(module_ctx):
             "urls": attrs.urls,
             "version": version,
         }
-    elif root == None or not root.tags.host_tools:
+    elif not root.tags.host_tools:
         host_tools = {
             "version": rust_common.default_version,
         }

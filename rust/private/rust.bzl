@@ -300,11 +300,10 @@ def _rust_test_impl(ctx):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    if toolchain._incompatible_test_attr_crate_and_srcs_mutually_exclusive:
-        if ctx.attr.crate and ctx.attr.srcs:
-            fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
-                ctx.label,
-            ))
+    if ctx.attr.crate and ctx.attr.srcs:
+        fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
+            ctx.label,
+        ))
 
     if ctx.attr.crate:
         # Target is building the crate in `test` config
@@ -1394,7 +1393,7 @@ rust_test = rule(
 """),
 )
 
-def rust_test_suite(name, srcs, **kwargs):
+def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     """A rule for creating a test suite for a set of `rust_test` targets.
 
     This rule can be used for setting up typical rust [integration tests][it]. Given the following
@@ -1412,6 +1411,8 @@ def rust_test_suite(name, srcs, **kwargs):
             integrated_test_c.rs
             patterns/
                 fibonacci_test.rs
+            helpers/
+                mod.rs
     ```
 
     The rule can be used to generate [rust_test](#rust_test) targets for each source file under `tests`
@@ -1433,6 +1434,7 @@ def rust_test_suite(name, srcs, **kwargs):
     rust_test_suite(
         name = "integrated_tests_suite",
         srcs = glob(["tests/**"]),
+        shared_srcs=glob(["tests/helpers/**"]),
         deps = [":math_lib"],
     )
     ```
@@ -1443,6 +1445,7 @@ def rust_test_suite(name, srcs, **kwargs):
     Args:
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
+        shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
         **kwargs (dict): Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """
@@ -1452,12 +1455,16 @@ def rust_test_suite(name, srcs, **kwargs):
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
 
+        if src in shared_srcs:
+            continue
+
         # Prefixed with `name` to allow parameterization with macros
         # The test name should not end with `.rs`
         test_name = name + "_" + src[:-3]
         rust_test(
             name = test_name,
-            srcs = [src],
+            crate_root = src,
+            srcs = [src] + shared_srcs,
             **kwargs
         )
         tests.append(test_name)

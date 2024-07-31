@@ -409,7 +409,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/anyhow/1.0.77/download"],
         strip_prefix = "anyhow-1.0.77",
-        build_file = Label("@//third-party/crates:BUILD.anyhow-1.0.77.bazel"),
+        build_file = Label("//third-party/crates:BUILD.anyhow-1.0.77.bazel"),
     )
 
     return [
