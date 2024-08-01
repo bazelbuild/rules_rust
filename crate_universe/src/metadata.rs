@@ -5,6 +5,7 @@ mod metadata_annotation;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
@@ -22,6 +23,7 @@ use tracing::debug;
 use crate::config::CrateId;
 use crate::lockfile::Digest;
 use crate::select::{Select, SelectableScalar};
+use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
 
 pub(crate) use self::dependency::*;
@@ -44,11 +46,13 @@ pub(crate) struct Generator {
 
 impl Generator {
     pub(crate) fn new() -> Self {
+        let rustc_bin = PathBuf::from(env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string()));
         Generator {
-            cargo_bin: Cargo::new(PathBuf::from(
-                env::var("CARGO").unwrap_or_else(|_| "cargo".to_string()),
-            )),
-            rustc_bin: PathBuf::from(env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string())),
+            cargo_bin: Cargo::new(
+                PathBuf::from(env::var("CARGO").unwrap_or_else(|_| "cargo".to_string())),
+                rustc_bin.clone(),
+            ),
+            rustc_bin,
         }
     }
 
@@ -77,17 +81,9 @@ impl MetadataGenerator for Generator {
             cargo_lock::Lockfile::load(lock_path)?
         };
 
-        let mut other_options = vec!["--locked".to_owned()];
-        if self.cargo_bin.is_nightly()? {
-            other_options.push("-Zbindeps".to_owned());
-        }
-
         let metadata = self
             .cargo_bin
-            .metadata_command()?
-            .current_dir(manifest_dir)
-            .manifest_path(manifest_path.as_ref())
-            .other_options(other_options)
+            .metadata_command_with_options(manifest_path.as_ref(), vec!["--locked".to_owned()])?
             .exec()?;
 
         Ok((metadata, lockfile))
@@ -100,15 +96,25 @@ impl MetadataGenerator for Generator {
 #[derive(Debug, Clone)]
 pub(crate) struct Cargo {
     path: PathBuf,
+    rustc_path: PathBuf,
     full_version: Arc<Mutex<Option<String>>>,
+    cargo_home: Option<PathBuf>,
 }
 
 impl Cargo {
-    pub(crate) fn new(path: PathBuf) -> Cargo {
+    pub(crate) fn new(path: PathBuf, rustc: PathBuf) -> Cargo {
         Cargo {
             path,
+            rustc_path: rustc,
             full_version: Arc::new(Mutex::new(None)),
+            cargo_home: None,
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_cargo_home(mut self, path: PathBuf) -> Cargo {
+        self.cargo_home = Some(path);
+        self
     }
 
     /// Returns a new `Command` for running this cargo.
@@ -122,12 +128,32 @@ impl Cargo {
     }
 
     /// Returns a new `MetadataCommand` using this cargo.
-    pub(crate) fn metadata_command(&self) -> Result<MetadataCommand> {
+    /// `manifest_path`, `current_dir`, and `other_options` should not be called on the resturned MetadataCommand - instead pass them as the relevant args.
+    pub(crate) fn metadata_command_with_options(
+        &self,
+        manifest_path: &Path,
+        other_options: Vec<String>,
+    ) -> Result<MetadataCommand> {
         let mut command = MetadataCommand::new();
         command.cargo_path(&self.path);
         for (k, v) in self.env()? {
             command.env(k, v);
         }
+
+        command.manifest_path(manifest_path);
+        // Cargo detects config files based on `pwd` when running so
+        // to ensure user provided Cargo config files are used, it's
+        // critical to set the working directory to the manifest dir.
+        let manifest_dir = manifest_path
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("manifest_path {:?} must have parent", manifest_path))?;
+        command.current_dir(manifest_dir);
+
+        let mut other_options = other_options;
+        if self.is_nightly()? {
+            other_options.push("-Zbindeps".to_owned());
+        }
+        command.other_options(other_options);
         Ok(command)
     }
 
@@ -175,8 +201,10 @@ impl Cargo {
         bail!("Couldn't parse cargo version");
     }
 
-    fn env(&self) -> Result<BTreeMap<String, String>> {
+    fn env(&self) -> Result<BTreeMap<String, OsString>> {
         let mut map = BTreeMap::new();
+
+        map.insert("RUSTC".into(), self.rustc_path.as_os_str().to_owned());
 
         if self.use_sparse_registries_for_crates_io()? {
             map.insert(
@@ -184,6 +212,11 @@ impl Cargo {
                 "sparse".into(),
             );
         }
+
+        if let Some(cargo_home) = &self.cargo_home {
+            map.insert("CARGO_HOME".into(), cargo_home.as_os_str().to_owned());
+        }
+
         Ok(map)
     }
 }
@@ -249,12 +282,7 @@ impl CargoUpdateRequest {
     }
 
     /// Calls `cargo update` with arguments specific to the state of the current variant.
-    pub(crate) fn update(
-        &self,
-        manifest: &Path,
-        cargo_bin: &Cargo,
-        rustc_bin: &Path,
-    ) -> Result<()> {
+    pub(crate) fn update(&self, manifest: &Path, cargo_bin: &Cargo) -> Result<()> {
         let manifest_dir = manifest.parent().unwrap();
 
         // Simply invoke `cargo update`
@@ -268,7 +296,6 @@ impl CargoUpdateRequest {
             .arg("--manifest-path")
             .arg(manifest)
             .args(self.get_update_args())
-            .env("RUSTC", rustc_bin)
             .output()
             .with_context(|| {
                 format!(
@@ -288,19 +315,13 @@ impl CargoUpdateRequest {
 }
 
 pub(crate) struct LockGenerator {
-    /// The path to a `cargo` binary
+    /// Interface to cargo.
     cargo_bin: Cargo,
-
-    /// The path to a `rustc` binary
-    rustc_bin: PathBuf,
 }
 
 impl LockGenerator {
-    pub(crate) fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
-        Self {
-            cargo_bin,
-            rustc_bin,
-        }
+    pub(crate) fn new(cargo_bin: Cargo) -> Self {
+        Self { cargo_bin }
     }
 
     #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
@@ -331,7 +352,7 @@ impl LockGenerator {
             fs::copy(lock, &generated_lockfile_path)?;
 
             if let Some(request) = update_request {
-                request.update(manifest_path, &self.cargo_bin, &self.rustc_bin)?;
+                request.update(manifest_path, &self.cargo_bin)?;
             }
 
             // Ensure the Cargo cache is up to date to simulate the behavior
@@ -344,10 +365,8 @@ impl LockGenerator {
                 // critical to set the working directory to the manifest dir.
                 .current_dir(manifest_dir)
                 .arg("fetch")
-                .arg("--locked")
                 .arg("--manifest-path")
                 .arg(manifest_path)
-                .env("RUSTC", &self.rustc_bin)
                 .output()
                 .context(format!(
                     "Error running cargo to fetch crates '{}'",
@@ -375,7 +394,6 @@ impl LockGenerator {
                 .arg("generate-lockfile")
                 .arg("--manifest-path")
                 .arg(manifest_path)
-                .env("RUSTC", &self.rustc_bin)
                 .output()
                 .context(format!(
                     "Error running cargo to generate lockfile '{}'",
@@ -493,32 +511,29 @@ pub(crate) type TreeResolverMetadata = BTreeMap<CrateId, Select<CargoTreeEntry>>
 pub(crate) struct TreeResolver {
     /// The path to a `cargo` binary
     cargo_bin: Cargo,
-
-    /// The path to a `rustc` binary
-    rustc_bin: PathBuf,
 }
 
 impl TreeResolver {
-    pub(crate) fn new(cargo_bin: Cargo, rustc_bin: PathBuf) -> Self {
-        Self {
-            cargo_bin,
-            rustc_bin,
-        }
+    pub(crate) fn new(cargo_bin: Cargo) -> Self {
+        Self { cargo_bin }
     }
 
     /// Computes the set of enabled features for each target triplet for each crate.
     #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        manifest_path: &Path,
+        pristine_manifest_path: &Path,
         target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
             "Generating features for manifest {}",
-            manifest_path.display()
+            pristine_manifest_path.display()
         );
 
-        let manifest_dir = manifest_path.parent().unwrap();
+        let (manifest_path_with_transitive_proc_macros, tempdir) = self
+            .copy_project_with_explicit_deps_on_all_transitive_proc_macros(pristine_manifest_path)
+            .context("Failed to copy project with proc macro deps made direct")?;
+
         let mut target_triple_to_child = BTreeMap::new();
         debug!("Spawning processes for {:?}", target_triples);
         for target_triple in target_triples {
@@ -530,11 +545,10 @@ impl TreeResolver {
             let output = self
                 .cargo_bin
                 .command()?
-                .current_dir(manifest_dir)
+                .current_dir(tempdir.path())
                 .arg("tree")
-                .arg("--locked")
                 .arg("--manifest-path")
-                .arg(manifest_path)
+                .arg(&manifest_path_with_transitive_proc_macros)
                 .arg("--edges")
                 .arg("normal,build,dev")
                 .arg("--prefix=depth")
@@ -544,7 +558,6 @@ impl TreeResolver {
                 .arg("--workspace")
                 .arg("--target")
                 .arg(target_triple.to_cargo())
-                .env("RUSTC", &self.rustc_bin)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
                 .spawn()
@@ -552,7 +565,7 @@ impl TreeResolver {
                     format!(
                         "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
                         target_triple,
-                        manifest_path.display()
+                        manifest_path_with_transitive_proc_macros.display()
                     )
                 })?;
             target_triple_to_child.insert(target_triple, output);
@@ -566,7 +579,7 @@ impl TreeResolver {
                     format!(
                         "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
                         target_triple,
-                        manifest_path.display()
+                        manifest_path_with_transitive_proc_macros.display()
                     )
                 })?;
             if !output.status.success() {
@@ -637,6 +650,99 @@ impl TreeResolver {
             result.insert(crate_id, select);
         }
         Ok(result)
+    }
+
+    // Artificially inject all proc macros as dependency roots.
+    // Proc macros are built in the exec rather than target configuration.
+    // If we do cross-compilation, these will be different, and it will be important that we have resolved features and optional dependencies for the exec platform.
+    // If we don't treat proc macros as roots for the purposes of resolving, we may end up with incorrect platform-specific features.
+    //
+    // Example:
+    // If crate foo only uses a proc macro Linux,
+    // and that proc-macro depends on syn and requires the feature extra-traits,
+    // when we resolve on macOS we'll see we don't need the extra-traits feature of syn because the proc macro isn't used.
+    // But if we're cross-compiling for Linux from macOS, we'll build a syn, but because we're building it for macOS (because proc macros are exec-cfg dependencies),
+    // we'll build syn but _without_ the extra-traits feature (because our resolve told us it was Linux only).
+    //
+    // By artificially injecting all proc macros as root dependencies,
+    // it means we are forced to resolve the dependencies and features for those proc-macros on all platforms we care about,
+    // even if they wouldn't be used in some platform when cfg == exec.
+    //
+    // This is tested by the "keyring" example in examples/musl_cross_compiling - the keyring crate uses proc-macros only on Linux,
+    // and if we don't have this fake root injection, cross-compiling from Darwin to Linux won't work because features don't get correctly resolved for the exec=darwin case.
+    fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
+        &self,
+        pristine_manifest_path: &Path,
+    ) -> Result<(PathBuf, tempfile::TempDir)> {
+        let pristine_root = pristine_manifest_path.parent().unwrap();
+        let working_directory = tempfile::tempdir().context("Failed to make tempdir")?;
+        for file in std::fs::read_dir(pristine_root).context("Failed to read dir")? {
+            let source_path = file?.path();
+            let file_name = source_path.file_name().unwrap();
+            if file_name != "Cargo.toml" && file_name != "Cargo.lock" {
+                let destination = working_directory.path().join(file_name);
+                symlink(&source_path, &destination).with_context(|| {
+                    format!(
+                        "Failed to create symlink {:?} pointing at {:?}",
+                        destination, source_path
+                    )
+                })?;
+            }
+        }
+        std::fs::copy(
+            pristine_root.join("Cargo.lock"),
+            working_directory.path().join("Cargo.lock"),
+        )
+        .with_context(|| {
+            format!(
+                "Failed to copy Cargo.lock from {:?} to {:?}",
+                pristine_root,
+                working_directory.path()
+            )
+        })?;
+
+        let cargo_metadata = self
+            .cargo_bin
+            .metadata_command_with_options(pristine_manifest_path, vec!["--locked".to_owned()])?
+            .manifest_path(pristine_manifest_path)
+            .exec()
+            .context("Failed to run cargo metadata to list transitive proc macros")?;
+        let proc_macros: BTreeSet<_> = cargo_metadata
+            .packages
+            .iter()
+            .filter(|p| {
+                p.targets
+                    .iter()
+                    .any(|t| t.kind.iter().any(|k| k == "proc-macro"))
+            })
+            .map(|pm| (pm.name.clone(), pm.version.to_string()))
+            .collect();
+
+        let mut manifest =
+            cargo_toml::Manifest::from_path(pristine_manifest_path).with_context(|| {
+                format!(
+                    "Failed to parse Cargo.toml file at {:?}",
+                    pristine_manifest_path
+                )
+            })?;
+        for (dep_name, dep_version) in proc_macros {
+            let detail = cargo_toml::DependencyDetail {
+                package: Some(dep_name.clone()),
+                version: Some(dep_version.clone()),
+                ..cargo_toml::DependencyDetail::default()
+            };
+            manifest.dependencies.insert(
+                format!(
+                    "rules_rust_fake_proc_macro_root_{}_{}",
+                    dep_name,
+                    dep_version.replace(['.', '+'], "_")
+                ),
+                cargo_toml::Dependency::Detailed(Box::new(detail)),
+            );
+        }
+        let manifest_path_with_transitive_proc_macros = working_directory.path().join("Cargo.toml");
+        crate::splicing::write_manifest(&manifest_path_with_transitive_proc_macros, &manifest)?;
+        Ok((manifest_path_with_transitive_proc_macros, working_directory))
     }
 }
 

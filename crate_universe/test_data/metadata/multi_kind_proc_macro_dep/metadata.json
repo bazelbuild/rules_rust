@@ -60,7 +60,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "multi-kind-proc-macro-dep",
+                    "name": "multi_kind_proc_macro_dep",
                     "src_path": "{TEMP_DIR}/multi_kind_proc_macro_dep/lib.rs",
                     "test": true
                 }

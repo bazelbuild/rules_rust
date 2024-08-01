@@ -418,7 +418,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -1939,7 +1939,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-with-optional-deps",
+                    "name": "crate_with_optional_deps",
                     "src_path": "{TEMP_DIR}/crate_optional_deps_enabled/lib.rs",
                     "test": true
                 }
@@ -2061,7 +2061,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-channel",
+                    "name": "crossbeam_channel",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-channel-0.5.7/src/lib.rs",
                     "test": true
                 },
@@ -2422,7 +2422,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-utils",
+                    "name": "crossbeam_utils",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-utils-0.8.15/src/lib.rs",
                     "test": true
                 },
@@ -2720,7 +2720,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "errno-dragonfly",
+                    "name": "errno_dragonfly",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/errno-dragonfly-0.1.2/src/lib.rs",
                     "test": true
                 },
@@ -2908,7 +2908,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "fsevent-sys",
+                    "name": "fsevent_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/fsevent-sys-4.1.0/src/lib.rs",
                     "test": true
                 }
@@ -3009,7 +3009,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "hermit-abi",
+                    "name": "hermit_abi",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/hermit-abi-0.3.1/src/lib.rs",
                     "test": true
                 }
@@ -3284,7 +3284,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "inotify-sys",
+                    "name": "inotify_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/inotify-sys-0.1.5/src/lib.rs",
                     "test": true
                 }
@@ -3495,7 +3495,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "io-lifetimes",
+                    "name": "io_lifetimes",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/io-lifetimes-1.0.9/src/lib.rs",
                     "test": true
                 },
@@ -3650,7 +3650,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "is-terminal",
+                    "name": "is_terminal",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/is-terminal-0.4.5/src/lib.rs",
                     "test": true
                 }
@@ -3857,7 +3857,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "kqueue-sys",
+                    "name": "kqueue_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/kqueue-sys-1.0.3/src/lib.rs",
                     "test": true
                 }
@@ -4113,7 +4113,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "linux-raw-sys",
+                    "name": "linux_raw_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/linux-raw-sys-0.1.4/src/lib.rs",
                     "test": true
                 }
@@ -5687,7 +5687,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "same-file",
+                    "name": "same_file",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/same-file-1.0.6/src/lib.rs",
                     "test": true
                 },
@@ -6524,7 +6524,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "winapi-i686-pc-windows-gnu",
+                    "name": "winapi_i686_pc_windows_gnu",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs",
                     "test": true
                 },
@@ -6621,7 +6621,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "winapi-util",
+                    "name": "winapi_util",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/winapi-util-0.1.5/src/lib.rs",
                     "test": true
                 }
@@ -6666,7 +6666,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "winapi-x86_64-pc-windows-gnu",
+                    "name": "winapi_x86_64_pc_windows_gnu",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs",
                     "test": true
                 },
@@ -7837,7 +7837,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-sys",
+                    "name": "windows_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-sys-0.42.0/src/lib.rs",
                     "test": true
                 }
@@ -8705,7 +8705,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-sys",
+                    "name": "windows_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-sys-0.45.0/src/lib.rs",
                     "test": true
                 }
@@ -8893,7 +8893,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-targets",
+                    "name": "windows_targets",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-targets-0.42.2/src/lib.rs",
                     "test": true
                 }

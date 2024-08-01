@@ -1683,7 +1683,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-with-optional-deps",
+                    "name": "crate_with_optional_deps",
                     "src_path": "{TEMP_DIR}/crate_optional_deps_disabled/lib.rs",
                     "test": true
                 }

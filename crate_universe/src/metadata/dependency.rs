@@ -533,7 +533,7 @@ mod test {
             .into_iter()
             .map(|(_, dep)| dep.target_name)
             .collect();
-        assert_eq!(normal_deps, vec!["proc-macro-rules"]);
+        assert_eq!(normal_deps, vec!["proc_macro_rules"]);
 
         let proc_macro_deps: Vec<_> = dependencies
             .proc_macro_deps
@@ -559,7 +559,7 @@ mod test {
         // `bench` target `executor` in the `async-executor` package.
         let async_executor = bindings
             .iter()
-            .find(|(_, dep)| dep.target_name == "async-executor")
+            .find(|(_, dep)| dep.target_name == "async_executor")
             .map(|(_, dep)| dep)
             .unwrap();
 
@@ -817,7 +817,7 @@ mod test {
                 .items()
                 .iter()
                 .filter(|(configuration, dep)| configuration.is_none()
-                    && (dep.target_name == "is-terminal" || dep.target_name == "termcolor"))
+                    && (dep.target_name == "is_terminal" || dep.target_name == "termcolor"))
                 .count(),
             2
         );

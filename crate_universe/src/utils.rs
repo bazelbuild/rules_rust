@@ -1,6 +1,7 @@
 //! Common utilities
 
 pub(crate) mod starlark;
+pub(crate) mod symlink;
 pub(crate) mod target_triple;
 
 pub(crate) const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
