@@ -10,7 +10,7 @@ fi
 binary="$1"
 want_file_output="$2"
 
-out="$(file "${binary}")"
+out="$(file -L "${binary}")"
 
 if [[ "${out}" != *"${want_file_output}"* ]]; then
     echo >&2 "Wrong file type: ${out}"

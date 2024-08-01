@@ -655,6 +655,14 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  musl_cross_compiling_linux_to_linux:
+    name: Musl cross compiling test from Linux to Linux
+    platform: ubuntu2204
+    working_directory: examples/musl_cross_compiling
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   nix_cross_compiling:
     name: Nix cross compiling test
     platform: ubuntu2204
