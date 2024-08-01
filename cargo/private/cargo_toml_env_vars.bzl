@@ -1,3 +1,5 @@
+"""The `cargo_toml_env_vars` rule is used to retrieve the env vars that Cargo would set, based on the contents of a Cargo.toml file."""
+
 def _cargo_toml_env_vars_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".env")
 
@@ -24,8 +26,8 @@ def _cargo_toml_env_vars_impl(ctx):
 cargo_toml_env_vars = rule(
     implementation = _cargo_toml_env_vars_impl,
     attrs = {
-        "src": attr.label(allow_single_file = True, mandatory = True),
-        "workspace": attr.label(allow_single_file = True),
+        "src": attr.label(allow_single_file = True, mandatory = True, doc = "Cargo.toml file to derive env vars from"),
+        "workspace": attr.label(allow_single_file = True, doc = "Workspace Cargo.toml file from which values may be inherited"),
         "_cargo_toml_variable_extractor": attr.label(allow_single_file = True, executable = True, default = "@rules_rust//cargo/cargo_toml_variable_extractor", cfg = "exec"),
     },
 )
