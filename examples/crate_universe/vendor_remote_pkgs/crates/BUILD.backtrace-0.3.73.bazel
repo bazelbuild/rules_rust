@@ -45,6 +45,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -97,6 +99,18 @@ rust_library(
             "@crates_vendor_pkgs__object-0.36.2//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@crates_vendor_pkgs__addr2line-0.22.0//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__libc-0.2.155//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__miniz_oxide-0.7.4//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__object-0.36.2//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "@crates_vendor_pkgs__addr2line-0.22.0//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__libc-0.2.155//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__miniz_oxide-0.7.4//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__object-0.36.2//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
             "@crates_vendor_pkgs__addr2line-0.22.0//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__libc-0.2.155//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__miniz_oxide-0.7.4//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))

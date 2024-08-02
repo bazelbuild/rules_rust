@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@t3p__serde-1.0.204//:serde"),
-            "serde_json": Label("@t3p__serde_json-1.0.121//:serde_json"),
+            "serde_json": Label("@t3p__serde_json-1.0.122//:serde_json"),
         },
     },
 }
@@ -362,6 +362,8 @@ _CONDITIONS = {
     "aarch64-apple-darwin": ["@rules_rust//rust/platform:aarch64-apple-darwin"],
     "aarch64-apple-ios": ["@rules_rust//rust/platform:aarch64-apple-ios"],
     "aarch64-apple-ios-sim": ["@rules_rust//rust/platform:aarch64-apple-ios-sim"],
+    "aarch64-apple-visionos": ["@rules_rust//rust/platform:aarch64-apple-visionos"],
+    "aarch64-apple-visionos-sim": ["@rules_rust//rust/platform:aarch64-apple-visionos-sim"],
     "aarch64-fuchsia": ["@rules_rust//rust/platform:aarch64-fuchsia"],
     "aarch64-linux-android": ["@rules_rust//rust/platform:aarch64-linux-android"],
     "aarch64-pc-windows-msvc": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
@@ -475,12 +477,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "t3p__serde_json-1.0.121",
-        sha256 = "4ab380d7d9f22ef3f21ad3e6c1ebe8e4fc7a2000ccba2e4d71fc96f15b2cb609",
+        name = "t3p__serde_json-1.0.122",
+        sha256 = "784b6203951c57ff748476b126ccb5e8e2959a5c19e5c617ab1956be3dbc68da",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.121/download"],
-        strip_prefix = "serde_json-1.0.121",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_json-1.0.121.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.122/download"],
+        strip_prefix = "serde_json-1.0.122",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_json-1.0.122.bazel"),
     )
 
     maybe(
@@ -505,5 +507,5 @@ def crate_repositories():
 
     return [
         struct(repo = "t3p__serde-1.0.204", is_dev_dep = False),
-        struct(repo = "t3p__serde_json-1.0.121", is_dev_dep = False),
+        struct(repo = "t3p__serde_json-1.0.122", is_dev_dep = False),
     ]

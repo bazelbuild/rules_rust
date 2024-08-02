@@ -1,5 +1,5 @@
 {
-  "checksum": "1953ab7765ef0aa9e58592e3274936001e578685f4f7ec95579a1a44bca08139",
+  "checksum": "8b0f44775d320a6b149ecd5293326df37783c200e942de39efe9f6f6cde286c5",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -3853,6 +3853,34 @@
                 "target": "socket2"
               }
             ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
             "aarch64-fuchsia": [
               {
                 "id": "libc 0.2.139",
@@ -6101,6 +6129,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -6137,6 +6171,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
@@ -6170,6 +6206,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -6215,6 +6253,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",

@@ -1,5 +1,5 @@
 {
-  "checksum": "3b7d6bcba353de8d99394179251bcce841a9036654b91c21e10e296b1a048db7",
+  "checksum": "a9bf89ebddb80492232bc87e0a9b1ec3fb64f6f63b25f6a10799c8e60ff96399",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1956,6 +1956,18 @@
                 "target": "libc"
               }
             ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
             "aarch64-fuchsia": [
               {
                 "id": "libc 0.2.139",
@@ -3030,6 +3042,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -3066,6 +3084,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
