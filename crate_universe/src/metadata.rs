@@ -725,6 +725,28 @@ impl TreeResolver {
                     pristine_manifest_path
                 )
             })?;
+
+        // To add dependencies to a virtual workspace, we need to add them to a package inside the workspace,
+        // we can't just add them to the workspace directly.
+        if !proc_macros.is_empty() && manifest.package.is_none() {
+            if let Some(ref mut workspace) = &mut manifest.workspace {
+                if !workspace.members.contains(&".".to_owned()) {
+                    workspace.members.push(".".to_owned());
+                }
+                manifest.package = Some(cargo_toml::Package::new(
+                    "rules_rust_fake_proc_macro_root",
+                    "0.0.0",
+                ));
+            }
+            if manifest.lib.is_none() && manifest.bin.is_empty() {
+                manifest.bin.push(cargo_toml::Product {
+                    name: Some("rules_rust_fake_proc_macro_root_bin".to_owned()),
+                    path: Some("/dev/null".to_owned()),
+                    ..cargo_toml::Product::default()
+                })
+            }
+        }
+
         for (dep_name, dep_version) in proc_macros {
             let detail = cargo_toml::DependencyDetail {
                 package: Some(dep_name.clone()),
