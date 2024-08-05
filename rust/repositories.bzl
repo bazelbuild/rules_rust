@@ -270,7 +270,7 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date, True):
             toolchain_names.append(toolchain.name)
             toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
@@ -959,10 +959,15 @@ rust_toolchain_set_repository = repository_rule(
     implementation = _rust_toolchain_set_repository_impl,
 )
 
-def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date):
+def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, iso_date, include_default_target):
     toolchain_repos = []
 
-    for target_triple in depset([exec_triple] + extra_target_triples).to_list():
+    target_triples = extra_target_triples
+
+    if include_default_target:
+        target_triples.insert(0, exec_triple)
+
+    for target_triple in depset(target_triples).to_list():
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:
@@ -1016,7 +1021,9 @@ def rust_repository_set(
         auth_patterns = None,
         register_toolchain = True,
         exec_compatible_with = None,
-        default_target_compatible_with = None):
+        default_target_compatible_with = None,
+        include_default_target = True,
+    ):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -1054,6 +1061,7 @@ def rust_repository_set(
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
+        include_default_target (bool): If True, includes the execution platform in the target triples.
     """
 
     if version and versions:
@@ -1079,9 +1087,9 @@ def rust_repository_set(
         extra_target_triples_list.append(extra_target_triple)
 
     all_toolchain_names = []
-    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples_list, versions, iso_date):
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples_list, versions, iso_date, include_default_target):
         target_compatible_with = None
-        if toolchain.target_triple == exec_triple:
+        if toolchain.target_triple == exec_triple and not include_default_target:
             # The exec triple implicitly gets a toolchain with itself as a target - use default_target_compatible_with for it
             target_compatible_with = default_target_compatible_with
         elif type(extra_target_triples) == "dict":
