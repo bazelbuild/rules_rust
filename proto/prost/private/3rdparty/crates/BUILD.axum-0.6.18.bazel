@@ -15,7 +15,7 @@ rust_library(
     name = "axum",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -106,10 +106,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "axum_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -126,6 +126,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    pkg_name = "axum",
     proc_macro_deps = [
         "@rules_rust_prost__rustversion-1.0.12//:rustversion",
     ],
@@ -145,6 +146,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":axum_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

@@ -556,6 +556,15 @@ _common_attrs = {
             These are other `rust_library` targets and will be presented as the new name given.
         """),
     ),
+    "alwayslink": attr.bool(
+        doc = dedent("""\
+            If 1, any binary that depends (directly or indirectly) on this library
+            will link in all the object files even if some contain no symbols referenced by the binary.
+
+            This attribute is used by the C++ Starlark API when passing CcInfo providers.
+        """),
+        default = False,
+    ),
     "compile_data": attr.label_list(
         doc = dedent("""\
             List of files used by this rule at compile time.

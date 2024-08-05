@@ -342,7 +342,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "block-buffer",
+                    "name": "block_buffer",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/block-buffer-0.10.4/src/lib.rs",
                     "test": true
                 },
@@ -435,7 +435,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -546,7 +546,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "const-oid",
+                    "name": "const_oid",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/const-oid-0.9.5/src/lib.rs",
                     "test": true
                 },
@@ -754,7 +754,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-with-optional-deps",
+                    "name": "crate_with_optional_deps",
                     "src_path": "{TEMP_DIR}/crate_renamed_optional_deps_enabled/lib.rs",
                     "test": true
                 }
@@ -1045,7 +1045,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crypto-bigint",
+                    "name": "crypto_bigint",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crypto-bigint-0.5.4/src/lib.rs",
                     "test": true
                 },
@@ -1207,7 +1207,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crypto-common",
+                    "name": "crypto_common",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crypto-common-0.1.6/src/lib.rs",
                     "test": true
                 }
@@ -2356,7 +2356,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "elliptic-curve",
+                    "name": "elliptic_curve",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/elliptic-curve-0.13.6/src/lib.rs",
                     "test": true
                 },
@@ -4020,7 +4020,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "pem-rfc7468",
+                    "name": "pem_rfc7468",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pem-rfc7468-0.7.0/src/lib.rs",
                     "test": true
                 },

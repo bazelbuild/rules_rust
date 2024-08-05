@@ -116,6 +116,12 @@ alias(
 )
 
 alias(
+    name = "once_cell",
+    actual = "@cui__once_cell-1.19.0//:once_cell",
+    tags = ["manual"],
+)
+
+alias(
     name = "pathdiff",
     actual = "@cui__pathdiff-0.2.1//:pathdiff",
     tags = ["manual"],

@@ -94,6 +94,6 @@ rust_library(
     version = "4.3.11",
     deps = [
         "@cui__clap_builder-4.3.11//:clap_builder",
-        "@cui__once_cell-1.18.0//:once_cell",
+        "@cui__once_cell-1.19.0//:once_cell",
     ],
 )

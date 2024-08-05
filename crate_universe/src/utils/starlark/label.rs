@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
@@ -63,8 +64,12 @@ impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@@?[\w\d\-_\.~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
-        let cap = re
+        static RE: OnceCell<Regex> = OnceCell::new();
+        let re = RE.get_or_try_init(|| {
+            Regex::new(r"^(@@?[\w\d\-_\.~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")
+        });
+
+        let cap = re?
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {s}"))?;
 

@@ -48,7 +48,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-with-optional-deps",
+                    "name": "crate_with_optional_deps",
                     "src_path": "{TEMP_DIR}/crate_optional_deps_disabled_build_dep_enabled/lib.rs",
                     "test": true
                 }
@@ -774,7 +774,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "peg-runtime",
+                    "name": "peg_runtime",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/peg-runtime-0.6.3/lib.rs",
                     "test": true
                 }
@@ -891,7 +891,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro2",
+                    "name": "proc_macro2",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.69/src/lib.rs",
                     "test": true
                 },
@@ -4226,7 +4226,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "thiserror-impl",
+                    "name": "thiserror_impl",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-1.0.50/src/lib.rs",
                     "test": true
                 }
@@ -4314,7 +4314,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "typed-builder",
+                    "name": "typed_builder",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/typed-builder-0.10.0/src/lib.rs",
                     "test": true
                 },
@@ -4492,7 +4492,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-ident",
+                    "name": "unicode_ident",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/src/lib.rs",
                     "test": true
                 },
@@ -4583,7 +4583,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-linebreak",
+                    "name": "unicode_linebreak",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-linebreak-0.1.5/src/lib.rs",
                     "test": true
                 }
@@ -4686,7 +4686,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-width",
+                    "name": "unicode_width",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-width-0.1.11/src/lib.rs",
                     "test": true
                 }

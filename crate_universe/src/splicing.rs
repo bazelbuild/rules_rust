@@ -448,7 +448,6 @@ pub(crate) fn generate_lockfile(
     manifest_path: &SplicedManifest,
     existing_lock: &Option<PathBuf>,
     cargo_bin: Cargo,
-    rustc_bin: &Path,
     update_request: &Option<CargoUpdateRequest>,
 ) -> Result<cargo_lock::Lockfile> {
     let manifest_dir = manifest_path
@@ -464,7 +463,7 @@ pub(crate) fn generate_lockfile(
     }
 
     // Generate the new lockfile
-    let lockfile = LockGenerator::new(cargo_bin, PathBuf::from(rustc_bin)).generate(
+    let lockfile = LockGenerator::new(cargo_bin).generate(
         manifest_path.as_path_buf(),
         existing_lock,
         update_request,

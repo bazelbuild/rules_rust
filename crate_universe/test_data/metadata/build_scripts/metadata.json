@@ -256,7 +256,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "build-scripts",
+                    "name": "build_scripts",
                     "src_path": "{TEMP_DIR}/build_scripts/lib.rs",
                     "test": true
                 }
@@ -484,7 +484,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -554,7 +554,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "foreign-types",
+                    "name": "foreign_types",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/foreign-types-0.3.2/src/lib.rs",
                     "test": true
                 }
@@ -597,7 +597,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "foreign-types-shared",
+                    "name": "foreign_types_shared",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/foreign-types-shared-0.1.1/src/lib.rs",
                     "test": true
                 }
@@ -2018,7 +2018,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "libz-sys",
+                    "name": "libz_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/libz-sys-1.1.8/src/lib.rs",
                     "test": true
                 },
@@ -2841,7 +2841,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "openssl-macros",
+                    "name": "openssl_macros",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/openssl-macros-0.1.1/src/lib.rs",
                     "test": true
                 }
@@ -2884,7 +2884,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "openssl-probe",
+                    "name": "openssl_probe",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/openssl-probe-0.1.5/src/lib.rs",
                     "test": true
                 },
@@ -3052,7 +3052,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "openssl-sys",
+                    "name": "openssl_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/openssl-sys-0.9.87/src/lib.rs",
                     "test": true
                 },
@@ -3114,7 +3114,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "percent-encoding",
+                    "name": "percent_encoding",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/percent-encoding-2.2.0/src/lib.rs",
                     "test": true
                 }
@@ -3172,7 +3172,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "pkg-config",
+                    "name": "pkg_config",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pkg-config-0.3.24/src/lib.rs",
                     "test": true
                 },
@@ -3302,7 +3302,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro2",
+                    "name": "proc_macro2",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.56/src/lib.rs",
                     "test": true
                 },
@@ -4821,7 +4821,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-ident",
+                    "name": "unicode_ident",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.8/src/lib.rs",
                     "test": true
                 },
@@ -4933,7 +4933,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-normalization",
+                    "name": "unicode_normalization",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-normalization-0.1.22/src/lib.rs",
                     "test": true
                 },

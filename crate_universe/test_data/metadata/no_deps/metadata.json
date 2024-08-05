@@ -35,7 +35,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "no-deps",
+                    "name": "no_deps",
                     "src_path": "{TEMP_DIR}/no_deps/lib.rs",
                     "test": true
                 }

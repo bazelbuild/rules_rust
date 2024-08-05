@@ -18,7 +18,7 @@ rust_library(
     name = "protoc_gen_prost",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -95,7 +95,7 @@ rust_binary(
     name = "protoc-gen-prost__bin",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

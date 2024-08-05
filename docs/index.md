@@ -22,7 +22,7 @@ Note that rules_rust bzlmod support is still a work in progress. Most features s
 To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.46.0")
+bazel_dep(name = "rules_rust", version = "0.48.0")
 ```
 
 Don't forget to substitute in your desired release's version number.
@@ -38,8 +38,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    integrity = "sha256-F8U7+AC5MvMtPKGdLLnorVM84cDXKfDRgwd7/dq3rUY=",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.46.0/rules_rust-v0.46.0.tar.gz"],
+    integrity = "sha256-Weev1uz2QztBlDA88JX6A1N72SucD1V8lBsaliM0TTg=",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.48.0/rules_rust-v0.48.0.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -78,7 +78,7 @@ To build with a particular version of the Rust compiler, pass that version to [`
 rust_register_toolchains(
     edition = "2021",
     versions = [
-        "1.66.1"
+        "1.79.0"
     ],
 )
 ```
@@ -89,7 +89,7 @@ As well as an exact version, `versions` can accept `nightly/{iso_date}` and `bet
 rust_register_toolchains(
     edition = "2021",
     versions = [
-        "nightly/2022-12-15",
+        "nightly/2024-06-13",
     ],
 )
 ```

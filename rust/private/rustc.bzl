@@ -1611,6 +1611,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             static_library = crate_info.output,
             # TODO(hlopko): handle PIC/NOPIC correctly
             pic_static_library = crate_info.output,
+            alwayslink = getattr(attr, "alwayslink", False),
         )
     elif crate_info.type in ("rlib", "lib"):
         # bazel hard-codes a check for endswith((".a", ".pic.a",
@@ -1626,6 +1627,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             static_library = dot_a,
             # TODO(hlopko): handle PIC/NOPIC correctly
             pic_static_library = dot_a,
+            alwayslink = getattr(attr, "alwayslink", False),
         )
     elif crate_info.type == "cdylib":
         library_to_link = cc_common.create_library_to_link(

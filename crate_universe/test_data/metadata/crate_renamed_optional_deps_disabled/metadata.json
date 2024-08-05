@@ -56,7 +56,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "android-tzdata",
+                    "name": "android_tzdata",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/android-tzdata-0.1.1/src/lib.rs",
                     "test": true
                 }
@@ -853,7 +853,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -1281,7 +1281,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "core-foundation-sys",
+                    "name": "core_foundation_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/core-foundation-sys-0.8.4/src/lib.rs",
                     "test": true
                 }
@@ -1335,7 +1335,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-with-optional-deps",
+                    "name": "crate_with_optional_deps",
                     "src_path": "{TEMP_DIR}/crate_renamed_optional_deps_disabled/lib.rs",
                     "test": true
                 }
@@ -3498,7 +3498,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "iana-time-zone",
+                    "name": "iana_time_zone",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/iana-time-zone-0.1.58/src/lib.rs",
                     "test": true
                 },
@@ -3589,7 +3589,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "iana-time-zone-haiku",
+                    "name": "iana_time_zone_haiku",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/iana-time-zone-haiku-0.1.2/src/lib.rs",
                     "test": true
                 },
@@ -4548,7 +4548,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "js-sys",
+                    "name": "js_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/js-sys-0.3.65/src/lib.rs",
                     "test": false
                 },
@@ -5175,7 +5175,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "num-traits",
+                    "name": "num_traits",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/num-traits-0.2.17/src/lib.rs",
                     "test": true
                 },
@@ -5668,7 +5668,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro2",
+                    "name": "proc_macro2",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.69/src/lib.rs",
                     "test": true
                 },
@@ -9051,7 +9051,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "time-core",
+                    "name": "time_core",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/time-core-0.1.2/src/lib.rs",
                     "test": true
                 }
@@ -9128,7 +9128,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "time-macros",
+                    "name": "time_macros",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/time-macros-0.2.15/src/lib.rs",
                     "test": true
                 }
@@ -9264,7 +9264,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-ident",
+                    "name": "unicode_ident",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/src/lib.rs",
                     "test": true
                 },
@@ -9512,7 +9512,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "wasm-bindgen",
+                    "name": "wasm_bindgen",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/wasm-bindgen-0.2.88/src/lib.rs",
                     "test": false
                 },
@@ -9759,7 +9759,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "wasm-bindgen-backend",
+                    "name": "wasm_bindgen_backend",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/wasm-bindgen-backend-0.2.88/src/lib.rs",
                     "test": true
                 }
@@ -9885,7 +9885,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "wasm-bindgen-macro",
+                    "name": "wasm_bindgen_macro",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/wasm-bindgen-macro-0.2.88/src/lib.rs",
                     "test": true
                 },
@@ -10014,7 +10014,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "wasm-bindgen-macro-support",
+                    "name": "wasm_bindgen_macro_support",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/wasm-bindgen-macro-support-0.2.88/src/lib.rs",
                     "test": true
                 }
@@ -10057,7 +10057,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "wasm-bindgen-shared",
+                    "name": "wasm_bindgen_shared",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/wasm-bindgen-shared-0.2.88/src/lib.rs",
                     "test": true
                 },
@@ -10139,7 +10139,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-core",
+                    "name": "windows_core",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-core-0.51.1/src/lib.rs",
                     "test": true
                 }
@@ -10267,7 +10267,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-targets",
+                    "name": "windows_targets",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-targets-0.48.5/src/lib.rs",
                     "test": true
                 }

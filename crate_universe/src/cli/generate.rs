@@ -89,14 +89,18 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     }
 
     // Ensure Cargo and Rustc are available for use during generation.
-    let cargo_bin = Cargo::new(match opt.cargo {
-        Some(bin) => bin,
-        None => bail!("The `--cargo` argument is required when generating unpinned content"),
-    });
     let rustc_bin = match &opt.rustc {
         Some(bin) => bin,
         None => bail!("The `--rustc` argument is required when generating unpinned content"),
     };
+
+    let cargo_bin = Cargo::new(
+        match opt.cargo {
+            Some(bin) => bin,
+            None => bail!("The `--cargo` argument is required when generating unpinned content"),
+        },
+        rustc_bin.clone(),
+    );
 
     // Ensure a path to a metadata file was provided
     let metadata_path = match &opt.metadata {

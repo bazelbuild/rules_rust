@@ -9,7 +9,8 @@ rules_rust_dependencies()
 
 EDITION = "2021"
 
-RUST_VERSION = "1.76.0"
+# Before 1.80.0, proc macros couldn't be used when exec!=target where exec and target platforms use different shared library extension (i.e. so vs dylib) because of an error in rustc's handling of extensions.
+RUST_VERSION = "1.80.0"
 
 rust_register_toolchains(
     edition = EDITION,
@@ -82,8 +83,8 @@ aspect_bazel_lib_register_toolchains()
 
 http_archive(
     name = "musl_toolchains",
-    sha256 = "f9f077b9ae74a0545f7cb7108462cb061593eef10fd09d25db4554e281ee880b",
-    url = "https://github.com/bazel-contrib/musl-toolchain/releases/download/v0.1.7/musl_toolchain-v0.1.7.tar.gz",
+    sha256 = "1e6cf99f35277dbb9c3b341a9986d0f33cf70e0cc76a58f062d2d9b7ab56eeeb",
+    url = "https://github.com/bazel-contrib/musl-toolchain/releases/download/v0.1.17/musl_toolchain-v0.1.17.tar.gz",
 )
 
 load("@musl_toolchains//:repositories.bzl", "load_musl_toolchains")
@@ -94,3 +95,34 @@ load_musl_toolchains(extra_target_compatible_with = ["@//linker_config:musl"])
 load("@musl_toolchains//:toolchains.bzl", "register_musl_toolchains")
 
 register_musl_toolchains()
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
+
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
+
+crates_repository(
+    name = "cu",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    # `generator` is not necessary in official releases.
+    # See load statement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    lockfile = "//:Cargo.Bazel.lock.json",
+    packages = {
+        # This package has a platform-specific dependency on zbus, which depends on the derivative proc-macro.
+        # This is here to ensure feature resolution works even if exec != target.
+        "keyring": crate.spec(
+            version = "=2.3.3",
+        ),
+        # If we just to top-level per-platform resolves, we end up with platform-specific features on this crate, such that the `visit` feature is only enabled on Linux.
+        # This causes problems when cross-compiling and using this crate from a proc-macro, because we compile the proc-macro against syn with features resolved for the wrong platform.
+        "syn": crate.spec(
+            version = "=1.0.109",
+        ),
+    },
+)
+
+load("@cu//:defs.bzl", "crate_repositories")
+
+crate_repositories()
