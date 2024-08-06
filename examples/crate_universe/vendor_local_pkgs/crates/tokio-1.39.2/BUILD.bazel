@@ -80,6 +80,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -115,7 +117,7 @@ rust_library(
     }),
     version = "1.39.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.7.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.7.1:bytes",
         "//vendor_local_pkgs/crates/mio-1.0.1:mio",
         "//vendor_local_pkgs/crates/parking_lot-0.12.3:parking_lot",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.14:pin_project_lite",
@@ -134,6 +136,16 @@ rust_library(
             "//vendor_local_pkgs/crates/libc-0.2.155:libc",  # aarch64-apple-ios-sim
             "//vendor_local_pkgs/crates/signal-hook-registry-1.4.2:signal_hook_registry",  # aarch64-apple-ios-sim
             "//vendor_local_pkgs/crates/socket2-0.5.7:socket2",  # aarch64-apple-ios-sim
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "//vendor_local_pkgs/crates/libc-0.2.155:libc",  # aarch64-apple-visionos
+            "//vendor_local_pkgs/crates/signal-hook-registry-1.4.2:signal_hook_registry",  # aarch64-apple-visionos
+            "//vendor_local_pkgs/crates/socket2-0.5.7:socket2",  # aarch64-apple-visionos
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
+            "//vendor_local_pkgs/crates/libc-0.2.155:libc",  # aarch64-apple-visionos-sim
+            "//vendor_local_pkgs/crates/signal-hook-registry-1.4.2:signal_hook_registry",  # aarch64-apple-visionos-sim
+            "//vendor_local_pkgs/crates/socket2-0.5.7:socket2",  # aarch64-apple-visionos-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
             "//vendor_local_pkgs/crates/libc-0.2.155:libc",  # aarch64-fuchsia

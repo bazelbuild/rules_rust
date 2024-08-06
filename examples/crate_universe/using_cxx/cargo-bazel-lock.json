@@ -1,5 +1,5 @@
 {
-  "checksum": "76a79f0ec746cceb222cddcbb61f82343275bccc4ccbb462242149974f400c23",
+  "checksum": "58b0ef449796cbde099f054ed6fc6a542c1133dcd0f2d066bd00850be3de625e",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -675,6 +675,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -706,6 +712,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",

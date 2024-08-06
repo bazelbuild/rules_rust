@@ -1,5 +1,5 @@
 {
-  "checksum": "68078c4ef97ed3d7b7eb38a184a0755a783b1eba33fa5b84f9ff3ed02a2d0262",
+  "checksum": "d2a77abafec9ee27b624c116889288da575566d0ad81f26a48523cdbbd3516c3",
   "crates": {
     "aes 0.8.4": {
       "name": "aes",
@@ -10185,6 +10185,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -10255,6 +10261,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-nto-qnx710",
@@ -10281,6 +10289,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-nto-qnx710",
@@ -10313,7 +10323,9 @@
     "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
-      "aarch64-apple-ios-sim"
+      "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim"
     ],
     "cfg(all(target_arch = \"loongarch64\", target_os = \"linux\"))": [],
     "cfg(all(target_arch = \"wasm32\", not(target_os = \"wasi\")))": [
@@ -10339,6 +10351,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -10364,6 +10378,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -10389,6 +10405,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
@@ -10415,6 +10433,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
@@ -10451,6 +10471,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",

@@ -50,6 +50,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -95,6 +97,12 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__iana-time-zone-0.1.57//:iana_time_zone",  # aarch64-apple-ios-sim
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "@cui__iana-time-zone-0.1.57//:iana_time_zone",  # aarch64-apple-visionos
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
+            "@cui__iana-time-zone-0.1.57//:iana_time_zone",  # aarch64-apple-visionos-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
             "@cui__iana-time-zone-0.1.57//:iana_time_zone",  # aarch64-fuchsia

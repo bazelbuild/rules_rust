@@ -1,5 +1,5 @@
 {
-  "checksum": "5488eb653c4ee6a17bbb102b52888d6bc9d7a9a60cc977385c212f1f90f80a3c",
+  "checksum": "e19e3e5c8464f80ea60f0b7a1eef082c99e72d2b52cd21978d492fb98631ed6c",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -956,6 +956,12 @@
     ],
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
+    ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
     ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"

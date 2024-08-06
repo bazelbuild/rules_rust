@@ -42,6 +42,12 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "extra_traits",  # aarch64-apple-ios-sim
         ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "extra_traits",  # aarch64-apple-visionos
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
+            "extra_traits",  # aarch64-apple-visionos-sim
+        ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
             "extra_traits",  # aarch64-fuchsia
         ],
@@ -141,6 +147,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -198,6 +206,12 @@ cargo_build_script(
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "extra_traits",  # aarch64-apple-ios-sim
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "extra_traits",  # aarch64-apple-visionos
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
+            "extra_traits",  # aarch64-apple-visionos-sim
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [
             "extra_traits",  # aarch64-fuchsia

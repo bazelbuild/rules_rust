@@ -1,5 +1,5 @@
 {
-  "checksum": "6c70ce4d4d0e2e18d9771d40354c24e3c605fdb3b38ae9f2a858177e372275aa",
+  "checksum": "71a6ac6b3364c50b5caef683fe95a4177a7cef4845e644e195b31660afb4fc67",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -861,6 +861,42 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "async-global-executor 2.3.1",
                 "target": "async_global_executor"
@@ -3008,6 +3044,26 @@
               "std",
               "waker-fn"
             ],
+            "aarch64-apple-visionos": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-apple-visionos-sim": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
             "aarch64-fuchsia": [
               "alloc",
               "default",
@@ -3367,6 +3423,50 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "fastrand 1.9.0",
                 "target": "fastrand"
@@ -5128,6 +5228,18 @@
               "http2",
               "runtime"
             ],
+            "aarch64-apple-visionos": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-apple-visionos-sim": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
             "aarch64-fuchsia": [
               "client",
               "h2",
@@ -5381,6 +5493,18 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "h2 0.3.16",
                 "target": "h2"
@@ -5739,6 +5863,12 @@
               "std"
             ],
             "aarch64-apple-ios-sim": [
+              "std"
+            ],
+            "aarch64-apple-visionos": [
+              "std"
+            ],
+            "aarch64-apple-visionos-sim": [
               "std"
             ],
             "aarch64-fuchsia": [
@@ -7072,6 +7202,7 @@
         ],
         "crate_features": {
           "common": [
+            "default",
             "proc-macro-crate",
             "std"
           ],
@@ -8224,6 +8355,50 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "hyper-rustls 0.23.2",
                 "target": "hyper_rustls"
@@ -10709,6 +10884,16 @@
               "io-util",
               "memchr"
             ],
+            "aarch64-apple-visionos": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "aarch64-apple-visionos-sim": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
             "aarch64-fuchsia": [
               "bytes",
               "io-util",
@@ -10924,6 +11109,50 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "bytes 1.4.0",
                 "target": "bytes"
@@ -12909,10 +13138,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -13050,10 +13284,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -13108,10 +13347,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -14612,6 +14856,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -14695,6 +14945,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
@@ -14722,6 +14974,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -14756,6 +15010,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
@@ -14789,6 +15045,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -14843,6 +15101,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
