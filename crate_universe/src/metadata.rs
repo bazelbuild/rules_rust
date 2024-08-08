@@ -708,7 +708,7 @@ impl TreeResolver {
             .manifest_path(pristine_manifest_path)
             .exec()
             .context("Failed to run cargo metadata to list transitive proc macros")?;
-        let proc_macros: BTreeSet<_> = cargo_metadata
+        let proc_macros = cargo_metadata
             .packages
             .iter()
             .filter(|p| {
@@ -724,15 +724,20 @@ impl TreeResolver {
                         ..cargo_toml::DependencyDetail::default()
                     });
 
-                    let source = Source::parse(&source.repr, pm.version.to_string()).expect("TODO");
+                    let source = match Source::parse(&source.repr, pm.version.to_string()) {
+                        Ok(source) => source,
+                        Err(err) => {
+                            return Some(Err(err));
+                        }
+                    };
                     source.populate_details(&mut detail.0);
 
-                    Some((pm.name.clone(), detail))
+                    Some(Ok((pm.name.clone(), detail)))
                 } else {
                     None
                 }
             })
-            .collect();
+            .collect::<Result<BTreeSet<_>>>()?;
 
         let mut manifest =
             cargo_toml::Manifest::from_path(pristine_manifest_path).with_context(|| {
