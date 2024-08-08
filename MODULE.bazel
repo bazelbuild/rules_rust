@@ -99,6 +99,7 @@ use_repo(
     "cui__toml-0.8.10",
     "cui__tracing-0.1.40",
     "cui__tracing-subscriber-0.3.17",
+    "cui__url-2.5.2",
     "generated_inputs_in_external_repo",
     "libc",
     "llvm-raw",

@@ -16242,7 +16242,7 @@
           [
             "rules_rust~",
             "cui__url-2.5.2",
-            "cui__url-2.5.2"
+            "rules_rust~~i~cui__url-2.5.2"
           ],
           [
             "rules_rust~",
