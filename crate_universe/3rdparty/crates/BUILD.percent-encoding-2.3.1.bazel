@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "form_urlencoded",
+    name = "percent_encoding",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -40,7 +40,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=form_urlencoded",
+        "crate-name=percent-encoding",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,8 +82,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.2.0",
-    deps = [
-        "@cui__percent-encoding-2.3.0//:percent_encoding",
-    ],
+    version = "2.3.1",
 )

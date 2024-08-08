@@ -210,3 +210,9 @@ alias(
     actual = "@cui__tracing-subscriber-0.3.17//:tracing_subscriber",
     tags = ["manual"],
 )
+
+alias(
+    name = "url",
+    actual = "@cui__url-2.5.2//:url",
+    tags = ["manual"],
+)

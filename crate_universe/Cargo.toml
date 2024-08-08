@@ -50,6 +50,7 @@ textwrap = "0.16.0"
 toml = "0.8.10"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.17"
+url = "2.5.2"
 
 [dev-dependencies]
 maplit = "1.0.2"

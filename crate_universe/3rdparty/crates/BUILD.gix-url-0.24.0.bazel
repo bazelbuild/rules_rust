@@ -84,6 +84,6 @@ rust_library(
         "@cui__gix-path-0.10.0//:gix_path",
         "@cui__home-0.5.5//:home",
         "@cui__thiserror-1.0.50//:thiserror",
-        "@cui__url-2.4.0//:url",
+        "@cui__url-2.5.2//:url",
     ],
 )

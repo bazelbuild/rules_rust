@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "idna",
+    name = "form_urlencoded",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -40,7 +40,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=idna",
+        "crate-name=form_urlencoded",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,9 +82,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.0",
+    version = "1.2.1",
     deps = [
-        "@cui__unicode-bidi-0.3.13//:unicode_bidi",
-        "@cui__unicode-normalization-0.1.22//:unicode_normalization",
+        "@cui__percent-encoding-2.3.1//:percent_encoding",
     ],
 )
