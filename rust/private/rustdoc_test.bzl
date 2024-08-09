@@ -67,7 +67,7 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     root = crate_info.output.root.path
     if not root in roots:
         roots.append(root)
-    for dep in crate_info.deps.to_list():
+    for dep in crate_info.deps.to_list() + crate_info.proc_macro_deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
         if dep_crate_info:
