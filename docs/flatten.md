@@ -795,7 +795,8 @@ Builds a Rust proc-macro crate.
 ## rust_prost_toolchain
 
 <pre>
-rust_prost_toolchain(<a href="#rust_prost_toolchain-name">name</a>, <a href="#rust_prost_toolchain-prost_opts">prost_opts</a>, <a href="#rust_prost_toolchain-prost_plugin">prost_plugin</a>, <a href="#rust_prost_toolchain-prost_plugin_flag">prost_plugin_flag</a>, <a href="#rust_prost_toolchain-prost_runtime">prost_runtime</a>, <a href="#rust_prost_toolchain-prost_types">prost_types</a>,
+rust_prost_toolchain(<a href="#rust_prost_toolchain-name">name</a>, <a href="#rust_prost_toolchain-prost_opts">prost_opts</a>, <a href="#rust_prost_toolchain-prost_plugin">prost_plugin</a>, <a href="#rust_prost_toolchain-prost_plugin_flag">prost_plugin_flag</a>, <a href="#rust_prost_toolchain-prost_runtime">prost_runtime</a>,
+                     <a href="#rust_prost_toolchain-prost_serde_opts">prost_serde_opts</a>, <a href="#rust_prost_toolchain-prost_serde_plugin">prost_serde_plugin</a>, <a href="#rust_prost_toolchain-prost_serde_plugin_flag">prost_serde_plugin_flag</a>, <a href="#rust_prost_toolchain-prost_types">prost_types</a>,
                      <a href="#rust_prost_toolchain-proto_compiler">proto_compiler</a>, <a href="#rust_prost_toolchain-tonic_opts">tonic_opts</a>, <a href="#rust_prost_toolchain-tonic_plugin">tonic_plugin</a>, <a href="#rust_prost_toolchain-tonic_plugin_flag">tonic_plugin_flag</a>, <a href="#rust_prost_toolchain-tonic_runtime">tonic_runtime</a>)
 </pre>
 
@@ -811,6 +812,9 @@ Rust Prost toolchain rule.
 | <a id="rust_prost_toolchain-prost_plugin"></a>prost_plugin |  Additional plugins to add to Prost.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_prost_toolchain-prost_plugin_flag"></a>prost_plugin_flag |  Prost plugin flag format. (e.g. `--plugin=protoc-gen-prost=%s`)   | String | optional |  `"--plugin=protoc-gen-prost=%s"`  |
 | <a id="rust_prost_toolchain-prost_runtime"></a>prost_runtime |  The Prost runtime crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="rust_prost_toolchain-prost_serde_opts"></a>prost_serde_opts |  Additional options to add to prost-serde.   | List of strings | optional | <code>[]</code> |
+| <a id="rust_prost_toolchain-prost_serde_plugin"></a>prost_serde_plugin |  Additional plugins to add to prost-serde.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional | <code>None</code> |
+| <a id="rust_prost_toolchain-prost_serde_plugin_flag"></a>prost_serde_plugin_flag |  prost-serde plugin flag format. (e.g. <code>--plugin=protoc-gen-prost-serde=%s</code>))   | String | optional | <code>"--plugin=protoc-gen-prost-serde=%s"</code> |
 | <a id="rust_prost_toolchain-prost_types"></a>prost_types |  The Prost types crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_prost_toolchain-proto_compiler"></a>proto_compiler |  The protoc compiler to use. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="rust_prost_toolchain-tonic_opts"></a>tonic_opts |  Additional options to add to Tonic.   | List of strings | optional |  `[]`  |

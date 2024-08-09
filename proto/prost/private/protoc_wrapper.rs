@@ -117,7 +117,11 @@ struct Module {
 ///     }
 /// }
 /// ```
-fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String {
+fn generate_lib_rs(
+    prost_outputs: &BTreeSet<PathBuf>,
+    is_tonic: bool,
+    is_prost_serde: bool,
+) -> String {
     let mut module_info = BTreeMap::new();
 
     for path in prost_outputs.iter() {
@@ -133,7 +137,13 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
                 .strip_suffix(".tonic")
                 .expect("Failed to strip suffix")
                 .to_string()
-        };
+        }
+        if is_prost_serde && package.ends_with(".serde") {
+            package = package
+                .strip_suffix(".serde")
+                .expect("Failed to strip suffix")
+                .to_string()
+        }
 
         if package.is_empty() {
             continue;
@@ -155,14 +165,21 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
         // Avoid a stack overflow by skipping a known bad package name
         let module_name = snake_cased_package_name(&package);
 
-        module_info.insert(
-            module_name.clone(),
-            Module {
+        module_info
+            .entry(module_name.clone())
+            // Serde module will have same name as module its bindings are for.
+            .and_modify(|module: &mut Module| {
+                module.contents = format!(
+                    "{}\n{}",
+                    module.contents,
+                    fs::read_to_string(path).expect("Failed to read file")
+                );
+            })
+            .or_insert(Module {
                 name,
                 contents: fs::read_to_string(path).expect("Failed to read file"),
                 submodules: BTreeSet::new(),
-            },
-        );
+            });
 
         let module_parts = module_name.split('.').collect::<Vec<_>>();
         for parent_module_index in 0..module_parts.len() {
@@ -437,11 +454,11 @@ struct Args {
     /// The proto include paths.
     proto_paths: Vec<String>,
 
-    /// The path to the rustfmt binary.
-    rustfmt: Option<PathBuf>,
-
     /// Whether to generate tonic code.
     is_tonic: bool,
+
+    /// Whether to generate prost serde code.
+    is_prost_serde: bool,
 
     /// Extra arguments to pass to protoc.
     extra_args: Vec<String>,
@@ -458,11 +475,11 @@ impl Args {
         let mut includes = Vec::new();
         let mut descriptor_set = None;
         let mut out_librs: Option<PathBuf> = None;
-        let mut rustfmt: Option<PathBuf> = None;
         let mut proto_paths = Vec::new();
         let mut label: Option<String> = None;
         let mut tonic_or_prost_opts = Vec::new();
         let mut is_tonic = false;
+        let mut is_prost_serde = false;
 
         let mut extra_args = Vec::new();
 
@@ -483,6 +500,11 @@ impl Args {
 
             if arg == "--is_tonic" {
                 is_tonic = true;
+                return;
+            }
+
+            if arg == "--is_prost_serde" {
+                is_prost_serde = true;
                 return;
             }
 
@@ -527,9 +549,6 @@ impl Args {
                 ("--out_librs", value) => {
                     out_librs = Some(PathBuf::from(value));
                 }
-                ("--rustfmt", value) => {
-                    rustfmt = Some(PathBuf::from(value));
-                }
                 ("--proto_path", value) => {
                     proto_paths.push(value.to_string());
                 }
@@ -562,6 +581,9 @@ impl Args {
             extra_args.push(format!("--prost_opt={}", tonic_or_prost_opt));
             if is_tonic {
                 extra_args.push(format!("--tonic_opt={}", tonic_or_prost_opt));
+            }
+            if is_prost_serde {
+                extra_args.push(format!("--prost-serde_opt={}", tonic_or_prost_opt));
             }
         }
 
@@ -610,9 +632,9 @@ impl Args {
             includes,
             descriptor_set: descriptor_set.unwrap(),
             out_librs: out_librs.unwrap(),
-            rustfmt,
             proto_paths,
             is_tonic,
+            is_prost_serde,
             label: label.unwrap(),
             extra_args,
         })
@@ -715,9 +737,9 @@ fn main() {
         includes,
         descriptor_set,
         out_librs,
-        rustfmt,
         proto_paths,
         is_tonic,
+        is_prost_serde,
         extra_args,
     } = Args::parse().expect("Failed to parse args");
 
@@ -736,6 +758,9 @@ fn main() {
     cmd.arg(format!("--prost_out={}", out_dir.display()));
     if is_tonic {
         cmd.arg(format!("--tonic_out={}", out_dir.display()));
+    }
+    if is_prost_serde {
+        cmd.arg(format!("--prost-serde_out={}", out_dir.display()));
     }
     cmd.args(extra_args);
     cmd.args(
@@ -830,7 +855,11 @@ fn main() {
         .expect("Failed to compute proto package info");
 
     // Write outputs
-    fs::write(&out_librs, generate_lib_rs(&rust_files, is_tonic)).expect("Failed to write file.");
+    fs::write(
+        &out_librs,
+        generate_lib_rs(&rust_files, is_tonic, is_prost_serde),
+    )
+    .expect("Failed to write file.");
     fs::write(
         package_info_file,
         extern_paths
@@ -840,23 +869,6 @@ fn main() {
             .join("\n"),
     )
     .expect("Failed to write file.");
-
-    // Finally run rustfmt on the output lib.rs file
-    if let Some(rustfmt) = rustfmt {
-        let fmt_status = process::Command::new(rustfmt)
-            .arg("--edition")
-            .arg("2021")
-            .arg("--quiet")
-            .arg(&out_librs)
-            .status()
-            .expect("Failed to spawn rustfmt process");
-        if !fmt_status.success() {
-            panic!(
-                "rustfmt failed with exit code: {}",
-                fmt_status.code().expect("Failed to get exit code")
-            );
-        }
-    }
 }
 
 /// Rust built-in keywords and reserved keywords.
