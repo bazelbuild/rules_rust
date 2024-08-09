@@ -114,7 +114,7 @@ def _rustfmt_aspect_impl(target, ctx):
 
     return [
         OutputGroupInfo(
-            rustfmt_checks = depset([marker]),
+            _validation = depset([marker]),
         ),
     ]
 
@@ -125,7 +125,7 @@ This aspect is used to gather information about a crate for use in rustfmt and p
 
 Output Groups:
 
-- `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
+- `_validation`: Executes `rustfmt --check` on the specified target.
 
 The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
 used at runtime.
