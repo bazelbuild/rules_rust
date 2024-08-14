@@ -263,7 +263,7 @@ def _create_single_crate(ctx, attrs, info):
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
     crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases.items()}
     crate["cfg"] = info.cfgs
-    crate["target"] = find_toolchain(ctx).target_triple.str
+    crate["target"] = find_toolchain(ctx).target_flag_value
     if info.proc_macro_dylib_path != None:
         crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib_path
     return crate
