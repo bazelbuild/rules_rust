@@ -721,6 +721,8 @@ impl TreeResolver {
                 if let Some(source) = pm.source.as_ref() {
                     let mut detail = DependencyDetailWithOrd(cargo_toml::DependencyDetail {
                         package: Some(pm.name.clone()),
+                        // Don't forcibly enable default features - if some other dependency enables them, they will still be enabled.
+                        default_features: false,
                         ..cargo_toml::DependencyDetail::default()
                     });
 

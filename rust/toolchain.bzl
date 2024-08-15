@@ -698,7 +698,6 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _experimental_toolchain_generated_sysroot = ctx.attr._experimental_toolchain_generated_sysroot[IncompatibleFlagInfo].enabled,
-        _incompatible_no_rustc_sysroot_env = ctx.attr._incompatible_no_rustc_sysroot_env[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
     )
     return [
@@ -889,9 +888,6 @@ rust_toolchain = rule(
                 "Label to a boolean build setting that informs the target build whether a global allocator is being used." +
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
             ),
-        ),
-        "_incompatible_no_rustc_sysroot_env": attr.label(
-            default = Label("//rust/settings:incompatible_no_rustc_sysroot_env"),
         ),
         "_no_std": attr.label(
             default = Label("//:no_std"),
