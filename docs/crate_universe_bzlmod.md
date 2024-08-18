@@ -322,11 +322,7 @@ sys_deps()
 
 Now, you can build the project as usual.
 
-There are some examples of using crate_universe with bzlmod:
-
-* https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/hello_world/MODULE.bazel
-* https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/override_target/MODULE.bazel
-* https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/all_crate_deps/MODULE.bazel
+There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/).
 
 <a id="crate"></a>
 
