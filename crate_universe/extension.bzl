@@ -405,6 +405,7 @@ _from_cargo = tag_class(
         generate_binaries = CRATES_VENDOR_ATTRS["generate_binaries"],
         generate_build_scripts = CRATES_VENDOR_ATTRS["generate_build_scripts"],
         supported_platform_triples = CRATES_VENDOR_ATTRS["supported_platform_triples"],
+        quiet = attr.bool(default = True),
     ),
 )
 
