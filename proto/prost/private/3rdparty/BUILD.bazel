@@ -6,14 +6,6 @@ crates_vendor(
     annotations = {
         "protoc-gen-prost": [crate.annotation(
             gen_binaries = ["protoc-gen-prost"],
-            patch_args = [
-                "-p1",
-            ],
-            patches = [
-                # This patch is needed to handle duplicate package names.
-                # See: https://github.com/neoeinstein/protoc-gen-prost/issues/70
-                "@rules_rust//proto/prost/private/3rdparty/patches:protoc-gen-prost.patch",
-            ],
         )],
         "protoc-gen-tonic": [crate.annotation(
             gen_binaries = ["protoc-gen-tonic"],
@@ -23,29 +15,29 @@ crates_vendor(
     mode = "remote",
     packages = {
         "h2": crate.spec(
-            version = "0.3.19",
+            version = "0.4.6",
         ),
         "prost": crate.spec(
-            version = "0.11.9",
+            version = "0.13.1",
         ),
         "prost-types": crate.spec(
-            version = "0.11.9",
+            version = "0.13.1",
         ),
         "protoc-gen-prost": crate.spec(
-            version = "0.2.2",
+            version = "0.4.0",
         ),
         "protoc-gen-tonic": crate.spec(
-            version = "0.2.2",
+            version = "0.4.0",
         ),
         "tokio": crate.spec(
             features = ["full"],
-            version = "1.28.2",
+            version = "1.39.3",
         ),
         "tokio-stream": crate.spec(
-            version = "0.1.14",
+            version = "0.1.15",
         ),
         "tonic": crate.spec(
-            version = "0.9.2",
+            version = "0.12.1",
         ),
     },
     repository_name = "rules_rust_prost",
