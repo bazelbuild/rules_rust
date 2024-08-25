@@ -48,6 +48,8 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [],
         "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -93,6 +95,12 @@ rust_library(
             "@cui__cpufeatures-0.2.9//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
+            "@cui__cpufeatures-0.2.9//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos": [
+            "@cui__cpufeatures-0.2.9//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-visionos-sim": [
             "@cui__cpufeatures-0.2.9//:cpufeatures",  # cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))
         ],
         "@rules_rust//rust/platform:aarch64-fuchsia": [

@@ -1,5 +1,5 @@
 {
-  "checksum": "4d9acbc9212bf7c50d1ffa6f0fd8c6c437504cf1e4d6cfbccae5b1b7504e615f",
+  "checksum": "b41db4d0c46142f4b4ff8fd78d1e0f74b8d1574be3239c51a12c4fb84ea73dd4",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -120,6 +120,12 @@
     ],
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
+    ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
     ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"

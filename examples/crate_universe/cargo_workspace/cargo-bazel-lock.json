@@ -1,5 +1,5 @@
 {
-  "checksum": "c1b765392fa7ad28bec4befe20619072584a0cdb72cc907249d3d45d736f088b",
+  "checksum": "f90d25158d4bed373fa1116b0b114a1bc8e27a511d7b8cfa0c598a3466fbf569",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -277,6 +277,18 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "ansi_term 0.12.1",
+                "target": "ansi_term"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "ansi_term 0.12.1",
+                "target": "ansi_term"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "ansi_term 0.12.1",
                 "target": "ansi_term"
@@ -897,6 +909,18 @@
               }
             ],
             "aarch64-apple-ios-sim": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-apple-visionos": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "aarch64-apple-visionos-sim": [
               {
                 "id": "libc 0.2.139",
                 "target": "libc"
@@ -1849,6 +1873,12 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
+    "aarch64-apple-visionos": [
+      "aarch64-apple-visionos"
+    ],
+    "aarch64-apple-visionos-sim": [
+      "aarch64-apple-visionos-sim"
+    ],
     "aarch64-fuchsia": [
       "aarch64-fuchsia"
     ],
@@ -1881,6 +1911,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
@@ -1927,6 +1959,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-apple-visionos",
+      "aarch64-apple-visionos-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",

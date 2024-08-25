@@ -2034,7 +2034,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     if toolchain.target_os == "windows":
         make_link_flags = _make_link_flags_windows_msvc if toolchain.target_triple.abi == "msvc" else _make_link_flags_windows_gnu
         get_lib_name = get_lib_name_for_windows
-    elif toolchain.target_os.startswith(("mac", "darwin", "ios")):
+    elif toolchain.target_os.startswith(("mac", "darwin", "ios", "visionos")):
         make_link_flags = _make_link_flags_darwin
         get_lib_name = get_lib_name_default
     else:

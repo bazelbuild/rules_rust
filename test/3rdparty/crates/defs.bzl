@@ -295,8 +295,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde": Label("@t3p__serde-1.0.205//:serde"),
-            "serde_json": Label("@t3p__serde_json-1.0.122//:serde_json"),
+            "serde": Label("@t3p__serde-1.0.209//:serde"),
+            "serde_json": Label("@t3p__serde_json-1.0.127//:serde_json"),
         },
     },
 }
@@ -362,6 +362,8 @@ _CONDITIONS = {
     "aarch64-apple-darwin": ["@rules_rust//rust/platform:aarch64-apple-darwin"],
     "aarch64-apple-ios": ["@rules_rust//rust/platform:aarch64-apple-ios"],
     "aarch64-apple-ios-sim": ["@rules_rust//rust/platform:aarch64-apple-ios-sim"],
+    "aarch64-apple-visionos": ["@rules_rust//rust/platform:aarch64-apple-visionos"],
+    "aarch64-apple-visionos-sim": ["@rules_rust//rust/platform:aarch64-apple-visionos-sim"],
     "aarch64-fuchsia": ["@rules_rust//rust/platform:aarch64-fuchsia"],
     "aarch64-linux-android": ["@rules_rust//rust/platform:aarch64-linux-android"],
     "aarch64-pc-windows-msvc": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
@@ -435,12 +437,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "t3p__quote-1.0.36",
-        sha256 = "0fa76aaf39101c457836aec0ce2316dbdc3ab723cdda1c6bd4e6ad4208acaca7",
+        name = "t3p__quote-1.0.37",
+        sha256 = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/quote/1.0.36/download"],
-        strip_prefix = "quote-1.0.36",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.quote-1.0.36.bazel"),
+        urls = ["https://static.crates.io/crates/quote/1.0.37/download"],
+        strip_prefix = "quote-1.0.37",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.quote-1.0.37.bazel"),
     )
 
     maybe(
@@ -455,42 +457,42 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "t3p__serde-1.0.205",
-        sha256 = "e33aedb1a7135da52b7c21791455563facbbcc43d0f0f66165b42c21b3dfb150",
+        name = "t3p__serde-1.0.209",
+        sha256 = "99fce0ffe7310761ca6bf9faf5115afbc19688edd00171d81b1bb1b116c63e09",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde/1.0.205/download"],
-        strip_prefix = "serde-1.0.205",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde-1.0.205.bazel"),
+        urls = ["https://static.crates.io/crates/serde/1.0.209/download"],
+        strip_prefix = "serde-1.0.209",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde-1.0.209.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "t3p__serde_derive-1.0.205",
-        sha256 = "692d6f5ac90220161d6774db30c662202721e64aed9058d2c394f451261420c1",
+        name = "t3p__serde_derive-1.0.209",
+        sha256 = "a5831b979fd7b5439637af1752d535ff49f4860c0f341d1baeb6faf0f4242170",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_derive/1.0.205/download"],
-        strip_prefix = "serde_derive-1.0.205",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_derive-1.0.205.bazel"),
+        urls = ["https://static.crates.io/crates/serde_derive/1.0.209/download"],
+        strip_prefix = "serde_derive-1.0.209",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_derive-1.0.209.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "t3p__serde_json-1.0.122",
-        sha256 = "784b6203951c57ff748476b126ccb5e8e2959a5c19e5c617ab1956be3dbc68da",
+        name = "t3p__serde_json-1.0.127",
+        sha256 = "8043c06d9f82bd7271361ed64f415fe5e12a77fdb52e573e7f06a516dea329ad",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.122/download"],
-        strip_prefix = "serde_json-1.0.122",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_json-1.0.122.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.127/download"],
+        strip_prefix = "serde_json-1.0.127",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.serde_json-1.0.127.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "t3p__syn-2.0.72",
-        sha256 = "dc4b9b9bf2add8093d3f2c0204471e951b2285580335de42f9d2534f3ae7a8af",
+        name = "t3p__syn-2.0.76",
+        sha256 = "578e081a14e0cefc3279b0472138c513f37b41a08d5a3cca9b6e4e8ceb6cd525",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.72/download"],
-        strip_prefix = "syn-2.0.72",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.syn-2.0.72.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.76/download"],
+        strip_prefix = "syn-2.0.76",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.syn-2.0.76.bazel"),
     )
 
     maybe(
@@ -504,6 +506,6 @@ def crate_repositories():
     )
 
     return [
-        struct(repo = "t3p__serde-1.0.205", is_dev_dep = False),
-        struct(repo = "t3p__serde_json-1.0.122", is_dev_dep = False),
+        struct(repo = "t3p__serde-1.0.209", is_dev_dep = False),
+        struct(repo = "t3p__serde_json-1.0.127", is_dev_dep = False),
     ]
