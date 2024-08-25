@@ -63,7 +63,7 @@ alias(
 
 alias(
     name = "cargo_toml",
-    actual = "@cui__cargo_toml-0.19.2//:cargo_toml",
+    actual = "@cui__cargo_toml-0.20.4//:cargo_toml",
     tags = ["manual"],
 )
 
@@ -141,7 +141,7 @@ alias(
 
 alias(
     name = "serde",
-    actual = "@cui__serde-1.0.190//:serde",
+    actual = "@cui__serde-1.0.209//:serde",
     tags = ["manual"],
 )
 
@@ -195,7 +195,7 @@ alias(
 
 alias(
     name = "toml",
-    actual = "@cui__toml-0.8.10//:toml",
+    actual = "@cui__toml-0.8.19//:toml",
     tags = ["manual"],
 )
 
