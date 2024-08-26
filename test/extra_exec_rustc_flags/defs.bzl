@@ -28,9 +28,6 @@ with_extra_exec_rustc_flags_cfg = rule(
             allow_files = True,
             cfg = _extra_exec_rustc_flags_transition,
         ),
-        "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
     },
 )
 
