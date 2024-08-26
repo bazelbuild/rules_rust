@@ -37,6 +37,7 @@ def _internal_deps_impl(module_ctx):
 
 # This is named a single character to reduce the size of path names when running build scripts, to reduce the chance
 # of hitting the 260 character windows path name limit.
+# TODO: https://github.com/bazelbuild/rules_rust/issues/1120
 i = module_extension(
     doc = "Dependencies for rules_rust",
     implementation = _internal_deps_impl,
