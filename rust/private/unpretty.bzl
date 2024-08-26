@@ -291,9 +291,6 @@ rust_unpretty = rule(
             values = _UNPRETTY_MODES,
             default = "expanded",
         ),
-        "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
         "_unpretty_modes": attr.label(
             doc = "The values to pass to `--unpretty`",
             providers = [RustUnprettyInfo],

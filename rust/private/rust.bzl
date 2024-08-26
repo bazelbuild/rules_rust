@@ -888,9 +888,6 @@ rust_static_library = rule(
             doc = "Optional platform to transition the static library to.",
             default = None,
         ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
     }.items()),
     fragments = ["cpp"],
     cfg = _rust_static_library_transition,
@@ -933,9 +930,6 @@ rust_shared_library = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
         "_use_grep_includes": attr.bool(default = True),
     }.items()),
@@ -980,9 +974,6 @@ rust_proc_macro = rule(
     # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
     attrs = dict(
         _common_attrs.items(),
-        _allowlist_function_transition = attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
         deps = attr.label_list(
             doc = dedent("""\
                 List of other libraries to be linked to this library target.
@@ -1065,9 +1056,6 @@ rust_binary = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     }.items()),
     executable = True,
@@ -1208,9 +1196,6 @@ rust_binary_without_process_wrapper = rule(
             doc = "Optional platform to transition the binary to.",
             default = None,
         ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
     }.items()),
     executable = True,
     fragments = ["cpp"],
@@ -1254,9 +1239,6 @@ rust_test = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     }.items()),
     executable = True,
