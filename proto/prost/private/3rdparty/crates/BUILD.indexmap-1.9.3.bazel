@@ -29,9 +29,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -94,9 +91,6 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
-    crate_features = [
-        "std",
-    ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
@@ -126,7 +120,7 @@ cargo_build_script(
     version = "1.9.3",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_prost__autocfg-1.1.0//:autocfg",
+        "@rules_rust_prost__autocfg-1.3.0//:autocfg",
     ],
 )
 

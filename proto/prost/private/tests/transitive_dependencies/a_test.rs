@@ -20,7 +20,7 @@ fn test_b() {
             name: "b".to_string(),
             c: Some(C {
                 name: "c".to_string(),
-                duration: Some(duration.clone()),
+                duration: Some(duration),
                 ..Default::default()
             }),
             ..Default::default()

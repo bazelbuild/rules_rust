@@ -430,7 +430,10 @@ def _rust_test_impl(ctx):
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-    providers.append(testing.TestEnvironment(env))
+    providers.append(RunEnvironmentInfo(
+        environment = env,
+        inherited_environment = ctx.attr.env_inherit,
+    ))
 
     return providers
 
@@ -769,6 +772,9 @@ _rust_test_attrs = dict({
             Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
+    ),
+    "env_inherit": attr.string_list(
+        doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
