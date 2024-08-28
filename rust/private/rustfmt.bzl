@@ -235,13 +235,15 @@ def _rustfmt_test_impl(ctx):
             runfiles = runfiles,
             executable = runner,
         ),
-        testing.TestEnvironment({
-            "RUSTFMT_MANIFESTS": ctx.configuration.host_path_separator.join([
-                workspace + "/" + manifest.short_path
-                for manifest in sorted(manifests.to_list())
-            ]),
-            "RUST_BACKTRACE": "1",
-        }),
+        RunEnvironmentInfo(
+            environment = {
+                "RUSTFMT_MANIFESTS": ctx.configuration.host_path_separator.join([
+                    workspace + "/" + manifest.short_path
+                    for manifest in sorted(manifests.to_list())
+                ]),
+                "RUST_BACKTRACE": "1",
+            },
+        ),
     ]
 
 rustfmt_test = rule(

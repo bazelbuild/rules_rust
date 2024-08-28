@@ -99,19 +99,18 @@ def _clippy_aspect_impl(target, ctx):
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
-    dep_info, build_info, linkstamps = collect_deps(
+    dep_info, build_info, _ = collect_deps(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
-        # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
-        are_linkstamps_supported = False,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
-        linkstamps,
+        # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
+        depset([]),
         toolchain,
         cc_toolchain,
         feature_configuration,

@@ -44,10 +44,10 @@ def rust_prost_dependencies(bzlmod = False):
     maybe(
         http_archive,
         name = "rules_rust_prost__heck",
-        sha256 = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8",
+        integrity = "sha256-IwTgCYP4f/s4tVtES147YKiEtdMMD8p9gv4zRJu+Veo=",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/heck/heck-0.4.1.crate"],
-        strip_prefix = "heck-0.4.1",
-        build_file = Label("@rules_rust//proto/prost/private/3rdparty/crates:BUILD.heck-0.4.1.bazel"),
+        urls = ["https://static.crates.io/crates/heck/heck-0.5.0.crate"],
+        strip_prefix = "heck-0.5.0",
+        build_file = Label("@rules_rust//proto/prost/private/3rdparty/crates:BUILD.heck-0.5.0.bazel"),
     )
     return direct_deps

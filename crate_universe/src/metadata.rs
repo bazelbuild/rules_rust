@@ -3,7 +3,7 @@
 mod dependency;
 mod metadata_annotation;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -19,6 +19,7 @@ use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
+use url::Url;
 
 use crate::config::CrateId;
 use crate::lockfile::Digest;
@@ -707,7 +708,7 @@ impl TreeResolver {
             .manifest_path(pristine_manifest_path)
             .exec()
             .context("Failed to run cargo metadata to list transitive proc macros")?;
-        let proc_macros: BTreeSet<_> = cargo_metadata
+        let proc_macros = cargo_metadata
             .packages
             .iter()
             .filter(|p| {
@@ -715,8 +716,30 @@ impl TreeResolver {
                     .iter()
                     .any(|t| t.kind.iter().any(|k| k == "proc-macro"))
             })
-            .map(|pm| (pm.name.clone(), pm.version.to_string()))
-            .collect();
+            // Filter out any in-workspace proc macros, populate dependency details for non-in-workspace proc macros.
+            .filter_map(|pm| {
+                if let Some(source) = pm.source.as_ref() {
+                    let mut detail = DependencyDetailWithOrd(cargo_toml::DependencyDetail {
+                        package: Some(pm.name.clone()),
+                        // Don't forcibly enable default features - if some other dependency enables them, they will still be enabled.
+                        default_features: false,
+                        ..cargo_toml::DependencyDetail::default()
+                    });
+
+                    let source = match Source::parse(&source.repr, pm.version.to_string()) {
+                        Ok(source) => source,
+                        Err(err) => {
+                            return Some(Err(err));
+                        }
+                    };
+                    source.populate_details(&mut detail.0);
+
+                    Some(Ok((pm.name.clone(), detail)))
+                } else {
+                    None
+                }
+            })
+            .collect::<Result<BTreeSet<_>>>()?;
 
         let mut manifest =
             cargo_toml::Manifest::from_path(pristine_manifest_path).with_context(|| {
@@ -747,25 +770,158 @@ impl TreeResolver {
             }
         }
 
-        for (dep_name, dep_version) in proc_macros {
-            let detail = cargo_toml::DependencyDetail {
-                package: Some(dep_name.clone()),
-                version: Some(dep_version.clone()),
-                ..cargo_toml::DependencyDetail::default()
-            };
+        let mut count_map: HashMap<_, u64> = HashMap::new();
+        for (dep_name, detail) in proc_macros {
+            let count = count_map.entry(dep_name.clone()).or_default();
             manifest.dependencies.insert(
-                format!(
-                    "rules_rust_fake_proc_macro_root_{}_{}",
-                    dep_name,
-                    dep_version.replace(['.', '+'], "_")
-                ),
-                cargo_toml::Dependency::Detailed(Box::new(detail)),
+                format!("rules_rust_fake_proc_macro_root_{}_{}", dep_name, count),
+                cargo_toml::Dependency::Detailed(Box::new(detail.0)),
             );
+            *count += 1;
         }
         let manifest_path_with_transitive_proc_macros = working_directory.path().join("Cargo.toml");
         crate::splicing::write_manifest(&manifest_path_with_transitive_proc_macros, &manifest)?;
         Ok((manifest_path_with_transitive_proc_macros, working_directory))
     }
+}
+
+// cargo_toml::DependencyDetail doesn't implement PartialOrd/Ord so can't be put in a sorted collection.
+// Wrap it so we can sort things for stable orderings.
+#[derive(Debug, PartialEq)]
+struct DependencyDetailWithOrd(cargo_toml::DependencyDetail);
+
+impl PartialOrd for DependencyDetailWithOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for DependencyDetailWithOrd {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let cargo_toml::DependencyDetail {
+            version,
+            registry,
+            registry_index,
+            path,
+            inherited,
+            git,
+            branch,
+            tag,
+            rev,
+            features,
+            optional,
+            default_features,
+            package,
+            unstable: _,
+        } = &self.0;
+
+        version
+            .cmp(&other.0.version)
+            .then(registry.cmp(&other.0.registry))
+            .then(registry_index.cmp(&other.0.registry_index))
+            .then(path.cmp(&other.0.path))
+            .then(inherited.cmp(&other.0.inherited))
+            .then(git.cmp(&other.0.git))
+            .then(branch.cmp(&other.0.branch))
+            .then(tag.cmp(&other.0.tag))
+            .then(rev.cmp(&other.0.rev))
+            .then(features.cmp(&other.0.features))
+            .then(optional.cmp(&other.0.optional))
+            .then(default_features.cmp(&other.0.default_features))
+            .then(package.cmp(&other.0.package))
+    }
+}
+
+impl Eq for DependencyDetailWithOrd {}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Source {
+    Registry {
+        registry: String,
+        version: String,
+    },
+    Git {
+        git: String,
+        rev: Option<String>,
+        branch: Option<String>,
+        tag: Option<String>,
+    },
+}
+
+impl Source {
+    fn parse(string: &str, version: String) -> Result<Source> {
+        let url: Url = Url::parse(string)?;
+        let original_scheme = url.scheme().to_owned();
+        let scheme_parts: Vec<_> = original_scheme.split('+').collect();
+        match &scheme_parts[..] {
+            // e.g. registry+https://github.com/rust-lang/crates.io-index
+            ["registry", scheme] => {
+                let new_url = set_url_scheme_despite_the_url_crate_not_wanting_us_to(&url, scheme)?;
+                Ok(Self::Registry {
+                    registry: new_url,
+                    version,
+                })
+            }
+            // e.g. git+https://github.com/serde-rs/serde.git?rev=9b868ef831c95f50dd4bde51a7eb52e3b9ee265a#9b868ef831c95f50dd4bde51a7eb52e3b9ee265a
+            ["git", scheme] => {
+                let mut query: HashMap<String, String> = url
+                    .query_pairs()
+                    .map(|(k, v)| (k.into_owned(), v.into_owned()))
+                    .collect();
+
+                let mut url = url;
+                url.set_fragment(None);
+                url.set_query(None);
+                let new_url = set_url_scheme_despite_the_url_crate_not_wanting_us_to(&url, scheme)?;
+
+                Ok(Self::Git {
+                    git: new_url,
+                    rev: query.remove("rev"),
+                    branch: query.remove("branch"),
+                    tag: query.remove("tag"),
+                })
+            }
+            _ => {
+                anyhow::bail!(
+                    "Couldn't parse source {:?}: Didn't recognise scheme",
+                    string
+                );
+            }
+        }
+    }
+
+    fn populate_details(self, details: &mut cargo_toml::DependencyDetail) {
+        match self {
+            Self::Registry { registry, version } => {
+                details.registry_index = Some(registry);
+                details.version = Some(version);
+            }
+            Self::Git {
+                git,
+                rev,
+                branch,
+                tag,
+            } => {
+                details.git = Some(git);
+                details.rev = rev;
+                details.branch = branch;
+                details.tag = tag;
+            }
+        }
+    }
+}
+
+fn set_url_scheme_despite_the_url_crate_not_wanting_us_to(
+    url: &Url,
+    new_scheme: &str,
+) -> Result<String> {
+    let (_old_scheme, new_url_without_scheme) = url.as_str().split_once(':').ok_or_else(|| {
+        anyhow::anyhow!(
+            "Cannot set schme of URL which doesn't contain \":\": {:?}",
+            url
+        )
+    })?;
+    Ok(format!("{new_scheme}:{new_url_without_scheme}"))
 }
 
 /// Parses the output of `cargo tree --format=|{p}|{f}|`. Other flags may be
@@ -1264,5 +1420,35 @@ mod test {
                 entry
             );
         }
+    }
+
+    #[test]
+    fn parse_registry_source() {
+        let source = Source::parse(
+            "registry+https://github.com/rust-lang/crates.io-index",
+            "1.0.1".to_owned(),
+        )
+        .unwrap();
+        assert_eq!(
+            source,
+            Source::Registry {
+                registry: "https://github.com/rust-lang/crates.io-index".to_owned(),
+                version: "1.0.1".to_owned()
+            }
+        );
+    }
+
+    #[test]
+    fn parse_git_source() {
+        let source = Source::parse("git+https://github.com/serde-rs/serde.git?rev=9b868ef831c95f50dd4bde51a7eb52e3b9ee265a#9b868ef831c95f50dd4bde51a7eb52e3b9ee265a", "unused".to_owned()).unwrap();
+        assert_eq!(
+            source,
+            Source::Git {
+                git: "https://github.com/serde-rs/serde.git".to_owned(),
+                rev: Some("9b868ef831c95f50dd4bde51a7eb52e3b9ee265a".to_owned()),
+                branch: None,
+                tag: None,
+            }
+        );
     }
 }

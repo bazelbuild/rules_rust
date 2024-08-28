@@ -100,7 +100,7 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "cu",
@@ -109,18 +109,10 @@ crates_repository(
     # See load statement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
     lockfile = "//:Cargo.Bazel.lock.json",
-    packages = {
-        # This package has a platform-specific dependency on zbus, which depends on the derivative proc-macro.
-        # This is here to ensure feature resolution works even if exec != target.
-        "keyring": crate.spec(
-            version = "=2.3.3",
-        ),
-        # If we just to top-level per-platform resolves, we end up with platform-specific features on this crate, such that the `visit` feature is only enabled on Linux.
-        # This causes problems when cross-compiling and using this crate from a proc-macro, because we compile the proc-macro against syn with features resolved for the wrong platform.
-        "syn": crate.spec(
-            version = "=1.0.109",
-        ),
-    },
+    manifests = [
+        "//:Cargo.toml",
+        "//:local_proc_macro/Cargo.toml",
+    ],
 )
 
 load("@cu//:defs.bzl", "crate_repositories")

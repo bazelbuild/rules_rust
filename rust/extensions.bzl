@@ -11,6 +11,11 @@ load(
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
 
+_RUST_TOOLCHAIN_VERSIONS = [
+    rust_common.default_version,
+    DEFAULT_NIGHTLY_VERSION,
+]
+
 def _find_modules(module_ctx):
     root = None
     our_module = None
@@ -89,7 +94,7 @@ _RUST_TOOLCHAIN_TAG = tag_class(
                 "A list of toolchain versions to download. This paramter only accepts one versions " +
                 "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`."
             ),
-            default = [],
+            default = _RUST_TOOLCHAIN_VERSIONS,
         ),
         **_COMMON_TAG_KWARGS
     ),
@@ -120,22 +125,14 @@ def _rust_host_tools_impl(module_ctx):
     if len(root.tags.host_tools) == 1:
         attrs = root.tags.host_tools[0]
 
-        iso_date = None
-        version = attrs.version
-
-        # Any version containing a slash is expected to be a nightly/beta release with iso date. E.g. `nightly/2024-03-21`
-        if "/" in version:
-            version, _, iso_date = version.partition("/")
-
         host_tools = {
             "allocator_library": attrs.allocator_library,
             "dev_components": attrs.dev_components,
             "edition": attrs.edition,
-            "iso_date": iso_date,
             "rustfmt_version": attrs.rustfmt_version,
             "sha256s": attrs.sha256s,
             "urls": attrs.urls,
-            "version": version,
+            "version": attrs.version,
         }
     elif not root.tags.host_tools:
         host_tools = {

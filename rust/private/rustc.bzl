@@ -40,6 +40,12 @@ load(
 )
 load(":utils.bzl", "is_std_dylib")
 
+# This feature is disabled unless one of the dependencies is a cc_library.
+# Authors of C++ toolchains can place linker flags that should only be applied
+# when linking with C objects in a feature with this name, or require this
+# feature from other features which needs to be disabled together.
+RUST_LINK_CC_FEATURE = "rules_rust_link_cc"
+
 BuildInfo = _BuildInfo
 
 AliasableDepInfo = provider(
@@ -195,21 +201,19 @@ def _is_proc_macro(crate_info):
 def collect_deps(
         deps,
         proc_macro_deps,
-        aliases,
-        are_linkstamps_supported = False):
+        aliases):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
-        are_linkstamps_supported (bool): Whether the current rule and the toolchain support building linkstamps..
 
     Returns:
         tuple: Returns a tuple of:
             DepInfo,
             BuildInfo,
-            linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
+            linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries when applicable.
 
     """
     direct_crates = []
@@ -249,7 +253,7 @@ def collect_deps(
         cc_info = _get_cc_info(dep)
         dep_build_info = _get_build_info(dep)
 
-        if cc_info and are_linkstamps_supported:
+        if cc_info:
             linkstamps.append(cc_info.linking_context.linkstamps())
 
         if crate_info:
@@ -1064,8 +1068,6 @@ def construct_arguments(
         ))
 
     # Ensure the sysroot is set for the target platform
-    if not toolchain._incompatible_no_rustc_sysroot_env:
-        env["SYSROOT"] = toolchain.sysroot
     if toolchain._experimental_toolchain_generated_sysroot:
         rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
@@ -1150,8 +1152,6 @@ def rustc_compile_action(
     rustc_output = crate_info_dict.get("rustc_output", None)
     rustc_rmeta_output = crate_info_dict.get("rustc_rmeta_output", None)
 
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
     #  * or if experimental_use_cc_common_link is -1 and
@@ -1169,11 +1169,17 @@ def rustc_compile_action(
         deps = crate_info_dict["deps"],
         proc_macro_deps = crate_info_dict["proc_macro_deps"],
         aliases = crate_info_dict["aliases"],
-        are_linkstamps_supported = _are_linkstamps_supported(
-            feature_configuration = feature_configuration,
-            has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
-        ),
     )
+    extra_disabled_features = [RUST_LINK_CC_FEATURE]
+    if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
+        # One or more of the transitive deps is a cc_library / cc_import
+        extra_disabled_features = []
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
+    if not _are_linkstamps_supported(
+        feature_configuration = feature_configuration,
+        has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
+    ):
+        linkstamps = depset([])
 
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)

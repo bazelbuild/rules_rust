@@ -1,5 +1,5 @@
 {
-  "checksum": "6c70ce4d4d0e2e18d9771d40354c24e3c605fdb3b38ae9f2a858177e372275aa",
+  "checksum": "cd202eb9923ed2d53c7f86e33d05c74e32052c428a6c49bc42876c70cefd1429",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -7072,6 +7072,7 @@
         ],
         "crate_features": {
           "common": [
+            "default",
             "proc-macro-crate",
             "std"
           ],
@@ -12909,10 +12910,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -13050,10 +13056,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -13108,10 +13119,15 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "spans"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-unknown-unknown": [
+              "spans"
+            ],
+            "wasm32-wasi": [
+              "spans"
+            ]
+          }
         },
         "deps": {
           "common": [

@@ -92,7 +92,7 @@ rust_library(
     }),
     version = "0.14.30",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.7.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.7.1:bytes",
         "//vendor_local_pkgs/crates/futures-channel-0.3.30:futures_channel",
         "//vendor_local_pkgs/crates/futures-core-0.3.30:futures_core",
         "//vendor_local_pkgs/crates/futures-util-0.3.30:futures_util",
