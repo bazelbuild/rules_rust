@@ -4,7 +4,7 @@ load("//rust:defs.bzl", "rust_test")
 cargo_build_script(
     name = "rundir_build_rs",
     srcs = ["build.rs"],
-    data = ["data"],
+    data = ["data.txt"],
     edition = "2018",
     rundir = ".",
 )

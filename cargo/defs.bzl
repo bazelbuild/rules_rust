@@ -6,12 +6,12 @@ load(
     _cargo_env = "cargo_env",
 )
 load(
-    "//cargo/private:cargo_build_script.bzl",
-    _cargo_dep_env = "cargo_dep_env",
-)
-load(
     "//cargo/private:cargo_build_script_wrapper.bzl",
     _cargo_build_script = "cargo_build_script",
+)
+load(
+    "//cargo/private:cargo_dep_env.bzl",
+    _cargo_dep_env = "cargo_dep_env",
 )
 
 cargo_bootstrap_repository = _cargo_bootstrap_repository
