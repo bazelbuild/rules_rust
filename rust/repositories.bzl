@@ -235,11 +235,11 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions):
+        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with = None):
             toolchain_names.append(toolchain.name)
             toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
-            target_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(toolchain.target_triple)
+            target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
             toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
 
         toolchain_names.append(rustfmt_repo_name)
@@ -923,10 +923,12 @@ rust_toolchain_set_repository = repository_rule(
     implementation = _rust_toolchain_set_repository_impl,
 )
 
-def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions):
+def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with):
+    extra_target_triples_list = extra_target_triples.keys() if type(extra_target_triples) == "dict" else extra_target_triples
+
     toolchain_repos = []
 
-    for target_triple in depset([exec_triple] + extra_target_triples).to_list():
+    for target_triple in depset([exec_triple] + extra_target_triples_list).to_list():
         # Parse all provided versions while checking for duplicates
         channels = {}
         for version in versions:
@@ -943,12 +945,20 @@ def _get_toolchain_repositories(name, exec_triple, extra_target_triples, version
                 version = version,
             )})
 
+        if type(extra_target_triples) == "dict" and target_triple in extra_target_triples:
+            target_constraints = extra_target_triples[target_triple]
+        elif fallback_target_compatible_with != None:
+            target_constraints = fallback_target_compatible_with
+        else:
+            target_constraints = triple_to_constraint_set(target_triple)
+
         # Define toolchains for each requested version
         for channel in channels.values():
             toolchain_repos.append(struct(
                 name = "{}__{}__{}".format(name, target_triple, channel.name),
                 target_triple = target_triple,
                 channel = channel,
+                target_constraints = target_constraints,
             ))
 
     return toolchain_repos
@@ -1012,20 +1022,8 @@ def rust_repository_set(
         default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
     """
 
-    # extra_target_triples may be a dict or list - make a list we can pass to _get_toolchain_repositories
-    extra_target_triples_list = []
-    for extra_target_triple in extra_target_triples:
-        extra_target_triples_list.append(extra_target_triple)
-
     all_toolchain_names = []
-    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples_list, versions):
-        target_compatible_with = None
-        if toolchain.target_triple == exec_triple:
-            # The exec triple implicitly gets a toolchain with itself as a target - use default_target_compatible_with for it
-            target_compatible_with = default_target_compatible_with
-        elif type(extra_target_triples) == "dict":
-            target_compatible_with = extra_target_triples.get(toolchain.target_triple)
-
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, default_target_compatible_with):
         # Infer toolchain-specific rustc flags depending on the type (list, dict, optional) of extra_rustc_flags
         if extra_rustc_flags == None:
             toolchain_extra_rustc_flags = []
@@ -1057,7 +1055,7 @@ def rust_repository_set(
             urls = urls,
             version = toolchain.channel.version,
             exec_compatible_with = exec_compatible_with,
-            target_compatible_with = target_compatible_with,
+            target_compatible_with = toolchain.target_constraints,
         ))
 
     # This repository exists to allow `rust_repository_set` to work with the `maybe` wrapper.
