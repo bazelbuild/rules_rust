@@ -148,7 +148,7 @@ def _rust_library_common(ctx, crate_type):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     # Determine unique hash for this rlib.
@@ -228,7 +228,7 @@ def _rust_binary_impl(ctx):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     providers = rustc_compile_action(
@@ -365,7 +365,7 @@ def _rust_test_impl(ctx):
 
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
-            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
+            crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
         srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
         output_hash = determine_output_hash(crate_root, ctx.label)
