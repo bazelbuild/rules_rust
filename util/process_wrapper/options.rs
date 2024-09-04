@@ -138,11 +138,14 @@ pub(crate) fn options() -> Result<Options, OptionError> {
                 OptionError::Generic(format!("empty key for substitution '{arg}'"))
             })?;
             let v = if val == "${pwd}" {
-                current_dir.as_str()
+                current_dir.as_str().to_owned()
+            } else if val == "${SDKROOT}" {
+                std::env::var("SDKROOT").unwrap_or(val.to_owned())
+            } else if val == "${DEVELOPER_DIR}" {
+                std::env::var("DEVELOPER_DIR").unwrap_or(val.to_owned())
             } else {
-                val
-            }
-            .to_owned();
+                val.to_owned()
+            };
             Ok((key.to_owned(), v))
         })
         .collect::<Result<Vec<(String, String)>, OptionError>>()?;
