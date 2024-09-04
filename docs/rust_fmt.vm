@@ -17,14 +17,13 @@ in your workspace. Simply run `bazel run @rules_rust//:rustfmt` to format source
 
 In addition to this formatter, a simple check can be performed using the [rustfmt_aspect](#rustfmt-aspect) aspect by running
 ```text
-bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect --output_groups=rustfmt_checks
+bazel build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 ```
 
 Add the following to a `.bazelrc` file to enable this check during the build phase.
 
 ```text
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
-build --output_groups=+rustfmt_checks
 ```
 
 It's recommended to only enable this aspect in your CI environment so formatting issues do not

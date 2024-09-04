@@ -33,11 +33,9 @@ build:nightly --//rust/toolchain/channel=nightly
 
 # Enable rustfmt for all targets in the workspace
 build:rustfmt --aspects=//rust:defs.bzl%rustfmt_aspect
-build:rustfmt --output_groups=+rustfmt_checks
 
 # Enable clippy for all targets in the workspace
 build:clippy --aspects=//rust:defs.bzl%rust_clippy_aspect
-build:clippy --output_groups=+clippy_checks
 
 # Enable unpretty for all targets in the workspace
 build:unpretty --aspects=//rust:defs.bzl%rust_unpretty_aspect

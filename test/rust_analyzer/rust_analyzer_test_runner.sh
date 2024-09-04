@@ -44,9 +44,7 @@ test --test_output=errors
 # targets that would otherwise not run due to them being tagged as "manual".
 # Note that that tag is stripped for this test.
 build:strict --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
-build:strict --output_groups=+rustfmt_checks
 build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
-build:strict --output_groups=+clippy_checks
 EOF
 
     echo "${new_workspace}"

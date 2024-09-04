@@ -94,7 +94,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
 def _clippy_aspect_impl(target, ctx):
     crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
-        return [ClippyInfo(output = depset([]))]
+        return [ClippyInfo(output = depset())]
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
@@ -196,14 +196,12 @@ def _clippy_aspect_impl(target, ctx):
     )
 
     return [
-        OutputGroupInfo(clippy_checks = depset([clippy_out])),
+        OutputGroupInfo(_validation = depset([clippy_out])),
         ClippyInfo(output = depset([clippy_out])),
     ]
 
 # Example: Run the clippy checker on all targets in the codebase.
-#   bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
-#               --output_groups=clippy_checks \
-#               //...
+#   bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect //...
 rust_clippy_aspect = aspect(
     fragments = ["cpp"],
     attrs = {
@@ -284,15 +282,14 @@ rust_test(
 Then the targets can be analyzed with clippy using the following command:
 
 ```output
-$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \
-              --output_groups=clippy_checks //hello_lib:all
+$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect //hello_lib:all
 ```
 """,
 )
 
 def _rust_clippy_rule_impl(ctx):
-    clippy_ready_targets = [dep for dep in ctx.attr.deps if "clippy_checks" in dir(dep[OutputGroupInfo])]
-    files = depset([], transitive = [dep[OutputGroupInfo].clippy_checks for dep in clippy_ready_targets])
+    clippy_ready_targets = [dep for dep in ctx.attr.deps if ClippyInfo in dep[OutputGroupInfo]]
+    files = depset([], transitive = [dep[OutputGroupInfo]._validation for dep in clippy_ready_targets])
     return [DefaultInfo(files = files)]
 
 rust_clippy = rule(
