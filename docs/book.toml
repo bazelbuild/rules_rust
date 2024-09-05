@@ -1,0 +1,6 @@
+[book]
+authors = ["UebelAndre"]
+language = "en"
+multilingual = false
+src = "src"
+title = "rules_rust"

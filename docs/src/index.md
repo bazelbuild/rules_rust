@@ -1,4 +1,4 @@
-# [Rules rust](https://github.com/bazelbuild/rules_rust)
+# [Rules Rust](https://github.com/bazelbuild/rules_rust)
 
 ## Overview
 
@@ -51,25 +51,6 @@ rust_register_toolchains()
 
 Don't forget to substitute in your desired release's version number and integrity hash.
 
-## Rules
-
-- [defs](defs.md): standard rust rules for building and testing libraries and binaries.
-- [rust_doc](rust_doc.md): rules for generating and testing rust documentation.
-- [rust_clippy](rust_clippy.md): rules for running [clippy](https://github.com/rust-lang/rust-clippy#readme).
-- [rust_fmt](rust_fmt.md): rules for running [rustfmt](https://github.com/rust-lang/rustfmt#readme).
-- [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs.
-- [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-- [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
-- [cargo](cargo.md): Rules dedicated to Cargo compatibility. ie: [`build.rs` scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
-- [crate_universe (bzlmod)](crate_universe_bzlmod.md): Rules for generating Bazel targets for external crate dependencies when using bzlmod.
-- [crate_universe (WORKSPACE)](crate_universe.md): Rules for generating Bazel targets for external crate dependencies when using WORKSPACE files.
-
-You can also browse the [full API in one page](flatten.md).
-
-### Experimental rules
-
-- [rust_analyzer](rust_analyzer.md): rules for generating `rust-project.json` files for [rust-analyzer](https://rust-analyzer.github.io/)
-
 ## Specifying Rust version
 
 To build with a particular version of the Rust compiler, pass that version to [`rust_register_toolchains`](flatten.md#rust_register_toolchains):
@@ -103,10 +84,6 @@ build --@rules_rust//rust/toolchain/channel=nightly
 ```
 
 Failure to do so will result in rules attempting to match a `stable` toolchain when one was not registered.
-
-## External Dependencies
-
-[crate_universe](crate_universe.md) ([crate_universe bzlmod](crate_universe_bzlmod.md)) is a tool built into `rules_rust` that can be used to fetch dependencies.
 
 ## Supported bazel versions
 
