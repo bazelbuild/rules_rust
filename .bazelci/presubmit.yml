@@ -539,6 +539,11 @@ tasks:
       - "//..."
       # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
       - "-//with_global_alloc/..."
+    coverage_targets:
+      - "--"
+      - "//..."
+      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
+      - "-//with_global_alloc/..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
     test_flags:
@@ -550,6 +555,8 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "//..."
+    coverage_targets:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
@@ -565,6 +572,8 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    # coverage_targets: # TODO: fix https://github.com/bazelbuild/rules_rust/issues/2838
+    #   - "//..."
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"

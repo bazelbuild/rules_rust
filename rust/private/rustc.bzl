@@ -1434,9 +1434,8 @@ def rustc_compile_action(
 
         coverage_link_flags = []
         if include_coverage:
-            # coverage fails due to gcc lacking a few linker args
-            # this fixes missing symbols and links against the c lib
-            coverage_link_flags = ["-u", "__llvm_profile_runtime", "-lc"]
+            # fixes missing symbols coverage fails due to gcc lacking a few linker args
+            coverage_link_flags = ["-u", "__llvm_profile_runtime"]
 
         cc_common.link(
             actions = ctx.actions,
