@@ -53,7 +53,7 @@ rust_library(
             "elf",  # i686-unknown-linux-gnu
             "errno",  # i686-unknown-linux-gnu
         ],
-	"@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
+        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "elf",  # s390x-unknown-linux-gnu
             "errno",  # s390x-unknown-linux-gnu
         ],
