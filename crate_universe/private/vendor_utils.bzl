@@ -9,8 +9,8 @@ _BUILDIFIER_INTEGRITY = {
     "buildifier-darwin-amd64": "sha256-d0YNlXr3oCi7GK223EP6ZLbgAGTkc+rINoq4pwOzp0M=",
     "buildifier-darwin-arm64": "sha256-yZD0sDsn1qDYb/6TAUcypZwYurDE86TMVjS9OxYp/OM=",
     "buildifier-linux-amd64": "sha256-VLfyzo8idhz60mRBbpEgVq6chkX1nrZYO4RrSGSh7oM=",
-    "buildifier-linux-s390x": "sha256-VLfyzo8idhz60mRBbpEgVq6chkX1nrZYO4RrSGSh7oM=",
     "buildifier-linux-arm64": "sha256-HZrx9pVqQ5/KKHii+/dguXyl3wD2aeXRlTvrDEYHrHE=",
+    "buildifier-linux-s390x": "sha256-VLfyzo8idhz60mRBbpEgVq6chkX1nrZYO4RrSGSh7oM=",
     "buildifier-windows-amd64.exe": "sha256-Mx2IPnyjbIu+KKHoUoqccRAvS+Yj+Tn6PSCk2PAEvqs=",
 }
 
