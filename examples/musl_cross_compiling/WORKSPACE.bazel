@@ -12,20 +12,18 @@ EDITION = "2021"
 # Before 1.80.0, proc macros couldn't be used when exec!=target where exec and target platforms use different shared library extension (i.e. so vs dylib) because of an error in rustc's handling of extensions.
 RUST_VERSION = "1.80.0"
 
-rust_register_toolchains(
-    edition = EDITION,
-)
-
 rust_repository_set(
     name = "darwin_x86_64_to_x86_64_musl_tuple",
     edition = EDITION,
     exec_triple = "x86_64-apple-darwin",
     # Setting this extra_target_triples allows differentiating the musl case from the non-musl case, in case multiple linux-targeting toolchains are registered.
-    extra_target_triples = {"x86_64-unknown-linux-musl": [
-        "@//linker_config:musl",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ]},
+    extra_target_triples = {
+        "x86_64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    },
     versions = [RUST_VERSION],
 )
 
@@ -33,11 +31,13 @@ rust_repository_set(
     name = "darwin_arm64_to_x86_64_musl_tuple",
     edition = EDITION,
     exec_triple = "aarch64-apple-darwin",
-    extra_target_triples = {"x86_64-unknown-linux-musl": [
-        "@//linker_config:musl",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ]},
+    extra_target_triples = {
+        "x86_64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    },
     versions = [RUST_VERSION],
 )
 
@@ -46,11 +46,13 @@ rust_repository_set(
     edition = EDITION,
     exec_triple = "x86_64-apple-darwin",
     # Setting this extra_target_triples allows differentiating the musl case from the non-musl case, in case multiple linux-targeting toolchains are registered.
-    extra_target_triples = {"aarch64-unknown-linux-musl": [
-        "@//linker_config:musl",
-        "@platforms//cpu:arm64",
-        "@platforms//os:linux",
-    ]},
+    extra_target_triples = {
+        "aarch64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:arm64",
+            "@platforms//os:linux",
+        ],
+    },
     versions = [RUST_VERSION],
 )
 
@@ -58,12 +60,45 @@ rust_repository_set(
     name = "darwin_arm64_to_arm64_musl_tuple",
     edition = EDITION,
     exec_triple = "aarch64-apple-darwin",
-    extra_target_triples = {"aarch64-unknown-linux-musl": [
-        "@//linker_config:musl",
-        "@platforms//cpu:arm64",
-        "@platforms//os:linux",
-    ]},
+    extra_target_triples = {
+        "aarch64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:arm64",
+            "@platforms//os:linux",
+        ],
+    },
     versions = [RUST_VERSION],
+)
+
+# This overrides a default rust_repository_set created by rust_register_toolchain.
+# It must be named exactly this, and must be called before rust_register_toolchain is.
+rust_repository_set(
+    name = "rust_linux_x86_64",
+    edition = EDITION,
+    exec_triple = "x86_64-unknown-linux-gnu",
+    # Setting this extra_target_triples allows differentiating the musl case from the non-musl case, in case multiple linux-targeting toolchains are registered.
+    extra_target_triples = {
+        "aarch64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:arm64",
+            "@platforms//os:linux",
+        ],
+        "x86_64-unknown-linux-gnu": [
+            "@//linker_config:unknown",
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+        "x86_64-unknown-linux-musl": [
+            "@//linker_config:musl",
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    },
+    versions = [RUST_VERSION],
+)
+
+rust_register_toolchains(
+    edition = EDITION,
 )
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

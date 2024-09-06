@@ -1,5 +1,5 @@
 ---
-minimum_bazel_version: &minimum_bazel_version "6.4.0"
+minimum_bazel_version: &minimum_bazel_version "7.3.1"
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -650,6 +650,14 @@ tasks:
   musl_cross_compiling_macos_to_linux:
     name: Musl cross compiling test from macOS to Linux
     platform: macos
+    working_directory: examples/musl_cross_compiling
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  musl_cross_compiling_linux_to_linux:
+    name: Musl cross compiling test from Linux to Linux
+    platform: ubuntu2204
     working_directory: examples/musl_cross_compiling
     build_targets:
       - "//..."
