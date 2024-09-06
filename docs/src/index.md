@@ -1,6 +1,4 @@
-# [Rules Rust](https://github.com/bazelbuild/rules_rust)
-
-## Overview
+# Rules Rust
 
 This repository provides rules for building [Rust][rust] projects with [Bazel][bazel].
 

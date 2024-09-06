@@ -1,5 +1,5 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Defs
+# Rust
 
 * [rust_binary](#rust_binary)
 * [rust_library](#rust_library)
