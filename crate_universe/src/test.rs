@@ -163,7 +163,7 @@ pub(crate) mod metadata {
         .unwrap()
     }
 
-    pub(crate) fn resolver_2_deps_metadata() -> cargo_metadata::Metadata {
+    pub(crate) fn resolver_2_deps() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/resolver_2_deps/metadata.json"

@@ -9,7 +9,8 @@ use cargo_metadata::{
 use cargo_platform::Platform;
 use serde::{Deserialize, Serialize};
 
-use crate::metadata::{CrateId, TreeResolverMetadata};
+use crate::config::CrateId;
+use crate::metadata::TreeResolverMetadata;
 use crate::select::Select;
 use crate::utils::sanitize_module_name;
 
@@ -905,7 +906,7 @@ mod test {
 
     #[test]
     fn tree_resolver_deps() {
-        let metadata = metadata::resolver_2_deps_metadata();
+        let metadata = metadata::resolver_2_deps();
 
         let mut select = Select::new();
         select.insert(

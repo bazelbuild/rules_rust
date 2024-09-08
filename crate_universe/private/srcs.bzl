@@ -21,6 +21,8 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/lockfile.rs"),
     Label("//crate_universe:src/main.rs"),
     Label("//crate_universe:src/metadata.rs"),
+    Label("//crate_universe:src/metadata/cargo_bin.rs"),
+    Label("//crate_universe:src/metadata/cargo_tree_resolver.rs"),
     Label("//crate_universe:src/metadata/dependency.rs"),
     Label("//crate_universe:src/metadata/metadata_annotation.rs"),
     Label("//crate_universe:src/rendering.rs"),
