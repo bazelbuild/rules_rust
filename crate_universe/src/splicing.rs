@@ -487,7 +487,8 @@ mod test {
         let path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json"
-        );
+        )
+        .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
 
@@ -571,7 +572,8 @@ mod test {
         let path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json"
-        );
+        )
+        .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
 
@@ -616,16 +618,19 @@ mod test {
         let workspace_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml"
-        );
+        )
+        .unwrap();
         let workspace_path = workspace_manifest_path.parent().unwrap().to_path_buf();
         let child_a_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_a/Cargo.toml"
-        );
+        )
+        .unwrap();
         let child_b_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_b/Cargo.toml"
-        );
+        )
+        .unwrap();
         let manifest = SplicingManifest {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([

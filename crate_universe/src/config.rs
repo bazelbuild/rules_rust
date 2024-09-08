@@ -922,7 +922,8 @@ mod test {
         let path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/serialized_configs/config.json"
-        );
+        )
+        .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
 

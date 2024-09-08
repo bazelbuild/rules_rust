@@ -103,7 +103,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
 
     splice(SpliceOptions {
         splicing_manifest,
-        cargo_lockfile: Some(runfiles::rlocation!(runfiles, lockfile)),
+        cargo_lockfile: Some(runfiles::rlocation!(runfiles, lockfile).unwrap()),
         repin: None,
         workspace_dir: None,
         output_dir: scratch.path().join("out"),
@@ -139,6 +139,7 @@ fn feature_generator() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -256,6 +257,7 @@ fn feature_generator_cfg_features() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -325,6 +327,7 @@ fn feature_generator_workspace() {
                     r,
                     "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"
                 )
+                .unwrap()
                 .to_string_lossy()
                 .to_string(),
                 "//:test_input".to_string(),
@@ -334,6 +337,7 @@ fn feature_generator_workspace() {
                     r,
                     "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml"
                 )
+                .unwrap()
                 .to_string_lossy()
                 .to_string(),
                 "//crate_universe:test_data/metadata/workspace/child/Cargo.toml".to_string(),
@@ -360,6 +364,7 @@ fn feature_generator_crate_combined_features() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -400,6 +405,7 @@ fn resolver_2_deps() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/resolver_2_deps/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),

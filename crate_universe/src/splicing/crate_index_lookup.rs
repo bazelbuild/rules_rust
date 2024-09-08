@@ -69,7 +69,8 @@ mod test {
                 runfiles::rlocation!(
                     runfiles,
                     "rules_rust/crate_universe/test_data/crate_indexes/lazy_static/cargo_home"
-                ),
+                )
+                .unwrap(),
             );
 
             let index = CrateIndexLookup::Http(
@@ -97,7 +98,7 @@ mod test {
         }
         {
             let _e = EnvVarResetter::set("CARGO_HOME", 
-                runfiles::rlocation!(runfiles, "rules_rust/crate_universe/test_data/crate_indexes/rewritten_lazy_static/cargo_home"));
+                runfiles::rlocation!(runfiles, "rules_rust/crate_universe/test_data/crate_indexes/rewritten_lazy_static/cargo_home").unwrap());
 
             let index = CrateIndexLookup::Http(
                 crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap(),

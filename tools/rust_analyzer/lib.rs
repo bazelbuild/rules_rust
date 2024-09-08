@@ -62,7 +62,8 @@ pub fn write_rust_project(
     let path = runfiles::rlocation!(
         Runfiles::create()?,
         "rules_rust/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
-    );
+    )
+    .unwrap();
     let toolchain_info: HashMap<String, String> =
         serde_json::from_str(&std::fs::read_to_string(path)?)?;
 
