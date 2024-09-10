@@ -1,5 +1,5 @@
 {
-  "checksum": "cd202eb9923ed2d53c7f86e33d05c74e32052c428a6c49bc42876c70cefd1429",
+  "checksum": "9f64f72d5c6354017434a360e024712eae4961dc31103eefd3155e3d54d59e68",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -7072,7 +7072,6 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "proc-macro-crate",
             "std"
           ],

@@ -85,10 +85,10 @@ rust_library(
         "@crates_vendor_pkgs__futures-sink-0.3.30//:futures_sink",
         "@crates_vendor_pkgs__futures-util-0.3.30//:futures_util",
         "@crates_vendor_pkgs__http-0.2.12//:http",
-        "@crates_vendor_pkgs__indexmap-2.3.0//:indexmap",
+        "@crates_vendor_pkgs__indexmap-2.5.0//:indexmap",
         "@crates_vendor_pkgs__slab-0.4.9//:slab",
-        "@crates_vendor_pkgs__tokio-1.39.2//:tokio",
-        "@crates_vendor_pkgs__tokio-util-0.7.11//:tokio_util",
+        "@crates_vendor_pkgs__tokio-1.40.0//:tokio",
+        "@crates_vendor_pkgs__tokio-util-0.7.12//:tokio_util",
         "@crates_vendor_pkgs__tracing-0.1.40//:tracing",
     ],
 )
