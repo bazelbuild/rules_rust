@@ -517,7 +517,7 @@ mod test {
                 let pkg = &metadata[&node.id];
                 pkg.name == name
             })
-            .unwrap()
+            .unwrap_or_else(|| panic!("Unable to find node '{}'", name))
     }
 
     #[test]

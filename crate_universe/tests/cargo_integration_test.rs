@@ -147,7 +147,6 @@ fn feature_generator() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu-hal 0.14.1"],
         json!({
             "common": {
                 "deps": [
@@ -236,7 +235,8 @@ fn feature_generator() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu-hal 0.14.1"],
     );
 }
 
@@ -264,7 +264,6 @@ fn feature_generator_cfg_features() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"],
         json!({
             "autocfg 1.1.0": {
                 "selects": {},
@@ -305,7 +304,8 @@ fn feature_generator_cfg_features() {
                     },
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"],
     );
 }
 
@@ -369,7 +369,6 @@ fn feature_generator_crate_combined_features() {
 
     // serde appears twice in the list of dependencies, with and without derive features
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["serde 1.0.158"]["common"],
         json!({
             "deps": [
                 "serde_derive 1.0.158",
@@ -380,7 +379,8 @@ fn feature_generator_crate_combined_features() {
                 "serde_derive",
                 "std",
             ],
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["serde 1.0.158"]["common"],
     );
 }
 
@@ -408,7 +408,6 @@ fn resolver_2_deps() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["tokio 1.37.0"],
         json!({
             "common": {
                 "deps": [
@@ -478,11 +477,11 @@ fn resolver_2_deps() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["tokio 1.37.0"],
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["iana-time-zone 0.1.60"],
         json!({
             // Note linux is not present since linux has no unique dependencies or features
             // for this crate.
@@ -504,6 +503,7 @@ fn resolver_2_deps() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["iana-time-zone 0.1.60"],
     );
 }

@@ -61,6 +61,76 @@ impl TreeResolver {
         Self { cargo_bin }
     }
 
+    /// Execute `cargo tree` for each target triple and return the stdout
+    /// streams containing structured output.
+    fn execute_cargo_tree(
+        &self,
+        manifest_path: &Path,
+        target_triples: &BTreeSet<TargetTriple>,
+    ) -> Result<BTreeMap<TargetTriple, Vec<u8>>> {
+        debug!("Spawning processes for {:?}", target_triples);
+        let mut target_triple_to_child = BTreeMap::new();
+
+        for target_triple in target_triples {
+            // We use `cargo tree` here because `cargo metadata` doesn't report
+            // back target-specific features (enabled with `resolver = "2"`).
+            // This is unfortunately a bit of a hack. See:
+            // - https://github.com/rust-lang/cargo/issues/9863
+            // - https://github.com/bazelbuild/rules_rust/issues/1662
+            let output = self
+                .cargo_bin
+                .command()?
+                .current_dir(manifest_path.parent().expect("All manifests should have a valid parent."))
+                .arg("tree")
+                .arg("--manifest-path")
+                .arg(manifest_path)
+                .arg("--edges")
+                .arg("normal,build,dev")
+                .arg("--prefix=indent")
+                // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
+                .arg("--format=;{p};{f};")
+                .arg("--color=never")
+                .arg("--charset=ascii")
+                .arg("--workspace")
+                .arg("--target")
+                .arg(target_triple.to_cargo())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .with_context(|| {
+                    format!(
+                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target_triple,
+                        manifest_path.display()
+                    )
+                })?;
+            target_triple_to_child.insert(target_triple.clone(), output);
+        }
+
+        // A collection of all stdout logs from each process
+        let mut stdouts: BTreeMap<TargetTriple, Vec<u8>> = BTreeMap::new();
+
+        for (target_triple, child) in target_triple_to_child.into_iter() {
+            let output = child
+                .wait_with_output()
+                .with_context(|| {
+                    format!(
+                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
+                        target_triple,
+                        manifest_path.display()
+                    )
+                })?;
+            if !output.status.success() {
+                eprintln!("{}", String::from_utf8_lossy(&output.stdout));
+                eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                bail!(format!("Failed to run cargo tree: {}", output.status))
+            }
+            stdouts.insert(target_triple, output.stdout);
+        }
+
+        Ok(stdouts)
+    }
+
     /// Computes the set of enabled features for each target triplet for each crate.
     #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
@@ -73,70 +143,32 @@ impl TreeResolver {
             pristine_manifest_path.display()
         );
 
-        let (manifest_path_with_transitive_proc_macros, tempdir) = self
-            .copy_project_with_explicit_deps_on_all_transitive_proc_macros(pristine_manifest_path)
+        let tempdir = tempfile::tempdir().context("Failed to make tempdir")?;
+
+        let manifest_path_with_transitive_proc_macros = self
+            .copy_project_with_explicit_deps_on_all_transitive_proc_macros(
+                pristine_manifest_path,
+                &tempdir.path().join("normal"),
+            )
             .context("Failed to copy project with proc macro deps made direct")?;
 
-        let mut target_triple_to_child = BTreeMap::new();
-        debug!("Spawning processes for {:?}", target_triples);
-        for target_triple in target_triples {
-            // We use `cargo tree` here because `cargo metadata` doesn't report
-            // back target-specific features (enabled with `resolver = "2"`).
-            // This is unfortunately a bit of a hack. See:
-            // - https://github.com/rust-lang/cargo/issues/9863
-            // - https://github.com/bazelbuild/rules_rust/issues/1662
-            let output = self
-                .cargo_bin
-                .command()?
-                .current_dir(tempdir.path())
-                .arg("tree")
-                .arg("--manifest-path")
-                .arg(&manifest_path_with_transitive_proc_macros)
-                .arg("--edges")
-                .arg("normal,build,dev")
-                .arg("--prefix=depth")
-                // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
-                .arg("--format=|{p}|{f}|")
-                .arg("--color=never")
-                .arg("--workspace")
-                .arg("--target")
-                .arg(target_triple.to_cargo())
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .spawn()
-                .with_context(|| {
-                    format!(
-                        "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target_triple,
-                        manifest_path_with_transitive_proc_macros.display()
-                    )
-                })?;
-            target_triple_to_child.insert(target_triple, output);
-        }
+        let deps_tree_streams =
+            self.execute_cargo_tree(&manifest_path_with_transitive_proc_macros, target_triples)?;
+
         let mut metadata: BTreeMap<CrateId, BTreeMap<TargetTriple, CargoTreeEntry>> =
             BTreeMap::new();
-        for (target_triple, child) in target_triple_to_child.into_iter() {
-            let output = child
-                .wait_with_output()
-                .with_context(|| {
-                    format!(
-                        "Error running cargo in child process to compute features for target '{}', manifest path '{}'",
-                        target_triple,
-                        manifest_path_with_transitive_proc_macros.display()
-                    )
-                })?;
-            if !output.status.success() {
-                eprintln!("{}", String::from_utf8_lossy(&output.stdout));
-                eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-                bail!(format!("Failed to run cargo tree: {}", output.status))
-            }
-            debug!("Process complete for {}", target_triple);
-            for (crate_id, tree_data) in
-                parse_features_from_cargo_tree_output(output.stdout.lines())?
-            {
+
+        for (target_triple, stdout) in deps_tree_streams.into_iter() {
+            debug!(
+                "Parsing `cargo tree --target {}` output:\n```\n{}\n```",
+                target_triple,
+                String::from_utf8_lossy(&stdout),
+            );
+
+            for (crate_id, tree_data) in parse_features_from_cargo_tree_output(stdout.lines())? {
                 debug!(
-                    "\tFor {}\n\t\tfeatures: {:?}\n\t\tdeps: {:?}",
-                    crate_id, tree_data.features, tree_data.deps
+                    "\tFor {} ({})\n\t\tfeatures: {:?}\n\t\tdeps: {:?}",
+                    crate_id, target_triple, tree_data.features, tree_data.deps
                 );
                 metadata
                     .entry(crate_id.clone())
@@ -144,6 +176,8 @@ impl TreeResolver {
                     .insert(target_triple.clone(), tree_data);
             }
         }
+
+        // Collect all metadata into a mapping of crate to it's metadata per target.
         let mut result = TreeResolverMetadata::new();
         for (crate_id, tree_data) in metadata.into_iter() {
             let common = CargoTreeEntry {
@@ -216,14 +250,18 @@ impl TreeResolver {
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
         pristine_manifest_path: &Path,
-    ) -> Result<(PathBuf, tempfile::TempDir)> {
+        output_dir: &Path,
+    ) -> Result<PathBuf> {
+        if !output_dir.exists() {
+            std::fs::create_dir_all(output_dir)?;
+        }
+
         let pristine_root = pristine_manifest_path.parent().unwrap();
-        let working_directory = tempfile::tempdir().context("Failed to make tempdir")?;
         for file in std::fs::read_dir(pristine_root).context("Failed to read dir")? {
             let source_path = file?.path();
             let file_name = source_path.file_name().unwrap();
             if file_name != "Cargo.toml" && file_name != "Cargo.lock" {
-                let destination = working_directory.path().join(file_name);
+                let destination = output_dir.join(file_name);
                 symlink(&source_path, &destination).with_context(|| {
                     format!(
                         "Failed to create symlink {:?} pointing at {:?}",
@@ -234,13 +272,12 @@ impl TreeResolver {
         }
         std::fs::copy(
             pristine_root.join("Cargo.lock"),
-            working_directory.path().join("Cargo.lock"),
+            output_dir.join("Cargo.lock"),
         )
         .with_context(|| {
             format!(
                 "Failed to copy Cargo.lock from {:?} to {:?}",
-                pristine_root,
-                working_directory.path()
+                pristine_root, output_dir
             )
         })?;
 
@@ -321,9 +358,9 @@ impl TreeResolver {
             );
             *count += 1;
         }
-        let manifest_path_with_transitive_proc_macros = working_directory.path().join("Cargo.toml");
+        let manifest_path_with_transitive_proc_macros = output_dir.join("Cargo.toml");
         crate::splicing::write_manifest(&manifest_path_with_transitive_proc_macros, &manifest)?;
-        Ok((manifest_path_with_transitive_proc_macros, working_directory))
+        Ok(manifest_path_with_transitive_proc_macros)
     }
 }
 
@@ -478,6 +515,7 @@ where
 {
     let mut tree_data = BTreeMap::<CrateId, CargoTreeEntry>::new();
     let mut parents: Vec<CrateId> = Vec::new();
+
     for line in lines {
         let line = line?;
         let line = line.as_ref();
@@ -485,13 +523,21 @@ where
             continue;
         }
 
-        let parts = line.split('|').collect::<Vec<_>>();
+        let parts = line.split(';').collect::<Vec<_>>();
         if parts.len() != 4 {
+            // The only time a line will not cleanly contain 4 parts
+            // is when there's a build or dev dependencies divider. The
+            // depth of this indicator will match the package it's
+            // associated with and can be easily skipped.
+            if line.ends_with("[build-dependencies]") || line.ends_with("[dev-dependencies]") {
+                continue;
+            }
             bail!("Unexpected line '{}'", line);
         }
-        // We expect the crate id (parts[1]) to be either
-        // "<crate name> v<crate version>" or
+        // We expect the crate id (parts[1]) to be one of
+        // "<crate name> v<crate version>"
         // "<crate name> v<crate version> (<path>)"
+        // "<crate name> v<crate version> (proc-macro)"
         // "<crate name> v<crate version> (proc-macro) (<path>)"
         // https://github.com/rust-lang/cargo/blob/19f952f160d4f750d1e12fad2bf45e995719673d/src/cargo/ops/tree/mod.rs#L281
         let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
@@ -510,10 +556,12 @@ where
         let version = Version::parse(version_str).context("Failed to parse version")?;
         let crate_id = CrateId::new(crate_id_parts[0].to_owned(), version);
 
-        // Update bookkeeping for dependency tracking.
-        let depth = parts[0]
-            .parse::<usize>()
-            .with_context(|| format!("Unexpected numeric value from cargo tree: {:?}", parts))?;
+        // Update bookkeeping for dependency tracking. Note that the `cargo tree --prefix=indent`
+        // output is expected to have 4 characters per section. We only care about depth but cannot
+        // use `--prefix=depth` because it does not show the `[build-dependencies]` section which we
+        // need to identify when build dependencies start.
+        let depth = parts[0].chars().count() / 4;
+
         if (depth + 1) <= parents.len() {
             // Drain parents until we get down to the right depth
             let range = parents.len() - (depth + 1);
@@ -540,10 +588,19 @@ where
             parents.push(crate_id.clone());
         }
 
+        let mut features = if parts[2].is_empty() {
+            BTreeSet::new()
+        } else {
+            parts[2].split(',').map(str::to_owned).collect()
+        };
+
         // Attribute any dependency that is not the root to it's parent.
         if depth > 0 {
-            // Access the last item in the list of parents.
+            // Access the last item in the list of parents and insert the current
+            // crate as a dependency to it.
             if let Some(parent) = parents.iter().rev().nth(1) {
+                // Dependency data is only tracked for direct consumers of build dependencies
+                // since they're known to be wrong cross-platform.
                 tree_data
                     .entry(parent.clone())
                     .or_default()
@@ -552,11 +609,6 @@ where
             }
         }
 
-        let mut features = if parts[2].is_empty() {
-            BTreeSet::new()
-        } else {
-            parts[2].split(',').map(str::to_owned).collect()
-        };
         tree_data
             .entry(crate_id)
             .or_default()
@@ -649,7 +701,7 @@ mod test {
     }
 
     #[test]
-    fn parse_features_from_cargo_tree_output_prefix_none() {
+    fn parse_features_from_cargo_tree_output_test() {
         let autocfg_id = CrateId {
             name: "autocfg".to_owned(),
             version: Version::new(1, 2, 0),
@@ -711,54 +763,34 @@ mod test {
             version: Version::new(1, 0, 12),
         };
 
-        // |tree-data v0.1.0 (/rules_rust/crate_universe/test_data/metadata/tree_data)||
-        // ├── |chrono v0.4.24|clock,default,iana-time-zone,js-sys,oldtime,std,time,wasm-bindgen,wasmbind,winapi|
-        // │   ├── |iana-time-zone v0.1.60|fallback|
-        // │   │   └── |core-foundation-sys v0.8.6|default,link|
-        // │   ├── |num-integer v0.1.46||
-        // │   │   └── |num-traits v0.2.18|i128|
-        // │   │       [build-dependencies]
-        // │   │       └── |autocfg v1.2.0||
-        // │   ├── |num-traits v0.2.18|i128| (*)
-        // │   └── |time v0.1.45||
-        // │       └── |libc v0.2.153|default,std|
-        // ├── |cpufeatures v0.2.7||
-        // │   └── |libc v0.2.153|default,std|
-        // └── |serde_derive v1.0.152 (proc-macro)|default|
-        //     ├── |proc-macro2 v1.0.81|default,proc-macro|
-        //     │   └── |unicode-ident v1.0.12||
-        //     ├── |quote v1.0.36|default,proc-macro|
-        //     │   └── |proc-macro2 v1.0.81|default,proc-macro| (*)
-        //     └── |syn v1.0.109|clone-impls,default,derive,parsing,printing,proc-macro,quote|
-        //         ├── |proc-macro2 v1.0.81|default,proc-macro| (*)
-        //         ├── |quote v1.0.36|default,proc-macro| (*)
-        //         └── |unicode-ident v1.0.12||
         let output = parse_features_from_cargo_tree_output(
-            vec![
-                Ok::<&str, std::io::Error>(""), // Blank lines are ignored.
-                Ok("0|tree-data v0.1.0 (/rules_rust/crate_universe/test_data/metadata/tree_data)||"),
-                Ok("1|chrono v0.4.24|clock,default,iana-time-zone,js-sys,oldtime,std,time,wasm-bindgen,wasmbind,winapi|"),
-                Ok("2|iana-time-zone v0.1.60|fallback|"),
-                Ok("3|core-foundation-sys v0.8.6|default,link|"),
-                Ok("2|num-integer v0.1.46||"),
-                Ok("3|num-traits v0.2.18|i128|"),
-                Ok("4|autocfg v1.2.0||"),
-                Ok("2|num-traits v0.2.18|i128| (*)"),
-                Ok("2|time v0.1.45||"),
-                Ok("3|libc v0.2.153|default,std|"),
-                Ok("1|cpufeatures v0.2.7||"),
-                Ok("2|libc v0.2.153|default,std|"),
-                Ok("1|serde_derive v1.0.152 (proc-macro)|default|"),
-                Ok("2|proc-macro2 v1.0.81|default,proc-macro|"),
-                Ok("3|unicode-ident v1.0.12||"),
-                Ok("2|quote v1.0.36|default,proc-macro|"),
-                Ok("3|proc-macro2 v1.0.81|default,proc-macro| (*)"),
-                Ok("2|syn v1.0.109|clone-impls,default,derive,parsing,printing,proc-macro,quote|"),
-                Ok("3|proc-macro2 v1.0.81|default,proc-macro| (*)"),
-                Ok("3|quote v1.0.36|default,proc-macro| (*)"),
-                Ok("3|unicode-ident v1.0.12||"),
-            ]
-            .into_iter()
+            textwrap::dedent(
+                r#"
+                ;tree-data v0.1.0 (/rules_rust/crate_universe/test_data/metadata/tree_data);;
+                |-- ;chrono v0.4.24;clock,default,iana-time-zone,js-sys,oldtime,std,time,wasm-bindgen,wasmbind,winapi;
+                |   |-- ;iana-time-zone v0.1.60;fallback;
+                |   |   `-- ;core-foundation-sys v0.8.6;default,link;
+                |   |-- ;num-integer v0.1.46;;
+                |   |   `-- ;num-traits v0.2.18;i128;
+                |   |       [build-dependencies]
+                |   |       `-- ;autocfg v1.2.0;;
+                |   |-- ;num-traits v0.2.18;i128; (*)
+                |   `-- ;time v0.1.45;;
+                |       `-- ;libc v0.2.153;default,std;
+                |-- ;cpufeatures v0.2.7;;
+                |   `-- ;libc v0.2.153;default,std;
+                `-- ;serde_derive v1.0.152 (proc-macro);default;
+                    |-- ;proc-macro2 v1.0.81;default,proc-macro;
+                    |   `-- ;unicode-ident v1.0.12;;
+                    |-- ;quote v1.0.36;default,proc-macro;
+                    |   `-- ;proc-macro2 v1.0.81;default,proc-macro; (*)
+                    `-- ;syn v1.0.109;clone-impls,default,derive,parsing,printing,proc-macro,quote;
+                        |-- ;proc-macro2 v1.0.81;default,proc-macro; (*)
+                        |-- ;quote v1.0.36;default,proc-macro; (*)
+                        `-- ;unicode-ident v1.0.12;;
+
+                "#,
+            ).lines().map(Ok::<&str, std::io::Error>)
         )
         .unwrap();
         assert_eq!(
@@ -832,7 +864,7 @@ mod test {
                     num_traits_id,
                     CargoTreeEntry {
                         features: BTreeSet::from(["i128".to_owned()]),
-                        deps: BTreeSet::from([autocfg_id]),
+                        deps: BTreeSet::from([autocfg_id.clone()]),
                     }
                 ),
                 (
@@ -896,6 +928,163 @@ mod test {
                         deps: BTreeSet::new()
                     }
                 )
+            ]),
+            output,
+        );
+    }
+
+    /// This test is intended to show how nested `[build-dependencies]` are
+    /// successfully parsed and transitive dependencies are tracked (or more
+    /// importantly for N+1 transitive deps, not tracked).
+    #[test]
+    fn parse_features_from_cargo_tree_output_nested_build_deps() {
+        let autocfg_id = CrateId {
+            name: "autocfg".to_owned(),
+            version: Version::new(1, 3, 0),
+        };
+        let nested_build_dependencies_id = CrateId {
+            name: "nested_build_dependencies".to_owned(),
+            version: Version::new(0, 0, 0),
+        };
+        let num_traits_id = CrateId {
+            name: "num-traits".to_owned(),
+            version: Version::new(0, 2, 19),
+        };
+        let proc_macro2_id = CrateId {
+            name: "proc-macro2".to_owned(),
+            version: Version::new(1, 0, 86),
+        };
+        let proc_macro_error_attr_id = CrateId {
+            name: "proc-macro-error-attr".to_owned(),
+            version: Version::new(1, 0, 4),
+        };
+        let quote_id = CrateId {
+            name: "quote".to_owned(),
+            version: Version::new(1, 0, 37),
+        };
+        let syn_id = CrateId {
+            name: "syn".to_owned(),
+            version: Version::new(2, 0, 77),
+        };
+        let unicode_ident_id = CrateId {
+            name: "unicode-ident".to_owned(),
+            version: Version::new(1, 0, 12),
+        };
+        let version_check_id = CrateId {
+            name: "version_check".to_owned(),
+            version: Version::new(0, 9, 5),
+        };
+
+        let output = parse_features_from_cargo_tree_output(
+        textwrap::dedent(
+                r#"
+                ;nested_build_dependencies v0.0.0 (/rules_rust/crate_universe/test_data/metadata/nested_build_dependencies);;
+                [build-dependencies]
+                |-- ;num-traits v0.2.19;default,std;
+                |   [build-dependencies]
+                |   `-- ;autocfg v1.3.0;;
+                `-- ;syn v2.0.77;clone-impls,default,derive,parsing,printing,proc-macro;
+                    |-- ;proc-macro2 v1.0.86;default,proc-macro;
+                    |   `-- ;unicode-ident v1.0.12;;
+                    |-- ;quote v1.0.37;default,proc-macro;
+                    |   `-- ;proc-macro2 v1.0.86;default,proc-macro; (*)
+                    `-- ;unicode-ident v1.0.12;;
+                [dev-dependencies]
+                `-- ;proc-macro-error-attr v1.0.4 (proc-macro);;
+                    |-- ;proc-macro2 v1.0.86;default,proc-macro; (*)
+                    `-- ;quote v1.0.37;default,proc-macro; (*)
+                    [build-dependencies]
+                    `-- ;version_check v0.9.5;;
+
+                "#,
+            ).lines().map(Ok::<&str, std::io::Error>)
+        )
+        .unwrap();
+
+        assert_eq!(
+            BTreeMap::from([
+                (
+                    autocfg_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::new(),
+                    },
+                ),
+                (
+                    nested_build_dependencies_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([
+                            num_traits_id.clone(),
+                            syn_id.clone(),
+                            proc_macro_error_attr_id.clone(),
+                        ]),
+                    }
+                ),
+                (
+                    num_traits_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "std".to_owned()]),
+                        deps: BTreeSet::from([autocfg_id.clone()]),
+                    }
+                ),
+                (
+                    proc_macro_error_attr_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([
+                            proc_macro2_id.clone(),
+                            quote_id.clone(),
+                            version_check_id.clone(),
+                        ]),
+                    },
+                ),
+                (
+                    proc_macro2_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
+                        deps: BTreeSet::from([unicode_ident_id.clone(),]),
+                    }
+                ),
+                (
+                    quote_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
+                        deps: BTreeSet::from([proc_macro2_id.clone()]),
+                    }
+                ),
+                (
+                    syn_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from([
+                            "clone-impls".to_owned(),
+                            "default".to_owned(),
+                            "derive".to_owned(),
+                            "parsing".to_owned(),
+                            "printing".to_owned(),
+                            "proc-macro".to_owned(),
+                        ]),
+                        deps: BTreeSet::from([
+                            proc_macro2_id.clone(),
+                            quote_id.clone(),
+                            unicode_ident_id.clone(),
+                        ]),
+                    }
+                ),
+                (
+                    unicode_ident_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::new(),
+                    }
+                ),
+                (
+                    version_check_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::new(),
+                    }
+                ),
             ]),
             output,
         );
