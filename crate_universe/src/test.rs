@@ -170,6 +170,14 @@ pub(crate) mod metadata {
         )))
         .unwrap()
     }
+
+    pub(crate) fn abspath() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/abspath/metadata.json"
+        )))
+        .unwrap()
+    }
 }
 
 pub(crate) mod lockfile {
@@ -235,6 +243,14 @@ pub(crate) mod lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/has_package_metadata/Cargo.lock"
+        )))
+        .unwrap()
+    }
+
+    pub(crate) fn abspath() -> cargo_lock::Lockfile {
+        cargo_lock::Lockfile::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/abspath/Cargo.lock"
         )))
         .unwrap()
     }
