@@ -13,7 +13,7 @@ for d in examples/crate_universe/vendor_*; do
   (cd "${d}" && CARGO_BAZEL_REPIN=true bazel run :crates_vendor)
 done
 
-for d in examples/crate_universe* test/no_std
+for d in examples/crate_universe* examples/musl_cross_compiling test/no_std
 do
   (cd "${d}" && CARGO_BAZEL_REPIN=true bazel query //... >/dev/null)
 done
