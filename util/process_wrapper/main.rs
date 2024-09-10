@@ -63,7 +63,7 @@ impl std::error::Error for ProcessWrapperError {}
 
 macro_rules! log {
     ($($arg:tt)*) => {
-        if std::env::var("RULES_RUST_PROCESS_WRAPPER_DEBUG").is_ok() {
+        if std::env::var_os("RULES_RUST_PROCESS_WRAPPER_DEBUG").is_some() {
             eprintln!($($arg)*);
         }
     };
