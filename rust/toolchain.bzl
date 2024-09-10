@@ -18,7 +18,6 @@ load(
     "is_std_dylib",
     "make_static_lib_symlink",
 )
-load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 rust_analyzer_toolchain = _rust_analyzer_toolchain
 rustfmt_toolchain = _rustfmt_toolchain
@@ -697,7 +696,6 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
-        _experimental_toolchain_generated_sysroot = ctx.attr._experimental_toolchain_generated_sysroot[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
     )
     return [
@@ -871,13 +869,6 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-        "_experimental_toolchain_generated_sysroot": attr.label(
-            default = Label("//rust/settings:experimental_toolchain_generated_sysroot"),
-            doc = (
-                "Label to a boolean build setting that lets the rule knows wheter to set --sysroot to rustc" +
-                "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_toolchain_generated_sysroot."
-            ),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
