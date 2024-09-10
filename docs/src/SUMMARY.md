@@ -5,7 +5,7 @@
 ---
 
 - [Rules](./rules.md)
-    - [defs](./defs.md)
+    - [rust](./rust.md)
     - [rustdoc](./rust_doc.md)
     - [clippy](./rust_clippy.md)
     - [rustfmt](./rust_fmt.md)

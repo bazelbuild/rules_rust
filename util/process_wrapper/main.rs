@@ -61,10 +61,19 @@ impl fmt::Display for ProcessWrapperError {
 
 impl std::error::Error for ProcessWrapperError {}
 
+macro_rules! log {
+    ($($arg:tt)*) => {
+        if std::env::var_os("RULES_RUST_PROCESS_WRAPPER_DEBUG").is_some() {
+            eprintln!($($arg)*);
+        }
+    };
+}
+
 fn main() -> Result<(), ProcessWrapperError> {
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
-    let mut child = Command::new(opts.executable)
+    let mut command = Command::new(opts.executable);
+    command
         .args(opts.child_arguments)
         .env_clear()
         .envs(opts.child_environment)
@@ -79,7 +88,9 @@ fn main() -> Result<(), ProcessWrapperError> {
         } else {
             Stdio::inherit()
         })
-        .stderr(Stdio::piped())
+        .stderr(Stdio::piped());
+    log!("{:#?}", command);
+    let mut child = command
         .spawn()
         .map_err(|e| ProcessWrapperError(format!("failed to spawn child process: {}", e)))?;
 

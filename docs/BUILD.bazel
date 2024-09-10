@@ -48,7 +48,7 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "defs",
+        name = "rust",
         symbols = [
             "rust_binary",
             "rust_library",

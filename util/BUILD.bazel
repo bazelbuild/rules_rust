@@ -1,9 +1,3 @@
-sh_binary(
-    name = "fetch_shas",
-    srcs = ["fetch_shas.sh"],
-    tags = ["manual"],
-)
-
 alias(
     name = "collect_coverage",
     actual = "//util/collect_coverage",

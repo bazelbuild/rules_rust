@@ -60,7 +60,10 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
         {
             "label": "Generate rust-project.json",
             "command": "bazel",
-            "args": ["run", "@rules_rust//tools/rust_analyzer:gen_rust_project"],
+            "args": [
+                "run",
+                "//tools/rust_analyzer:gen_rust_project"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
