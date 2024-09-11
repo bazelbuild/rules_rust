@@ -87,6 +87,7 @@ def _annotation(
         additive_build_file = None,
         additive_build_file_content = None,
         alias_rule = None,
+        build_script_compile_data = None,
         build_script_data = None,
         build_script_tools = None,
         build_script_data_glob = None,
@@ -125,6 +126,7 @@ def _annotation(
             generated BUILD files.
         alias_rule (str, optional): Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s
             'default_alias_rule'.
+        build_script_compile_data (list, optional): A list of labels to add to a crate's `cargo_build_script::compile_data` attribute.
         build_script_data (list, optional): A list of labels to add to a crate's `cargo_build_script::data` attribute.
         build_script_tools (list, optional): A list of labels to add to a crate's `cargo_build_script::tools` attribute.
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
@@ -185,6 +187,7 @@ def _annotation(
             additive_build_file = _stringify_label(additive_build_file),
             additive_build_file_content = additive_build_file_content,
             alias_rule = parse_alias_rule(alias_rule),
+            build_script_compile_data = _stringify_list(build_script_compile_data),
             build_script_data = _stringify_list(build_script_data),
             build_script_tools = _stringify_list(build_script_tools),
             build_script_data_glob = build_script_data_glob,

@@ -175,6 +175,9 @@ pub(crate) struct BuildScriptAttributes {
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) compile_data: Select<BTreeSet<Label>>,
 
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub(crate) compile_data_glob: BTreeSet<String>,
+
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) data: Select<BTreeSet<Label>>,
 
@@ -245,6 +248,9 @@ impl Default for BuildScriptAttributes {
     fn default() -> Self {
         Self {
             compile_data: Default::default(),
+            // The build script itself also has access to all
+            // source files by default.
+            compile_data_glob: BTreeSet::from(["**".to_owned()]),
             data: Default::default(),
             // Build scripts include all sources by default
             data_glob: BTreeSet::from(["**".to_owned()]),
@@ -617,6 +623,11 @@ impl CrateContext {
                 // Data
                 if let Some(extra) = &crate_extra.build_script_data {
                     attrs.data = Select::merge(attrs.data.clone(), extra.clone());
+                }
+
+                // Compile Data
+                if let Some(extra) = &crate_extra.build_script_compile_data {
+                    attrs.compile_data = Select::merge(attrs.compile_data.clone(), extra.clone());
                 }
 
                 // Tools

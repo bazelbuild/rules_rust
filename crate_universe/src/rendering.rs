@@ -456,7 +456,9 @@ impl Renderer {
             ),
             compile_data: make_data(
                 platforms,
-                Default::default(),
+                attrs
+                    .map(|attrs| attrs.compile_data_glob.clone())
+                    .unwrap_or_default(),
                 attrs
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
@@ -1070,6 +1072,7 @@ mod test {
         assert!(build_file_content.contains("cargo_build_script("));
         assert!(build_file_content.contains("name = \"build_script_build\""));
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
+        assert!(build_file_content.contains("compile_data = glob("));
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"_bs\""));
