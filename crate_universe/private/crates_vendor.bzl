@@ -7,10 +7,21 @@ load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
+
 set -euo pipefail
+
 export RUNTIME_PWD="$(pwd)"
 if [[ -z "${{BAZEL_REAL:-}}" ]]; then
     BAZEL_REAL="$(which bazel || echo 'bazel')"
+fi
+
+_ENVIRON=()
+_ENVIRON+=(BAZEL_REAL="${{BAZEL_REAL}}")
+_ENVIRON+=(BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}")
+_ENVIRON+=(PATH="${{PATH}}")
+
+if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
+    _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
 fi
 
 # The path needs to be preserved to prevent bazel from starting with different
@@ -18,8 +29,12 @@ fi
 # If you provide an empty path, bazel starts itself with
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
-exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
-"{bin}" {args} "$@"
+exec env - \\
+${{_ENVIRON[@]}} \\
+{env} \\
+    "{bin}" \\
+    {args} \\
+    "$@"
 """
 
 _WINDOWS_WRAPPER = """\
@@ -27,7 +42,8 @@ _WINDOWS_WRAPPER = """\
 set RUNTIME_PWD=%CD%
 {env}
 
-call {bin} {args} %@%
+{bin} {args} %*
+exit %ERRORLEVEL%
 """
 
 CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
