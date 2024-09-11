@@ -41,7 +41,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "//vendor_local_pkgs/crates/async-trait-0.1.81:async_trait",
+        "//vendor_local_pkgs/crates/async-trait-0.1.82:async_trait",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -104,14 +104,14 @@ rust_library(
         "//vendor_local_pkgs/crates/mime-0.3.17:mime",
         "//vendor_local_pkgs/crates/percent-encoding-2.3.1:percent_encoding",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.14:pin_project_lite",
-        "//vendor_local_pkgs/crates/serde-1.0.205:serde",
-        "//vendor_local_pkgs/crates/serde_json-1.0.122:serde_json",
+        "//vendor_local_pkgs/crates/serde-1.0.210:serde",
+        "//vendor_local_pkgs/crates/serde_json-1.0.128:serde_json",
         "//vendor_local_pkgs/crates/serde_urlencoded-0.7.1:serde_urlencoded",
         "//vendor_local_pkgs/crates/sync_wrapper-0.1.2:sync_wrapper",
-        "//vendor_local_pkgs/crates/tokio-1.39.2:tokio",
+        "//vendor_local_pkgs/crates/tokio-1.40.0:tokio",
         "//vendor_local_pkgs/crates/tower-0.4.13:tower",
         "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
-        "//vendor_local_pkgs/crates/tower-layer-0.3.2:tower_layer",
-        "//vendor_local_pkgs/crates/tower-service-0.3.2:tower_service",
+        "//vendor_local_pkgs/crates/tower-layer-0.3.3:tower_layer",
+        "//vendor_local_pkgs/crates/tower-service-0.3.3:tower_service",
     ],
 )

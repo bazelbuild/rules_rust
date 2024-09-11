@@ -52,7 +52,7 @@ impl Context {
         Ok(serde_json::from_str(&data)?)
     }
 
-    pub(crate) fn new(annotations: Annotations, sources_are_present: bool) -> Result<Self> {
+    pub(crate) fn new(annotations: Annotations, sources_are_present: bool) -> anyhow::Result<Self> {
         // Build a map of crate contexts
         let crates: BTreeMap<CrateId, CrateContext> = annotations
             .metadata
@@ -68,11 +68,11 @@ impl Context {
                     annotations.config.generate_binaries,
                     annotations.config.generate_build_scripts,
                     sources_are_present,
-                );
+                )?;
                 let id = CrateId::new(context.name.clone(), context.version.clone());
-                (id, context)
+                Ok::<_, anyhow::Error>((id, context))
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         // Filter for any crate that contains a binary
         let binary_crates: BTreeSet<CrateId> = crates

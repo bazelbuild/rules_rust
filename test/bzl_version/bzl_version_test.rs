@@ -27,7 +27,7 @@ fn module_bzl_has_correct_version() {
     let version = std::env::var("VERSION").unwrap();
     let module_bazel_text = {
         let r = Runfiles::create().unwrap();
-        let path = runfiles::rlocation!(r, std::env::var("MODULE_BAZEL").unwrap());
+        let path = runfiles::rlocation!(r, std::env::var("MODULE_BAZEL").unwrap()).unwrap();
         std::fs::read_to_string(path).unwrap()
     };
 

@@ -86,7 +86,7 @@ impl LoggingFormatEvent {
 }
 
 /// Initialize logging for one of the cli options.
-pub fn init_logging(name: &str) {
+pub fn init_logging(name: &str, verbose: bool) {
     if !EXPECTED_LOGGER_NAMES.contains(&name) {
         panic!(
             "Unexpected logger name {}, use of one of {:?}",
@@ -98,11 +98,7 @@ pub fn init_logging(name: &str) {
     let subscriber = FmtSubscriber::builder()
         // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
         // will be written to stdout.
-        .with_max_level(
-            std::env::var("CARGO_BAZEL_DEBUG")
-                .map(|_| Level::DEBUG)
-                .unwrap_or(Level::INFO),
-        )
+        .with_max_level(if verbose { Level::DEBUG } else { Level::INFO })
         .event_format(LoggingFormatEvent::new(name))
         // completes the builder.
         .finish();

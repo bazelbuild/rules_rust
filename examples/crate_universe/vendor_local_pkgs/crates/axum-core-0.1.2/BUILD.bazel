@@ -31,7 +31,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "//vendor_local_pkgs/crates/async-trait-0.1.81:async_trait",
+        "//vendor_local_pkgs/crates/async-trait-0.1.82:async_trait",
     ],
     rustc_flags = [
         "--cap-lints=allow",

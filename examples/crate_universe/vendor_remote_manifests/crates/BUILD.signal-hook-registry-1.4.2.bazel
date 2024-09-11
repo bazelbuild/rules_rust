@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "1.4.2",
     deps = [
-        "@cvm__libc-0.2.155//:libc",
+        "@cvm__libc-0.2.158//:libc",
     ],
 )

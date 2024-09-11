@@ -12,7 +12,7 @@ edition = "2021"
 publish = false
 
 [lib]
-path = "/dev/null"
+path = "fake.rs"
 
 [dependencies]
 # This package has a platform-specific dependency on zbus, which depends on the derivative proc-macro.

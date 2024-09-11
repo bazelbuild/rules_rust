@@ -94,67 +94,55 @@ def _lookup_tool_sha256_test_impl(ctx):
     # Release version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        ("rustc-1.65.0-x86_64-unknown-linux-gnu.tar.xz", "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8"),
+        ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
             target_triple = _PLATFORM_TRIPLE,
-            version = "1.65.0",
-            iso_date = "2022-11-02",
+            version = "1.80.0",
+            iso_date = "2024-06-13",
         ),
     )
 
     # Values in //rust:known_shas.bzl override sha256 arg
     asserts.equals(
         env,
-        ("rustc-1.65.0-x86_64-unknown-linux-gnu.tar.xz", "62b89786e195fc5a8a262f83118d6689832b24228c9d303cba8ac14dc1e9adc8"),
+        ("rustc-1.80.0-x86_64-unknown-linux-gnu.tar.xz", "ef1692e3d67236868d32ef26f96f47792b1c3a3f9747bbe05c63742464307c4f"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rustc",
             target_triple = _PLATFORM_TRIPLE,
-            version = "1.65.0",
-            iso_date = "2022-11-02",
+            version = "1.80.0",
+            iso_date = "2024-06-13",
         ),
     )
 
     # Nightly version included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        ("2022-11-02/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", "ea01d3cd6c6729cd8ebb55a7702eda2347451e304b58807361e020065a579d96"),
+        ("2024-06-13/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", "d925acda44aa5f2b5e37a6a17aa3fdea4e190f0078ed33cc7db2d2ee6c2d0010"),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
             target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
-            iso_date = "2022-11-02",
+            iso_date = "2024-06-13",
         ),
     )
 
     # Lookup failure (returns "") for a nightly version not included in //rust:known_shas.bzl
     asserts.equals(
         env,
-        ("2022-11-01/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),
+        ("2077-13-33/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),
         lookup_tool_sha256(
             ctx,
             tool_name = "rust-std",
             target_triple = _PLATFORM_TRIPLE,
             version = "nightly",
-            iso_date = "2022-11-01",
+            iso_date = "2077-13-33",
         ),
     )
 
-    # A nightly version not included in //rust:known_shas.bzl falls back to sha256 arg
-    asserts.equals(
-        env,
-        ("2022-11-01/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz", ""),
-        lookup_tool_sha256(
-            ctx,
-            tool_name = "rust-std",
-            target_triple = _PLATFORM_TRIPLE,
-            version = "nightly",
-            iso_date = "2022-11-01",
-        ),
-    )
     return unittest.end(env)
 
 def _select_rust_version_test_impl(ctx):

@@ -39,7 +39,7 @@ impl ServerInfo {
         let mut c = Command::new(runfiles::rlocation!(
             r,
             "examples/proto/helloworld/greeter_server/greeter_server"
-        ))
+        ).unwrap())
         .arg("0")
         .stdout(Stdio::piped())
         .spawn()
@@ -70,7 +70,7 @@ impl ServerInfo {
         let mut cmd0 = Command::new(runfiles::rlocation!(
             r,
             "examples/proto/helloworld/greeter_client/greeter_client"
-        ));
+        ).unwrap());
         let cmd = cmd0.arg(format!("-p={}", self.port));
 
         let output = if let Some(s) = arg { cmd.arg(s) } else { cmd }

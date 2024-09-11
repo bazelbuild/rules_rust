@@ -2,6 +2,7 @@
 
 load(
     "//cargo/private:cargo_build_script.bzl",
+    "cargo_build_script_runfiles",
     "name_to_crate_name",
     "name_to_pkg_name",
     _build_script_run = "cargo_build_script",
@@ -142,10 +143,21 @@ def cargo_build_script(
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(name_to_pkg_name(name))
 
-    binary_tags = [tag for tag in tags or []]
-    if "manual" not in binary_tags:
-        binary_tags.append("manual")
+    script_kwargs = {}
+    for arg in ("exec_compatible_with", "testonly"):
+        if arg in kwargs:
+            script_kwargs[arg] = kwargs[arg]
 
+    wrapper_kwargs = dict(script_kwargs)
+    for arg in ("compatible_with", "target_compatible_with"):
+        if arg in kwargs:
+            wrapper_kwargs[arg] = kwargs[arg]
+
+    binary_tags = depset(
+        (tags if tags else []) + ["manual"],
+    ).to_list()
+
+    # This target exists as the actual build script.
     rust_binary(
         name = name + "_",
         crate_name = crate_name,
@@ -154,7 +166,7 @@ def cargo_build_script(
         crate_features = crate_features,
         deps = deps,
         proc_macro_deps = proc_macro_deps,
-        data = data,
+        data = tools,
         compile_data = compile_data,
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,
@@ -162,18 +174,33 @@ def cargo_build_script(
         edition = edition,
         tags = binary_tags,
         aliases = aliases,
+        **script_kwargs
     )
+
+    # Because the build script is expected to be run on the exec host, the
+    # script above needs to be in the exec configuration but the script may
+    # need data files that are in the target configuration. This rule wraps
+    # the script above so the `cfg=exec` target can be run without issue in
+    # a `cfg=target` environment. More details can be found on the rule.
+    cargo_build_script_runfiles(
+        name = name + "-",
+        script = ":{}_".format(name),
+        data = data,
+        tools = tools,
+        tags = binary_tags,
+        **wrapper_kwargs
+    )
+
+    # This target executes the build script.
     _build_script_run(
         name = name,
-        script = ":{}_".format(name),
+        script = ":{}-".format(name),
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
         links = links,
         deps = deps,
         link_deps = link_deps,
-        data = data,
-        tools = tools,
         rundir = rundir,
         rustc_flags = rustc_flags,
         visibility = visibility,

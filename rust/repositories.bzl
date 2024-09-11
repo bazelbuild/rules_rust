@@ -39,6 +39,7 @@ DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_darwin_aarch64",
     "aarch64-pc-windows-msvc": "rust_windows_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
+    "s390x-unknown-linux-gnu": "rust_linux_s390x",
     "x86_64-apple-darwin": "rust_darwin_x86_64",
     "x86_64-pc-windows-msvc": "rust_windows_x86_64",
     "x86_64-unknown-freebsd": "rust_freebsd_x86_64",

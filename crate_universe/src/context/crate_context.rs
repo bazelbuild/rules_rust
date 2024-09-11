@@ -352,7 +352,7 @@ impl CrateContext {
         include_binaries: bool,
         include_build_scripts: bool,
         sources_are_present: bool,
-    ) -> Self {
+    ) -> anyhow::Result<Self> {
         let package: &Package = &packages[&annotation.node.id];
         let current_crate_id = CrateId::new(package.name.clone(), package.version.clone());
 
@@ -430,7 +430,7 @@ impl CrateContext {
             gen_binaries,
             include_build_scripts,
             sources_are_present,
-        );
+        )?;
 
         // Parse the library crate name from the set of included targets
         let library_target_name = {
@@ -511,7 +511,7 @@ impl CrateContext {
         };
 
         // Create the crate's context and apply extra settings
-        CrateContext {
+        Ok(CrateContext {
             name: package.name.clone(),
             version: package.version.clone(),
             license: package.license.clone(),
@@ -529,7 +529,7 @@ impl CrateContext {
             alias_rule: None,
             override_targets: BTreeMap::new(),
         }
-        .with_overrides(extras)
+        .with_overrides(extras))
     }
 
     fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairedExtras>) -> Self {
@@ -755,7 +755,7 @@ impl CrateContext {
         gen_binaries: &GenBinaries,
         include_build_scripts: bool,
         sources_are_present: bool,
-    ) -> BTreeSet<Rule> {
+    ) -> anyhow::Result<BTreeSet<Rule>> {
         let package = &packages[&node.id];
 
         let package_root = package
@@ -774,6 +774,10 @@ impl CrateContext {
                     // content to align when rendering, the package target names are always sanitized.
                     let crate_name = sanitize_module_name(&target.name);
 
+                    if !target.src_path.starts_with(package_root) {
+                        return Some(Err(anyhow::anyhow!("Package {:?} target {:?} had an absolute source path {:?}, which is not supported", package.name, target.name, target.src_path)));
+                    }
+
                     // Locate the crate's root source file relative to the package root normalized for unix
                     let crate_root = pathdiff::diff_paths(&target.src_path, package_root).map(
                         // Normalize the path so that it always renders the same regardless of platform
@@ -782,29 +786,29 @@ impl CrateContext {
 
                     // Conditionally check to see if the dependencies is a build-script target
                     if include_build_scripts && kind == "custom-build" {
-                        return Some(Rule::BuildScript(TargetAttributes {
+                        return Some(Ok(Rule::BuildScript(TargetAttributes {
                             crate_name,
                             crate_root,
                             srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
+                        })));
                     }
 
                     // Check to see if the dependencies is a proc-macro target
                     if kind == "proc-macro" {
-                        return Some(Rule::ProcMacro(TargetAttributes {
+                        return Some(Ok(Rule::ProcMacro(TargetAttributes {
                             crate_name,
                             crate_root,
                             srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
+                        })));
                     }
 
                     // Check to see if the dependencies is a library target
                     if ["lib", "rlib"].contains(&kind.as_str()) {
-                        return Some(Rule::Library(TargetAttributes {
+                        return Some(Ok(Rule::Library(TargetAttributes {
                             crate_name,
                             crate_root,
                             srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
+                        })));
                     }
 
                     // Check if the target kind is binary and is one of the ones included in gen_binaries
@@ -814,11 +818,11 @@ impl CrateContext {
                             GenBinaries::Some(set) => set.contains(&target.name),
                         }
                     {
-                        return Some(Rule::Binary(TargetAttributes {
+                        return Some(Ok(Rule::Binary(TargetAttributes {
                             crate_name: target.name.clone(),
                             crate_root,
                             srcs: Glob::new_rust_srcs(!sources_are_present),
-                        }));
+                        })));
                     }
 
                     None
@@ -866,7 +870,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "common");
         assert_eq!(
@@ -914,7 +919,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "common");
         assert_eq!(
@@ -979,7 +985,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "openssl-sys");
         assert!(context.build_script_attrs.is_some());
@@ -1026,7 +1033,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "openssl-sys");
         assert!(context.build_script_attrs.is_none());
@@ -1062,7 +1070,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "sysinfo");
         assert!(context.build_script_attrs.is_none());
@@ -1104,7 +1113,8 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         assert_eq!(context.name, "common");
         check_context(context);
@@ -1236,11 +1246,44 @@ mod test {
             include_binaries,
             include_build_scripts,
             are_sources_present,
-        );
+        )
+        .unwrap();
 
         let mut expected = Select::new();
         expected.insert("unique_feature".to_owned(), None);
 
         assert_eq!(context.common_attrs.crate_features, expected);
+    }
+
+    #[test]
+    fn absolute_paths_for_srcs_are_errors() {
+        let annotations = Annotations::new(
+            crate::test::metadata::abspath(),
+            crate::test::lockfile::abspath(),
+            crate::config::Config::default(),
+        )
+        .unwrap();
+
+        let crate_annotation = &annotations.metadata.crates[&PackageId {
+            repr: "path+file://{TEMP_DIR}/common#0.1.0".to_owned(),
+        }];
+
+        let include_binaries = false;
+        let include_build_scripts = false;
+        let are_sources_present = false;
+        let err = CrateContext::new(
+            crate_annotation,
+            &annotations.metadata.packages,
+            &annotations.lockfile.crates,
+            &annotations.pairred_extras,
+            &annotations.metadata.workspace_metadata.tree_metadata,
+            include_binaries,
+            include_build_scripts,
+            are_sources_present,
+        )
+        .unwrap_err()
+        .to_string();
+
+        assert_eq!(err, "Package \"common\" target \"common\" had an absolute source path \"/dev/null\", which is not supported");
     }
 }

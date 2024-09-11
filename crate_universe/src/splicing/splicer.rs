@@ -765,8 +765,8 @@ mod test {
     #[cfg(not(feature = "cargo"))]
     fn get_cargo_and_rustc_paths() -> (PathBuf, PathBuf) {
         let r = runfiles::Runfiles::create().unwrap();
-        let cargo_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("CARGO")));
-        let rustc_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("RUSTC")));
+        let cargo_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("CARGO"))).unwrap();
+        let rustc_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("RUSTC"))).unwrap();
 
         (cargo_path, rustc_path)
     }

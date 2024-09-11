@@ -103,7 +103,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
 
     splice(SpliceOptions {
         splicing_manifest,
-        cargo_lockfile: Some(runfiles::rlocation!(runfiles, lockfile)),
+        cargo_lockfile: Some(runfiles::rlocation!(runfiles, lockfile).unwrap()),
         repin: None,
         workspace_dir: None,
         output_dir: scratch.path().join("out"),
@@ -139,6 +139,7 @@ fn feature_generator() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -147,7 +148,6 @@ fn feature_generator() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu-hal 0.14.1"],
         json!({
             "common": {
                 "deps": [
@@ -236,7 +236,8 @@ fn feature_generator() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu-hal 0.14.1"],
     );
 }
 
@@ -256,6 +257,7 @@ fn feature_generator_cfg_features() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -264,7 +266,6 @@ fn feature_generator_cfg_features() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"],
         json!({
             "autocfg 1.1.0": {
                 "selects": {},
@@ -305,7 +306,8 @@ fn feature_generator_cfg_features() {
                     },
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"],
     );
 }
 
@@ -325,6 +327,7 @@ fn feature_generator_workspace() {
                     r,
                     "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"
                 )
+                .unwrap()
                 .to_string_lossy()
                 .to_string(),
                 "//:test_input".to_string(),
@@ -334,6 +337,7 @@ fn feature_generator_workspace() {
                     r,
                     "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml"
                 )
+                .unwrap()
                 .to_string_lossy()
                 .to_string(),
                 "//crate_universe:test_data/metadata/workspace/child/Cargo.toml".to_string(),
@@ -360,6 +364,7 @@ fn feature_generator_crate_combined_features() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -369,7 +374,6 @@ fn feature_generator_crate_combined_features() {
 
     // serde appears twice in the list of dependencies, with and without derive features
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["serde 1.0.158"]["common"],
         json!({
             "deps": [
                 "serde_derive 1.0.158",
@@ -380,7 +384,8 @@ fn feature_generator_crate_combined_features() {
                 "serde_derive",
                 "std",
             ],
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["serde 1.0.158"]["common"],
     );
 }
 
@@ -400,6 +405,7 @@ fn resolver_2_deps() {
                 r,
                 "rules_rust/crate_universe/test_data/metadata/resolver_2_deps/Cargo.toml"
             )
+            .unwrap()
             .to_string_lossy()
             .to_string(),
             "//:test_input".to_string(),
@@ -408,7 +414,6 @@ fn resolver_2_deps() {
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["tokio 1.37.0"],
         json!({
             "common": {
                 "deps": [
@@ -478,11 +483,11 @@ fn resolver_2_deps() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["tokio 1.37.0"],
     );
 
     assert_eq!(
-        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["iana-time-zone 0.1.60"],
         json!({
             // Note linux is not present since linux has no unique dependencies or features
             // for this crate.
@@ -504,6 +509,7 @@ fn resolver_2_deps() {
                     ],
                 },
             },
-        })
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["iana-time-zone 0.1.60"],
     );
 }

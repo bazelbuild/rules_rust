@@ -29,7 +29,8 @@ mod test {
             ]
             .iter()
             .collect::<PathBuf>()
-        );
+        )
+        .unwrap();
 
         let process_wrapper = runfiles::rlocation!(
             r,
@@ -45,7 +46,8 @@ mod test {
             ]
             .iter()
             .collect::<PathBuf>()
-        );
+        )
+        .unwrap();
 
         let output = Command::new(process_wrapper)
             .args(process_wrapper_args)

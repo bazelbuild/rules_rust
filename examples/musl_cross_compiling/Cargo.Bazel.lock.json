@@ -1,5 +1,5 @@
 {
-  "checksum": "8baf77c337c6bcb99a30354a681f892140a66ea24aa0f5bdb1b520f58f2e9578",
+  "checksum": "dea1e8796c8b3c84ed71c17b9449fadcf6c9e77aa448f294a165df1c0881fea5",
   "crates": {
     "aes 0.8.4": {
       "name": "aes",
@@ -4625,7 +4625,7 @@
         {
           "Library": {
             "crate_name": "musl_cross_compiling",
-            "crate_root": "../../../../../../dev/null",
+            "crate_root": "fake.rs",
             "srcs": {
               "allow_empty": true,
               "include": [
@@ -6843,10 +6843,42 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-unknown-freebsd": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "deps": {
           "common": [

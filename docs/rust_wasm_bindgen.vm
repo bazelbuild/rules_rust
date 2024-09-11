@@ -8,7 +8,7 @@ Bazel rules for generating wasm modules for Javascript using [wasm-bindgen][wb].
 To begin using the `wasm-bindgen` rules, users can load the necessary dependencies
 in their workspace by adding the following to their `WORKSPACE.bazel` file.
 
-```starlark
+```python
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
 
 rust_wasm_bindgen_dependencies()

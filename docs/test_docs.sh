@@ -15,8 +15,8 @@ pushd "${DOCS_WORKSPACE}" &> /dev/null
 # docs artifacts in the new commit.
 bazel clean \
 && bazel build //... \
-&& cp bazel-bin/*.md . \
-&& chmod 0644 *.md
+&& cp bazel-bin/*.md ./src/ \
+&& chmod 0644 ./src/*.md
 
 if [ -n "$(git status --porcelain)" ]; then 
     >&2 git status
