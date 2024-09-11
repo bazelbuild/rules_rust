@@ -471,13 +471,13 @@ list: A list of labels to generated rust targets (str)
 
 <pre>
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
-                 <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>,
-                 <a href="#crate.annotation-build_script_env">build_script_env</a>, <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>,
-                 <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>, <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>,
-                 <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>,
-                 <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>, <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>,
-                 <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>, <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>,
-                 <a href="#crate.annotation-override_targets">override_targets</a>)
+                 <a href="#crate.annotation-build_script_compile_data">build_script_compile_data</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>,
+                 <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
+                 <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>,
+                 <a href="#crate.annotation-build_script_toolchains">build_script_toolchains</a>, <a href="#crate.annotation-compile_data">compile_data</a>, <a href="#crate.annotation-compile_data_glob">compile_data_glob</a>, <a href="#crate.annotation-crate_features">crate_features</a>, <a href="#crate.annotation-data">data</a>,
+                 <a href="#crate.annotation-data_glob">data_glob</a>, <a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="#crate.annotation-gen_binaries">gen_binaries</a>, <a href="#crate.annotation-disable_pipelining">disable_pipelining</a>,
+                 <a href="#crate.annotation-gen_build_script">gen_build_script</a>, <a href="#crate.annotation-patch_args">patch_args</a>, <a href="#crate.annotation-patch_tool">patch_tool</a>, <a href="#crate.annotation-patches">patches</a>, <a href="#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="#crate.annotation-rustc_env">rustc_env</a>,
+                 <a href="#crate.annotation-rustc_env_files">rustc_env_files</a>, <a href="#crate.annotation-rustc_flags">rustc_flags</a>, <a href="#crate.annotation-shallow_since">shallow_since</a>, <a href="#crate.annotation-override_targets">override_targets</a>)
 </pre>
 
 A collection of extra attributes and settings for a particular crate
@@ -491,6 +491,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-additive_build_file"></a>additive_build_file |  A file containing extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-additive_build_file_content"></a>additive_build_file_content |  Extra contents to write to the bottom of generated BUILD files.   |  `None` |
 | <a id="crate.annotation-alias_rule"></a>alias_rule |  Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s 'default_alias_rule'.   |  `None` |
+| <a id="crate.annotation-build_script_compile_data"></a>build_script_compile_data |  A list of labels to add to a crate's `cargo_build_script::compile_data` attribute.   |  `None` |
 | <a id="crate.annotation-build_script_data"></a>build_script_data |  A list of labels to add to a crate's `cargo_build_script::data` attribute.   |  `None` |
 | <a id="crate.annotation-build_script_tools"></a>build_script_tools |  A list of labels to add to a crate's `cargo_build_script::tools` attribute.   |  `None` |
 | <a id="crate.annotation-build_script_data_glob"></a>build_script_data_glob |  A list of glob patterns to add to a crate's `cargo_build_script::data` attribute.   |  `None` |
