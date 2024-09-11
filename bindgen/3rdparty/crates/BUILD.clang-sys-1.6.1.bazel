@@ -113,6 +113,18 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
     crate_features = [
         "clang_10_0",
         "clang_11_0",
