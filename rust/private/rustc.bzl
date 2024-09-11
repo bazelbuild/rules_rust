@@ -1125,7 +1125,7 @@ def rustc_compile_action(
         force_all_deps_direct = False,
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
-        include_coverage = True):
+        include_coverage = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
