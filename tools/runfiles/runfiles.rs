@@ -105,6 +105,27 @@ impl std::fmt::Display for RunfilesError {
 
 impl std::error::Error for RunfilesError {}
 
+impl PartialEq for RunfilesError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::RunfilesDirIoError(l0), Self::RunfilesDirIoError(r0)) => {
+                l0.to_string() == r0.to_string()
+            }
+            (Self::RunfilesManifestIoError(l0), Self::RunfilesManifestIoError(r0)) => {
+                l0.to_string() == r0.to_string()
+            }
+            (Self::RepoMappingIoError(l0), Self::RepoMappingIoError(r0)) => {
+                l0.to_string() == r0.to_string()
+            }
+            (Self::RunfileNotFound(l0), Self::RunfileNotFound(r0)) => l0 == r0,
+            (Self::RunfileIoError(l0), Self::RunfileIoError(r0)) => {
+                l0.to_string() == r0.to_string()
+            }
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
 /// A specialized [`std::result::Result`] type for
 pub type Result<T> = std::result::Result<T, RunfilesError>;
 
@@ -427,5 +448,96 @@ mod test {
         };
 
         assert_eq!(r.rlocation("does/not/exist"), None);
+    }
+
+    fn dedent(text: &str) -> String {
+        text.lines()
+            .map(|l| l.trim_start())
+            .collect::<Vec<&str>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn test_parse_repo_mapping() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let valid = temp_dir.join("test_parse_repo_mapping.txt");
+        std::fs::write(
+            &valid,
+            dedent(
+                r#",rules_rust,rules_rust
+            bazel_tools,__main__,rules_rust
+            local_config_cc,rules_rust,rules_rust
+            local_config_sh,rules_rust,rules_rust
+            local_config_xcode,rules_rust,rules_rust
+            platforms,rules_rust,rules_rust
+            rules_rust_tinyjson,rules_rust,rules_rust
+            rust_darwin_aarch64__aarch64-apple-darwin__stable_tools,rules_rust,rules_rust
+            "#,
+            ),
+        )
+        .unwrap();
+
+        assert_eq!(
+            parse_repo_mapping(valid),
+            Ok(RepoMapping::from([
+                (
+                    ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("platforms".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    (
+                        "rust_darwin_aarch64__aarch64-apple-darwin__stable_tools".to_owned(),
+                        "rules_rust".to_owned()
+                    ),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("rules_rust_tinyjson".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("local_config_sh".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("bazel_tools".to_owned(), "__main__".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("local_config_cc".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                ),
+                (
+                    ("".to_owned(), "rules_rust".to_owned()),
+                    "rules_rust".to_owned()
+                )
+            ]))
+        );
+    }
+
+    #[test]
+    fn test_parse_repo_mapping_invalid_file() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let invalid = temp_dir.join("test_parse_repo_mapping_invalid_file.txt");
+
+        assert!(matches!(
+            parse_repo_mapping(invalid.clone()).err().unwrap(),
+            RunfilesError::RepoMappingIoError(_)
+        ));
+
+        std::fs::write(&invalid, "invalid").unwrap();
+
+        assert_eq!(
+            parse_repo_mapping(invalid),
+            Err(RunfilesError::RepoMappingInvalidFormat),
+        );
     }
 }
