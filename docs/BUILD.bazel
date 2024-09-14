@@ -26,7 +26,6 @@ bzl_library(
     name = "all_docs",
     deps = [
         ":docs_deps",
-        "@rules_rust//:bzl_lib",
         "@rules_rust//bindgen:bzl_lib",
         "@rules_rust//cargo:bzl_lib",
         "@rules_rust//crate_universe:bzl_lib",
