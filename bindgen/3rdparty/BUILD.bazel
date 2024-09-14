@@ -26,9 +26,6 @@ crates_vendor(
         "libc": [crate.annotation(
             gen_build_script = True,
         )],
-        "rustix": [crate.annotation(
-            gen_build_script = True,
-        )],
         "winapi": [crate.annotation(
             gen_build_script = True,
         )],

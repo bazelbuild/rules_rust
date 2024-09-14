@@ -83,7 +83,7 @@ rust_library(
     }),
     version = "7.1.3",
     deps = [
-        "@rules_rust_bindgen__memchr-2.5.0//:memchr",
+        "@rules_rust_bindgen__memchr-2.7.4//:memchr",
         "@rules_rust_bindgen__minimal-lexical-0.2.1//:minimal_lexical",
     ],
 )
