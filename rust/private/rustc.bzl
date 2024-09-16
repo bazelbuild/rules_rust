@@ -46,6 +46,8 @@ load(":utils.bzl", "is_std_dylib")
 # feature from other features which needs to be disabled together.
 RUST_LINK_CC_FEATURE = "rules_rust_link_cc"
 
+_SUPPORTS_PATH_MAPPING = {"supports-path-mapping": ""}
+
 BuildInfo = _BuildInfo
 
 AliasableDepInfo = provider(
@@ -794,7 +796,7 @@ def construct_arguments(
         attr,
         file,
         toolchain,
-        tool_path,
+        tool,
         cc_toolchain,
         feature_configuration,
         crate_info,
@@ -815,7 +817,8 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
-        skip_expanding_rustc_env = False):
+        skip_expanding_rustc_env = False,
+        tool_use_short_path = False):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -823,7 +826,7 @@ def construct_arguments(
         attr (struct): The attributes for the target. These may be different from ctx.attr in an aspect context.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         toolchain (rust_toolchain): The current target's `rust_toolchain`
-        tool_path (str): Path to rustc
+        tool (File): The rustc binary
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
@@ -847,6 +850,7 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        tool_use_short_path (bool): Whether to use the short path for the tool
 
     Returns:
         tuple: A tuple of the following items
@@ -861,7 +865,7 @@ def construct_arguments(
     if build_metadata and not use_json_output:
         fail("build_metadata requires parse_json_output")
 
-    output_dir = getattr(crate_info.output, "dirname", None)
+    has_output_dir = hasattr(crate_info.output, "dirname")
     linker_script = getattr(file, "linker_script", None)
 
     env = _get_rustc_env(attr, toolchain, crate_info.name)
@@ -904,7 +908,10 @@ def construct_arguments(
     # Arguments for launching rustc from the process wrapper
     rustc_path = ctx.actions.args()
     rustc_path.add("--")
-    rustc_path.add(tool_path)
+    if tool_use_short_path:
+        rustc_path.add(tool.short_path)
+    else:
+        rustc_path.add(tool)
 
     # Rustc arguments
     rustc_flags = ctx.actions.args()
@@ -941,9 +948,9 @@ def construct_arguments(
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
         if crate_info.rustc_rmeta_output:
-            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
-        process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+        process_wrapper_flags.add("--output-file", crate_info.rustc_output)
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -958,8 +965,8 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=metadata=-%s")
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
-    if output_dir:
-        rustc_flags.add(output_dir, format = "--out-dir=%s")
+    if has_output_dir:
+        rustc_flags.add_all([crate_info.output], format_each = "--out-dir=%s", map_each = _get_dirname)
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -989,7 +996,7 @@ def construct_arguments(
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
     # Tell Rustc where to find the standard library (or libcore)
-    rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
+    rustc_flags.add_all(toolchain.rust_std, before_each = "-L", map_each = _get_dirname, uniquify = True)
     rustc_flags.add_all(rust_flags)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
@@ -1011,9 +1018,9 @@ def construct_arguments(
         # linker since it won't understand.
         compilation_mode = ctx.var["COMPILATION_MODE"]
         if toolchain.target_arch != "wasm32":
-            if output_dir:
+            if has_output_dir:
                 use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
+                rpaths = _compute_rpaths(toolchain, crate_info.output.dirname, dep_info, use_pic)
             else:
                 rpaths = depset()
 
@@ -1069,7 +1076,7 @@ def construct_arguments(
 
     # Ensure the sysroot is set for the target platform
     if toolchain._toolchain_generated_sysroot:
-        rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
+        rustc_flags.add_all([toolchain.sysroot_anchor], format_each = "--sysroot=%s", map_each = _get_dirname)
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
@@ -1218,7 +1225,7 @@ def rustc_compile_action(
         attr = attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rustc.path,
+        tool = toolchain.rustc,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1244,7 +1251,7 @@ def rustc_compile_action(
             attr = attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool = toolchain.rustc,
             cc_toolchain = cc_toolchain,
             emit = emit,
             feature_configuration = feature_configuration,
@@ -1272,6 +1279,11 @@ def rustc_compile_action(
         formatted_version = " v{}".format(attr.version)
     else:
         formatted_version = ""
+
+    if any(["$(execpath " in flag or "$(location " in flag for flag in getattr(attr, "rustc_flags", [])]):
+        execution_requirements = {}
+    else:
+        execution_requirements = _SUPPORTS_PATH_MAPPING
 
     # Declares the outputs of the rustc compile action.
     # By default this is the binary output; if cc_common.link is used, this is
@@ -1329,6 +1341,7 @@ def rustc_compile_action(
                 formatted_version,
                 len(crate_info.srcs.to_list()),
             ),
+            execution_requirements = execution_requirements,
             toolchain = "@rules_rust//rust:toolchain_type",
         )
         if args_metadata:
@@ -1345,6 +1358,7 @@ def rustc_compile_action(
                     formatted_version,
                     len(crate_info.srcs.to_list()),
                 ),
+                execution_requirements = execution_requirements,
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
@@ -1364,6 +1378,7 @@ def rustc_compile_action(
                 formatted_version,
                 len(crate_info.srcs.to_list()),
             ),
+            execution_requirements = execution_requirements,
             toolchain = "@rules_rust//rust:toolchain_type",
         )
     else:
@@ -2047,8 +2062,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     if ambiguous_libs:
         # If there are ambiguous libs, the disambiguation symlinks to them are
         # all created in the same directory. Add it to the library search path.
-        ambiguous_libs_dirname = ambiguous_libs.values()[0].dirname
-        args.add(ambiguous_libs_dirname, format = "-Lnative=%s")
+        args.add_all([ambiguous_libs.values()[0]], format_each = "-Lnative=%s", map_each = _get_dirname)
 
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
@@ -2084,7 +2098,7 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
             )
 
 def _get_dirname(file):
-    """A helper function for `_add_native_link_flags`.
+    """Helper function for Args.add_all to get the directory name of a File object
 
     Args:
         file (File): The target file
