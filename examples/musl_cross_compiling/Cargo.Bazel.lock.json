@@ -1,5 +1,5 @@
 {
-  "checksum": "7a3e15ae6c6ff1b94459b9ca9a6cdb80d505b162bd011987c891898706874c30",
+  "checksum": "328a66662ffb1483bfc989e31cdd52cc3e489fc707eb53ed5fdff0eed38eb4fb",
   "crates": {
     "aes 0.8.4": {
       "name": "aes",
@@ -5821,10 +5821,52 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "proc-macro"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-pc-windows-msvc": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-apple-darwin": [
+              "default"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -5888,10 +5930,52 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "proc-macro"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-pc-windows-msvc": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-apple-darwin": [
+              "default"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -6885,42 +6969,10 @@
           "**"
         ],
         "crate_features": {
-          "common": [],
-          "selects": {
-            "aarch64-unknown-linux-gnu": [
-              "default"
-            ],
-            "aarch64-unknown-nixos-gnu": [
-              "default"
-            ],
-            "arm-unknown-linux-gnueabi": [
-              "default"
-            ],
-            "armv7-unknown-linux-gnueabi": [
-              "default"
-            ],
-            "i686-unknown-freebsd": [
-              "default"
-            ],
-            "i686-unknown-linux-gnu": [
-              "default"
-            ],
-            "powerpc-unknown-linux-gnu": [
-              "default"
-            ],
-            "s390x-unknown-linux-gnu": [
-              "default"
-            ],
-            "x86_64-unknown-freebsd": [
-              "default"
-            ],
-            "x86_64-unknown-linux-gnu": [
-              "default"
-            ],
-            "x86_64-unknown-nixos-gnu": [
-              "default"
-            ]
-          }
+          "common": [
+            "default"
+          ],
+          "selects": {}
         },
         "deps": {
           "common": [
@@ -7453,16 +7505,97 @@
             "clone-impls",
             "default",
             "derive",
-            "extra-traits",
-            "fold",
-            "full",
             "parsing",
             "printing",
             "proc-macro",
-            "quote",
-            "visit"
+            "quote"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "i686-pc-windows-msvc": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "i686-unknown-linux-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "x86_64-apple-darwin": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "x86_64-unknown-freebsd": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "extra-traits",
+              "fold",
+              "full",
+              "visit"
+            ]
+          }
         },
         "deps": {
           "common": [
