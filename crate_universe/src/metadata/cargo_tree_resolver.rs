@@ -281,7 +281,7 @@ impl TreeResolver {
     /// ```
     ///
     /// As seen in the associated `target_info.rs` link, this command is generally a lot more complicated but
-    /// this prefix is what's used to identify the a command to intercept. Cargo will make this call multiple times
+    /// this prefix is what's used to identify the command to intercept. Cargo will make this call multiple times
     /// to identify a myriad of information about a target platform (primarily [--print=cfg](https://doc.rust-lang.org/rustc/command-line-arguments.html#--print-print-compiler-information)
     /// for the interests here) and will pass `--target ${TARGET_TRIPLE}` in the case where `cargo tree` was
     /// called with the `--target` argument. When identifying host platform information, the `rustc` invocation
