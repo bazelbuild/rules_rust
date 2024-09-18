@@ -27,7 +27,9 @@ def _create_dep_dir_impl(ctx):
     ctx.actions.run(
         executable = writer,
         outputs = [out],
-        arguments = ["{}/a_file".format(out.path)],
+        arguments = [
+            "{}\\a_file".format(out.path) if is_windows else "{}/a_file".format(out.path),
+        ],
     )
 
     return [DefaultInfo(files = depset(direct = [out]))]
