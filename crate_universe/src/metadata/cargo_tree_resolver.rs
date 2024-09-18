@@ -292,6 +292,9 @@ impl TreeResolver {
     /// The design/use of this script feels blasphemous but it is the only way I could figure out how to get the
     /// necessary information from Cargo without reimplementing the dependency+feature resolver logic. This is
     /// valuable in allowing `cargo-bazel` to scale with different versions of Rust.
+    ///
+    /// This wrapper can probably be eliminated if the following feature request is implemented:
+    /// - https://github.com/rust-lang/cargo/issues/14527
     fn create_rustc_wrapper(output_dir: &Path) -> Result<PathBuf> {
         Self::create_rustc_wrapper_impl(output_dir)
     }
@@ -704,12 +707,15 @@ enum TreeDepCompileKind {
     /// Collecting dependencies for the target platform.
     Target(CrateId),
 
-    /// Collecting dependencies for the host platform (e.g. `[build-dependency]` and `proc-macro`).
+    /// Collecting dependencies for the host platform (e.g. `[build-dependency]`
+    /// and `proc-macro`).
     Host(CrateId),
 
-    /// Similar to [TreeDepCompileKind::Target] represents an edge where
+    /// A variant of [TreeDepCompileKind::Target] that represents an edge where
     /// dependencies are to be collected for host. E.g. a crate which has
-    /// a `[build-dependency] or `(proc-macro)` dependency.
+    /// a `[build-dependency] or `(proc-macro)` dependency. This variant is only
+    /// used for internal bookkeeping to make sure other nodes farther down in
+    /// the graph are collected as [TreeDepCompileKind::Host].
     TargetWithHostDep(CrateId),
 }
 
