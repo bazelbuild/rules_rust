@@ -94,7 +94,7 @@ rust_library(
     deps = [
         "@crates_vendor_pkgs__axum-core-0.1.2//:axum_core",
         "@crates_vendor_pkgs__bitflags-1.3.2//:bitflags",
-        "@crates_vendor_pkgs__bytes-1.7.1//:bytes",
+        "@crates_vendor_pkgs__bytes-1.7.2//:bytes",
         "@crates_vendor_pkgs__futures-util-0.3.30//:futures_util",
         "@crates_vendor_pkgs__http-0.2.12//:http",
         "@crates_vendor_pkgs__http-body-0.4.6//:http_body",

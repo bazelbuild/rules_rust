@@ -501,12 +501,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__bytes-1.7.1",
-        sha256 = "8318a53db07bb3f8dca91a600466bdb3f2eaadeedfdbcf02e1accbad9271ba50",
+        name = "cvm__bytes-1.7.2",
+        sha256 = "428d9aa8fbc0670b7b8d6030a7fadd0f86151cae55e4dbbece15f3780a3dfaf3",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/bytes/1.7.1/download"],
-        strip_prefix = "bytes-1.7.1",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.bytes-1.7.1.bazel"),
+        urls = ["https://static.crates.io/crates/bytes/1.7.2/download"],
+        strip_prefix = "bytes-1.7.2",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.bytes-1.7.2.bazel"),
     )
 
     maybe(

@@ -116,7 +116,7 @@ rust_library(
     }),
     version = "1.40.0",
     deps = [
-        "//vendor_local_manifests/crates/bytes-1.7.1:bytes",
+        "//vendor_local_manifests/crates/bytes-1.7.2:bytes",
         "//vendor_local_manifests/crates/mio-1.0.2:mio",
         "//vendor_local_manifests/crates/parking_lot-0.12.3:parking_lot",
         "//vendor_local_manifests/crates/pin-project-lite-0.2.14:pin_project_lite",

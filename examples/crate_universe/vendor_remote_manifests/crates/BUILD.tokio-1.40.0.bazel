@@ -116,7 +116,7 @@ rust_library(
     }),
     version = "1.40.0",
     deps = [
-        "@cvm__bytes-1.7.1//:bytes",
+        "@cvm__bytes-1.7.2//:bytes",
         "@cvm__mio-1.0.2//:mio",
         "@cvm__parking_lot-0.12.3//:parking_lot",
         "@cvm__pin-project-lite-0.2.14//:pin_project_lite",

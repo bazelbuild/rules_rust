@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.7.1:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.7.2:bytes",
         "//vendor_local_pkgs/crates/futures-util-0.3.30:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",
