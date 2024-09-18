@@ -95,6 +95,8 @@ tasks:
     platform: windows
     build_flags:
       - "--noenable_runfiles"
+    test_flags:
+      - "--noenable_runfiles"
     build_targets: *default_windows_no_runfiles_targets
     test_targets: *default_windows_no_runfiles_targets
   ubuntu2004_split_coverage_postprocessing:
@@ -194,6 +196,10 @@ tasks:
     name: No Runfiles With Aspects
     platform: windows
     build_flags:
+      - "--noenable_runfiles"
+      - "--config=rustfmt"
+      - "--config=clippy"
+    test_flags:
       - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
