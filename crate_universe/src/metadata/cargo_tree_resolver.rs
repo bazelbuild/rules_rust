@@ -644,7 +644,7 @@ fn set_url_scheme_despite_the_url_crate_not_wanting_us_to(
 ) -> Result<String> {
     let (_old_scheme, new_url_without_scheme) = url.as_str().split_once(':').ok_or_else(|| {
         anyhow::anyhow!(
-            "Cannot set schme of URL which doesn't contain \":\": {:?}",
+            "Cannot set scheme of URL which doesn't contain \":\": {:?}",
             url
         )
     })?;
