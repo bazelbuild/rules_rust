@@ -67,9 +67,24 @@ def declare_config_settings():
         )
 
     native.platform(
-        name = "wasm",
+        name = "wasm32",
         constraint_values = [
             "@platforms//cpu:wasm32",
+            str(Label("//rust/platform/os:unknown")),
+        ],
+    )
+
+    # Add alias for wasm to maintain backwards compatibility.
+    native.alias(
+        name = "wasm",
+        actual = ":wasm32",
+        deprecation = "Use `@rules_rust//rust/platform:wasm32` instead",
+    )
+
+    native.platform(
+        name = "wasm64",
+        constraint_values = [
+            "@platforms//cpu:wasm64",
             str(Label("//rust/platform/os:unknown")),
         ],
     )

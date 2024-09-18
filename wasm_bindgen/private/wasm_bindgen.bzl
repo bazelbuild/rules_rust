@@ -113,6 +113,11 @@ WASM_BINDGEN_ATTR = {
         default = "bundler",
         values = ["web", "bundler", "nodejs", "no-modules", "deno"],
     ),
+    "target_arch": attr.string(
+        doc = "The target architecture to use for the wasm-bindgen command line option.",
+        default = "wasm32",
+        values = ["wasm32", "wasm64"],
+    ),
     "wasm_file": attr.label(
         doc = "The `.wasm` file or crate to generate bindings for.",
         allow_single_file = True,
@@ -141,6 +146,11 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
             doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
             default = "bundler",
             values = ["web", "bundler", "nodejs", "no-modules", "deno"],
+        ),
+        "target_arch": attr.string(
+            doc = "The target architecture to use for the wasm-bindgen command line option.",
+            default = "wasm32",
+            values = ["wasm32", "wasm64"],
         ),
         "wasm_file": attr.label(
             doc = "The `.wasm` file or crate to generate bindings for.",

@@ -273,7 +273,7 @@ def main() -> None:
 
         file_key_to_sha = {}
 
-        retries = []
+        artifacts = []
 
         logging.info("Parsing artifacts...")
         for channel, versioned_info in manifest_data.items():
@@ -340,7 +340,7 @@ def main() -> None:
                         template = tool_template.replace("{target}", target)
 
                         # See if we can download the file directly.
-                        retries.extend(
+                        artifacts.extend(
                             [
                                 template.format(pkg=pkg_name, ext="tar.gz"),
                                 template.format(pkg=pkg_name, ext="tar.xz"),
@@ -352,7 +352,7 @@ def main() -> None:
         # Do a brute force check to find additional sha256 values.
         file_key_to_sha.update(
             download_direct_sha256s(
-                artifacts=sorted(set(retries)),
+                artifacts=sorted(set(artifacts)),
                 output_dir=tmp_dir / "retries",
             )
         )

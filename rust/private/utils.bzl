@@ -788,7 +788,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
     prefix = "lib"
     if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
         prefix = ""
-    if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
+    if toolchain.target_arch in ("wasm32", "wasm64") and crate_type == "cdylib":
         prefix = ""
 
     return "{prefix}{name}{lib_hash}{extension}".format(
