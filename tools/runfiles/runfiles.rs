@@ -141,6 +141,10 @@ impl Runfiles {
         };
 
         let repo_mapping = raw_rlocation(&mode, "_repo_mapping")
+            // This is the only place directory based runfiles might do file IO for a runfile. In the
+            // event that a `_repo_mapping` file does not exist, a default map should be created. Otherwise
+            // if the file is known to exist, parse it and raise errors for users should parsing fail.
+            .filter(|f| f.exists())
             .map(parse_repo_mapping)
             .transpose()?
             .unwrap_or_default();
