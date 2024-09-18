@@ -294,7 +294,7 @@ impl TreeResolver {
     /// valuable in allowing `cargo-bazel` to scale with different versions of Rust.
     ///
     /// This wrapper can probably be eliminated if the following feature request is implemented:
-    /// - https://github.com/rust-lang/cargo/issues/14527
+    /// - <https://github.com/rust-lang/cargo/issues/14527>
     fn create_rustc_wrapper(output_dir: &Path) -> Result<PathBuf> {
         Self::create_rustc_wrapper_impl(output_dir)
     }
