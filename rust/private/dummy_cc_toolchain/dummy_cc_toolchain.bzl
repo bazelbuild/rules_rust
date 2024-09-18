@@ -13,7 +13,7 @@ dummy_cc_toolchain = rule(
 def _config_impl(ctx):
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
-        toolchain_identifier = "dummy-wasm32-cc-toolchain",
+        toolchain_identifier = "dummy-wasm-cc-toolchain",
         host_system_name = "unknown",
         target_system_name = "unknown",
         target_cpu = "unknown",

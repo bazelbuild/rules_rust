@@ -19,7 +19,7 @@ def _format_src_label(label):
     return "Label(\"{}\"),".format(str(label).lstrip("@"))
 
 def _srcs_module_impl(ctx):
-    srcs = [_format_src_label(src.owner) for src in ctx.files.srcs]
+    srcs = [_format_src_label(src.owner) for src in sorted(ctx.files.srcs)]
     if not srcs:
         fail("`srcs` cannot be empty")
     output = ctx.actions.declare_file(ctx.label.name)

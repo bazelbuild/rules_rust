@@ -88,6 +88,6 @@ rust_library(
     deps = [
         "@t3p__proc-macro2-1.0.86//:proc_macro2",
         "@t3p__quote-1.0.37//:quote",
-        "@t3p__unicode-ident-1.0.12//:unicode_ident",
+        "@t3p__unicode-ident-1.0.13//:unicode_ident",
     ],
 )

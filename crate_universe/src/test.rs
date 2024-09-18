@@ -1,5 +1,7 @@
 //! A module containing common test helpers
 
+use std::path::PathBuf;
+
 pub(crate) fn mock_cargo_metadata_package() -> cargo_metadata::Package {
     serde_json::from_value(serde_json::json!({
         "name": "mock-pkg",
@@ -40,6 +42,22 @@ pub(crate) fn mock_cargo_lock_package() -> cargo_lock::Package {
         "#,
     ))
     .unwrap()
+}
+
+/// Create a temp directory that is conditionally leaked when running under Bazel.
+/// Bazel will cleanup the test temp directory after tests have finished.
+pub(crate) fn test_tempdir(prefix: &str) -> (Option<tempfile::TempDir>, PathBuf) {
+    match std::env::var("TEST_TMPDIR") {
+        Ok(t) => {
+            let dir = tempfile::TempDir::with_prefix_in(prefix, t).unwrap();
+            (None, dir.into_path())
+        }
+        Err(_) => {
+            let dir = tempfile::TempDir::with_prefix(prefix).unwrap();
+            let path = PathBuf::from(dir.path());
+            (Some(dir), path)
+        }
+    }
 }
 
 pub(crate) mod metadata {

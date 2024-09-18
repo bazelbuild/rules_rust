@@ -1,5 +1,5 @@
 {
-  "checksum": "00a3a71b3bac0df6fd4b94a93bd822e981273474ee64cf1dd23c6a8e7c40bafa",
+  "checksum": "d8d7787f457eaad0ffd61ec7adc235234a873c09420a7b6ad73269b5faae6163",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -2113,6 +2113,21 @@
         "compile_data_glob": [
           "**"
         ],
+        "crate_features": {
+          "common": [
+            "errhandlingapi",
+            "fileapi",
+            "handleapi",
+            "minwinbase",
+            "minwindef",
+            "processthreadsapi",
+            "synchapi",
+            "winbase",
+            "winerror",
+            "winnt"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {

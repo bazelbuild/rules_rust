@@ -49,6 +49,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "x86_64-unknown-none",
 ]
 
+# Note that only platforms with `std` artifacts should be added
+# to this list: https://doc.rust-lang.org/nightly/rustc/platform-support.html#tier-3
 SUPPORTED_T3_PLATFORM_TRIPLES = [
     "aarch64-unknown-nto-qnx710",
 ]
@@ -82,6 +84,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "thumbv7m": "armv7-m",
     "thumbv8m.main": "armv8-m",
     "wasm32": None,
+    "wasm64": None,
     "x86_64": "x86_64",
 }
 
@@ -355,6 +358,11 @@ def triple_to_constraint_set(target_triple):
     if target_triple == "wasm32-unknown-unknown":
         return [
             "@platforms//cpu:wasm32",
+            "@platforms//os:none",
+        ]
+    if target_triple == "wasm64-unknown-unknown":
+        return [
+            "@platforms//cpu:wasm64",
             "@platforms//os:none",
         ]
 

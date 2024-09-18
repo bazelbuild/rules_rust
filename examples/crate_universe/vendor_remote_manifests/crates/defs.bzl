@@ -701,12 +701,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__redox_syscall-0.5.3",
-        sha256 = "2a908a6e00f1fdd0dfd9c0eb08ce85126f6d8bbda50017e74bc4a4b7d4a926a4",
+        name = "cvm__redox_syscall-0.5.4",
+        sha256 = "0884ad60e090bf1345b93da0a5de8923c93884cd03f40dfcfddd3b4bee661853",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/redox_syscall/0.5.3/download"],
-        strip_prefix = "redox_syscall-0.5.3",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.3.bazel"),
+        urls = ["https://static.crates.io/crates/redox_syscall/0.5.4/download"],
+        strip_prefix = "redox_syscall-0.5.4",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.4.bazel"),
     )
 
     maybe(
@@ -721,12 +721,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__rustix-0.38.36",
-        sha256 = "3f55e80d50763938498dd5ebb18647174e0c76dc38c5505294bb224624f30f36",
+        name = "cvm__rustix-0.38.37",
+        sha256 = "8acb788b847c24f28525660c4d7758620a7210875711f79e7f663cc152726811",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/rustix/0.38.36/download"],
-        strip_prefix = "rustix-0.38.36",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.rustix-0.38.36.bazel"),
+        urls = ["https://static.crates.io/crates/rustix/0.38.37/download"],
+        strip_prefix = "rustix-0.38.37",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.rustix-0.38.37.bazel"),
     )
 
     maybe(
@@ -831,12 +831,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__unicode-ident-1.0.12",
-        sha256 = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b",
+        name = "cvm__unicode-ident-1.0.13",
+        sha256 = "e91b56cd4cadaeb79bbf1a5645f6b4f8dc5bde8834ad5894a8db35fda9efa1fe",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unicode-ident/1.0.12/download"],
-        strip_prefix = "unicode-ident-1.0.12",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.unicode-ident-1.0.12.bazel"),
+        urls = ["https://static.crates.io/crates/unicode-ident/1.0.13/download"],
+        strip_prefix = "unicode-ident-1.0.13",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.unicode-ident-1.0.13.bazel"),
     )
 
     maybe(

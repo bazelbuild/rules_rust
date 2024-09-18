@@ -4,13 +4,14 @@ extern crate cargo_bazel;
 extern crate serde_json;
 extern crate tempfile;
 
-use anyhow::{ensure, Context, Result};
-use cargo_bazel::cli::{splice, SpliceOptions};
-use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+
+use anyhow::{ensure, Context, Result};
+use cargo_bazel::cli::{splice, SpliceOptions};
+use serde_json::{json, Value};
 
 fn should_skip_test() -> bool {
     // All test cases require network access to build pull crate metadata
@@ -26,14 +27,16 @@ fn should_skip_test() -> bool {
     }
 }
 
-fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
-    let cargo = std::fs::canonicalize(PathBuf::from(
-        env::var("CARGO").context("CARGO environment variable must be set.")?,
-    ))
+fn setup_cargo_env(rfiles: &runfiles::Runfiles) -> Result<(PathBuf, PathBuf)> {
+    let cargo = runfiles::rlocation!(
+        rfiles,
+        env::var("CARGO").context("CARGO environment variable must be set.")?
+    )
     .unwrap();
-    let rustc = std::fs::canonicalize(PathBuf::from(
-        env::var("RUSTC").context("RUSTC environment variable must be set.")?,
-    ))
+    let rustc = runfiles::rlocation!(
+        rfiles,
+        env::var("RUSTC").context("RUSTC environment variable must be set.")?
+    )
     .unwrap();
     ensure!(cargo.exists());
     ensure!(rustc.exists());
@@ -63,10 +66,10 @@ fn setup_cargo_env() -> Result<(PathBuf, PathBuf)> {
 }
 
 fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str) -> Value {
-    let (cargo, rustc) = setup_cargo_env().unwrap();
-
     let scratch = tempfile::tempdir().unwrap();
     let runfiles = runfiles::Runfiles::create().unwrap();
+
+    let (cargo, rustc) = setup_cargo_env(&runfiles).unwrap();
 
     let splicing_manifest = scratch.path().join("splicing_manifest.json");
     fs::write(
@@ -397,6 +400,8 @@ fn resolver_2_deps() {
         return;
     }
 
+    cargo_bazel::cli::init_logging("Splice", true);
+
     let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "resolver_2_deps_test",
@@ -511,5 +516,96 @@ fn resolver_2_deps() {
             },
         }),
         metadata["metadata"]["cargo-bazel"]["tree_metadata"]["iana-time-zone 0.1.60"],
+    );
+}
+
+#[test]
+fn host_specific_build_deps() {
+    if should_skip_test() {
+        eprintln!("Skipping!");
+        return;
+    }
+
+    let r = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "host_specific_build_deps",
+        HashMap::from([(
+            runfiles::rlocation!(
+                r,
+                "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.toml"
+            )
+            .unwrap()
+            .to_string_lossy()
+            .to_string(),
+            "//:test_input".to_string(),
+        )]),
+        "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.lock",
+    );
+
+    assert_eq!(
+        json!({
+            "common": {
+                "deps": [
+                    "bitflags 2.6.0",
+                ],
+                "features": [
+                    "alloc",
+                    "default",
+                    "fs",
+                    "libc-extra-traits",
+                    "std",
+                    "use-libc-auxv",
+                ],
+            },
+            // Note that there is no `wasm32-unknown-unknown` or `x86_64-pc-windows-msvc` entry
+            // since these platforms do not depend on `rustix`. The chain breaks due to the
+            // conditions here: https://github.com/Stebalien/tempfile/blob/v3.11.0/Cargo.toml#L25-L33
+            "selects": {
+                "x86_64-apple-darwin": {
+                    "deps": [
+                        "errno 0.3.9",
+                        "libc 0.2.158",
+                    ],
+                },
+                "x86_64-unknown-linux-gnu": {
+                    "deps": [
+                        "linux-raw-sys 0.4.14",
+                    ],
+                },
+            },
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["rustix 0.38.36"],
+    );
+
+    assert_eq!(
+        json!({
+            "common": {
+                "deps": [
+                    "cfg-if 1.0.0",
+                    "fastrand 2.1.1",
+                    "once_cell 1.19.0",
+                ],
+            },
+            // Note that windows does not contain `rustix` and instead `windows-sys`.
+            // This shows correct detection of exec platform constraints.
+            "selects": {
+                "x86_64-apple-darwin": {
+                    "deps": [
+                        "rustix 0.38.36",
+                    ],
+                },
+                "x86_64-pc-windows-msvc": {
+                    "deps": [
+                        "windows-sys 0.59.0",
+                    ],
+                },
+                "x86_64-unknown-linux-gnu": {
+                    "deps": [
+                        "rustix 0.38.36",
+                    ],
+                },
+            },
+        }),
+        metadata["metadata"]["cargo-bazel"]["tree_metadata"]["tempfile 3.12.0"],
     );
 }

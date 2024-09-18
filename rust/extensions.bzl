@@ -31,6 +31,17 @@ def _find_modules(module_ctx):
 
     return root, our_module
 
+def _empty_repository_impl(repository_ctx):
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        repository_ctx.name,
+    ))
+    repository_ctx.file("BUILD.bazel", "")
+
+_empty_repository = repository_rule(
+    doc = ("Declare an empty repository."),
+    implementation = _empty_repository_impl,
+)
+
 def _rust_impl(module_ctx):
     # Toolchain configuration is only allowed in the root module, or in
     # rules_rust.
@@ -40,18 +51,25 @@ def _rust_impl(module_ctx):
     toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
-        rust_register_toolchains(
-            dev_components = toolchain.dev_components,
-            edition = toolchain.edition,
-            allocator_library = toolchain.allocator_library,
-            rustfmt_version = toolchain.rustfmt_version,
-            rust_analyzer_version = toolchain.rust_analyzer_version,
-            sha256s = toolchain.sha256s,
-            extra_target_triples = toolchain.extra_target_triples,
-            urls = toolchain.urls,
-            versions = toolchain.versions,
-            register_toolchains = False,
-        )
+        if len(toolchain.versions) == 0:
+            # If the root module has asked for rules_rust to not register default
+            # toolchains, an empty repository named `rust_toolchains` is created
+            # so that the `register_toolchains()` in MODULES.bazel is still
+            # valid.
+            _empty_repository(name = "rust_toolchains")
+        else:
+            rust_register_toolchains(
+                dev_components = toolchain.dev_components,
+                edition = toolchain.edition,
+                allocator_library = toolchain.allocator_library,
+                rustfmt_version = toolchain.rustfmt_version,
+                rust_analyzer_version = toolchain.rust_analyzer_version,
+                sha256s = toolchain.sha256s,
+                extra_target_triples = toolchain.extra_target_triples,
+                urls = toolchain.urls,
+                versions = toolchain.versions,
+                register_toolchains = False,
+            )
 
 _COMMON_TAG_KWARGS = dict(
     allocator_library = attr.string(
@@ -92,7 +110,8 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         versions = attr.string_list(
             doc = (
                 "A list of toolchain versions to download. This paramter only accepts one versions " +
-                "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`."
+                "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
+                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
         ),

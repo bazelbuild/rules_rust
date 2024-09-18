@@ -495,12 +495,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "t3p__unicode-ident-1.0.12",
-        sha256 = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b",
+        name = "t3p__unicode-ident-1.0.13",
+        sha256 = "e91b56cd4cadaeb79bbf1a5645f6b4f8dc5bde8834ad5894a8db35fda9efa1fe",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unicode-ident/1.0.12/download"],
-        strip_prefix = "unicode-ident-1.0.12",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.unicode-ident-1.0.12.bazel"),
+        urls = ["https://static.crates.io/crates/unicode-ident/1.0.13/download"],
+        strip_prefix = "unicode-ident-1.0.13",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.unicode-ident-1.0.13.bazel"),
     )
 
     return [
