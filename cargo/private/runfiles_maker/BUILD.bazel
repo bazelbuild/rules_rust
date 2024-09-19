@@ -1,0 +1,8 @@
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "runfiles_maker",
+    srcs = ["runfiles_maker.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)

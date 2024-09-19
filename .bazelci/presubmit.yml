@@ -36,6 +36,21 @@ default_windows_targets: &default_windows_targets
   - "//..."
   - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
+default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
+  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+  - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/1156
+  - "-//crate_universe/..."
+  - "-//test/chained_direct_deps:mod3_doc_test"
+  - "-//test/out_dir_in_tests:demo_lib_doc_test"
+  - "-//test/proto/..."
+  - "-//test/rustc_env_files:output_test"
+  - "-//test/test_env_launcher:test"
+  - "-//test/test_env:test_manifest_dir"
+  - "-//test/test_env:test_run"
+  - "-//test/unit/pipelined_compilation/..."
+  - "-//test/unit/rustdoc/..."
+  - "-//tools/runfiles/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -78,6 +93,15 @@ tasks:
   windows:
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
+  windows_no_runfiles:
+    name: No Runfiles
+    platform: windows
+    build_flags:
+      - "--noenable_runfiles"
+    test_flags:
+      - "--noenable_runfiles"
+    build_targets: *default_windows_no_runfiles_targets
+    test_targets: *default_windows_no_runfiles_targets
   ubuntu2004_split_coverage_postprocessing:
     name: Split Coverage Postprocessing
     platform: ubuntu2004
@@ -171,6 +195,19 @@ tasks:
       - "--config=clippy"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
+  windows_no_runfiles_with_aspects:
+    name: No Runfiles With Aspects
+    platform: windows
+    build_flags:
+      - "--noenable_runfiles"
+      - "--config=rustfmt"
+      - "--config=clippy"
+    test_flags:
+      - "--noenable_runfiles"
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_no_runfiles_targets
+    test_targets: *default_windows_no_runfiles_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows

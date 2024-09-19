@@ -329,6 +329,7 @@ def collect_deps(
                 transitive_build_infos.append(depset([build_info]))
                 if build_info.link_search_paths:
                     transitive_link_search_paths.append(depset([build_info.link_search_paths]))
+                transitive_data.append(build_info.compile_data)
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
@@ -470,14 +471,12 @@ def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configurati
 def _process_build_scripts(
         build_info,
         dep_info,
-        compile_inputs,
         include_link_flags = True):
     """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
         build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
-        compile_inputs (depset): A set of all files that will participate in the build.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
 
     Returns:
@@ -488,8 +487,7 @@ def _process_build_scripts(
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
     extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info, dep_info, include_link_flags = include_link_flags)
-    compile_inputs = depset(transitive = [extra_inputs, compile_inputs])
-    return compile_inputs, out_dir, build_env_file, build_flags_files
+    return extra_inputs, out_dir, build_env_file, build_flags_files
 
 def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -780,13 +778,18 @@ def collect_inputs(
         ],
     )
 
+    build_script_compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(
+        build_info = build_info,
+        dep_info = dep_info,
+        include_link_flags = include_link_flags,
+    )
+
     # For backwards compatibility, we also check the value of the `rustc_env_files` attribute when
     # `crate_info.rustc_env_files` is not populated.
     build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
-    compile_inputs, out_dir, build_env_file, build_flags_files = _process_build_scripts(build_info, dep_info, compile_inputs, include_link_flags = include_link_flags)
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
-    compile_inputs = depset(build_env_files, transitive = [compile_inputs])
+    compile_inputs = depset(build_env_files, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
@@ -1731,8 +1734,13 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
 
         input_depsets.append(build_info.compile_data)
 
+    out_dir_compile_inputs = depset(
+        input_files,
+        transitive = [dep_info.link_search_path_files, dep_info.transitive_data] + input_depsets,
+    )
+
     return (
-        depset(input_files, transitive = [dep_info.link_search_path_files] + input_depsets),
+        out_dir_compile_inputs,
         out_dir,
         build_env_file,
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),

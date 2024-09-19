@@ -23,6 +23,7 @@ load(
     "find_toolchain",
     _name_to_crate_name = "name_to_crate_name",
 )
+load(":runfiles_enabled.bzl", "is_runfiles_enabled", "runfiles_enabled_attr")
 
 # Reexport for cargo_build_script_wrapper.bzl
 name_to_crate_name = _name_to_crate_name
@@ -198,6 +199,38 @@ def _feature_enabled(ctx, feature_name, default = False):
 
     return default
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
+def _create_runfiles_dir(ctx, script):
+    runfiles_dir = ctx.actions.declare_directory("{}.cargo_runfiles".format(ctx.label.name))
+
+    # External repos always fall into the `../` branch of `_rlocationpath`.
+    workspace_name = ctx.workspace_name
+
+    def _runfiles_map(file):
+        return "{}={}".format(file.path, _rlocationpath(file, workspace_name))
+
+    runfiles = script[DefaultInfo].default_runfiles
+
+    args = ctx.actions.args()
+    args.use_param_file("@%s", use_always = True)
+    args.add(runfiles_dir.path)
+    args.add_all(runfiles.files, map_each = _runfiles_map, allow_closure = True)
+
+    ctx.actions.run(
+        mnemonic = "CargoBuildScriptRunfilesDir",
+        executable = ctx.executable._runfiles_maker,
+        arguments = [args],
+        inputs = runfiles.files,
+        outputs = [runfiles_dir],
+    )
+
+    return runfiles_dir
+
 def _cargo_build_script_impl(ctx):
     """The implementation for the `cargo_build_script` rule.
 
@@ -208,6 +241,7 @@ def _cargo_build_script_impl(ctx):
         list: A list containing a BuildInfo provider
     """
     script = ctx.executable.script
+    script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
     toolchain = find_toolchain(ctx)
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
@@ -215,8 +249,28 @@ def _cargo_build_script_impl(ctx):
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
-    manifest_dir = "%s.runfiles/%s/%s" % (script.path, ctx.label.workspace_name or ctx.workspace_name, ctx.label.package)
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
+
+    script_tools = []
+    script_data = []
+    for target in script_info.data:
+        script_data.append(target[DefaultInfo].files)
+        script_data.append(target[DefaultInfo].default_runfiles.files)
+    for target in script_info.tools:
+        script_tools.append(target[DefaultInfo].files)
+        script_tools.append(target[DefaultInfo].default_runfiles.files)
+
+    workspace_name = ctx.label.workspace_name
+    if not workspace_name:
+        workspace_name = ctx.workspace_name
+
+    if not is_runfiles_enabled(ctx.attr):
+        runfiles_dir = _create_runfiles_dir(ctx, ctx.attr.script)
+        script_data.append(depset([runfiles_dir]))
+        manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
+    else:
+        script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
+        manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
 
     streams = struct(
         stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
@@ -331,8 +385,6 @@ def _cargo_build_script_impl(ctx):
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
             env.update(variables)
 
-    script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
-
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
@@ -342,15 +394,6 @@ def _cargo_build_script_impl(ctx):
         script_info.data +
         script_info.tools,
     ))
-
-    script_tools = []
-    script_data = []
-    for target in script_info.data:
-        script_data.append(target[DefaultInfo].files)
-        script_data.append(target[DefaultInfo].default_runfiles.files)
-    for target in script_info.tools:
-        script_tools.append(target[DefaultInfo].files)
-        script_tools.append(target[DefaultInfo].default_runfiles.files)
 
     tools = depset(
         direct = [
@@ -379,6 +422,7 @@ def _cargo_build_script_impl(ctx):
     args.add(ctx.attr.rundir)
 
     build_script_inputs = []
+
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
             dep_env_file = dep[rust_common.dep_info].dep_env
@@ -520,7 +564,14 @@ cargo_build_script = rule(
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
-    },
+        "_runfiles_maker": attr.label(
+            cfg = "exec",
+            executable = True,
+            default = Label("//cargo/private/runfiles_maker"),
+        ),
+    } | runfiles_enabled_attr(
+        default = Label("//cargo/private:runfiles_enabled"),
+    ),
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
