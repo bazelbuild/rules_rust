@@ -124,7 +124,9 @@ impl BuildScriptOutput {
     pub fn outputs_from_command(
         cmd: &mut Command,
     ) -> Result<(Vec<BuildScriptOutput>, Output), Output> {
-        let child_output = cmd.output().expect("Unable to start binary");
+        let child_output = cmd
+            .output()
+            .unwrap_or_else(|e| panic!("Unable to start command:\n{:?}\n{:#?}", e, cmd));
         if child_output.status.success() {
             let reader = BufReader::new(child_output.stdout.as_slice());
             let output = Self::outputs_from_reader(reader);
