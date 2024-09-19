@@ -206,6 +206,7 @@ cargo_build_script(
         allow_empty = True,
         exclude = [
             "**/* *",
+            "**/*.rs",
             ".tmp_git_root/**/*",
             "BUILD",
             "BUILD.bazel",
