@@ -242,6 +242,7 @@ def _cargo_build_script_impl(ctx):
         list: A list containing a BuildInfo provider
     """
     script = ctx.executable.script
+    script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
     toolchain = find_toolchain(ctx)
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
@@ -251,7 +252,14 @@ def _cargo_build_script_impl(ctx):
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
     compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
 
-    build_script_inputs = []
+    script_tools = []
+    script_data = []
+    for target in script_info.data:
+        script_data.append(target[DefaultInfo].files)
+        script_data.append(target[DefaultInfo].default_runfiles.files)
+    for target in script_info.tools:
+        script_tools.append(target[DefaultInfo].files)
+        script_tools.append(target[DefaultInfo].default_runfiles.files)
 
     workspace_name = ctx.label.workspace_name
     if not workspace_name:
@@ -260,7 +268,7 @@ def _cargo_build_script_impl(ctx):
     manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
     if not is_runfiles_enabled(ctx.attr):
         runfiles_dir = _create_runfiles_dir(ctx, ctx.attr.script)
-        build_script_inputs.append(runfiles_dir)
+        script_data.append(depset([runfiles_dir]))
         manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
 
     streams = struct(
@@ -376,8 +384,6 @@ def _cargo_build_script_impl(ctx):
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
             env.update(variables)
 
-    script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
-
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
         ctx.attr.build_script_env,
@@ -387,15 +393,6 @@ def _cargo_build_script_impl(ctx):
         script_info.data +
         script_info.tools,
     ))
-
-    script_tools = []
-    script_data = []
-    for target in script_info.data:
-        script_data.append(target[DefaultInfo].files)
-        script_data.append(target[DefaultInfo].default_runfiles.files)
-    for target in script_info.tools:
-        script_tools.append(target[DefaultInfo].files)
-        script_tools.append(target[DefaultInfo].default_runfiles.files)
 
     tools = depset(
         direct = [
@@ -422,6 +419,8 @@ def _cargo_build_script_impl(ctx):
     args.add(streams.stdout)
     args.add(streams.stderr)
     args.add(ctx.attr.rundir)
+
+    build_script_inputs = []
 
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
