@@ -280,13 +280,13 @@ impl RustModulePath {
     /// Join a path to the end of the module path.
     fn join(&self, path: &str) -> RustModulePath {
         if self.0.is_empty() {
-            return RustModulePath(path.to_string());
+            return RustModulePath(escape_keyword(path.to_string()));
         }
         if path.is_empty() {
             return self.clone();
         }
 
-        RustModulePath(format!("{}::{}", self.0, path))
+        RustModulePath(format!("{}::{}", self.0, escape_keyword(path.to_string())))
     }
 }
 
@@ -298,7 +298,7 @@ impl Display for RustModulePath {
 
 impl From<&str> for RustModulePath {
     fn from(path: &str) -> Self {
-        RustModulePath(path.to_string())
+        RustModulePath(escape_keyword(path.to_string()))
     }
 }
 
@@ -310,7 +310,7 @@ fn get_extern_paths(
     crate_name: &str,
 ) -> Result<BTreeMap<ProtoPath, RustModulePath>, String> {
     let mut extern_paths = BTreeMap::new();
-    let rust_path = RustModulePath(crate_name.to_string());
+    let rust_path = RustModulePath(escape_keyword(crate_name.to_string()));
 
     for file in descriptor_set.file.iter() {
         descriptor_set_file_to_extern_paths(&mut extern_paths, &rust_path, file);
@@ -326,7 +326,9 @@ fn descriptor_set_file_to_extern_paths(
     file: &FileDescriptorProto,
 ) {
     let package = file.package.clone().unwrap_or_default();
-    let rust_path = rust_path.join(&snake_cased_package_name(&package).replace('.', "::"));
+    let rust_path = package.split('.').fold(rust_path.clone(), |acc, part| {
+        acc.join(&snake_cased_package_name(part))
+    });
     let proto_path = ProtoPath(package);
 
     for message_type in file.message_type.iter() {
