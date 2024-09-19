@@ -34,8 +34,10 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
+  # The proto rules do not work on windows
+  - "-//proto/..."
+  - "-//test/proto/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"

@@ -7,7 +7,7 @@ rust_library(
 )
 
 rust_test_suite(
-    name = "tests_suite",
+    name = "suite",
     srcs = glob(["tests/**"]),
     edition = "2018",
     deps = [":math_lib"],
