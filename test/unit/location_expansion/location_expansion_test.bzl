@@ -1,7 +1,6 @@
 """Unittest to verify location expansion in rustc flags"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_library")
 load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains")
 
@@ -18,14 +17,10 @@ def _location_expansion_rustc_flags_test(ctx):
 location_expansion_rustc_flags_test = analysistest.make(_location_expansion_rustc_flags_test)
 
 def _location_expansion_test():
-    write_file(
+    native.genrule(
         name = "flag_generator",
-        out = "generated_flag.data",
-        content = [
-            "--cfg=test_flag",
-            "",
-        ],
-        newline = "unix",
+        outs = ["generated_flag.data"],
+        cmd = "echo --cfg=test_flag > $@",
     )
 
     rust_library(

@@ -6,21 +6,21 @@ load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVa
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
-_CONTENT = """\
+def _wrap_impl(ctx):
+    rs_file = ctx.actions.declare_file(ctx.label.name + "_wrapped.rs")
+    crate_name = ctx.attr.crate_name if ctx.attr.crate_name else ctx.label.name
+    ctx.actions.run_shell(
+        outputs = [rs_file],
+        command = """cat <<EOF > {}
 // crate_name: {}
 use to_wrap::to_wrap;
 
 pub fn wrap() {{
     to_wrap();
 }}
-"""
-
-def _wrap_impl(ctx):
-    rs_file = ctx.actions.declare_file(ctx.label.name + "_wrapped.rs")
-    crate_name = ctx.attr.crate_name if ctx.attr.crate_name else ctx.label.name
-    ctx.actions.write(
-        output = rs_file,
-        content = _CONTENT.format(crate_name),
+EOF
+""".format(rs_file.path, crate_name),
+        mnemonic = "WriteWrapperRsFile",
     )
 
     toolchain = ctx.toolchains[Label("//rust:toolchain")]

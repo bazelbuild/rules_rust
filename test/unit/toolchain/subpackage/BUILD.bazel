@@ -1,10 +1,7 @@
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
-
-write_file(
+genrule(
     name = "dummy_rlib",
-    out = "core.rlib",
-    content = [],
-    newline = "unix",
+    outs = ["core.rlib"],
+    cmd = "touch $@",
 )
 
 filegroup(

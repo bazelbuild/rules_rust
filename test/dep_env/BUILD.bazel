@@ -113,5 +113,4 @@ genrule(
     srcs = ["dep_dir"],
     outs = ["set_dep_dir.env"],
     cmd = "echo DEP_DIR=\\$${pwd}/$(execpath dep_dir) > $@",
-    cmd_bat = "echo DEP_DIR=$${pwd}/$(execpath dep_dir) > $@",
 )

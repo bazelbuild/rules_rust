@@ -36,21 +36,6 @@ default_windows_targets: &default_windows_targets
   - "//..."
   - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
-default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
-  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-  - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/1156
-  - "-//crate_universe/..."
-  - "-//test/chained_direct_deps:mod3_doc_test"
-  - "-//test/out_dir_in_tests:demo_lib_doc_test"
-  - "-//test/proto/..."
-  - "-//test/rustc_env_files:output_test"
-  - "-//test/test_env_launcher:test"
-  - "-//test/test_env:test_manifest_dir"
-  - "-//test/test_env:test_run"
-  - "-//test/unit/pipelined_compilation/..."
-  - "-//test/unit/rustdoc/..."
-  - "-//tools/runfiles/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -73,7 +58,6 @@ split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_she
   - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
 tasks:
   ubuntu2004:
-    platform: ubuntu2004
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
@@ -81,31 +65,19 @@ tasks:
     run_targets:
       - //test:query_test_binary
   rbe_ubuntu2004:
-    platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   macos:
-    platform: macos
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
-    platform: windows
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
-  windows_no_runfiles:
-    name: No Runfiles
-    platform: windows
-    build_flags:
-      - "--noenable_runfiles"
-    test_flags:
-      - "--noenable_runfiles"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
   ubuntu2004_split_coverage_postprocessing:
     name: Split Coverage Postprocessing
     platform: ubuntu2004
@@ -199,19 +171,6 @@ tasks:
       - "--config=clippy"
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
-  windows_no_runfiles_with_aspects:
-    name: No Runfiles With Aspects
-    platform: windows
-    build_flags:
-      - "--noenable_runfiles"
-      - "--config=rustfmt"
-      - "--config=clippy"
-    test_flags:
-      - "--noenable_runfiles"
-      - "--config=rustfmt"
-      - "--config=clippy"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows
@@ -651,7 +610,7 @@ tasks:
     environment:
       # This ndk version matches with rules_android_ndk repo's CI
       # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L37
-      # The ndk is installed by this script
+      # The ndk is installed by this script 
       # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
       ANDROID_NDK_HOME: /opt/android-ndk-r25b
   android_examples_macos:
@@ -666,7 +625,7 @@ tasks:
     environment:
       # This ndk version matches with rules_android_ndk repo's CI
       # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L42
-      # The ndk is installed by this script
+      # The ndk is installed by this script 
       # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
       ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
   ios_examples:

@@ -1,18 +1,9 @@
-use std::env::var;
-use std::fs;
-use std::io::Result;
-use std::path::PathBuf;
+use std::{env::var, fs, io::Result};
 
 fn main() {
-    let dep_dir = PathBuf::from(var("DEP_DIR").expect("DEP_DIR should be set").trim());
-    let entries = fs::read_dir(&dep_dir)
-        .unwrap_or_else(|e| {
-            panic!(
-                "Failed to open DEP_DIR directory: {}\n{:?}",
-                dep_dir.display(),
-                e
-            )
-        })
+    let dep_dir = &var("DEP_DIR").expect("DEP_DIR should be set");
+    let entries = fs::read_dir(dep_dir)
+        .expect("Failed to open DEP_DIR directory")
         .collect::<Result<Vec<_>>>()
         .expect("Failed to read DEP_DIR directory entries");
     let entries = entries

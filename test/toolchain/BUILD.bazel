@@ -9,7 +9,6 @@ genrule(
     # rustc assumes it can read things like librustc_driver in order to run this command.
     # This is a test to ensure we supply all of the files rustc needs as part of the current_rust_toolchain.
     cmd = "$(RUSTC) --print=cfg > $@",
-    cmd_bat = "$(RUSTC) --print=cfg > $@",
     toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
     tools = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
 )

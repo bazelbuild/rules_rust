@@ -20,7 +20,7 @@ Note that rules_rust bzlmod support is still a work in progress. Most features s
 To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.50.1")
+bazel_dep(name = "rules_rust", version = "0.48.0")
 ```
 
 Don't forget to substitute in your desired release's version number.
@@ -36,8 +36,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_rust/releases
 http_archive(
     name = "rules_rust",
-    integrity = "sha256-Log/YgrGjboS4tCqQPBA58VPyFcnCn/IZm+xxKTZrn0=",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.50.1/rules_rust-v0.50.1.tar.gz"],
+    integrity = "sha256-Weev1uz2QztBlDA88JX6A1N72SucD1V8lBsaliM0TTg=",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.48.0/rules_rust-v0.48.0.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -57,7 +57,7 @@ To build with a particular version of the Rust compiler, pass that version to [`
 rust_register_toolchains(
     edition = "2021",
     versions = [
-        "1.79.0",
+        "1.79.0"
     ],
 )
 ```
