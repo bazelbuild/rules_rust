@@ -61,7 +61,7 @@ fn main() {
         .expect("Failed to create output directory");
         std::fs::copy(src, &out_dest).unwrap_or_else(|e| {
             panic!(
-                "Failed to copy file {} -> {}\n{:?}",
+                "Failed to copy file `{} -> {}`\n{:?}",
                 src.display(),
                 out_dest.display(),
                 e

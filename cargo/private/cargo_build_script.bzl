@@ -23,7 +23,6 @@ load(
     "find_toolchain",
     _name_to_crate_name = "name_to_crate_name",
 )
-load(":runfiles_enabled.bzl", "is_runfiles_enabled", "runfiles_enabled_attr")
 
 # Reexport for cargo_build_script_wrapper.bzl
 name_to_crate_name = _name_to_crate_name
@@ -206,6 +205,23 @@ def _rlocationpath(file, workspace_name):
     return "{}/{}".format(workspace_name, file.short_path)
 
 def _create_runfiles_dir(ctx, script):
+    """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
+
+    Due to the inability to forcibly generate runfiles directories for use as inputs
+    to actions, this function creates a custom runfiles directory that can more
+    consistently be relied upon as an input. For more details see:
+    https://github.com/bazelbuild/bazel/issues/15486
+
+    If runfiles directories can ever be more directly treated as an input this function
+    can be retired.
+
+    Args:
+        ctx (ctx): The rule's context object
+        script (Target): The `cargo_build_script.script` target.
+
+    Returns:
+        File: The directory created
+    """
     runfiles_dir = ctx.actions.declare_directory("{}.cargo_runfiles".format(ctx.label.name))
 
     # External repos always fall into the `../` branch of `_rlocationpath`.
@@ -264,13 +280,18 @@ def _cargo_build_script_impl(ctx):
     if not workspace_name:
         workspace_name = ctx.workspace_name
 
-    if not is_runfiles_enabled(ctx.attr):
+    # Relying on runfiles directories is unreliable when passing data to
+    # dependent actions. Instead, an explicit directory should be created
+    # until more reliable functionality is implemented in Bazel:
+    # https://github.com/bazelbuild/bazel/issues/15486
+    incompatible_runfiles_cargo_manifest_dir = ctx.attr._incompatible_runfiles_cargo_manifest_dir[BuildSettingInfo].value
+    if incompatible_runfiles_cargo_manifest_dir:
+        script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
+        manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
+    else:
         runfiles_dir = _create_runfiles_dir(ctx, ctx.attr.script)
         script_data.append(depset([runfiles_dir]))
         manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
-    else:
-        script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
-        manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
 
     streams = struct(
         stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
@@ -564,14 +585,15 @@ cargo_build_script = rule(
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
+        "_incompatible_runfiles_cargo_manifest_dir": attr.label(
+            default = Label("//cargo/settings:incompatible_runfiles_cargo_manifest_dir"),
+        ),
         "_runfiles_maker": attr.label(
             cfg = "exec",
             executable = True,
             default = Label("//cargo/private/runfiles_maker"),
         ),
-    } | runfiles_enabled_attr(
-        default = Label("//cargo/private:runfiles_enabled"),
-    ),
+    },
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),

@@ -8,3 +8,12 @@ bool_flag(
     name = "experimental_symlink_execroot",
     build_setting_default = False,
 )
+
+# A flag which causes `cargo_build_script` to write an explicit `CARGO_MANFIEST_DIR`
+# directory from an action instead of using runfiles directories which cannot be
+# passed to downstream actions.
+# https://github.com/bazelbuild/bazel/issues/15486
+bool_flag(
+    name = "incompatible_runfiles_cargo_manifest_dir",
+    build_setting_default = False,
+)
