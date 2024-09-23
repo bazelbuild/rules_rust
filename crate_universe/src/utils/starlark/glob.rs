@@ -149,7 +149,7 @@ impl Serialize for GlobOrLabels {
 impl GlobOrLabels {
     pub fn is_empty(&self) -> bool {
         match self {
-            Self::Glob(g) => g.is_empty(),
+            Self::Glob(g) => !g.has_any_include(),
             Self::Labels(l) => l.is_empty(),
         }
     }

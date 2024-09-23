@@ -8,12 +8,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::{AliasRule, CrateId, GenBinaries};
 use crate::metadata::{
-    CrateAnnotation, Dependency, PairedExtras, SourceAnnotation, TreeResolverMetadata,
+    CrateAnnotation, Dependency, MetadataAnnotation, PairedExtras, SourceAnnotation,
+    TreeResolverMetadata,
 };
 use crate::select::Select;
 use crate::splicing::WorkspaceMetadata;
 use crate::utils::sanitize_module_name;
-use crate::utils::starlark::{ Glob, GlobOrLabels, Label, SelectList };
+use crate::utils::starlark::{Glob, GlobOrLabels, Label, Repository};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CrateDependency {
@@ -874,7 +875,7 @@ fn get_attributes(
         TargetAttributes {
             crate_name,
             crate_root,
-            srcs: Glob::new_rust_srcs().into(),
+            srcs: Glob::new_rust_srcs(true).into(),
             compile_data: None,
         }
     } else {
@@ -890,14 +891,14 @@ fn get_attributes(
         println!(
             "'crate_root', 'srcs', 'compile_data', and (if necessary) 'build_script_crate_root'"
         );
-        let srcs = GlobOrLabels::Labels(vec![Label {
-            repository: None,
-            package: Some(pkg.clone()),
+        let srcs = GlobOrLabels::Labels(vec![Label::Absolute {
+            repository: Repository::Local,
+            package: pkg.clone(),
             target: "srcs".to_string(),
         }]);
-        let compile_data = Some(GlobOrLabels::Labels(vec![Label {
-            repository: None,
-            package: Some(pkg.clone()),
+        let compile_data = Some(GlobOrLabels::Labels(vec![Label::Absolute {
+            repository: Repository::Local,
+            package: pkg.clone(),
             target: "compile_data".to_string(),
         }]));
 
@@ -1159,7 +1160,7 @@ mod test {
             BTreeSet::from([Rule::Library(TargetAttributes {
                 crate_name: "sysinfo".to_owned(),
                 crate_root: Some("src/lib.rs".to_owned()),
-                srcs: Glob::new_rust_srcs(!are_sources_present),
+                srcs: Glob::new_rust_srcs(!are_sources_present).into(),
                 compile_data: None,
             })]),
         );
@@ -1186,7 +1187,7 @@ mod test {
 
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,
@@ -1318,7 +1319,7 @@ mod test {
 
         let context = CrateContext::new(
             crate_annotation,
-            &annotations.metadata.packages,
+            &annotations.metadata,
             &annotations.lockfile.crates,
             &annotations.pairred_extras,
             &annotations.metadata.workspace_metadata.tree_metadata,

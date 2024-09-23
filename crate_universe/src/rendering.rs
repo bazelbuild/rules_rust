@@ -455,7 +455,7 @@ impl Renderer {
                 platforms,
             ),
             compile_data: {
-                make_data(
+                let mut data = make_data(
                     platforms,
                     Default::default(),
                     attrs
@@ -657,7 +657,7 @@ impl Renderer {
     ) -> Result<CommonAttrs> {
         Ok(CommonAttrs {
             compile_data: {
-                make_data(
+                let mut data = make_data(
                     platforms,
                     krate.common_attrs.compile_data_glob.clone(),
                     krate.common_attrs.compile_data.clone(),
