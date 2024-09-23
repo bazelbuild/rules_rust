@@ -239,7 +239,19 @@ impl LockfileAnnotation {
                         patches: None,
                     })
                 }
-                None => return Ok(SourceAnnotation::Path),
+                None => {
+                    // this is a hack to determine whether a dep is patched. cargo
+                    // metadata doesn't expose that info other than as part of the
+                    // technically opaque id field
+                    if pkg.id.repr.starts_with("path+file://") {
+                        return Ok(SourceAnnotation::Path);
+                    }
+                    bail!(
+                        "The package '{:?} {:?}' has no source info so no annotation can be made",
+                        lock_pkg.name,
+                        lock_pkg.version
+                    );
+                }
             },
         };
 
