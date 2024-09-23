@@ -21,11 +21,11 @@ def triple(triple):
             - abi (str, optional): The abi to use or None if abi does not apply.
             - str (str): Original string representation of the triple
     """
-    if triple == "wasm32-wasi":
+    if triple in ("wasm32-wasi", "wasm32-wasip1"):
         return struct(
-            arch = "wasm32",
-            system = "wasi",
-            vendor = "wasi",
+            arch = triple.split("-")[0],
+            system = triple.split("-")[1],
+            vendor = triple.split("-")[1],
             abi = None,
             str = triple,
         )
