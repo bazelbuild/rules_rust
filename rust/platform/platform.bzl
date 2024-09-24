@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     ":triple_mappings.bzl",
-    "SUPPORTED_PLATFORM_TRIPLES",
+    "ALL_PLATFORM_TRIPLES",
     "cpu_arch_to_constraints",
     "system_to_constraints",
     "triple_to_constraint_set",
@@ -59,7 +59,7 @@ def declare_config_settings():
         actual = ":darwin",
     )
 
-    all_supported_triples = SUPPORTED_PLATFORM_TRIPLES
+    all_supported_triples = ALL_PLATFORM_TRIPLES
     for triple in all_supported_triples:
         native.config_setting(
             name = triple,

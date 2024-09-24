@@ -75,7 +75,7 @@ use_repo(
     "cui__cargo-platform-0.1.4",
     "cui__cargo_metadata-0.18.1",
     "cui__cargo_toml-0.19.2",
-    "cui__cfg-expr-0.15.5",
+    "cui__cfg-expr-0.17.0",
     "cui__clap-4.3.11",
     "cui__crates-index-2.2.0",
     "cui__hex-0.4.3",
