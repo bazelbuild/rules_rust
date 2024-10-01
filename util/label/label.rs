@@ -14,7 +14,7 @@ pub fn analyze(input: &'_ str) -> Result<Label<'_>> {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Repository<'s> {
-    /// A `@@` prefixed name that is unique within a workspace. E.g. `@@rules_rust~0.1.2~toolchains~local_rustc`
+    /// A `@@` prefixed name that is unique within a workspace. E.g. `@@rules_rust+0.1.2+toolchains~local_rustc`
     Canonical(&'s str), // stringifies to `@@self.0` where `self.0` may be empty
     /// A `@` (single) prefixed name. E.g. `@rules_rust`.
     Apparent(&'s str),
@@ -187,12 +187,20 @@ fn consume_repository_name<'s>(
         }
         if !repository_name
             .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' || c == '~')
+            // TODO: Disallow `~` in repository names once support for Bazel 7.2 is dropped.
+            .all(|c| {
+                c.is_ascii_alphanumeric()
+                    || c == '-'
+                    || c == '_'
+                    || c == '.'
+                    || c == '~'
+                    || c == '+'
+            })
         {
             return Err(LabelError(err(
                 label,
                 "workspace names \
-                may contain only A-Z, a-z, 0-9, '-', '_', '.', and '~'.",
+                may contain only A-Z, a-z, 0-9, '-', '_', '.', '+', and '~'.",
             )));
         }
     }
@@ -378,7 +386,7 @@ mod tests {
         assert_eq!(
             analyze("@foo:bar"),
             Err(LabelError(
-                "@foo:bar must be a legal label; workspace names may contain only A-Z, a-z, 0-9, '-', '_', '.', and '~'.".to_string()
+                "@foo:bar must be a legal label; workspace names may contain only A-Z, a-z, 0-9, '-', '_', '.', '+', and '~'.".to_string()
             ))
         );
 
@@ -398,7 +406,7 @@ mod tests {
             analyze("@foo#//:baz"),
             Err(LabelError(
                 "@foo#//:baz must be a legal label; workspace names \
-            may contain only A-Z, a-z, 0-9, '-', '_', '.', and '~'."
+            may contain only A-Z, a-z, 0-9, '-', '_', '.', '+', and '~'."
                     .to_string()
             ))
         );
