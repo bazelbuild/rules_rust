@@ -519,7 +519,7 @@ A collection of extra attributes and settings for a particular crate
 | <a id="crate.annotation-rustc_env_files"></a>rustc_env_files |  A list of labels to set on a crate's `rust_library::rustc_env_files` attribute.   |  `None` |
 | <a id="crate.annotation-rustc_flags"></a>rustc_flags |  A list of strings to set on a crate's `rust_library::rustc_flags` attribute.   |  `None` |
 | <a id="crate.annotation-shallow_since"></a>shallow_since |  An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.   |  `None` |
-| <a id="crate.annotation-override_targets"></a>override_targets |  A dictionary of alternate tagets to use when something depends on this crate to allow the parent repo to provide its own version of this dependency. Keys can be `proc-macro`, `custom-build`, `lib`, `bin`.   |  `None` |
+| <a id="crate.annotation-override_targets"></a>override_targets |  A dictionary of alternate targets to use when something depends on this crate to allow the parent repo to provide its own version of this dependency. Keys can be `proc-marco`, `custom-build`, `lib`, `bin`.   |  `None` |
 
 **RETURNS**
 
