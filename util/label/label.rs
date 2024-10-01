@@ -350,7 +350,10 @@ mod tests {
 
         assert_eq!(analyze("@repo//foo/bar")?.repo_name(), Some("repo"));
         assert_eq!(analyze("@@repo//foo/bar")?.repo_name(), Some("repo"));
-        assert_eq!(analyze("@@repo+name//foo/bar")?.repo_name(), Some("repo+name"));
+        assert_eq!(
+            analyze("@@repo+name//foo/bar")?.repo_name(),
+            Some("repo+name")
+        );
         assert_eq!(analyze("@//foo/bar")?.repo_name(), Some(""));
         assert_eq!(analyze("//foo/bar")?.repo_name(), None);
         assert_eq!(
