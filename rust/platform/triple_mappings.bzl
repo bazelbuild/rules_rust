@@ -38,7 +38,9 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
     "riscv32imc-unknown-none-elf",
     "riscv64gc-unknown-none-elf",
     "s390x-unknown-linux-gnu",
+    "thumbv6m-none-eabi",
     "thumbv7em-none-eabi",
+    "thumbv7em-none-eabihf",
     "thumbv8m.main-none-eabi",
     "wasm32-unknown-unknown",
     "wasm32-wasi",
@@ -216,7 +218,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch, *, system = None):
+def cpu_arch_to_constraints(cpu_arch, *, system = None, abi = None):
     """Returns a list of contraint values which represents a triple's CPU.
 
     Args:
@@ -232,7 +234,7 @@ def cpu_arch_to_constraints(cpu_arch, *, system = None):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     # Patch armv7e-m to mf if hardfloat abi is selected
-    if plat_suffix == "armv7e-m" and system == "eabihf":
+    if plat_suffix == "armv7e-m" and (system == "eabihf" or abi == "eabihf"):
         plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
@@ -372,6 +374,7 @@ def triple_to_constraint_set(target_triple):
     constraint_set += cpu_arch_to_constraints(
         triple_struct.arch,
         system = triple_struct.system,
+        abi = triple_struct.abi,
     )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
