@@ -1,5 +1,5 @@
 {
-  "checksum": "fa59dea88fcb5c78e980a6f69b6fa7f94255f1927f939e8ccb0d51cd03470c53",
+  "checksum": "239be7c4bb15597cf9c1ec3bfcf071bafb774073efa800b17b0ee094d69e988a",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -97,14 +97,14 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
-    "aarch64-fuchsia": [
-      "aarch64-fuchsia"
-    ],
     "aarch64-linux-android": [
       "aarch64-linux-android"
     ],
     "aarch64-pc-windows-msvc": [
       "aarch64-pc-windows-msvc"
+    ],
+    "aarch64-unknown-fuchsia": [
+      "aarch64-unknown-fuchsia"
     ],
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
@@ -169,9 +169,6 @@
     "x86_64-apple-ios": [
       "x86_64-apple-ios"
     ],
-    "x86_64-fuchsia": [
-      "x86_64-fuchsia"
-    ],
     "x86_64-linux-android": [
       "x86_64-linux-android"
     ],
@@ -180,6 +177,9 @@
     ],
     "x86_64-unknown-freebsd": [
       "x86_64-unknown-freebsd"
+    ],
+    "x86_64-unknown-fuchsia": [
+      "x86_64-unknown-fuchsia"
     ],
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"

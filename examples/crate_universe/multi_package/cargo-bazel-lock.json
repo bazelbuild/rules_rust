@@ -1,5 +1,5 @@
 {
-  "checksum": "682eb3f5883424d6e1d9609861a24e3190a0c0be69754448bd32a1aa0ca14910",
+  "checksum": "2a1abe8c21ebd0ef1fe9168a537c5b521e43a56f123c9a5b620cd51814559bbf",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -887,24 +887,6 @@
                 "target": "futures_lite"
               }
             ],
-            "aarch64-fuchsia": [
-              {
-                "id": "async-global-executor 2.3.1",
-                "target": "async_global_executor"
-              },
-              {
-                "id": "async-io 1.12.0",
-                "target": "async_io"
-              },
-              {
-                "id": "async-process 1.6.0",
-                "target": "async_process"
-              },
-              {
-                "id": "futures-lite 1.12.0",
-                "target": "futures_lite"
-              }
-            ],
             "aarch64-linux-android": [
               {
                 "id": "async-global-executor 2.3.1",
@@ -924,6 +906,24 @@
               }
             ],
             "aarch64-pc-windows-msvc": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
+            "aarch64-unknown-fuchsia": [
               {
                 "id": "async-global-executor 2.3.1",
                 "target": "async_global_executor"
@@ -1327,24 +1327,6 @@
                 "target": "futures_lite"
               }
             ],
-            "x86_64-fuchsia": [
-              {
-                "id": "async-global-executor 2.3.1",
-                "target": "async_global_executor"
-              },
-              {
-                "id": "async-io 1.12.0",
-                "target": "async_io"
-              },
-              {
-                "id": "async-process 1.6.0",
-                "target": "async_process"
-              },
-              {
-                "id": "futures-lite 1.12.0",
-                "target": "futures_lite"
-              }
-            ],
             "x86_64-linux-android": [
               {
                 "id": "async-global-executor 2.3.1",
@@ -1382,6 +1364,24 @@
               }
             ],
             "x86_64-unknown-freebsd": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
+            "x86_64-unknown-fuchsia": [
               {
                 "id": "async-global-executor 2.3.1",
                 "target": "async_global_executor"
@@ -3032,16 +3032,6 @@
               "std",
               "waker-fn"
             ],
-            "aarch64-fuchsia": [
-              "alloc",
-              "default",
-              "fastrand",
-              "futures-io",
-              "memchr",
-              "parking",
-              "std",
-              "waker-fn"
-            ],
             "aarch64-linux-android": [
               "alloc",
               "default",
@@ -3053,6 +3043,16 @@
               "waker-fn"
             ],
             "aarch64-pc-windows-msvc": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "aarch64-unknown-fuchsia": [
               "alloc",
               "default",
               "fastrand",
@@ -3262,16 +3262,6 @@
               "std",
               "waker-fn"
             ],
-            "x86_64-fuchsia": [
-              "alloc",
-              "default",
-              "fastrand",
-              "futures-io",
-              "memchr",
-              "parking",
-              "std",
-              "waker-fn"
-            ],
             "x86_64-linux-android": [
               "alloc",
               "default",
@@ -3293,6 +3283,16 @@
               "waker-fn"
             ],
             "x86_64-unknown-freebsd": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-fuchsia": [
               "alloc",
               "default",
               "fastrand",
@@ -3412,28 +3412,6 @@
                 "target": "waker_fn"
               }
             ],
-            "aarch64-fuchsia": [
-              {
-                "id": "fastrand 1.9.0",
-                "target": "fastrand"
-              },
-              {
-                "id": "futures-io 0.3.26",
-                "target": "futures_io"
-              },
-              {
-                "id": "memchr 2.5.0",
-                "target": "memchr"
-              },
-              {
-                "id": "parking 2.0.0",
-                "target": "parking"
-              },
-              {
-                "id": "waker-fn 1.1.0",
-                "target": "waker_fn"
-              }
-            ],
             "aarch64-linux-android": [
               {
                 "id": "fastrand 1.9.0",
@@ -3457,6 +3435,28 @@
               }
             ],
             "aarch64-pc-windows-msvc": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "aarch64-unknown-fuchsia": [
               {
                 "id": "fastrand 1.9.0",
                 "target": "fastrand"
@@ -3918,28 +3918,6 @@
                 "target": "waker_fn"
               }
             ],
-            "x86_64-fuchsia": [
-              {
-                "id": "fastrand 1.9.0",
-                "target": "fastrand"
-              },
-              {
-                "id": "futures-io 0.3.26",
-                "target": "futures_io"
-              },
-              {
-                "id": "memchr 2.5.0",
-                "target": "memchr"
-              },
-              {
-                "id": "parking 2.0.0",
-                "target": "parking"
-              },
-              {
-                "id": "waker-fn 1.1.0",
-                "target": "waker_fn"
-              }
-            ],
             "x86_64-linux-android": [
               {
                 "id": "fastrand 1.9.0",
@@ -3985,6 +3963,28 @@
               }
             ],
             "x86_64-unknown-freebsd": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "x86_64-unknown-fuchsia": [
               {
                 "id": "fastrand 1.9.0",
                 "target": "fastrand"
@@ -5164,12 +5164,6 @@
               "http2",
               "runtime"
             ],
-            "aarch64-fuchsia": [
-              "client",
-              "h2",
-              "http2",
-              "runtime"
-            ],
             "aarch64-linux-android": [
               "client",
               "h2",
@@ -5177,6 +5171,12 @@
               "runtime"
             ],
             "aarch64-pc-windows-msvc": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "aarch64-unknown-fuchsia": [
               "client",
               "h2",
               "http2",
@@ -5296,12 +5296,6 @@
               "http2",
               "runtime"
             ],
-            "x86_64-fuchsia": [
-              "client",
-              "h2",
-              "http2",
-              "runtime"
-            ],
             "x86_64-linux-android": [
               "client",
               "h2",
@@ -5315,6 +5309,12 @@
               "runtime"
             ],
             "x86_64-unknown-freebsd": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-fuchsia": [
               "client",
               "h2",
               "http2",
@@ -5422,12 +5422,6 @@
                 "target": "h2"
               }
             ],
-            "aarch64-fuchsia": [
-              {
-                "id": "h2 0.3.16",
-                "target": "h2"
-              }
-            ],
             "aarch64-linux-android": [
               {
                 "id": "h2 0.3.16",
@@ -5435,6 +5429,12 @@
               }
             ],
             "aarch64-pc-windows-msvc": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
+            "aarch64-unknown-fuchsia": [
               {
                 "id": "h2 0.3.16",
                 "target": "h2"
@@ -5554,12 +5554,6 @@
                 "target": "h2"
               }
             ],
-            "x86_64-fuchsia": [
-              {
-                "id": "h2 0.3.16",
-                "target": "h2"
-              }
-            ],
             "x86_64-linux-android": [
               {
                 "id": "h2 0.3.16",
@@ -5573,6 +5567,12 @@
               }
             ],
             "x86_64-unknown-freebsd": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
+            "x86_64-unknown-fuchsia": [
               {
                 "id": "h2 0.3.16",
                 "target": "h2"
@@ -8216,28 +8216,6 @@
                 "target": "webpki_roots"
               }
             ],
-            "aarch64-fuchsia": [
-              {
-                "id": "hyper-rustls 0.23.2",
-                "target": "hyper_rustls"
-              },
-              {
-                "id": "rustls 0.20.8",
-                "target": "rustls"
-              },
-              {
-                "id": "rustls-pemfile 1.0.2",
-                "target": "rustls_pemfile"
-              },
-              {
-                "id": "tokio-rustls 0.23.4",
-                "target": "tokio_rustls"
-              },
-              {
-                "id": "webpki-roots 0.22.6",
-                "target": "webpki_roots"
-              }
-            ],
             "aarch64-linux-android": [
               {
                 "id": "hyper-rustls 0.23.2",
@@ -8261,6 +8239,28 @@
               }
             ],
             "aarch64-pc-windows-msvc": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
+            "aarch64-unknown-fuchsia": [
               {
                 "id": "hyper-rustls 0.23.2",
                 "target": "hyper_rustls"
@@ -8770,28 +8770,6 @@
                 "target": "webpki_roots"
               }
             ],
-            "x86_64-fuchsia": [
-              {
-                "id": "hyper-rustls 0.23.2",
-                "target": "hyper_rustls"
-              },
-              {
-                "id": "rustls 0.20.8",
-                "target": "rustls"
-              },
-              {
-                "id": "rustls-pemfile 1.0.2",
-                "target": "rustls_pemfile"
-              },
-              {
-                "id": "tokio-rustls 0.23.4",
-                "target": "tokio_rustls"
-              },
-              {
-                "id": "webpki-roots 0.22.6",
-                "target": "webpki_roots"
-              }
-            ],
             "x86_64-linux-android": [
               {
                 "id": "hyper-rustls 0.23.2",
@@ -8837,6 +8815,28 @@
               }
             ],
             "x86_64-unknown-freebsd": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
+            "x86_64-unknown-fuchsia": [
               {
                 "id": "hyper-rustls 0.23.2",
                 "target": "hyper_rustls"
@@ -10710,11 +10710,6 @@
               "io-util",
               "memchr"
             ],
-            "aarch64-fuchsia": [
-              "bytes",
-              "io-util",
-              "memchr"
-            ],
             "aarch64-linux-android": [
               "bytes",
               "io-util",
@@ -10725,6 +10720,11 @@
               "io-util",
               "memchr",
               "windows-sys"
+            ],
+            "aarch64-unknown-fuchsia": [
+              "bytes",
+              "io-util",
+              "memchr"
             ],
             "aarch64-unknown-linux-gnu": [
               "bytes",
@@ -10822,11 +10822,6 @@
               "io-util",
               "memchr"
             ],
-            "x86_64-fuchsia": [
-              "bytes",
-              "io-util",
-              "memchr"
-            ],
             "x86_64-linux-android": [
               "bytes",
               "io-util",
@@ -10839,6 +10834,11 @@
               "windows-sys"
             ],
             "x86_64-unknown-freebsd": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-unknown-fuchsia": [
               "bytes",
               "io-util",
               "memchr"
@@ -10946,28 +10946,6 @@
                 "target": "socket2"
               }
             ],
-            "aarch64-fuchsia": [
-              {
-                "id": "bytes 1.4.0",
-                "target": "bytes"
-              },
-              {
-                "id": "libc 0.2.139",
-                "target": "libc"
-              },
-              {
-                "id": "memchr 2.5.0",
-                "target": "memchr"
-              },
-              {
-                "id": "signal-hook-registry 1.4.1",
-                "target": "signal_hook_registry"
-              },
-              {
-                "id": "socket2 0.4.9",
-                "target": "socket2"
-              }
-            ],
             "aarch64-linux-android": [
               {
                 "id": "bytes 1.4.0",
@@ -11006,6 +10984,28 @@
               {
                 "id": "windows-sys 0.45.0",
                 "target": "windows_sys"
+              }
+            ],
+            "aarch64-unknown-fuchsia": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
               }
             ],
             "aarch64-unknown-linux-gnu": [
@@ -11396,28 +11396,6 @@
                 "target": "socket2"
               }
             ],
-            "x86_64-fuchsia": [
-              {
-                "id": "bytes 1.4.0",
-                "target": "bytes"
-              },
-              {
-                "id": "libc 0.2.139",
-                "target": "libc"
-              },
-              {
-                "id": "memchr 2.5.0",
-                "target": "memchr"
-              },
-              {
-                "id": "signal-hook-registry 1.4.1",
-                "target": "signal_hook_registry"
-              },
-              {
-                "id": "socket2 0.4.9",
-                "target": "socket2"
-              }
-            ],
             "x86_64-linux-android": [
               {
                 "id": "bytes 1.4.0",
@@ -11459,6 +11437,28 @@
               }
             ],
             "x86_64-unknown-freebsd": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "signal-hook-registry 1.4.1",
+                "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "x86_64-unknown-fuchsia": [
               {
                 "id": "bytes 1.4.0",
                 "target": "bytes"
@@ -14664,15 +14664,15 @@
     "aarch64-apple-ios-sim": [
       "aarch64-apple-ios-sim"
     ],
-    "aarch64-fuchsia": [
-      "aarch64-fuchsia"
-    ],
     "aarch64-linux-android": [
       "aarch64-linux-android"
     ],
     "aarch64-pc-windows-gnullvm": [],
     "aarch64-pc-windows-msvc": [
       "aarch64-pc-windows-msvc"
+    ],
+    "aarch64-unknown-fuchsia": [
+      "aarch64-unknown-fuchsia"
     ],
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu",
@@ -14702,8 +14702,8 @@
       "wasm32-unknown-unknown"
     ],
     "cfg(any(target_arch = \"x86\", target_arch = \"x86_64\", all(any(target_arch = \"aarch64\", target_arch = \"arm\"), any(target_os = \"android\", target_os = \"fuchsia\", target_os = \"linux\"))))": [
-      "aarch64-fuchsia",
       "aarch64-linux-android",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
@@ -14716,10 +14716,10 @@
       "i686-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
@@ -14747,8 +14747,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
       "aarch64-linux-android",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
@@ -14763,9 +14763,9 @@
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
     ],
@@ -14774,9 +14774,9 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
@@ -14796,10 +14796,10 @@
       "thumbv8m.main-none-eabi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
@@ -14808,8 +14808,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
       "aarch64-linux-android",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
@@ -14830,9 +14830,9 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
@@ -14841,9 +14841,9 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
@@ -14865,10 +14865,10 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
@@ -14895,8 +14895,8 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
-      "aarch64-fuchsia",
       "aarch64-linux-android",
+      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
@@ -14911,9 +14911,9 @@
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
-      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
+      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
     ],
@@ -14970,9 +14970,6 @@
     "x86_64-apple-ios": [
       "x86_64-apple-ios"
     ],
-    "x86_64-fuchsia": [
-      "x86_64-fuchsia"
-    ],
     "x86_64-linux-android": [
       "x86_64-linux-android"
     ],
@@ -14983,6 +14980,9 @@
     ],
     "x86_64-unknown-freebsd": [
       "x86_64-unknown-freebsd"
+    ],
+    "x86_64-unknown-fuchsia": [
+      "x86_64-unknown-fuchsia"
     ],
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu",
