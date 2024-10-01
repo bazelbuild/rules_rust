@@ -66,7 +66,8 @@ impl FromStr for Label {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         static RE: OnceCell<Regex> = OnceCell::new();
         let re = RE.get_or_try_init(|| {
-            Regex::new(r"^(@@?[\w\d\-_\.~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")
+            // TODO: Disallow `~` in repository names once support for Bazel 7.2 is dropped.
+            Regex::new(r"^(@@?[\w\d\-_\.+~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")
         });
 
         let cap = re?
