@@ -342,6 +342,7 @@ mod tests {
     #[test]
     fn test_repository_name_parsing() -> Result<()> {
         assert_eq!(analyze("@repo//:foo")?.repo_name(), Some("repo"));
+        assert_eq!(analyze("@repo+name//:foo")?.repo_name(), Some("repo+name"));
         assert_eq!(analyze("@@repo//:foo")?.repo_name(), Some("repo"));
         assert_eq!(analyze("@//:foo")?.repo_name(), Some(""));
         assert_eq!(analyze("//:foo")?.repo_name(), None);
@@ -349,6 +350,7 @@ mod tests {
 
         assert_eq!(analyze("@repo//foo/bar")?.repo_name(), Some("repo"));
         assert_eq!(analyze("@@repo//foo/bar")?.repo_name(), Some("repo"));
+        assert_eq!(analyze("@@repo+name//foo/bar")?.repo_name(), Some("repo+name"));
         assert_eq!(analyze("@//foo/bar")?.repo_name(), Some(""));
         assert_eq!(analyze("//foo/bar")?.repo_name(), None);
         assert_eq!(
