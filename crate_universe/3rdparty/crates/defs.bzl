@@ -301,7 +301,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo-platform": Label("@cui__cargo-platform-0.1.4//:cargo_platform"),
             "cargo_metadata": Label("@cui__cargo_metadata-0.18.1//:cargo_metadata"),
             "cargo_toml": Label("@cui__cargo_toml-0.19.2//:cargo_toml"),
-            "cfg-expr": Label("@cui__cfg-expr-0.15.5//:cfg_expr"),
+            "cfg-expr": Label("@cui__cfg-expr-0.17.0//:cfg_expr"),
             "clap": Label("@cui__clap-4.3.11//:clap"),
             "crates-index": Label("@cui__crates-index-2.2.0//:crates_index"),
             "hex": Label("@cui__hex-0.4.3//:hex"),
@@ -801,12 +801,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cfg-expr-0.15.5",
-        sha256 = "03915af431787e6ffdcc74c645077518c6b6e01f80b761e0fbbfa288536311b3",
+        name = "cui__cfg-expr-0.17.0",
+        sha256 = "d0890061c4d3223e7267f3bad2ec40b997d64faac1c2815a4a9d95018e2b9e9c",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cfg-expr/0.15.5/download"],
-        strip_prefix = "cfg-expr-0.15.5",
-        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cfg-expr-0.15.5.bazel"),
+        urls = ["https://static.crates.io/crates/cfg-expr/0.17.0/download"],
+        strip_prefix = "cfg-expr-0.17.0",
+        build_file = Label("@rules_rust//crate_universe/3rdparty/crates:BUILD.cfg-expr-0.17.0.bazel"),
     )
 
     maybe(
@@ -3366,7 +3366,7 @@ def crate_repositories():
         struct(repo = "cui__cargo-platform-0.1.4", is_dev_dep = False),
         struct(repo = "cui__cargo_metadata-0.18.1", is_dev_dep = False),
         struct(repo = "cui__cargo_toml-0.19.2", is_dev_dep = False),
-        struct(repo = "cui__cfg-expr-0.15.5", is_dev_dep = False),
+        struct(repo = "cui__cfg-expr-0.17.0", is_dev_dep = False),
         struct(repo = "cui__clap-4.3.11", is_dev_dep = False),
         struct(repo = "cui__crates-index-2.2.0", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),

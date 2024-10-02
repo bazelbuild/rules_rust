@@ -26,7 +26,7 @@ cargo_metadata = "0.18.1"
 cargo_toml = "0.19.2"
 cargo-lock = "9.0.0"
 cargo-platform = "0.1.4"
-cfg-expr = "0.15.5"
+cfg-expr = "0.17.0"
 clap = { version = "4.3.11", features = ["derive", "env"] }
 crates-index = { version = "2.2.0", default-features = false, features = [
     "git",
