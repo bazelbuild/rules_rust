@@ -1,6 +1,0 @@
-alias(
-    name = "wasm32",
-    actual = "@platforms//cpu:wasm32",
-    deprecation = "Use @platforms//cpu:wasm32 directly instead.",
-    visibility = ["//visibility:public"],
-)

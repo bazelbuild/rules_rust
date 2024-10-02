@@ -267,7 +267,21 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    flags_known_to_clang = ("-I", "-iquote", "-isystem", "--sysroot", "--gcc-toolchain")
+    flags_known_to_clang = (
+        "-I",
+        "-iquote",
+        "-isystem",
+        "--sysroot",
+        "--gcc-toolchain",
+        "--target",
+        "-W",
+        "--system-header-prefix",
+        "--no-system-header-prefix",
+        "-Xclang",
+        "-D",
+        "-no-canonical-prefixes",
+        "-nostd",
+    )
     open_arg = False
     for arg in compile_flags:
         if open_arg:
