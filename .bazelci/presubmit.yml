@@ -98,8 +98,10 @@ tasks:
     platform: windows
     build_flags:
       - "--noenable_runfiles"
+      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     test_flags:
       - "--noenable_runfiles"
+      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     build_targets: *default_windows_no_runfiles_targets
     test_targets: *default_windows_no_runfiles_targets
   ubuntu2004_split_coverage_postprocessing:
@@ -202,10 +204,12 @@ tasks:
       - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
+      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     test_flags:
       - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
+      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     build_targets: *default_windows_no_runfiles_targets
     test_targets: *default_windows_no_runfiles_targets
   windows_rolling_with_aspects:
@@ -647,7 +651,7 @@ tasks:
     environment:
       # This ndk version matches with rules_android_ndk repo's CI
       # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L37
-      # The ndk is installed by this script 
+      # The ndk is installed by this script
       # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
       ANDROID_NDK_HOME: /opt/android-ndk-r25b
   android_examples_macos:
@@ -662,7 +666,7 @@ tasks:
     environment:
       # This ndk version matches with rules_android_ndk repo's CI
       # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L42
-      # The ndk is installed by this script 
+      # The ndk is installed by this script
       # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
       ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
   ios_examples:
