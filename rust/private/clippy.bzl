@@ -75,12 +75,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
     # Targets with specific tags will not be formatted
     if aspect_ctx:
         ignore_tags = [
+            "no_clippy",
+            "no_lint",
             "noclippy",
-            "no-clippy",
         ]
-
-        for tag in ignore_tags:
-            if tag in aspect_ctx.rule.attr.tags:
+        for tag in aspect_ctx.rule.attr.tags:
+            if tag.replace("-", "_").lower() in ignore_tags:
                 return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
@@ -192,6 +192,7 @@ def _clippy_aspect_impl(target, ctx):
         tools = [toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
+        progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 

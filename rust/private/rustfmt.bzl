@@ -38,13 +38,13 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
     # Targets with specific tags will not be formatted
     if aspect_ctx:
         ignore_tags = [
-            "no-format",
-            "no-rustfmt",
+            "no_format",
+            "no_rustfmt",
             "norustfmt",
         ]
 
-        for tag in ignore_tags:
-            if tag in aspect_ctx.rule.attr.tags:
+        for tag in aspect_ctx.rule.attr.tags:
+            if tag.replace("-", "_").lower() in ignore_tags:
                 return []
 
     # Filter out any generated files
@@ -92,6 +92,7 @@ def _perform_check(edition, srcs, ctx):
         tools = [rustfmt_toolchain.all_files],
         arguments = [args],
         mnemonic = "Rustfmt",
+        progress_message = "Rustfmt %{label}",
     )
 
     return marker
