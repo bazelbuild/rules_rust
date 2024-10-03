@@ -338,7 +338,7 @@ type RlocationPath = String;
 
 struct RunfilesArgs {
     output_dir: PathBuf,
-    retain_list: BTreeSet<String>,
+    filename_suffixes_to_retain: BTreeSet<String>,
     runfiles: BTreeMap<PathBuf, RlocationPath>,
 }
 
