@@ -284,7 +284,7 @@ def _cargo_build_script_impl(ctx):
         runfiles_dir, runfiles_args = _create_runfiles_dir(
             ctx = ctx,
             script = ctx.attr.script,
-            retain_list = ctx.attr._cargo_manifest_dir_retain_list[BuildSettingInfo].value,
+            retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
         )
         manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
         extra_args.append(runfiles_args)
@@ -579,8 +579,8 @@ cargo_build_script = rule(
             default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
             cfg = "exec",
         ),
-        "_cargo_manifest_dir_retain_list": attr.label(
-            default = Label("//cargo/settings:cargo_manifest_dir_retain_list"),
+        "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
+            default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A simple wrapper around a build_script execution to generate file to reuse
-// by rust_library/rust_binary.
+//! A simple wrapper around a build_script execution to generate file to reuse
+//! by rust_library/rust_binary.
+
 extern crate cargo_build_script_output_parser;
 
 use cargo_build_script_output_parser::{BuildScriptOutput, CompileAndLinkFlags};
@@ -47,11 +48,11 @@ fn run_buildrs() -> Result<(), String> {
         stderr_path,
         rundir,
         input_dep_env_paths,
-        cargo_manifest_args,
+        cargo_manifest_maker,
     } = Args::parse();
 
-    if let Some(cargo_manifest_args) = &cargo_manifest_args {
-        cargo_manifest_args.create_runfiles_dir().unwrap()
+    if let Some(cargo_manifest_maker) = &cargo_manifest_maker {
+        cargo_manifest_maker.create_runfiles_dir().unwrap()
     }
 
     let out_dir_abs = exec_root.join(out_dir);
@@ -216,8 +217,9 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    if let Some(cargo_manifest_args) = cargo_manifest_args {
-        cargo_manifest_args.drain_runfiles_dir().unwrap();
+    // Delete any runfiles that do not need to be propagated to down stream dependents.
+    if let Some(cargo_manifest_maker) = cargo_manifest_maker {
+        cargo_manifest_maker.drain_runfiles_dir().unwrap();
     }
 
     Ok(())
@@ -336,14 +338,20 @@ fn is_dir_empty(path: &Path) -> Result<bool, String> {
 
 type RlocationPath = String;
 
-struct RunfilesArgs {
+/// A struct for generating runfiles directories to use when running Cargo build scripts.
+struct RunfilesMaker {
+    /// The output where a runfiles-like directory should be written.
     output_dir: PathBuf,
+
+    /// A list of file suffixes to retain when pruning runfiles.
     filename_suffixes_to_retain: BTreeSet<String>,
+
+    /// Runfiles to include in `output_dir`.
     runfiles: BTreeMap<PathBuf, RlocationPath>,
 }
 
-impl RunfilesArgs {
-    fn parse(arg: &str) -> Self {
+impl RunfilesMaker {
+    fn new_from(arg: &str) -> Self {
         assert!(
             arg.starts_with('@'),
             "Expected arg to be a params file. Got {}",
@@ -361,7 +369,7 @@ impl RunfilesArgs {
             args.next()
                 .unwrap_or_else(|| panic!("Not enough arguments provided.")),
         );
-        let retain_list = args
+        let filename_suffixes_to_retain = args
             .next()
             .unwrap_or_else(|| panic!("Not enough arguments provided."))
             .split(',')
@@ -385,7 +393,7 @@ impl RunfilesArgs {
 
         Self {
             output_dir,
-            retain_list,
+            filename_suffixes_to_retain,
             runfiles,
         }
     }
@@ -495,7 +503,11 @@ impl RunfilesArgs {
                 )
             })?;
 
-            if !self.retain_list.iter().any(|suffix| dest.ends_with(suffix)) {
+            if !self
+                .filename_suffixes_to_retain
+                .iter()
+                .any(|suffix| dest.ends_with(suffix))
+            {
                 if let Some(parent) = abs_dest.parent() {
                     if is_dir_empty(parent).map_err(|e| {
                         format!("Failed to determine if directory was empty with: {:?}", e)
@@ -530,7 +542,11 @@ impl RunfilesArgs {
     /// been copied into the runfiles directoriy.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
         for dest in self.runfiles.values() {
-            if !self.retain_list.iter().any(|suffix| dest.ends_with(suffix)) {
+            if !self
+                .filename_suffixes_to_retain
+                .iter()
+                .any(|suffix| dest.ends_with(suffix))
+            {
                 continue;
             }
 
@@ -572,7 +588,7 @@ struct Args {
     stderr_path: String,
     rundir: String,
     input_dep_env_paths: Vec<String>,
-    cargo_manifest_args: Option<RunfilesArgs>,
+    cargo_manifest_maker: Option<RunfilesMaker>,
 }
 
 impl Args {
@@ -598,7 +614,7 @@ impl Args {
             Err("Argument `stderr_path` not provided".to_owned());
         let mut rundir: Result<String, String> = Err("Argument `rundir` not provided".to_owned());
         let mut input_dep_env_paths = Vec::new();
-        let mut cargo_manifest_args = None;
+        let mut cargo_manifest_maker = None;
 
         for mut arg in env::args().skip(1) {
             if arg.starts_with("--script=") {
@@ -626,7 +642,7 @@ impl Args {
             } else if arg.starts_with("--input_dep_env_path=") {
                 input_dep_env_paths.push(arg.split_off("--input_dep_env_path=".len()));
             } else if arg.starts_with("--cargo_manifest_args=") {
-                cargo_manifest_args = Some(RunfilesArgs::parse(
+                cargo_manifest_maker = Some(RunfilesMaker::new_from(
                     &arg.split_off("--cargo_manifest_args=".len()),
                 ));
             }
@@ -645,7 +661,7 @@ impl Args {
             stderr_path: stderr_path.unwrap(),
             rundir: rundir.unwrap(),
             input_dep_env_paths,
-            cargo_manifest_args,
+            cargo_manifest_maker,
         }
     }
 }

@@ -21,7 +21,7 @@ bool_flag(
 # A flag which determines what files are retained in `CARGO_MANIFEST_DIR` directories
 # that are created in `CargoBuildScriptRun` actions.
 string_list_flag(
-    name = "cargo_manifest_dir_retain_list",
+    name = "cargo_manifest_dir_filename_suffixes_to_retain",
     build_setting_default = [
         ".lib",
         ".so",
