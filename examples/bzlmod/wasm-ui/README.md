@@ -1,10 +1,21 @@
-# Yew Trunk Template
+# Yew Template - with Bazel/Trunk
 
-This is a fairly minimal template for a Yew app that's built with [Trunk].
+This was generated according to the getting started instructions of [yew](https://yew.rs/)
+and then enriched with Bazel build rules.
 
-## Usage
+## Bazel
 
-For a more thorough explanation of Trunk and its features, please head over to the [repository][trunk].
+Build and serve the UI with:
+
+```bash
+bazel run //serve
+```
+
+This also builds a small rust server application to serve the files.
+
+## Usage (Trunk)
+
+For a more thorough explanation of Trunk and its features, please head over to the [Trunk](https://trunkrs.dev/).
 
 ### Installation
 
@@ -18,7 +29,7 @@ If you don't already have it, install it with the following command:
 rustup target add wasm32-unknown-unknown
 ```
 
-Now that we have our basics covered, it's time to install the star of the show: [Trunk].
+Now that we have our basics covered, it's time to install the star of the show: [Trunk](https://trunkrs.dev/).
 Simply run the following command to install it:
 
 ```bash
@@ -63,12 +74,3 @@ Update the `name`, `version`, `description` and `repository` fields in the [Carg
 The [index.html](index.html) file also contains a `<title>` tag that needs updating.
 
 Finally, you should update this very `README` file to be about your app.
-
-### License
-
-The template ships with both the Apache and MIT license.
-If you don't want to have your app dual licensed, just remove one (or both) of the files and update the `license` field in `Cargo.toml`.
-
-There are two empty spaces in the MIT license you need to fill out: `` and `Peter Kolloch <peter.kolloch@nexxiot.com>`.
-
-[trunk]: https://github.com/thedodd/trunk

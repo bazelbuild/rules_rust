@@ -1,0 +1,24 @@
+load("@crates_serve//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(":binary_runner.bzl", "binary_runner")
+
+package(default_visibility = ["//visibility:public"])
+
+binary_runner(
+    name = "serve",
+    binary = ":serve_bin",
+    data = [
+        "//:ui-http-root",
+    ],
+    env = {
+        "HTTP_ROOT": "$(rootpath //:ui-http-root)",
+    },
+)
+
+rust_binary(
+    name = "serve_bin",
+    srcs = [
+        "src/main.rs",
+    ],
+    deps = all_crate_deps(normal = True),
+)
