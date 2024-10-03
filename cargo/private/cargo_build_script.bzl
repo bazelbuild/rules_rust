@@ -538,9 +538,12 @@ cargo_build_script = rule(
         "rundir": attr.string(
             default = "",
             doc = dedent("""\
-                A directory to cd to before the cargo_build_script is run. This should be a path relative to the exec root.
+                A directory to cd to before the cargo_build_script is run.
 
-                The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.
+                This should be a pathrelative to the exec root. The default behaviour (and the
+                behaviour if rundir is set to the empty string) is to change to the relative
+                path corresponding to the cargo manifest directory, which replicates the
+                normal behaviour of cargo so it is easy to write compatible build scripts.
 
                 If set to `.`, the cargo build script will run in the exec root.
             """),
