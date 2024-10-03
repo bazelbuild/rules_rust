@@ -169,8 +169,8 @@ def _annotation(
         rustc_flags (list, optional): A list of strings to set on a crate's `rust_library::rustc_flags` attribute.
         shallow_since (str, optional): An optional timestamp used for crates originating from a git repository
             instead of a crate registry. This flag optimizes fetching the source code.
-        override_targets (dict, optional): A dictionary of alternate tagets to use when something depends on this crate to allow
-            the parent repo to provide its own version of this dependency. Keys can be `proc_marco`, `build_script`, `lib`, `bin`.
+        override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
+            the parent repo to provide its own version of this dependency. Keys can be `proc-marco`, `custom-build`, `lib`, `bin`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
