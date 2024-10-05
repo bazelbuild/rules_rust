@@ -40,11 +40,26 @@ def _cargo_build_script_runfiles_impl(ctx):
 
     is_windows = script.extension == "exe"
     exe = ctx.actions.declare_file("{}{}".format(ctx.label.name, ".exe" if is_windows else ""))
-    ctx.actions.symlink(
-        output = exe,
-        target_file = script,
-        is_executable = True,
-    )
+
+    # Avoid the following issue on Windows when using builds-without-the-bytes.
+    # https://github.com/bazelbuild/bazel/issues/21747
+    if is_windows:
+        args = ctx.actions.args()
+        args.add(script)
+        args.add(exe)
+
+        ctx.actions.run(
+            executable = ctx.executable._copy_file,
+            arguments = [args],
+            inputs = [script],
+            outputs = [exe],
+        )
+    else:
+        ctx.actions.symlink(
+            output = exe,
+            target_file = script,
+            is_executable = True,
+        )
 
     # Tools are ommitted here because they should be within the `script`
     # attribute's runfiles.
@@ -94,6 +109,11 @@ https://github.com/bazelbuild/bazel/issues/15486
             doc = "Tools required by the build script.",
             allow_files = True,
             cfg = "exec",
+        ),
+        "_copy_file": attr.label(
+            cfg = "exec",
+            executable = True,
+            default = Label("//cargo/private:copy_file"),
         ),
     },
     executable = True,
