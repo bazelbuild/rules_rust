@@ -216,7 +216,10 @@ def _create_runfiles_dir(ctx, script, retain_list):
         retain_list (list): A list of strings to keep in generated runfiles directories.
 
     Returns:
-        Tuple[File, Args]: The output directory to be created and the args required to do so.
+        Tuple[File, Depset[File], Args]:
+            - The output directory to be created.
+            - Runfile inputs needed by the action.
+            - The args required to create the directory.
     """
     runfiles_dir = ctx.actions.declare_directory("{}.cargo_runfiles".format(ctx.label.name))
 
@@ -234,7 +237,7 @@ def _create_runfiles_dir(ctx, script, retain_list):
     args.add(",".join(retain_list))
     args.add_all(runfiles.files, map_each = _runfiles_map, allow_closure = True)
 
-    return runfiles_dir, args
+    return runfiles_dir, runfiles.files, args
 
 def _cargo_build_script_impl(ctx):
     """The implementation for the `cargo_build_script` rule.
@@ -270,6 +273,7 @@ def _cargo_build_script_impl(ctx):
         workspace_name = ctx.workspace_name
 
     extra_args = []
+    extra_inputs = []
     extra_output = []
 
     # Relying on runfiles directories is unreliable when passing data to
@@ -281,13 +285,14 @@ def _cargo_build_script_impl(ctx):
         script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
         manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
     else:
-        runfiles_dir, runfiles_args = _create_runfiles_dir(
+        runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
             ctx = ctx,
             script = ctx.attr.script,
             retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
         )
         manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
         extra_args.append(runfiles_args)
+        extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
     streams = struct(
@@ -473,7 +478,7 @@ def _cargo_build_script_impl(ctx):
             streams.stderr,
         ] + extra_output,
         tools = tools,
-        inputs = build_script_inputs,
+        inputs = depset(build_script_inputs, transitive = extra_inputs),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
