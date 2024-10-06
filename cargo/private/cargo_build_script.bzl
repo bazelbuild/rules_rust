@@ -153,7 +153,25 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
-def _pwd_flags(args):
+def _pwd_flags_sysroot(args):
+    """Prefix execroot-relative paths of known arguments with ${pwd}.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list.
+    """
+    res = []
+    for arg in args:
+        s, opt, path = arg.partition("--sysroot=")
+        if s == "" and not paths.is_absolute(path):
+            res.append("{}${{pwd}}/{}".format(opt, path))
+        else:
+            res.append(arg)
+    return res
+
+def _pwd_flags_isystem(args):
     """Prefix execroot-relative paths of known arguments with ${pwd}.
 
     Args:
@@ -164,31 +182,18 @@ def _pwd_flags(args):
     """
     res = []
     fix_next_arg = False
-
-    flags = ["-fsanitize-ignorelist", "-isystem", "--sysroot"]
-
-    def split_flag(flag):
-        if flag in flags:
-            return (flag, None)
-        for flag in flags:
-            s, opt, path = arg.partition(flag + "=")
-            if s == "":
-                return (opt, path)
-        return (None, None)
-
     for arg in args:
         if fix_next_arg and not paths.is_absolute(arg):
             res.append("${{pwd}}/{}".format(arg))
-            fix_next_arg = False
         else:
-            opt, path = split_flag(arg)
-            if opt and path:
-                res.append("{}${{pwd}}/{}".format(opt, path))
-            else:
-                fix_next_arg = (opt != None)
-                res.append(arg)
+            res.append(arg)
+
+        fix_next_arg = arg == "-isystem"
 
     return res
+
+def _pwd_flags(args):
+    return _pwd_flags_isystem(_pwd_flags_sysroot(args))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
