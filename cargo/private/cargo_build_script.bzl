@@ -182,7 +182,7 @@ def _pwd_flags(args):
             fix_next_arg = False
         else:
             opt, path = split_flag(arg)
-            if opt and path:
+            if opt and path and not paths.is_absolute(path):
                 res.append("{}${{pwd}}/{}".format(opt, path))
             else:
                 fix_next_arg = (opt != None)
