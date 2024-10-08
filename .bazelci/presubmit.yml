@@ -748,6 +748,14 @@ tasks:
       - "//:all"
     test_targets:
       - "//..."
+  macos_bzlmod_cross_compile:
+    name: Cross compilation with bzlmod on macOS
+    platform: macos
+    working_directory: examples/bzlmod/cross_compile
+    build_targets:
+      - "//:all"
+    test_targets:
+      - "//..."
   bzlmod_ffi:
     name: FFI with bzlmod
     platform: ubuntu2004
@@ -855,12 +863,6 @@ tasks:
     name: Proto and Prost with bzlmod
     platform: ubuntu2004
     working_directory: examples/bzlmod/proto
-    build_targets:
-      - "//..."
-  bzlmod_proto:
-    name: Proto and Prost with prebuilt protoc with bzlmod
-    platform: ubuntu2004
-    working_directory: examples/bzlmod/proto_with_toolchain
     build_targets:
       - "//..."
   compile_one_dependency:
