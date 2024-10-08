@@ -51,7 +51,7 @@ llvm.toolchain(
     name = "llvm_toolchain",
     llvm_versions = {
         "": "16.0.0",
-        "darwin-x86_64": "15.0.7", # For CI runner only; remove if you don't have an Intel Mac.
+        "darwin-x86_64": "15.0.7",  # For CI runner only; remove if you don't have an Intel Mac.
     },
     stdlib = {
         "linux-aarch64": "stdc++",
