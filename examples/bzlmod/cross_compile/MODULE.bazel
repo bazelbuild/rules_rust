@@ -51,8 +51,8 @@ llvm.toolchain(
     name = "llvm_toolchain",
     llvm_version = "16.0.0",  # Same LLVM version for all platforms
     stdlib = {
-        "linux-x86_64": "stdc++",
         "linux-aarch64": "stdc++",
+        "linux-x86_64": "stdc++",
     },
 )
 llvm.sysroot(
