@@ -11,7 +11,7 @@
 
 # Don't create bazel-* symlinks in the WORKSPACE directory.
 # Instead, set a prefix and put it in .gitignore
-build --symlink_prefix=target-bzl/
+build --symlink_prefix=target-bzl
 
 # Non-empty glob test is disabled because some Bazels deps fail the test.
 # build --incompatible_disallow_empty_glob

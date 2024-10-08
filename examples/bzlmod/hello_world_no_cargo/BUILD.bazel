@@ -6,7 +6,7 @@ rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
     deps = [
-        "@crates//:mimalloc",
-        "@crates//:lz4-sys",
+        "@crates//:anyhow",
+        "@crates//:uuid",
     ],
 )
