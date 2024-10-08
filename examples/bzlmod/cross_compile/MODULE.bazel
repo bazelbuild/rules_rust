@@ -49,7 +49,10 @@ http_archive(
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
 llvm.toolchain(
     name = "llvm_toolchain",
-    llvm_version = "16.0.0",  # Same LLVM version for all platforms
+    llvm_versions = {
+        "": "16.0.0",
+        "darwin-x86_64": "15.0.7", # For CI runner only; remove if you don't have an Intel Mac.
+    },
     stdlib = {
         "linux-aarch64": "stdc++",
         "linux-x86_64": "stdc++",
