@@ -6,6 +6,7 @@ module(
 ###############################################################################
 # Bazel Dependencies # https://registry.bazel.build/
 ###############################################################################
+# Get latest rules_rust release from:
 # https://github.com/bazelbuild/rules_rust/releases
 bazel_dep(name = "rules_rust", version = "0.52.0")
 local_path_override(
