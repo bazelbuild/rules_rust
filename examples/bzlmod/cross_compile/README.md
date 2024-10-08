@@ -144,7 +144,7 @@ It is possible to pin different targets to different LLVM
 versions; [see the documentation for details](https://github.com/bazel-contrib/toolchains_llvm/tree/master?tab=readme-ov-file#per-host-architecture-llvm-version).
 
 If you face difficulties with building LLVM on older linux distros or your CI, 
-please take a look at the [LLVM Troubleshooting guide](LLVM_Troubleshooting.md) for known issues.
+please take a look at the [LLVM Troubleshooting guide](README_LLVM_Troubleshooting) for known issues.
 
 
 **Rust Toolchain Configuration**

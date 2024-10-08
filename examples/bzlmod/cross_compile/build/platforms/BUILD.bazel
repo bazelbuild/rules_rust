@@ -1,6 +1,14 @@
 package(default_visibility = ["//visibility:public"])
 
 platform(
+    name = "linux-x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
     name = "linux-aarch64",
     constraint_values = [
         "@platforms//os:linux",
@@ -9,9 +17,17 @@ platform(
 )
 
 platform(
-    name = "linux-x86_64",
+    name = "darwin-x86_64",
     constraint_values = [
-        "@platforms//os:linux",
+        "@platforms//os:osx",
         "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "darwin-aarch64",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
     ],
 )
