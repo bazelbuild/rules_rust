@@ -17,7 +17,7 @@ build --symlink_prefix=target-bzl
 # build --incompatible_disallow_empty_glob
 
 # This flag improves execution throughput by executing more actions in parallel.
-build --jobs=32
+# build --jobs=32
 
 ###############################################################################
 ## Test configuration
@@ -74,10 +74,6 @@ common --enable_platform_specific_config
 # Required to resolve C/C++ toolchain.
 # https://github.com/bazel-contrib/musl-toolchain?tab=readme-ov-file#setup
 build --incompatible_enable_cc_toolchain_resolution
-
-# Build targets for different hosts
-build:macos --extra_execution_platforms=//build/platforms:darwin-aarch64
-build:linux --extra_execution_platforms=//build/platforms:linux-x86_64
 
 ###############################################################################
 ## Custom user flags
