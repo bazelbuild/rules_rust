@@ -9,6 +9,7 @@ EXEC_TOOLCHAIN_FLAG = "missing"
 TOOLCHAIN_FLAG = "before"
 CONFIG_FLAG = "after"
 CRATE_FLAGS = {"cdylib": ["cdylib_flag"], "rlib": ["rlib_flag"]}
+TARGET_FLAG = "-Ccodegen-units=1"
 
 def _toolchain_adds_rustc_flags_impl(ctx, crate_type):
     """ Tests adding extra_rustc_flags on the toolchain, asserts that:
@@ -16,6 +17,7 @@ def _toolchain_adds_rustc_flags_impl(ctx, crate_type):
     - extra_rustc_flags added by the toolchain are applied BEFORE flags added by a config on the commandline
     - The exec flags from the toolchain don't go on the commandline for a non-exec target
     - crate type rustc flags are added
+    - target specific rustc flags are added AFTER the crate type rustc flags
     """
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
@@ -25,16 +27,16 @@ def _toolchain_adds_rustc_flags_impl(ctx, crate_type):
 
     asserts.true(
         env,
-        action.argv[-2:] == [TOOLCHAIN_FLAG, CONFIG_FLAG],
+        action.argv[-3:] == [TOOLCHAIN_FLAG, CONFIG_FLAG, TARGET_FLAG],
         "Unexpected rustc flags: {}\nShould have ended with: {}".format(
             action.argv,
-            [TOOLCHAIN_FLAG, CONFIG_FLAG],
+            [TOOLCHAIN_FLAG, CONFIG_FLAG, TARGET_FLAG],
         ),
     )
 
     asserts.true(
         env,
-        action.argv[-3] == CRATE_FLAGS[crate_type][0],
+        action.argv[-4] == CRATE_FLAGS[crate_type][0],
         "Unexpected rustc flags: {}\nShould have contained: {}".format(
             action.argv,
             CRATE_FLAGS["rlib"],
@@ -140,12 +142,14 @@ def _define_targets():
         name = "lib",
         srcs = ["lib.rs"],
         edition = "2021",
+        rustc_flags = [TARGET_FLAG],
     )
 
     rust_shared_library(
         name = "shared_lib",
         srcs = ["lib.rs"],
         edition = "2021",
+        rustc_flags = [TARGET_FLAG],
     )
 
     native.filegroup(
