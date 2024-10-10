@@ -41,7 +41,6 @@ def find_toolchain(ctx):
     """
     return ctx.toolchains[Label("//rust:toolchain_type")]
 
-
 def find_cc_toolchain(ctx, mandatory = True, extra_unsupported_features = tuple()):
     """Extracts a CcToolchain from the current target's context
 
