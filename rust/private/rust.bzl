@@ -148,7 +148,7 @@ def _rust_library_common(ctx, crate_type):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     # Determine unique hash for this rlib.
@@ -228,7 +228,7 @@ def _rust_binary_impl(ctx):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     providers = rustc_compile_action(
@@ -309,14 +309,21 @@ def _rust_test_impl(ctx):
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
 
-        output_hash = determine_output_hash(crate.root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        if toolchain._incompatible_change_rust_test_compilation_output_directory:
+            crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
+            output = ctx.actions.declare_file(
+                ctx.label.name + toolchain.binary_ext,
+            )
+        else:
+            crate_name = crate.name
+            output_hash = determine_output_hash(crate.root, ctx.label)
+            output = ctx.actions.declare_file(
+                "test-%s/%s%s" % (
+                    output_hash,
+                    ctx.label.name,
+                    toolchain.binary_ext,
+                ),
+            )
 
         srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
 
@@ -342,7 +349,7 @@ def _rust_test_impl(ctx):
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
-            name = crate.name,
+            name = crate_name,
             type = crate_type,
             root = crate.root,
             srcs = depset(srcs, transitive = [crate.srcs]),
@@ -365,17 +372,22 @@ def _rust_test_impl(ctx):
 
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
-            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
+            crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
         srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
-        output_hash = determine_output_hash(crate_root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        if toolchain._incompatible_change_rust_test_compilation_output_directory:
+            output = ctx.actions.declare_file(
+                ctx.label.name + toolchain.binary_ext,
+            )
+        else:
+            output_hash = determine_output_hash(crate_root, ctx.label)
+            output = ctx.actions.declare_file(
+                "test-%s/%s%s" % (
+                    output_hash,
+                    ctx.label.name,
+                    toolchain.binary_ext,
+                ),
+            )
 
         data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
         rustc_env = expand_dict_value_locations(
@@ -439,7 +451,10 @@ def _rust_test_impl(ctx):
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-    providers.append(testing.TestEnvironment(env))
+    providers.append(RunEnvironmentInfo(
+        environment = env,
+        inherited_environment = ctx.attr.env_inherit,
+    ))
 
     return providers
 
@@ -555,6 +570,15 @@ _common_attrs = {
 
             These are other `rust_library` targets and will be presented as the new name given.
         """),
+    ),
+    "alwayslink": attr.bool(
+        doc = dedent("""\
+            If 1, any binary that depends (directly or indirectly) on this library
+            will link in all the object files even if some contain no symbols referenced by the binary.
+
+            This attribute is used by the C++ Starlark API when passing CcInfo providers.
+        """),
+        default = False,
     ),
     "compile_data": attr.label_list(
         doc = dedent("""\
@@ -769,6 +793,9 @@ _rust_test_attrs = dict({
             Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
+    ),
+    "env_inherit": attr.string_list(
+        doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
@@ -1333,9 +1360,7 @@ rust_test = rule(
         )
         ```
 
-        Run the test with `bazel test //hello_lib:hello_lib_test`. The crate
-        will be built using the same crate name as the underlying ":hello_lib"
-        crate.
+        Run the test with `bazel test //hello_lib:hello_lib_test`.
 
         ### Example: `test` directory
 

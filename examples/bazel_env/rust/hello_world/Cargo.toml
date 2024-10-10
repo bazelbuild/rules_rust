@@ -5,4 +5,4 @@ edition = "2021"
 publish = false
 
 [lib]
-path = "/dev/null"
+path = "fake.rs"

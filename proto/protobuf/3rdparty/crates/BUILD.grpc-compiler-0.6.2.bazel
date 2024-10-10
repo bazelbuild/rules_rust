@@ -18,7 +18,7 @@ rust_library(
     name = "grpc_compiler",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -92,7 +92,7 @@ rust_binary(
     name = "protoc-gen-rust-grpc__bin",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

@@ -69,7 +69,7 @@ alias(
 
 alias(
     name = "cfg-expr",
-    actual = "@cui__cfg-expr-0.15.5//:cfg_expr",
+    actual = "@cui__cfg-expr-0.17.0//:cfg_expr",
     tags = ["manual"],
 )
 
@@ -112,6 +112,12 @@ alias(
 alias(
     name = "normpath",
     actual = "@cui__normpath-1.1.1//:normpath",
+    tags = ["manual"],
+)
+
+alias(
+    name = "once_cell",
+    actual = "@cui__once_cell-1.19.0//:once_cell",
     tags = ["manual"],
 )
 
@@ -202,5 +208,11 @@ alias(
 alias(
     name = "tracing-subscriber",
     actual = "@cui__tracing-subscriber-0.3.17//:tracing_subscriber",
+    tags = ["manual"],
+)
+
+alias(
+    name = "url",
+    actual = "@cui__url-2.5.2//:url",
     tags = ["manual"],
 )

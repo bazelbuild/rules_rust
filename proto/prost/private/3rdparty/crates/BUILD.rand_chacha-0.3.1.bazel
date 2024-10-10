@@ -14,7 +14,7 @@ rust_library(
     name = "rand_chacha",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "0.3.1",
     deps = [
-        "@rules_rust_prost__ppv-lite86-0.2.17//:ppv_lite86",
+        "@rules_rust_prost__ppv-lite86-0.2.20//:ppv_lite86",
         "@rules_rust_prost__rand_core-0.6.4//:rand_core",
     ],
 )

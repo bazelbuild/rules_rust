@@ -15,7 +15,7 @@ rust_library(
     name = "crossbeam_utils",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -92,10 +92,23 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "crossbeam-utils_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
     ),
     crate_features = [
         "default",
@@ -117,6 +130,7 @@ cargo_build_script(
         ],
     ),
     edition = "2015",
+    pkg_name = "crossbeam-utils",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -136,6 +150,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":crossbeam-utils_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

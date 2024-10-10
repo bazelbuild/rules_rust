@@ -7,8 +7,8 @@ Crate Universe examples require a bootstrapping process the first time
 bazel commands:
 
 ```shell
-bazel run //vendor_remote_manifests:crates_vendor_manifests
-bazel run //vendor_remote_pkgs:crates_vendor_pkgs
+bazel run //vendor_remote_manifests:crates_vendor
+bazel run //vendor_remote_pkgs:crates_vendor
 ```
 
 ## Repinning/Updating Dependencies

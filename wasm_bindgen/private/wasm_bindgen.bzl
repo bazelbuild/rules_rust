@@ -53,11 +53,14 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
     bindgen_wasm_module = ctx.actions.declare_file(ctx.label.name + "_bg.wasm")
 
     js_out = [ctx.actions.declare_file(ctx.label.name + ".js")]
-    ts_out = [ctx.actions.declare_file(ctx.label.name + ".d.ts")]
+    ts_out = []
+    if not "--no-typescript" in bindgen_flags:
+        ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
 
     if target_output == "bundler":
         js_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.js"))
-        ts_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.wasm.d.ts"))
+        if not "--no-typescript" in bindgen_flags:
+            ts_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.wasm.d.ts"))
 
     outputs = [bindgen_wasm_module] + js_out + ts_out
 
@@ -110,6 +113,11 @@ WASM_BINDGEN_ATTR = {
         default = "bundler",
         values = ["web", "bundler", "nodejs", "no-modules", "deno"],
     ),
+    "target_arch": attr.string(
+        doc = "The target architecture to use for the wasm-bindgen command line option.",
+        default = "wasm32",
+        values = ["wasm32", "wasm64"],
+    ),
     "wasm_file": attr.label(
         doc = "The `.wasm` file or crate to generate bindings for.",
         allow_single_file = True,
@@ -138,6 +146,11 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
             doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
             default = "bundler",
             values = ["web", "bundler", "nodejs", "no-modules", "deno"],
+        ),
+        "target_arch": attr.string(
+            doc = "The target architecture to use for the wasm-bindgen command line option.",
+            default = "wasm32",
+            values = ["wasm32", "wasm64"],
         ),
         "wasm_file": attr.label(
             doc = "The `.wasm` file or crate to generate bindings for.",

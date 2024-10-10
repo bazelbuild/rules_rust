@@ -75,12 +75,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
     # Targets with specific tags will not be formatted
     if aspect_ctx:
         ignore_tags = [
+            "no_clippy",
+            "no_lint",
             "noclippy",
-            "no-clippy",
         ]
-
-        for tag in ignore_tags:
-            if tag in aspect_ctx.rule.attr.tags:
+        for tag in aspect_ctx.rule.attr.tags:
+            if tag.replace("-", "_").lower() in ignore_tags:
                 return None
 
     # Obviously ignore any targets that don't contain `CrateInfo`
@@ -102,19 +102,18 @@ def _clippy_aspect_impl(target, ctx):
     if toolchain == None or cc_toolchain == None:
         return [ClippyInfo(output = depset([]))]
 
-    dep_info, build_info, linkstamps = collect_deps(
+    dep_info, build_info, _ = collect_deps(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
-        # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
-        are_linkstamps_supported = False,
     )
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
-        linkstamps,
+        # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
+        depset([]),
         toolchain,
         cc_toolchain,
         feature_configuration,
@@ -196,6 +195,7 @@ def _clippy_aspect_impl(target, ctx):
         tools = [toolchain.clippy_driver],
         arguments = args.all,
         mnemonic = "Clippy",
+        progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 

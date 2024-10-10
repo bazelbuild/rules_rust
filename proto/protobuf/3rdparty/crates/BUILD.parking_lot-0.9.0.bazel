@@ -15,7 +15,7 @@ rust_library(
     name = "parking_lot",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -90,10 +90,23 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "parking_lot_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
     ),
     crate_features = [
         "default",
@@ -113,6 +126,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "parking_lot",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -132,6 +146,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":parking_lot_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

@@ -48,7 +48,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "example-proc-macro-dep",
+                    "name": "example_proc_macro_dep",
                     "src_path": "{TEMP_DIR}/example_proc_macro_dep/lib.rs",
                     "test": true
                 }
@@ -405,7 +405,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro-rules",
+                    "name": "proc_macro_rules",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-0.4.0/src/lib.rs",
                     "test": true
                 },
@@ -514,7 +514,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "proc-macro-rules-macros",
+                    "name": "proc_macro_rules_macros",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-macros-0.4.0/src/lib.rs",
                     "test": true
                 }
@@ -667,7 +667,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro2",
+                    "name": "proc_macro2",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/src/lib.rs",
                     "test": true
                 },
@@ -1743,7 +1743,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-ident",
+                    "name": "unicode_ident",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/src/lib.rs",
                     "test": true
                 },

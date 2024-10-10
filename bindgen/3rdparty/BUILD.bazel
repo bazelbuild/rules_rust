@@ -26,9 +26,6 @@ crates_vendor(
         "libc": [crate.annotation(
             gen_build_script = True,
         )],
-        "rustix": [crate.annotation(
-            gen_build_script = True,
-        )],
         "winapi": [crate.annotation(
             gen_build_script = True,
         )],
@@ -50,6 +47,7 @@ crates_vendor(
         "clang-sys": crate.spec(
             # Should match the version of llvm-project being used.
             features = ["clang_14_0"],
+            version = "1.6.1",
         ),
     }.items() + _BINDGEN_CLI_PACKAGES.items()),
     repository_name = "rules_rust_bindgen",

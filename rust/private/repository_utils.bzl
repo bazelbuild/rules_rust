@@ -574,12 +574,14 @@ def BUILD_for_rustfmt_toolchain(name, rustfmt, rustc, rustc_lib):
         rustc_lib = rustc_lib,
     )
 
-def load_rust_stdlib(ctx, target_triple):
+def load_rust_stdlib(ctx, target_triple, version, iso_date = None):
     """Loads a rust standard library and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
         target_triple (struct): The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD file contents for this stdlib and the sha256 of the artifact.
@@ -587,58 +589,62 @@ def load_rust_stdlib(ctx, target_triple):
 
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rust-std",
         tool_subdirectories = ["rust-std-{}".format(target_triple.str)],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_stdlib(target_triple), sha256
 
-def load_rustc_dev_nightly(ctx, target_triple):
+def load_rustc_dev_nightly(ctx, target_triple, version, iso_date = None):
     """Loads the nightly rustc dev component
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Dict[str, str]: The sha256 value of the rustc-dev artifact.
     """
 
     subdir_name = "rustc-dev"
-    if ctx.attr.iso_date < "2020-12-24":
+    if iso_date and iso_date < "2020-12-24":
         subdir_name = "rustc-dev-{}".format(target_triple)
 
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
         tool_subdirectories = [subdir_name],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return sha256
 
-def load_llvm_tools(ctx, target_triple):
+def load_llvm_tools(ctx, target_triple, version, iso_date = None):
     """Loads the llvm tools
 
     Args:
         ctx (repository_ctx): A repository_ctx.
         target_triple (struct): The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD.bazel content and sha256 value of the llvm tools artifact.
     """
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "llvm-tools",
         tool_subdirectories = ["llvm-tools-preview"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_llvm_tools(target_triple), sha256

@@ -132,7 +132,7 @@ rust_library(
         "@cui__gix-utils-0.1.5//:gix_utils",
         "@cui__gix-validate-0.8.0//:gix_validate",
         "@cui__gix-worktree-0.26.0//:gix_worktree",
-        "@cui__once_cell-1.18.0//:once_cell",
+        "@cui__once_cell-1.19.0//:once_cell",
         "@cui__parking_lot-0.12.1//:parking_lot",
         "@cui__smallvec-1.11.0//:smallvec",
         "@cui__thiserror-1.0.50//:thiserror",

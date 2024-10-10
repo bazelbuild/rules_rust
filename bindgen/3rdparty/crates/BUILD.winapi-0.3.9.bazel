@@ -15,7 +15,7 @@ rust_library(
     name = "winapi",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -34,14 +34,7 @@ rust_library(
         "errhandlingapi",
         "fileapi",
         "handleapi",
-        "libloaderapi",
-        "minwindef",
         "processenv",
-        "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     crate_root = "src/lib.rs",
     edition = "2015",
@@ -99,24 +92,30 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "winapi_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
     ),
     crate_features = [
         "consoleapi",
         "errhandlingapi",
         "fileapi",
         "handleapi",
-        "libloaderapi",
-        "minwindef",
         "processenv",
-        "std",
-        "winbase",
-        "wincon",
-        "winerror",
-        "winnt",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -133,6 +132,7 @@ cargo_build_script(
         ],
     ),
     edition = "2015",
+    pkg_name = "winapi",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -149,6 +149,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":winapi_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

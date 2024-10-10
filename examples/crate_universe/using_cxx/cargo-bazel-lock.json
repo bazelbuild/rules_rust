@@ -1,5 +1,5 @@
 {
-  "checksum": "66c8ad47f55ed4ef74e89a799d519c12b62cfb9ca39fd876b78536976fdc50cd",
+  "checksum": "7965741cb62223d9e5b802d525e5a5417cbe49a82bcc32b73c8456da5245d299",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -328,6 +328,9 @@
         "version": "0.2.147"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -399,6 +402,9 @@
         "version": "1.0.9"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -485,6 +491,9 @@
         "version": "1.0.66"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]

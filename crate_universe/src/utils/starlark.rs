@@ -88,7 +88,7 @@ pub(crate) struct Alias {
     pub(crate) tags: Set<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename = "cargo_build_script")]
 pub(crate) struct CargoBuildScript {
     pub(crate) name: String,
@@ -205,6 +205,7 @@ pub(crate) struct CommonAttrs {
     pub(crate) version: String,
 }
 
+#[derive(Debug)]
 pub(crate) struct Data {
     pub(crate) glob: Glob,
     pub(crate) select: SelectSet<Label>,

@@ -58,6 +58,15 @@ js_rust_wasm_bindgen(
     wasm_file = ":hello_world_lib_wasm",
 )
 
+js_rust_wasm_bindgen(
+    name = "hello_world_nodejs_no_typescript_wasm_bindgen",
+    bindgen_flags = [
+        "--no-typescript",
+    ],
+    target = "nodejs",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
 _WASM_DATA = [
     ":hello_world_bundler_wasm_bindgen",
     ":hello_world_deno_wasm_bindgen",

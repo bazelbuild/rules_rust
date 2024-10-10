@@ -14,7 +14,7 @@ rust_library(
     name = "serde_urlencoded",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -82,6 +82,6 @@ rust_library(
         "@crates_vendor_pkgs__form_urlencoded-1.2.1//:form_urlencoded",
         "@crates_vendor_pkgs__itoa-1.0.11//:itoa",
         "@crates_vendor_pkgs__ryu-1.0.18//:ryu",
-        "@crates_vendor_pkgs__serde-1.0.200//:serde",
+        "@crates_vendor_pkgs__serde-1.0.204//:serde",
     ],
 )

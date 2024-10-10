@@ -36,13 +36,23 @@ bzl_library(
 )
 
 filegroup(
-    name = "rust_srcs",
+    name = "rust_data",
     srcs = glob([
         "src/**/*.bzl",
         "src/**/*.j2",
-        "src/**/*.rs",
+        "src/**/*.sh",
+        "src/**/*.bat",
     ]),
-    visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "rust_srcs",
+    srcs = glob([
+        "src/**/*.rs",
+    ]) + [
+        ":rust_data",
+    ],
+    visibility = ["//crate_universe:__subpackages__"],
 )
 
 rust_library(
@@ -52,10 +62,7 @@ rust_library(
         exclude = ["src/main.rs"],
     ),
     aliases = aliases(),
-    compile_data = glob(
-        include = ["src/**"],
-        exclude = ["src/**/*.rs"],
-    ),
+    compile_data = [":rust_data"],
     edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     # This target embeds additional, stamping related information (see
@@ -119,16 +126,12 @@ rust_test(
     ],
     edition = "2021",
     env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
-        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
+        "CARGO": "$(rlocationpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "RUSTC": "$(rlocationpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
-    rustc_env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
-        "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
-    },
     tags = ["requires-network"],
     deps = [
         ":cargo_bazel",

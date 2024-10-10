@@ -350,15 +350,18 @@ def _rust_prost_toolchain_impl(ctx):
     if any(tonic_attrs) and not all(tonic_attrs):
         fail("When one tonic attribute is added, all must be added")
 
-    if ctx.attr.proto_compiler:
-        # buildifier: disable=print
-        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
-
     proto_toolchain = proto_toolchains.find_toolchain(
         ctx,
         legacy_attr = "_legacy_proto_toolchain",
         toolchain_type = "@rules_proto//proto:toolchain_type",
     )
+
+    if ctx.attr.proto_compiler:
+        # buildifier: disable=print
+        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
+        proto_compiler = ctx.attr.proto_compiler[DefaultInfo].files_to_run
+    else:
+        proto_compiler = proto_toolchain.proto_compiler
 
     return [platform_common.ToolchainInfo(
         prost_opts = ctx.attr.prost_opts,
@@ -366,7 +369,7 @@ def _rust_prost_toolchain_impl(ctx):
         prost_plugin_flag = ctx.attr.prost_plugin_flag,
         prost_runtime = ctx.attr.prost_runtime,
         prost_types = ctx.attr.prost_types,
-        proto_compiler = ctx.attr.proto_compiler or proto_toolchain.proto_compiler,
+        proto_compiler = proto_compiler,
         protoc_opts = ctx.fragments.proto.experimental_protoc_opts,
         tonic_opts = ctx.attr.tonic_opts,
         tonic_plugin = ctx.attr.tonic_plugin,

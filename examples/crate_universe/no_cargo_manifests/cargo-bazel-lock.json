@@ -1,5 +1,5 @@
 {
-  "checksum": "be1db8376c535588af343ab2a6e7ebe2cafa39028fa7c234bf3d51a68d3b6a9a",
+  "checksum": "37f810ef526344a6ee8002ca2b786345d64562c2bc11920105ba4686031862f5",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -67,6 +67,9 @@
         "version": "0.1.64"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -701,6 +704,9 @@
         "version": "0.3.26"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -774,6 +780,9 @@
         "version": "0.3.26"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -892,6 +901,9 @@
         "version": "0.3.26"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -979,6 +991,9 @@
         "version": "0.3.26"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1380,6 +1395,9 @@
         "version": "1.8.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1617,6 +1635,9 @@
         "version": "1.9.2"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1776,6 +1797,9 @@
         "version": "0.2.139"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1845,6 +1869,9 @@
         "version": "0.4.9"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1929,6 +1956,9 @@
         "version": "0.4.17"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2045,6 +2075,9 @@
         "version": "2.5.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2509,6 +2542,9 @@
         "version": "0.9.7"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2813,6 +2849,9 @@
         "version": "1.0.51"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2889,6 +2928,9 @@
         "version": "1.0.23"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -3086,6 +3128,9 @@
         "version": "1.0.152"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -3171,6 +3216,9 @@
         "version": "1.0.93"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -3398,6 +3446,9 @@
         "version": "0.4.8"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -3600,6 +3651,9 @@
         "version": "1.0.109"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -4228,6 +4282,9 @@
         "version": "1.26.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -5117,6 +5174,9 @@
         "version": "0.1.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5303,6 +5363,9 @@
         "version": "0.3.9"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5368,6 +5431,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5433,6 +5499,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5685,6 +5754,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5750,6 +5822,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5815,6 +5890,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5880,6 +5958,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -5945,6 +6026,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -6010,6 +6094,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -6075,6 +6162,9 @@
         "version": "0.42.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]

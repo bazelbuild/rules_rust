@@ -18,7 +18,7 @@ rust_library(
     name = "protobuf_codegen",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -91,7 +91,7 @@ rust_binary(
     name = "protoc-gen-rust__bin",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

@@ -14,7 +14,7 @@ rust_library(
     name = "signal_hook_registry",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "1.4.2",
     deps = [
-        "@crates_vendor_pkgs__libc-0.2.154//:libc",
+        "@crates_vendor_pkgs__libc-0.2.155//:libc",
     ],
 )

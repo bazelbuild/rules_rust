@@ -15,7 +15,7 @@ rust_library(
     name = "indexmap",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -29,9 +29,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -89,14 +86,24 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "indexmap_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
-    crate_features = [
-        "std",
-    ],
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
     crate_name = "build_script_build",
     crate_root = "build.rs",
     data = glob(
@@ -112,6 +119,7 @@ cargo_build_script(
         ],
     ),
     edition = "2021",
+    pkg_name = "indexmap",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -125,12 +133,12 @@ cargo_build_script(
     version = "1.9.3",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_prost__autocfg-1.1.0//:autocfg",
+        "@rules_rust_prost__autocfg-1.3.0//:autocfg",
     ],
 )
 
 alias(
     name = "build_script_build",
-    actual = ":indexmap_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

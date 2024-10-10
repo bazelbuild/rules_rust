@@ -1,4 +1,5 @@
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
@@ -37,4 +38,22 @@ sh_test(
         "'ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked'",
     ],
     data = [":hello_linux_arm64_musl"],
+)
+
+rust_binary(
+    name = "keyring",
+    srcs = ["src/keyring.rs"],
+    tags = ["manual"],
+    deps = ["@cu//:keyring"],
+)
+
+platform_transition_binary(
+    name = "keyring_linux_x86_64_musl",
+    binary = ":keyring",
+    target_platform = "//platforms:linux_x86_64_musl",
+)
+
+build_test(
+    name = "keyring_linux_x86_64_musl_build_test",
+    targets = [":keyring_linux_x86_64_musl"],
 )

@@ -388,7 +388,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -454,7 +454,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "core-foundation-sys",
+                    "name": "core_foundation_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/core-foundation-sys-0.8.3/src/lib.rs",
                     "test": true
                 },
@@ -534,7 +534,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-types",
+                    "name": "crate_types",
                     "src_path": "{TEMP_DIR}/crate_types/lib.rs",
                     "test": true
                 }
@@ -656,7 +656,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-channel",
+                    "name": "crossbeam_channel",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-channel-0.5.2/src/lib.rs",
                     "test": true
                 },
@@ -1023,7 +1023,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-deque",
+                    "name": "crossbeam_deque",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-deque-0.8.1/src/lib.rs",
                     "test": true
                 },
@@ -1253,7 +1253,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-epoch",
+                    "name": "crossbeam_epoch",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-epoch-0.9.6/src/lib.rs",
                     "test": true
                 },
@@ -1463,7 +1463,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crossbeam-utils",
+                    "name": "crossbeam_utils",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/crossbeam-utils-0.8.6/src/lib.rs",
                     "test": true
                 },
@@ -1779,7 +1779,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "hermit-abi",
+                    "name": "hermit_abi",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/hermit-abi-0.1.19/src/lib.rs",
                     "test": true
                 }
@@ -3120,7 +3120,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "rayon-core",
+                    "name": "rayon_core",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/rayon-core-1.9.1/src/lib.rs",
                     "test": true
                 },
@@ -4179,7 +4179,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "winapi-i686-pc-windows-gnu",
+                    "name": "winapi_i686_pc_windows_gnu",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs",
                     "test": true
                 },
@@ -4238,7 +4238,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "winapi-x86_64-pc-windows-gnu",
+                    "name": "winapi_x86_64_pc_windows_gnu",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs",
                     "test": true
                 },

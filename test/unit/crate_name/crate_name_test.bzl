@@ -126,6 +126,16 @@ def _crate_name_test():
         edition = "2018",
     )
 
+    rust_binary(
+        name = "custom_bin_target_name",
+        crate_name = "smain",
+        srcs = [
+            "smain.rs",
+            "add.rs",
+        ],
+        edition = "2018",
+    )
+
     rust_test(
         name = "default/crate-name-test",
         srcs = ["main.rs"],
@@ -139,9 +149,29 @@ def _crate_name_test():
         edition = "2018",
     )
 
+    rust_test(
+        name = "custom_named_test",
+        crate_name = "stest",
+        srcs = [
+            "stest.rs",
+            "add.rs",
+        ],
+        edition = "2018",
+    )
+
     rust_library(
         name = "slib",
         srcs = ["slib.rs"],
+        edition = "2018",
+    )
+
+    rust_library(
+        name = "custom_lib_target_name",
+        crate_name = "slib",
+        srcs = [
+            "slib.rs",
+            "add.rs",
+        ],
         edition = "2018",
     )
 

@@ -41,12 +41,14 @@ def find_toolchain(ctx):
     """
     return ctx.toolchains[Label("//rust:toolchain_type")]
 
-def find_cc_toolchain(ctx, mandatory = True):
+
+def find_cc_toolchain(ctx, mandatory = True, extra_unsupported_features = tuple()):
     """Extracts a CcToolchain from the current target's context
 
     Args:
         ctx (ctx): The current target's rule context object
         mandatory: If the CcToolchain is mandatory
+        extra_unsupported_features (sequence of str): Extra features to disable
 
     Returns:
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
@@ -59,7 +61,8 @@ def find_cc_toolchain(ctx, mandatory = True):
         ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
-        unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features,
+        unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features +
+                               list(extra_unsupported_features),
     )
     return cc_toolchain, feature_configuration
 
@@ -709,11 +712,12 @@ def can_build_metadata(toolchain, ctx, crate_type):
            ctx.attr._process_wrapper and \
            crate_type in ("rlib", "lib")
 
-def crate_root_src(name, srcs, crate_type):
+def crate_root_src(name, crate_name, srcs, crate_type):
     """Determines the source file for the crate root, should it not be specified in `attr.crate_root`.
 
     Args:
         name (str): The name of the target.
+        crate_name (str): The target's `crate_name` attribute.
         srcs (list): A list of all sources for the target Crate.
         crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
 
@@ -724,10 +728,14 @@ def crate_root_src(name, srcs, crate_type):
     """
     default_crate_root_filename = "main.rs" if crate_type == "bin" else "lib.rs"
 
+    if not crate_name:
+        crate_name = name
+
     crate_root = (
         (srcs[0] if len(srcs) == 1 else None) or
         _shortest_src_with_basename(srcs, default_crate_root_filename) or
-        _shortest_src_with_basename(srcs, name + ".rs")
+        _shortest_src_with_basename(srcs, name + ".rs") or
+        _shortest_src_with_basename(srcs, crate_name + ".rs")
     )
     if not crate_root:
         file_names = [default_crate_root_filename, name + ".rs"]
@@ -784,7 +792,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
     prefix = "lib"
     if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
         prefix = ""
-    if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
+    if toolchain.target_arch in ("wasm32", "wasm64") and crate_type == "cdylib":
         prefix = ""
 
     return "{prefix}{name}{lib_hash}{extension}".format(

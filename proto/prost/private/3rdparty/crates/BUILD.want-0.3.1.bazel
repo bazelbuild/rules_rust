@@ -14,7 +14,7 @@ rust_library(
     name = "want",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.3.1",
     deps = [
-        "@rules_rust_prost__try-lock-0.2.4//:try_lock",
+        "@rules_rust_prost__try-lock-0.2.5//:try_lock",
     ],
 )

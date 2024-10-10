@@ -67,7 +67,7 @@ pub fn query(opt: QueryOptions) -> Result<()> {
         &lockfile,
         &config,
         &splicing_manifest,
-        &Cargo::new(opt.cargo),
+        &Cargo::new(opt.cargo, opt.rustc.clone()),
         &opt.rustc,
     )?;
 

@@ -82,6 +82,6 @@ rust_library(
         "@cui__semver-1.0.20//:semver",
         "@cui__serde-1.0.190//:serde",
         "@cui__toml-0.7.6//:toml",
-        "@cui__url-2.4.0//:url",
+        "@cui__url-2.5.2//:url",
     ],
 )

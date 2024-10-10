@@ -13,7 +13,7 @@ const PATH_SEPARATOR: &str = ";";
 fn main() {
     let runfiles = runfiles::Runfiles::create().unwrap();
 
-    let wrapped_tool_path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET);
+    let wrapped_tool_path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET).unwrap();
     if !wrapped_tool_path.exists() {
         panic!(
             "{WRAPPED_TOOL_NAME} does not exist at: {}",

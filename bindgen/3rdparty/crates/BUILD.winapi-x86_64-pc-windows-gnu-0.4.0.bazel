@@ -14,7 +14,7 @@ rust_library(
     name = "winapi_x86_64_pc_windows_gnu",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],

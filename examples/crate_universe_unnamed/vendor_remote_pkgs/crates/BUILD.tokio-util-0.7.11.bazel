@@ -14,7 +14,7 @@ rust_library(
     name = "tokio_util",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -88,6 +88,6 @@ rust_library(
         "@crates_vendor_pkgs__futures-core-0.3.30//:futures_core",
         "@crates_vendor_pkgs__futures-sink-0.3.30//:futures_sink",
         "@crates_vendor_pkgs__pin-project-lite-0.2.14//:pin_project_lite",
-        "@crates_vendor_pkgs__tokio-1.37.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.38.0//:tokio",
     ],
 )

@@ -454,6 +454,9 @@ def _generate_sysroot(
         sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
         transitive_file_sets.extend([sysroot_rust_std])
 
+        # Made available to support $(location) expansion in stdlib_linkflags and extra_rustc_flags.
+        transitive_file_sets.append(depset(ctx.files.rust_std))
+
     # Declare a file in the root of the sysroot to make locating the sysroot easy
     sysroot_anchor = ctx.actions.declare_file("{}/rust.sysroot".format(name))
     ctx.actions.write(
@@ -546,6 +549,16 @@ def _rust_toolchain_impl(ctx):
     expanded_stdlib_linkflags = []
     for flag in ctx.attr.stdlib_linkflags:
         expanded_stdlib_linkflags.append(
+            dedup_expand_location(
+                ctx,
+                flag,
+                targets = rust_std[rust_common.stdlib_info].srcs,
+            ),
+        )
+
+    expanded_extra_rustc_flags = []
+    for flag in ctx.attr.extra_rustc_flags:
+        expanded_extra_rustc_flags.append(
             dedup_expand_location(
                 ctx,
                 flag,
@@ -664,7 +677,7 @@ def _rust_toolchain_impl(ctx):
         rustfmt = sysroot.rustfmt,
         staticlib_ext = ctx.attr.staticlib_ext,
         stdlib_linkflags = stdlib_linkflags_cc_info,
-        extra_rustc_flags = ctx.attr.extra_rustc_flags,
+        extra_rustc_flags = expanded_extra_rustc_flags,
         extra_rustc_flags_for_crate_types = ctx.attr.extra_rustc_flags_for_crate_types,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
@@ -684,8 +697,8 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
-        _experimental_toolchain_generated_sysroot = ctx.attr._experimental_toolchain_generated_sysroot[IncompatibleFlagInfo].enabled,
-        _incompatible_no_rustc_sysroot_env = ctx.attr._incompatible_no_rustc_sysroot_env[IncompatibleFlagInfo].enabled,
+        _incompatible_change_rust_test_compilation_output_directory = ctx.attr._incompatible_change_rust_test_compilation_output_directory[IncompatibleFlagInfo].enabled,
+        _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _no_std = no_std,
     )
     return [
@@ -765,7 +778,7 @@ rust_toolchain = rule(
             doc = "Extra flags to pass to rustc in exec configuration",
         ),
         "extra_rustc_flags": attr.string_list(
-            doc = "Extra flags to pass to rustc in non-exec configuration",
+            doc = "Extra flags to pass to rustc in non-exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute.",
         ),
         "extra_rustc_flags_for_crate_types": attr.string_list_dict(
             doc = "Extra flags to pass to rustc based on crate type",
@@ -860,13 +873,6 @@ rust_toolchain = rule(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
-        "_experimental_toolchain_generated_sysroot": attr.label(
-            default = Label("//rust/settings:experimental_toolchain_generated_sysroot"),
-            doc = (
-                "Label to a boolean build setting that lets the rule knows wheter to set --sysroot to rustc" +
-                "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_toolchain_generated_sysroot."
-            ),
-        ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
         ),
@@ -877,8 +883,8 @@ rust_toolchain = rule(
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
             ),
         ),
-        "_incompatible_no_rustc_sysroot_env": attr.label(
-            default = Label("//rust/settings:incompatible_no_rustc_sysroot_env"),
+        "_incompatible_change_rust_test_compilation_output_directory": attr.label(
+            default = Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory"),
         ),
         "_no_std": attr.label(
             default = Label("//:no_std"),
@@ -891,6 +897,13 @@ rust_toolchain = rule(
         ),
         "_third_party_dir": attr.label(
             default = Label("//rust/settings:third_party_dir"),
+        ),
+        "_toolchain_generated_sysroot": attr.label(
+            default = Label("//rust/settings:toolchain_generated_sysroot"),
+            doc = (
+                "Label to a boolean build setting that lets the rule knows wheter to set --sysroot to rustc. " +
+                "This flag is only relevant when used together with --@rules_rust//rust/settings:toolchain_generated_sysroot."
+            ),
         ),
     },
     toolchains = [

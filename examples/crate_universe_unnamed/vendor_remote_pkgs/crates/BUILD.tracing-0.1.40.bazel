@@ -14,7 +14,7 @@ rust_library(
     name = "tracing",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -89,7 +89,7 @@ rust_library(
     }),
     version = "0.1.40",
     deps = [
-        "@crates_vendor_pkgs__log-0.4.21//:log",
+        "@crates_vendor_pkgs__log-0.4.22//:log",
         "@crates_vendor_pkgs__pin-project-lite-0.2.14//:pin_project_lite",
         "@crates_vendor_pkgs__tracing-core-0.1.32//:tracing_core",
     ],

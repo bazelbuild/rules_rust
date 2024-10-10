@@ -41,11 +41,13 @@ def _current_toolchain_files_test_impl(ctx):
             runfiles = runfiles,
             executable = test_runner,
         ),
-        testing.TestEnvironment({
-            "CURRENT_TOOLCHAIN_FILES_TEST_INPUT": input.short_path,
-            "CURRENT_TOOLCHAIN_FILES_TEST_KIND": ctx.attr.kind,
-            "CURRENT_TOOLCHAIN_FILES_TEST_PATTERN": ctx.attr.pattern,
-        }),
+        RunEnvironmentInfo(
+            environment = {
+                "CURRENT_TOOLCHAIN_FILES_TEST_INPUT": input.short_path,
+                "CURRENT_TOOLCHAIN_FILES_TEST_KIND": ctx.attr.kind,
+                "CURRENT_TOOLCHAIN_FILES_TEST_PATTERN": ctx.attr.pattern,
+            },
+        ),
     ]
 
 current_toolchain_files_test = rule(

@@ -20,8 +20,9 @@ pub fn parse(path: &Path) -> Result<impl CargoBazelLockfile> {
     Ok(lockfile)
 }
 
-/// `CargoBazelLockfile` provides a view over `cargo-bazel`'s lockfile format,
-/// providing information about the third-party dependencies of a workspace.
+/// `CargoBazelLockfile` provides a view over `cargo-bazel`'s lockfile format.
+///
+/// This trait provides information about the third-party dependencies of a workspace.
 /// While the lockfile's format doesn't provide any kind of compatibility guarantees over time,
 /// this type offers an interface which is likely to be publicly supportable.
 /// No formal compatibility guarantees are offered around this type - it may change at any time,
@@ -144,7 +145,7 @@ mod test {
 
         let runfiles = runfiles::Runfiles::create().unwrap();
         let path = runfiles::rlocation!(
-            runfiles, "rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json");
+            runfiles, "rules_rust/crate_universe/test_data/cargo_bazel_lockfile/multi_package-cargo-bazel-lock.json").unwrap();
 
         let parsed = parse(&path).unwrap();
         assert_eq!(parsed.workspace_members(), want_workspace_member_names);

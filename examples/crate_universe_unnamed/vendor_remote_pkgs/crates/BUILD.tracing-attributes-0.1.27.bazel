@@ -14,7 +14,7 @@ rust_proc_macro(
     name = "tracing_attributes",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -79,8 +79,8 @@ rust_proc_macro(
     }),
     version = "0.1.27",
     deps = [
-        "@crates_vendor_pkgs__proc-macro2-1.0.82//:proc_macro2",
+        "@crates_vendor_pkgs__proc-macro2-1.0.86//:proc_macro2",
         "@crates_vendor_pkgs__quote-1.0.36//:quote",
-        "@crates_vendor_pkgs__syn-2.0.61//:syn",
+        "@crates_vendor_pkgs__syn-2.0.68//:syn",
     ],
 )

@@ -87,6 +87,7 @@ def _annotation(
         additive_build_file = None,
         additive_build_file_content = None,
         alias_rule = None,
+        build_script_compile_data = None,
         build_script_data = None,
         build_script_tools = None,
         build_script_data_glob = None,
@@ -125,6 +126,7 @@ def _annotation(
             generated BUILD files.
         alias_rule (str, optional): Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s
             'default_alias_rule'.
+        build_script_compile_data (list, optional): A list of labels to add to a crate's `cargo_build_script::compile_data` attribute.
         build_script_data (list, optional): A list of labels to add to a crate's `cargo_build_script::data` attribute.
         build_script_tools (list, optional): A list of labels to add to a crate's `cargo_build_script::tools` attribute.
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
@@ -167,8 +169,8 @@ def _annotation(
         rustc_flags (list, optional): A list of strings to set on a crate's `rust_library::rustc_flags` attribute.
         shallow_since (str, optional): An optional timestamp used for crates originating from a git repository
             instead of a crate registry. This flag optimizes fetching the source code.
-        override_targets (dict, optional): A dictionary of alternate tagets to use when something depends on this crate to allow
-            the parent repo to provide its own version of this dependency. Keys can be `proc_marco`, `build_script`, `lib`, `bin`.
+        override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
+            the parent repo to provide its own version of this dependency. Keys can be `proc-marco`, `custom-build`, `lib`, `bin`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
@@ -185,6 +187,7 @@ def _annotation(
             additive_build_file = _stringify_label(additive_build_file),
             additive_build_file_content = additive_build_file_content,
             alias_rule = parse_alias_rule(alias_rule),
+            build_script_compile_data = _stringify_list(build_script_compile_data),
             build_script_data = _stringify_list(build_script_data),
             build_script_tools = _stringify_list(build_script_tools),
             build_script_data_glob = build_script_data_glob,

@@ -10,8 +10,8 @@ bazel commands:
 bazel run //vendor_external:crates_vendor
 bazel run //vendor_local_manifests:crates_vendor
 bazel run //vendor_local_pkgs:crates_vendor
-bazel run //vendor_remote_manifests:crates_vendor_manifests
-bazel run //vendor_remote_pkgs:crates_vendor_pkgs
+bazel run //vendor_remote_manifests:crates_vendor
+bazel run //vendor_remote_pkgs:crates_vendor
 ```
 
 ## Repinning/Updating Dependencies

@@ -126,6 +126,7 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
     _assert_parts(env, triple("wasm32-unknown-unknown"), "wasm32", "unknown", "unknown", None)
     _assert_parts(env, triple("wasm32-wasi"), "wasm32", "wasi", "wasi", None)
+    _assert_parts(env, triple("wasm32-wasip1"), "wasm32", "wasip1", "wasip1", None)
     _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "fuchsia", "fuchsia", None)
 
     return unittest.end(env)

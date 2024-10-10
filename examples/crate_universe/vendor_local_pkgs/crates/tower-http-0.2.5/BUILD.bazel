@@ -88,7 +88,7 @@ rust_library(
     version = "0.2.5",
     deps = [
         "//vendor_local_pkgs/crates/bitflags-1.3.2:bitflags",
-        "//vendor_local_pkgs/crates/bytes-1.6.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.7.2:bytes",
         "//vendor_local_pkgs/crates/futures-core-0.3.30:futures_core",
         "//vendor_local_pkgs/crates/futures-util-0.3.30:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
@@ -96,8 +96,8 @@ rust_library(
         "//vendor_local_pkgs/crates/http-range-header-0.3.1:http_range_header",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.14:pin_project_lite",
         "//vendor_local_pkgs/crates/tower-0.4.13:tower",
-        "//vendor_local_pkgs/crates/tower-layer-0.3.2:tower_layer",
-        "//vendor_local_pkgs/crates/tower-service-0.3.2:tower_service",
+        "//vendor_local_pkgs/crates/tower-layer-0.3.3:tower_layer",
+        "//vendor_local_pkgs/crates/tower-service-0.3.3:tower_service",
         "//vendor_local_pkgs/crates/tracing-0.1.40:tracing",
     ],
 )

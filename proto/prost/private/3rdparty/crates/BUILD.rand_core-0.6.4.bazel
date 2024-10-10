@@ -14,7 +14,7 @@ rust_library(
     name = "rand_core",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "0.6.4",
     deps = [
-        "@rules_rust_prost__getrandom-0.2.10//:getrandom",
+        "@rules_rust_prost__getrandom-0.2.15//:getrandom",
     ],
 )

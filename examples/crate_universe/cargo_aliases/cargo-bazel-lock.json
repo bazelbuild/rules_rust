@@ -1,5 +1,5 @@
 {
-  "checksum": "ab3295042b385557b39bfe5eff26f06a0f8fe9e2a2e9bcffb96026092fccc372",
+  "checksum": "9d0a94060a6684c0a4b2d0a932c792ebe4429eb60eae361a7eee7e3d8b73b163",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -959,6 +959,9 @@
         "version": "1.9.2"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1033,6 +1036,9 @@
         "version": "0.2.139"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1163,6 +1169,9 @@
         "version": "0.4.14"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1235,6 +1244,9 @@
         "version": "2.5.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1319,6 +1331,9 @@
         "version": "0.12.1-dev"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1399,6 +1414,9 @@
         "version": "0.13.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1631,6 +1649,9 @@
         "version": "1.0.4"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1713,6 +1734,9 @@
         "version": "1.0.4"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1798,6 +1822,9 @@
         "version": "1.0.51"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1874,6 +1901,9 @@
         "version": "1.0.23"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2433,6 +2463,9 @@
         "version": "1.0.109"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2635,6 +2668,9 @@
         "version": "1.0.0-alpha.7"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -2824,6 +2860,9 @@
         "version": "0.3.9"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2889,6 +2928,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -3004,6 +3046,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]

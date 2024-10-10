@@ -736,7 +736,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "cfg-if",
+                    "name": "cfg_if",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.0/src/lib.rs",
                     "test": true
                 },
@@ -804,7 +804,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "crate-combined-features",
+                    "name": "crate_combined_features",
                     "src_path": "{TEMP_DIR}/crate_combined_features/lib.rs",
                     "test": true
                 }
@@ -2380,7 +2380,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "percent-encoding",
+                    "name": "percent_encoding",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/percent-encoding-2.2.0/src/lib.rs",
                     "test": true
                 }
@@ -2472,7 +2472,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "pin-project-lite",
+                    "name": "pin_project_lite",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/src/lib.rs",
                     "test": true
                 },
@@ -2679,7 +2679,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro-crate",
+                    "name": "proc_macro_crate",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-crate-1.2.1/src/lib.rs",
                     "test": true
                 }
@@ -2795,7 +2795,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "proc-macro2",
+                    "name": "proc_macro2",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.52/src/lib.rs",
                     "test": true
                 },
@@ -4023,7 +4023,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "ruma-common",
+                    "name": "ruma_common",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/ruma-common-0.9.3/src/lib.rs",
                     "test": true
                 },
@@ -4113,7 +4113,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "ruma-identifiers-validation",
+                    "name": "ruma_identifiers_validation",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/ruma-identifiers-validation-0.8.1/src/lib.rs",
                     "test": true
                 }
@@ -4229,7 +4229,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "ruma-macros",
+                    "name": "ruma_macros",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/ruma-macros-0.9.3/src/lib.rs",
                     "test": true
                 }
@@ -6904,7 +6904,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "thiserror-impl",
+                    "name": "thiserror_impl",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-1.0.40/src/lib.rs",
                     "test": true
                 }
@@ -8177,7 +8177,7 @@
                     "kind": [
                         "proc-macro"
                     ],
-                    "name": "tracing-attributes",
+                    "name": "tracing_attributes",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tracing-attributes-0.1.23/src/lib.rs",
                     "test": true
                 },
@@ -8451,7 +8451,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "tracing-core",
+                    "name": "tracing_core",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tracing-core-0.1.30/src/lib.rs",
                     "test": true
                 },
@@ -8771,7 +8771,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-ident",
+                    "name": "unicode_ident",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.8/src/lib.rs",
                     "test": true
                 },
@@ -8883,7 +8883,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "unicode-normalization",
+                    "name": "unicode_normalization",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-normalization-0.1.22/src/lib.rs",
                     "test": true
                 },

@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.2.12",
     deps = [
-        "@crates_vendor_pkgs__bytes-1.6.0//:bytes",
+        "@crates_vendor_pkgs__bytes-1.7.2//:bytes",
         "@crates_vendor_pkgs__fnv-1.0.7//:fnv",
         "@crates_vendor_pkgs__itoa-1.0.11//:itoa",
     ],

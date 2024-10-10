@@ -1,5 +1,5 @@
 {
-  "checksum": "9512facaf3a0b80e9970a1ab81cef6f6eeeb11e06297cb6d8904b97653d4ee20",
+  "checksum": "3a0fe38d4b8cb77b7de1f9d378bd60a98eff50711d355bf3dd319a0df052118c",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -148,6 +148,9 @@
         "version": "0.66.1"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -330,6 +333,9 @@
         "version": "3.1.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data": {
           "common": [
             "@//complicated_dependencies:boringssl_gen_dir",
@@ -583,6 +589,9 @@
         "version": "1.7.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ],
@@ -1138,6 +1147,9 @@
         "version": "0.2.154"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -1262,6 +1274,9 @@
         "version": "1.1.15"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data": {
           "common": [
             "@rules_foreign_cc//toolchains:current_cmake_toolchain"
@@ -1599,6 +1614,9 @@
         "version": "1.0.81"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2095,6 +2113,21 @@
         "compile_data_glob": [
           "**"
         ],
+        "crate_features": {
+          "common": [
+            "errhandlingapi",
+            "fileapi",
+            "handleapi",
+            "minwinbase",
+            "minwindef",
+            "processthreadsapi",
+            "synchapi",
+            "winbase",
+            "winerror",
+            "winnt"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -2121,6 +2154,9 @@
         "version": "0.3.9"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2186,6 +2222,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2251,6 +2290,9 @@
         "version": "0.4.0"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2408,6 +2450,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2473,6 +2518,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2538,6 +2586,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2603,6 +2654,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2668,6 +2722,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2733,6 +2790,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2798,6 +2858,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]
@@ -2863,6 +2926,9 @@
         "version": "0.52.5"
       },
       "build_script_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
         "data_glob": [
           "**"
         ]

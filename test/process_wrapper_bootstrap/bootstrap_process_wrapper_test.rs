@@ -13,7 +13,8 @@ fn test_shebang() {
     let script = runfiles::rlocation!(
         rfiles,
         "rules_rust/util/process_wrapper/private/process_wrapper.sh"
-    );
+    )
+    .unwrap();
 
     let content = read_to_string(script).unwrap();
     assert!(
