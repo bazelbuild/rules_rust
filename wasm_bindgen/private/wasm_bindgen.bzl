@@ -78,6 +78,7 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
         mnemonic = "RustWasmBindgen",
         progress_message = "Generating WebAssembly bindings for {}...".format(progress_message_label),
         arguments = [args],
+        toolchain = str(Label("//wasm_bindgen:toolchain_type")),
     )
 
     return RustWasmBindgenInfo(
