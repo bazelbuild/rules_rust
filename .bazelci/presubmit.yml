@@ -96,6 +96,8 @@ tasks:
   windows_no_runfiles:
     name: No Runfiles
     platform: windows
+    batch_commands:
+      - "echo startup --nowindows_enable_symlinks >> user.bazelrc"
     build_flags:
       - "--noenable_runfiles"
       - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
@@ -200,6 +202,8 @@ tasks:
   windows_no_runfiles_with_aspects:
     name: No Runfiles With Aspects
     platform: windows
+    batch_commands:
+      - "echo startup --nowindows_enable_symlinks >> user.bazelrc"
     build_flags:
       - "--noenable_runfiles"
       - "--config=rustfmt"
