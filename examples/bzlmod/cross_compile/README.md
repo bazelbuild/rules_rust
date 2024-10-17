@@ -1,6 +1,6 @@
 # Cross Compilation
 
-For cross compilation, you have to specify a custom platform to let Bazel know that you are compiling for a different platform than the default host platform. 
+For cross compilation, you have to specify a custom platform to let Bazel know that you are compiling for a different platform than the default host platform.
 
 The example code is setup to cross compile from the following hosts to the the following targets using Rust and the LLVM toolchain:
 
