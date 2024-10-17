@@ -69,11 +69,7 @@ pub fn get_crate_specs(
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);
-    let target_pattern = targets
-        .iter()
-        .map(|t| format!("deps({t})"))
-        .collect::<Vec<_>>()
-        .join("+");
+    let target_pattern = format!("deps({})", targets.join("+"));
 
     let aquery_output = Command::new(bazel)
         .current_dir(workspace)
