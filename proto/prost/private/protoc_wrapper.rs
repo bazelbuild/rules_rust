@@ -68,7 +68,7 @@ struct Module {
     contents: String,
 
     /// The names of any other modules which are submodules of this module.
-    submodules: BTreeSet<String>,
+    submodules: BTreeMap<String, Module>,
 }
 
 /// Generate a lib.rs file with all prost/tonic outputs embeeded in modules which
@@ -118,7 +118,12 @@ struct Module {
 /// }
 /// ```
 fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String {
-    let mut module_info = BTreeMap::new();
+    // dummy root module to host all discovered modules in its submodules map
+    let mut root_module = Module {
+        name: "".to_string(),
+        contents: "".to_string(),
+        submodules: BTreeMap::new(),
+    };
 
     for path in prost_outputs.iter() {
         let mut package = path
@@ -154,43 +159,31 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
 
         // Avoid a stack overflow by skipping a known bad package name
         let module_name = snake_cased_package_name(&package);
-
-        module_info.insert(
-            module_name.clone(),
-            Module {
-                name,
-                contents: fs::read_to_string(path).expect("Failed to read file"),
-                submodules: BTreeSet::new(),
-            },
-        );
-
+        let contents = fs::read_to_string(path).expect("Failed to read file");
         let module_parts = module_name.split('.').collect::<Vec<_>>();
-        for parent_module_index in 0..module_parts.len() {
-            let child_module_index = parent_module_index + 1;
-            if child_module_index >= module_parts.len() {
-                break;
-            }
-            let full_parent_module_name = module_parts[0..parent_module_index + 1].join(".");
-            let parent_module_name = module_parts[parent_module_index];
-            let child_module_name = module_parts[child_module_index];
 
-            module_info
-                .entry(full_parent_module_name.clone())
-                .and_modify(|parent_module| {
-                    parent_module
-                        .submodules
-                        .insert(child_module_name.to_string());
-                })
-                .or_insert(Module {
-                    name: parent_module_name.to_string(),
+        let mut curr_module = &mut root_module;
+        // Iterate package path to create leaf node
+        for part in module_parts.iter() {
+            curr_module = curr_module
+                .submodules
+                .entry(part.to_string())
+                .or_insert_with(|| Module {
+                    name: part.to_string(),
                     contents: "".to_string(),
-                    submodules: [child_module_name.to_string()].iter().cloned().collect(),
+                    submodules: BTreeMap::new(),
                 });
         }
+        // Assign generated rust code at the leaf node
+        curr_module.contents = contents;
+        curr_module.name = name;
     }
 
     let mut content = "// @generated\n\n".to_string();
-    write_module(&mut content, &module_info, "", 0);
+    let module_info = &root_module.submodules;
+    for submodule_name in module_info.keys() {
+        write_module(&mut content, module_info, submodule_name, 1);
+    }
     content
 }
 
@@ -201,40 +194,32 @@ fn write_module(
     module_name: &str,
     depth: usize,
 ) {
-    if module_name.is_empty() {
-        for submodule_name in module_info.keys() {
-            write_module(content, module_info, submodule_name, depth + 1);
-        }
-        return;
-    }
     let module = module_info.get(module_name).expect("Failed to get module");
     let indent = "  ".repeat(depth);
     let is_rust_module = module.name != "_";
 
     if is_rust_module {
-        let rust_module_name = escape_keyword(module.name.clone());
-        content
-            .write_str(&format!("{}pub mod {} {{\n", indent, rust_module_name))
-            .expect("Failed to write string");
+        let rust_module_name = escape_keyword(module_name.to_string());
+        let opening = format!("{}pub mod {} {{\n", indent, rust_module_name);
+        content.write_str(&opening).expect("Failed to write string");
     }
 
     content
         .write_str(&module.contents)
         .expect("Failed to write string");
 
-    for submodule_name in module.submodules.iter() {
+    for submodule_name in module.submodules.keys() {
         write_module(
             content,
-            module_info,
-            [module_name, submodule_name].join(".").as_str(),
+            &module.submodules,
+            submodule_name.as_str(),
             depth + 1,
         );
     }
 
     if is_rust_module {
-        content
-            .write_str(&format!("{}}}\n", indent))
-            .expect("Failed to write string");
+        let closing = format!("{}}}\n", indent);
+        content.write_str(&closing).expect("Failed to write string");
     }
 }
 

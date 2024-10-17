@@ -1,0 +1,26 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//proto/prost:defs.bzl", "rust_prost_library")
+
+proto_library(
+    name = "shared_pkg_prefix_proto",
+    srcs = [
+        "pkg.foo.a.proto",
+        "pkg.foo.b.proto",
+        "pkg.c.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "shared_pkg_prefix_rs_proto",
+    proto = ":shared_pkg_prefix_proto",
+)
+
+rust_test(
+    name = "shared_pkg_prefix_test",
+    srcs = ["shared_pkg_prefix_test.rs"],
+    edition = "2021",
+    deps = [
+        ":shared_pkg_prefix_rs_proto",
+    ],
+)

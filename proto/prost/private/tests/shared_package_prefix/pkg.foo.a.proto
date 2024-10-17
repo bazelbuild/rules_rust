@@ -1,0 +1,9 @@
+syntax = "proto3";
+package pkg.foo;
+
+import "proto/prost/private/tests/shared_package_prefix/pkg.c.proto";
+
+message AMessage {
+    string name = 1;
+    CMessage c = 2;
+}

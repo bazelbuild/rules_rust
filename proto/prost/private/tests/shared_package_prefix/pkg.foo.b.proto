@@ -1,0 +1,6 @@
+syntax = "proto3";
+package pkg.foo;
+
+message BMessage {
+    string name = 1;
+}
