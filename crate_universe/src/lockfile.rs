@@ -159,7 +159,11 @@ impl Digest {
     }
 
     pub(crate) fn bin_version(binary: &Path) -> Result<String> {
-        let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
+        let safe_vars = [
+            OsStr::new("HOME"),
+            OsStr::new("HOMEDRIVE"),
+            OsStr::new("PATHEXT"),
+        ];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 
         let output = Command::new(binary)
