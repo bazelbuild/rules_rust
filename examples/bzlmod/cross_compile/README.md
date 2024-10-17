@@ -2,13 +2,16 @@
 
 For cross compilation, you have to specify a custom platform to let Bazel know that you are compiling for a different platform than the default host platform.
 
-The example code is setup to cross compile from the following hosts to the the following targets:
+The example code is setup to cross compile from the following hosts to the the following targets using Rust and the LLVM toolchain:
 
 * {linux, x86_64} -> {linux, aarch64}
+* {linux, aarch64} -> {linux, x86_64}
 * {darwin, x86_64} -> {linux, x86_64}
 * {darwin, x86_64} -> {linux, aarch64}
 * {darwin, aarch64 (Apple Silicon)} -> {linux, x86_64}
 * {darwin, aarch64 (Apple Silicon)} -> {linux, aarch64}
+
+Cross compilation from Linux to Apple may work, but has not been tested. 
 
 You cross-compile by calling the target.
 
@@ -38,113 +41,95 @@ The setup requires three steps, first declare dependencies and toolchains in you
 You add the required rules for cross compilation to your MODULE.bazel as shown below.
 
 ```Starlark
-# Rules for cross compilation
+# Get latest release from:
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.52.0")
+
 # https://github.com/bazelbuild/platforms/releases
 bazel_dep(name = "platforms", version = "0.0.10")
+
 # https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.0.0")
+bazel_dep(name = "toolchains_llvm", version = "1.2.0", dev_dependency = True)
+
+# https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 ```
 
 ## LLVM Configuration
 
-Next, you have to configure the LLVM toolchain because rules_rust still needs a cpp toolchain for cross compilation and
-you have to add the specific platform triplets to the Rust toolchain. Suppose you want to compile a Rust binary that
-supports linux on both, X86 and ARM. In that case, you have to setup three LLVM toolchains:
+Next, you have to configure the LLVM toolchain because rules_rust still needs a cpp toolchain for cross compilation and you have to add the specific platform triplets to the Rust toolchain. 
+Suppose you want to compile a Rust binary that supports linux on both, X86 and ARM. 
+In that case, you have to configure three LLVM targets:
 
 1) LLVM for the host
-2) LLVM for X86
+2) LLVM for X86 (x86_64)
 3) LLVM for ARM (aarch64)
 
-For the host LLVM, you just specify a LLVM version and then register the toolchain as usual. The target LLVM toolchains,
-however, have dependencies on system libraries for the target platform. Therefore, it is required to download a so-
-called sysroot that contains a root file system with all those system libraries for the specific target platform.
-To do so, please add the following to your MODULE.bazel
+For the host LLVM, you just specify a LLVM version and then register the toolchain as usual. The target LLVM toolchains, however, have dependencies on system libraries for the target platform. Therefore, it is required to download a so- called sysroot that contains a root file system with all those system libraries for the specific target platform. To do so, please add the following to your MODULE.bazel
 
 ```Starlark
-# https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
-http_archive = use_repo_rule("@bazel_tools//:http.bzl", "http_archive")
-
-# Both, cross compilation and MUSL still need a C/C++ toolchain with sysroot.
-_BUILD_FILE_CONTENT = """
-filegroup(
-  name = "{name}",
-  srcs = glob(["*/**"]),
-  visibility = ["//visibility:public"],
-)
-"""
-
-# Download sysroot
+# INTEL/AMD64 Sysroot. LastModified: 2024-04-26T19:15
 # https://commondatastorage.googleapis.com/chrome-linux-sysroot/
 http_archive(
-    name = "org_chromium_sysroot_linux_x64",
-    build_file_content = _BUILD_FILE_CONTENT.format(name = "sysroot"),
-    sha256 = "f6b758d880a6df264e2581788741623320d548508f07ffc2ae6a29d0c13d647d",
-    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/2e7ada854015a4cc60fc812112d261af44213ed0/debian_bullseye_amd64_sysroot.tar.xz"],
+    name = "sysroot_linux_x64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "5df5be9357b425cdd70d92d4697d07e7d55d7a923f037c22dc80a78e85842d2c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/4f611ec025be98214164d4bf9fbe8843f58533f7/debian_bullseye_amd64_sysroot.tar.xz"],
 )
 
+# ARM 64 Sysroot. LastModified: 2024-04-26T18:33
+# https://commondatastorage.googleapis.com/chrome-linux-sysroot/
 http_archive(
-    name = "org_chromium_sysroot_linux_aarch64",
-    build_file_content = _BUILD_FILE_CONTENT.format(name = "sysroot"),
-    sha256 = "902d1a40a5fd8c3764a36c8d377af5945a92e3d264c6252855bda4d7ef81d3df",
-    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/41a6c8dec4c4304d6509e30cbaf9218dffb4438e/debian_bullseye_arm64_sysroot.tar.xz"],
+    name = "sysroot_linux_aarch64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "d303cf3faf7804c9dd24c9b6b167d0345d41d7fe4bfb7d34add3ab342f6a236c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/906cc7c6bf47d4bd969a3221fc0602c6b3153caa/debian_bullseye_arm64_sysroot.tar.xz"],
 )
 ```
 
-Here, we declare to new http downloads that retrieve the sysroot for linux_x64 (Intel/AMD) and linux_aarch64 (ARM/Apple Silicon). Note, these are only
-sysroots, that means you have to configure LLVM next to use these files. As mentioned earlier, three LLVM toolchains
-needs to be configured and to do that, please add the following to your MODULE.bazel
+Here, we declare to new http downloads that retrieve the sysroot for linux_x64 (Intel/AMD) and linux_aarch64 (ARM/Apple Silicon). The buildfile is a simple filegroup and located in the /build/sysroot directory. You have to copy it in your project directory to make the sysroots work. Note, these are only
+sysroots, that means you have to configure LLVM next to use these files. 
+
+If you need a custom sysroot, for example to cross compile system dependencies such as openssl, 
+libpq (postgres client library) or similar, read through the excellent tutorial by Steven Casagrande:
+
+https://steven.casagrande.io/posts/2024/sysroot-generation-toolchains-llvm/
+
+As mentioned earlier, three LLVM targets need to be configured and to do just that, 
+please add the following to your MODULE.bazel
 
 ```Starlark
-LLVM_VERSIONS = {
-    "": "16.0.0",
-}
-
-# Host LLVM toolchain.
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
 llvm.toolchain(
     name = "llvm_toolchain",
-    llvm_versions = LLVM_VERSIONS,
-)
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
-
-# X86 LLVM Toolchain with sysroot.
-# https://github.com/bazel-contrib/toolchains_llvm/blob/master/tests/WORKSPACE.bzlmod
-llvm.toolchain(
-    name = "llvm_toolchain_x86_with_sysroot",
-    llvm_versions = LLVM_VERSIONS,
+    llvm_version = "16.0.0",  # Same LLVM version for all platforms
+    stdlib = {
+        "linux-x86_64": "stdc++",
+        "linux-aarch64": "stdc++",
+    },
 )
 llvm.sysroot(
-    name = "llvm_toolchain_x86_with_sysroot",
-    label = "@org_chromium_sysroot_linux_x64//:sysroot",
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_x64//:sysroot",
     targets = ["linux-x86_64"],
 )
-use_repo(llvm, "llvm_toolchain_x86_with_sysroot")
-
-#
-# ARM (aarch64) LLVM Toolchain with sysroot.
-# https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/cross_compile/WORKSPACE.bzlmod
-llvm.toolchain(
-    name = "llvm_toolchain_aarch64_with_sysroot",
-    llvm_versions = LLVM_VERSIONS,
-)
 llvm.sysroot(
-    name = "llvm_toolchain_aarch64_with_sysroot",
-    label = "@org_chromium_sysroot_linux_aarch64//:sysroot",
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_aarch64//:sysroot",
     targets = ["linux-aarch64"],
 )
-use_repo(llvm, "llvm_toolchain_aarch64_with_sysroot")
+use_repo(llvm, "llvm_toolchain")
 
-# Register all LLVM toolchains
-register_toolchains("@llvm_toolchain//:all")
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
 ```
 
-For simplicity, all toolchains are pinned to version LLVM 16 because it is one of the few releases that supports the
-host (apple-darwin / Ubuntu), and the two targets. For a
-complete [list off all LLVM releases and supported platforms, see this list.](https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl)
-It is possible to pin different targets to different LLVM
-versions; [see the documentation for details](https://github.com/bazel-contrib/toolchains_llvm/tree/master?tab=readme-ov-file#per-host-architecture-llvm-version).
+For simplicity, all toolchains are pinned to LLVM version 16 because it is one of the few releases that supports many targets and runs on older linux distributions i.e. Ubuntu 18.04. If you target modern CPU's i.e. ARMv9 that require a more recent LLVM version, see the complete [list off all LLVM releases and supported platforms.](https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl) Also, it is possible to pin different targets to different LLVM versions; [see the documentation for details](https://github.com/bazel-contrib/toolchains_llvm/tree/master?tab=readme-ov-file#per-host-architecture-llvm-version).
 
 If you face difficulties with building LLVM on older linux distros or your CI, 
-please take a look at the [LLVM Troubleshooting guide](LLVM_Troubleshooting.md) for known issues.
+please take a look at the [LLVM Troubleshooting guide](README_LLVM_Troubleshooting) for known issues.
 
 
 **Rust Toolchain Configuration**
@@ -153,20 +138,20 @@ The Rust toolchain only need to know the additional platform triplets to downloa
 or or modify your MODULE.bazel with the following entry:
 
 ```Starlark
-# Rust toolchain
-RUST_EDITION = "2021"
-RUST_VERSION = "1.79.0"
+RUST_EDITION = "2021"  
+RUST_VERSION = "1.81.0"
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = RUST_EDITION,
-    versions = [RUST_VERSION],
     extra_target_triples = [
         "aarch64-unknown-linux-gnu",
         "x86_64-unknown-linux-gnu",
     ],
+    versions = [RUST_VERSION],
 )
 use_repo(rust, "rust_toolchains")
+
 register_toolchains("@rust_toolchains//:all")
 ```
 
@@ -204,12 +189,10 @@ platform(
 )
 ```
 
-The default visibility at the top of the file means that all targets in this BUILD file will be public by default, which
-is sensible because cross-compilation targets are usually used across the entire project.
+The default visibility at the top of the file means that all targets in this BUILD file will be public by default, which is sensible because cross-compilation targets are usually used across the entire project. The platform BUILD file also defines the constraint values for Apple platform, both on x86_64 and aarch64.
 
 It is important to recognize that the platform rules use the constraint values to map those constraints to the target
-triplets of the Rust toolchain. If you somehow see errors that says some crate couldn't be found with triple xyz, then
-one of two things happened.
+triplets of the Rust toolchain. If you somehow see errors that says some crate couldn't be found with triple xyz, then one of two things happened.
 
 Either you forgot to add a triple to the Rust toolchain. Unfortunately, the error message
 doesn't always tell you the correct triple that is missing. However, in that case you have to double check if for each

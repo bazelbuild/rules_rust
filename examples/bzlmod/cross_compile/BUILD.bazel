@@ -14,21 +14,30 @@ filegroup(
 rust_binary(
     name = "hello_world_host",
     srcs = ["src/main.rs"],
-    deps = [],
+    deps = [
+        "@crates//:lz4-sys",
+        "@crates//:mimalloc",
+    ],
 )
 
 rust_binary(
     name = "hello_world_x86_64",
     srcs = ["src/main.rs"],
     platform = "//build/platforms:linux-x86_64",
-    deps = [],
+    deps = [
+        "@crates//:lz4-sys",
+        "@crates//:mimalloc",
+    ],
 )
 
 rust_binary(
     name = "hello_world_aarch64",
     srcs = ["src/main.rs"],
     platform = "//build/platforms:linux-aarch64",
-    deps = [],
+    deps = [
+        "@crates//:lz4-sys",
+        "@crates//:mimalloc",
+    ],
 )
 
 # Test if the host binary works.
