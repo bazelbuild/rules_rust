@@ -41,17 +41,20 @@ def find_toolchain(ctx):
     """
     return ctx.toolchains[Label("//rust:toolchain_type")]
 
-def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
+def find_cc_toolchain(ctx, mandatory = True, extra_unsupported_features = tuple()):
     """Extracts a CcToolchain from the current target's context
 
     Args:
         ctx (ctx): The current target's rule context object
-        extra_unsupported_features (sequence of str): Extra featrures to disable
+        mandatory: If the CcToolchain is mandatory
+        extra_unsupported_features (sequence of str): Extra features to disable
 
     Returns:
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
     """
-    cc_toolchain = find_rules_cc_toolchain(ctx)
+    cc_toolchain = find_rules_cc_toolchain(ctx, mandatory = mandatory)
+    if cc_toolchain == None:
+        return (None, None)
 
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
