@@ -3,8 +3,8 @@
 
 use bar_proto::b_ar::b_az::qaz::qu_x::bar::Baz as BazMessage;
 use bar_proto::b_ar::b_az::qaz::qu_x::Bar as BarMessage;
-use foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::foo::NestedFoo as NestedFooMessage;
-use foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::Foo as FooMessage;
+use bar_proto::foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::foo::NestedFoo as NestedFooMessage;
+use bar_proto::foo_proto::foo::quu_x::co_rg_e::grault::ga_rply::Foo as FooMessage;
 
 #[test]
 fn test_packages() {

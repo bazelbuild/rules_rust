@@ -1,8 +1,8 @@
 //! Tests transitive dependencies.
 
-use any_proto::google::protobuf::Any;
 use c_proto::a::b::c::C;
-use duration_proto::google::protobuf::Duration;
+use c_proto::any_proto::google::protobuf::Any;
+use c_proto::duration_proto::google::protobuf::Duration;
 
 #[test]
 fn test_c() {
