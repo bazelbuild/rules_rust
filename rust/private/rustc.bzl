@@ -999,13 +999,6 @@ def construct_arguments(
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
     data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
-    rustc_flags.add_all(
-        expand_list_element_locations(
-            ctx,
-            getattr(attr, "rustc_flags", []),
-            data_paths,
-        ),
-    )
     add_edition_flags(rustc_flags, crate_info)
 
     # Link!
@@ -1104,6 +1097,15 @@ def construct_arguments(
 
     if _is_no_std(ctx, toolchain, crate_info):
         rustc_flags.add('--cfg=feature="no_std"')
+
+    # Add target specific flags last, so they can override previous flags
+    rustc_flags.add_all(
+        expand_list_element_locations(
+            ctx,
+            getattr(attr, "rustc_flags", []),
+            data_paths,
+        ),
+    )
 
     # Needed for bzlmod-aware runfiles resolution.
     env["REPOSITORY_NAME"] = ctx.label.workspace_name

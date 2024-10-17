@@ -175,7 +175,7 @@ complex scenario (with more dependencies), you must redefine those
 dependencies.
 
 To do this, once you've imported the needed dependencies (see our
-[@rules_rust//proto/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/3rdparty/BUILD.bazel)
+[@rules_rust//proto/protobuf/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/protobuf/3rdparty/BUILD.bazel)
 file to see the default dependencies), you need to create your own toolchain. 
 To do so you can create a BUILD file with your toolchain definition, for example:
 

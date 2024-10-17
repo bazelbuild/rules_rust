@@ -1,0 +1,15 @@
+load(
+    "cc_args_and_env_test.bzl",
+    "isystem_absolute_test",
+    "isystem_relative_test",
+    "sysroot_absolute_test",
+    "sysroot_relative_test",
+)
+
+sysroot_relative_test(name = "sysroot_relative_test")
+
+sysroot_absolute_test(name = "sysroot_absolute_test")
+
+isystem_relative_test(name = "isystem_relative_test")
+
+isystem_absolute_test(name = "isystem_absolute_test")
