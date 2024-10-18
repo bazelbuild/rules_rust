@@ -1877,7 +1877,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-extra_rustc_flags"></a>extra_rustc_flags |  Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.   |  `None` |
 | <a id="rust_register_toolchains-extra_exec_rustc_flags"></a>extra_exec_rustc_flags |  Extra flags to pass to rustc in exec configuration.   |  `None` |
 | <a id="rust_register_toolchains-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).   |  `["https://static.rust-lang.org/dist/{}.tar.xz"]` |
-| <a id="rust_register_toolchains-versions"></a>versions |  A list of toolchain versions to download. This paramter only accepts one versions per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.   |  `["1.81.0", "nightly/2024-09-05"]` |
+| <a id="rust_register_toolchains-versions"></a>versions |  A list of toolchain versions to download. This paramter only accepts one versions per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.   |  `["1.82.0", "nightly/2024-10-17"]` |
 
 
 <a id="rust_repositories"></a>
@@ -2236,7 +2236,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
 | <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
 | <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional |  `600`  |
-| <a id="cargo_bootstrap_repository-version"></a>version |  The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`   | String | optional |  `"1.81.0"`  |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`   | String | optional |  `"1.82.0"`  |
 
 
 <a id="rust_toolchain_repository_proxy"></a>

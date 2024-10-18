@@ -24,16 +24,16 @@ def triple(triple):
     if triple in ("wasm32-wasi", "wasm32-wasip1"):
         return struct(
             arch = triple.split("-")[0],
-            system = triple.split("-")[1],
             vendor = triple.split("-")[1],
+            system = triple.split("-")[1],
             abi = None,
             str = triple,
         )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(
             arch = triple.split("-")[0],
+            vendor = "unknown",
             system = "fuchsia",
-            vendor = "fuchsia",
             abi = None,
             str = triple,
         )

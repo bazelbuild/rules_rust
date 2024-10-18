@@ -120,14 +120,14 @@ def _construct_known_triples_test_impl(ctx):
     env = unittest.begin(ctx)
 
     _assert_parts(env, triple("aarch64-apple-darwin"), "aarch64", "apple", "darwin", None)
-    _assert_parts(env, triple("aarch64-fuchsia"), "aarch64", "fuchsia", "fuchsia", None)
+    _assert_parts(env, triple("aarch64-fuchsia"), "aarch64", "unknown", "fuchsia", None)
     _assert_parts(env, triple("aarch64-unknown-linux-musl"), "aarch64", "unknown", "linux", "musl")
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
     _assert_parts(env, triple("wasm32-unknown-unknown"), "wasm32", "unknown", "unknown", None)
     _assert_parts(env, triple("wasm32-wasi"), "wasm32", "wasi", "wasi", None)
     _assert_parts(env, triple("wasm32-wasip1"), "wasm32", "wasip1", "wasip1", None)
-    _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "fuchsia", "fuchsia", None)
+    _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "unknown", "fuchsia", None)
 
     return unittest.end(env)
 
