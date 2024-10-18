@@ -49,13 +49,13 @@ struct FlagDef<'a, T> {
     output_storage: &'a mut Option<T>,
 }
 
-impl<'a, T> fmt::Display for FlagDef<'a, T> {
+impl<T> fmt::Display for FlagDef<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}\t{}", self.name, self.help)
     }
 }
 
-impl<'a, T> fmt::Debug for FlagDef<'a, T> {
+impl<T> fmt::Debug for FlagDef<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("FlagDef")
             .field("name", &self.name)
