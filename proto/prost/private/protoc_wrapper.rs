@@ -98,7 +98,7 @@ impl Module {
             return current_module;
         }
 
-        return current_module.insert_module(&module_parts[1..], contents);
+        current_module.insert_module(&module_parts[1..], contents)
     }
 }
 

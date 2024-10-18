@@ -120,7 +120,7 @@ where
         where
             T: SelectableScalar;
 
-        impl<'a, T> Serialize for SelectInner<'a, T>
+        impl<T> Serialize for SelectInner<'_, T>
         where
             T: SelectableScalar,
         {
@@ -140,7 +140,7 @@ where
                     where
                         T: SelectableScalar;
 
-                    impl<'a, T> Serialize for SelectUnmapped<'a, T>
+                    impl<T> Serialize for SelectUnmapped<'_, T>
                     where
                         T: SelectableScalar,
                     {
