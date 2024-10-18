@@ -98,10 +98,8 @@ tasks:
     platform: windows
     build_flags:
       - "--noenable_runfiles"
-      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     test_flags:
       - "--noenable_runfiles"
-      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     build_targets: *default_windows_no_runfiles_targets
     test_targets: *default_windows_no_runfiles_targets
   ubuntu2004_split_coverage_postprocessing:
@@ -204,12 +202,10 @@ tasks:
       - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
-      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     test_flags:
       - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
-      - "--//cargo/settings:incompatible_runfiles_cargo_manifest_dir=true"
     build_targets: *default_windows_no_runfiles_targets
     test_targets: *default_windows_no_runfiles_targets
   windows_rolling_with_aspects:
