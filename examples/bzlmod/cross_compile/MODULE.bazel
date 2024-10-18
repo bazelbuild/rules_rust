@@ -3,103 +3,84 @@ module(
     version = "0.0.0",
 )
 
+###############################################################################
+# Bazel Dependencies # https://registry.bazel.build/
+###############################################################################
+# Get latest rules_rust release from:
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.46.0")
+bazel_dep(name = "rules_rust", version = "0.52.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../../..",
 )
 
-# Rules for cross compilation
-bazel_dep(name = "toolchains_musl", version = "0.1.16", dev_dependency = True)
-
 # https://github.com/bazelbuild/platforms/releases
 bazel_dep(name = "platforms", version = "0.0.10")
 
 # https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.0.0")
+bazel_dep(name = "toolchains_llvm", version = "1.2.0", dev_dependency = True)
 
 # https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
-http_archive = use_repo_rule("@bazel_tools//:http.bzl", "http_archive")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Both, cross compilation and MUSL still need a C/C++ toolchain with sysroot.
-_BUILD_FILE_CONTENT = """
-filegroup(
-  name = "{name}",
-  srcs = glob(["*/**"]),
-  visibility = ["//visibility:public"],
-)
-"""
-
-# Download sysroot
+###############################################################################
+# LLVM Toolchain #
+###############################################################################
+# INTEL/AMD64 Sysroot. LastModified: 2024-04-26T19:15
 # https://commondatastorage.googleapis.com/chrome-linux-sysroot/
 http_archive(
-    name = "org_chromium_sysroot_linux_x64",
-    build_file_content = _BUILD_FILE_CONTENT.format(name = "sysroot"),
-    sha256 = "f6b758d880a6df264e2581788741623320d548508f07ffc2ae6a29d0c13d647d",
-    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/2e7ada854015a4cc60fc812112d261af44213ed0/debian_bullseye_amd64_sysroot.tar.xz"],
+    name = "sysroot_linux_x64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "5df5be9357b425cdd70d92d4697d07e7d55d7a923f037c22dc80a78e85842d2c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/4f611ec025be98214164d4bf9fbe8843f58533f7/debian_bullseye_amd64_sysroot.tar.xz"],
 )
 
+# ARM 64 Sysroot. LastModified: 2024-04-26T18:33
+# https://commondatastorage.googleapis.com/chrome-linux-sysroot/
 http_archive(
-    name = "org_chromium_sysroot_linux_aarch64",
-    build_file_content = _BUILD_FILE_CONTENT.format(name = "sysroot"),
-    sha256 = "902d1a40a5fd8c3764a36c8d377af5945a92e3d264c6252855bda4d7ef81d3df",
-    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/41a6c8dec4c4304d6509e30cbaf9218dffb4438e/debian_bullseye_arm64_sysroot.tar.xz"],
+    name = "sysroot_linux_aarch64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "d303cf3faf7804c9dd24c9b6b167d0345d41d7fe4bfb7d34add3ab342f6a236c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/906cc7c6bf47d4bd969a3221fc0602c6b3153caa/debian_bullseye_arm64_sysroot.tar.xz"],
 )
-
-# LLVM setup
-# https://github.com/bazel-contrib/toolchains_llvm/tree/0d302de75f6ace071ac616fb274481eedcc20e5a?tab=readme-ov-file#sysroots
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 
 # LLVM Versions and platforms
 # https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl
-LLVM_VERSIONS = {
-    "": "16.0.0",
-    "darwin-aarch64": "16.0.3",
-    "darwin-x86_64": "15.0.7",
-}
-
-# Host LLVM toolchain.
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
 llvm.toolchain(
     name = "llvm_toolchain",
-    llvm_versions = LLVM_VERSIONS,
-)
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
-
-# X86 LLVM Toolchain with sysroot.
-# https://github.com/bazel-contrib/toolchains_llvm/blob/master/tests/WORKSPACE.bzlmod
-llvm.toolchain(
-    name = "llvm_toolchain_x86_with_sysroot",
-    llvm_versions = LLVM_VERSIONS,
+    llvm_versions = {
+        "": "16.0.0",
+        "darwin-x86_64": "15.0.7",  # For CI runner only; remove if you don't have an Intel Mac.
+    },
+    stdlib = {
+        "linux-aarch64": "stdc++",
+        "linux-x86_64": "stdc++",
+    },
 )
 llvm.sysroot(
-    name = "llvm_toolchain_x86_with_sysroot",
-    label = "@org_chromium_sysroot_linux_x64//:sysroot",
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_x64//:sysroot",
     targets = ["linux-x86_64"],
 )
-use_repo(llvm, "llvm_toolchain_x86_with_sysroot")
-
-#
-# ARM (aarch64) LLVM Toolchain with sysroot.
-# https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/cross_compile/WORKSPACE.bzlmod
-llvm.toolchain(
-    name = "llvm_toolchain_aarch64_with_sysroot",
-    llvm_versions = LLVM_VERSIONS,
-)
 llvm.sysroot(
-    name = "llvm_toolchain_aarch64_with_sysroot",
-    label = "@org_chromium_sysroot_linux_aarch64//:sysroot",
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_aarch64//:sysroot",
     targets = ["linux-aarch64"],
 )
-use_repo(llvm, "llvm_toolchain_aarch64_with_sysroot")
+use_repo(llvm, "llvm_toolchain")
 
-# Register all LLVM toolchains
-register_toolchains("@llvm_toolchain//:all")
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
 
-# Rust toolchain
-RUST_EDITION = "2021"
+###############################################################################
+# Rust Toolchain #
+###############################################################################
+RUST_EDITION = "2021"  # NOTE: 2024 will be released with Rust 1.86.0
 
-RUST_VERSION = "1.79.0"
+RUST_VERSION = "1.81.0"
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -113,3 +94,18 @@ rust.toolchain(
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# Rust Dependencies #
+###############################################################################
+crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate.spec(
+    package = "mimalloc",
+    version = "0.1.43",
+)
+crate.spec(
+    package = "lz4-sys",
+    version = "1.11.1",
+)
+crate.from_specs()
+use_repo(crate, "crates")
