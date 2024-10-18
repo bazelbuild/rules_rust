@@ -152,7 +152,7 @@ where
             U: SelectableOrderedValue,
             T: SelectableValue;
 
-        impl<'a, U, T> Serialize for SelectInner<'a, U, T>
+        impl<U, T> Serialize for SelectInner<'_, U, T>
         where
             U: SelectableOrderedValue,
             T: SelectableValue,
@@ -190,7 +190,7 @@ where
                         U: SelectableOrderedValue,
                         T: SelectableValue;
 
-                    impl<'a, U, T> Serialize for SelectUnmapped<'a, U, T>
+                    impl<U, T> Serialize for SelectUnmapped<'_, U, T>
                     where
                         U: SelectableOrderedValue,
                         T: SelectableValue,
