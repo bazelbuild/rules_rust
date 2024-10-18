@@ -48,9 +48,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
@@ -72,10 +72,10 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
@@ -98,11 +98,6 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_proto__fuchsia-zircon-0.3.3//:fuchsia_zircon",  # cfg(target_os = "fuchsia")
-            "@rules_rust_proto__fuchsia-zircon-sys-0.3.3//:fuchsia_zircon_sys",  # cfg(target_os = "fuchsia")
-            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
-        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
@@ -110,6 +105,11 @@ rust_library(
             "@rules_rust_proto__kernel32-sys-0.2.2//:kernel32",  # cfg(windows)
             "@rules_rust_proto__miow-0.2.2//:miow",  # cfg(windows)
             "@rules_rust_proto__winapi-0.2.8//:winapi",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
+            "@rules_rust_proto__fuchsia-zircon-0.3.3//:fuchsia_zircon",  # cfg(target_os = "fuchsia")
+            "@rules_rust_proto__fuchsia-zircon-sys-0.3.3//:fuchsia_zircon_sys",  # cfg(target_os = "fuchsia")
+            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
@@ -158,11 +158,6 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@rules_rust_proto__fuchsia-zircon-0.3.3//:fuchsia_zircon",  # cfg(target_os = "fuchsia")
-            "@rules_rust_proto__fuchsia-zircon-sys-0.3.3//:fuchsia_zircon_sys",  # cfg(target_os = "fuchsia")
-            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
-        ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
@@ -172,6 +167,11 @@ rust_library(
             "@rules_rust_proto__winapi-0.2.8//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
+            "@rules_rust_proto__fuchsia-zircon-0.3.3//:fuchsia_zircon",  # cfg(target_os = "fuchsia")
+            "@rules_rust_proto__fuchsia-zircon-sys-0.3.3//:fuchsia_zircon_sys",  # cfg(target_os = "fuchsia")
             "@rules_rust_proto__libc-0.2.139//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
