@@ -269,7 +269,7 @@ impl Serialize for Label {
 }
 
 struct LabelVisitor;
-impl<'de> Visitor<'de> for LabelVisitor {
+impl Visitor<'_> for LabelVisitor {
     type Value = Label;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

@@ -547,7 +547,7 @@ impl Serialize for CrateId {
 }
 
 struct CrateIdVisitor;
-impl<'de> Visitor<'de> for CrateIdVisitor {
+impl Visitor<'_> for CrateIdVisitor {
     type Value = CrateId;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -701,7 +701,7 @@ impl Serialize for CrateNameAndVersionReq {
 }
 
 struct CrateNameAndVersionReqVisitor;
-impl<'de> Visitor<'de> for CrateNameAndVersionReqVisitor {
+impl Visitor<'_> for CrateNameAndVersionReqVisitor {
     type Value = CrateNameAndVersionReq;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -795,7 +795,7 @@ impl<'de> Deserialize<'de> for VersionReqString {
     {
         struct StringVisitor;
 
-        impl<'de> Visitor<'de> for StringVisitor {
+        impl Visitor<'_> for StringVisitor {
             type Value = String;
 
             fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
