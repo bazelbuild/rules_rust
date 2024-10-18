@@ -85,79 +85,79 @@ rust_library(
         "@cui__cfg-if-1.0.0//:cfg_if",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
             "@cui__wasi-0.11.0-wasi-snapshot-preview1//:wasi",  # cfg(target_os = "wasi")
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@cui__libc-0.2.149//:libc",  # cfg(unix)
+            "@cui__libc-0.2.161//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),

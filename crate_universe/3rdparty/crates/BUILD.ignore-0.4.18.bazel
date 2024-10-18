@@ -84,7 +84,7 @@ rust_library(
         "@cui__lazy_static-1.4.0//:lazy_static",
         "@cui__log-0.4.19//:log",
         "@cui__memchr-2.6.4//:memchr",
-        "@cui__regex-1.10.2//:regex",
+        "@cui__regex-1.11.0//:regex",
         "@cui__same-file-1.0.6//:same_file",
         "@cui__thread_local-1.1.4//:thread_local",
         "@cui__walkdir-2.3.3//:walkdir",

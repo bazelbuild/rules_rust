@@ -85,87 +85,87 @@ rust_library(
     version = "0.4.6",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-apple-darwin
+            "@cui__libc-0.2.161//:libc",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-apple-ios
+            "@cui__libc-0.2.161//:libc",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-apple-ios-sim
+            "@cui__libc-0.2.161//:libc",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-linux-android
+            "@cui__libc-0.2.161//:libc",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@cui__fuchsia-cprng-0.1.1//:fuchsia_cprng",  # cfg(target_os = "fuchsia")
-            "@cui__libc-0.2.149//:libc",  # aarch64-unknown-fuchsia
+            "@cui__libc-0.2.161//:libc",  # aarch64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-unknown-linux-gnu
+            "@cui__libc-0.2.161//:libc",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@cui__libc-0.2.161//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@cui__libc-0.2.149//:libc",  # aarch64-unknown-nto-qnx710
+            "@cui__libc-0.2.161//:libc",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cui__libc-0.2.149//:libc",  # arm-unknown-linux-gnueabi
+            "@cui__libc-0.2.161//:libc",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cui__libc-0.2.149//:libc",  # armv7-linux-androideabi
+            "@cui__libc-0.2.161//:libc",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cui__libc-0.2.149//:libc",  # armv7-unknown-linux-gnueabi
+            "@cui__libc-0.2.161//:libc",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # i686-apple-darwin
+            "@cui__libc-0.2.161//:libc",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # i686-linux-android
+            "@cui__libc-0.2.161//:libc",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cui__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cui__libc-0.2.149//:libc",  # i686-unknown-freebsd
+            "@cui__libc-0.2.161//:libc",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # i686-unknown-linux-gnu
+            "@cui__libc-0.2.161//:libc",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # powerpc-unknown-linux-gnu
+            "@cui__libc-0.2.161//:libc",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # s390x-unknown-linux-gnu
+            "@cui__libc-0.2.161//:libc",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-apple-darwin
+            "@cui__libc-0.2.161//:libc",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-apple-ios
+            "@cui__libc-0.2.161//:libc",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-linux-android
+            "@cui__libc-0.2.161//:libc",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cui__winapi-0.3.9//:winapi",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-unknown-freebsd
+            "@cui__libc-0.2.161//:libc",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
             "@cui__fuchsia-cprng-0.1.1//:fuchsia_cprng",  # cfg(target_os = "fuchsia")
-            "@cui__libc-0.2.149//:libc",  # x86_64-unknown-fuchsia
+            "@cui__libc-0.2.161//:libc",  # x86_64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-unknown-linux-gnu
+            "@cui__libc-0.2.161//:libc",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@cui__libc-0.2.149//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@cui__libc-0.2.161//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
