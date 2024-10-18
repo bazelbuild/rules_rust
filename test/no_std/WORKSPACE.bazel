@@ -17,8 +17,8 @@ rules_rust_dependencies()
 rust_register_toolchains(
     edition = "2021",
     versions = [
-        "nightly/2023-06-01",
-        "1.70.0",
+        "nightly/2024-10-17",
+        "1.82.0",
     ],
 )
 
@@ -41,7 +41,7 @@ crates_repository(
         ),
     },
     # Should match the version represented by the currently registered `rust_toolchain`.
-    rust_version = "nightly/2023-06-01",
+    rust_version = "nightly/2024-10-17",
 )
 
 load(
