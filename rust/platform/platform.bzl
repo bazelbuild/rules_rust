@@ -107,3 +107,15 @@ def declare_config_settings():
             ":nto",
         ],
     )
+
+    native.alias(
+        name = "aarch64-fuchsia",
+        actual = "aarch64-unknown-fuchsia",
+        deprecation = "Use `@rules_rust//rust/platform:aarch64-unknown-fuchsia` instead.",
+    )
+
+    native.alias(
+        name = "x86_64-fuchsia",
+        actual = "x86_64-unknown-fuchsia",
+        deprecation = "Use `@rules_rust//rust/platform:x86_64-unknown-fuchsia` instead.",
+    )

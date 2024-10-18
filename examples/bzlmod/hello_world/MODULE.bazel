@@ -33,7 +33,7 @@ crate.from_cargo(
 )
 use_repo(crate, "crates")
 crate.annotation(
-    additive_build_file = "//:anyhow.BUILD.bazel",
+    additive_build_file = "//:BUILD.anyhow.bazel",
     crate = "anyhow",
     # Defined in additive_build_file.
     data = [":cargo_toml"],

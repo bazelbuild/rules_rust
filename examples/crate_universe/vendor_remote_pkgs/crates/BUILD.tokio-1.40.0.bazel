@@ -80,9 +80,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
@@ -104,10 +104,10 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
@@ -121,27 +121,22 @@ rust_library(
         "@crates_vendor_pkgs__pin-project-lite-0.2.14//:pin_project_lite",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-apple-darwin
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-apple-darwin
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-darwin
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-apple-ios
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-apple-ios
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-apple-ios-sim
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-apple-ios-sim
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios-sim
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-apple-ios-sim
         ],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-fuchsia
-            "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-fuchsia
-            "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-fuchsia
-        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-linux-android
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-linux-android
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-linux-android
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-linux-android
         ],
@@ -149,43 +144,48 @@ rust_library(
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-pc-windows-msvc
             "@crates_vendor_pkgs__windows-sys-0.52.0//:windows_sys",  # aarch64-pc-windows-msvc
         ],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-unknown-fuchsia
+            "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-fuchsia
+            "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-unknown-fuchsia
+        ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-unknown-linux-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # aarch64-unknown-nto-qnx710
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # aarch64-unknown-nto-qnx710
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-nto-qnx710
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # arm-unknown-linux-gnueabi
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # arm-unknown-linux-gnueabi
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # arm-unknown-linux-gnueabi
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # armv7-linux-androideabi
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # armv7-linux-androideabi
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-linux-androideabi
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # armv7-unknown-linux-gnueabi
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # armv7-unknown-linux-gnueabi
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-unknown-linux-gnueabi
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # i686-apple-darwin
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # i686-apple-darwin
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-apple-darwin
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # i686-linux-android
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # i686-linux-android
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-linux-android
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # i686-linux-android
         ],
@@ -194,17 +194,17 @@ rust_library(
             "@crates_vendor_pkgs__windows-sys-0.52.0//:windows_sys",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # i686-unknown-freebsd
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # i686-unknown-freebsd
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-freebsd
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # i686-unknown-linux-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # i686-unknown-linux-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-linux-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # powerpc-unknown-linux-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # powerpc-unknown-linux-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # powerpc-unknown-linux-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # powerpc-unknown-linux-gnu
         ],
@@ -215,7 +215,7 @@ rust_library(
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # riscv64gc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # s390x-unknown-linux-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # s390x-unknown-linux-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # s390x-unknown-linux-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # s390x-unknown-linux-gnu
         ],
@@ -226,22 +226,17 @@ rust_library(
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # thumbv8m.main-none-eabi
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-apple-darwin
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-apple-darwin
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-darwin
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-apple-ios
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-apple-ios
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-ios
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-apple-ios
         ],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-fuchsia
-            "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-fuchsia
-            "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-fuchsia
-        ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-linux-android
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-linux-android
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-linux-android
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-linux-android
         ],
@@ -250,17 +245,22 @@ rust_library(
             "@crates_vendor_pkgs__windows-sys-0.52.0//:windows_sys",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-unknown-freebsd
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-unknown-freebsd
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-freebsd
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-unknown-freebsd
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-unknown-fuchsia
+            "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-fuchsia
+            "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-unknown-fuchsia
+        ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-unknown-linux-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@crates_vendor_pkgs__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@crates_vendor_pkgs__libc-0.2.161//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
             "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
             "@crates_vendor_pkgs__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
