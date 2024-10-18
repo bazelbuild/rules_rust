@@ -28,18 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "Win32",
-        "Win32_Foundation",
-        "Win32_Security",
-        "Win32_Security_Authorization",
-        "Win32_Storage",
-        "Win32_Storage_FileSystem",
-        "Win32_System",
-        "Win32_System_Memory",
-        "Win32_System_Threading",
-        "default",
-    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = [

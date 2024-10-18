@@ -79,9 +79,9 @@ rust_library(
     }),
     version = "0.2.87",
     deps = [
-        "@cui__proc-macro2-1.0.64//:proc_macro2",
-        "@cui__quote-1.0.29//:quote",
-        "@cui__syn-2.0.32//:syn",
+        "@cui__proc-macro2-1.0.88//:proc_macro2",
+        "@cui__quote-1.0.37//:quote",
+        "@cui__syn-2.0.79//:syn",
         "@cui__wasm-bindgen-backend-0.2.87//:wasm_bindgen_backend",
         "@cui__wasm-bindgen-shared-0.2.87//:wasm_bindgen_shared",
     ],
