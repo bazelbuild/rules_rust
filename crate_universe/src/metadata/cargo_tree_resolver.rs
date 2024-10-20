@@ -949,7 +949,7 @@ mod test {
         )
         .unwrap();
         // sparse we want to leave the augmented scheme in there.
-        // cargo_toml::RegistryDetail::registry_index explicitly supports
+        // cargo_toml::DependencyDetail::registry_index explicitly supports
         // sparse+https:
         assert_eq!(
             source,
