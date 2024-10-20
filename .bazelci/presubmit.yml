@@ -786,17 +786,18 @@ tasks:
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
-  windows_bzlmod_bcr:
-    name: bzlmod BCR presubmit
-    platform: windows
-    working_directory: examples/bzlmod/hello_world
-    test_flags: *bzlmod_flags
-    run_targets:
-      - "//third-party:vendor"
-    build_targets:
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
-    test_targets:
-      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2878
+  # windows_bzlmod_bcr:
+  #   name: bzlmod BCR presubmit
+  #   platform: windows
+  #   working_directory: examples/bzlmod/hello_world
+  #   test_flags: *bzlmod_flags
+  #   run_targets:
+  #     - "//third-party:vendor"
+  #   build_targets:
+  #     - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+  #   test_targets:
+  #     - "//..."
   ubuntu2004_bzlmod_plus_repo_names_bcr:
     name: bzlmod BCR presubmit w/ incompatible flags
     # A newer version than is specified in the .bazel_version file is needed for
