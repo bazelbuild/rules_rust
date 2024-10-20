@@ -242,7 +242,7 @@ def _deduplicate(xs):
 def concat(xss):
     return [x for xs in xss for x in xs]
 
-def _expand_location_for_build_script_runner(ctx, env, data):
+def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
     """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
@@ -260,10 +260,10 @@ def _expand_location_for_build_script_runner(ctx, env, data):
     return ctx.expand_make_variables(
         env,
         dedup_expand_location(ctx, env, data),
-        {},
+        known_variables,
     )
 
-def expand_dict_value_locations(ctx, env, data):
+def expand_dict_value_locations(ctx, env, data, known_variables):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -292,9 +292,9 @@ def expand_dict_value_locations(ctx, env, data):
     Returns:
         dict: A dict of environment variables with expanded location macros
     """
-    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data)) for (k, v) in env.items()])
+    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data, known_variables)) for (k, v) in env.items()])
 
-def expand_list_element_locations(ctx, args, data):
+def expand_list_element_locations(ctx, args, data, known_variables):
     """Performs location-macro expansion on a list of string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -315,7 +315,7 @@ def expand_list_element_locations(ctx, args, data):
     Returns:
         list: A list of arguments with expanded location macros
     """
-    return [_expand_location_for_build_script_runner(ctx, arg, data) for arg in args]
+    return [_expand_location_for_build_script_runner(ctx, arg, data, known_variables) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
