@@ -1,7 +1,7 @@
 //! Tests transitive dependencies.
 
 use b_proto::a::b::B;
-use c_proto::a::b::c::C;
+use b_proto::c_proto::a::b::c::C;
 
 #[test]
 fn test_b() {

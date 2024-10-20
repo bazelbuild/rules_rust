@@ -83,7 +83,7 @@ def _cc_args_and_env_analysis_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     cargo_action = tut[DepActionsInfo].actions[0]
-    cflags = cargo_action.env["CFLAGS"]
+    cflags = cargo_action.env["CFLAGS"].split(" ")
     for flag in ctx.attr.expected_cflags:
         asserts.true(
             env,
@@ -173,6 +173,17 @@ def sysroot_absolute_test(name):
         expected_cflags = ["--sysroot=/test/absolute/sysroot"],
     )
 
+def sysroot_next_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["--sysroot=/test/absolute/sysroot", "test/relative/another"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["--sysroot=/test/absolute/sysroot", "test/relative/another"],
+    )
+
 def isystem_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
@@ -181,7 +192,7 @@ def isystem_relative_test(name):
     cc_args_and_env_analysis_test(
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
-        expected_cflags = ["-isystem ${pwd}/test/relative/path"],
+        expected_cflags = ["-isystem", "${pwd}/test/relative/path"],
     )
 
 def isystem_absolute_test(name):
@@ -192,5 +203,27 @@ def isystem_absolute_test(name):
     cc_args_and_env_analysis_test(
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
-        expected_cflags = ["-isystem /test/absolute/path"],
+        expected_cflags = ["-isystem", "/test/absolute/path"],
+    )
+
+def fsanitize_ignorelist_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-fsanitize-ignorelist=test/relative/path"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-fsanitize-ignorelist=${pwd}/test/relative/path"],
+    )
+
+def fsanitize_ignorelist_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-fsanitize-ignorelist=/test/absolute/path"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-fsanitize-ignorelist=/test/absolute/path"],
     )

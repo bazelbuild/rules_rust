@@ -53,6 +53,7 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     proto_compiler = prost_toolchain.proto_compiler
     tools = depset([proto_compiler.executable])
 
+    direct_crate_names = [dep[ProstProtoInfo].dep_variant_info.crate_info.name for dep in deps]
     additional_args = ctx.actions.args()
 
     # Prost process wrapper specific args
@@ -61,6 +62,7 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     additional_args.add("--out_librs={}".format(lib_rs.path))
     additional_args.add("--package_info_output={}".format("{}={}".format(crate_name, package_info_file.path)))
     additional_args.add("--deps_info={}".format(deps_info_file.path))
+    additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
     additional_args.add("--prost_opt=compile_well_known_types")
     additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
     additional_args.add_all(prost_toolchain.prost_opts, format_each = "--prost_opt=%s")
@@ -199,7 +201,7 @@ def _rust_prost_aspect_impl(target, ctx):
     runtime_deps = []
 
     rustfmt_toolchain = ctx.toolchains["@rules_rust//rust/rustfmt:toolchain_type"]
-    prost_toolchain = ctx.toolchains["@rules_rust//proto/prost:toolchain_type"]
+    prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
     for prost_runtime in [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]:
         if not prost_runtime:
             continue
@@ -316,12 +318,18 @@ def _rust_prost_library_impl(ctx):
     rust_proto_info = proto_dep[ProstProtoInfo]
     dep_variant_info = rust_proto_info.dep_variant_info
 
+    prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
+
+    transitive = []
+    if prost_toolchain.include_transitive_deps:
+        transitive = [rust_proto_info.transitive_dep_infos]
+
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
         rust_common.crate_group_info(
             dep_variant_infos = depset(
                 [dep_variant_info],
-                transitive = [rust_proto_info.transitive_dep_infos],
+                transitive = transitive,
             ),
         ),
         RustAnalyzerGroupInfo(deps = [proto_dep[RustAnalyzerInfo]]),
@@ -343,6 +351,9 @@ rust_prost_library = rule(
             cfg = "exec",
         ),
     },
+    toolchains = [
+        TOOLCHAIN_TYPE,
+    ],
 )
 
 def _rust_prost_toolchain_impl(ctx):
@@ -375,6 +386,7 @@ def _rust_prost_toolchain_impl(ctx):
         tonic_plugin = ctx.attr.tonic_plugin,
         tonic_plugin_flag = ctx.attr.tonic_plugin_flag,
         tonic_runtime = ctx.attr.tonic_runtime,
+        include_transitive_deps = ctx.attr.include_transitive_deps,
     )]
 
 rust_prost_toolchain = rule(
@@ -382,6 +394,10 @@ rust_prost_toolchain = rule(
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
     attrs = dict({
+        "include_transitive_deps": attr.bool(
+            doc = "Whether to include transitive dependencies. If set to True, all transitive dependencies will directly accessible by the dependent crate.",
+            default = False,
+        ),
         "prost_opts": attr.string_list(
             doc = "Additional options to add to Prost.",
         ),
