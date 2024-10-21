@@ -1,0 +1,16 @@
+load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_bindgen_toolchain(
+    name = "default_bindgen_toolchain_impl",
+    bindgen = "@rules_rust//bindgen/3rdparty:bindgen",
+    clang = "@llvm-project//clang:clang",
+    libclang = "@llvm-project//clang:libclang",
+)
+
+toolchain(
+    name = "default_bindgen_toolchain",
+    toolchain = "default_bindgen_toolchain_impl",
+    toolchain_type = "@rules_rust//bindgen:toolchain_type",
+)
