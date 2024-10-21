@@ -36,6 +36,9 @@ bzl_library(
 
 rust_library_group(
     name = "prost_runtime",
+    visibility = [
+        "//proto/prost:__subpackages__",
+    ],
     deps = [
         "//proto/prost/private/3rdparty/crates:prost",
     ],
@@ -43,6 +46,9 @@ rust_library_group(
 
 rust_library_group(
     name = "tonic_runtime",
+    visibility = [
+        "//proto/prost:__subpackages__",
+    ],
     deps = [
         ":prost_runtime",
         "//proto/prost/private/3rdparty/crates:tonic",

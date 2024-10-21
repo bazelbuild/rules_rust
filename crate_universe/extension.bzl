@@ -582,6 +582,11 @@ _spec = tag_class(
     ),
 )
 
+_conditional_crate_args = {
+    "arch_dependent": True,
+    "os_dependent": True,
+} if bazel_features.external_deps.module_extension_has_os_arch_dependent else {}
+
 crate = module_extension(
     implementation = _crate_impl,
     tag_classes = dict(
@@ -590,4 +595,5 @@ crate = module_extension(
         from_specs = _from_specs,
         spec = _spec,
     ),
+    **_conditional_crate_args
 )

@@ -44,9 +44,9 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
-    "aarch64-fuchsia": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
+    "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
@@ -61,9 +61,9 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
     "wasm32-wasi": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
-    "x86_64-fuchsia": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
+    "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
 }
 

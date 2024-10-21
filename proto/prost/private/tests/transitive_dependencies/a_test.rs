@@ -1,14 +1,13 @@
 //! Tests transitive dependencies.
 
 use a_proto::a::A;
-use b_proto::a::b::B;
-use c_proto::a::b::c::C;
-use duration_proto::google::protobuf::Duration;
-use timestamp_proto::google::protobuf::Timestamp;
-use types_proto::Types;
+use a_proto::b_proto::c_proto::a::b::c::C;
+use a_proto::duration_proto::google::protobuf::Duration;
+use a_proto::timestamp_proto::google::protobuf::Timestamp;
+use a_proto::types_proto::Types;
 
 #[test]
-fn test_b() {
+fn test_a() {
     let duration = Duration {
         seconds: 1,
         nanos: 2,
@@ -16,7 +15,8 @@ fn test_b() {
 
     let a = A {
         name: "a".to_string(),
-        b: Some(B {
+        // Ensure the external `b_proto` dependency is compatible with `a_proto`'s `B`.
+        b: Some(b_proto::a::b::B {
             name: "b".to_string(),
             c: Some(C {
                 name: "c".to_string(),

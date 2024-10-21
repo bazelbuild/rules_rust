@@ -581,6 +581,11 @@ impl Source {
         let original_scheme = url.scheme().to_owned();
         let scheme_parts: Vec<_> = original_scheme.split('+').collect();
         match &scheme_parts[..] {
+            // e.g. sparse+https://github.com/rust-lang/crates.io-index
+            ["sparse", _] => Ok(Self::Registry {
+                registry: url.to_string(),
+                version,
+            }),
             // e.g. registry+https://github.com/rust-lang/crates.io-index
             ["registry", scheme] => {
                 let new_url = set_url_scheme_despite_the_url_crate_not_wanting_us_to(&url, scheme)?;
@@ -935,6 +940,25 @@ mod test {
     use textwrap::dedent;
 
     use super::*;
+
+    #[test]
+    fn parse_sparse_source() {
+        let source = Source::parse(
+            "sparse+https://github.com/rust-lang/crates.io-index",
+            "1.0.1".to_owned(),
+        )
+        .unwrap();
+        // sparse we want to leave the augmented scheme in there.
+        // cargo_toml::DependencyDetail::registry_index explicitly supports
+        // sparse+https:
+        assert_eq!(
+            source,
+            Source::Registry {
+                registry: "sparse+https://github.com/rust-lang/crates.io-index".to_owned(),
+                version: "1.0.1".to_owned()
+            }
+        );
+    }
 
     #[test]
     fn parse_registry_source() {

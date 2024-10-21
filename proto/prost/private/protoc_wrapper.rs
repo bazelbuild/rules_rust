@@ -68,7 +68,38 @@ struct Module {
     contents: String,
 
     /// The names of any other modules which are submodules of this module.
-    submodules: BTreeSet<String>,
+    submodules: BTreeMap<String, Module>,
+}
+
+impl Module {
+    fn insert(&mut self, module_name: String, contents: String) {
+        let module_parts = module_name.split('.').collect::<Vec<_>>();
+
+        self.insert_module(module_parts.as_slice(), contents);
+    }
+
+    fn insert_module(&mut self, module_parts: &[&str], contents: String) -> &mut Module {
+        let current_name = module_parts[0].to_string();
+
+        // Insert empty module if it doesn't exist.
+        self.submodules
+            .entry(current_name.clone())
+            .or_insert_with(|| Module {
+                name: current_name.clone(),
+                contents: "".to_string(),
+                submodules: BTreeMap::new(),
+            });
+
+        let current_module = self.submodules.get_mut(&current_name).unwrap();
+
+        // If this is the last part (current module) then add the contents.
+        if module_parts.len() == 1 {
+            current_module.contents = contents;
+            return current_module;
+        }
+
+        return current_module.insert_module(&module_parts[1..], contents);
+    }
 }
 
 /// Generate a lib.rs file with all prost/tonic outputs embeeded in modules which
@@ -117,8 +148,22 @@ struct Module {
 ///     }
 /// }
 /// ```
-fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String {
-    let mut module_info = BTreeMap::new();
+fn generate_lib_rs(
+    prost_outputs: &BTreeSet<PathBuf>,
+    is_tonic: bool,
+    direct_dep_crate_names: Vec<String>,
+) -> String {
+    let mut contents = vec!["// @generated".to_string(), "".to_string()];
+    for crate_name in direct_dep_crate_names {
+        contents.push(format!("pub use {crate_name};"));
+    }
+    contents.push("".to_string());
+
+    let mut module_info = Module {
+        name: "".to_string(),
+        contents: contents.join("\n"),
+        submodules: BTreeMap::new(),
+    };
 
     for path in prost_outputs.iter() {
         let mut package = path
@@ -139,75 +184,29 @@ fn generate_lib_rs(prost_outputs: &BTreeSet<PathBuf>, is_tonic: bool) -> String 
             continue;
         }
 
-        let name = if package == "_" {
-            package.clone()
-        } else if package.contains('.') {
-            package
-                .rsplit_once('.')
-                .expect("Failed to split on '.'")
-                .1
-                .to_snake_case()
-                .to_string()
-        } else {
-            package.to_snake_case()
-        };
-
         // Avoid a stack overflow by skipping a known bad package name
         let module_name = snake_cased_package_name(&package);
 
-        module_info.insert(
-            module_name.clone(),
-            Module {
-                name,
-                contents: fs::read_to_string(path).expect("Failed to read file"),
-                submodules: BTreeSet::new(),
-            },
-        );
-
-        let module_parts = module_name.split('.').collect::<Vec<_>>();
-        for parent_module_index in 0..module_parts.len() {
-            let child_module_index = parent_module_index + 1;
-            if child_module_index >= module_parts.len() {
-                break;
-            }
-            let full_parent_module_name = module_parts[0..parent_module_index + 1].join(".");
-            let parent_module_name = module_parts[parent_module_index];
-            let child_module_name = module_parts[child_module_index];
-
-            module_info
-                .entry(full_parent_module_name.clone())
-                .and_modify(|parent_module| {
-                    parent_module
-                        .submodules
-                        .insert(child_module_name.to_string());
-                })
-                .or_insert(Module {
-                    name: parent_module_name.to_string(),
-                    contents: "".to_string(),
-                    submodules: [child_module_name.to_string()].iter().cloned().collect(),
-                });
-        }
+        let contents = fs::read_to_string(path).expect("Failed to read file");
+        module_info.insert(module_name, contents);
     }
 
-    let mut content = "// @generated\n\n".to_string();
-    write_module(&mut content, &module_info, "", 0);
+    let mut content = String::new();
+    write_module(&mut content, &module_info, 0);
     content
 }
 
 /// Write out a rust module and all of its submodules.
-fn write_module(
-    content: &mut String,
-    module_info: &BTreeMap<String, Module>,
-    module_name: &str,
-    depth: usize,
-) {
-    if module_name.is_empty() {
-        for submodule_name in module_info.keys() {
-            write_module(content, module_info, submodule_name, depth + 1);
+fn write_module(content: &mut String, module: &Module, depth: usize) {
+    if module.name.is_empty() {
+        content
+            .write_str(&module.contents)
+            .expect("Failed to write string");
+        for submodule in module.submodules.values() {
+            write_module(content, submodule, depth);
         }
         return;
     }
-    let module = module_info.get(module_name).expect("Failed to get module");
     let indent = "  ".repeat(depth);
     let is_rust_module = module.name != "_";
 
@@ -222,13 +221,8 @@ fn write_module(
         .write_str(&module.contents)
         .expect("Failed to write string");
 
-    for submodule_name in module.submodules.iter() {
-        write_module(
-            content,
-            module_info,
-            [module_name, submodule_name].join(".").as_str(),
-            depth + 1,
-        );
+    for submodule in module.submodules.values() {
+        write_module(content, submodule, depth + 1);
     }
 
     if is_rust_module {
@@ -439,6 +433,9 @@ struct Args {
     /// The proto include paths.
     proto_paths: Vec<String>,
 
+    /// Direct dependency crate names.
+    direct_dep_crate_names: Vec<String>,
+
     /// The path to the rustfmt binary.
     rustfmt: Option<PathBuf>,
 
@@ -464,6 +461,7 @@ impl Args {
         let mut proto_paths = Vec::new();
         let mut label: Option<String> = None;
         let mut tonic_or_prost_opts = Vec::new();
+        let mut direct_dep_crate_names = Vec::new();
         let mut is_tonic = false;
 
         let mut extra_args = Vec::new();
@@ -522,6 +520,13 @@ impl Args {
                             tonic_or_prost_opts.push(format!("extern_path={}", flag.trim()));
                         }
                     }
+                }
+                ("--direct_dep_crate_names", value) => {
+                    if value.trim().is_empty() {
+                        return;
+                    }
+
+                    direct_dep_crate_names = value.split(',').map(|s| s.to_string()).collect();
                 }
                 ("--descriptor_set", value) => {
                     descriptor_set = Some(PathBuf::from(value));
@@ -614,6 +619,7 @@ impl Args {
             out_librs: out_librs.unwrap(),
             rustfmt,
             proto_paths,
+            direct_dep_crate_names,
             is_tonic,
             label: label.unwrap(),
             extra_args,
@@ -719,6 +725,7 @@ fn main() {
         out_librs,
         rustfmt,
         proto_paths,
+        direct_dep_crate_names,
         is_tonic,
         extra_args,
     } = Args::parse().expect("Failed to parse args");
@@ -832,7 +839,11 @@ fn main() {
         .expect("Failed to compute proto package info");
 
     // Write outputs
-    fs::write(&out_librs, generate_lib_rs(&rust_files, is_tonic)).expect("Failed to write file.");
+    fs::write(
+        &out_librs,
+        generate_lib_rs(&rust_files, is_tonic, direct_dep_crate_names),
+    )
+    .expect("Failed to write file.");
     fs::write(
         package_info_file,
         extern_paths
