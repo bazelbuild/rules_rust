@@ -1537,8 +1537,6 @@ def rustc_compile_action(
         output_group_info["dsym_folder"] = depset([dsym_folder])
     if build_metadata:
         output_group_info["build_metadata"] = depset([build_metadata])
-    if build_metadata:
-        output_group_info["build_metadata"] = depset([build_metadata])
         if rustc_rmeta_output:
             output_group_info["rustc_rmeta_output"] = depset([rustc_rmeta_output])
     if rustc_output:
