@@ -71,6 +71,11 @@ def _rust_impl(module_ctx):
                 register_toolchains = False,
             )
 
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        return mctx.extension_metadata(reproducible = True)
+
+    return mctx.extension_metadata()
+
 _COMMON_TAG_KWARGS = dict(
     allocator_library = attr.string(
         doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
