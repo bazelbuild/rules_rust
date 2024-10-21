@@ -15,7 +15,7 @@ bool_flag(
 # https://github.com/bazelbuild/bazel/issues/15486
 bool_flag(
     name = "incompatible_runfiles_cargo_manifest_dir",
-    build_setting_default = False,
+    build_setting_default = True,
 )
 
 # A flag which determines what files are retained in `CARGO_MANIFEST_DIR` directories
