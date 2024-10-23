@@ -13,7 +13,7 @@ fi
 
 # When querying info about the compiler, ensure the triple is mocked out to be
 # the desired target triple for the host.
-if [[ "$@" == *"rustc -Vv" || "$@" == *"rustc -vV" ]]; then
+if [[ "$@" == *"rustc -Vv" ]]; then
     set +e
     _RUSTC_OUTPUT="$($@)"
     _EXIT_CODE=$?
