@@ -175,8 +175,11 @@ register_toolchains(
     "//proto/prost:default_prost_toolchain",
 )
 
+bindgen = use_extension("//bindgen:extension.bzl", "bindgen")
+use_repo(bindgen, "bindgen_toolchains")
+
 register_toolchains(
-    "//bindgen:default_bindgen_toolchain",
+    "@bindgen_toolchains//:default_bindgen_toolchain",
 )
 
 rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
