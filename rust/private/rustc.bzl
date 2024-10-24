@@ -1437,6 +1437,11 @@ def rustc_compile_action(
             # Append the name of the library
             output_relative_to_package = output_relative_to_package + output_lib
 
+        coverage_link_flags = []
+        if include_coverage:
+            # fixes missing symbols coverage fails due to gcc lacking a few linker args
+            coverage_link_flags = ["-u", "__llvm_profile_runtime"]
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1446,6 +1451,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
+            user_link_flags = coverage_link_flags,
         )
 
         outputs = [crate_info.output]
