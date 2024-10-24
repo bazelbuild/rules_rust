@@ -78,6 +78,9 @@ def rust_bindgen_library(
     ):
         if shared in kwargs:
             bindgen_kwargs.update({shared: kwargs[shared]})
+    if "merge_cc_lib_objects_into_rlib" in kwargs:
+        bindgen_kwargs.update({"merge_cc_lib_objects_into_rlib": kwargs["merge_cc_lib_objects_into_rlib"]})
+        kwargs.pop("merge_cc_lib_objects_into_rlib")
 
     rust_bindgen(
         name = name + "__bindgen",
@@ -334,22 +337,28 @@ def _rust_bindgen_impl(ctx):
         toolchain = None,
     )
 
-    return [
-        _generate_cc_link_build_info(ctx, cc_lib),
-        # As in https://github.com/bazelbuild/rules_rust/pull/2361, we want
-        # to link cc_lib to the direct parent (rlib) using `-lstatic=<cc_lib>`
-        # rustc flag. Hence, we do not need to provide the whole CcInfo of
-        # cc_lib because it will cause the downstream binary to link the cc_lib
-        # again. The CcInfo here only contains the custom link flags (i.e.
-        # linkopts attribute) specified by users in cc_lib.
-        CcInfo(
-            linking_context = cc_common.create_linking_context(
-                linker_inputs = depset([cc_common.create_linker_input(
-                    owner = ctx.label,
-                    user_link_flags = _get_user_link_flags(cc_lib),
-                )]),
+    if ctx.attr.merge_cc_lib_objects_into_rlib:
+        providers = [
+            _generate_cc_link_build_info(ctx, cc_lib),
+            # As in https://github.com/bazelbuild/rules_rust/pull/2361, we want
+            # to link cc_lib to the direct parent (rlib) using `-lstatic=<cc_lib>`
+            # rustc flag. Hence, we do not need to provide the whole CcInfo of
+            # cc_lib because it will cause the downstream binary to link the cc_lib
+            # again. The CcInfo here only contains the custom link flags (i.e.
+            # linkopts attribute) specified by users in cc_lib.
+            CcInfo(
+                linking_context = cc_common.create_linking_context(
+                    linker_inputs = depset([cc_common.create_linker_input(
+                        owner = ctx.label,
+                        user_link_flags = _get_user_link_flags(cc_lib),
+                    )]),
+                ),
             ),
-        ),
+        ]
+    else:
+        providers = [cc_lib[CcInfo]]
+
+    return providers + [
         OutputGroupInfo(
             bindgen_bindings = depset([output]),
             bindgen_c_thunks = depset(([c_output] if wrap_static_fns else [])),
@@ -379,6 +388,11 @@ rust_bindgen = rule(
         "wrap_static_fns": attr.bool(
             doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
             default = False,
+        ),
+        "merge_cc_lib_objects_into_rlib": attr.bool(
+            doc = ("When True, objects from `cc_lib` will be copied into the `rlib` archive produced by " +
+                   "the rust_library that depends on this `rust_bindgen` rule (using `BuildInfo` provider)"),
+            default = True,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
