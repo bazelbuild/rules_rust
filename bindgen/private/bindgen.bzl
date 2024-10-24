@@ -385,14 +385,14 @@ rust_bindgen = rule(
             allow_single_file = True,
             mandatory = True,
         ),
-        "wrap_static_fns": attr.bool(
-            doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
-            default = False,
-        ),
         "merge_cc_lib_objects_into_rlib": attr.bool(
             doc = ("When True, objects from `cc_lib` will be copied into the `rlib` archive produced by " +
                    "the rust_library that depends on this `rust_bindgen` rule (using `BuildInfo` provider)"),
             default = True,
+        ),
+        "wrap_static_fns": attr.bool(
+            doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
+            default = False,
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

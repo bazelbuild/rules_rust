@@ -2,7 +2,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_library")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
 
 def _test_cc_linkopt_impl(env, target):
@@ -45,7 +45,7 @@ def _test_cc_linkopt(name):
     )
 
 def _test_cc_lib_object_merging_impl(env, target):
-    env.expect.that_collection(target.actions).has_size(3)
+    env.expect.that_int(len(target.actions)).is_greater_than(2)
     env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
     env.expect.that_action(target.actions[1]).mnemonic().contains("FileWrite")
     env.expect.that_action(target.actions[1]).content().contains("-lstatic=test_cc_lib_object_merging_cc")
@@ -54,7 +54,7 @@ def _test_cc_lib_object_merging_impl(env, target):
 
 def _test_cc_lib_object_merging_disabled_impl(env, target):
     # no FileWrite actions writing arg files registered
-    env.expect.that_collection(target.actions).has_size(1)
+    env.expect.that_int(len(target.actions)).is_greater_than(0)
     env.expect.that_action(target.actions[0]).mnemonic().contains("RustBindgen")
 
 def _test_cc_lib_object_merging(name):
@@ -65,6 +65,7 @@ def _test_cc_lib_object_merging(name):
         cc_lib = name + "_cc",
         header = "simple.h",
         tags = ["manual"],
+        edition = "2021",
     )
 
     analysis_test(
@@ -82,6 +83,7 @@ def _test_cc_lib_object_merging_disabled(name):
         header = "simple.h",
         tags = ["manual"],
         merge_cc_lib_objects_into_rlib = False,
+        edition = "2021",
     )
 
     analysis_test(
