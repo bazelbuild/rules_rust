@@ -53,7 +53,8 @@ toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen
 ## rust_bindgen
 
 <pre>
-rust_bindgen(<a href="#rust_bindgen-name">name</a>, <a href="#rust_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen-cc_lib">cc_lib</a>, <a href="#rust_bindgen-clang_flags">clang_flags</a>, <a href="#rust_bindgen-header">header</a>, <a href="#rust_bindgen-wrap_static_fns">wrap_static_fns</a>)
+rust_bindgen(<a href="#rust_bindgen-name">name</a>, <a href="#rust_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen-cc_lib">cc_lib</a>, <a href="#rust_bindgen-clang_flags">clang_flags</a>, <a href="#rust_bindgen-header">header</a>, <a href="#rust_bindgen-merge_cc_lib_objects_into_rlib">merge_cc_lib_objects_into_rlib</a>,
+             <a href="#rust_bindgen-wrap_static_fns">wrap_static_fns</a>)
 </pre>
 
 Generates a rust source file from a cc_library and a header.
@@ -68,6 +69,7 @@ Generates a rust source file from a cc_library and a header.
 | <a id="rust_bindgen-cc_lib"></a>cc_lib |  The cc_library that contains the `.h` file. This is used to find the transitive includes.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="rust_bindgen-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   | List of strings | optional |  `[]`  |
 | <a id="rust_bindgen-header"></a>header |  The `.h` file to generate bindings for.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="rust_bindgen-merge_cc_lib_objects_into_rlib"></a>merge_cc_lib_objects_into_rlib |  When True, objects from `cc_lib` will be copied into the `rlib` archive produced by the rust_library that depends on this `rust_bindgen` rule (using `BuildInfo` provider)   | Boolean | optional |  `True`  |
 | <a id="rust_bindgen-wrap_static_fns"></a>wrap_static_fns |  Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).   | Boolean | optional |  `False`  |
 
 
