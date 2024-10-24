@@ -61,15 +61,16 @@ def _assert_correct_dep_mapping(ctx):
                     ),
                 )
     for dep in ctx.attr.proc_macro_deps:
-        type = dep[rust_common.crate_info].type
-        if type != "proc-macro":
-            fail(
-                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                    ctx.label,
-                    dep.label,
-                    type,
-                ),
-            )
+        if rust_common.crate_info in dep:
+            type = dep[rust_common.crate_info].type
+            if type != "proc-macro":
+                fail(
+                    "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
+                        ctx.label,
+                        dep.label,
+                        type,
+                    ),
+                )
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -647,7 +648,7 @@ _common_attrs = {
             List of `rust_proc_macro` targets used to help build this library target.
         """),
         cfg = "exec",
-        providers = [rust_common.crate_info],
+        providers = [[rust_common.crate_group_info], [rust_common.crate_info]],
     ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
