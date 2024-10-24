@@ -30,9 +30,6 @@ symlink_execroot_cargo_build_script = rule(
             mandatory = True,
             providers = [BuildInfo],
         ),
-        "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
     },
     cfg = symlink_execroot_setting_transition,
 )
