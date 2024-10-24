@@ -69,7 +69,7 @@ Running `bazel build //hello_lib:hello_lib_doc` will build a zip file containing
 ## rust_doc_test
 
 <pre>
-rust_doc_test(<a href="#rust_doc_test-name">name</a>, <a href="#rust_doc_test-deps">deps</a>, <a href="#rust_doc_test-crate">crate</a>)
+rust_doc_test(<a href="#rust_doc_test-name">name</a>, <a href="#rust_doc_test-deps">deps</a>, <a href="#rust_doc_test-crate">crate</a>, <a href="#rust_doc_test-proc_macro_deps">proc_macro_deps</a>)
 </pre>
 
 Runs Rust documentation tests.
@@ -117,5 +117,6 @@ Running `bazel test //hello_lib:hello_lib_doc_test` will run all documentation t
 | <a id="rust_doc_test-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 | <a id="rust_doc_test-deps"></a>deps |  List of other libraries to be linked to this library target.<br><br>These can be either other `rust_library` targets or `cc_library` targets if linking a native library.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
 | <a id="rust_doc_test-crate"></a>crate |  The label of the target to generate code documentation for. `rust_doc_test` can generate HTML code documentation for the source files of `rust_library` or `rust_binary` targets.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="rust_doc_test-proc_macro_deps"></a>proc_macro_deps |  List of `rust_proc_macro` targets used to help build this library target.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
 
 
