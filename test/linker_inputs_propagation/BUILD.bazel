@@ -21,9 +21,6 @@ cc_library(
         "foo_shared.cc",
     ],
     hdrs = ["foo_shared.h"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-    ],
 )
 
 cc_library(
@@ -84,10 +81,6 @@ rust_static_library(
     name = "staticlib_uses_foo",
     srcs = ["bar_uses_foo.rs"],
     edition = "2018",
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
     deps = [":foo"],
 )
 
@@ -102,10 +95,6 @@ rust_shared_library(
     name = "sharedlib_uses_foo",
     srcs = ["bar_uses_foo.rs"],
     edition = "2018",
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
     deps = [":foo"],
 )
 
@@ -113,10 +102,6 @@ rust_static_library(
     name = "staticlib_uses_shared_foo",
     srcs = ["bar_uses_shared_foo.rs"],
     edition = "2018",
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
     deps = [":import_foo_shared"],
 )
 
@@ -124,50 +109,48 @@ rust_static_library(
     name = "sharedlib_uses_shared_foo",
     srcs = ["bar_uses_shared_foo.rs"],
     edition = "2018",
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
     deps = [":import_foo_shared"],
 )
 
 cc_test(
     name = "depends_on_foo_via_staticlib",
     srcs = ["baz.cc"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
+    target_compatible_with = select({
+        "@platforms//os:linux": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":staticlib_uses_foo"],
 )
 
 cc_test(
     name = "depends_on_foo_via_sharedlib",
     srcs = ["baz.cc"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
+    target_compatible_with = select({
+        "@platforms//os:linux": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":sharedlib_uses_foo"],
 )
 
 cc_test(
     name = "depends_on_shared_foo_via_sharedlib",
     srcs = ["baz.cc"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
+    target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":sharedlib_uses_shared_foo"],
 )
 
 cc_test(
     name = "depends_on_shared_foo_via_staticlib",
     srcs = ["baz.cc"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "@platforms//os:windows",
-    ],
+    target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":staticlib_uses_shared_foo"],
 )
 
@@ -175,5 +158,9 @@ rust_binary(
     name = "depends_on_foo_with_redundant_linkopts",
     srcs = ["main_uses_foo.rs"],
     edition = "2021",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":rlib_uses_foo_with_redundant_linkopts"],
 )
