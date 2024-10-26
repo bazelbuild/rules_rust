@@ -1,6 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library", "cc_test")
 load(
     "@rules_rust//rust:defs.bzl",
+    "rust_binary",
     "rust_library",
     "rust_shared_library",
     "rust_static_library",
@@ -23,6 +24,15 @@ cc_library(
     target_compatible_with = [
         "@platforms//os:linux",
     ],
+)
+
+cc_library(
+    name = "foo_with_linkopts",
+    srcs = [
+        "foo_shared.cc",
+    ],
+    hdrs = ["foo_shared.h"],
+    linkopts = ["-L/doesnotexist"],
 )
 
 cc_binary(
@@ -79,6 +89,13 @@ rust_static_library(
         "@platforms//os:windows",
     ],
     deps = [":foo"],
+)
+
+rust_library(
+    name = "rlib_uses_foo_with_redundant_linkopts",
+    srcs = ["bar_uses_shared_foo.rs"],
+    edition = "2018",
+    deps = [":foo_with_linkopts"],
 )
 
 rust_shared_library(
@@ -152,4 +169,11 @@ cc_test(
         "@platforms//os:windows",
     ],
     deps = [":staticlib_uses_shared_foo"],
+)
+
+rust_binary(
+    name = "depends_on_foo_with_redundant_linkopts",
+    edition = "2021",
+    srcs = ["main_uses_foo.rs"],
+    deps = [":rlib_uses_foo_with_redundant_linkopts"],
 )

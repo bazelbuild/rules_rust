@@ -437,13 +437,6 @@ def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configurati
     else:
         fail("Unknown `crate_type`: {}".format(crate_type))
 
-    # Add linkopts from dependencies. This includes linkopts from transitive
-    # dependencies since they get merged up.
-    for dep in getattr(attr, "deps", []):
-        if CcInfo in dep and dep[CcInfo].linking_context:
-            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
-                for flag in linker_input.user_link_flags:
-                    user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -1957,6 +1950,9 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
 
     return []
 
+def _add_user_link_flags(ret, linker_input):
+    ret.extend(["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags])
+
 def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
@@ -1975,6 +1971,7 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
                 ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_windows_msvc(make_link_flags_args):
@@ -1994,6 +1991,7 @@ def _make_link_flags_darwin(make_link_flags_args):
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_default(make_link_flags_args):
@@ -2011,6 +2009,7 @@ def _make_link_flags_default(make_link_flags_args):
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _libraries_dirnames(make_link_flags_args):

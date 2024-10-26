@@ -22,11 +22,27 @@ def _static_lib_is_not_propagated_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _dependency_linkopts_are_propagated_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    link_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
+    # Expect a library's own linkopts to come after the flags we create to link them.
+    # This is required, because linkopts are ordered and the linker will only apply later ones when resolving symbols required for earlier ones.
+    # This means that if one of our transitive deps has a linkopt like `-lfoo`, the dep will see the symbols of foo at link time.
+    asserts.true(env, _contains_in_order(link_action.argv, ["-lstatic=foo_with_linkopts", "-Clink-arg=-lfoo_with_linkopts", "--codegen=link-arg=-L/doesnotexist"]))
+    return analysistest.end(env)
+
 def _contains_input(inputs, name):
     for input in inputs.to_list():
         # We cannot check for name equality because rlib outputs contain
         # a hash in their name.
         if input.basename.startswith(name):
+            return True
+    return False
+
+def _contains_in_order(haystack, needle):
+    for i in range(len(haystack)):
+        if haystack[i:i+len(needle)] == needle:
             return True
     return False
 
@@ -51,6 +67,10 @@ shared_lib_is_propagated_test = analysistest.make(
     },
 )
 
+dependency_linkopts_are_propagated_test = analysistest.make(
+    _dependency_linkopts_are_propagated_test_impl,
+)
+
 def _linker_inputs_propagation_test():
     static_lib_is_not_propagated_test(
         name = "depends_on_foo_via_staticlib",
@@ -70,6 +90,11 @@ def _linker_inputs_propagation_test():
     shared_lib_is_propagated_test(
         name = "depends_on_shared_foo_via_sharedlib",
         target_under_test = "//test/linker_inputs_propagation:depends_on_shared_foo_via_sharedlib",
+    )
+
+    dependency_linkopts_are_propagated_test(
+        name = "dependency_linkopts_are_propagated",
+        target_under_test = "//test/linker_inputs_propagation:depends_on_foo_with_redundant_linkopts",
     )
 
 def linker_inputs_propagation_test_suite(name):
