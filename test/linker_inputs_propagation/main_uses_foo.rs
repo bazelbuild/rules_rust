@@ -1,7 +1,5 @@
-extern "C" {
-    fn double_foo() -> i32;
-}
+use rlib_uses_foo_with_redundant_linkopts::double_foo;
 
 fn main() {
-  println!("{}", unsafe { double_foo() });
+  println!("{}", double_foo());
 }

@@ -93,7 +93,7 @@ rust_static_library(
 
 rust_library(
     name = "rlib_uses_foo_with_redundant_linkopts",
-    srcs = ["bar_uses_shared_foo.rs"],
+    srcs = ["bar_uses_shared_foo_for_rust.rs"],
     edition = "2018",
     deps = [":foo_with_linkopts"],
 )
