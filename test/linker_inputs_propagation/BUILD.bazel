@@ -173,7 +173,7 @@ cc_test(
 
 rust_binary(
     name = "depends_on_foo_with_redundant_linkopts",
-    edition = "2021",
     srcs = ["main_uses_foo.rs"],
+    edition = "2021",
     deps = [":rlib_uses_foo_with_redundant_linkopts"],
 )

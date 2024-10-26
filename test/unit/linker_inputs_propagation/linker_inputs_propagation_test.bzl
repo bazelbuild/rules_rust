@@ -26,6 +26,7 @@ def _dependency_linkopts_are_propagated_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     link_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
+
     # Expect a library's own linkopts to come after the flags we create to link them.
     # This is required, because linkopts are ordered and the linker will only apply later ones when resolving symbols required for earlier ones.
     # This means that if one of our transitive deps has a linkopt like `-lfoo`, the dep will see the symbols of foo at link time.
@@ -42,7 +43,7 @@ def _contains_input(inputs, name):
 
 def _contains_in_order(haystack, needle):
     for i in range(len(haystack)):
-        if haystack[i:i+len(needle)] == needle:
+        if haystack[i:i + len(needle)] == needle:
             return True
     return False
 
