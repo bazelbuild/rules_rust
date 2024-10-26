@@ -303,7 +303,7 @@ def _rust_bindgen_impl(ctx):
             open_arg = True
             continue
 
-    _, _, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
+    _, _, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.

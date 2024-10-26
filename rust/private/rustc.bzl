@@ -398,12 +398,11 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
+def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
-        attr (struct): Attributes to use in gathering linker args
         crate_type (str): The target crate's type (i.e. "bin", "proc-macro", etc.).
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
@@ -1006,7 +1005,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
+            ld, link_args, link_env = get_linker_and_args(ctx, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
