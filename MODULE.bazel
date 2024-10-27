@@ -92,7 +92,6 @@ use_repo(
     "cui__serde_starlark-0.1.16",
     "cui__sha2-0.10.8",
     "cui__spdx-0.10.6",
-    "cui__spectral-0.6.0",
     "cui__tempfile-3.13.0",
     "cui__tera-1.19.1",
     "cui__textwrap-0.16.1",
