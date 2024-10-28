@@ -505,7 +505,10 @@ impl CrateAnnotations {
         default(&mut self.rustc_env_files, rustc_env_files);
         default(&mut self.rustc_flags, rustc_flags);
         default(&mut self.build_script_env, build_script_env);
-        default(&mut self.build_script_env_for_target_cfg, build_script_env_for_target_cfg);
+        default(
+            &mut self.build_script_env_for_target_cfg,
+            build_script_env_for_target_cfg,
+        );
         default(&mut self.build_script_rustc_env, build_script_rustc_env);
         default(&mut self.build_script_rundir, build_script_rundir);
         default(
