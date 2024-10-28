@@ -249,6 +249,7 @@ def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
         ctx (ctx): The rule's context object
         env (str): The value possibly containing location macros to expand.
         data (sequence of Targets): See one of the parent functions.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         string: The location-macro expanded version of the string.
@@ -288,6 +289,7 @@ def expand_dict_value_locations(ctx, env, data, known_variables):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         dict: A dict of environment variables with expanded location macros
@@ -311,6 +313,7 @@ def expand_list_element_locations(ctx, args, data, known_variables):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         list: A list of arguments with expanded location macros
