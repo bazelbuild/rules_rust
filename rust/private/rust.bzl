@@ -1476,6 +1476,10 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     """
     tests = []
 
+    # If test_suite.tests is empty, Bazel will unhelpfully include all tests
+    # from the package. Require an extra tag so they are filtered out again.
+    tags = ["restrict_" + name] + kwargs.pop('tags', [])
+
     for src in srcs:
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
@@ -1490,6 +1494,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
             name = test_name,
             crate_root = src,
             srcs = [src] + shared_srcs,
+            tags = tags,
             **kwargs
         )
         tests.append(test_name)
@@ -1497,7 +1502,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     native.test_suite(
         name = name,
         tests = tests,
-        tags = kwargs.get("tags", None),
+        tags = tags,
     )
 
 rust_library_group = rule(
