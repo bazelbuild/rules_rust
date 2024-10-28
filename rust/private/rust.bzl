@@ -346,6 +346,8 @@ def _rust_test_impl(ctx):
             ctx.attr.rustc_env,
             data_paths,
         ))
+        aliases = dict(crate.aliases)
+        aliases.update(ctx.attr.aliases)
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
@@ -355,7 +357,7 @@ def _rust_test_impl(ctx):
             srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
-            aliases = ctx.attr.aliases,
+            aliases = aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             edition = crate.edition,
