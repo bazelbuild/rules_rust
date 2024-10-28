@@ -97,7 +97,7 @@ https://github.com/bazelbuild/bazel/issues/15486
     implementation = _cargo_build_script_runfiles_impl,
     attrs = {
         "build_script_env_for_target_cfg": attr.string_dict(
-            doc = "Env vars to set for the build script, with selects resolved based on the target cfg of what's depeneding on the build script, rather than the exec cfg the build script is naturally configured in."
+            doc = "Env vars to set for the build script, with selects resolved based on the target cfg of what's depeneding on the build script, rather than the exec cfg the build script is naturally configured in.",
         ),
         "data": attr.label_list(
             doc = "Data required by the build script.",
