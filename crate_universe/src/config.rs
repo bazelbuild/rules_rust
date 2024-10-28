@@ -294,6 +294,7 @@ pub(crate) struct CrateAnnotations {
     /// Additional environment variables to pass to a build script's
     /// [build_script_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub(crate) build_script_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_env_for_target_cfg: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
@@ -396,6 +397,7 @@ impl Add for CrateAnnotations {
             build_script_tools: select_merge(self.build_script_tools, rhs.build_script_tools),
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
+            build_script_env_for_target_cfg: select_merge(self.build_script_env_for_target_cfg, rhs.build_script_env_for_target_cfg),
             build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
@@ -447,6 +449,7 @@ pub(crate) struct AnnotationsProvidedByPackage {
     pub(crate) rustc_env_files: Option<Select<BTreeSet<String>>>,
     pub(crate) rustc_flags: Option<Select<Vec<String>>>,
     pub(crate) build_script_env: Option<Select<BTreeMap<String, String>>>,
+    pub(crate) build_script_env_for_target_cfg: Option<Select<BTreeMap<String, String>>>,
     pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
     pub(crate) build_script_rundir: Option<Select<String>>,
     pub(crate) additive_build_file_content: Option<String>,
@@ -470,6 +473,7 @@ impl CrateAnnotations {
             rustc_env_files,
             rustc_flags,
             build_script_env,
+            build_script_env_for_target_cfg,
             build_script_rustc_env,
             build_script_rundir,
             additive_build_file_content,
@@ -501,6 +505,7 @@ impl CrateAnnotations {
         default(&mut self.rustc_env_files, rustc_env_files);
         default(&mut self.rustc_flags, rustc_flags);
         default(&mut self.build_script_env, build_script_env);
+        default(&mut self.build_script_env_for_target_cfg, build_script_env_for_target_cfg);
         default(&mut self.build_script_rustc_env, build_script_rustc_env);
         default(&mut self.build_script_rundir, build_script_rundir);
         default(

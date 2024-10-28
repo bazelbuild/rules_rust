@@ -456,6 +456,12 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
+            build_script_env_for_target_cfg: SelectDict::new(
+                attrs
+                    .map(|attrs| attrs.build_script_env_for_target_cfg.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
             compile_data: make_data_with_exclude(
                 platforms,
                 attrs

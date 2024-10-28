@@ -96,6 +96,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) build_script_env: SelectDict<String, String>,
+    #[serde(skip_serializing_if = "SelectDict::is_empty")]
+    pub(crate) build_script_env_for_target_cfg: SelectDict<String, String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub(crate) compile_data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]

@@ -32,6 +32,7 @@ CargoBuildScriptRunfilesInfo = provider(
     fields = {
         "data": "List[Target]: The raw `cargo_build_script_runfiles.data` attribute.",
         "tools": "List[Target]: The raw `cargo_build_script_runfiles.tools` attribute.",
+        "env_from_target_cfg": "Dict[str, str]: Env vars for the build script which should be configured for the target cfg of the thing depending on the build script, rather than transitioned to the exec cfg.",
     },
 )
 
@@ -74,6 +75,7 @@ def _cargo_build_script_runfiles_impl(ctx):
         CargoBuildScriptRunfilesInfo(
             data = ctx.attr.data,
             tools = ctx.attr.tools,
+            env_from_target_cfg = ctx.attr.build_script_env_for_target_cfg,
         ),
     ]
 
@@ -94,6 +96,9 @@ https://github.com/bazelbuild/bazel/issues/15486
 """,
     implementation = _cargo_build_script_runfiles_impl,
     attrs = {
+        "build_script_env_for_target_cfg": attr.string_dict(
+            doc = "Env vars to set for the build script, with selects resolved based on the target cfg of what's depeneding on the build script, rather than the exec cfg the build script is naturally configured in."
+        ),
         "data": attr.label_list(
             doc = "Data required by the build script.",
             allow_files = True,
@@ -453,9 +458,12 @@ def _cargo_build_script_impl(ctx):
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
             known_variables.update(variables)
 
+    build_script_env = dict(ctx.attr.build_script_env)
+    build_script_env.update(script_info.env_from_target_cfg)
+
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
-        ctx.attr.build_script_env,
+        build_script_env,
         getattr(ctx.attr, "data", []) +
         getattr(ctx.attr, "compile_data", []) +
         getattr(ctx.attr, "tools", []) +

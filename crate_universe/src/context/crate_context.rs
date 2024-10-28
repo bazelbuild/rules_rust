@@ -217,6 +217,9 @@ pub(crate) struct BuildScriptAttributes {
     pub(crate) build_script_env: Select<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) build_script_env_for_target_cfg: Select<BTreeMap<String, String>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) rundir: Select<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -259,6 +262,7 @@ impl Default for BuildScriptAttributes {
             link_deps: Default::default(),
             extra_link_deps: Default::default(),
             build_script_env: Default::default(),
+            build_script_env_for_target_cfg: Default::default(),
             rundir: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
@@ -654,6 +658,12 @@ impl CrateContext {
                 if let Some(extra) = &crate_extra.build_script_env {
                     attrs.build_script_env =
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
+                }
+
+                // Build script env
+                if let Some(extra) = &crate_extra.build_script_env_for_target_cfg {
+                    attrs.build_script_env_for_target_cfg =
+                        Select::merge(attrs.build_script_env_for_target_cfg.clone(), extra.clone());
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {

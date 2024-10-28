@@ -21,6 +21,7 @@ def cargo_build_script(
         link_deps = [],
         proc_macro_deps = [],
         build_script_env = {},
+        build_script_env_for_target_cfg = {},
         data = [],
         compile_data = [],
         tools = [],
@@ -188,6 +189,7 @@ def cargo_build_script(
         data = data,
         tools = tools,
         tags = binary_tags,
+        build_script_env_for_target_cfg = build_script_env_for_target_cfg,
         **wrapper_kwargs
     )
 
