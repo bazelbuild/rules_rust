@@ -1,5 +1,5 @@
 {
-  "checksum": "26ad68c7d37f03ca109de4f73fd8b02ce0d7cae9641b2cc931b2ee9fea0cdf5a",
+  "checksum": "85ace51890ea8af96208646d5ad3605b2b0d82475631ef0aa45487557550ead3",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -397,6 +397,12 @@
               }
             ],
             "wasm32-wasi": [
+              {
+                "id": "ansi_term 0.12.1",
+                "target": "ansi_term"
+              }
+            ],
+            "wasm32-wasip1": [
               {
                 "id": "ansi_term 0.12.1",
                 "target": "ansi_term"
@@ -1918,6 +1924,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -1931,7 +1938,8 @@
     "cfg(target_os = \"emscripten\")": [],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasi",
+      "wasm32-wasip1"
     ],
     "cfg(target_os = \"windows\")": [
       "aarch64-pc-windows-msvc",
@@ -2008,6 +2016,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"
