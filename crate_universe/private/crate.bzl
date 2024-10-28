@@ -135,6 +135,8 @@ def _annotation(
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
         build_script_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
+        build_script_env_for_target_cfg (dict, optional): Additional environment variables to set on a crate's
+            `cargo_build_script::env_for_target_cfg` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rundir (str, optional): An override for the build script's rundir attribute.

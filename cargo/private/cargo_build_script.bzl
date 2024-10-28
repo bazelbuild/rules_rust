@@ -31,8 +31,8 @@ CargoBuildScriptRunfilesInfo = provider(
     doc = "Info about a `cargo_build_script.script` target.",
     fields = {
         "data": "List[Target]: The raw `cargo_build_script_runfiles.data` attribute.",
-        "tools": "List[Target]: The raw `cargo_build_script_runfiles.tools` attribute.",
         "env_from_target_cfg": "Dict[str, str]: Env vars for the build script which should be configured for the target cfg of the thing depending on the build script, rather than transitioned to the exec cfg.",
+        "tools": "List[Target]: The raw `cargo_build_script_runfiles.tools` attribute.",
     },
 )
 

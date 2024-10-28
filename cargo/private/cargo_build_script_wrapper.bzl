@@ -108,6 +108,7 @@ def cargo_build_script(
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
         build_script_env (dict, optional): Environment variables for build scripts.
+        build_script_env_for_target_cfg (dict, optional): Environment variables for build scripts which should be resolved in the cfg of the depender on the build script, not the exec cfg it naturally transitions to.
         data (list, optional): Files needed by the build script.
         compile_data (list, optional): Files needed for the compilation of the build script.
         tools (list, optional): Tools (executables) needed by the build script.
