@@ -1,5 +1,5 @@
 {
-  "checksum": "917f78531619c916ae5da7874f8a5fecba600280479d4a50eb8e6d7787cf79a2",
+  "checksum": "59be2ecd05a76e24ac796ef59c99aa8df9951f6f5a9e7985ae284c673013baa0",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -587,6 +587,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

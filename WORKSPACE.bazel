@@ -91,3 +91,5 @@ http_archive(
 load("//test/3rdparty/crates:crates.bzl", test_crate_repositories = "crate_repositories")
 
 test_crate_repositories()
+
+register_toolchains("//test/foreign_toolchain_make_variables:toolchain_for_test")

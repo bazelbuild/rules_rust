@@ -261,6 +261,7 @@ def _rust_binary_impl(ctx):
             ctx,
             ctx.attr.env,
             ctx.attr.data,
+            {},
         ),
     ))
 
@@ -345,6 +346,7 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         ))
         aliases = dict(crate.aliases)
         aliases.update(ctx.attr.aliases)
@@ -396,6 +398,7 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         )
 
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -432,6 +435,7 @@ def _rust_test_impl(ctx):
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
+        {},
     )
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:

@@ -435,6 +435,8 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
+    known_variables = {}
+
     # Gather data from the `toolchains` attribute.
     for target in ctx.attr.toolchains:
         if DefaultInfo in target:
@@ -449,7 +451,7 @@ def _cargo_build_script_impl(ctx):
             toolchain_tools.append(all_files)
         if platform_common.TemplateVariableInfo in target:
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
-            env.update(variables)
+            known_variables.update(variables)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
@@ -459,6 +461,7 @@ def _cargo_build_script_impl(ctx):
         getattr(ctx.attr, "tools", []) +
         script_info.data +
         script_info.tools,
+        known_variables,
     ))
 
     tools = depset(

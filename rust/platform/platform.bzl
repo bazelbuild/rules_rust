@@ -90,11 +90,18 @@ def declare_config_settings():
     )
 
     native.platform(
-        name = "wasi",
+        name = "wasip1",
         constraint_values = [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
         ],
+    )
+
+    # Add alias for wasi to maintain backwards compatibility.
+    native.alias(
+        name = "wasi",
+        actual = ":wasip1",
+        deprecation = "Use `@rules_rust//rust/platform:wasip1` instead",
     )
 
     selects.config_setting_group(

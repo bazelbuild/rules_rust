@@ -60,6 +60,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
     "wasm32-wasi": _support(std = True, host_tools = False),
+    "wasm32-wasip1": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
@@ -144,6 +145,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "solaris": None,
     "unknown": None,
     "wasi": None,
+    "wasip1": None,
     "windows": "windows",
 }
 
@@ -165,6 +167,7 @@ _SYSTEM_TO_BINARY_EXT = {
     # windows target
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "wasip1": ".wasm",
     "windows": ".exe",
 }
 
@@ -183,6 +186,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "nto": ".a",
     "unknown": "",
     "wasi": "",
+    "wasip1": "",
     "windows": ".lib",
 }
 
@@ -201,6 +205,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "nto": ".a",
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "wasip1": ".wasm",
     "windows": ".dll",
 }
 
@@ -247,6 +252,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "unknown": [],
     "uwp": ["ws2_32.lib"],
     "wasi": [],
+    "wasip1": [],
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
@@ -385,6 +391,11 @@ def triple_to_constraint_set(target_triple):
         list: A list of constraints (each represented by a list of strings)
     """
     if target_triple == "wasm32-wasi":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+        ]
+    if target_triple == "wasm32-wasip1":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",

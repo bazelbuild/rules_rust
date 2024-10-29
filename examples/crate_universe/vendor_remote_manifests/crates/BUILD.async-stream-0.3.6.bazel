@@ -69,6 +69,7 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -83,6 +84,6 @@ rust_library(
     version = "0.3.6",
     deps = [
         "@cvm__futures-core-0.3.31//:futures_core",
-        "@cvm__pin-project-lite-0.2.14//:pin_project_lite",
+        "@cvm__pin-project-lite-0.2.15//:pin_project_lite",
     ],
 )

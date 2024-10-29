@@ -1,5 +1,5 @@
 {
-  "checksum": "ac774efb6c1a06c8562d385acafe8fcf60daa5e00a9d108f10e4c2eab35132db",
+  "checksum": "4ce263703fc55e73dbbd9ec2b2b1861be82bc9b9c8cbdb59d045db3355ddf241",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -1040,6 +1040,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

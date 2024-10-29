@@ -184,3 +184,8 @@ use_repo(rust_host_tools, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
 use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
+
+register_toolchains(
+    "//test/foreign_toolchain_make_variables:toolchain_for_test",
+    dev_dependency = True,
+)
