@@ -279,7 +279,10 @@ def _rust_prost_aspect_impl(target, ctx):
             package_info = package_info_file,
         ),
         rust_analyzer_info,
-        OutputGroupInfo(rust_generated_srcs = [lib_rs]),
+        OutputGroupInfo(
+            rust_generated_srcs = [lib_rs],
+            proto_descriptor_set = [proto_info.direct_descriptor_set],
+        ),
     ]
 
 rust_prost_aspect = aspect(
@@ -316,6 +319,8 @@ rust_prost_aspect = aspect(
 def _rust_prost_library_impl(ctx):
     proto_dep = ctx.attr.proto
     rust_proto_info = proto_dep[ProstProtoInfo]
+    rust_generated_srcs = proto_dep[OutputGroupInfo].rust_generated_srcs
+    proto_descriptor_set = proto_dep[OutputGroupInfo].proto_descriptor_set
     dep_variant_info = rust_proto_info.dep_variant_info
 
     prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
@@ -331,6 +336,10 @@ def _rust_prost_library_impl(ctx):
                 [dep_variant_info],
                 transitive = transitive,
             ),
+        ),
+        OutputGroupInfo(
+            rust_generated_srcs = rust_generated_srcs,
+            proto_descriptor_set = proto_descriptor_set,
         ),
         RustAnalyzerGroupInfo(deps = [proto_dep[RustAnalyzerInfo]]),
     ]
