@@ -27,3 +27,10 @@ string_list_flag(
         ".so",
     ],
 )
+
+# A flag which adds a `streams` output group to `cargo_build_script` targets that contain
+# the raw `stderr` and `stdout` streams from the build script.
+bool_flag(
+    name = "debug_std_streams_output_group",
+    build_setting_default = False,
+)

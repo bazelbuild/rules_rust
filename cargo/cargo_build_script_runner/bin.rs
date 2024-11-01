@@ -176,7 +176,7 @@ fn run_buildrs() -> Result<(), String> {
         BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy())
             .as_bytes(),
     )
-    .unwrap_or_else(|_| panic!("Unable to write file {:?}", env_file));
+    .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", env_file, e));
     write(
         &output_dep_env_path,
         BuildScriptOutput::outputs_to_dep_env(
@@ -186,11 +186,16 @@ fn run_buildrs() -> Result<(), String> {
         )
         .as_bytes(),
     )
-    .unwrap_or_else(|_| panic!("Unable to write file {:?}", output_dep_env_path));
-    write(&stdout_path, process_output.stdout)
-        .unwrap_or_else(|_| panic!("Unable to write file {:?}", stdout_path));
-    write(&stderr_path, process_output.stderr)
-        .unwrap_or_else(|_| panic!("Unable to write file {:?}", stderr_path));
+    .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", output_dep_env_path, e));
+
+    if let Some(path) = &stdout_path {
+        write(path, process_output.stdout)
+            .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", path, e));
+    }
+    if let Some(path) = &stderr_path {
+        write(path, process_output.stderr)
+            .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", path, e));
+    }
 
     let CompileAndLinkFlags {
         compile_flags,
@@ -199,11 +204,15 @@ fn run_buildrs() -> Result<(), String> {
     } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
 
     write(&compile_flags_file, compile_flags.as_bytes())
-        .unwrap_or_else(|_| panic!("Unable to write file {:?}", compile_flags_file));
+        .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", compile_flags_file, e));
     write(&link_flags_file, link_flags.as_bytes())
-        .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_flags_file));
-    write(&link_search_paths_file, link_search_paths.as_bytes())
-        .unwrap_or_else(|_| panic!("Unable to write file {:?}", link_search_paths_file));
+        .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", link_flags_file, e));
+    write(&link_search_paths_file, link_search_paths.as_bytes()).unwrap_or_else(|e| {
+        panic!(
+            "Unable to write file {:?}: {:#?}",
+            link_search_paths_file, e
+        )
+    });
 
     if !exec_root_links.is_empty() {
         for link in exec_root_links {
@@ -584,8 +593,8 @@ struct Args {
     link_flags_file: String,
     link_search_paths_file: String,
     output_dep_env_path: String,
-    stdout_path: String,
-    stderr_path: String,
+    stdout_path: Option<String>,
+    stderr_path: Option<String>,
     rundir: String,
     input_dep_env_paths: Vec<String>,
     cargo_manifest_maker: Option<RunfilesMaker>,
@@ -608,10 +617,8 @@ impl Args {
             Err("Argument `link_search_paths_file` not provided".to_owned());
         let mut output_dep_env_path: Result<String, String> =
             Err("Argument `output_dep_env_path` not provided".to_owned());
-        let mut stdout_path: Result<String, String> =
-            Err("Argument `stdout_path` not provided".to_owned());
-        let mut stderr_path: Result<String, String> =
-            Err("Argument `stderr_path` not provided".to_owned());
+        let mut stdout_path = None;
+        let mut stderr_path = None;
         let mut rundir: Result<String, String> = Err("Argument `rundir` not provided".to_owned());
         let mut input_dep_env_paths = Vec::new();
         let mut cargo_manifest_maker = None;
@@ -634,9 +641,9 @@ impl Args {
             } else if arg.starts_with("--dep_env_out=") {
                 output_dep_env_path = Ok(arg.split_off("--dep_env_out=".len()));
             } else if arg.starts_with("--stdout=") {
-                stdout_path = Ok(arg.split_off("--stdout=".len()));
+                stdout_path = Some(arg.split_off("--stdout=".len()));
             } else if arg.starts_with("--stderr=") {
-                stderr_path = Ok(arg.split_off("--stderr=".len()));
+                stderr_path = Some(arg.split_off("--stderr=".len()));
             } else if arg.starts_with("--rundir=") {
                 rundir = Ok(arg.split_off("--rundir=".len()))
             } else if arg.starts_with("--input_dep_env_path=") {
@@ -657,8 +664,8 @@ impl Args {
             link_flags_file: link_flags_file.unwrap(),
             link_search_paths_file: link_search_paths_file.unwrap(),
             output_dep_env_path: output_dep_env_path.unwrap(),
-            stdout_path: stdout_path.unwrap(),
-            stderr_path: stderr_path.unwrap(),
+            stdout_path,
+            stderr_path,
             rundir: rundir.unwrap(),
             input_dep_env_paths,
             cargo_manifest_maker,

@@ -338,11 +338,6 @@ def _cargo_build_script_impl(ctx):
         extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
-    streams = struct(
-        stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
-        stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
-    )
-
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
@@ -486,9 +481,21 @@ def _cargo_build_script_impl(ctx):
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
-    args.add(streams.stdout, format = "--stdout=%s")
-    args.add(streams.stderr, format = "--stderr=%s")
     args.add(ctx.attr.rundir, format = "--rundir=%s")
+
+    output_groups = {
+        "out_dir": depset([out_dir]),
+    }
+
+    debug_std_streams_output_group = ctx.attr._debug_std_streams_output_group[BuildSettingInfo].value
+    if debug_std_streams_output_group:
+        debug_stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log")
+        debug_stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log")
+        args.add(debug_stdout, format = "--stdout=%s")
+        args.add(debug_stderr, format = "--stderr=%s")
+        extra_output.append(debug_stdout)
+        extra_output.append(debug_stderr)
+        output_groups["streams"] = depset([debug_stdout, debug_stderr])
 
     build_script_inputs = []
 
@@ -520,8 +527,6 @@ def _cargo_build_script_impl(ctx):
             link_flags,
             link_search_paths,
             dep_env_out,
-            streams.stdout,
-            streams.stderr,
         ] + extra_output,
         tools = tools,
         inputs = depset(build_script_inputs, transitive = extra_inputs),
@@ -549,8 +554,7 @@ def _cargo_build_script_impl(ctx):
             compile_data = depset(extra_output, transitive = script_data),
         ),
         OutputGroupInfo(
-            streams = depset([streams.stdout, streams.stderr]),
-            out_dir = depset([out_dir]),
+            **output_groups
         ),
     ]
 
@@ -635,6 +639,9 @@ cargo_build_script = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_debug_std_streams_output_group": attr.label(
+            default = Label("//cargo/settings:debug_std_streams_output_group"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
