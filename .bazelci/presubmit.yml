@@ -635,6 +635,12 @@ tasks:
     working_directory: test/bzlmod_repo_mapping/module_a
     test_targets:
       - "//..."
+  aliased_toolchains:
+    name: aliased toolchains test
+    platform: ubuntu2004
+    working_directory: test/aliased_toolchains
+    build_targets:
+      - "@rust_toolchains//:all"
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
