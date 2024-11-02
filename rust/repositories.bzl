@@ -174,6 +174,10 @@ def rust_register_toolchains(
     if not rust_analyzer_version:
         rust_analyzer_version = select_rust_version(versions)
 
+    # Convert to an unfrozen dict to remove mappings as they are used. This will allow us to determine if there
+    # are any unused aliases requested.
+    aliases = dict(aliases)
+
     rust_analyzer_repo_name = "rust_analyzer_{}".format(rust_analyzer_version.replace("/", "-"))
 
     toolchain_names = []
@@ -224,6 +228,8 @@ def rust_register_toolchains(
         )
 
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
+        if rustfmt_repo_name in aliases:
+            rustfmt_repo_name = aliases.pop(rustfmt_repo_name)
 
         maybe(
             rustfmt_toolchain_repository,
@@ -251,6 +257,9 @@ def rust_register_toolchains(
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
         target_compatible_with_by_toolchain[rustfmt_repo_name] = []
         toolchain_types[rustfmt_repo_name] = "@rules_rust//rust/rustfmt:toolchain_type"
+
+    if aliases:
+        fail("No repositories were created matching the requested names to alias:\n{}".format("\n".join(sorted(aliases))))
 
     toolchain_repository_hub(
         name = "rust_toolchains",
@@ -961,7 +970,7 @@ def _get_toolchain_repositories(name, exec_triple, extra_target_triples, version
             # Check if this toolchain is requested to be aliased.
             full_name = "{}__{}__{}".format(name, target_triple, channel.name)
             if full_name in aliases:
-                full_name = aliases[full_name]
+                full_name = aliases.pop(full_name)
             toolchain_repos.append(struct(
                 name = full_name,
                 target_triple = target_triple,
