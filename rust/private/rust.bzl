@@ -1494,7 +1494,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
 
     # If test_suite.tests is empty, Bazel will unhelpfully include all tests
     # from the package. Require an extra tag so they are filtered out again.
-    tags = ["restrict_" + name] + kwargs.pop('tags', [])
+    tags = ["restrict_" + name] + kwargs.pop("tags", [])
 
     for src in srcs:
         if not src.endswith(".rs"):
