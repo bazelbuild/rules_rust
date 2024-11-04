@@ -1,5 +1,5 @@
 {
-  "checksum": "a3c8c3119a4121fe1e86e49f0837fedf0922bad10b0913dab399dbf6f671b8df",
+  "checksum": "dc978ad414fb0f5ad2be4c7c980f674c2681de5dc239cce00ae81f6b47f4ed6f",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -3070,6 +3070,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

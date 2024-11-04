@@ -1,5 +1,5 @@
 {
-  "checksum": "ecc38493e99408e7fd2e8bbb5731db5b59cfc64b92c3db5641c6eed0bd809419",
+  "checksum": "fc68bac1f7716fee683f636af22b11d286dbb45c059a18372d3c647531097be4",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -6247,6 +6247,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -6282,6 +6283,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -6294,7 +6296,8 @@
     ],
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasi",
+      "wasm32-wasip1"
     ],
     "cfg(target_os = \"windows\")": [
       "aarch64-pc-windows-msvc",
@@ -6373,6 +6376,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

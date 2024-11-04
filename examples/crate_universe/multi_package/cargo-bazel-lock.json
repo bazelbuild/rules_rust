@@ -1,5 +1,5 @@
 {
-  "checksum": "c07f953d57122cde54b1e0c33732c26fc35c1f039ab3bccd114577747838299a",
+  "checksum": "5f9f542fb5d7f755899484d25795cd4d59335d6d218294af5ed485a22cd0c779",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1262,6 +1262,36 @@
               }
             ],
             "wasm32-wasi": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-channel 0.3.26",
+                "target": "futures_channel"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              },
+              {
+                "id": "gloo-timers 0.2.6",
+                "target": "gloo_timers"
+              },
+              {
+                "id": "wasm-bindgen-futures 0.4.34",
+                "target": "wasm_bindgen_futures"
+              }
+            ],
+            "wasm32-wasip1": [
               {
                 "id": "async-global-executor 2.3.1",
                 "target": "async_global_executor"
@@ -3242,6 +3272,16 @@
               "std",
               "waker-fn"
             ],
+            "wasm32-wasip1": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
             "x86_64-apple-darwin": [
               "alloc",
               "default",
@@ -3853,6 +3893,28 @@
               }
             ],
             "wasm32-wasi": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "wasm32-wasip1": [
               {
                 "id": "fastrand 1.9.0",
                 "target": "fastrand"
@@ -14828,6 +14890,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -14863,6 +14926,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -14875,7 +14939,8 @@
     ],
     "cfg(target_arch = \"wasm32\")": [
       "wasm32-unknown-unknown",
-      "wasm32-wasi"
+      "wasm32-wasi",
+      "wasm32-wasip1"
     ],
     "cfg(target_env = \"msvc\")": [
       "aarch64-pc-windows-msvc",
@@ -14884,7 +14949,8 @@
     ],
     "cfg(target_feature = \"atomics\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasi",
+      "wasm32-wasip1"
     ],
     "cfg(target_os = \"windows\")": [
       "aarch64-pc-windows-msvc",
@@ -14963,6 +15029,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

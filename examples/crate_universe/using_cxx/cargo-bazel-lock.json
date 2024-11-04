@@ -1,5 +1,5 @@
 {
-  "checksum": "56a8453896248b02768383d12773c916598e53313cba7e7ec7410a06c3c8f65b",
+  "checksum": "f56264a830f95c58f95f6b381314a888926dd242ec2abf41fd6d2434eb712fab",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -775,6 +775,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

@@ -69,6 +69,7 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -82,7 +83,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.7.2:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.8.0:bytes",
         "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",

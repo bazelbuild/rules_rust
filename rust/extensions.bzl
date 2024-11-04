@@ -69,7 +69,9 @@ def _rust_impl(module_ctx):
                 urls = toolchain.urls,
                 versions = toolchain.versions,
                 register_toolchains = False,
+                aliases = toolchain.aliases,
             )
+    return module_ctx.extension_metadata(reproducible = True)
 
 _COMMON_TAG_KWARGS = dict(
     allocator_library = attr.string(
@@ -109,11 +111,20 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         versions = attr.string_list(
             doc = (
-                "A list of toolchain versions to download. This paramter only accepts one versions " +
+                "A list of toolchain versions to download. This parameter only accepts one version " +
                 "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
                 "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
+        ),
+        aliases = attr.string_dict(
+            doc = (
+                "Map of full toolchain repository name to an alias. If any repository is created by this " +
+                "extension matches a key in this dictionary, the name of the created repository will be " +
+                "remapped to the value instead. This may be required to work around path length limits " +
+                "on Windows."
+            ),
+            default = {},
         ),
         **_COMMON_TAG_KWARGS
     ),

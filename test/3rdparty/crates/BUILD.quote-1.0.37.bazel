@@ -69,6 +69,7 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -82,6 +83,6 @@ rust_library(
     }),
     version = "1.0.37",
     deps = [
-        "@t3p__proc-macro2-1.0.88//:proc_macro2",
+        "@t3p__proc-macro2-1.0.89//:proc_macro2",
     ],
 )

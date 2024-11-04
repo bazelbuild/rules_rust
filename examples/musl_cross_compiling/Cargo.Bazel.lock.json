@@ -1,5 +1,5 @@
 {
-  "checksum": "e9e8a540699ba115c7a41a252593566f5b5fee0e34d8960b2a0a646563c1ddca",
+  "checksum": "bc501fbed21fc4e32a24e756bb16c970c8d7d3ce37e0eb6778b25cdb6ba0e9ee",
   "crates": {
     "aes 0.8.4": {
       "name": "aes",
@@ -10572,6 +10572,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -10598,6 +10599,7 @@
       "thumbv8m.main-none-eabi",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -10732,6 +10734,7 @@
       "powerpc-unknown-linux-gnu",
       "s390x-unknown-linux-gnu",
       "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
       "x86_64-linux-android",
@@ -10747,7 +10750,8 @@
       "x86_64-apple-darwin"
     ],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasi",
+      "wasm32-wasip1"
     ],
     "cfg(unix)": [
       "aarch64-apple-darwin",
@@ -10820,6 +10824,9 @@
     ],
     "wasm32-wasi": [
       "wasm32-wasi"
+    ],
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

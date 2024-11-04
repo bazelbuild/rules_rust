@@ -17,7 +17,7 @@ cargo_build_script(
     edition = "2018",
     links = "beep",
     # Add a flag to test that they're exposed to the build script
-    rustc_flags = ["--verbose"],
+    rustc_flags = ["--cfg=foo=\"bar\""],
     toolchains = ["//rust/toolchain:current_rust_toolchain"],
     tools = [":tool"],
 )

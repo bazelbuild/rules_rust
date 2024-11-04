@@ -119,7 +119,8 @@ def rust_register_toolchains(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        versions = _RUST_TOOLCHAIN_VERSIONS):
+        versions = _RUST_TOOLCHAIN_VERSIONS,
+        aliases = {}):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -151,8 +152,9 @@ def rust_register_toolchains(
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
-        versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
+        versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
+        aliases (dict, optional): A mapping of "full" repository name to another name to use instead.
     """
     if not rustfmt_version:
         if len(versions) == 1:
@@ -171,6 +173,10 @@ def rust_register_toolchains(
 
     if not rust_analyzer_version:
         rust_analyzer_version = select_rust_version(versions)
+
+    # Convert to an unfrozen dict to remove mappings as they are used. This will allow us to determine if there
+    # are any unused aliases requested.
+    aliases = dict(aliases)
 
     rust_analyzer_repo_name = "rust_analyzer_{}".format(rust_analyzer_version.replace("/", "-"))
 
@@ -218,9 +224,12 @@ def rust_register_toolchains(
             sha256s = sha256s,
             urls = urls,
             versions = versions,
+            aliases = aliases,
         )
 
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
+        if rustfmt_repo_name in aliases:
+            rustfmt_repo_name = aliases.pop(rustfmt_repo_name)
 
         maybe(
             rustfmt_toolchain_repository,
@@ -236,7 +245,7 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with = None):
+        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with = None, aliases = aliases):
             toolchain_names.append(toolchain.name)
             toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
@@ -248,6 +257,9 @@ def rust_register_toolchains(
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
         target_compatible_with_by_toolchain[rustfmt_repo_name] = []
         toolchain_types[rustfmt_repo_name] = "@rules_rust//rust/rustfmt:toolchain_type"
+
+    if aliases:
+        fail("No repositories were created matching the requested names to alias:\n{}".format("\n".join(sorted(aliases))))
 
     toolchain_repository_hub(
         name = "rust_toolchains",
@@ -924,7 +936,7 @@ rust_toolchain_set_repository = repository_rule(
     implementation = _rust_toolchain_set_repository_impl,
 )
 
-def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with):
+def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with, aliases = {}):
     extra_target_triples_list = extra_target_triples.keys() if type(extra_target_triples) == "dict" else extra_target_triples
 
     toolchain_repos = []
@@ -955,8 +967,12 @@ def _get_toolchain_repositories(name, exec_triple, extra_target_triples, version
 
         # Define toolchains for each requested version
         for channel in channels.values():
+            # Check if this toolchain is requested to be aliased.
+            full_name = "{}__{}__{}".format(name, target_triple, channel.name)
+            if full_name in aliases:
+                full_name = aliases.pop(full_name)
             toolchain_repos.append(struct(
-                name = "{}__{}__{}".format(name, target_triple, channel.name),
+                name = full_name,
                 target_triple = target_triple,
                 channel = channel,
                 target_constraints = target_constraints,
@@ -985,7 +1001,8 @@ def rust_repository_set(
         auth_patterns = None,
         register_toolchain = True,
         exec_compatible_with = None,
-        default_target_compatible_with = None):
+        default_target_compatible_with = None,
+        aliases = {}):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -1021,10 +1038,11 @@ def rust_repository_set(
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
+        aliases (dict): Replacement names to use for toolchains created by this macro.
     """
 
     all_toolchain_names = []
-    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, default_target_compatible_with):
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, default_target_compatible_with, aliases):
         # Infer toolchain-specific rustc flags depending on the type (list, dict, optional) of extra_rustc_flags
         if extra_rustc_flags == None:
             toolchain_extra_rustc_flags = []

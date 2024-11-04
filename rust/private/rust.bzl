@@ -221,7 +221,11 @@ def _rust_binary_impl(ctx):
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
-    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    if ctx.attr.binary_name:
+        output_filename = ctx.attr.binary_name
+    else:
+        output_filename = ctx.label.name
+    output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
@@ -261,6 +265,7 @@ def _rust_binary_impl(ctx):
             ctx,
             ctx.attr.env,
             ctx.attr.data,
+            {},
         ),
     ))
 
@@ -345,7 +350,10 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         ))
+        aliases = dict(crate.aliases)
+        aliases.update(ctx.attr.aliases)
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
@@ -355,7 +363,7 @@ def _rust_test_impl(ctx):
             srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
-            aliases = ctx.attr.aliases,
+            aliases = aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             edition = crate.edition,
@@ -394,6 +402,7 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         )
 
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -430,6 +439,7 @@ def _rust_test_impl(ctx):
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
+        {},
     )
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
@@ -1031,6 +1041,12 @@ rust_proc_macro = rule(
 )
 
 _rust_binary_attrs = dict({
+    "binary_name": attr.string(
+        doc = dedent("""\
+            Override the resulting binary file name. By default, the binary file will be named using the `name` attribute on this rule,
+            however sometimes that is not deseriable.
+        """),
+    ),
     "crate_type": attr.string(
         doc = dedent("""\
             Crate type that will be passed to `rustc` to be used for building this crate.

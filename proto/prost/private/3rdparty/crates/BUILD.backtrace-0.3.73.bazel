@@ -67,6 +67,7 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -217,6 +218,12 @@ rust_library(
             "@rules_rust_prost__object-0.36.3//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
+            "@rules_rust_prost__addr2line-0.22.0//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rules_rust_prost__libc-0.2.158//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rules_rust_prost__miniz_oxide-0.7.4//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rules_rust_prost__object-0.36.3//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+        ],
+        "@rules_rust//rust/platform:wasm32-wasip1": [
             "@rules_rust_prost__addr2line-0.22.0//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rules_rust_prost__libc-0.2.158//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rules_rust_prost__miniz_oxide-0.7.4//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))

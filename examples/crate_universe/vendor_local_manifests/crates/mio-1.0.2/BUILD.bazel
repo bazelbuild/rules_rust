@@ -71,6 +71,7 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -142,6 +143,10 @@ rust_library(
             "//vendor_local_manifests/crates/libc-0.2.161:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:wasm32-wasi": [
+            "//vendor_local_manifests/crates/libc-0.2.161:libc",  # cfg(target_os = "wasi")
+            "//vendor_local_manifests/crates/wasi-0.11.0-wasi-snapshot-preview1:wasi",  # cfg(target_os = "wasi")
+        ],
+        "@rules_rust//rust/platform:wasm32-wasip1": [
             "//vendor_local_manifests/crates/libc-0.2.161:libc",  # cfg(target_os = "wasi")
             "//vendor_local_manifests/crates/wasi-0.11.0-wasi-snapshot-preview1:wasi",  # cfg(target_os = "wasi")
         ],
