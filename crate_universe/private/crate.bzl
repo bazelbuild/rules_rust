@@ -240,7 +240,7 @@ def _stringify_list(values):
         new_selects = {}
 
         for k, v in values.selects.items():
-            new_selects[k] = [str(x) for x in values.selects[k]]
+            new_selects[k] = [str(x) for x in v]
 
         return struct(common = [str(x) for x in values.common], selects = new_selects)
 
