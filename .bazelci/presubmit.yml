@@ -51,6 +51,8 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
   - "-//tools/runfiles/..."
+  # Runfiles used by the test only.
+  - "-//test/empty_suite:deps_test"
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
