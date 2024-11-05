@@ -212,7 +212,7 @@ clippy_flags(
 
 clippy_flag(
     name = "clippy_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
@@ -228,7 +228,7 @@ extra_rustc_flags(
 
 extra_rustc_flag(
     name = "extra_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
@@ -244,12 +244,12 @@ extra_exec_rustc_flags(
 
 extra_exec_rustc_flag(
     name = "extra_exec_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
 per_crate_rustc_flag(
     name = "experimental_per_crate_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )

@@ -2212,7 +2212,7 @@ extra_rustc_flag = rule(
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _extra_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _extra_exec_rustc_flags_impl(ctx):
@@ -2237,7 +2237,7 @@ extra_exec_rustc_flag = rule(
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _per_crate_rustc_flag_impl(ctx):
@@ -2253,7 +2253,7 @@ per_crate_rustc_flag = rule(
         "Multiple uses are accumulated."
     ),
     implementation = _per_crate_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _no_std_impl(ctx):

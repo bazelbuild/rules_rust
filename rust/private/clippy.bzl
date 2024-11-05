@@ -43,7 +43,7 @@ clippy_flag = rule(
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _clippy_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _clippy_flags_impl(ctx):
