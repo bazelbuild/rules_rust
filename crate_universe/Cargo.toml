@@ -45,7 +45,7 @@ serde_starlark = "0.1.16"
 sha2 = "0.10.8"
 spdx = "0.10.6"
 tempfile = "3.13.0"
-tera = "1.19.1"
+tera = { version = "1.19.1", default-features = false }
 textwrap = "0.16.1"
 toml = "0.8.19"
 tracing = "0.1.40"
