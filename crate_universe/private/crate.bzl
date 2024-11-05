@@ -230,7 +230,21 @@ def _stringify_label(value):
 def _stringify_list(values):
     if not values:
         return values
-    return [str(x) for x in values]
+
+    if type(values) == "list":
+        return [str(x) for x in values]
+
+    # if values is a struct with a "selects" attribute, assume it was created with
+    # crate.select() and map values for all platforms
+    if type(values) == "struct" and type(values.selects) != "NoneType":
+        new_selects = {}
+
+        for k, v in values.selects.items():
+            new_selects[k] = [str(x) for x in v]
+
+        return struct(common = [str(x) for x in values.common], selects = new_selects)
+
+    fail("Cannot stringify unknown type for list '{}'".format(values))
 
 def _select(common, selects):
     """A Starlark Select for `crate.annotation()`.
