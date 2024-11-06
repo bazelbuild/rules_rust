@@ -252,7 +252,7 @@ cargo_bootstrap_repository = repository_rule(
         ),
         "cargo_config": attr.label(
             doc = "The path of the Cargo configuration (`Config.toml`) file.",
-            allow_single_file = ["Cargo.toml"],
+            allow_single_file = True,
         ),
         "cargo_lockfile": attr.label(
             doc = "The lockfile of the crate_universe resolver",
