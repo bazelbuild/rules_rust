@@ -71,7 +71,10 @@ def _rust_impl(module_ctx):
                 register_toolchains = False,
                 aliases = toolchain.aliases,
             )
-    return module_ctx.extension_metadata(reproducible = True)
+    metadata_kwargs = {}
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        metadata_kwargs["reproducible"] = True
+    return module_ctx.extension_metadata(**metadata_kwargs)
 
 _COMMON_TAG_KWARGS = dict(
     allocator_library = attr.string(
