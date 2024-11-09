@@ -16,7 +16,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
-load("//rust/private:providers.bzl", "BuildInfo")
+load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
@@ -644,6 +644,10 @@ _common_attrs = {
             These can be either other `rust_library` targets or `cc_library` targets if
             linking a native library.
         """),
+    ),
+    "lints": attr.label(
+        doc = "Set of lints to apply when building this crate.",
+        providers = [LintsInfo],
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",

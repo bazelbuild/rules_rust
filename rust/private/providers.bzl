@@ -176,3 +176,12 @@ RustAnalyzerGroupInfo = provider(
         "deps": "List[String]: crate IDs of direct dependencies",
     },
 )
+
+LintsInfo = provider(
+    doc = "LintsInfo holds the 'allow', 'warn', etc. config for rustc, clippy, and rustdoc lints.",
+    fields = {
+        "rustc_lints": "List[String]: rustc flags to specify when building rust_* targets.",
+        "clippy_lints": "List[String]: rustc flags to specify when building clippy targets.",
+        "rustdoc_lints": "List[String]: rustc flags to specify when building rust_doc targets.",
+    },
+)

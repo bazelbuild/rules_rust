@@ -71,6 +71,10 @@ load(
     _rust_unpretty = "rust_unpretty",
     _rust_unpretty_aspect = "rust_unpretty_aspect",
 )
+load(
+    "//rust/private:lints.bzl",
+    _rust_lint_group = "rust_lint_group",
+)
 
 rust_library = _rust_library
 # See @rules_rust//rust/private:rust.bzl for a complete description.
@@ -156,5 +160,8 @@ rustfmt_test = _rustfmt_test
 
 rust_stdlib_filegroup = _rust_stdlib_filegroup
 # See @rules_rust//rust:toolchain.bzl for a complete description.
+
+rust_lint_group = _rust_lint_group
+# See @rules_rust//private:lint.bzl for a complete description.
 
 no_std = _no_std

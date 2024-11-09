@@ -15,6 +15,7 @@
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "LintsInfo")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
 
@@ -187,6 +188,11 @@ def _rust_doc_impl(ctx):
     crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
 
+    if LintsInfo in crate:
+        rustdoc_lints = crate[LintsInfo].rustdoc_lints
+    else:
+        rustdoc_lints = []
+
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
     # Add the current crate as an extern for the compile action
@@ -196,6 +202,7 @@ def _rust_doc_impl(ctx):
     ]
 
     rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+    rustdoc_flags.extend(rustdoc_lints)
 
     action = rustdoc_compile_action(
         ctx = ctx,

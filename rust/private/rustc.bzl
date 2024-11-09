@@ -24,7 +24,7 @@ load(
 )
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:compat.bzl", "abs")
-load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load("//rust/private:providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
@@ -1189,6 +1189,10 @@ def rustc_compile_action(
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
+    # Add flags for any 'rustc' lints that are specified.
+    if hasattr(ctx.attr, "lints") and ctx.attr.lints:
+        rust_flags = rust_flags + ctx.attr.lints[LintsInfo].rustc_lints
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -1544,6 +1548,11 @@ def rustc_compile_action(
 
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
+
+    # A bit unfortunate, but sidecar the lints info so rustdoc can access the
+    # set of lints from the target it is documenting.
+    if hasattr(ctx.attr, "lints") and ctx.attr.lints:
+        providers.append(ctx.attr.lints[LintsInfo])
 
     return providers
 
