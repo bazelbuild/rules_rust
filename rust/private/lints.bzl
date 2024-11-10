@@ -41,8 +41,11 @@ def _rust_lint_group(ctx):
 
     return LintsInfo(
         rustc_lints = rustc_flags,
+        rustc_lint_files = [],
         clippy_lints = clippy_flags,
+        clippy_lint_files = [],
         rustdoc_lints = rustdoc_flags,
+        rustdoc_lint_files = [],
     )
 
 rust_lint_group = rule(
