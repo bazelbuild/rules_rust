@@ -1,6 +1,7 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//proto/prost:defs.bzl", "rust_prost_library")
+load("//proto/prost:defs.bzl", "rust_prost_library", "rust_prost_toolchain")
 load("//rust:defs.bzl", "rust_test")
+load(":transition.bzl", "extra_toolchain_wrapper")
 
 package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
 
@@ -29,5 +30,42 @@ rust_test(
     edition = "2021",
     deps = [
         ":a_rs_proto",
+        # Add b_proto as a dependency directly to ensure compatibility with `a.proto`'s imports.
+        "//proto/prost/private/tests/transitive_dependencies/b:b_rs_proto",
     ],
+)
+
+# Test with transitively included dependencies.
+extra_toolchain_wrapper(
+    name = "a_rs_proto_with_transitive_deps",
+    dep = ":a_rs_proto",
+    toolchain = ":prost_toolchain_transitive_includes_enabled",
+)
+
+rust_test(
+    name = "transitive_deps_test",
+    srcs = ["transitive_deps_test.rs"],
+    edition = "2021",
+    deps = [
+        ":a_rs_proto_with_transitive_deps",
+    ],
+)
+
+toolchain(
+    name = "prost_toolchain_transitive_includes_enabled",
+    toolchain = ":prost_toolchain_transitive_includes_enabled_impl",
+    toolchain_type = "//proto/prost:toolchain_type",
+)
+
+rust_prost_toolchain(
+    name = "prost_toolchain_transitive_includes_enabled_impl",
+    # This is the important delta from the default toolchain.
+    include_transitive_deps = True,
+    prost_plugin = "//proto/prost/private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
+    prost_runtime = "//proto/prost/private:prost_runtime",
+    prost_types = "//proto/prost/private/3rdparty/crates:prost-types",
+    tonic_plugin = "//proto/prost/private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
+    tonic_runtime = "//proto/prost/private:tonic_runtime",
 )

@@ -15,7 +15,7 @@ fn test_encoded_rustflags() {
     // Ensure the `pwd` template has been resolved
     assert!(!flags[0].contains("${pwd}"));
 
-    assert_eq!(flags[1], "--verbose");
+    assert_eq!(flags[1], "--cfg=foo=\"bar\"");
 }
 
 /// Ensure Make variables provided by the `toolchains` attribute are expandable.

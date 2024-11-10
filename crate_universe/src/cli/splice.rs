@@ -77,26 +77,25 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Generate a splicer for creating a Cargo workspace manifest
     let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
 
+    let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
+
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(&opt.cargo)
+        .splice_workspace(&cargo)
         .context("Failed to splice workspace")?;
-
-    let cargo = Cargo::new(opt.cargo);
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
         &manifest_path,
         &opt.cargo_lockfile,
         cargo.clone(),
-        &opt.rustc,
         &opt.repin,
     )
     .context("Failed to generate lockfile")?;
 
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
-    let resolver_data = TreeResolver::new(cargo.clone(), opt.rustc.clone())
+    let resolver_data = TreeResolver::new(cargo.clone())
         .generate(
             manifest_path.as_path_buf(),
             &config.supported_platform_triples,

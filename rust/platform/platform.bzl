@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     ":triple_mappings.bzl",
-    "SUPPORTED_PLATFORM_TRIPLES",
+    "ALL_PLATFORM_TRIPLES",
     "cpu_arch_to_constraints",
     "system_to_constraints",
     "triple_to_constraint_set",
@@ -59,7 +59,7 @@ def declare_config_settings():
         actual = ":darwin",
     )
 
-    all_supported_triples = SUPPORTED_PLATFORM_TRIPLES
+    all_supported_triples = ALL_PLATFORM_TRIPLES
     for triple in all_supported_triples:
         native.config_setting(
             name = triple,
@@ -67,19 +67,41 @@ def declare_config_settings():
         )
 
     native.platform(
-        name = "wasm",
+        name = "wasm32",
         constraint_values = [
             "@platforms//cpu:wasm32",
             str(Label("//rust/platform/os:unknown")),
         ],
     )
 
+    # Add alias for wasm to maintain backwards compatibility.
+    native.alias(
+        name = "wasm",
+        actual = ":wasm32",
+        deprecation = "Use `@rules_rust//rust/platform:wasm32` instead",
+    )
+
     native.platform(
-        name = "wasi",
+        name = "wasm64",
+        constraint_values = [
+            "@platforms//cpu:wasm64",
+            str(Label("//rust/platform/os:unknown")),
+        ],
+    )
+
+    native.platform(
+        name = "wasip1",
         constraint_values = [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
         ],
+    )
+
+    # Add alias for wasi to maintain backwards compatibility.
+    native.alias(
+        name = "wasi",
+        actual = ":wasip1",
+        deprecation = "Use `@rules_rust//rust/platform:wasip1` instead",
     )
 
     selects.config_setting_group(
@@ -91,4 +113,16 @@ def declare_config_settings():
             ":linux",
             ":nto",
         ],
+    )
+
+    native.alias(
+        name = "aarch64-fuchsia",
+        actual = "aarch64-unknown-fuchsia",
+        deprecation = "Use `@rules_rust//rust/platform:aarch64-unknown-fuchsia` instead.",
+    )
+
+    native.alias(
+        name = "x86_64-fuchsia",
+        actual = "x86_64-unknown-fuchsia",
+        deprecation = "Use `@rules_rust//rust/platform:x86_64-unknown-fuchsia` instead.",
     )

@@ -448,7 +448,6 @@ pub(crate) fn generate_lockfile(
     manifest_path: &SplicedManifest,
     existing_lock: &Option<PathBuf>,
     cargo_bin: Cargo,
-    rustc_bin: &Path,
     update_request: &Option<CargoUpdateRequest>,
 ) -> Result<cargo_lock::Lockfile> {
     let manifest_dir = manifest_path
@@ -464,7 +463,7 @@ pub(crate) fn generate_lockfile(
     }
 
     // Generate the new lockfile
-    let lockfile = LockGenerator::new(cargo_bin, PathBuf::from(rustc_bin)).generate(
+    let lockfile = LockGenerator::new(cargo_bin).generate(
         manifest_path.as_path_buf(),
         existing_lock,
         update_request,
@@ -488,7 +487,8 @@ mod test {
         let path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json"
-        );
+        )
+        .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
 
@@ -572,7 +572,8 @@ mod test {
         let path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/serialized_configs/splicing_manifest.json"
-        );
+        )
+        .unwrap();
 
         let content = std::fs::read_to_string(path).unwrap();
 
@@ -617,16 +618,19 @@ mod test {
         let workspace_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/Cargo.toml"
-        );
+        )
+        .unwrap();
         let workspace_path = workspace_manifest_path.parent().unwrap().to_path_buf();
         let child_a_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_a/Cargo.toml"
-        );
+        )
+        .unwrap();
         let child_b_manifest_path = runfiles::rlocation!(
             runfiles,
             "rules_rust/crate_universe/test_data/metadata/workspace_path/child_b/Cargo.toml"
-        );
+        )
+        .unwrap();
         let manifest = SplicingManifest {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([

@@ -30,6 +30,10 @@ MODULE.bazel.lock
 .vscode
 *.code-workspace
 
+# JetBrains
+.idea
+.idea/**
+
 # BazelCI
 bazelci.py
 

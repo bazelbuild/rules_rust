@@ -9,8 +9,10 @@
 
 #include <stdint.h>
 
-EXTERN_C const int64_t SIMPLE_VALUE = 42;
+static const int64_t SIMPLE_VALUE = 42;
 
 EXTERN_C const int64_t simple_function();
+
+static inline int64_t simple_static_function() { return 84; }
 
 #endif

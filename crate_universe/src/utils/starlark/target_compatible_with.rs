@@ -31,7 +31,7 @@ impl Serialize for TargetCompatibleWith {
 
         struct SelectInner<'a>(&'a BTreeSet<String>);
 
-        impl<'a> Serialize for SelectInner<'a> {
+        impl Serialize for SelectInner<'_> {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: Serializer,

@@ -5,9 +5,21 @@ load("//rust:defs.bzl", "rust_test")
 package(default_visibility = ["//proto/prost/private/tests:__subpackages__"])
 
 proto_library(
+    name = "imported_keyword_proto",
+    srcs = [
+        "imported_keyword.proto",
+    ],
+    strip_import_prefix = "/proto/prost/private/tests/keywords",
+)
+
+proto_library(
     name = "mod_named_mod_proto",
     srcs = [
         "mod_named_mod.proto",
+    ],
+    strip_import_prefix = "/proto/prost/private/tests/keywords",
+    deps = [
+        ":imported_keyword_proto",
     ],
 )
 
@@ -16,11 +28,17 @@ rust_prost_library(
     proto = ":mod_named_mod_proto",
 )
 
+rust_prost_library(
+    name = "imported_keyword_rs_proto",
+    proto = ":imported_keyword_proto",
+)
+
 rust_test(
     name = "mod_named_mod_test",
     srcs = ["mod_named_mod_test.rs"],
     edition = "2021",
     deps = [
+        ":imported_keyword_rs_proto",
         ":mod_named_mod_rs_proto",
     ],
 )

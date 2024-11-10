@@ -1,6 +1,7 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
+load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 load("//proto/prost:providers.bzl", "ProstProtoInfo")
 load("//rust:defs.bzl", "rust_common")
 
@@ -49,9 +50,10 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     package_info_file = ctx.actions.declare_file(ctx.label.name + ".prost_package_info")
     lib_rs = ctx.actions.declare_file("{}.lib.rs".format(ctx.label.name))
 
-    proto_compiler = prost_toolchain.proto_compiler[DefaultInfo].files_to_run
+    proto_compiler = prost_toolchain.proto_compiler
     tools = depset([proto_compiler.executable])
 
+    direct_crate_names = [dep[ProstProtoInfo].dep_variant_info.crate_info.name for dep in deps]
     additional_args = ctx.actions.args()
 
     # Prost process wrapper specific args
@@ -60,6 +62,7 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     additional_args.add("--out_librs={}".format(lib_rs.path))
     additional_args.add("--package_info_output={}".format("{}={}".format(crate_name, package_info_file.path)))
     additional_args.add("--deps_info={}".format(deps_info_file.path))
+    additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
     additional_args.add("--prost_opt=compile_well_known_types")
     additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
     additional_args.add_all(prost_toolchain.prost_opts, format_each = "--prost_opt=%s")
@@ -198,7 +201,7 @@ def _rust_prost_aspect_impl(target, ctx):
     runtime_deps = []
 
     rustfmt_toolchain = ctx.toolchains["@rules_rust//rust/rustfmt:toolchain_type"]
-    prost_toolchain = ctx.toolchains["@rules_rust//proto/prost:toolchain_type"]
+    prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
     for prost_runtime in [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]:
         if not prost_runtime:
             continue
@@ -259,6 +262,7 @@ def _rust_prost_aspect_impl(target, ctx):
     cfgs = ["test", "debug_assertions"]
 
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        aliases = {},
         crate = dep_variant_info.crate_info,
         cfgs = cfgs,
         env = dep_variant_info.crate_info.rustc_env,
@@ -314,12 +318,18 @@ def _rust_prost_library_impl(ctx):
     rust_proto_info = proto_dep[ProstProtoInfo]
     dep_variant_info = rust_proto_info.dep_variant_info
 
+    prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
+
+    transitive = []
+    if prost_toolchain.include_transitive_deps:
+        transitive = [rust_proto_info.transitive_dep_infos]
+
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
         rust_common.crate_group_info(
             dep_variant_infos = depset(
                 [dep_variant_info],
-                transitive = [rust_proto_info.transitive_dep_infos],
+                transitive = transitive,
             ),
         ),
         RustAnalyzerGroupInfo(deps = [proto_dep[RustAnalyzerInfo]]),
@@ -341,6 +351,9 @@ rust_prost_library = rule(
             cfg = "exec",
         ),
     },
+    toolchains = [
+        TOOLCHAIN_TYPE,
+    ],
 )
 
 def _rust_prost_toolchain_impl(ctx):
@@ -348,25 +361,43 @@ def _rust_prost_toolchain_impl(ctx):
     if any(tonic_attrs) and not all(tonic_attrs):
         fail("When one tonic attribute is added, all must be added")
 
+    proto_toolchain = proto_toolchains.find_toolchain(
+        ctx,
+        legacy_attr = "_legacy_proto_toolchain",
+        toolchain_type = "@rules_proto//proto:toolchain_type",
+    )
+
+    if ctx.attr.proto_compiler:
+        # buildifier: disable=print
+        print("WARN: rust_prost_toolchain's proto_compiler attribute is deprecated. Make sure your rules_proto dependency is at least version 6.0.0 and stop setting proto_compiler")
+        proto_compiler = ctx.attr.proto_compiler[DefaultInfo].files_to_run
+    else:
+        proto_compiler = proto_toolchain.proto_compiler
+
     return [platform_common.ToolchainInfo(
         prost_opts = ctx.attr.prost_opts,
         prost_plugin = ctx.attr.prost_plugin,
         prost_plugin_flag = ctx.attr.prost_plugin_flag,
         prost_runtime = ctx.attr.prost_runtime,
         prost_types = ctx.attr.prost_types,
-        proto_compiler = ctx.attr.proto_compiler,
+        proto_compiler = proto_compiler,
         protoc_opts = ctx.fragments.proto.experimental_protoc_opts,
         tonic_opts = ctx.attr.tonic_opts,
         tonic_plugin = ctx.attr.tonic_plugin,
         tonic_plugin_flag = ctx.attr.tonic_plugin_flag,
         tonic_runtime = ctx.attr.tonic_runtime,
+        include_transitive_deps = ctx.attr.include_transitive_deps,
     )]
 
 rust_prost_toolchain = rule(
     implementation = _rust_prost_toolchain_impl,
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
-    attrs = {
+    attrs = dict({
+        "include_transitive_deps": attr.bool(
+            doc = "Whether to include transitive dependencies. If set to True, all transitive dependencies will directly accessible by the dependent crate.",
+            default = False,
+        ),
         "prost_opts": attr.string_list(
             doc = "Additional options to add to Prost.",
         ),
@@ -391,10 +422,9 @@ rust_prost_toolchain = rule(
             mandatory = True,
         ),
         "proto_compiler": attr.label(
-            doc = "The protoc compiler to use.",
+            doc = "The protoc compiler to use. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.",
             cfg = "exec",
             executable = True,
-            mandatory = True,
         ),
         "tonic_opts": attr.string_list(
             doc = "Additional options to add to Tonic.",
@@ -412,7 +442,12 @@ rust_prost_toolchain = rule(
             doc = "The Tonic runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
         ),
-    },
+    }, **proto_toolchains.if_legacy_toolchain({
+        "_legacy_proto_toolchain": attr.label(
+            default = "//proto/protobuf:legacy_proto_toolchain",
+        ),
+    })),
+    toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),
 )
 
 def _current_prost_runtime_impl(ctx):

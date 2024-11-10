@@ -5,13 +5,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use cargo_metadata::MetadataCommand;
 use cargo_toml::{Dependency, Manifest};
 use normpath::PathExt;
 
 use crate::config::CrateId;
-use crate::splicing::{SplicedManifest, SplicingManifest};
+use crate::splicing::{Cargo, SplicedManifest, SplicingManifest};
 use crate::utils::starlark::Label;
+use crate::utils::symlink::{remove_symlink, symlink};
 
 use super::{read_manifest, DirectPackageManifest, WorkspaceMetadata};
 
@@ -45,7 +45,7 @@ impl<'a> SplicerKind<'a> {
     pub(crate) fn new(
         manifests: &'a BTreeMap<PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
-        cargo: &Path,
+        cargo_bin: &Cargo,
     ) -> Result<Self> {
         // First check for any workspaces in the provided manifests
         let workspace_owned: BTreeMap<&PathBuf, &Manifest> = manifests
@@ -75,10 +75,8 @@ impl<'a> SplicerKind<'a> {
             if workspace_roots.is_empty() {
                 let sorted_manifests: BTreeSet<_> = manifests.keys().collect();
                 for manifest_path in sorted_manifests {
-                    let metadata_result = MetadataCommand::new()
-                        .cargo_path(cargo)
-                        .current_dir(manifest_path.parent().unwrap())
-                        .manifest_path(manifest_path)
+                    let metadata_result = cargo_bin
+                        .metadata_command_with_options(manifest_path, Vec::new())?
                         .no_deps()
                         .exec();
                     if let Ok(metadata) = metadata_result {
@@ -548,12 +546,11 @@ impl Splicer {
     }
 
     /// Build a new workspace root
-    pub(crate) fn splice_workspace(&self, cargo: &Path) -> Result<SplicedManifest> {
+    pub(crate) fn splice_workspace(&self, cargo: &Cargo) -> Result<SplicedManifest> {
         SplicerKind::new(&self.manifests, &self.splicing_manifest, cargo)?
             .splice(&self.workspace_dir)
     }
 }
-
 const DEFAULT_SPLICING_PACKAGE_NAME: &str = "direct-cargo-bazel-deps";
 const DEFAULT_SPLICING_PACKAGE_VERSION: &str = "0.0.1";
 
@@ -658,6 +655,13 @@ pub(crate) fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -
         fs::create_dir_all(parent)?;
     }
 
+    // Write an intermediate manifest so we can run `cargo metadata` to list all the transitive proc-macros.
+    write_manifest(path, &manifest)?;
+
+    Ok(())
+}
+
+pub(crate) fn write_manifest(path: &Path, manifest: &cargo_toml::Manifest) -> Result<()> {
     // TODO(https://gitlab.com/crates.rs/cargo_toml/-/issues/3)
     let value = toml::Value::try_from(manifest)?;
     let content = toml::to_string(&value)?;
@@ -667,38 +671,6 @@ pub(crate) fn write_root_manifest(path: &Path, manifest: cargo_toml::Manifest) -
         content
     );
     fs::write(path, content).context(format!("Failed to write manifest to {}", path.display()))
-}
-
-/// Create a symlink file on unix systems
-#[cfg(target_family = "unix")]
-fn symlink(src: &Path, dest: &Path) -> Result<(), std::io::Error> {
-    std::os::unix::fs::symlink(src, dest)
-}
-
-/// Create a symlink file on windows systems
-#[cfg(target_family = "windows")]
-fn symlink(src: &Path, dest: &Path) -> Result<(), std::io::Error> {
-    if src.is_dir() {
-        std::os::windows::fs::symlink_dir(src, dest)
-    } else {
-        std::os::windows::fs::symlink_file(src, dest)
-    }
-}
-
-/// Create a symlink file on unix systems
-#[cfg(target_family = "unix")]
-fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
-    fs::remove_file(path)
-}
-
-/// Create a symlink file on windows systems
-#[cfg(target_family = "windows")]
-fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
-    if path.is_dir() {
-        fs::remove_dir(path)
-    } else {
-        fs::remove_file(path)
-    }
 }
 
 /// Symlinks the root contents of a source directory into a destination directory
@@ -775,12 +747,26 @@ mod test {
         };
     }
 
+    fn should_skip_network_test() -> bool {
+        // Some test cases require network access to build pull crate metadata
+        // so that we can actually run `cargo tree`. However, RBE (and perhaps
+        // other environments) disallow or don't support this. In those cases,
+        // we just skip this test case.
+        use std::net::ToSocketAddrs;
+        if "github.com:443".to_socket_addrs().is_err() {
+            eprintln!("This test case requires network access.");
+            true
+        } else {
+            false
+        }
+    }
+
     /// Get cargo and rustc binaries the Bazel way
     #[cfg(not(feature = "cargo"))]
     fn get_cargo_and_rustc_paths() -> (PathBuf, PathBuf) {
         let r = runfiles::Runfiles::create().unwrap();
-        let cargo_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("CARGO")));
-        let rustc_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("RUSTC")));
+        let cargo_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("CARGO"))).unwrap();
+        let rustc_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("RUSTC"))).unwrap();
 
         (cargo_path, rustc_path)
     }
@@ -791,29 +777,15 @@ mod test {
         (PathBuf::from("cargo"), PathBuf::from("rustc"))
     }
 
-    fn cargo() -> PathBuf {
-        get_cargo_and_rustc_paths().0
+    fn cargo() -> Cargo {
+        let (cargo, rustc) = get_cargo_and_rustc_paths();
+        Cargo::new(cargo, rustc)
     }
 
     fn generate_metadata(manifest_path: &Path) -> cargo_metadata::Metadata {
-        let manifest_dir = manifest_path.parent().unwrap_or_else(|| {
-            panic!(
-                "The given manifest has no parent directory: {}",
-                manifest_path.display()
-            )
-        });
-
-        let (cargo_path, rustc_path) = get_cargo_and_rustc_paths();
-
-        MetadataCommand::new()
-            .cargo_path(cargo_path)
-            // Cargo detects config files based on `pwd` when running so
-            // to ensure user provided Cargo config files are used, it's
-            // critical to set the working directory to the manifest dir.
-            .current_dir(manifest_dir)
-            .manifest_path(manifest_path)
-            .other_options(["--offline".to_owned()])
-            .env("RUSTC", rustc_path)
+        cargo()
+            .metadata_command_with_options(manifest_path, vec!["--offline".to_owned()])
+            .unwrap()
             .exec()
             .unwrap()
     }
@@ -1087,8 +1059,7 @@ mod test {
                 .unwrap();
 
         // Locate cargo
-        let (_, cargo_path) = get_cargo_and_rustc_paths();
-        let cargo = Cargo::new(cargo_path);
+        let cargo = cargo();
 
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1131,8 +1102,7 @@ mod test {
                 .unwrap();
 
         // Locate cargo
-        let (_, cargo_path) = get_cargo_and_rustc_paths();
-        let cargo = Cargo::new(cargo_path);
+        let cargo = cargo();
 
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1323,8 +1293,7 @@ mod test {
                 .unwrap();
 
         // Locate cargo
-        let (_, cargo_path) = get_cargo_and_rustc_paths();
-        let cargo = Cargo::new(cargo_path);
+        let cargo = cargo();
 
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1372,8 +1341,7 @@ mod test {
         );
 
         // Locate cargo
-        let (_, cargo_path) = get_cargo_and_rustc_paths();
-        let cargo = Cargo::new(cargo_path);
+        let cargo = cargo();
 
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1423,8 +1391,7 @@ mod test {
         );
 
         // Locate cargo
-        let (_, cargo_path) = get_cargo_and_rustc_paths();
-        let cargo = Cargo::new(cargo_path);
+        let cargo = cargo();
 
         // Ensure metadata is valid
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1449,14 +1416,18 @@ mod test {
 
     #[test]
     fn splice_multi_package_with_direct_deps() {
-        let (mut splicing_manifest, _cache_dir) = mock_splicing_manifest_with_multi_package();
+        if should_skip_network_test() {
+            return;
+        }
+
+        let (mut splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
         // Add a "direct dependency" entry
         splicing_manifest.direct_packages.insert(
-            "fake_pkg".to_owned(),
+            "syn".to_owned(),
             cargo_toml::DependencyDetail {
-                version: Some("1.2.3".to_owned()),
-                ..cargo_toml::DependencyDetail::default()
+                version: Some("1.0.109".to_owned()),
+                ..syn_dependency_detail()
             },
         );
 
@@ -1465,7 +1436,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
                 .unwrap()
-                .splice_workspace(&cargo())
+                .splice_workspace(&cargo().with_cargo_home(cache_dir.path().to_owned()))
                 .unwrap();
 
         // Check the default resolver version
@@ -1480,14 +1451,18 @@ mod test {
 
     #[test]
     fn splice_multi_package_with_patch() {
+        if should_skip_network_test() {
+            return;
+        }
+
         let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
         // Generate a patch entry
         let expected = cargo_toml::PatchSet::from([(
-            "registry".to_owned(),
+            "crates-io".to_owned(),
             BTreeMap::from([(
-                "foo".to_owned(),
-                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                "syn".to_owned(),
+                cargo_toml::Dependency::Detailed(Box::new(syn_dependency_detail())),
             )]),
         )]);
 
@@ -1503,49 +1478,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
                 .unwrap()
-                .splice_workspace(&cargo())
-                .unwrap();
-
-        // Ensure the patches match the expected value
-        let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(expected, cargo_manifest.patch);
-    }
-
-    #[test]
-    fn splice_multi_package_with_multiple_patch_registries() {
-        let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
-
-        let mut expected = cargo_toml::PatchSet::new();
-
-        for pkg in ["pkg_a", "pkg_b"] {
-            // Generate a patch entry
-            let new_patch = cargo_toml::PatchSet::from([(
-                format!("{pkg}_registry"),
-                BTreeMap::from([(
-                    "foo".to_owned(),
-                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
-                )]),
-            )]);
-            expected.extend(new_patch.clone());
-
-            // Insert the patch entry to the manifests
-            let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
-            let mut manifest =
-                cargo_toml::Manifest::from_str(&fs::read_to_string(&manifest_path).unwrap())
-                    .unwrap();
-            manifest.patch.extend(new_patch);
-            fs::write(manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
-        }
-
-        // Splice the workspace
-        let workspace_root = tempfile::tempdir().unwrap();
-        let workspace_manifest =
-            Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
-                .unwrap()
-                .splice_workspace(&cargo())
+                .splice_workspace(&cargo().with_cargo_home(cache_dir.path().to_owned()))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1558,31 +1491,41 @@ mod test {
 
     #[test]
     fn splice_multi_package_with_merged_patch_registries() {
+        if should_skip_network_test() {
+            return;
+        }
+
         let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
         let expected = cargo_toml::PatchSet::from([(
-            "registry".to_owned(),
+            "crates-io".to_owned(),
             cargo_toml::DepsSet::from([
                 (
-                    "foo-pkg_a".to_owned(),
-                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                    "syn".to_owned(),
+                    cargo_toml::Dependency::Detailed(Box::new(syn_dependency_detail())),
                 ),
                 (
-                    "foo-pkg_b".to_owned(),
-                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                    "lazy_static".to_owned(),
+                    cargo_toml::Dependency::Detailed(Box::new(lazy_static_dependency_detail())),
                 ),
             ]),
         )]);
 
         for pkg in ["pkg_a", "pkg_b"] {
             // Generate a patch entry
-            let new_patch = cargo_toml::PatchSet::from([(
-                "registry".to_owned(),
-                BTreeMap::from([(
-                    format!("foo-{pkg}"),
-                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
-                )]),
-            )]);
+            let mut map = BTreeMap::new();
+            if pkg == "pkg_a" {
+                map.insert(
+                    "syn".to_owned(),
+                    cargo_toml::Dependency::Detailed(Box::new(syn_dependency_detail())),
+                );
+            } else {
+                map.insert(
+                    "lazy_static".to_owned(),
+                    cargo_toml::Dependency::Detailed(Box::new(lazy_static_dependency_detail())),
+                );
+            }
+            let new_patch = cargo_toml::PatchSet::from([("crates-io".to_owned(), map)]);
 
             // Insert the patch entry to the manifests
             let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
@@ -1598,7 +1541,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
                 .unwrap()
-                .splice_workspace(&cargo())
+                .splice_workspace(&cargo().with_cargo_home(cache_dir.path().to_owned()))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1611,23 +1554,27 @@ mod test {
 
     #[test]
     fn splice_multi_package_with_merged_identical_patch_registries() {
+        if should_skip_network_test() {
+            return;
+        }
+
         let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
         let expected = cargo_toml::PatchSet::from([(
-            "registry".to_owned(),
+            "crates-io".to_owned(),
             cargo_toml::DepsSet::from([(
-                "foo".to_owned(),
-                cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                "syn".to_owned(),
+                cargo_toml::Dependency::Detailed(Box::new(syn_dependency_detail())),
             )]),
         )]);
 
         for pkg in ["pkg_a", "pkg_b"] {
             // Generate a patch entry
             let new_patch = cargo_toml::PatchSet::from([(
-                "registry".to_owned(),
+                "crates-io".to_owned(),
                 BTreeMap::from([(
-                    "foo".to_owned(),
-                    cargo_toml::Dependency::Simple("1.2.3".to_owned()),
+                    "syn".to_owned(),
+                    cargo_toml::Dependency::Detailed(Box::new(syn_dependency_detail())),
                 )]),
             )]);
 
@@ -1645,7 +1592,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(workspace_root.as_ref().to_path_buf(), splicing_manifest)
                 .unwrap()
-                .splice_workspace(&cargo())
+                .splice_workspace(&cargo().with_cargo_home(cache_dir.path().to_owned()))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1983,5 +1930,21 @@ mod test {
     fn touch(path: &Path) {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(path, []).unwrap();
+    }
+
+    fn syn_dependency_detail() -> cargo_toml::DependencyDetail {
+        cargo_toml::DependencyDetail {
+            git: Some("https://github.com/dtolnay/syn.git".to_owned()),
+            tag: Some("1.0.109".to_owned()),
+            ..cargo_toml::DependencyDetail::default()
+        }
+    }
+
+    fn lazy_static_dependency_detail() -> cargo_toml::DependencyDetail {
+        cargo_toml::DependencyDetail {
+            git: Some("https://github.com/rust-lang-nursery/lazy-static.rs.git".to_owned()),
+            tag: Some("1.5.0".to_owned()),
+            ..cargo_toml::DependencyDetail::default()
+        }
     }
 }

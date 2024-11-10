@@ -436,6 +436,8 @@ impl Renderer {
     ) -> Result<CargoBuildScript> {
         let attrs = krate.build_script_attrs.as_ref();
 
+        const COMPILE_DATA_GLOB_EXCLUDES: &[&str] = &["**/*.rs"];
+
         Ok(CargoBuildScript {
             // Because `cargo_build_script` does some invisible target name
             // mutating to determine the package and crate name for a build
@@ -454,9 +456,15 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
-            compile_data: make_data(
+            compile_data: make_data_with_exclude(
                 platforms,
-                Default::default(),
+                attrs
+                    .map(|attrs| attrs.compile_data_glob.clone())
+                    .unwrap_or_default(),
+                COMPILE_DATA_GLOB_EXCLUDES
+                    .iter()
+                    .map(|&pattern| pattern.to_owned())
+                    .collect(),
                 attrs
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
@@ -870,9 +878,10 @@ fn render_build_file_template(template: &str, name: &str, version: &str) -> Resu
     )
 }
 
-fn make_data(
+fn make_data_with_exclude(
     platforms: &Platforms,
-    glob: BTreeSet<String>,
+    include: BTreeSet<String>,
+    exclude: BTreeSet<String>,
     select: Select<BTreeSet<Label>>,
 ) -> Data {
     const COMMON_GLOB_EXCLUDES: &[&str] = &[
@@ -887,14 +896,23 @@ fn make_data(
     Data {
         glob: Glob {
             allow_empty: true,
-            include: glob,
+            include,
             exclude: COMMON_GLOB_EXCLUDES
                 .iter()
                 .map(|&glob| glob.to_owned())
+                .chain(exclude)
                 .collect(),
         },
         select: SelectSet::new(select, platforms),
     }
+}
+
+fn make_data(
+    platforms: &Platforms,
+    glob: BTreeSet<String>,
+    select: Select<BTreeSet<Label>>,
+) -> Data {
+    make_data_with_exclude(platforms, glob, BTreeSet::new(), select)
 }
 
 #[cfg(test)]
@@ -1070,6 +1088,7 @@ mod test {
         assert!(build_file_content.contains("cargo_build_script("));
         assert!(build_file_content.contains("name = \"build_script_build\""));
         assert!(build_file_content.contains("\"crate-name=mock_crate\""));
+        assert!(build_file_content.contains("compile_data = glob("));
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"_bs\""));

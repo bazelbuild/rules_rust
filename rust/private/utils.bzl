@@ -41,11 +41,12 @@ def find_toolchain(ctx):
     """
     return ctx.toolchains[Label("//rust:toolchain_type")]
 
-def find_cc_toolchain(ctx):
+def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
     """Extracts a CcToolchain from the current target's context
 
     Args:
         ctx (ctx): The current target's rule context object
+        extra_unsupported_features (sequence of str): Extra featrures to disable
 
     Returns:
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
@@ -56,7 +57,8 @@ def find_cc_toolchain(ctx):
         ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
-        unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features,
+        unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features +
+                               list(extra_unsupported_features),
     )
     return cc_toolchain, feature_configuration
 
@@ -240,13 +242,14 @@ def _deduplicate(xs):
 def concat(xss):
     return [x for xs in xss for x in xs]
 
-def _expand_location_for_build_script_runner(ctx, env, data):
+def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
     """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
         ctx (ctx): The rule's context object
         env (str): The value possibly containing location macros to expand.
         data (sequence of Targets): See one of the parent functions.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         string: The location-macro expanded version of the string.
@@ -258,10 +261,10 @@ def _expand_location_for_build_script_runner(ctx, env, data):
     return ctx.expand_make_variables(
         env,
         dedup_expand_location(ctx, env, data),
-        {},
+        known_variables,
     )
 
-def expand_dict_value_locations(ctx, env, data):
+def expand_dict_value_locations(ctx, env, data, known_variables):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -286,13 +289,14 @@ def expand_dict_value_locations(ctx, env, data):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         dict: A dict of environment variables with expanded location macros
     """
-    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data)) for (k, v) in env.items()])
+    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data, known_variables)) for (k, v) in env.items()])
 
-def expand_list_element_locations(ctx, args, data):
+def expand_list_element_locations(ctx, args, data, known_variables):
     """Performs location-macro expansion on a list of string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -309,11 +313,12 @@ def expand_list_element_locations(ctx, args, data):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         list: A list of arguments with expanded location macros
     """
-    return [_expand_location_for_build_script_runner(ctx, arg, data) for arg in args]
+    return [_expand_location_for_build_script_runner(ctx, arg, data, known_variables) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
@@ -420,7 +425,7 @@ def dedent(doc_string):
         block = " " * space_count
         return "\n".join([line.replace(block, "", 1).rstrip() for line in lines])
 
-def make_static_lib_symlink(actions, rlib_file):
+def make_static_lib_symlink(ctx_package, actions, rlib_file):
     """Add a .a symlink to an .rlib file.
 
     The name of the symlink is derived from the <name> of the <name>.rlib file as follows:
@@ -432,17 +437,31 @@ def make_static_lib_symlink(actions, rlib_file):
     * `crateb.rlib` is `libcrateb.a`.
 
     Args:
+        ctx_package (string): The rule's context package name.
         actions (actions): The rule's context actions object.
         rlib_file (File): The file to symlink, which must end in .rlib.
 
     Returns:
         The symlink's File.
     """
+
     if not rlib_file.basename.endswith(".rlib"):
         fail("file is not an .rlib: ", rlib_file.basename)
     basename = rlib_file.basename[:-5]
     if not basename.startswith("lib"):
         basename = "lib" + basename
+
+    # The .a symlink below is created as a sibling to the .rlib file.
+    # Bazel doesn't allow creating a symlink outside of the rule's package,
+    # so if the .rlib file comes from a different package, first symlink it
+    # to the rule's package. The name of the new .rlib symlink is derived
+    # as the name of the original .rlib relative to its package.
+    if rlib_file.owner.package != ctx_package:
+        new_path = rlib_file.short_path.removeprefix(rlib_file.owner.package).removeprefix("/")
+        new_rlib_file = actions.declare_file(new_path)
+        actions.symlink(output = new_rlib_file, target_file = rlib_file)
+        rlib_file = new_rlib_file
+
     dot_a = actions.declare_file(basename + ".a", sibling = rlib_file)
     actions.symlink(output = dot_a, target_file = rlib_file)
     return dot_a
@@ -692,11 +711,12 @@ def can_build_metadata(toolchain, ctx, crate_type):
            ctx.attr._process_wrapper and \
            crate_type in ("rlib", "lib")
 
-def crate_root_src(name, srcs, crate_type):
+def crate_root_src(name, crate_name, srcs, crate_type):
     """Determines the source file for the crate root, should it not be specified in `attr.crate_root`.
 
     Args:
         name (str): The name of the target.
+        crate_name (str): The target's `crate_name` attribute.
         srcs (list): A list of all sources for the target Crate.
         crate_type (str): The type of this crate ("bin", "lib", "rlib", "cdylib", etc).
 
@@ -707,10 +727,14 @@ def crate_root_src(name, srcs, crate_type):
     """
     default_crate_root_filename = "main.rs" if crate_type == "bin" else "lib.rs"
 
+    if not crate_name:
+        crate_name = name
+
     crate_root = (
         (srcs[0] if len(srcs) == 1 else None) or
         _shortest_src_with_basename(srcs, default_crate_root_filename) or
-        _shortest_src_with_basename(srcs, name + ".rs")
+        _shortest_src_with_basename(srcs, name + ".rs") or
+        _shortest_src_with_basename(srcs, crate_name + ".rs")
     )
     if not crate_root:
         file_names = [default_crate_root_filename, name + ".rs"]
@@ -767,7 +791,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
     prefix = "lib"
     if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
         prefix = ""
-    if toolchain.target_arch == "wasm32" and crate_type == "cdylib":
+    if toolchain.target_arch in ("wasm32", "wasm64") and crate_type == "cdylib":
         prefix = ""
 
     return "{prefix}{name}{lib_hash}{extension}".format(

@@ -27,6 +27,7 @@ def cargo_bootstrap(
         rustc_bin,
         binary,
         cargo_manifest,
+        cargo_config = None,
         environment = {},
         quiet = False,
         build_mode = "release",
@@ -40,6 +41,7 @@ def cargo_bootstrap(
         rustc_bin (path): The path to a Rustc binary.
         binary (str): The binary to build (the `--bin` parameter for Cargo).
         cargo_manifest (path): The path to a Cargo manifest (Cargo.toml file).
+        cargo_config (path, optional): The path to a Cargo configuration file (Config.toml) to use.
         environment (dict): Environment variables to use during execution.
         quiet (bool, optional): Whether or not to print output from the Cargo command.
         build_mode (str, optional): The build mode to use
@@ -53,6 +55,9 @@ def cargo_bootstrap(
 
     if not target_dir:
         target_dir = repository_ctx.path(".")
+
+    if cargo_config:
+        repository_ctx.symlink(cargo_config, repository_ctx.path(".cargo/config.toml"))
 
     args = [
         cargo_bin,
@@ -173,6 +178,9 @@ def _detect_changes(repository_ctx):
     repository_ctx.path(repository_ctx.attr.cargo_lockfile)
     repository_ctx.path(repository_ctx.attr.cargo_toml)
 
+    if repository_ctx.attr.cargo_config:
+        repository_ctx.path(repository_ctx.attr.cargo_config)
+
 def _cargo_bootstrap_repository_impl(repository_ctx):
     # Pretend to Bazel that this rule's input files have been used, so that it will re-run the rule if they change.
     _detect_changes(repository_ctx)
@@ -203,10 +211,15 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
     # be gathered.
     environment = dict(_collect_environ(repository_ctx, "*").items() + _collect_environ(repository_ctx, host_triple.str).items())
 
+    cargo_config = None
+    if repository_ctx.attr.cargo_config:
+        cargo_config = repository_ctx.path(repository_ctx.attr.cargo_config)
+
     built_binary = cargo_bootstrap(
         repository_ctx = repository_ctx,
         cargo_bin = repository_ctx.path(tools.cargo),
         rustc_bin = repository_ctx.path(tools.rustc),
+        cargo_config = cargo_config,
         binary = binary_name,
         cargo_manifest = repository_ctx.path(repository_ctx.attr.cargo_toml),
         build_mode = repository_ctx.attr.build_mode,
@@ -237,13 +250,17 @@ cargo_bootstrap_repository = repository_rule(
             ],
             default = "release",
         ),
+        "cargo_config": attr.label(
+            doc = "The path of the Cargo configuration (`Config.toml`) file.",
+            allow_single_file = True,
+        ),
         "cargo_lockfile": attr.label(
             doc = "The lockfile of the crate_universe resolver",
             allow_single_file = ["Cargo.lock"],
             mandatory = True,
         ),
         "cargo_toml": attr.label(
-            doc = "The path of the crate_universe resolver manifest (`Cargo.toml` file)",
+            doc = "The path of the `Cargo.toml` file.",
             allow_single_file = ["Cargo.toml"],
             mandatory = True,
         ),

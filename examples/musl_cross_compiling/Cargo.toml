@@ -1,0 +1,24 @@
+[workspace]
+members = [
+    ".",
+    # This proc macro exists as a regression test for https://github.com/bazelbuild/rules_rust/issues/2777
+    "local_proc_macro",
+]
+
+[package]
+name = "musl_cross_compiling"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "fake.rs"
+
+[dependencies]
+# This package has a platform-specific dependency on zbus, which depends on the derivative proc-macro.
+# This is here to ensure feature resolution works even if exec != target.
+keyring = "=2.3.3"
+
+# If we just to top-level per-platform resolves, we end up with platform-specific features on this crate, such that the `visit` feature is only enabled on Linux.
+# This causes problems when cross-compiling and using this crate from a proc-macro, because we compile the proc-macro against syn with features resolved for the wrong platform.
+"syn" = "=1.0.109"

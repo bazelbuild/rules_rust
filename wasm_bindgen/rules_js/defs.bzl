@@ -14,20 +14,18 @@ def _js_rust_wasm_bindgen_impl(ctx):
         bindgen_flags = ctx.attr.bindgen_flags,
     )
 
-    # Return a structure that is compatible with the deps[] of a ts_library.
-    declarations = info.ts
-    es5_sources = info.js
-
     return [
         DefaultInfo(
             files = depset([info.wasm], transitive = [info.js, info.ts]),
         ),
         info,
+        # Return a structure that is compatible with the deps[] of a ts_library.
         js_info(
-            declarations = declarations,
-            sources = es5_sources,
-            transitive_declarations = declarations,
-            transitive_sources = es5_sources,
+            target = ctx.label,
+            sources = info.js,
+            transitive_sources = info.js,
+            types = info.ts,
+            transitive_types = info.ts,
         ),
     ]
 

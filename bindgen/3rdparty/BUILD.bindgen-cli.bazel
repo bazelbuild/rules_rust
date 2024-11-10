@@ -34,10 +34,11 @@ rust_binary(
     # to `@rules_rust//bindgen/3rdparty:crates_vendor`, rendering dependencies, and updating the deps
     deps = [
         "@rules_rust_bindgen__bindgen-{}//:bindgen".format(BINDGEN_VERSION),
-        "@rules_rust_bindgen__clap-4.3.3//:clap",
-        "@rules_rust_bindgen__clap_complete-4.3.1//:clap_complete",
-        "@rules_rust_bindgen__env_logger-0.10.0//:env_logger",
-        "@rules_rust_bindgen__log-0.4.19//:log",
-        "@rules_rust_bindgen__shlex-1.1.0//:shlex",
+        "@rules_rust_bindgen__clap-4.5.17//:clap",
+        "@rules_rust_bindgen__clap_complete-4.5.26//:clap_complete",
+        "@rules_rust_bindgen__env_logger-0.10.2//:env_logger",
+        "@rules_rust_bindgen__log-0.4.22//:log",
+        "@rules_rust_bindgen__proc-macro2-1.0.86//:proc_macro2",
+        "@rules_rust_bindgen__shlex-1.3.0//:shlex",
     ],
 )

@@ -1,3 +1,6 @@
+// TODO: Remove this ignore https://github.com/bazelbuild/rules_rust/issues/2842
+#![allow(clippy::needless_maybe_sized)]
+
 #[cxx::bridge(namespace = "org::blobstore")]
 mod ffi {
     // Shared structs with fields visible to both languages.

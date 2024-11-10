@@ -77,7 +77,7 @@ def rustdoc_compile_action(
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
-    dep_info, build_info, linkstamps = collect_deps(
+    dep_info, build_info, _ = collect_deps(
         deps = crate_info.deps,
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
@@ -87,7 +87,7 @@ def rustdoc_compile_action(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
-        linkstamps = linkstamps,
+        linkstamps = depset([]),
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,

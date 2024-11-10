@@ -1,58 +1,36 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load(
-    "//rust:defs.bzl",
-    "capture_clippy_output",
-    "clippy_flag",
-    "clippy_flags",
-    "error_format",
-    "extra_exec_rustc_flag",
-    "extra_exec_rustc_flags",
-    "extra_rustc_flag",
-    "extra_rustc_flags",
-    "no_std",
-    "per_crate_rustc_flag",
-    "rustc_output_diagnostics",
-)
-
 exports_files([
+    ".clippy.toml",
+    ".rustfmt.toml",
     "LICENSE",
     "MODULE.bazel",
+    "version.bzl",
 ])
 
-bzl_library(
-    name = "bzl_lib",
-    srcs = [
-        ":version.bzl",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 # This setting may be changed from the command line to generate machine readable errors.
-error_format(
+alias(
     name = "error_format",
-    build_setting_default = "human",
+    actual = "//rust/settings:error_format",
     visibility = ["//visibility:public"],
 )
 
 # This setting may be changed from the command line to generate rustc diagnostics.
-rustc_output_diagnostics(
+alias(
     name = "rustc_output_diagnostics",
-    build_setting_default = False,
+    actual = "//rust/settings:rustc_output_diagnostics",
     visibility = ["//visibility:public"],
 )
 
 # This setting may be used to pass extra options to clippy from the command line.
 # It applies across all targets.
-clippy_flags(
+alias(
     name = "clippy_flags",
-    build_setting_default = [],
+    actual = "//rust/settings:clippy_flags",
     visibility = ["//visibility:public"],
 )
 
-clippy_flag(
+alias(
     name = "clippy_flag",
-    build_setting_default = "",
+    actual = "//rust/settings:clippy_flag",
     visibility = ["//visibility:public"],
 )
 
@@ -60,15 +38,15 @@ clippy_flag(
 # in non-exec configuration.
 # It applies across all targets whereas the rustc_flags option on targets applies only
 # to that target. This can be useful for passing build-wide options such as LTO.
-extra_rustc_flags(
+alias(
     name = "extra_rustc_flags",
-    build_setting_default = [],
+    actual = "//rust/settings:extra_rustc_flags",
     visibility = ["//visibility:public"],
 )
 
-extra_rustc_flag(
+alias(
     name = "extra_rustc_flag",
-    build_setting_default = "",
+    actual = "//rust/settings:extra_rustc_flag",
     visibility = ["//visibility:public"],
 )
 
@@ -76,35 +54,33 @@ extra_rustc_flag(
 # in exec configuration.
 # It applies across all targets whereas the rustc_flags option on targets applies only
 # to that target. This can be useful for passing build-wide options such as LTO.
-extra_exec_rustc_flags(
+alias(
     name = "extra_exec_rustc_flags",
-    build_setting_default = [],
+    actual = "//rust/settings:extra_exec_rustc_flags",
     visibility = ["//visibility:public"],
 )
 
-extra_exec_rustc_flag(
+alias(
     name = "extra_exec_rustc_flag",
-    build_setting_default = "",
+    actual = "//rust/settings:extra_exec_rustc_flag",
     visibility = ["//visibility:public"],
 )
 
-per_crate_rustc_flag(
+alias(
     name = "experimental_per_crate_rustc_flag",
-    build_setting_default = "",
+    actual = "//rust/settings:experimental_per_crate_rustc_flag",
     visibility = ["//visibility:public"],
 )
 
-# This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html
-label_flag(
+alias(
     name = "clippy.toml",
-    build_setting_default = "//tools/clippy:clippy.toml",
+    actual = "//rust/settings:clippy.toml",
     visibility = ["//visibility:public"],
 )
 
-# This setting is used by the rustfmt rules. See https://bazelbuild.github.io/rules_rust/rust_fmt.html
-label_flag(
+alias(
     name = "rustfmt.toml",
-    build_setting_default = "//tools/rustfmt:rustfmt.toml",
+    actual = "//rust/settings:rustfmt.toml",
     visibility = ["//visibility:public"],
 )
 
@@ -114,35 +90,20 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-capture_clippy_output(
+alias(
     name = "capture_clippy_output",
-    build_setting_default = False,
+    actual = "//rust/settings:capture_clippy_output",
     visibility = ["//visibility:public"],
 )
 
-# This setting may be used to enable builds without the standard library.
-# Currently only no_std + alloc is supported, which can be enabled with setting the value to "alloc".
-# In the future we could add support for additional modes, e.g "core", "alloc,collections".
-string_flag(
+alias(
     name = "no_std",
-    build_setting_default = "off",
-    values = [
-        "alloc",
-        "off",
-    ],
+    actual = "//rust/settings:no_std",
     visibility = ["//visibility:public"],
 )
 
-# A hack target to allow as to only apply the no_std mode in target config.
-no_std(
-    name = "build_target_in_no_std",
-)
-
-# A config setting for setting conditional `cargo_features`, `deps`, based on the `:no_std` value.
-config_setting(
+alias(
     name = "is_no_std",
-    flag_values = {
-        ":build_target_in_no_std": "alloc",
-    },
+    actual = "//rust/settings:is_no_std",
     visibility = ["//visibility:public"],
 )

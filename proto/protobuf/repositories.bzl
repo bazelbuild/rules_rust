@@ -19,16 +19,22 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//proto/protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def rust_proto_protobuf_dependencies(bzlmod = False):
+    """Sets up dependencies for rules_rust's proto support.
+
+    Args:
+        bzlmod (bool): Whether this function is being called from a bzlmod context rather than a workspace context.
+
+    Returns:
+        A list of structs containing information about root module deps to report to bzlmod's extension_metadata.
+
+    """
     if not bzlmod:
         maybe(
             http_archive,
             name = "rules_proto",
-            sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
-            strip_prefix = "rules_proto-5.3.0-21.7",
-            urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
-                "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
-            ],
+            sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+            strip_prefix = "rules_proto-6.0.2",
+            url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
         )
 
         maybe(
@@ -44,6 +50,14 @@ def rust_proto_protobuf_dependencies(bzlmod = False):
             patches = [
                 Label("//proto/protobuf/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
             ],
+        )
+
+        maybe(
+            http_archive,
+            name = "bazel_features",
+            sha256 = "5d7e4eb0bb17aee392143cd667b67d9044c270a9345776a5e5a3cccbc44aa4b3",
+            strip_prefix = "bazel_features-1.13.0",
+            url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.13.0/bazel_features-v1.13.0.tar.gz",
         )
 
     return crate_repositories()

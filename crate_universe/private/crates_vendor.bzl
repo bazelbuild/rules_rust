@@ -7,10 +7,21 @@ load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
+
 set -euo pipefail
+
 export RUNTIME_PWD="$(pwd)"
 if [[ -z "${{BAZEL_REAL:-}}" ]]; then
     BAZEL_REAL="$(which bazel || echo 'bazel')"
+fi
+
+_ENVIRON=()
+_ENVIRON+=(BAZEL_REAL="${{BAZEL_REAL}}")
+_ENVIRON+=(BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}")
+_ENVIRON+=(PATH="${{PATH}}")
+
+if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
+    _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
 fi
 
 # The path needs to be preserved to prevent bazel from starting with different
@@ -18,8 +29,12 @@ fi
 # If you provide an empty path, bazel starts itself with
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
-exec env - BAZEL_REAL="${{BAZEL_REAL}}" BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}" PATH="${{PATH}}" {env} \\
-"{bin}" {args} "$@"
+exec env - \\
+${{_ENVIRON[@]}} \\
+{env} \\
+    "{bin}" \\
+    {args} \\
+    "$@"
 """
 
 _WINDOWS_WRAPPER = """\
@@ -27,7 +42,8 @@ _WINDOWS_WRAPPER = """\
 set RUNTIME_PWD=%CD%
 {env}
 
-call {bin} {args} %@%
+{bin} {args} %*
+exit %ERRORLEVEL%
 """
 
 CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
@@ -204,24 +220,32 @@ def generate_config_file(
         render_config = default_render_config
 
     if mode == "local":
-        build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel"
+        build_file_base_template = "//{}/{{name}}-{{version}}:BUILD.bazel".format(output_pkg)
+        if workspace_name != "":
+            build_file_base_template = "@{}//{}/{{name}}-{{version}}:BUILD.bazel".format(workspace_name, output_pkg)
         crate_label_template = "//{}/{{name}}-{{version}}:{{target}}".format(
             output_pkg,
         )
     else:
-        build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel"
+        build_file_base_template = "//{}:BUILD.{{name}}-{{version}}.bazel".format(output_pkg)
+        if workspace_name != "":
+            build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel".format(workspace_name, output_pkg)
         crate_label_template = render_config["crate_label_template"]
 
+    # If `workspace_name` is blank (such as when using modules), the `@{}//{}:{{file}}` template would generate
+    # a reference like `Label(@//<stuff>)`. This causes issues if the module doing the `crates_vendor`ing is not the root module.
+    # See: https://github.com/bazelbuild/rules_rust/issues/2661
+    crates_module_template_value = "//{}:{{file}}".format(output_pkg)
+    if workspace_name != "":
+        crates_module_template_value = "@{}//{}:{{file}}".format(
+            workspace_name,
+            output_pkg,
+        )
+
     updates = {
-        "build_file_template": build_file_base_template.format(
-            workspace_name,
-            output_pkg,
-        ),
+        "build_file_template": build_file_base_template,
         "crate_label_template": crate_label_template,
-        "crates_module_template": "@{}//{}:{{file}}".format(
-            workspace_name,
-            output_pkg,
-        ),
+        "crates_module_template": crates_module_template_value,
         "vendor_mode": mode,
     }
 

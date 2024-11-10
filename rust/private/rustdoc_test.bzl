@@ -67,7 +67,7 @@ def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate
     root = crate_info.output.root.path
     if not root in roots:
         roots.append(root)
-    for dep in crate_info.deps.to_list():
+    for dep in crate_info.deps.to_list() + crate_info.proc_macro_deps.to_list():
         dep_crate_info = getattr(dep, "crate_info", None)
         dep_dep_info = getattr(dep, "dep_info", None)
         if dep_crate_info:
@@ -110,6 +110,7 @@ def _rust_doc_test_impl(ctx):
 
     crate = ctx.attr.crate[rust_common.crate_info]
     deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     crate_info = rust_common.create_crate_info(
         name = crate.name,
@@ -117,7 +118,7 @@ def _rust_doc_test_impl(ctx):
         root = crate.root,
         srcs = crate.srcs,
         deps = depset(deps, transitive = [crate.deps]),
-        proc_macro_deps = crate.proc_macro_deps,
+        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
         aliases = crate.aliases,
         output = crate.output,
         edition = crate.edition,
@@ -206,6 +207,13 @@ rust_doc_test = rule(
                 linking a native library.
             """),
             providers = [[CrateInfo], [CcInfo]],
+        ),
+        "proc_macro_deps": attr.label_list(
+            doc = dedent("""\
+                List of `rust_proc_macro` targets used to help build this library target.
+            """),
+            cfg = "exec",
+            providers = [rust_common.crate_info],
         ),
         "_cc_toolchain": attr.label(
             doc = (

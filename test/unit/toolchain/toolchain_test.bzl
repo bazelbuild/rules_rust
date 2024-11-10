@@ -47,9 +47,39 @@ def _toolchain_location_expands_linkflags_impl(ctx):
 
     return analysistest.end(env)
 
+def _toolchain_location_expands_extra_rustc_flags_impl(ctx):
+    env = analysistest.begin(ctx)
+    toolchain_info = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
+
+    asserts.equals(
+        env,
+        "extra_rustc_flags:test/unit/toolchain/config.txt",
+        toolchain_info.extra_rustc_flags[0],
+    )
+
+    return analysistest.end(env)
+
+def _std_libs_support_srcs_outside_package_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+
+    symlinks = [a for a in actions if a.mnemonic == "Symlink"]
+    asserts.equals(env, 2, len(symlinks))
+
+    rlib_symlink = symlinks[0].outputs.to_list()[0]
+    asserts.equals(env, tut.label.package + "/core.rlib", rlib_symlink.short_path)
+
+    a_symlink = symlinks[1].outputs.to_list()[0]
+    asserts.equals(env, tut.label.package + "/libcore.a", a_symlink.short_path)
+
+    return analysistest.end(env)
+
 toolchain_specifies_target_triple_test = analysistest.make(_toolchain_specifies_target_triple_test_impl)
 toolchain_specifies_target_json_test = analysistest.make(_toolchain_specifies_target_json_test_impl)
 toolchain_location_expands_linkflags_test = analysistest.make(_toolchain_location_expands_linkflags_impl)
+toolchain_location_expands_extra_rustc_flags_test = analysistest.make(_toolchain_location_expands_extra_rustc_flags_impl)
+std_libs_support_srcs_outside_package_test = analysistest.make(_std_libs_support_srcs_outside_package_test_impl)
 
 def _define_test_targets():
     native.filegroup(
@@ -59,6 +89,11 @@ def _define_test_targets():
     rust_stdlib_filegroup(
         name = "std_libs",
         srcs = [":stdlib_srcs"],
+    )
+
+    rust_stdlib_filegroup(
+        name = "std_libs_with_srcs_outside_package",
+        srcs = ["//test/unit/toolchain/subpackage:std_libs_srcs"],
     )
 
     native.filegroup(
@@ -139,6 +174,7 @@ def _define_test_targets():
         rustc = ":mock_rustc",
         staticlib_ext = ".a",
         stdlib_linkflags = ["test:$(location :stdlib_srcs)"],
+        extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)"],
         target_json = encoded_target_json,
     )
 
@@ -166,6 +202,14 @@ def toolchain_test_suite(name):
         name = "toolchain_location_expands_linkflags_test",
         target_under_test = ":rust_location_expand_toolchain",
     )
+    toolchain_location_expands_extra_rustc_flags_test(
+        name = "toolchain_location_expands_extra_rustc_flags_test",
+        target_under_test = ":rust_location_expand_toolchain",
+    )
+    std_libs_support_srcs_outside_package_test(
+        name = "std_libs_support_srcs_outside_package_test",
+        target_under_test = ":std_libs_with_srcs_outside_package",
+    )
 
     native.test_suite(
         name = name,
@@ -174,5 +218,7 @@ def toolchain_test_suite(name):
             ":toolchain_specifies_target_json_test",
             ":toolchain_specifies_inline_target_json_test",
             ":toolchain_location_expands_linkflags_test",
+            ":toolchain_location_expands_extra_rustc_flags_test",
+            ":std_libs_support_srcs_outside_package_test",
         ],
     )

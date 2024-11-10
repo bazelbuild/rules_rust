@@ -9,6 +9,7 @@ rust_bindgen_library(
     ],
     cc_lib = "//bindgen/simple",
     header = "//bindgen/simple:simple.h",
+    wrap_static_fns = True,
 )
 
 rust_binary(

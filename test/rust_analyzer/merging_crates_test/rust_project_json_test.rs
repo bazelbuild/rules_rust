@@ -10,8 +10,24 @@ mod tests {
         let content = std::fs::read_to_string(&rust_project_path)
             .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
 
+        let expected = r#"{
+      "display_name": "mylib",
+      "root_module": "mylib.rs",
+      "edition": "2018",
+      "deps": [
+        {
+          "crate": 0,
+          "name": "extra_test_dep"
+        },
+        {
+          "crate": 1,
+          "name": "lib_dep"
+        }
+      ],"#;
+
+        println!("{}", content);
         assert!(
-            content.contains(r#""root_module":"mylib.rs","edition":"2018","deps":[{"crate":0,"name":"extra_test_dep"},{"crate":1,"name":"lib_dep"}]"#),
+            content.contains(expected),
             "expected rust-project.json to contain both lib_dep and extra_test_dep in deps of mylib.rs.");
     }
 }

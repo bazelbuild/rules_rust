@@ -32,8 +32,27 @@ fn main() {
         .collect::<HashSet<_>>();
 
     assert!(
-        root_files.take(build_script_name).is_some(),
+        root_files.remove(build_script_name),
         "Build script must be in the current directory"
+    );
+
+    // An implementation detail of `cargo_build_script` is that is has two
+    // intermediate targets which represent the script runner. The script
+    // itself is suffixed with `_` while it's wrapper is suffixed with `-`.
+    // ensure the script is removed from consideration before continuing the
+    // test.
+    let alt_script_name = if cfg!(windows) {
+        format!(
+            "{}_.exe",
+            &build_script_name[0..(build_script_name.len() - ".exe".len() - 1)],
+        )
+    } else {
+        format!("{}_", &build_script_name[0..(build_script_name.len() - 1)],)
+    };
+    assert!(
+        root_files.remove(&alt_script_name),
+        "Failed to remove {}",
+        alt_script_name
     );
 
     let cargo_manifest_dir_file = root_files.take("cargo_manifest_dir_file.txt");

@@ -4,8 +4,14 @@ load(":custom_alias.bzl", "custom_alias")
 rust_library(
     name = "mylib",
     srcs = ["mylib.rs"],
+    aliases = {
+        ":renamed_proc_macro_dep": "shorter_name",
+    },
     edition = "2018",
-    proc_macro_deps = [":proc_macro_dep"],
+    proc_macro_deps = [
+        ":proc_macro_dep",
+        ":renamed_proc_macro_dep",
+    ],
     deps = [
         ":alias_dep",
         ":custom_alias_dep",
@@ -81,6 +87,12 @@ rust_proc_macro(
     edition = "2018",
 )
 
+rust_proc_macro(
+    name = "renamed_proc_macro_dep",
+    srcs = ["renamed_proc_macro_dep.rs"],
+    edition = "2018",
+)
+
 rust_test(
     name = "rust_project_json_test",
     srcs = ["rust_project_json_test.rs"],
@@ -91,4 +103,8 @@ rust_test(
     # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
     # that target to execute this test.
     tags = ["manual"],
+    deps = [
+        "@rules_rust//test/3rdparty/crates:serde",
+        "@rules_rust//test/3rdparty/crates:serde_json",
+    ],
 )

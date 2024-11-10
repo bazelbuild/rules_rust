@@ -205,7 +205,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "pin-project-lite",
+                    "name": "pin_project_lite",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/src/lib.rs",
                     "test": true
                 },
@@ -322,7 +322,7 @@
                     "optional": false,
                     "registry": null,
                     "rename": null,
-                    "req": "*",
+                    "req": "^1.25.0",
                     "source": "registry+https://github.com/rust-lang/crates.io-index",
                     "target": "cfg(unix)",
                     "uses_default_features": true
@@ -3708,7 +3708,7 @@
                     "kind": [
                         "lib"
                     ],
-                    "name": "windows-sys",
+                    "name": "windows_sys",
                     "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-sys-0.42.0/src/lib.rs",
                     "test": true
                 }

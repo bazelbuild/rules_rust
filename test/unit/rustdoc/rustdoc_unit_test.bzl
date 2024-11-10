@@ -74,6 +74,14 @@ def _rustdoc_for_lib_with_proc_macro_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_for_lib_with_proc_macro_in_docs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    return analysistest.end(env)
+
 def _rustdoc_for_bin_with_transitive_proc_macro_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -145,6 +153,7 @@ rustdoc_for_bin_with_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_cc_li
 rustdoc_for_bin_with_transitive_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_transitive_cc_lib_test_impl)
 rustdoc_for_proc_macro_test = analysistest.make(_rustdoc_for_proc_macro_test_impl)
 rustdoc_for_lib_with_proc_macro_test = analysistest.make(_rustdoc_for_lib_with_proc_macro_test_impl)
+rustdoc_for_lib_with_proc_macro_in_docs_test = analysistest.make(_rustdoc_for_lib_with_proc_macro_in_docs_test_impl)
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
 rustdoc_with_args_test = analysistest.make(_rustdoc_with_args_test_impl)
@@ -153,7 +162,7 @@ rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error
     str(Label("//:error_format")): "json",
 })
 
-def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
+def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
     rule_fn(
         name = name,
         edition = "2018",
@@ -175,6 +184,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
         name = "{}_doctest".format(name),
         crate = ":{}".format(name),
         deps = rustdoc_deps,
+        proc_macro_deps = rustdoc_proc_macro_deps,
     )
 
 def _define_targets():
@@ -232,6 +242,20 @@ def _define_targets():
         rustdoc_deps = [":adder"],
         proc_macro_deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_proc_macro_in_docs",
+        srcs = ["procmacro_in_rustdoc.rs"],
+        proc_macro_deps = [":rustdoc_proc_macro"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_proc_macro_only_in_docs",
+        srcs = ["procmacro_in_rustdoc.rs"],
+        rustdoc_proc_macro_deps = [":rustdoc_proc_macro"],
     )
 
     _target_maker(
@@ -371,6 +395,11 @@ def rustdoc_test_suite(name):
         target_under_test = ":rustdoc_proc_macro_doc",
     )
 
+    rustdoc_for_lib_with_proc_macro_in_docs_test(
+        name = "rustdoc_for_lib_with_proc_macro_in_docs_test",
+        target_under_test = ":lib_with_proc_macro_in_docs_doc",
+    )
+
     rustdoc_for_lib_with_proc_macro_test(
         name = "rustdoc_for_lib_with_proc_macro_test",
         target_under_test = ":lib_with_proc_macro_doc",
@@ -414,6 +443,7 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_bin_with_cc_lib_test",
             ":rustdoc_for_bin_with_transitive_cc_lib_test",
             ":rustdoc_for_proc_macro_test",
+            ":rustdoc_for_lib_with_proc_macro_in_docs_test",
             ":rustdoc_for_lib_with_proc_macro_test",
             ":rustdoc_for_lib_with_cc_lib_test",
             ":rustdoc_with_args_test",

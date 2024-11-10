@@ -15,7 +15,7 @@ rust_library(
     name = "rustix",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     aliases = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": {
@@ -27,14 +27,14 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
-        "@rules_rust//rust/platform:aarch64-fuchsia": {
-            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
-        },
         "@rules_rust//rust/platform:aarch64-linux-android": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(windows)
+        },
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": {
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
@@ -78,13 +78,13 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-wasi": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
+        "@rules_rust//rust/platform:wasm32-wasip1": {
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        },
         "@rules_rust//rust/platform:x86_64-apple-darwin": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
         "@rules_rust//rust/platform:x86_64-apple-ios": {
-            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
-        },
-        "@rules_rust//rust/platform:x86_64-fuchsia": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
         "@rules_rust//rust/platform:x86_64-linux-android": {
@@ -94,6 +94,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(windows)
         },
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": {
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        },
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": {
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
         "@rules_rust//rust/platform:x86_64-unknown-none": {
@@ -137,9 +140,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
@@ -159,12 +162,13 @@ rust_library(
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasi": [],
+        "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
@@ -186,9 +190,6 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
-        "@rules_rust//rust/platform:aarch64-fuchsia": [
-            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
-        ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
             "@rules_rust_wasm_bindgen__linux-raw-sys-0.3.8//:linux_raw_sys",  # cfg(all(any(target_os = "android", target_os = "linux"), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
@@ -196,6 +197,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(windows)
             "@rules_rust_wasm_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rules_rust_wasm_bindgen__linux-raw-sys-0.3.8//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))
@@ -259,13 +263,13 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-wasi": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
+        "@rules_rust//rust/platform:wasm32-wasip1": [
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
-        ],
-        "@rules_rust//rust/platform:x86_64-fuchsia": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
@@ -277,6 +281,9 @@ rust_library(
             "@rules_rust_wasm_bindgen__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
+            "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
             "@rules_rust_wasm_bindgen__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
@@ -293,10 +300,23 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "rustix_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
     ),
     crate_features = [
         "default",
@@ -321,6 +341,7 @@ cargo_build_script(
         ],
     ),
     edition = "2018",
+    pkg_name = "rustix",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -337,6 +358,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":rustix_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

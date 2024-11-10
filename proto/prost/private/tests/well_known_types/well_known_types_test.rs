@@ -1,20 +1,20 @@
 //! Tests the Google well-known types.
 
-use any_proto::google::protobuf::Any;
-use api_proto::google::protobuf::{Api, Method, Mixin};
-use compiler_plugin_proto::google::protobuf::compiler::Version;
-use descriptor_proto::google::protobuf::DescriptorProto;
-use duration_proto::google::protobuf::Duration;
-use empty_proto::google::protobuf::Empty;
-use field_mask_proto::google::protobuf::FieldMask;
-use source_context_proto::google::protobuf::SourceContext;
-use struct_proto::google::protobuf::Struct;
-use struct_proto::google::protobuf::Value;
-use timestamp_proto::google::protobuf::Timestamp;
-use type_proto::google::protobuf::field::{Cardinality, Kind};
-use type_proto::google::protobuf::{Field, Option, Syntax, Type};
+use well_known_types_proto::any_proto::google::protobuf::Any;
+use well_known_types_proto::api_proto::google::protobuf::{Api, Method, Mixin};
+use well_known_types_proto::compiler_plugin_proto::google::protobuf::compiler::Version;
+use well_known_types_proto::descriptor_proto::google::protobuf::DescriptorProto;
+use well_known_types_proto::duration_proto::google::protobuf::Duration;
+use well_known_types_proto::empty_proto::google::protobuf::Empty;
+use well_known_types_proto::field_mask_proto::google::protobuf::FieldMask;
+use well_known_types_proto::source_context_proto::google::protobuf::SourceContext;
+use well_known_types_proto::struct_proto::google::protobuf::Struct;
+use well_known_types_proto::struct_proto::google::protobuf::Value;
+use well_known_types_proto::timestamp_proto::google::protobuf::Timestamp;
+use well_known_types_proto::type_proto::google::protobuf::field::{Cardinality, Kind};
+use well_known_types_proto::type_proto::google::protobuf::{Field, Option, Syntax, Type};
 use well_known_types_proto::wkt::WellKnownTypes;
-use wrappers_proto::google::protobuf::{
+use well_known_types_proto::wrappers_proto::google::protobuf::{
     BoolValue, BytesValue, DoubleValue, FloatValue, Int32Value, Int64Value, StringValue,
     UInt32Value, UInt64Value,
 };

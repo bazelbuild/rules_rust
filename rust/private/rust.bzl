@@ -148,7 +148,7 @@ def _rust_library_common(ctx, crate_type):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     # Determine unique hash for this rlib.
@@ -221,14 +221,18 @@ def _rust_binary_impl(ctx):
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
-    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    if ctx.attr.binary_name:
+        output_filename = ctx.attr.binary_name
+    else:
+        output_filename = ctx.label.name
+    output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, ctx.attr.crate_type)
+        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
     providers = rustc_compile_action(
@@ -261,6 +265,7 @@ def _rust_binary_impl(ctx):
             ctx,
             ctx.attr.env,
             ctx.attr.data,
+            {},
         ),
     ))
 
@@ -309,14 +314,21 @@ def _rust_test_impl(ctx):
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
 
-        output_hash = determine_output_hash(crate.root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        if toolchain._incompatible_change_rust_test_compilation_output_directory:
+            crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
+            output = ctx.actions.declare_file(
+                ctx.label.name + toolchain.binary_ext,
+            )
+        else:
+            crate_name = crate.name
+            output_hash = determine_output_hash(crate.root, ctx.label)
+            output = ctx.actions.declare_file(
+                "test-%s/%s%s" % (
+                    output_hash,
+                    ctx.label.name,
+                    toolchain.binary_ext,
+                ),
+            )
 
         srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
 
@@ -338,17 +350,20 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         ))
+        aliases = dict(crate.aliases)
+        aliases.update(ctx.attr.aliases)
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
-            name = crate.name,
+            name = crate_name,
             type = crate_type,
             root = crate.root,
             srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
-            aliases = ctx.attr.aliases,
+            aliases = aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             edition = crate.edition,
@@ -365,23 +380,29 @@ def _rust_test_impl(ctx):
 
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
-            crate_root = crate_root_src(ctx.attr.name, ctx.files.srcs, crate_root_type)
+            crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
         srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
 
-        output_hash = determine_output_hash(crate_root, ctx.label)
-        output = ctx.actions.declare_file(
-            "test-%s/%s%s" % (
-                output_hash,
-                ctx.label.name,
-                toolchain.binary_ext,
-            ),
-        )
+        if toolchain._incompatible_change_rust_test_compilation_output_directory:
+            output = ctx.actions.declare_file(
+                ctx.label.name + toolchain.binary_ext,
+            )
+        else:
+            output_hash = determine_output_hash(crate_root, ctx.label)
+            output = ctx.actions.declare_file(
+                "test-%s/%s%s" % (
+                    output_hash,
+                    ctx.label.name,
+                    toolchain.binary_ext,
+                ),
+            )
 
         data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
         rustc_env = expand_dict_value_locations(
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         )
 
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -418,6 +439,7 @@ def _rust_test_impl(ctx):
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
+        {},
     )
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
@@ -439,7 +461,10 @@ def _rust_test_impl(ctx):
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-    providers.append(testing.TestEnvironment(env))
+    providers.append(RunEnvironmentInfo(
+        environment = env,
+        inherited_environment = ctx.attr.env_inherit,
+    ))
 
     return providers
 
@@ -555,6 +580,15 @@ _common_attrs = {
 
             These are other `rust_library` targets and will be presented as the new name given.
         """),
+    ),
+    "alwayslink": attr.bool(
+        doc = dedent("""\
+            If 1, any binary that depends (directly or indirectly) on this library
+            will link in all the object files even if some contain no symbols referenced by the binary.
+
+            This attribute is used by the C++ Starlark API when passing CcInfo providers.
+        """),
+        default = False,
     ),
     "compile_data": attr.label_list(
         doc = dedent("""\
@@ -769,6 +803,9 @@ _rust_test_attrs = dict({
             Values are subject to `$(rootpath)`, `$(execpath)`, location, and
             ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
         """),
+    ),
+    "env_inherit": attr.string_list(
+        doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
@@ -1004,6 +1041,12 @@ rust_proc_macro = rule(
 )
 
 _rust_binary_attrs = dict({
+    "binary_name": attr.string(
+        doc = dedent("""\
+            Override the resulting binary file name. By default, the binary file will be named using the `name` attribute on this rule,
+            however sometimes that is not deseriable.
+        """),
+    ),
     "crate_type": attr.string(
         doc = dedent("""\
             Crate type that will be passed to `rustc` to be used for building this crate.
@@ -1333,9 +1376,7 @@ rust_test = rule(
         )
         ```
 
-        Run the test with `bazel test //hello_lib:hello_lib_test`. The crate
-        will be built using the same crate name as the underlying ":hello_lib"
-        crate.
+        Run the test with `bazel test //hello_lib:hello_lib_test`.
 
         ### Example: `test` directory
 
@@ -1393,7 +1434,7 @@ rust_test = rule(
 """),
 )
 
-def rust_test_suite(name, srcs, **kwargs):
+def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     """A rule for creating a test suite for a set of `rust_test` targets.
 
     This rule can be used for setting up typical rust [integration tests][it]. Given the following
@@ -1411,6 +1452,8 @@ def rust_test_suite(name, srcs, **kwargs):
             integrated_test_c.rs
             patterns/
                 fibonacci_test.rs
+            helpers/
+                mod.rs
     ```
 
     The rule can be used to generate [rust_test](#rust_test) targets for each source file under `tests`
@@ -1432,6 +1475,7 @@ def rust_test_suite(name, srcs, **kwargs):
     rust_test_suite(
         name = "integrated_tests_suite",
         srcs = glob(["tests/**"]),
+        shared_srcs=glob(["tests/helpers/**"]),
         deps = [":math_lib"],
     )
     ```
@@ -1442,21 +1486,31 @@ def rust_test_suite(name, srcs, **kwargs):
     Args:
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
+        shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
         **kwargs (dict): Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """
     tests = []
 
+    # If test_suite.tests is empty, Bazel will unhelpfully include all tests
+    # from the package. Require an extra tag so they are filtered out again.
+    tags = ["restrict_" + name] + kwargs.pop("tags", [])
+
     for src in srcs:
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
+
+        if src in shared_srcs:
+            continue
 
         # Prefixed with `name` to allow parameterization with macros
         # The test name should not end with `.rs`
         test_name = name + "_" + src[:-3]
         rust_test(
             name = test_name,
-            srcs = [src],
+            crate_root = src,
+            srcs = [src] + shared_srcs,
+            tags = tags,
             **kwargs
         )
         tests.append(test_name)
@@ -1464,7 +1518,7 @@ def rust_test_suite(name, srcs, **kwargs):
     native.test_suite(
         name = name,
         tests = tests,
-        tags = kwargs.get("tags", None),
+        tags = tags,
     )
 
 rust_library_group = rule(

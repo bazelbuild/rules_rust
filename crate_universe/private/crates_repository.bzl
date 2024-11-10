@@ -50,6 +50,7 @@ def _crates_repository_impl(repository_ctx):
         splicing_manifest = splicing_manifest,
         cargo = cargo_path,
         rustc = rustc_path,
+        repin_instructions = repository_ctx.attr.repin_instructions,
     )
 
     # If re-pinning is enabled, gather additional inputs for the generator
@@ -280,6 +281,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
+        ),
+        "repin_instructions": attr.string(
+            doc = "Instructions to re-pin the repository if required. Many people have wrapper scripts for keeping dependencies up to date, and would like to point users to that instead of the default.",
         ),
         "rust_toolchain_cargo_template": attr.string(
             doc = (

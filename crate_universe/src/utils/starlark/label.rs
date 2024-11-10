@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::de::Visitor;
 use serde::{Deserialize, Serialize, Serializer};
@@ -63,8 +64,13 @@ impl FromStr for Label {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(@@?[\w\d\-_\.~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")?;
-        let cap = re
+        static RE: OnceCell<Regex> = OnceCell::new();
+        let re = RE.get_or_try_init(|| {
+            // TODO: Disallow `~` in repository names once support for Bazel 7.2 is dropped.
+            Regex::new(r"^(@@?[\w\d\-_\.+~]*)?(//)?([\w\d\-_\./+]+)?(:([\+\w\d\-_\./]+))?$")
+        });
+
+        let cap = re?
             .captures(s)
             .with_context(|| format!("Failed to parse label from string: {s}"))?;
 
@@ -194,7 +200,8 @@ impl Label {
             }
             if workspace_root.is_none()
                 && (ancestor.join("WORKSPACE").exists()
-                    || ancestor.join("WORKSPACE.bazel").exists())
+                    || ancestor.join("WORKSPACE.bazel").exists()
+                    || ancestor.join("MODULE.bazel").exists())
             {
                 workspace_root = Some(ancestor);
                 break;
@@ -262,7 +269,7 @@ impl Serialize for Label {
 }
 
 struct LabelVisitor;
-impl<'de> Visitor<'de> for LabelVisitor {
+impl Visitor<'_> for LabelVisitor {
     type Value = Label;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -295,7 +302,6 @@ impl Label {
 #[cfg(test)]
 mod test {
     use super::*;
-    use spectral::prelude::*;
     use std::fs::{create_dir_all, File};
     use tempfile::tempdir;
 
@@ -542,8 +548,8 @@ mod test {
         let err = Label::from_absolute_path(&actual_file)
             .unwrap_err()
             .to_string();
-        assert_that(&err).contains("Could not identify workspace");
-        assert_that(&err).contains(format!("{}", actual_file.display()).as_str());
+        assert!(err.contains("Could not identify workspace"));
+        assert!(err.contains(format!("{}", actual_file.display()).as_str()));
     }
 
     #[test]
@@ -560,8 +566,8 @@ mod test {
         let err = Label::from_absolute_path(&actual_file)
             .unwrap_err()
             .to_string();
-        assert_that(&err).contains("Could not identify package");
-        assert_that(&err).contains("Maybe you need to add a BUILD.bazel file");
-        assert_that(&err).contains(format!("{}", actual_file.display()).as_str());
+        assert!(err.contains("Could not identify package"));
+        assert!(err.contains("Maybe you need to add a BUILD.bazel file"));
+        assert!(err.contains(format!("{}", actual_file.display()).as_str()));
     }
 }

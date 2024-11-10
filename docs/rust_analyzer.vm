@@ -54,7 +54,10 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
         {
             "label": "Generate rust-project.json",
             "command": "bazel",
-            "args": ["run", "@rules_rust//tools/rust_analyzer:gen_rust_project"],
+            "args": [
+                "run",
+                "//tools/rust_analyzer:gen_rust_project"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -76,7 +79,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 
 Add the following to your bazelrc:
 ```
-build --@rules_rust//:output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
+build --@rules_rust//:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 ```
 
 Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer) that automatically collects the outputs whenever you recompile.

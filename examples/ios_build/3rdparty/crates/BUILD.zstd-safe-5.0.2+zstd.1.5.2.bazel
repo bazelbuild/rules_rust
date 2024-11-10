@@ -15,7 +15,7 @@ rust_library(
     name = "zstd_safe",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     compile_data = glob(
         include = ["**"],
@@ -93,10 +93,10 @@ rust_library(
 )
 
 cargo_build_script(
-    name = "zstd-safe_bs",
+    name = "_bs",
     srcs = glob(
         include = ["**/*.rs"],
-        allow_empty = False,
+        allow_empty = True,
     ),
     crate_features = [
         "arrays",
@@ -122,6 +122,7 @@ cargo_build_script(
     link_deps = [
         "@ios_build__zstd-sys-2.0.1-zstd.1.5.2//:zstd_sys",
     ],
+    pkg_name = "zstd-safe",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -138,6 +139,6 @@ cargo_build_script(
 
 alias(
     name = "build_script_build",
-    actual = ":zstd-safe_bs",
+    actual = ":_bs",
     tags = ["manual"],
 )

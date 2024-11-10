@@ -19,12 +19,12 @@ load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
-DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasi"]
+DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasip1"]
 
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
     sha256 = "9ab95735ea2c8fd51154d01e39cf13912a78071c2d89abc49a7ef102a7dd725a",
-    url = "https://crates.io/api/v1/crates/tinyjson/2.5.1/download",
+    url = "https://static.crates.io/crates/tinyjson/tinyjson-2.5.1.crate",
     strip_prefix = "tinyjson-2.5.1",
     type = "tar.gz",
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
@@ -122,14 +122,6 @@ def BUILD_for_rustfmt(target_triple):
         binary_ext = system_to_binary_ext(target_triple.system),
     )
 
-_build_file_for_clippy_template = """\
-filegroup(
-    name = "clippy_driver_bin",
-    srcs = ["bin/clippy-driver{binary_ext}"],
-    visibility = ["//visibility:public"],
-)
-"""
-
 _build_file_for_rust_analyzer_proc_macro_srv = """\
 filegroup(
    name = "rust_analyzer_proc_macro_srv",
@@ -149,6 +141,19 @@ def BUILD_for_rust_analyzer_proc_macro_srv(exec_triple):
     return _build_file_for_rust_analyzer_proc_macro_srv.format(
         binary_ext = system_to_binary_ext(exec_triple.system),
     )
+
+_build_file_for_clippy_template = """\
+filegroup(
+    name = "clippy_driver_bin",
+    srcs = ["bin/clippy-driver{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+filegroup(
+    name = "cargo_clippy_bin",
+    srcs = ["bin/cargo-clippy{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 def BUILD_for_clippy(target_triple):
     """Emits a BUILD file the clippy archive.
@@ -244,6 +249,7 @@ rust_toolchain(
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
+    cargo_clippy = "//:cargo_clippy_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
     rustc_lib = "//:rustc_lib",
@@ -568,12 +574,14 @@ def BUILD_for_rustfmt_toolchain(name, rustfmt, rustc, rustc_lib):
         rustc_lib = rustc_lib,
     )
 
-def load_rust_stdlib(ctx, target_triple):
+def load_rust_stdlib(ctx, target_triple, version, iso_date = None):
     """Loads a rust standard library and yields corresponding BUILD for it
 
     Args:
         ctx (repository_ctx): A repository_ctx.
         target_triple (struct): The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD file contents for this stdlib and the sha256 of the artifact.
@@ -581,58 +589,62 @@ def load_rust_stdlib(ctx, target_triple):
 
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rust-std",
         tool_subdirectories = ["rust-std-{}".format(target_triple.str)],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_stdlib(target_triple), sha256
 
-def load_rustc_dev_nightly(ctx, target_triple):
+def load_rustc_dev_nightly(ctx, target_triple, version, iso_date = None):
     """Loads the nightly rustc dev component
 
     Args:
         ctx: A repository_ctx.
         target_triple: The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Dict[str, str]: The sha256 value of the rustc-dev artifact.
     """
 
     subdir_name = "rustc-dev"
-    if ctx.attr.iso_date < "2020-12-24":
+    if iso_date and iso_date < "2020-12-24":
         subdir_name = "rustc-dev-{}".format(target_triple)
 
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "rustc-dev",
         tool_subdirectories = [subdir_name],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return sha256
 
-def load_llvm_tools(ctx, target_triple):
+def load_llvm_tools(ctx, target_triple, version, iso_date = None):
     """Loads the llvm tools
 
     Args:
         ctx (repository_ctx): A repository_ctx.
         target_triple (struct): The rust-style target triple of the tool
+        version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        iso_date (str): The iso_date to use with \"nightly\" or \"beta\" versions.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD.bazel content and sha256 value of the llvm tools artifact.
     """
     sha256 = load_arbitrary_tool(
         ctx,
-        iso_date = ctx.attr.iso_date,
+        iso_date = iso_date,
         target_triple = target_triple,
         tool_name = "llvm-tools",
         tool_subdirectories = ["llvm-tools-preview"],
-        version = ctx.attr.version,
+        version = version,
     )
 
     return BUILD_for_llvm_tools(target_triple), sha256

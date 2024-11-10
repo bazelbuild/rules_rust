@@ -21,19 +21,19 @@ def triple(triple):
             - abi (str, optional): The abi to use or None if abi does not apply.
             - str (str): Original string representation of the triple
     """
-    if triple == "wasm32-wasi":
+    if triple in ("wasm32-wasi", "wasm32-wasip1"):
         return struct(
-            arch = "wasm32",
-            system = "wasi",
-            vendor = "wasi",
+            arch = triple.split("-")[0],
+            vendor = triple.split("-")[1],
+            system = triple.split("-")[1],
             abi = None,
             str = triple,
         )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(
             arch = triple.split("-")[0],
+            vendor = "unknown",
             system = "fuchsia",
-            vendor = "fuchsia",
             abi = None,
             str = triple,
         )
@@ -114,7 +114,7 @@ def get_host_triple(repository_ctx, abi = None):
     # Detect the host's cpu architecture
 
     supported_architectures = {
-        "linux": ["aarch64", "x86_64"],
+        "linux": ["aarch64", "x86_64", "s390x"],
         "macos": ["aarch64", "x86_64"],
         "windows": ["aarch64", "x86_64"],
     }

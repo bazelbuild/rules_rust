@@ -1,6 +1,7 @@
 //! Common utilities
 
 pub(crate) mod starlark;
+pub(crate) mod symlink;
 pub(crate) mod target_triple;
 
 pub(crate) const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
@@ -33,7 +34,6 @@ pub(crate) fn normalize_cargo_file_paths(
     outputs
         .into_iter()
         .map(|(path, content)| {
-            let path = out_dir.join(path);
             // Get Path Str and Parent Path Str so we can rename the root file
             let original_path_str = path.to_str().expect("All file paths should be strings");
             let original_parent_path_str = path
@@ -42,16 +42,23 @@ pub(crate) fn normalize_cargo_file_paths(
                 .to_str()
                 .expect("All file paths should be strings");
 
-            let new_path = if original_parent_path_str.contains('+') {
+            let path = if original_parent_path_str.contains('+') {
                 let new_parent_file_path = sanitize_repository_name(original_parent_path_str);
-                std::fs::rename(original_parent_path_str, new_parent_file_path)
-                    .expect("Could not rename paths");
+                std::fs::rename(
+                    out_dir.join(original_parent_path_str),
+                    out_dir.join(new_parent_file_path),
+                )
+                .expect("Could not rename paths");
                 PathBuf::from(&original_path_str.replace('+', "-"))
             } else {
                 path
             };
 
-            (new_path, content)
+            // In recent versions of Bazel, canonical repository paths may contain (+)
+            // symbols so it is important to apply the transformation only to `outputs`
+            // and leave `out_dir` untouched.
+            let path = out_dir.join(path);
+            (path, content)
         })
         .collect()
 }
