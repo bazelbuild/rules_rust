@@ -64,7 +64,7 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     additional_args.add("--deps_info={}".format(deps_info_file.path))
     additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
     additional_args.add("--prost_opt=compile_well_known_types")
-    additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
+    additional_args.add("--file_descriptor_set={}".format(proto_info.direct_descriptor_set.path))
     additional_args.add_all(prost_toolchain.prost_opts, format_each = "--prost_opt=%s")
 
     if prost_toolchain.tonic_plugin:
