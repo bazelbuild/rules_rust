@@ -61,6 +61,8 @@ def _rust_impl(module_ctx):
             rust_register_toolchains(
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
+                extra_rustc_flags = toolchain.extra_rustc_flags,
+                extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
                 allocator_library = toolchain.allocator_library,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
@@ -108,6 +110,12 @@ _RUST_TOOLCHAIN_TAG = tag_class(
     attrs = dict(
         extra_target_triples = attr.string_list(
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        extra_exec_rustc_flags = attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        extra_rustc_flags = attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
         ),
         rust_analyzer_version = attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
