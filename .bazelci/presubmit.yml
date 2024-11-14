@@ -88,6 +88,7 @@ tasks:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   macos:
+    platform: macos_arm64
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     coverage_targets: *default_macos_targets
@@ -112,7 +113,7 @@ tasks:
     post_shell_commands: *coverage_validation_post_shell_commands
   macos_split_coverage_postprocessing:
     name: Split Coverage Postprocessing
-    platform: macos
+    platform: macos_arm64
     shell_commands: *split_coverage_postprocessing_shell_commands
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
@@ -127,7 +128,7 @@ tasks:
       - "--compilation_mode=opt"
   macos_opt:
     name: Opt Mode
-    platform: macos
+    platform: macos_arm64
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
     build_flags:
@@ -173,7 +174,7 @@ tasks:
     bazel: "rolling"
   macos_with_aspects:
     name: With Aspects
-    platform: macos
+    platform: macos_arm64
     build_flags: *aspects_flags
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -181,7 +182,7 @@ tasks:
     post_shell_commands: *coverage_validation_post_shell_commands
   macos_rolling_with_aspects:
     name: "Macos Rolling Bazel Version With Aspects"
-    platform: macos
+    platform: macos_arm64
     build_flags: *aspects_flags
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -455,7 +456,7 @@ tasks:
     build_flags: *aspects_flags
   macos_examples:
     name: Examples
-    platform: macos
+    platform: macos_arm64
     working_directory: examples
     build_targets:
       - "//..."
@@ -528,7 +529,7 @@ tasks:
     build_flags: *aspects_flags
   crate_universe_examples_macos:
     name: Crate Universe Examples
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/crate_universe
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
@@ -538,7 +539,7 @@ tasks:
     build_flags: *aspects_flags
   crate_universe_unnamed_examples_macos:
     name: Crate Universe Unnamed Examples
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/crate_universe_unnamed
     run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:
@@ -660,7 +661,7 @@ tasks:
       ANDROID_NDK_HOME: /opt/android-ndk-r25b
   android_examples_macos:
     name: Android Examples
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/android
     build_flags:
       - "--incompatible_enable_android_toolchain_resolution"
@@ -675,13 +676,13 @@ tasks:
       ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
   ios_examples:
     name: iOS Examples
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/ios
     build_targets:
       - "//..."
   ios_build:
     name: iOS build script cross compile test
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/ios_build
     test_flags:
       - "--cpu=ios_x86_64"
@@ -697,7 +698,7 @@ tasks:
   #     - "//..."
   musl_cross_compiling_macos_to_linux:
     name: Musl cross compiling test from macOS to Linux
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/musl_cross_compiling
     build_targets:
       - "//..."
@@ -754,7 +755,7 @@ tasks:
       - "//..."
   macos_bzlmod_cross_compile:
     name: Cross compilation with bzlmod on macOS
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/bzlmod/cross_compile
     build_targets:
       - "//:all"
@@ -790,7 +791,7 @@ tasks:
       - "//..."
   macos_bzlmod_bcr:
     name: bzlmod BCR presubmit
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_flags
     run_targets:
@@ -828,7 +829,7 @@ tasks:
     # A newer version than is specified in the .bazel_version file is needed for
     # --incompatible_use_plus_in_repo_names'
     bazel: *minimum_bazel_version
-    platform: macos
+    platform: macos_arm64
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
