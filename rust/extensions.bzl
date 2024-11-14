@@ -51,6 +51,8 @@ def _rust_impl(module_ctx):
     toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
+        if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
+            fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
         if len(toolchain.versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
@@ -58,10 +60,12 @@ def _rust_impl(module_ctx):
             # valid.
             _empty_repository(name = "rust_toolchains")
         else:
+            extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
+
             rust_register_toolchains(
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
-                extra_rustc_flags = toolchain.extra_rustc_flags,
+                extra_rustc_flags = extra_rustc_flags,
                 extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
                 allocator_library = toolchain.allocator_library,
                 rustfmt_version = toolchain.rustfmt_version,
@@ -116,6 +120,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         extra_rustc_flags = attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        extra_rustc_flags_triples = attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
         ),
         rust_analyzer_version = attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
