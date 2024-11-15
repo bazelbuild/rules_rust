@@ -83,13 +83,19 @@ SUPPORTED_T3_PLATFORM_TRIPLES = {
 }
 
 SUPPORTED_PLATFORM_TRIPLES = sorted(
-    SUPPORTED_T1_PLATFORM_TRIPLES.keys() + SUPPORTED_T2_PLATFORM_TRIPLES.keys() + SUPPORTED_T3_PLATFORM_TRIPLES.keys(),
+    list(SUPPORTED_T1_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T2_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T3_PLATFORM_TRIPLES.keys()),
 )
 
 # Represents all platform triples `rules_rust` is configured to handle in some way.
 # Note that with T3 platforms some artifacts may not be available which can lead to
 # failures in the analysis phase. This list should be used sparingly.
-ALL_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES.keys() + SUPPORTED_T2_PLATFORM_TRIPLES.keys() + _T3_PLATFORM_TRIPLES.keys()
+ALL_PLATFORM_TRIPLES = (
+    list(SUPPORTED_T1_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T2_PLATFORM_TRIPLES.keys()) +
+    list(_T3_PLATFORM_TRIPLES.keys())
+)
 
 # CPUs that map to a `@platforms//cpu` entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
