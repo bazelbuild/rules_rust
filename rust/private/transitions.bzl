@@ -41,8 +41,5 @@ alias_with_import_macro_bootstrapping_mode = rule(
             cfg = import_macro_dep_bootstrap_transition,
             mandatory = True,
         ),
-        "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
     },
 )

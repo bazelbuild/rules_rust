@@ -125,9 +125,6 @@ WASM_BINDGEN_ATTR = {
         cfg = wasm_bindgen_transition,
         mandatory = True,
     ),
-    "_allowlist_function_transition": attr.label(
-        default = Label("//tools/allowlists/function_transition_allowlist"),
-    ),
 }
 
 rust_wasm_bindgen = rule(
@@ -158,9 +155,6 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
             allow_single_file = True,
             cfg = wasm_bindgen_transition,
             mandatory = True,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
     },
     toolchains = [

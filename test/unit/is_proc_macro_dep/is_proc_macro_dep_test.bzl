@@ -45,11 +45,6 @@ attach_dep_actions_and_enable_is_proc_macro_dep_aspect = rule(
         "dep": attr.label(
             aspects = [collect_dep_actions_aspect],
         ),
-        "_allowlist_function_transition": attr.label(
-            default = Label(
-                "//tools/allowlists/function_transition_allowlist",
-            ),
-        ),
     },
     cfg = enable_is_proc_macro_dep_transition,
 )
