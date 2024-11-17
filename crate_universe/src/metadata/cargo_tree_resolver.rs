@@ -65,6 +65,7 @@ pub(crate) struct CargoTreeEntry {
 }
 
 impl CargoTreeEntry {
+    #[cfg(test)]
     pub fn new() -> Self {
         Self {
             features: BTreeSet::new(),
@@ -374,48 +375,33 @@ impl TreeResolver {
             }
         }
 
-        // Collect all metadata into a mapping of crate to it's metadata per target.
+        // Collect all metadata into a mapping of crate to its metadata per target.
         let mut result = TreeResolverMetadata::new();
         for (crate_id, tree_data) in metadata.into_iter() {
-            let common = CargoTreeEntry {
-                features: tree_data
-                    .iter()
-                    .fold(
-                        None,
-                        |common: Option<BTreeSet<String>>, (_, data)| match common {
-                            Some(common) => {
-                                Some(common.intersection(&data.features).cloned().collect())
-                            }
-                            None => Some(data.features.clone()),
-                        },
-                    )
-                    .unwrap_or_default(),
-                deps: tree_data
-                    .iter()
-                    .fold(
-                        None,
-                        |common: Option<BTreeSet<CrateId>>, (_, data)| match common {
-                            Some(common) => {
-                                Some(common.intersection(&data.deps).cloned().collect())
-                            }
-                            None => Some(data.deps.clone()),
-                        },
-                    )
-                    .unwrap_or_default(),
+            // Determine the features and deps common to all targets
+            let common = if target_triples
+                .iter()
+                .all(|triple| tree_data.contains_key(triple))
+            {
+                let mut tree_data = tree_data.values();
+                let mut common = tree_data.next().cloned().unwrap_or_default();
+                for CargoTreeEntry { features, deps } in tree_data {
+                    common.features.retain(|feat| features.contains(feat));
+                    common.deps.retain(|dep| deps.contains(dep));
+                }
+                common
+            } else {
+                // The crate is not included on all targets, so it cannot have
+                // any features or deps common to all targets
+                CargoTreeEntry::default()
             };
             let mut select: Select<CargoTreeEntry> = Select::default();
-            for (target_triple, data) in tree_data {
-                let mut entry = CargoTreeEntry::new();
-                entry.features.extend(
-                    data.features
-                        .into_iter()
-                        .filter(|f| !common.features.contains(f)),
-                );
-                entry
-                    .deps
-                    .extend(data.deps.into_iter().filter(|d| !common.deps.contains(d)));
-                if !entry.is_empty() {
-                    select.insert(entry, Some(target_triple.to_bazel()));
+            for (target_triple, mut data) in tree_data {
+                // Filter out common features and deps to get target-specific features and deps
+                data.features.retain(|feat| !common.features.contains(feat));
+                data.deps.retain(|dep| !common.deps.contains(dep));
+                if !data.is_empty() {
+                    select.insert(data, Some(target_triple.to_bazel()));
                 }
             }
             if !common.is_empty() {

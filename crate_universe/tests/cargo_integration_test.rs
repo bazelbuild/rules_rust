@@ -152,54 +152,59 @@ fn feature_generator() {
 
     assert_eq!(
         json!({
-            "common": {
-                "deps": [
-                    "arrayvec 0.7.2",
-                    "bitflags 1.3.2",
-                    "fxhash 0.2.1",
-                    "log 0.4.17",
-                    "naga 0.10.0",
-                    "parking_lot 0.12.1",
-                    "profiling 1.0.7",
-                    "raw-window-handle 0.5.0",
-                    "thiserror 1.0.37",
-                    "wgpu-types 0.14.1",
-                ],
-                "features": [
-                    "default",
-                ],
-            },
             "selects": {
                 "x86_64-apple-darwin": {
                     "deps": [
+                        "arrayvec 0.7.2",
+                        "bitflags 1.3.2",
                         "block 0.1.6",
                         "core-graphics-types 0.1.1",
                         "foreign-types 0.3.2",
+                        "fxhash 0.2.1",
+                        "log 0.4.17",
                         "metal 0.24.0",
+                        "naga 0.10.0",
                         "objc 0.2.7",
+                        "parking_lot 0.12.1",
+                        "profiling 1.0.7",
+                        "raw-window-handle 0.5.0",
+                        "thiserror 1.0.37",
+                        "wgpu-types 0.14.1",
                     ],
                     "features": [
                         "block",
+                        "default",
                         "foreign-types",
                         "metal",
                     ],
                 },
                 "x86_64-pc-windows-msvc": {
                     "deps": [
+                        "arrayvec 0.7.2",
                         "ash 0.37.1+1.3.235",
                         "bit-set 0.5.3",
+                        "bitflags 1.3.2",
                         "d3d12 0.5.0",
+                        "fxhash 0.2.1",
                         "gpu-alloc 0.5.3",
                         "gpu-descriptor 0.2.3",
                         "libloading 0.7.4",
+                        "log 0.4.17",
+                        "naga 0.10.0",
+                        "parking_lot 0.12.1",
+                        "profiling 1.0.7",
                         "range-alloc 0.1.2",
+                        "raw-window-handle 0.5.0",
                         "renderdoc-sys 0.7.1",
                         "smallvec 1.10.0",
+                        "thiserror 1.0.37",
+                        "wgpu-types 0.14.1",
                         "winapi 0.3.9",
                     ],
                     "features": [
                         "ash",
                         "bit-set",
+                        "default",
                         "dx11",
                         "dx12",
                         "gpu-alloc",
@@ -211,21 +216,33 @@ fn feature_generator() {
                         "renderdoc-sys",
                         "smallvec",
                         "vulkan",
+
                     ],
                 },
                 "x86_64-unknown-linux-gnu": {
                     "deps": [
+                        "arrayvec 0.7.2",
                         "ash 0.37.1+1.3.235",
+                        "bitflags 1.3.2",
+                        "fxhash 0.2.1",
                         "glow 0.11.2",
                         "gpu-alloc 0.5.3",
                         "gpu-descriptor 0.2.3",
                         "khronos-egl 4.1.0",
                         "libloading 0.7.4",
+                        "log 0.4.17",
+                        "naga 0.10.0",
+                        "parking_lot 0.12.1",
+                        "profiling 1.0.7",
+                        "raw-window-handle 0.5.0",
                         "renderdoc-sys 0.7.1",
                         "smallvec 1.10.0",
+                        "thiserror 1.0.37",
+                        "wgpu-types 0.14.1",
                     ],
                     "features": [
                         "ash",
+                        "default",
                         "egl",
                         "gles",
                         "glow",
@@ -544,32 +561,37 @@ fn host_specific_build_deps() {
 
     assert_eq!(
         json!({
-            "common": {
-                "deps": [
-                    "bitflags 2.6.0",
-                ],
-                "features": [
-                    "alloc",
-                    "default",
-                    "fs",
-                    "libc-extra-traits",
-                    "std",
-                    "use-libc-auxv",
-                ],
-            },
             // Note that there is no `wasm32-unknown-unknown` or `x86_64-pc-windows-msvc` entry
             // since these platforms do not depend on `rustix`. The chain breaks due to the
             // conditions here: https://github.com/Stebalien/tempfile/blob/v3.11.0/Cargo.toml#L25-L33
             "selects": {
                 "x86_64-apple-darwin": {
                     "deps": [
+                        "bitflags 2.6.0",
                         "errno 0.3.9",
                         "libc 0.2.158",
+                    ],
+                    "features": [
+                        "alloc",
+                        "default",
+                        "fs",
+                        "libc-extra-traits",
+                        "std",
+                        "use-libc-auxv",
                     ],
                 },
                 "x86_64-unknown-linux-gnu": {
                     "deps": [
+                        "bitflags 2.6.0",
                         "linux-raw-sys 0.4.14",
+                    ],
+                    "features": [
+                        "alloc",
+                        "default",
+                        "fs",
+                        "libc-extra-traits",
+                        "std",
+                        "use-libc-auxv",
                     ],
                 },
             },
@@ -579,28 +601,30 @@ fn host_specific_build_deps() {
 
     assert_eq!(
         json!({
-            "common": {
-                "deps": [
-                    "cfg-if 1.0.0",
-                    "fastrand 2.1.1",
-                    "once_cell 1.19.0",
-                ],
-            },
             // Note that windows does not contain `rustix` and instead `windows-sys`.
             // This shows correct detection of exec platform constraints.
             "selects": {
                 "x86_64-apple-darwin": {
                     "deps": [
+                        "cfg-if 1.0.0",
+                        "fastrand 2.1.1",
+                        "once_cell 1.19.0",
                         "rustix 0.38.36",
                     ],
                 },
                 "x86_64-pc-windows-msvc": {
                     "deps": [
+                        "cfg-if 1.0.0",
+                        "fastrand 2.1.1",
+                        "once_cell 1.19.0",
                         "windows-sys 0.59.0",
                     ],
                 },
                 "x86_64-unknown-linux-gnu": {
                     "deps": [
+                        "cfg-if 1.0.0",
+                        "fastrand 2.1.1",
+                        "once_cell 1.19.0",
                         "rustix 0.38.36",
                     ],
                 },

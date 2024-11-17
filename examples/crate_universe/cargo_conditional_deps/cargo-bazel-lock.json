@@ -1,5 +1,5 @@
 {
-  "checksum": "59be2ecd05a76e24ac796ef59c99aa8df9951f6f5a9e7985ae284c673013baa0",
+  "checksum": "ceedae0ebf7765906eb5ca282cf919fa7ec9b6ed417c32589c420ace0c6a6a37",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -70,10 +70,36 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "edition": "2018",
         "version": "1.3.2"
@@ -195,12 +221,54 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "extra_traits",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "extra_traits",
+              "std"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -271,10 +339,36 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -341,44 +435,342 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "acct",
-            "aio",
-            "default",
-            "dir",
-            "env",
-            "event",
-            "feature",
-            "fs",
-            "hostname",
-            "inotify",
-            "ioctl",
-            "kmod",
-            "memoffset",
-            "mman",
-            "mount",
-            "mqueue",
-            "net",
-            "personality",
-            "pin-utils",
-            "poll",
-            "process",
-            "pthread",
-            "ptrace",
-            "quota",
-            "reboot",
-            "resource",
-            "sched",
-            "signal",
-            "socket",
-            "term",
-            "time",
-            "ucontext",
-            "uio",
-            "user",
-            "zerocopy"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "i686-unknown-linux-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "acct",
+              "aio",
+              "default",
+              "dir",
+              "env",
+              "event",
+              "feature",
+              "fs",
+              "hostname",
+              "inotify",
+              "ioctl",
+              "kmod",
+              "memoffset",
+              "mman",
+              "mount",
+              "mqueue",
+              "net",
+              "personality",
+              "pin-utils",
+              "poll",
+              "process",
+              "pthread",
+              "ptrace",
+              "quota",
+              "reboot",
+              "resource",
+              "sched",
+              "signal",
+              "socket",
+              "term",
+              "time",
+              "ucontext",
+              "uio",
+              "user",
+              "zerocopy"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -395,19 +787,102 @@
               "target": "libc"
             },
             {
-              "id": "memoffset 0.7.1",
-              "target": "memoffset"
-            },
-            {
-              "id": "pin-utils 0.1.0",
-              "target": "pin_utils"
-            },
-            {
               "id": "static_assertions 1.1.0",
               "target": "static_assertions"
             }
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "memoffset 0.7.1",
+                "target": "memoffset"
+              },
+              {
+                "id": "pin-utils 0.1.0",
+                "target": "pin_utils"
+              }
+            ]
+          }
         },
         "edition": "2018",
         "version": "0.26.2"
@@ -521,7 +996,8 @@
       "aarch64-unknown-fuchsia"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
@@ -610,7 +1086,8 @@
       "x86_64-unknown-fuchsia"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"

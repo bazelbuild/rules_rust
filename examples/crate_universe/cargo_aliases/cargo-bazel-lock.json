@@ -1,5 +1,5 @@
 {
-  "checksum": "72bc62e0cc45a664f35df0f1386d5f120cb84ca55fbf7ace99dd99c526b5b308",
+  "checksum": "95a6f1706c40594b70a4070a568ceda5e1e8e6e387e24d59645b5c9201f91f30",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -437,10 +437,51 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-pc-windows-msvc": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-apple-darwin": [
+              "default"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -793,10 +834,51 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default"
+            ],
+            "i686-pc-windows-msvc": [
+              "default"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-apple-darwin": [
+              "default"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default"
+            ]
+          }
         },
         "edition": "2018",
         "version": "0.4.1"
@@ -1608,12 +1690,79 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "syn",
-            "syn-error"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "syn",
+              "syn-error"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1628,13 +1777,94 @@
             {
               "id": "quote 1.0.23",
               "target": "quote"
-            },
-            {
-              "id": "syn 1.0.109",
-              "target": "syn"
             }
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "syn 1.0.109",
+                "target": "syn"
+              }
+            ]
+          }
         },
         "edition": "2018",
         "proc_macro_deps": {
@@ -1799,11 +2029,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "proc-macro"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1878,11 +2162,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "proc-macro"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -2426,27 +2764,155 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "clone-impls",
-            "default",
-            "derive",
-            "full",
-            "parsing",
-            "printing",
-            "proc-macro",
-            "quote"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "i686-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "i686-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "x86_64-apple-darwin": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "x86_64-unknown-freebsd": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "quote"
+            ]
+          }
         },
         "deps": {
           "common": [
             {
               "id": "proc-macro2 1.0.51",
               "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.23",
-              "target": "quote"
             },
             {
               "id": "syn 1.0.109",
@@ -2457,7 +2923,92 @@
               "target": "unicode_ident"
             }
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "quote 1.0.23",
+                "target": "quote"
+              }
+            ]
+          }
         },
         "edition": "2018",
         "version": "1.0.109"
@@ -2761,11 +3312,17 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-wasi": [
+              "default",
+              "std"
+            ],
+            "wasm32-wasip1": [
+              "default",
+              "std"
+            ]
+          }
         },
         "edition": "2018",
         "version": "0.11.0+wasi-snapshot-preview1"
@@ -2819,20 +3376,48 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "consoleapi",
-            "errhandlingapi",
-            "fileapi",
-            "minwinbase",
-            "minwindef",
-            "processenv",
-            "std",
-            "winbase",
-            "wincon",
-            "winerror",
-            "winnt"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ],
+            "i686-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ]
+          }
         },
         "deps": {
           "common": [

@@ -1,5 +1,5 @@
 {
-  "checksum": "dc978ad414fb0f5ad2be4c7c980f674c2681de5dc239cce00ae81f6b47f4ed6f",
+  "checksum": "cd1440ada6db7ff0ee9fb56461aad8babdc1a8710959a736be4ff905ca5a23e9",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -82,10 +82,51 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "runtime"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "runtime"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "runtime"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "runtime"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "runtime"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "runtime"
+            ],
+            "i686-pc-windows-msvc": [
+              "runtime"
+            ],
+            "i686-unknown-linux-gnu": [
+              "runtime"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "runtime"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "runtime"
+            ],
+            "x86_64-apple-darwin": [
+              "runtime"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "runtime"
+            ],
+            "x86_64-unknown-freebsd": [
+              "runtime"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "runtime"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "runtime"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -550,19 +591,177 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "clang_3_5",
-            "clang_3_6",
-            "clang_3_7",
-            "clang_3_8",
-            "clang_3_9",
-            "clang_4_0",
-            "clang_5_0",
-            "clang_6_0",
-            "libloading",
-            "runtime"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "i686-pc-windows-msvc": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "i686-unknown-linux-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "x86_64-apple-darwin": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "x86_64-unknown-freebsd": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "clang_3_5",
+              "clang_3_6",
+              "clang_3_7",
+              "clang_3_8",
+              "clang_3_9",
+              "clang_4_0",
+              "clang_5_0",
+              "clang_6_0",
+              "libloading",
+              "runtime"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -577,13 +776,94 @@
             {
               "id": "libc 0.2.154",
               "target": "libc"
-            },
-            {
-              "id": "libloading 0.8.3",
-              "target": "libloading"
             }
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "libloading 0.8.3",
+                "target": "libloading"
+              }
+            ]
+          }
         },
         "edition": "2015",
         "version": "1.7.0"
@@ -798,10 +1078,51 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "std"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -937,11 +1258,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ]
+          }
         },
         "deps": {
           "common": [],
@@ -1343,11 +1718,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "alloc",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "alloc",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "alloc",
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "alloc",
+              "std"
+            ]
+          }
         },
         "edition": "2021",
         "version": "2.7.2"
@@ -1389,10 +1818,51 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "std"
+            ]
+          }
         },
         "edition": "2018",
         "version": "0.2.1"
@@ -1434,11 +1904,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "alloc",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "alloc",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "alloc",
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "alloc",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "alloc",
+              "std"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1591,11 +2115,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "proc-macro"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1658,11 +2236,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "proc-macro"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "proc-macro"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "proc-macro"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1713,18 +2345,163 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
-            "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "i686-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-apple-darwin": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -1779,33 +2556,336 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "alloc",
-            "meta",
-            "nfa-pikevm",
-            "nfa-thompson",
-            "std",
-            "syntax",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
-            "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment",
-            "unicode-word-boundary"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "i686-pc-windows-msvc": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "i686-unknown-linux-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "x86_64-apple-darwin": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "x86_64-unknown-freebsd": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "alloc",
+              "meta",
+              "nfa-pikevm",
+              "nfa-thompson",
+              "std",
+              "syntax",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment",
+              "unicode-word-boundary"
+            ]
+          }
         },
         "deps": {
-          "common": [
-            {
-              "id": "regex-syntax 0.8.3",
-              "target": "regex_syntax"
-            }
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "regex-syntax 0.8.3",
+                "target": "regex_syntax"
+              }
+            ]
+          }
         },
         "edition": "2021",
         "version": "0.4.6"
@@ -1847,18 +2927,163 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
-            "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "i686-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-apple-darwin": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "std",
+              "unicode",
+              "unicode-age",
+              "unicode-bool",
+              "unicode-case",
+              "unicode-gencat",
+              "unicode-perl",
+              "unicode-script",
+              "unicode-segment"
+            ]
+          }
         },
         "edition": "2021",
         "version": "0.8.3"
@@ -1900,11 +3125,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ]
+          }
         },
         "edition": "2015",
         "version": "1.1.0"
@@ -1946,11 +3225,65 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "std"
+            ],
+            "i686-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "std"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "std"
+            ]
+          }
         },
         "edition": "2015",
         "version": "1.3.0"
@@ -1992,18 +3325,163 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "clone-impls",
-            "default",
-            "derive",
-            "extra-traits",
-            "full",
-            "parsing",
-            "printing",
-            "proc-macro",
-            "visit-mut"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "i686-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "i686-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "x86_64-apple-darwin": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "x86_64-unknown-freebsd": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "clone-impls",
+              "default",
+              "derive",
+              "extra-traits",
+              "full",
+              "parsing",
+              "printing",
+              "proc-macro",
+              "visit-mut"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -2012,15 +3490,96 @@
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.36",
-              "target": "quote"
-            },
-            {
               "id": "unicode-ident 1.0.12",
               "target": "unicode_ident"
             }
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "aarch64-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "aarch64-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "arm-unknown-linux-gnueabi": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "i686-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "i686-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "powerpc-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "s390x-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "x86_64-apple-darwin": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "x86_64-pc-windows-msvc": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-freebsd": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-linux-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              {
+                "id": "quote 1.0.36",
+                "target": "quote"
+              }
+            ]
+          }
         },
         "edition": "2021",
         "version": "2.0.60"
@@ -2114,19 +3673,45 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "errhandlingapi",
-            "fileapi",
-            "handleapi",
-            "minwinbase",
-            "minwindef",
-            "processthreadsapi",
-            "synchapi",
-            "winbase",
-            "winerror",
-            "winnt"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-pc-windows-msvc": [
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processthreadsapi",
+              "synchapi",
+              "winbase",
+              "winerror",
+              "winnt"
+            ],
+            "i686-pc-windows-msvc": [
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processthreadsapi",
+              "synchapi",
+              "winbase",
+              "winerror",
+              "winnt"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processthreadsapi",
+              "synchapi",
+              "winbase",
+              "winerror",
+              "winnt"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -2966,7 +4551,8 @@
       "aarch64-unknown-fuchsia"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
     ],
     "aarch64-unknown-nixos-gnu": [
       "aarch64-unknown-nixos-gnu"
@@ -3095,7 +4681,8 @@
       "x86_64-unknown-fuchsia"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"

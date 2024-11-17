@@ -1,5 +1,5 @@
 {
-  "checksum": "4ce263703fc55e73dbbd9ec2b2b1861be82bc9b9c8cbdb59d045db3355ddf241",
+  "checksum": "da5dc26d23af86a9cbdefd498c9be5314d49d5394f761ab43f05a661b707ae98",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -714,19 +714,45 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "consoleapi",
-            "errhandlingapi",
-            "fileapi",
-            "minwindef",
-            "processenv",
-            "std",
-            "winbase",
-            "wincon",
-            "winerror",
-            "winnt"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ],
+            "i686-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "minwindef",
+              "processenv",
+              "std",
+              "winbase",
+              "wincon",
+              "winerror",
+              "winnt"
+            ]
+          }
         },
         "deps": {
           "common": [

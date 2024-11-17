@@ -1,5 +1,5 @@
 {
-  "checksum": "85ace51890ea8af96208646d5ad3605b2b0d82475631ef0aa45487557550ead3",
+  "checksum": "b63b55fd999e059e78cc27d0b163b05d4bedf7feb8a29969884bd4f4adee2f93",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -1607,11 +1607,17 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "wasm32-wasi": [
+              "default",
+              "std"
+            ],
+            "wasm32-wasip1": [
+              "default",
+              "std"
+            ]
+          }
         },
         "edition": "2018",
         "version": "0.9.0+wasi-snapshot-preview1"
@@ -1665,17 +1671,39 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "consoleapi",
-            "errhandlingapi",
-            "fileapi",
-            "handleapi",
-            "minwinbase",
-            "minwindef",
-            "processenv",
-            "winbase"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "winbase"
+            ],
+            "i686-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "winbase"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "consoleapi",
+              "errhandlingapi",
+              "fileapi",
+              "handleapi",
+              "minwinbase",
+              "minwindef",
+              "processenv",
+              "winbase"
+            ]
+          }
         },
         "deps": {
           "common": [
