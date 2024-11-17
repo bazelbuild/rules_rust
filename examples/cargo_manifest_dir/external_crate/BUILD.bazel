@@ -3,6 +3,6 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 rust_library(
     name = "external_crate",
     srcs = ["src/lib.rs"],
-    data = ["include/included_file.rs.inc"],
+    compile_data = ["include/included_file.rs.inc"],
     visibility = ["//visibility:public"],
 )

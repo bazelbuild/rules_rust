@@ -715,8 +715,14 @@ def collect_inputs(
         if build_info.flags:
             build_info_inputs.append(build_info.flags)
 
+    # The old default behavior was to include data files at compile time.
+    # This flag controls whether to include data files in compile_data.
+    data_included_in_inputs = []
+    if not toolchain._incompatible_do_not_include_data_in_compile_data:
+        data_included_in_inputs = getattr(files, "data", [])
+
     nolinkstamp_compile_inputs = depset(
-        getattr(files, "data", []) +
+        data_included_in_inputs +
         build_info_inputs +
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
