@@ -73,7 +73,7 @@ load(
 )
 load(
     "//rust/private:lints.bzl",
-    _rust_lint_group = "rust_lint_group",
+    _rust_lint_config = "rust_lint_config",
 )
 
 rust_library = _rust_library
@@ -161,7 +161,7 @@ rustfmt_test = _rustfmt_test
 rust_stdlib_filegroup = _rust_stdlib_filegroup
 # See @rules_rust//rust:toolchain.bzl for a complete description.
 
-rust_lint_group = _rust_lint_group
+rust_lint_config = _rust_lint_config
 # See @rules_rust//private:lint.bzl for a complete description.
 
 no_std = _no_std

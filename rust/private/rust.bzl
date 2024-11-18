@@ -645,7 +645,7 @@ _common_attrs = {
             linking a native library.
         """),
     ),
-    "lints": attr.label(
+    "lint_config": attr.label(
         doc = "Set of lints to apply when building this crate.",
         providers = [LintsInfo],
     ),

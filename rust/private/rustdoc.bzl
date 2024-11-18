@@ -81,7 +81,7 @@ def rustdoc_compile_action(
     # Specify rustc flags for lints, if they were provided.
     lint_files = []
     if lints_info:
-        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lints
+        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
         lint_files = lint_files + lints_info.rustdoc_lint_files
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)

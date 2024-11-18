@@ -7,5 +7,5 @@ rust_binary(
     srcs = ["main.rs"],
     edition = "2021",
     visibility = ["//visibility:public"],
-    deps = ["//cargo/cargo_toml_info/3rdparty/crates:cargo_toml"],
+    deps = ["//cargo/private/cargo_toml_info/3rdparty/crates:cargo_toml"],
 )
