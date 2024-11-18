@@ -18,7 +18,7 @@ load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_i
 
 cross_installer_deps()
 
-load("//cargo/cargo_toml_info/3rdparty/crates:defs.bzl", cargo_toml_info_crate_repositories = "crate_repositories")
+load("//cargo/private/cargo_toml_info/3rdparty/crates:defs.bzl", cargo_toml_info_crate_repositories = "crate_repositories")
 
 cargo_toml_info_crate_repositories()
 

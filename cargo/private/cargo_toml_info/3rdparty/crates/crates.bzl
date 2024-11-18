@@ -9,7 +9,7 @@
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//cargo/cargo_toml_info/3rdparty/crates:defs.bzl", _crate_repositories = "crate_repositories")
+load("@rules_rust//cargo/private/cargo_toml_info/3rdparty/crates:defs.bzl", _crate_repositories = "crate_repositories")
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
@@ -23,8 +23,8 @@ def crate_repositories():
     maybe(
         crates_vendor_remote_repository,
         name = "rules_rust_cargo_toml_info",
-        build_file = Label("@rules_rust//cargo/cargo_toml_info/3rdparty/crates:BUILD.bazel"),
-        defs_module = Label("@rules_rust//cargo/cargo_toml_info/3rdparty/crates:defs.bzl"),
+        build_file = Label("@rules_rust//cargo/private/cargo_toml_info/3rdparty/crates:BUILD.bazel"),
+        defs_module = Label("@rules_rust//cargo/private/cargo_toml_info/3rdparty/crates:defs.bzl"),
     )
 
     direct_deps = [struct(repo = "rules_rust_cargo_toml_info", is_dev_dep = False)]

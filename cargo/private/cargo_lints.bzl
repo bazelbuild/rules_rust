@@ -42,11 +42,11 @@ def _cargo_lints(ctx):
     return [
         DefaultInfo(files = depset(outputs), runfiles = ctx.runfiles(outputs)),
         LintsInfo(
-            rustc_lints = [],
+            rustc_lint_flags = [],
             rustc_lint_files = [rustc_lints_out],
-            clippy_lints = [],
+            clippy_lint_flags = [],
             clippy_lint_files = [clippy_lints_out],
-            rustdoc_lints = [],
+            rustdoc_lint_flags = [],
             rustdoc_lint_files = [rustdoc_lints_out],
         )
     ]
@@ -66,7 +66,7 @@ cargo_lints = rule(
         "_cargo_toml_info": attr.label(
             allow_single_file = True,
             executable = True,
-            default = "@rules_rust//cargo/cargo_toml_info",
+            default = "@rules_rust//cargo/private/cargo_toml_info",
             cfg = "exec",
         ),
     },

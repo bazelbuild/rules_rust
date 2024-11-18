@@ -2,8 +2,8 @@
 
 load("//rust/private:providers.bzl", "LintsInfo")
 
-def _rust_lint_group(ctx):
-    """Implementation of the `rust_lint_group` rule.
+def _rust_lint_config(ctx):
+    """Implementation of the `rust_lint_config` rule.
 
     Args:
         ctx (ctx): The rule's context object.
@@ -40,16 +40,16 @@ def _rust_lint_group(ctx):
         rustdoc_flags.append("--{LEVEL}=rustdoc::{LINT}".format(LEVEL = level, LINT = lint))
 
     return LintsInfo(
-        rustc_lints = rustc_flags,
+        rustc_lint_flags = rustc_flags,
         rustc_lint_files = [],
-        clippy_lints = clippy_flags,
+        clippy_lint_flags = clippy_flags,
         clippy_lint_files = [],
-        rustdoc_lints = rustdoc_flags,
+        rustdoc_lint_flags = rustdoc_flags,
         rustdoc_lint_files = [],
     )
 
-rust_lint_group = rule(
-    implementation = _rust_lint_group,
+rust_lint_config = rule(
+    implementation = _rust_lint_config,
     attrs = {
         "rustc": attr.string_dict(
             doc = "Set of 'rustc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.",
@@ -70,9 +70,9 @@ Defines a group of lints that can be applied when building Rust targets.
 For example, you can define a single group of lints:
 
 ```python
-load("@rules_rust//rust:defs.bzl", "rust_lint_group")
+load("@rules_rust//rust:defs.bzl", "rust_lint_config")
 
-rust_lint_group(
+rust_lint_config(
     name = "workspace_lints",
     rustc = {
         "unknown_lints": "allow",

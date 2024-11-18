@@ -1204,7 +1204,7 @@ def rustc_compile_action(
     # Add flags for any 'rustc' lints that are specified.
     lint_files = []
     if hasattr(ctx.attr, "lints") and ctx.attr.lints:
-        rust_flags = rust_flags + ctx.attr.lints[LintsInfo].rustc_lints
+        rust_flags = rust_flags + ctx.attr.lints[LintsInfo].rustc_lint_flags
         lint_files = lint_files + ctx.attr.lints[LintsInfo].rustc_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(

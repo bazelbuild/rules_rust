@@ -30,6 +30,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         let workspace_details = Some((&manifest, workspace_path.as_path()));
 
         // TODO(parkmycar): Fix cargo_toml so we inherit lints from our workspace.
+        //
+        // See: <https://gitlab.com/lib.rs/cargo_toml/-/issues/35>
         crate_manifest.complete_from_path_and_workspace(&manifest_toml, workspace_details)?;
         workspace_manifest = Some(manifest);
     }
@@ -49,6 +51,8 @@ struct LintsArgs {
     output_clippy_lints: PathBuf,
     output_rustdoc_lints: PathBuf,
     // TODO(parkmycar): Support Rust's new --check-cfg once cargo-toml is updated.
+    //
+    // See: <https://gitlab.com/lib.rs/cargo_toml/-/issues/34>
     #[allow(dead_code)]
     output_rustc_check_cfg: PathBuf,
 }
