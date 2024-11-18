@@ -15,7 +15,7 @@ load(
 )
 load(
     "//cargo/private:cargo_lints.bzl",
-    _cargo_lints = "cargo_lints",
+    _extract_cargo_lints = "extract_cargo_lints",
 )
 
 cargo_bootstrap_repository = _cargo_bootstrap_repository
@@ -24,4 +24,4 @@ cargo_env = _cargo_env
 cargo_build_script = _cargo_build_script
 cargo_dep_env = _cargo_dep_env
 
-cargo_lints = _cargo_lints
+extract_cargo_lints = _extract_cargo_lints

@@ -6,7 +6,7 @@ Rule used to retrieve the lints specified in the [lints section] of a `Cargo.tom
 
 load("//rust/private:providers.bzl", "LintsInfo")
 
-def _cargo_lints(ctx):
+def _extract_cargo_lints(ctx):
     # Cargo.toml's to read from.
     inputs = [ctx.file.manifest]
     args = ctx.actions.args()
@@ -51,8 +51,8 @@ def _cargo_lints(ctx):
         )
     ]
 
-cargo_lints = rule(
-    implementation = _cargo_lints,
+extract_cargo_lints = rule(
+    implementation = _extract_cargo_lints,
     attrs = {
         "manifest": attr.label(
             allow_single_file = True,
