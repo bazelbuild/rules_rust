@@ -59,9 +59,6 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
-crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
-  - "//vendor_remote_manifests:crates_vendor"
-  - "//vendor_remote_pkgs:crates_vendor"
 coverage_validation_post_shell_commands: &coverage_validation_post_shell_commands
   - |
     grep -q '^SF:.*\.rs$' bazel-out/_coverage/_coverage_report.dat \
@@ -378,12 +375,8 @@ tasks:
     name: Rust-Analyzer Tests
     platform: ubuntu2004
     run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_integration_test:
-    name: Rust-Analyzer Integration Test
-    platform: ubuntu2004
-    run_targets:
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   examples_rust_analyzer_integration_test:
     name: Rust-Analyzer Integration Test
     platform: ubuntu2004
@@ -491,16 +484,6 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_unnamed_examples_ubuntu2004:
-    name: Crate Universe Unnamed Examples
-    platform: ubuntu2004
-    working_directory: examples/crate_universe_unnamed
-    run_targets: *crate_universe_unnamed_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
   crate_universe_rbe_ubuntu2004:
     name: Crate Universe Examples
     platform: rbe_ubuntu2004
@@ -509,19 +492,6 @@ tasks:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
-  crate_universe_unnamed_rbe_ubuntu2004:
-    name: Crate Universe Unnamed Examples
-    platform: rbe_ubuntu2004
-    working_directory: examples/crate_universe_unnamed
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -537,32 +507,12 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_unnamed_examples_macos:
-    name: Crate Universe Unnamed Examples
-    platform: macos_arm64
-    working_directory: examples/crate_universe_unnamed
-    run_targets: *crate_universe_unnamed_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
 #    platform: windows
 #    working_directory: examples/crate_universe
 #    run_targets: *crate_universe_vendor_example_targets
-#    build_flags: *aspects_flags
-#    build_targets:
-#      - "//..."
-#    test_targets:
-#      - "//..."
-#  crate_universe_unnamed_examples_windows:
-#    name: Crate Universe Unnamed Examples
-#    platform: windows
-#    working_directory: examples/crate_universe_unnamed
-#    run_targets: *crate_universe_unnamed_vendor_example_targets
 #    build_flags: *aspects_flags
 #    build_targets:
 #      - "//..."
