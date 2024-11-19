@@ -24,16 +24,6 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
-
-rust_bindgen_dependencies()
-
-rust_bindgen_register_toolchains()
-
-load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
-
-rust_bindgen_transitive_dependencies()
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # We need to load rules_java before anything proto-related happens because otherwise it will pull in its own rules_java which isn't compatible with rules_jvm_external.
@@ -44,38 +34,6 @@ http_archive(
         "https://github.com/bazelbuild/rules_java/releases/download/7.6.1/rules_java-7.6.1.tar.gz",
     ],
 )
-
-load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
-
-rust_proto_protobuf_dependencies()
-
-rust_proto_protobuf_register_toolchains()
-
-load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
-
-rust_proto_protobuf_transitive_repositories()
-
-load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
-
-rust_wasm_bindgen_dependencies()
-
-rust_wasm_bindgen_register_toolchains()
-
-load("@rules_rust//wasm_bindgen/rules_nodejs:repositories.bzl", "nodejs_rust_wasm_bindgen_dependencies")
-
-nodejs_rust_wasm_bindgen_dependencies()
-
-load("@rules_rust//wasm_bindgen/rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
-
-js_rust_wasm_bindgen_dependencies()
-
-load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
-
-rules_js_dependencies()
-
-load("@aspect_rules_js//js:toolchains.bzl", "DEFAULT_NODE_VERSION", "rules_js_register_toolchains")
-
-rules_js_register_toolchains(node_version = DEFAULT_NODE_VERSION)
 
 ###############################################################################
 # Workspace examples
@@ -103,20 +61,6 @@ rust_repository_set(
 ###############################################################################
 # Examples dependencies
 ###############################################################################
-
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "709cc0dcb51cf9028dd57c268066e5bc8f03a119ded410a13b5c3925d6e43c48",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.4/rules_nodejs-5.8.4.tar.gz"],
-)
-
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
-
-node_repositories()
-
-load("@bazel_features//:deps.bzl", "bazel_features_deps")
-
-bazel_features_deps()
 
 http_archive(
     name = "rules_foreign_cc",

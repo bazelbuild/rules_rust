@@ -2,27 +2,27 @@
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
-load("//proto/prost:providers.bzl", "ProstProtoInfo")
-load("//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
+load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rust.bzl", "RUSTC_ATTRS")
+load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rust_analyzer.bzl", "write_rust_analyzer_spec_file")
+load("@rules_rust//rust/private:rust_analyzer.bzl", "write_rust_analyzer_spec_file")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "rustc_compile_action")
+load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "can_build_metadata")
+load("@rules_rust//rust/private:utils.bzl", "can_build_metadata")
+load("//prost:providers.bzl", "ProstProtoInfo")
 
 RUST_EDITION = "2021"
 
-TOOLCHAIN_TYPE = "@rules_rust//proto/prost:toolchain_type"
+TOOLCHAIN_TYPE = "@rules_rust_ext//prost:toolchain_type"
 
 def _create_proto_lang_toolchain(ctx, prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
@@ -288,7 +288,7 @@ rust_prost_aspect = aspect(
     attr_aspects = ["deps"],
     attrs = {
         "_collect_cc_coverage": attr.label(
-            default = Label("//util:collect_coverage"),
+            default = Label("@rules_rust//util:collect_coverage"),
             executable = True,
             cfg = "exec",
         ),
@@ -301,7 +301,7 @@ rust_prost_aspect = aspect(
             doc = "The wrapper script for the Prost protoc plugin.",
             cfg = "exec",
             executable = True,
-            default = Label("//proto/prost/private:protoc_wrapper"),
+            default = Label("//prost/private:protoc_wrapper"),
         ),
     } | RUSTC_ATTRS,
     fragments = ["cpp"],
@@ -444,7 +444,7 @@ rust_prost_toolchain = rule(
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(
-            default = "//proto/protobuf:legacy_proto_toolchain",
+            default = Label("//prost/private:legacy_proto_toolchain"),
         ),
     })),
     toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),

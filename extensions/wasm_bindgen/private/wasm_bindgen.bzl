@@ -1,8 +1,8 @@
 """Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
-load("//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_common")
 load("//wasm_bindgen:providers.bzl", "RustWasmBindgenInfo")
-load("//wasm_bindgen/private:transitions.bzl", "wasm_bindgen_transition")
+load(":transitions.bzl", "wasm_bindgen_transition")
 
 def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_flags = []):
     """Spawn a `RustWasmBindgen` action.
@@ -126,7 +126,7 @@ WASM_BINDGEN_ATTR = {
         mandatory = True,
     ),
     "_allowlist_function_transition": attr.label(
-        default = Label("//tools/allowlists/function_transition_allowlist"),
+        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
     ),
 }
 
@@ -160,7 +160,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
             mandatory = True,
         ),
         "_allowlist_function_transition": attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     toolchains = [
@@ -182,7 +182,7 @@ In cases where users want to control or change the version of `wasm-bindgen` use
 a unique toolchain can be created as in the example below:
 
 ```python
-load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_ext//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     bindgen = "//3rdparty/crates:wasm_bindgen_cli__bin",
@@ -191,7 +191,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "wasm_bindgen_toolchain",
     toolchain = "wasm_bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//wasm_bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_ext//wasm_bindgen:toolchain_type",
 )
 ```
 

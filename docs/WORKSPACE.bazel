@@ -15,20 +15,25 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies()
 
-load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
+local_repository(
+    name = "rules_rust_ext",
+    path = "../extensions",
+)
+
+load("@rules_rust_ext//prost:repositories.bzl", "rust_prost_dependencies")
 
 rust_prost_dependencies()
 
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
+load("@rules_rust_ext//prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
 rust_prost_transitive_repositories()
 
-load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
+load("@rules_rust_ext//protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
 
 rust_proto_protobuf_dependencies()
 
 load(
-    "@rules_rust//wasm_bindgen:repositories.bzl",
+    "@rules_rust_ext//wasm_bindgen:repositories.bzl",
     "rust_wasm_bindgen_dependencies",
     "rust_wasm_bindgen_register_toolchains",
 )
@@ -36,3 +41,11 @@ load(
 rust_wasm_bindgen_dependencies()
 
 rust_wasm_bindgen_register_toolchains()
+
+load("@rules_rust_ext//wasm_bindgen/rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
+
+js_rust_wasm_bindgen_dependencies()
+
+load("@rules_rust_ext//wasm_bindgen/rules_nodejs:repositories.bzl", "nodejs_rust_wasm_bindgen_dependencies")
+
+nodejs_rust_wasm_bindgen_dependencies()

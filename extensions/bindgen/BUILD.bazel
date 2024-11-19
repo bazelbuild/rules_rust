@@ -3,6 +3,10 @@ load("//bindgen:defs.bzl", "rust_bindgen_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "defs.bzl",
+])
+
 toolchain_type(
     name = "toolchain_type",
 )
@@ -13,7 +17,7 @@ bzl_library(
     deps = [
         "//bindgen/3rdparty:bzl_lib",
         "//bindgen/private:bzl_lib",
-        "//rust:bzl_lib",
+        "@rules_rust//rust:bzl_lib",
     ],
 )
 

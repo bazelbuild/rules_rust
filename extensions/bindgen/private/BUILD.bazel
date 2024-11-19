@@ -6,4 +6,7 @@ bzl_library(
         "@rules_cc//cc:bzl_srcs",
     ],
     visibility = ["//bindgen:__pkg__"],
+    deps = [
+        "@rules_rust//rust:bzl_lib",
+    ],
 )

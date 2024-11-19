@@ -1,9 +1,10 @@
+.direnv
 bzlmod
+crate_universe/private/bootstrap
 docs
 examples
-crate_universe/private/bootstrap
+extensions
 test/aliased_toolchains
 test/bzlmod_repo_mapping
 test/cc_common_link
 test/no_std
-.direnv

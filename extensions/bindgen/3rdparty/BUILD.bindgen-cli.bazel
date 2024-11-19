@@ -1,5 +1,5 @@
-load("@rules_rust//bindgen:repositories.bzl", "BINDGEN_VERSION")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_rust_ext//bindgen:repositories.bzl", "BINDGEN_VERSION")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -31,7 +31,7 @@ rust_binary(
     ],
     version = BINDGEN_VERSION,
     # This list is produced by adding the contents of https://github.com/rust-lang/rust-bindgen/blob/main/bindgen-cli/Cargo.toml
-    # to `@rules_rust//bindgen/3rdparty:crates_vendor`, rendering dependencies, and updating the deps
+    # to `@rules_rust_ext//bindgen/3rdparty:crates_vendor`, rendering dependencies, and updating the deps
     deps = [
         "@rules_rust_bindgen__bindgen-{}//:bindgen".format(BINDGEN_VERSION),
         "@rules_rust_bindgen__clap-4.5.17//:clap",

@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//rust:defs.bzl", "rust_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
 load(":legacy_proto_toolchain.bzl", "legacy_proto_toolchain")
 load(":toolchain.bzl", "rust_proto_toolchain")
 
@@ -8,6 +8,10 @@ package(default_visibility = ["//visibility:public"])
 toolchain_type(
     name = "toolchain_type",
 )
+
+exports_files([
+    "defs.bzl",
+])
 
 rust_binary(
     name = "optional_output_wrapper",
@@ -19,7 +23,7 @@ rust_binary(
 toolchain(
     name = "default-proto-toolchain",
     toolchain = ":default-proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
+    toolchain_type = "@rules_rust_ext//protobuf:toolchain_type",
 )
 
 rust_proto_toolchain(
@@ -28,10 +32,24 @@ rust_proto_toolchain(
 )
 
 bzl_library(
+    name = "protobuf_bzl_lib",
+    srcs = ["@com_google_protobuf//:bzl_srcs"],
+    visibility = ["//visibility:private"],
+)
+
+bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]),
+    srcs = [
+        "defs.bzl",
+        "proto.bzl",
+        "toolchain.bzl",
+    ],
     deps = [
-        "//proto/protobuf/3rdparty:bzl_lib",
+        ":protobuf_bzl_lib",
+        "//protobuf/3rdparty:bzl_lib",
+        "@rules_proto//proto:defs",
+        "@rules_proto//proto:repositories",
+        "@rules_rust//rust:bzl_lib",
     ],
 )
 

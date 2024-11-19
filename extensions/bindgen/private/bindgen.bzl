@@ -19,14 +19,14 @@ load(
     "CPP_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_library")
-load("//rust:defs.bzl", "rust_library")
-load("//rust:rust_common.bzl", "BuildInfo")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:rust_common.bzl", "BuildInfo")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "get_linker_and_args")
+load("@rules_rust//rust/private:rustc.bzl", "get_linker_and_args")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "find_cc_toolchain", "get_lib_name_default", "get_preferred_artifact")
+load("@rules_rust//rust/private:utils.bzl", "find_cc_toolchain", "get_lib_name_default", "get_preferred_artifact")
 
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
@@ -237,7 +237,7 @@ def _rust_bindgen_impl(ctx):
         args.add(c_output.path)
 
     # Vanilla usage of bindgen produces formatted output, here we do the same if we have `rustfmt` in our toolchain.
-    rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
+    rustfmt_toolchain = ctx.toolchains[Label("@rules_rust//rust/rustfmt:toolchain_type")]
     if rustfmt_toolchain and toolchain.default_rustfmt:
         # Bindgen is able to find rustfmt using the RUSTFMT environment variable
         env.update({"RUSTFMT": rustfmt_toolchain.rustfmt.path})
@@ -398,7 +398,7 @@ rust_bindgen = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_process_wrapper": attr.label(
-            default = Label("//util/process_wrapper"),
+            default = Label("@rules_rust//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -408,8 +408,8 @@ rust_bindgen = rule(
     fragments = ["cpp"],
     toolchains = [
         config_common.toolchain_type("//bindgen:toolchain_type"),
-        config_common.toolchain_type("//rust:toolchain_type"),
-        config_common.toolchain_type("//rust/rustfmt:toolchain_type", mandatory = False),
+        config_common.toolchain_type("@rules_rust//rust:toolchain_type"),
+        config_common.toolchain_type("@rules_rust//rust/rustfmt:toolchain_type", mandatory = False),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type"),
     ],
 )
@@ -428,12 +428,12 @@ rust_bindgen_toolchain = rule(
     doc = """\
 The tools required for the `rust_bindgen` rule.
 
-This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it 
+This rule depends on the [`bindgen`](https://crates.io/crates/bindgen) binary crate, and it
 in turn depends on both a clang binary and the clang library. To obtain these dependencies,
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
 ```python
-load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_ext//bindgen:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen_toolchain_impl",
@@ -446,7 +446,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen_toolchain",
     toolchain = "bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_ext//bindgen:toolchain_type",
 )
 ```
 

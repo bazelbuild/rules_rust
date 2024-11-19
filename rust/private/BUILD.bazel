@@ -4,10 +4,20 @@ load("//rust/private:rustc.bzl", "is_proc_macro_dep", "is_proc_macro_dep_enabled
 load("//rust/private:stamp.bzl", "stamp_build_setting")
 
 bzl_library(
+    name = "bazel_tools_bzl_lib",
+    srcs = ["@bazel_tools//tools:bzl_srcs"],
+)
+
+bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     visibility = ["//rust:__subpackages__"],
-    deps = ["//rust/platform:bzl_lib"],
+    deps = [
+        ":bazel_tools_bzl_lib",
+        "//rust/platform:bzl_lib",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
+    ],
 )
 
 stamp_build_setting(name = "stamp")

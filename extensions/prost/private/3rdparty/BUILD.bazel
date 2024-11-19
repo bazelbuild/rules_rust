@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 crates_vendor(
     name = "crates_vendor",
@@ -47,8 +47,8 @@ crates_vendor(
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        "//proto/prost/private/3rdparty/crates:crates.bzl",
-        "//proto/prost/private/3rdparty/crates:defs.bzl",
+        "//prost/private/3rdparty/crates:crates.bzl",
+        "//prost/private/3rdparty/crates:defs.bzl",
     ],
-    visibility = ["//proto/prost/private:__pkg__"],
+    visibility = ["//prost/private:__pkg__"],
 )

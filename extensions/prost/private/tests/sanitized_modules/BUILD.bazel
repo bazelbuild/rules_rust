@@ -1,13 +1,13 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//proto/prost:defs.bzl", "rust_prost_library")
+load("//prost:defs.bzl", "rust_prost_library")
 
 proto_library(
     name = "foo_proto",
     srcs = [
         "foo.proto",
     ],
-    strip_import_prefix = "/proto/prost/private/tests/sanitized_modules",
+    strip_import_prefix = "/prost/private/tests/sanitized_modules",
 )
 
 proto_library(

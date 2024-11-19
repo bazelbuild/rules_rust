@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 load("//wasm_bindgen:repositories.bzl", "WASM_BINDGEN_VERSION")
 
 exports_files([

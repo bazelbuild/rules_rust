@@ -16,7 +16,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//proto/protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
+load("//protobuf/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def rust_proto_protobuf_dependencies(bzlmod = False):
     """Sets up dependencies for rules_rust's proto support.
@@ -48,7 +48,7 @@ def rust_proto_protobuf_dependencies(bzlmod = False):
             ],
             patch_args = ["-p1"],
             patches = [
-                Label("//proto/protobuf/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
+                Label("//protobuf/3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
             ],
         )
 
@@ -67,4 +67,4 @@ def rust_proto_protobuf_register_toolchains(register_toolchains = True):
     """Register toolchains for proto compilation."""
 
     if register_toolchains:
-        native.register_toolchains(str(Label("//proto/protobuf:default-proto-toolchain")))
+        native.register_toolchains(str(Label("//protobuf:default-proto-toolchain")))

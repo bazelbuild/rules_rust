@@ -35,8 +35,6 @@ Generates javascript and typescript bindings for a webassembly module using [was
 
 [ws]: https://rustwasm.github.io/docs/wasm-bindgen/
 [abjs]: https://github.com/aspect-build/rules_js
-
-An example of this rule in use can be seen at [@rules_rust//examples/wasm_bindgen/rules_js](../examples/wasm_bindgen/rules_js)
 """,
     implementation = _js_rust_wasm_bindgen_impl,
     attrs = WASM_BINDGEN_ATTR,

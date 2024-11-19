@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 crates_vendor(
     name = "crates_vendor",
@@ -14,7 +14,7 @@ crates_vendor(
         )],
         "protobuf": [crate.annotation(
             patch_args = ["-p1"],
-            patches = ["@rules_rust//proto/protobuf/3rdparty/patches:protobuf-2.8.2.patch"],
+            patches = ["@rules_rust_ext//protobuf/3rdparty/patches:protobuf-2.8.2.patch"],
         )],
         "protobuf-codegen": [crate.annotation(
             gen_binaries = ["protoc-gen-rust"],
@@ -53,8 +53,8 @@ crates_vendor(
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        "//proto/protobuf/3rdparty/crates:crates.bzl",
-        "//proto/protobuf/3rdparty/crates:defs.bzl",
+        "//protobuf/3rdparty/crates:crates.bzl",
+        "//protobuf/3rdparty/crates:defs.bzl",
     ],
-    visibility = ["//proto/protobuf:__pkg__"],
+    visibility = ["//protobuf:__pkg__"],
 )

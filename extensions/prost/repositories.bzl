@@ -2,7 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//proto/prost/private/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//prost/private/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def rust_prost_dependencies(bzlmod = False):
     """Declares repositories needed for prost.
@@ -48,6 +48,6 @@ def rust_prost_dependencies(bzlmod = False):
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/heck/heck-0.5.0.crate"],
         strip_prefix = "heck-0.5.0",
-        build_file = Label("@rules_rust//proto/prost/private/3rdparty/crates:BUILD.heck-0.5.0.bazel"),
+        build_file = Label("@rules_rust_ext//prost/private/3rdparty/crates:BUILD.heck-0.5.0.bazel"),
     )
     return direct_deps

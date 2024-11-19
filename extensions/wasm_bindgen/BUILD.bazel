@@ -3,6 +3,10 @@ load("//wasm_bindgen:defs.bzl", "rust_wasm_bindgen_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "defs.bzl",
+])
+
 toolchain_type(
     name = "toolchain_type",
 )
@@ -11,7 +15,6 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     deps = [
-        "//rust:bzl_lib",
         "//wasm_bindgen/3rdparty:bzl_lib",
         "//wasm_bindgen/private:bzl_lib",
     ],
@@ -19,7 +22,7 @@ bzl_library(
 
 rust_wasm_bindgen_toolchain(
     name = "default_wasm_bindgen_toolchain_impl",
-    bindgen = "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen_cli",
+    bindgen = "@rules_rust_ext//wasm_bindgen/3rdparty:wasm_bindgen_cli",
 )
 
 toolchain(

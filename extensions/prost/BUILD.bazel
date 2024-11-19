@@ -2,13 +2,17 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "defs.bzl",
+])
+
 toolchain_type(
     name = "toolchain_type",
 )
 
 toolchain(
     name = "default_prost_toolchain",
-    toolchain = "//proto/prost/private:default_prost_toolchain_impl",
+    toolchain = "//prost/private:default_prost_toolchain_impl",
     toolchain_type = ":toolchain_type",
 )
 
@@ -16,7 +20,6 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     deps = [
-        "//proto/prost/private:bzl_lib",
-        "//rust:bzl_lib",
+        "//prost/private:bzl_lib",
     ],
 )

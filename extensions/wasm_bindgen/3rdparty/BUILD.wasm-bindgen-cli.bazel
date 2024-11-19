@@ -1,6 +1,6 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@rules_rust//wasm_bindgen:repositories.bzl", "WASM_BINDGEN_VERSION")
-load("@rules_rust//wasm_bindgen/3rdparty/crates:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust_ext//wasm_bindgen:repositories.bzl", "WASM_BINDGEN_VERSION")
+load("@rules_rust_ext//wasm_bindgen/3rdparty/crates:defs.bzl", "aliases", "all_crate_deps")
 
 package(default_visibility = ["//visibility:public"])
 

@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 load("//bindgen:repositories.bzl", "BINDGEN_VERSION")
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 _BINDGEN_CLI_PACKAGES = {
     "clap": crate.spec(

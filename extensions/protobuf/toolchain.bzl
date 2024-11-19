@@ -17,7 +17,7 @@
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "name_to_crate_name")
+load("@rules_rust//rust/private:utils.bzl", "name_to_crate_name")
 
 def generated_file_stem(file_path):
     """Returns the basename of a file without any extensions.
@@ -145,14 +145,14 @@ def _rust_proto_toolchain_impl(ctx):
 
 # Default dependencies needed to compile protobuf stubs.
 PROTO_COMPILE_DEPS = [
-    Label("//proto/protobuf/3rdparty/crates:protobuf"),
+    Label("//protobuf/3rdparty/crates:protobuf"),
 ]
 
 # Default dependencies needed to compile gRPC stubs.
 GRPC_COMPILE_DEPS = PROTO_COMPILE_DEPS + [
-    Label("//proto/protobuf/3rdparty/crates:grpc"),
-    Label("//proto/protobuf/3rdparty/crates:tls-api"),
-    Label("//proto/protobuf/3rdparty/crates:tls-api-stub"),
+    Label("//protobuf/3rdparty/crates:grpc"),
+    Label("//protobuf/3rdparty/crates:tls-api"),
+    Label("//protobuf/3rdparty/crates:tls-api-stub"),
 ]
 
 rust_proto_toolchain = rule(
@@ -170,7 +170,7 @@ rust_proto_toolchain = rule(
             doc = "The location of the Rust protobuf compiler plugin to generate rust gRPC stubs.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label("//proto/protobuf/3rdparty/crates:grpc-compiler__protoc-gen-rust-grpc"),
+            default = Label("//protobuf/3rdparty/crates:grpc-compiler__protoc-gen-rust-grpc"),
         ),
         "proto_compile_deps": attr.label_list(
             doc = "The crates the generated protobuf libraries depends on.",
@@ -181,7 +181,7 @@ rust_proto_toolchain = rule(
             doc = "The location of the Rust protobuf compiler plugin used to generate rust sources.",
             allow_single_file = True,
             cfg = "exec",
-            default = Label("//proto/protobuf/3rdparty/crates:protobuf-codegen__protoc-gen-rust"),
+            default = Label("//protobuf/3rdparty/crates:protobuf-codegen__protoc-gen-rust"),
         ),
         "protoc": attr.label(
             doc = "The location of the `protoc` binary. It should be an executable target. Note that this attribute is deprecated - prefer to use --incompatible_enable_proto_toolchain_resolution.",
@@ -190,7 +190,7 @@ rust_proto_toolchain = rule(
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(
-            default = "//proto/protobuf:legacy_proto_toolchain",
+            default = Label("//protobuf:legacy_proto_toolchain"),
         ),
     })),
     doc = """\
@@ -205,7 +205,7 @@ Suppose a new nicer gRPC plugin has came out. The new plugin can be \
 used in Bazel by defining a new toolchain definition and declaration:
 
 ```python
-load('@rules_rust//proto/protobuf:toolchain.bzl', 'rust_proto_toolchain')
+load('@rules_rust_ext//protobuf:toolchain.bzl', 'rust_proto_toolchain')
 
 rust_proto_toolchain(
    name="rust_proto_impl",

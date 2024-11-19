@@ -1,6 +1,6 @@
 """Transition rule for the transitive dependencies test case."""
 
-load("//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_common")
 
 def _extra_toolchain_transition_impl(settings, attr):
     return {

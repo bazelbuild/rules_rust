@@ -12,7 +12,7 @@ def _wasm_bindgen_transition(_settings, attr):
     Returns:
         dict: A dict of new build settings values to apply
     """
-    return {"//command_line_option:platforms": str(Label("//rust/platform:{}".format(attr.target_arch)))}
+    return {"//command_line_option:platforms": str(Label("@rules_rust//rust/platform:{}".format(attr.target_arch)))}
 
 wasm_bindgen_transition = transition(
     implementation = _wasm_bindgen_transition,

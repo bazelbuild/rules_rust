@@ -15,17 +15,17 @@
 """Rust Protobuf Rules"""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:utils.bzl", "can_build_metadata", "compute_crate_name", "determine_output_hash", "find_toolchain", "transform_deps")
 load(
-    "//proto/protobuf:toolchain.bzl",
+    "//protobuf:toolchain.bzl",
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
-
-# buildifier: disable=bzl-visibility
-load("//rust/private:rustc.bzl", "rustc_compile_action")
-
-# buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "can_build_metadata", "compute_crate_name", "determine_output_hash", "find_toolchain", "transform_deps")
 
 RustProtoInfo = provider(
     doc = "Rust protobuf provider info",
@@ -167,7 +167,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     """
 
     # Create all the source in a specific folder
-    proto_toolchain = ctx.toolchains[Label("//proto/protobuf:toolchain_type")]
+    proto_toolchain = ctx.toolchains[Label("//protobuf:toolchain_type")]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
@@ -306,7 +306,7 @@ rust_proto_library = rule(
                 List of compiler flags passed to `rustc`.
 
                 These strings are subject to Make variable expansion for predefined
-                source/output path variables like `$location`, `$execpath`, and 
+                source/output path variables like `$location`, `$execpath`, and
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """,
@@ -317,10 +317,10 @@ rust_proto_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//proto/protobuf:optional_output_wrapper"),
+            default = Label("//protobuf:optional_output_wrapper"),
         ),
         "_process_wrapper": attr.label(
-            default = Label("//util/process_wrapper"),
+            default = Label("@rules_rust//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -328,8 +328,8 @@ rust_proto_library = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//proto/protobuf:toolchain_type")),
-        str(Label("//rust:toolchain_type")),
+        str(Label("//protobuf:toolchain_type")),
+        str(Label("@rules_rust//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -338,7 +338,7 @@ Builds a Rust library crate from a set of `proto_library`s.
 Example:
 
 ```python
-load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
+load("@rules_rust_ext//protobuf:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "my_proto",
@@ -398,7 +398,7 @@ rust_grpc_library = rule(
                 List of compiler flags passed to `rustc`.
 
                 These strings are subject to Make variable expansion for predefined
-                source/output path variables like `$location`, `$execpath`, and 
+                source/output path variables like `$location`, `$execpath`, and
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """,
@@ -409,10 +409,10 @@ rust_grpc_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//proto/protobuf:optional_output_wrapper"),
+            default = Label("//protobuf:optional_output_wrapper"),
         ),
         "_process_wrapper": attr.label(
-            default = Label("//util/process_wrapper"),
+            default = Label("@rules_rust//util/process_wrapper"),
             executable = True,
             allow_single_file = True,
             cfg = "exec",
@@ -420,8 +420,8 @@ rust_grpc_library = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//proto/protobuf:toolchain_type")),
-        str(Label("//rust:toolchain_type")),
+        str(Label("//protobuf:toolchain_type")),
+        str(Label("@rules_rust//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
     doc = """\
@@ -430,7 +430,7 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@rules_rust//proto/protobuf:defs.bzl", "rust_grpc_library")
+load("@rules_rust_ext//protobuf:defs.bzl", "rust_grpc_library")
 
 proto_library(
     name = "my_proto",

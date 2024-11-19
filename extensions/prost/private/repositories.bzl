@@ -1,7 +1,7 @@
 """Dependencies for Rust Prost rules"""
 
-load("//proto/prost:repositories.bzl", _rust_prost_dependencies = "rust_prost_dependencies")
-load("//proto/prost/private/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//prost:repositories.bzl", _rust_prost_dependencies = "rust_prost_dependencies")
+load("//prost/private/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def rust_prost_dependencies():
     """Prost repository dependencies."""
@@ -18,4 +18,4 @@ def rust_prost_register_toolchains(register_toolchains = True):
     """
 
     if register_toolchains:
-        native.register_toolchains(str(Label("//proto/prost:default_prost_toolchain")))
+        native.register_toolchains(str(Label("//prost:default_prost_toolchain")))

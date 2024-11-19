@@ -14,7 +14,8 @@
 ## 3rd party rules
 
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
-- [rust_proto](rust_proto.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs.
+- [rust_prost](rust_prost.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs using [prost](https://github.com/tokio-rs/prost).
+- [rust_protobuf](rust_protobuf.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs with [rust-protobuf](https://github.com/stepancheg/rust-protobuf/)
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
 
 ## Full API
