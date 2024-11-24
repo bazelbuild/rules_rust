@@ -1,6 +1,6 @@
 """Module extensions for using vendored crates with bzlmod"""
 
-load("//third-party/crates:defs.bzl", _crate_repositories = "crate_repositories")
+load("//third-party-in-workspace/crates:defs.bzl", _crate_repositories = "crate_repositories")
 
 def _crate_repositories_impl(module_ctx):
     direct_deps = _crate_repositories()
