@@ -39,7 +39,10 @@ crate.annotation(
     data = [":cargo_toml"],
     # Optional, you probably don't need this. Defaults to all from_cargo
     # invocations in this module.
-    repositories = ["crates_in_workspace"],
+    repositories = [
+        "crates_in_workspace",
+        "crates_without_workspace",
+    ],
     # Optional, you probably don't need this, defaults to "*".
     version = "*",
 )
@@ -47,3 +50,11 @@ crate.annotation(
 # Option 2: Vendored crates
 crate_repositories = use_extension("//third-party-in-workspace:extension.bzl", "crate_repositories")
 use_repo(crate_repositories, "vendor__anyhow-1.0.77")
+
+# Another example of Option 1, but where the Cargo.toml file isn't a [workspace]
+crate.from_cargo(
+    name = "crates_without_workspace",
+    cargo_lockfile = "//third-party-without-workspace:Cargo.lock",
+    manifests = ["//third-party-without-workspace:Cargo.toml"],
+)
+use_repo(crate, "crates_without_workspace")

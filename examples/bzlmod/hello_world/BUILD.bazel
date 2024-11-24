@@ -19,34 +19,44 @@ rust_binary(
     ],
 )
 
+rust_binary(
+    name = "hello_world_without_workspace_transient",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates_without_workspace//:anyhow",
+    ],
+)
+
 [
     rust_doc(
-        name = "hello_world_from_workspace_{}_doc".format(target),
-        crate = ":hello_world_from_workspace_{}".format(target),
+        name = "hello_world_{}_doc".format(target),
+        crate = ":hello_world_{}".format(target),
     )
     for target in [
-        "transient",
-        "vendored",
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
     ]
 ]
 
 [
     sh_test(
-        name = "hello_world_from_workspace_{}_test".format(target),
+        name = "hello_world_{}_test".format(target),
         srcs = ["hello_world_test.sh"],
         args = [
-            "$(rlocationpath :hello_world_from_workspace_{})".format(target),
+            "$(rlocationpath :hello_world_{})".format(target),
         ],
         data = [
-            ":hello_world_from_workspace_{}".format(target),
+            ":hello_world_{}".format(target),
         ],
         deps = [
             "@bazel_tools//tools/bash/runfiles",
         ],
     )
     for target in [
-        "transient",
-        "vendored",
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
     ]
 ]
 
