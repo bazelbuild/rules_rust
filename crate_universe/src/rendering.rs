@@ -296,7 +296,7 @@ impl Renderer {
             .collect()
     }
 
-    fn render_one_build_file(&self, platforms: &Platforms, krate: &CrateContext) -> Result<String> {
+    pub(crate) fn render_one_build_file(&self, platforms: &Platforms, krate: &CrateContext) -> Result<String> {
         let mut starlark = Vec::new();
 
         // Banner comment for top of the file.

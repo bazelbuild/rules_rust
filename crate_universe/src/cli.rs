@@ -2,6 +2,7 @@
 
 mod generate;
 mod query;
+mod render;
 mod splice;
 mod vendor;
 
@@ -15,12 +16,14 @@ use tracing_subscriber::FmtSubscriber;
 
 pub use self::generate::GenerateOptions;
 pub use self::query::QueryOptions;
+pub use self::render::RenderOptions;
 pub use self::splice::SpliceOptions;
 pub use self::vendor::VendorOptions;
 
 // Entrypoints
 pub use generate::generate;
 pub use query::query;
+pub use render::render;
 pub use splice::splice;
 pub use vendor::vendor;
 
@@ -42,6 +45,9 @@ pub enum Options {
 
     /// Vendor BUILD files to the workspace with either repository definitions or `cargo vendor` generated sources.
     Vendor(VendorOptions),
+
+    /// Render a BUILD file for a single crate.
+    Render(RenderOptions),
 }
 
 // Convenience wrappers to avoid dependencies in the binary
@@ -51,7 +57,7 @@ pub fn parse_args() -> Options {
     Options::parse()
 }
 
-const EXPECTED_LOGGER_NAMES: [&str; 4] = ["Generate", "Splice", "Query", "Vendor"];
+const EXPECTED_LOGGER_NAMES: [&str; 5] = ["Generate", "Splice", "Query", "Vendor", "Render"];
 
 /// A wrapper for the tracing-subscriber default [FormatEvent]
 /// that prepends the name of the active CLI option.

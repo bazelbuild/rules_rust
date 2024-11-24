@@ -25,5 +25,9 @@ fn main() -> cli::Result<()> {
             cli::init_logging("Vendor", verbose_logging);
             cli::vendor(opt)
         }
+        cli::Options::Render(opt) => {
+            cli::init_logging("Render", verbose_logging);
+            cli::render(opt)
+        }
     }
 }
