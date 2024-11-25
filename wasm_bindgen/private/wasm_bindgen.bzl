@@ -52,10 +52,17 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
 
     bindgen_wasm_module = ctx.actions.declare_file(ctx.label.name + "_bg.wasm")
 
+    out_dir = ctx.label.name.split("/")
+    out_name = out_dir.pop()
+    out_dir_name = "/".join(out_dir)
+
     js_out = [ctx.actions.declare_file(ctx.label.name + ".js")]
     ts_out = []
     if not "--no-typescript" in bindgen_flags:
         ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
+
+    if target_output == "web" or target_output == "bundler":
+        js_out.append(ctx.actions.declare_directory(out_dir_name + "/snippets"))
 
     if target_output == "bundler":
         js_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.js"))
@@ -67,7 +74,7 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
     args = ctx.actions.args()
     args.add("--target", target_output)
     args.add("--out-dir", bindgen_wasm_module.dirname)
-    args.add("--out-name", ctx.label.name)
+    args.add("--out-name", out_name)
     args.add_all(bindgen_flags)
     args.add(input_file)
 
