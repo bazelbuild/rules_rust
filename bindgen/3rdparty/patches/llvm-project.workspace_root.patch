@@ -1,0 +1,68 @@
+diff --git b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
++++ a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+@@ -1,8 +1,9 @@
+ # This file is licensed under the Apache License v2.0 with LLVM Exceptions.
+ # See https://llvm.org/LICENSE.txt for license information.
+ # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
++load("//:workspace_root.bzl", "workspace_root")
+ load("//llvm:tblgen.bzl", "gentbl")
+ load("//llvm:binary_alias.bzl", "binary_alias")
+ load("//llvm:cc_plugin_library.bzl", "cc_plugin_library")
+ load("//llvm:config.bzl", "llvm_stdcxx_copts")
+@@ -684,8 +685,10 @@ gentbl(
+     td_srcs = [
+         "include/clang/Basic/ASTNode.td",
+         "include/clang/Basic/TypeNodes.td",
+     ],
+ )
++
++workspace_root(name = "workspace_root")
+ 
+ cc_library(
+     name = "ast",
+@@ -711,8 +714,8 @@ cc_library(
+         # least bad approach. Using `includes` is *specifically* problematic for
+         # this library because it contains files that collide easily with system
+         # headers such as `CXXABI.h`.
+-        "-I$(GENDIR)/external/llvm-project/clang/lib/AST",
+-        "-I$(GENDIR)/external/llvm-project/clang/lib/AST/Interp",
++        "-I$(GENDIR)/$(WORKSPACE_ROOT)/clang/lib/AST",
++        "-I$(GENDIR)/$(WORKSPACE_ROOT)/clang/lib/AST/Interp",
+     ] + llvm_stdcxx_copts,
+     textual_hdrs = [
+         "include/clang/AST/AttrImpl.inc",
+@@ -730,8 +733,11 @@ cc_library
+         "include/clang/AST/StmtDataCollectors.inc",
+         "include/clang/AST/StmtNodes.inc",
+     ] + glob([
+         "include/clang/AST/*.def",
+     ], allow_empty = True),
++    toolchains = [
++        ":workspace_root",
++    ],
+     deps = [
+         ":ast_attr_gen",
+         ":ast_comment_command_info_gen",
+
+--- /dev/null
++++ a/utils/bazel/llvm-project-overlay/workspace_root.bzl
+@@ -0,0 +1,17 @@
++def _workspace_root_impl(ctx):
++    """Dynamically determine the workspace root from the current context.
++
++    The path is made available as a `WORKSPACE_ROOT` environmment variable and
++    may for instance be consumed in the `toolchains` attributes for `cc_library`
++    and `genrule` targets.
++    """
++    return [
++        platform_common.TemplateVariableInfo({
++            "WORKSPACE_ROOT": ctx.label.workspace_root,
++        }),
++    ]
++
++workspace_root = rule(
++    implementation = _workspace_root_impl,
++    attrs = {},
++)

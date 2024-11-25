@@ -40,6 +40,7 @@ def rust_bindgen_dependencies():
         patches = [
             Label("//bindgen/3rdparty/patches:llvm-project.cxx17.patch"),
             Label("//bindgen/3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch"),
+            Label("//bindgen/3rdparty/patches:llvm-project.workspace_root.patch"),
         ],
     )
 
