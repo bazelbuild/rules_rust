@@ -15,7 +15,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.8",
+    version = "0.0.10",
 )
 bazel_dep(
     name = "rules_cc",
@@ -26,34 +26,11 @@ bazel_dep(
     version = "0.0.8",
 )
 bazel_dep(
-    name = "rules_proto",
-    version = "6.0.2",
-)
-bazel_dep(
     name = "apple_support",
     version = "1.13.0",
     repo_name = "build_bazel_apple_support",
 )
-bazel_dep(
-    name = "protobuf",
-    version = "21.7",
-    repo_name = "com_google_protobuf",
-)
-bazel_dep(
-    name = "aspect_rules_js",
-    version = "1.39.0",
-)
 
-bazel_dep(
-    name = "bazel_ci_rules",
-    version = "1.0.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "rules_python",
-    version = "0.31.0",
-    dev_dependency = True,
-)
 bazel_dep(
     name = "rules_testing",
     version = "0.6.0",
@@ -99,9 +76,6 @@ use_repo(
     "cui__tracing-0.1.40",
     "cui__tracing-subscriber-0.3.18",
     "cui__url-2.5.2",
-    "generated_inputs_in_external_repo",
-    "libc",
-    "llvm-raw",
     "rrra__anyhow-1.0.71",
     "rrra__clap-4.3.11",
     "rrra__env_logger-0.10.0",
@@ -109,53 +83,7 @@ use_repo(
     "rrra__log-0.4.19",
     "rrra__serde-1.0.171",
     "rrra__serde_json-1.0.102",
-    "rules_rust_bindgen__bindgen-0.70.1",
-    "rules_rust_bindgen__bindgen-cli-0.70.1",
-    "rules_rust_bindgen__clang-sys-1.8.1",
-    "rules_rust_bindgen__clap-4.5.17",
-    "rules_rust_bindgen__clap_complete-4.5.26",
-    "rules_rust_bindgen__env_logger-0.10.2",
-    "rules_rust_prost",
-    "rules_rust_prost__h2-0.4.6",
-    "rules_rust_prost__heck",
-    "rules_rust_prost__prost-0.13.1",
-    "rules_rust_prost__prost-types-0.13.1",
-    "rules_rust_prost__protoc-gen-prost-0.4.0",
-    "rules_rust_prost__protoc-gen-tonic-0.4.1",
-    "rules_rust_prost__tokio-1.39.3",
-    "rules_rust_prost__tokio-stream-0.1.15",
-    "rules_rust_prost__tonic-0.12.1",
-    "rules_rust_proto__grpc-0.6.2",
-    "rules_rust_proto__grpc-compiler-0.6.2",
-    "rules_rust_proto__log-0.4.17",
-    "rules_rust_proto__protobuf-2.8.2",
-    "rules_rust_proto__protobuf-codegen-2.8.2",
-    "rules_rust_proto__tls-api-0.1.22",
-    "rules_rust_proto__tls-api-stub-0.1.22",
-    "rules_rust_test_load_arbitrary_tool",
     "rules_rust_tinyjson",
-    "rules_rust_toolchain_test_target_json",
-    "rules_rust_wasm_bindgen__anyhow-1.0.71",
-    "rules_rust_wasm_bindgen__assert_cmd-1.0.8",
-    "rules_rust_wasm_bindgen__diff-0.1.13",
-    "rules_rust_wasm_bindgen__docopt-1.1.1",
-    "rules_rust_wasm_bindgen__env_logger-0.8.4",
-    "rules_rust_wasm_bindgen__log-0.4.19",
-    "rules_rust_wasm_bindgen__predicates-1.0.8",
-    "rules_rust_wasm_bindgen__rayon-1.7.0",
-    "rules_rust_wasm_bindgen__rouille-3.6.2",
-    "rules_rust_wasm_bindgen__serde-1.0.171",
-    "rules_rust_wasm_bindgen__serde_derive-1.0.171",
-    "rules_rust_wasm_bindgen__serde_json-1.0.102",
-    "rules_rust_wasm_bindgen__tempfile-3.6.0",
-    "rules_rust_wasm_bindgen__ureq-2.8.0",
-    "rules_rust_wasm_bindgen__walrus-0.20.3",
-    "rules_rust_wasm_bindgen__wasm-bindgen-0.2.92",
-    "rules_rust_wasm_bindgen__wasm-bindgen-cli-support-0.2.92",
-    "rules_rust_wasm_bindgen__wasm-bindgen-shared-0.2.92",
-    "rules_rust_wasm_bindgen__wasmparser-0.102.0",
-    "rules_rust_wasm_bindgen__wasmprinter-0.2.60",
-    "rules_rust_wasm_bindgen_cli",
 )
 
 rust = use_extension("//rust:extensions.bzl", "rust")
@@ -166,23 +94,22 @@ register_toolchains(
     "@rust_toolchains//:all",
 )
 
-register_toolchains(
-    "//proto/protobuf:default-proto-toolchain",
-)
-
-register_toolchains(
-    "//proto/prost:default_prost_toolchain",
-)
-
-register_toolchains(
-    "//bindgen:default_bindgen_toolchain",
-)
-
 rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
 use_repo(rust_host_tools, "rust_host_tools")
 
 cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
 use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
+
+rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)
+use_repo(
+    rust_test,
+    "generated_inputs_in_external_repo",
+    "libc",
+    "rules_rust_test_load_arbitrary_tool",
+    "rules_rust_toolchain_test_target_json",
+    "t3p__serde-1.0.214",
+    "t3p__serde_json-1.0.132",
+)
 
 register_toolchains(
     "//test/foreign_toolchain_make_variables:toolchain_for_test",

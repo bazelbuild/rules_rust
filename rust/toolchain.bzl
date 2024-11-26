@@ -699,6 +699,7 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _incompatible_change_rust_test_compilation_output_directory = ctx.attr._incompatible_change_rust_test_compilation_output_directory[IncompatibleFlagInfo].enabled,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
+        _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
     )
     return [
@@ -885,6 +886,10 @@ rust_toolchain = rule(
         ),
         "_incompatible_change_rust_test_compilation_output_directory": attr.label(
             default = Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory"),
+        ),
+        "_incompatible_do_not_include_data_in_compile_data": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
+            doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
         ),
         "_no_std": attr.label(
             default = Label("//:no_std"),

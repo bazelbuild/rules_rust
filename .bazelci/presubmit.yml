@@ -34,7 +34,6 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//test/proto/..."
   - "-//test/unit/pipelined_compilation/..."
 default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
@@ -43,7 +42,6 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//crate_universe/..."
   - "-//test/chained_direct_deps:mod3_doc_test"
   - "-//test/out_dir_in_tests:demo_lib_doc_test"
-  - "-//test/proto/..."
   - "-//test/rustc_env_files:output_test"
   - "-//test/test_env_launcher:test"
   - "-//test/test_env:test_manifest_dir"
@@ -57,9 +55,6 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
-  - "//vendor_remote_manifests:crates_vendor"
-  - "//vendor_remote_pkgs:crates_vendor"
-crate_universe_unnamed_vendor_example_targets: &crate_universe_unnamed_vendor_example_targets
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
 coverage_validation_post_shell_commands: &coverage_validation_post_shell_commands
@@ -238,12 +233,9 @@ tasks:
     build_flags:
       - "--enable_bzlmod"
     build_targets:
-      - "//bindgen/3rdparty:bindgen"
       - "//crate_universe:cargo_bazel_bin"
-      - "//proto/prost/private:prost_runtime"
       - "//tools/runfiles"
       - "//util/import"
-      - "//wasm_bindgen/3rdparty:wasm_bindgen"
   ubuntu2004_clang:
     name: With Clang
     platform: ubuntu2004
@@ -378,12 +370,8 @@ tasks:
     name: Rust-Analyzer Tests
     platform: ubuntu2004
     run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_integration_test:
-    name: Rust-Analyzer Integration Test
-    platform: ubuntu2004
-    run_targets:
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   examples_rust_analyzer_integration_test:
     name: Rust-Analyzer Integration Test
     platform: ubuntu2004
@@ -474,11 +462,6 @@ tasks:
     windows_targets: &windows_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # The proto rules do not work on windows
-      - "-//proto/..."
-      # The bindgen rules are currently broken on windows
-      # https://github.com/bazelbuild/rules_rust/issues/2009
-      - "-//bindgen/..."
     build_targets: *windows_targets
     test_targets: *windows_targets
   crate_universe_examples_ubuntu2004:
@@ -486,16 +469,6 @@ tasks:
     platform: ubuntu2004
     working_directory: examples/crate_universe
     run_targets: *crate_universe_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
-  crate_universe_unnamed_examples_ubuntu2004:
-    name: Crate Universe Unnamed Examples
-    platform: ubuntu2004
-    working_directory: examples/crate_universe_unnamed
-    run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -514,34 +487,11 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
-  crate_universe_unnamed_rbe_ubuntu2004:
-    name: Crate Universe Unnamed Examples
-    platform: rbe_ubuntu2004
-    working_directory: examples/crate_universe_unnamed
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    run_targets: *crate_universe_unnamed_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
   crate_universe_examples_macos:
     name: Crate Universe Examples
     platform: macos_arm64
     working_directory: examples/crate_universe
     run_targets: *crate_universe_vendor_example_targets
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
-  crate_universe_unnamed_examples_macos:
-    name: Crate Universe Unnamed Examples
-    platform: macos_arm64
-    working_directory: examples/crate_universe_unnamed
-    run_targets: *crate_universe_unnamed_vendor_example_targets
     build_targets:
       - "//..."
     test_targets:
@@ -553,16 +503,6 @@ tasks:
 #    platform: windows
 #    working_directory: examples/crate_universe
 #    run_targets: *crate_universe_vendor_example_targets
-#    build_flags: *aspects_flags
-#    build_targets:
-#      - "//..."
-#    test_targets:
-#      - "//..."
-#  crate_universe_unnamed_examples_windows:
-#    name: Crate Universe Unnamed Examples
-#    platform: windows
-#    working_directory: examples/crate_universe_unnamed
-#    run_targets: *crate_universe_unnamed_vendor_example_targets
 #    build_flags: *aspects_flags
 #    build_targets:
 #      - "//..."
@@ -773,7 +713,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_flags
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
@@ -785,7 +725,7 @@ tasks:
     shell_commands:
       - "rm MODULE.bazel.lock"
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
@@ -795,7 +735,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_flags
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
@@ -806,7 +746,7 @@ tasks:
   #   working_directory: examples/bzlmod/hello_world
   #   test_flags: *bzlmod_flags
   #   run_targets:
-  #     - "//third-party:vendor"
+  #     - "//third-party-in-workspace:vendor"
   #   build_targets:
   #     - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   #   test_targets:
@@ -820,7 +760,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
@@ -833,7 +773,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
@@ -846,7 +786,7 @@ tasks:
     working_directory: examples/bzlmod/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
-      - "//third-party:vendor"
+      - "//third-party-in-workspace:vendor"
     build_targets:
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
@@ -884,6 +824,142 @@ tasks:
       - "--compile_one_dependency"
     build_targets:
       - "tools/rust_analyzer/main.rs"
+  extensions_bindgen_linux:
+    platform: ubuntu2004
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_bindgen_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_bindgen_macos:
+    platform: macos_arm64
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
+  # # The bindgen rules are currently broken on windows
+  # extensions_bindgen_windows:
+  #   platform: windows
+  #   name: Extensions Bindgen
+  #   working_directory: extensions/bindgen
+  #   build_flags: *aspects_flags
+  #   test_flags: *aspects_flags
+  #   build_targets:
+  #     - "--"
+  #     - "//..."
+  #   test_targets:
+  #     - "--"
+  #     - "//..."
+  extensions_protobuf_linux:
+    platform: ubuntu2004
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_macos:
+    platform: macos_arm64
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_windows:
+    platform: windows
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux:
+    platform: ubuntu2004
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_macos:
+    platform: macos_arm64
+    name: Extensions wasm-bindgen
+    working_directory: extensions
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # # TODO: https://github.com/bazelbuild/rules_rust/issues/3021
+  # # The length of the workspace name results in paths that are too long
+  # # on windows for linking.
+  # extensions_wasm_bindgen_windows:
+  #   platform: windows
+  #   name: Extensions wasm-bindgen
+  #   working_directory: extensions/wasm_bindgen
+  #   build_flags: *aspects_flags
+  #   test_flags: *aspects_flags
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
 
 buildifier:
   version: latest

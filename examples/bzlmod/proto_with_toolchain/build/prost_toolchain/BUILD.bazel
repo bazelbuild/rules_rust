@@ -1,5 +1,5 @@
-load("@rules_rust//proto/prost:defs.bzl", "rust_prost_toolchain")
 load("@rules_rust//rust:defs.bzl", "rust_library_group")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
 
 rust_library_group(
     name = "prost_runtime",
@@ -28,5 +28,5 @@ rust_prost_toolchain(
 toolchain(
     name = "prost_toolchain",
     toolchain = "prost_toolchain_impl",
-    toolchain_type = "@rules_rust//proto/prost:toolchain_type",
+    toolchain_type = "@rules_rust_prost//:toolchain_type",
 )

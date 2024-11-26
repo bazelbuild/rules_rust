@@ -5,7 +5,7 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "platforms", version = "0.0.8")
+bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(
     name = "bazel_skylib",
     version = "1.5.0",
@@ -27,11 +27,11 @@ crate = use_extension(
     "crate",
 )
 crate.from_cargo(
-    name = "crates",
-    cargo_lockfile = "//third-party:Cargo.lock",
-    manifests = ["//third-party:Cargo.toml"],
+    name = "crates_in_workspace",
+    cargo_lockfile = "//third-party-in-workspace:Cargo.lock",
+    manifests = ["//third-party-in-workspace:Cargo.toml"],
 )
-use_repo(crate, "crates")
+use_repo(crate, "crates_in_workspace")
 crate.annotation(
     additive_build_file = "//:BUILD.anyhow.bazel",
     crate = "anyhow",
@@ -39,11 +39,22 @@ crate.annotation(
     data = [":cargo_toml"],
     # Optional, you probably don't need this. Defaults to all from_cargo
     # invocations in this module.
-    repositories = ["crates"],
+    repositories = [
+        "crates_in_workspace",
+        "crates_without_workspace",
+    ],
     # Optional, you probably don't need this, defaults to "*".
     version = "*",
 )
 
 # Option 2: Vendored crates
-crate_repositories = use_extension("//third-party:extension.bzl", "crate_repositories")
+crate_repositories = use_extension("//third-party-in-workspace:extension.bzl", "crate_repositories")
 use_repo(crate_repositories, "vendor__anyhow-1.0.77")
+
+# Another example of Option 1, but where the Cargo.toml file isn't a [workspace]
+crate.from_cargo(
+    name = "crates_without_workspace",
+    cargo_lockfile = "//third-party-without-workspace:Cargo.lock",
+    manifests = ["//third-party-without-workspace:Cargo.toml"],
+)
+use_repo(crate, "crates_without_workspace")

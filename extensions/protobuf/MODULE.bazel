@@ -1,0 +1,50 @@
+"""bazelbuild/rules_rust/extensions/protobuf"""
+
+module(
+    name = "rules_rust_protobuf",
+    version = "0.54.1",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.54.1",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.5.0",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.9",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "6.0.2",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "21.7",
+    repo_name = "com_google_protobuf",
+)
+
+rust_ext_protobuf = use_extension("//:extensions.bzl", "rust_ext_protobuf")
+use_repo(
+    rust_ext_protobuf,
+    "rules_rust_protobuf_deps",
+    "rules_rust_protobuf_deps__grpc-0.6.2",
+    "rules_rust_protobuf_deps__grpc-compiler-0.6.2",
+    "rules_rust_protobuf_deps__log-0.4.17",
+    "rules_rust_protobuf_deps__protobuf-2.8.2",
+    "rules_rust_protobuf_deps__protobuf-codegen-2.8.2",
+    "rules_rust_protobuf_deps__tls-api-0.1.22",
+    "rules_rust_protobuf_deps__tls-api-stub-0.1.22",
+)
+
+register_toolchains(
+    "//:default_proto_toolchain",
+)

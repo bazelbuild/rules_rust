@@ -1,5 +1,9 @@
 android
 bazel_env
+bazel-bin
+bazel-examples
+bazel-out
+bazel-testlogs
 bzlmod
 cargo_manifest_dir/external_crate
 crate_universe

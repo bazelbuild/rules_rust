@@ -1,0 +1,63 @@
+"""bazelbuild/rules_rust/extensions/wasm_bindgen"""
+
+module(
+    name = "rules_rust_wasm_bindgen",
+    version = "0.54.1",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.54.1",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.5.0",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.9",
+)
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "1.39.0",
+)
+bazel_dep(
+    name = "rules_nodejs",
+    version = "5.8.5",
+)
+
+rust_ext_wasm_bindgen = use_extension("//:extensions.bzl", "rust_ext_wasm_bindgen")
+use_repo(
+    rust_ext_wasm_bindgen,
+    "rules_rust_wasm_bindgen_deps",
+    "rules_rust_wasm_bindgen_deps__anyhow-1.0.71",
+    "rules_rust_wasm_bindgen_deps__assert_cmd-1.0.8",
+    "rules_rust_wasm_bindgen_deps__diff-0.1.13",
+    "rules_rust_wasm_bindgen_deps__docopt-1.1.1",
+    "rules_rust_wasm_bindgen_deps__env_logger-0.8.4",
+    "rules_rust_wasm_bindgen_deps__log-0.4.19",
+    "rules_rust_wasm_bindgen_deps__predicates-1.0.8",
+    "rules_rust_wasm_bindgen_deps__rayon-1.7.0",
+    "rules_rust_wasm_bindgen_deps__rouille-3.6.2",
+    "rules_rust_wasm_bindgen_deps__serde-1.0.171",
+    "rules_rust_wasm_bindgen_deps__serde_derive-1.0.171",
+    "rules_rust_wasm_bindgen_deps__serde_json-1.0.102",
+    "rules_rust_wasm_bindgen_deps__tempfile-3.6.0",
+    "rules_rust_wasm_bindgen_deps__ureq-2.8.0",
+    "rules_rust_wasm_bindgen_deps__walrus-0.20.3",
+    "rules_rust_wasm_bindgen_deps__wasm-bindgen-0.2.92",
+    "rules_rust_wasm_bindgen_deps__wasm-bindgen-cli-support-0.2.92",
+    "rules_rust_wasm_bindgen_deps__wasm-bindgen-shared-0.2.92",
+    "rules_rust_wasm_bindgen_deps__wasmparser-0.102.0",
+    "rules_rust_wasm_bindgen_deps__wasmprinter-0.2.60",
+    "rules_rust_wasm_bindgen_deps_cli",
+)
+
+register_toolchains(
+    "//:default_wasm_bindgen_toolchain",
+)

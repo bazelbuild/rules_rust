@@ -1,0 +1,41 @@
+"""bazelbuild/rules_rust/extensions/bindgen"""
+
+module(
+    name = "rules_rust_bindgen",
+    version = "0.54.1",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.54.1",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.5.0",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.9",
+)
+
+rust_ext_bindgen = use_extension("//:extensions.bzl", "rust_ext_bindgen")
+use_repo(
+    rust_ext_bindgen,
+    "llvm-raw",
+    "rules_rust_bindgen_deps",
+    "rules_rust_bindgen_deps__bindgen-0.70.1",
+    "rules_rust_bindgen_deps__bindgen-cli-0.70.1",
+    "rules_rust_bindgen_deps__clang-sys-1.8.1",
+    "rules_rust_bindgen_deps__clap-4.5.17",
+    "rules_rust_bindgen_deps__clap_complete-4.5.26",
+    "rules_rust_bindgen_deps__env_logger-0.10.2",
+)
+
+register_toolchains(
+    "//:default_bindgen_toolchain",
+)

@@ -786,7 +786,7 @@ libc's `malloc`. This label must refer to a `cc_library` rule.
     ),
 }
 
-_rust_test_attrs = dict({
+_rust_test_attrs = {
     "crate": attr.label(
         mandatory = False,
         doc = dedent("""\
@@ -817,12 +817,12 @@ _rust_test_attrs = dict({
         """),
     ),
     "_use_grep_includes": attr.bool(default = True),
-}.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
+} | _coverage_attrs | _experimental_use_cc_common_link_attrs
 
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + {
+    attrs = _common_attrs | {
         "disable_pipelining": attr.bool(
             default = False,
             doc = dedent("""\
@@ -831,7 +831,7 @@ rust_library = rule(
                 crates will instead use the `.rlib` file.
             """),
         ),
-    }.items()),
+    },
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -920,7 +920,7 @@ _rust_static_library_transition = transition(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    attrs = dict(_common_attrs.items() + {
+    attrs = _common_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the static library to.",
             default = None,
@@ -928,7 +928,7 @@ rust_static_library = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     fragments = ["cpp"],
     cfg = _rust_static_library_transition,
     toolchains = [
@@ -966,7 +966,7 @@ _rust_shared_library_transition = transition(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = dict(_common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
+    attrs = _common_attrs | _experimental_use_cc_common_link_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
@@ -975,7 +975,7 @@ rust_shared_library = rule(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
         "_use_grep_includes": attr.bool(default = True),
-    }.items()),
+    },
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
@@ -1040,7 +1040,7 @@ rust_proc_macro = rule(
     """),
 )
 
-_rust_binary_attrs = dict({
+_rust_binary_attrs = {
     "binary_name": attr.string(
         doc = dedent("""\
             Override the resulting binary file name. By default, the binary file will be named using the `name` attribute on this rule,
@@ -1084,7 +1084,7 @@ _rust_binary_attrs = dict({
     ),
     "stamp": _stamp_attribute(default_value = -1),
     "_use_grep_includes": attr.bool(default = True),
-}.items() + _experimental_use_cc_common_link_attrs.items())
+} | _experimental_use_cc_common_link_attrs
 
 def _rust_binary_transition_impl(settings, attr):
     return {
@@ -1104,7 +1104,7 @@ _rust_binary_transition = transition(
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items() + {
+    attrs = _common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1112,7 +1112,7 @@ rust_binary = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,
@@ -1246,7 +1246,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items() + {
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1254,7 +1254,7 @@ rust_binary_without_process_wrapper = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    }),
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,
@@ -1293,7 +1293,7 @@ _rust_test_transition = transition(
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + _rust_test_attrs.items() + {
+    attrs = _common_attrs | _rust_test_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,
@@ -1301,7 +1301,7 @@ rust_test = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_test_transition,

@@ -1,35 +1,31 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Bindgen
 
-* [rust_bindgen_library](#rust_bindgen_library)
-* [rust_bindgen](#rust_bindgen)
-* [rust_bindgen_toolchain](#rust_bindgen_toolchain)
-* [rust_bindgen_dependencies](#rust_bindgen_dependencies)
-* [rust_bindgen_register_toolchains](#rust_bindgen_register_toolchains)
-
-
-## Overview
+# rules_rust_bindgen
 
 These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings to C (and some C++) libraries.
 
 [rust]: http://www.rust-lang.org/
 [bindgen]: https://github.com/rust-lang/rust-bindgen
 
-See the [bindgen example](https://github.com/bazelbuild/rules_rust/tree/main/examples/bindgen/BUILD.bazel) for a more complete example of use.
+## Rules
 
-### Setup
+- [rust_bindgen](#rust_bindgen)
+- [rust_bindgen_library](#rust_bindgen_library)
+- [rust_bindgen_toolchain](#rust_bindgen_toolchain)
+
+## Setup
 
 To use the Rust bindgen rules, add the following to your `WORKSPACE` file to add the
 external repositories for the Rust bindgen toolchain (in addition to the [rust rules setup](https://bazelbuild.github.io/rules_rust/#setup)):
 
 ```python
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
+load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
 
-load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+load("@rules_rust_bindgen//:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
 
 rust_bindgen_transitive_dependencies()
 ```
@@ -43,10 +39,7 @@ toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen
 [cra_uni]: https://bazelbuild.github.io/rules_rust/crate_universe.html
 
 ---
-
 ---
-
-
 
 <a id="rust_bindgen"></a>
 
@@ -88,7 +81,7 @@ in turn depends on both a clang binary and the clang library. To obtain these de
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
 ```python
-load("@rules_rust//bindgen:defs.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen_toolchain_impl",
@@ -101,7 +94,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen_toolchain",
     toolchain = "bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_bindgen//:toolchain_type",
 )
 ```
 
@@ -119,23 +112,6 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 | <a id="rust_bindgen_toolchain-default_rustfmt"></a>default_rustfmt |  If set, `rust_bindgen` targets will always format generated sources with `rustfmt`.   | Boolean | optional |  `True`  |
 | <a id="rust_bindgen_toolchain-libclang"></a>libclang |  A cc_library that provides bindgen's runtime dependency on libclang.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="rust_bindgen_toolchain-libstdcxx"></a>libstdcxx |  A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
-
-
-<a id="rust_bindgen_dependencies"></a>
-
-## rust_bindgen_dependencies
-
-<pre>
-rust_bindgen_dependencies()
-</pre>
-
-Declare dependencies needed for bindgen.
-
-
-**RETURNS**
-
-list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
-  defined by this macro.
 
 
 <a id="rust_bindgen_library"></a>
@@ -165,26 +141,5 @@ Arguments are the same as `rust_bindgen`, and `kwargs` are passed directly to ru
 | <a id="rust_bindgen_library-clang_flags"></a>clang_flags |  Flags to pass directly to the clang executable.   |  `None` |
 | <a id="rust_bindgen_library-wrap_static_fns"></a>wrap_static_fns |  Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains",   |  `False` |
 | <a id="rust_bindgen_library-kwargs"></a>kwargs |  Arguments to forward to the underlying `rust_library` rule.   |  none |
-
-
-<a id="rust_bindgen_register_toolchains"></a>
-
-## rust_bindgen_register_toolchains
-
-<pre>
-rust_bindgen_register_toolchains(<a href="#rust_bindgen_register_toolchains-register_toolchains">register_toolchains</a>)
-</pre>
-
-Registers the default toolchains for the `rules_rust` [bindgen][bg] rules.
-
-[bg]: https://rust-lang.github.io/rust-bindgen/
-
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="rust_bindgen_register_toolchains-register_toolchains"></a>register_toolchains |  Whether or not to register toolchains.   |  `True` |
 
 

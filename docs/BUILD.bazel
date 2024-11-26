@@ -8,7 +8,6 @@ bzl_library(
     name = "docs_deps",
     srcs = [
         "@bazel_tools//tools:bzl_srcs",
-        "@com_google_protobuf//:bzl_srcs",
     ],
     deps = [
         "@bazel_features//:deps",
@@ -17,8 +16,6 @@ bzl_library(
         "@bazel_skylib//lib:selects",
         "@bazel_skylib//lib:structs",
         "@bazel_skylib//rules:common_settings",
-        "@rules_proto//proto:defs",
-        "@rules_proto//proto:repositories",
     ],
 )
 
@@ -26,13 +23,14 @@ bzl_library(
     name = "all_docs",
     deps = [
         ":docs_deps",
-        "@rules_rust//bindgen:bzl_lib",
         "@rules_rust//cargo:bzl_lib",
         "@rules_rust//crate_universe:bzl_lib",
         "@rules_rust//crate_universe/private/module_extensions:bzl_lib",
-        "@rules_rust//proto:bzl_lib",
         "@rules_rust//rust:bzl_lib",
-        "@rules_rust//wasm_bindgen:bzl_lib",
+        "@rules_rust_bindgen//:bzl_lib",
+        "@rules_rust_prost//:bzl_lib",
+        "@rules_rust_protobuf//:bzl_lib",
+        "@rules_rust_wasm_bindgen//:bzl_lib",
     ],
 )
 
@@ -80,17 +78,6 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "rust_bindgen",
-        header_template = ":rust_bindgen.vm",
-        symbols = [
-            "rust_bindgen_library",
-            "rust_bindgen",
-            "rust_bindgen_toolchain",
-            "rust_bindgen_dependencies",
-            "rust_bindgen_register_toolchains",
-        ],
-    ),
-    page(
         name = "rust_clippy",
         header_template = ":rust_clippy.vm",
         symbols = [
@@ -115,23 +102,6 @@ PAGES = dict([
         ],
     ),
     page(
-        name = "rust_proto",
-        header_template = ":rust_proto.vm",
-        symbols = [
-            "rust_prost_library",
-            "rust_prost_toolchain",
-            "rust_prost_dependencies",
-            "rust_prost_transitive_repositories",
-        ] + [
-            "rust_proto_library",
-            "rust_grpc_library",
-            "rust_proto_protobuf_toolchain",
-            "rust_proto_protobuf_dependencies",
-            "rust_proto_protobuf_register_toolchains",
-            "rust_proto_protobuf_transitive_repositories",
-        ],
-    ),
-    page(
         name = "rust_repositories",
         symbols = [
             "rules_rust_dependencies",
@@ -144,17 +114,6 @@ PAGES = dict([
             "rust_toolchain_repository",
             "rust_toolchain_tools_repository",
             "rust_toolchain",
-        ],
-    ),
-    page(
-        name = "rust_wasm_bindgen",
-        header_template = ":rust_wasm_bindgen.vm",
-        symbols = [
-            "rust_wasm_bindgen_dependencies",
-            "rust_wasm_bindgen_register_toolchains",
-            "rust_wasm_bindgen_toolchain",
-            "rust_wasm_bindgen",
-            "RustWasmBindgenInfo",
         ],
     ),
     page(
@@ -211,6 +170,48 @@ stardoc(
     out = "crate_universe_bzlmod.md",
     input = "@rules_rust//crate_universe:docs_bzlmod.bzl",
     deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_bindgen",
+    out = "rust_bindgen.md",
+    input = "@rules_rust_bindgen//:defs.bzl",
+    deps = ["@rules_rust_bindgen//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_protobuf",
+    out = "rust_protobuf.md",
+    input = "@rules_rust_protobuf//:defs.bzl",
+    deps = ["@rules_rust_protobuf//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_prost",
+    out = "rust_prost.md",
+    input = "@rules_rust_prost//:defs.bzl",
+    deps = ["@rules_rust_prost//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen",
+    out = "rust_wasm_bindgen.md",
+    input = "@rules_rust_wasm_bindgen//:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen_rules_js",
+    out = "rust_wasm_bindgen_rules_js.md",
+    input = "@rules_rust_wasm_bindgen//rules_js:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen_rules_nodejs",
+    out = "rust_wasm_bindgen_rules_nodejs.md",
+    input = "@rules_rust_wasm_bindgen//rules_nodejs:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//rules_nodejs:bzl_lib"],
 )
 
 sh_binary(

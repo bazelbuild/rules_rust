@@ -7,10 +7,16 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.46.0")
+bazel_dep(name = "rules_rust", version = "0.54.1")
 local_path_override(
     module_name = "rules_rust",
     path = "../../..",
+)
+
+bazel_dep(name = "rules_rust_prost", version = "0.54.1")
+local_path_override(
+    module_name = "rules_rust_prost",
+    path = "../../../extensions/prost",
 )
 
 #
@@ -67,9 +73,6 @@ rust.toolchain(
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
-
-# Proto toolchain
-register_toolchains("@rules_rust//proto/protobuf:default-proto-toolchain")
 
 # Custom Prost toolchain
 register_toolchains("@//build/prost_toolchain")

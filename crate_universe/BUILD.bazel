@@ -93,6 +93,7 @@ alias(
 rust_test(
     name = "unit_test",
     aliases = aliases(),
+    compile_data = glob(["test_data/**"]),
     crate = ":cargo_bazel",
     data = glob(["test_data/**"]) + [
         "//crate_universe/test_data/serialized_configs",

@@ -13,7 +13,7 @@ bcr_test_module:
       shell_commands:
         - "rm MODULE.bazel.lock"
       run_targets:
-        - "//third-party:vendor"
+        - "//third-party-in-workspace:vendor"
         - "@rules_rust//tools/rust_analyzer:gen_rust_project"
       test_targets:
         - "//..."
@@ -32,7 +32,7 @@ bcr_test_module_windows:
       shell_commands:
         - "rm MODULE.bazel.lock"
       run_targets:
-        - "//third-party:vendor"
+        - "//third-party-in-workspace:vendor"
       build_targets:
         - "@rules_rust//tools/rust_analyzer:gen_rust_project"
       test_targets:
