@@ -42,13 +42,6 @@ def rust_prost_dependencies(bzlmod = False):
         )
         maybe(
             http_archive,
-            name = "bazel_features",
-            sha256 = "5d7e4eb0bb17aee392143cd667b67d9044c270a9345776a5e5a3cccbc44aa4b3",
-            strip_prefix = "bazel_features-1.13.0",
-            url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.13.0/bazel_features-v1.13.0.tar.gz",
-        )
-        maybe(
-            http_archive,
             name = "zlib",
             build_file = Label("//private/3rdparty:BUILD.zlib.bazel"),
             sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",

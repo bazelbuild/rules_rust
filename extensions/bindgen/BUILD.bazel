@@ -17,7 +17,6 @@ bzl_library(
     deps = [
         "//3rdparty:bzl_lib",
         "//private:bzl_lib",
-        "@rules_rust//rust:bzl_lib",
     ],
 )
 

@@ -32,7 +32,10 @@ bzl_library(
     name = "bzl_lib",
     srcs = [":bzl_srcs"],
     visibility = ["//visibility:public"],
-    deps = ["//rust:bzl_lib"],
+    deps = [
+        "//rust:bzl_lib",
+        "@bazel_features//:features",
+    ],
 )
 
 filegroup(

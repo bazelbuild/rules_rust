@@ -1,5 +1,10 @@
 """rules_rust docs"""
 
+module(
+    name = "rules_rust_docs",
+    version = "0.0.0",
+)
+
 bazel_dep(name = "rules_rust", version = "0.54.1")
 local_path_override(
     module_name = "rules_rust",
@@ -39,6 +44,11 @@ bazel_dep(
     version = "0.6.2",
 )
 bazel_dep(
-    name = "bazel_features",
-    version = "1.14.0",
+    name = "protobuf",
+    version = "27.0",
+    repo_name = "com_google_protobuf",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
 )

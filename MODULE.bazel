@@ -7,11 +7,11 @@ module(
 
 bazel_dep(
     name = "bazel_features",
-    version = "1.9.1",
+    version = "1.21.0",
 )
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.5.0",
+    version = "1.7.1",
 )
 bazel_dep(
     name = "platforms",
@@ -19,15 +19,15 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.9",
+    version = "0.0.17",
 )
 bazel_dep(
     name = "rules_license",
-    version = "0.0.8",
+    version = "1.0.0",
 )
 bazel_dep(
     name = "apple_support",
-    version = "1.13.0",
+    version = "1.17.1",
     repo_name = "build_bazel_apple_support",
 )
 
