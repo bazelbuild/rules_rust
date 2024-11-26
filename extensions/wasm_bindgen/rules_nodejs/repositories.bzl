@@ -3,7 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
-    "//wasm_bindgen:repositories.bzl",
+    "//:repositories.bzl",
     _rust_wasm_bindgen_dependencies = "rust_wasm_bindgen_dependencies",
     _rust_wasm_bindgen_register_toolchains = "rust_wasm_bindgen_register_toolchains",
 )

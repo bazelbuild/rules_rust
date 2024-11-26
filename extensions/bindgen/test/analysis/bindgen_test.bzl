@@ -2,7 +2,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@rules_rust_ext//bindgen:defs.bzl", "rust_bindgen_library")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
 load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
 
 def _test_cc_linkopt_impl(env, target):

@@ -1,6 +1,6 @@
 # Patches
 
-All patches pair with the versions of the referenced repositories defined in `@rules_rust_ext//bindgen:repositories.bzl`.
+All patches pair with the versions of the referenced repositories defined in `@rules_rust_bindgen//:repositories.bzl`.
 
 ## [llvm-project.cxx17](./llvm-project.cxx17.patch)
 

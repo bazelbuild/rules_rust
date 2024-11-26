@@ -1,6 +1,6 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
 
-# rules_rust_ext protobuf
+# rules_rust_protobuf
 
 These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [Rust][rust] with Bazel
 using [`rust-protobuf`].
@@ -124,7 +124,7 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@rules_rust_ext//protobuf:defs.bzl", "rust_grpc_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
 
 proto_library(
     name = "my_proto",
@@ -168,7 +168,7 @@ Builds a Rust library crate from a set of `proto_library`s.
 Example:
 
 ```python
-load("@rules_rust_ext//protobuf:defs.bzl", "rust_proto_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "my_proto",

@@ -824,20 +824,20 @@ tasks:
       - "--compile_one_dependency"
     build_targets:
       - "tools/rust_analyzer/main.rs"
-  extensions_linux:
-    name: Extensions
+  extensions_bindgen_linux:
     platform: ubuntu2004
-    working_directory: extensions
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  extensions_linux_rbe:
-    name: Extensions
+  extensions_bindgen_linux_rbe:
     platform: rbe_ubuntu2004
-    working_directory: extensions
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -847,34 +847,119 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  extensions_macos:
-    name: Extensions
+  extensions_bindgen_macos:
     platform: macos_arm64
-    working_directory: extensions
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  extensions_windows:
-    name: Extensions
+  # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
+  # # The bindgen rules are currently broken on windows
+  # extensions_bindgen_windows:
+  #   platform: windows
+  #   name: Extensions Bindgen
+  #   working_directory: extensions/bindgen
+  #   build_flags: *aspects_flags
+  #   test_flags: *aspects_flags
+  #   build_targets:
+  #     - "--"
+  #     - "//..."
+  #   test_targets:
+  #     - "--"
+  #     - "//..."
+  extensions_protobuf_linux:
+    platform: ubuntu2004
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_macos:
+    platform: macos_arm64
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_windows:
     platform: windows
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux:
+    platform: ubuntu2004
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_macos:
+    platform: macos_arm64
+    name: Extensions wasm-bindgen
     working_directory: extensions
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
-      - "--"
       - "//..."
-      # The bindgen rules are currently broken on windows
-      # https://github.com/bazelbuild/rules_rust/issues/2009
-      - "-//bindgen/..."
     test_targets:
-      - "--"
       - "//..."
-      # The bindgen rules are currently broken on windows
-      # https://github.com/bazelbuild/rules_rust/issues/2009
-      - "-//bindgen/..."
+  # # TODO: https://github.com/bazelbuild/rules_rust/issues/3021
+  # # The length of the workspace name results in paths that are too long
+  # # on windows for linking.
+  # extensions_wasm_bindgen_windows:
+  #   platform: windows
+  #   name: Extensions wasm-bindgen
+  #   working_directory: extensions/wasm_bindgen
+  #   build_flags: *aspects_flags
+  #   test_flags: *aspects_flags
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
 
 buildifier:
   version: latest

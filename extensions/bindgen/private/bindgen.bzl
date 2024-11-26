@@ -194,7 +194,7 @@ def _rust_bindgen_impl(ctx):
     if header not in cc_header_list:
         fail("Header {} is not in {}'s transitive headers.".format(ctx.attr.header, cc_lib), "header")
 
-    toolchain = ctx.toolchains[Label("//bindgen:toolchain_type")]
+    toolchain = ctx.toolchains[Label("//:toolchain_type")]
     bindgen_bin = toolchain.bindgen
     clang_bin = toolchain.clang
     libclang = toolchain.libclang
@@ -407,7 +407,7 @@ rust_bindgen = rule(
     outputs = {"out": "%{name}.rs"},
     fragments = ["cpp"],
     toolchains = [
-        config_common.toolchain_type("//bindgen:toolchain_type"),
+        config_common.toolchain_type("//:toolchain_type"),
         config_common.toolchain_type("@rules_rust//rust:toolchain_type"),
         config_common.toolchain_type("@rules_rust//rust/rustfmt:toolchain_type", mandatory = False),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type"),
@@ -433,7 +433,7 @@ in turn depends on both a clang binary and the clang library. To obtain these de
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
 ```python
-load("@rules_rust_ext//bindgen:defs.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen_toolchain_impl",
@@ -446,7 +446,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen_toolchain",
     toolchain = "bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust_ext//bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_bindgen//:toolchain_type",
 )
 ```
 

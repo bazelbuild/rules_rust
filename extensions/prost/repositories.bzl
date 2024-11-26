@@ -2,7 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//prost/private/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//private/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def rust_prost_dependencies(bzlmod = False):
     """Declares repositories needed for prost.
@@ -16,7 +16,7 @@ def rust_prost_dependencies(bzlmod = False):
     """
 
     direct_deps = [
-        struct(repo = "rules_rust_prost__heck", is_dev_dep = False),
+        struct(repo = "rules_rust_prost_deps__heck", is_dev_dep = False),
     ]
     if bzlmod:
         # Without bzlmod, this function is normally called by the
@@ -40,14 +40,32 @@ def rust_prost_dependencies(bzlmod = False):
             strip_prefix = "protobuf-3.18.0",
             urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.18.0/protobuf-all-3.18.0.tar.gz"],
         )
+        maybe(
+            http_archive,
+            name = "bazel_features",
+            sha256 = "5d7e4eb0bb17aee392143cd667b67d9044c270a9345776a5e5a3cccbc44aa4b3",
+            strip_prefix = "bazel_features-1.13.0",
+            url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.13.0/bazel_features-v1.13.0.tar.gz",
+        )
+        maybe(
+            http_archive,
+            name = "zlib",
+            build_file = Label("//private/3rdparty:BUILD.zlib.bazel"),
+            sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+            strip_prefix = "zlib-1.2.11",
+            urls = [
+                "https://zlib.net/zlib-1.2.11.tar.gz",
+                "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
+            ],
+        )
 
     maybe(
         http_archive,
-        name = "rules_rust_prost__heck",
+        name = "rules_rust_prost_deps__heck",
         integrity = "sha256-IwTgCYP4f/s4tVtES147YKiEtdMMD8p9gv4zRJu+Veo=",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/heck/heck-0.5.0.crate"],
         strip_prefix = "heck-0.5.0",
-        build_file = Label("@rules_rust_ext//prost/private/3rdparty/crates:BUILD.heck-0.5.0.bazel"),
+        build_file = Label("@rules_rust_prost//private/3rdparty/crates:BUILD.heck-0.5.0.bazel"),
     )
     return direct_deps

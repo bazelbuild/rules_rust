@@ -14,7 +14,7 @@ crates_vendor(
         )],
         "protobuf": [crate.annotation(
             patch_args = ["-p1"],
-            patches = ["@rules_rust_ext//protobuf/3rdparty/patches:protobuf-2.8.2.patch"],
+            patches = ["@rules_rust_protobuf//3rdparty/patches:protobuf-2.8.2.patch"],
         )],
         "protobuf-codegen": [crate.annotation(
             gen_binaries = ["protoc-gen-rust"],
@@ -46,15 +46,15 @@ crates_vendor(
             version = "0.1.22",
         ),
     },
-    repository_name = "rules_rust_proto",
+    repository_name = "rules_rust_protobuf_deps",
     tags = ["manual"],
 )
 
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        "//protobuf/3rdparty/crates:crates.bzl",
-        "//protobuf/3rdparty/crates:defs.bzl",
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
     ],
-    visibility = ["//protobuf:__pkg__"],
+    visibility = ["//:__pkg__"],
 )

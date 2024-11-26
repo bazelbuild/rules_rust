@@ -1,7 +1,7 @@
 """Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
 load("@rules_rust//rust:defs.bzl", "rust_common")
-load("//wasm_bindgen:providers.bzl", "RustWasmBindgenInfo")
+load("//:providers.bzl", "RustWasmBindgenInfo")
 load(":transitions.bzl", "wasm_bindgen_transition")
 
 def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_flags = []):
@@ -78,7 +78,7 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
         mnemonic = "RustWasmBindgen",
         progress_message = "Generating WebAssembly bindings for {}...".format(progress_message_label),
         arguments = [args],
-        toolchain = str(Label("//wasm_bindgen:toolchain_type")),
+        toolchain = str(Label("//:toolchain_type")),
     )
 
     return RustWasmBindgenInfo(
@@ -88,7 +88,7 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
     )
 
 def _rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//wasm_bindgen:toolchain_type")]
+    toolchain = ctx.toolchains[Label("//:toolchain_type")]
 
     info = rust_wasm_bindgen_action(
         ctx = ctx,
@@ -164,7 +164,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
         ),
     },
     toolchains = [
-        str(Label("//wasm_bindgen:toolchain_type")),
+        str(Label("//:toolchain_type")),
     ],
 )
 
@@ -182,7 +182,7 @@ In cases where users want to control or change the version of `wasm-bindgen` use
 a unique toolchain can be created as in the example below:
 
 ```python
-load("@rules_rust_ext//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     bindgen = "//3rdparty/crates:wasm_bindgen_cli__bin",
@@ -191,7 +191,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "wasm_bindgen_toolchain",
     toolchain = "wasm_bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust_ext//wasm_bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_wasm_bindgen//:toolchain_type",
 )
 ```
 

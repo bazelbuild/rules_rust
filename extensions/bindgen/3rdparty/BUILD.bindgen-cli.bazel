@@ -1,5 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@rules_rust_ext//bindgen:repositories.bzl", "BINDGEN_VERSION")
+load("@rules_rust_bindgen//:repositories.bzl", "BINDGEN_VERSION")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -31,14 +31,14 @@ rust_binary(
     ],
     version = BINDGEN_VERSION,
     # This list is produced by adding the contents of https://github.com/rust-lang/rust-bindgen/blob/main/bindgen-cli/Cargo.toml
-    # to `@rules_rust_ext//bindgen/3rdparty:crates_vendor`, rendering dependencies, and updating the deps
+    # to `@rules_rust_bindgen//3rdparty:crates_vendor`, rendering dependencies, and updating the deps
     deps = [
-        "@rules_rust_bindgen__bindgen-{}//:bindgen".format(BINDGEN_VERSION),
-        "@rules_rust_bindgen__clap-4.5.17//:clap",
-        "@rules_rust_bindgen__clap_complete-4.5.26//:clap_complete",
-        "@rules_rust_bindgen__env_logger-0.10.2//:env_logger",
-        "@rules_rust_bindgen__log-0.4.22//:log",
-        "@rules_rust_bindgen__proc-macro2-1.0.86//:proc_macro2",
-        "@rules_rust_bindgen__shlex-1.3.0//:shlex",
+        "@rules_rust_bindgen_deps__bindgen-{}//:bindgen".format(BINDGEN_VERSION),
+        "@rules_rust_bindgen_deps__clap-4.5.17//:clap",
+        "@rules_rust_bindgen_deps__clap_complete-4.5.26//:clap_complete",
+        "@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger",
+        "@rules_rust_bindgen_deps__log-0.4.22//:log",
+        "@rules_rust_bindgen_deps__proc-macro2-1.0.86//:proc_macro2",
+        "@rules_rust_bindgen_deps__shlex-1.3.0//:shlex",
     ],
 )

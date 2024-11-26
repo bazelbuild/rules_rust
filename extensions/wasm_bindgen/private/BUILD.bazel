@@ -6,7 +6,7 @@ bzl_library(
         "transitions.bzl",
         "wasm_bindgen.bzl",
     ],
-    visibility = ["//wasm_bindgen:__pkg__"],
+    visibility = ["//:__pkg__"],
     deps = [
         "@rules_rust//rust:bzl_lib",
     ],

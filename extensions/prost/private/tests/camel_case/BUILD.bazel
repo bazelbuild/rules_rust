@@ -1,15 +1,15 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//prost:defs.bzl", "rust_prost_library")
+load("//:defs.bzl", "rust_prost_library")
 
-package(default_visibility = ["//prost/private/tests:__subpackages__"])
+package(default_visibility = ["//private/tests:__subpackages__"])
 
 proto_library(
     name = "camel_case_proto",
     srcs = [
         "camel_case.proto",
     ],
-    strip_import_prefix = "/prost/private/tests/camel_case",
+    strip_import_prefix = "/private/tests/camel_case",
 )
 
 proto_library(

@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library_group", "rust_test")
-load("//prost:defs.bzl", "rust_prost_toolchain")
+load("//:defs.bzl", "rust_prost_toolchain")
 load(":legacy_proto_toolchain.bzl", "legacy_proto_toolchain")
 load(":prost.bzl", "RUST_EDITION", "current_prost_runtime")
 
@@ -15,7 +15,7 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":current_prost_runtime",
-        "@rules_rust_prost__heck//:heck",
+        "@rules_rust_prost_deps__heck//:heck",
     ],
 )
 
@@ -28,9 +28,9 @@ rust_test(
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
-    visibility = ["//prost:__pkg__"],
+    visibility = ["//:__pkg__"],
     deps = [
-        "//prost/private/3rdparty:bzl_lib",
+        "//private/3rdparty:bzl_lib",
         "@rules_proto//proto:defs",
         "@rules_proto//proto:repositories",
         "@rules_rust//rust:bzl_lib",
@@ -40,31 +40,31 @@ bzl_library(
 rust_library_group(
     name = "prost_runtime",
     visibility = [
-        "//prost:__subpackages__",
+        "//:__subpackages__",
     ],
     deps = [
-        "//prost/private/3rdparty/crates:prost",
+        "//private/3rdparty/crates:prost",
     ],
 )
 
 rust_library_group(
     name = "tonic_runtime",
     visibility = [
-        "//prost:__subpackages__",
+        "//:__subpackages__",
     ],
     deps = [
         ":prost_runtime",
-        "//prost/private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates:tonic",
     ],
 )
 
 rust_prost_toolchain(
     name = "default_prost_toolchain_impl",
-    prost_plugin = "//prost/private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin = "//private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
     prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
     prost_runtime = ":prost_runtime",
-    prost_types = "//prost/private/3rdparty/crates:prost-types",
-    tonic_plugin = "//prost/private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    prost_types = "//private/3rdparty/crates:prost-types",
+    tonic_plugin = "//private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
     tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
     tonic_runtime = ":tonic_runtime",
 )

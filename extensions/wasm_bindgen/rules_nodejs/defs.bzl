@@ -1,10 +1,10 @@
 """Rust WASM-bindgen rules for interfacing with bazelbuild/rules_nodejs"""
 
 load("@rules_nodejs//nodejs:providers.bzl", "DeclarationInfo", "JSModuleInfo")
-load("//wasm_bindgen/private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
+load("//private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
 
 def _nodejs_rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//wasm_bindgen:toolchain_type")]
+    toolchain = ctx.toolchains[Label("//:toolchain_type")]
 
     info = rust_wasm_bindgen_action(
         ctx = ctx,
@@ -44,6 +44,6 @@ Generates javascript and typescript bindings for a webassembly module using [was
     implementation = _nodejs_rust_wasm_bindgen_impl,
     attrs = WASM_BINDGEN_ATTR,
     toolchains = [
-        str(Label("//wasm_bindgen:toolchain_type")),
+        str(Label("//:toolchain_type")),
     ],
 )

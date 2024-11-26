@@ -1,10 +1,10 @@
 """Rust WASM-bindgen rules for interfacing with aspect-build/rules_js"""
 
 load("@aspect_rules_js//js:providers.bzl", "js_info")
-load("//wasm_bindgen/private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
+load("//private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
 
 def _js_rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//wasm_bindgen:toolchain_type")]
+    toolchain = ctx.toolchains[Label("//:toolchain_type")]
 
     info = rust_wasm_bindgen_action(
         ctx = ctx,
@@ -39,6 +39,6 @@ Generates javascript and typescript bindings for a webassembly module using [was
     implementation = _js_rust_wasm_bindgen_impl,
     attrs = WASM_BINDGEN_ATTR,
     toolchains = [
-        str(Label("//wasm_bindgen:toolchain_type")),
+        str(Label("//:toolchain_type")),
     ],
 )

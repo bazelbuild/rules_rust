@@ -10,7 +10,7 @@ bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     deps = [
-        "//wasm_bindgen:bzl_lib",
+        "//:bzl_lib",
         "@rules_nodejs//nodejs:bzl",
     ],
 )

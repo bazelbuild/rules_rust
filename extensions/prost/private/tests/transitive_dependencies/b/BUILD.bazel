@@ -1,17 +1,17 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//prost:defs.bzl", "rust_prost_library")
+load("//:defs.bzl", "rust_prost_library")
 
-package(default_visibility = ["//prost/private/tests:__subpackages__"])
+package(default_visibility = ["//private/tests:__subpackages__"])
 
 proto_library(
     name = "b_proto",
     srcs = [
         "b.proto",
     ],
-    strip_import_prefix = "/prost/private/tests/transitive_dependencies",
+    strip_import_prefix = "/private/tests/transitive_dependencies",
     deps = [
-        "//prost/private/tests/transitive_dependencies/b/c:c_proto",
+        "//private/tests/transitive_dependencies/b/c:c_proto",
         "@com_google_protobuf//:empty_proto",
     ],
 )

@@ -16,7 +16,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
+load("//3rdparty/crates:defs.bzl", "crate_repositories")
 
 BINDGEN_VERSION = "0.70.1"
 
@@ -38,8 +38,20 @@ def rust_bindgen_dependencies():
         build_file_content = "# empty",
         patch_args = ["-p1"],
         patches = [
-            Label("//bindgen/3rdparty/patches:llvm-project.cxx17.patch"),
-            Label("//bindgen/3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch"),
+            Label("//3rdparty/patches:llvm-project.cxx17.patch"),
+            Label("//3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch"),
+        ],
+    )
+
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = Label("//3rdparty:BUILD.zlib.bazel"),
+        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+        strip_prefix = "zlib-1.2.11",
+        urls = [
+            "https://zlib.net/zlib-1.2.11.tar.gz",
+            "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
         ],
     )
 
@@ -51,7 +63,7 @@ def rust_bindgen_dependencies():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/bindgen-cli/bindgen-cli-{}.crate".format(BINDGEN_VERSION)],
         strip_prefix = "bindgen-cli-{}".format(BINDGEN_VERSION),
-        build_file = Label("//bindgen/3rdparty:BUILD.bindgen-cli.bazel"),
+        build_file = Label("//3rdparty:BUILD.bindgen-cli.bazel"),
     )
 
     direct_deps = [
@@ -71,4 +83,4 @@ def rust_bindgen_register_toolchains(register_toolchains = True):
         register_toolchains (bool, optional): Whether or not to register toolchains.
     """
     if register_toolchains:
-        native.register_toolchains(str(Label("//bindgen:default_bindgen_toolchain")))
+        native.register_toolchains(str(Label("//:default_bindgen_toolchain")))

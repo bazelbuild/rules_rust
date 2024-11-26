@@ -1,6 +1,6 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
 
-# rules_rust_ext bindgen
+# rules_rust_bindgen
 
 These rules are for using [Bindgen][bindgen] to generate [Rust][rust] bindings to C (and some C++) libraries.
 
@@ -19,13 +19,13 @@ To use the Rust bindgen rules, add the following to your `WORKSPACE` file to add
 external repositories for the Rust bindgen toolchain (in addition to the [rust rules setup](https://bazelbuild.github.io/rules_rust/#setup)):
 
 ```python
-load("@rules_rust_ext//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
+load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
 
-load("@rules_rust_ext//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+load("@rules_rust_bindgen//:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
 
 rust_bindgen_transitive_dependencies()
 ```
@@ -81,7 +81,7 @@ in turn depends on both a clang binary and the clang library. To obtain these de
 `rust_bindgen_dependencies` imports bindgen and its dependencies.
 
 ```python
-load("@rules_rust_ext//bindgen:defs.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 rust_bindgen_toolchain(
     name = "bindgen_toolchain_impl",
@@ -94,7 +94,7 @@ rust_bindgen_toolchain(
 toolchain(
     name = "bindgen_toolchain",
     toolchain = "bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust_ext//bindgen:toolchain_type",
+    toolchain_type = "@rules_rust_bindgen//:toolchain_type",
 )
 ```
 

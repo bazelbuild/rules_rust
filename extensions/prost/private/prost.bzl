@@ -18,11 +18,11 @@ load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:utils.bzl", "can_build_metadata")
-load("//prost:providers.bzl", "ProstProtoInfo")
+load("//:providers.bzl", "ProstProtoInfo")
 
 RUST_EDITION = "2021"
 
-TOOLCHAIN_TYPE = "@rules_rust_ext//prost:toolchain_type"
+TOOLCHAIN_TYPE = "@rules_rust_prost//:toolchain_type"
 
 def _create_proto_lang_toolchain(ctx, prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
@@ -301,7 +301,7 @@ rust_prost_aspect = aspect(
             doc = "The wrapper script for the Prost protoc plugin.",
             cfg = "exec",
             executable = True,
-            default = Label("//prost/private:protoc_wrapper"),
+            default = Label("//private:protoc_wrapper"),
         ),
     } | RUSTC_ATTRS,
     fragments = ["cpp"],
@@ -444,7 +444,7 @@ rust_prost_toolchain = rule(
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(
-            default = Label("//prost/private:legacy_proto_toolchain"),
+            default = Label("//private:legacy_proto_toolchain"),
         ),
     })),
     toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),

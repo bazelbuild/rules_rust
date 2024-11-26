@@ -1,0 +1,52 @@
+"""bazelbuild/rules_rust/extensions/prost"""
+
+module(
+    name = "rules_rust_prost",
+    version = "0.54.1",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.54.1",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.5.0",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.9",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "6.0.2",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "21.7",
+    repo_name = "com_google_protobuf",
+)
+
+rust_ext_prost = use_extension("//:extensions.bzl", "rust_ext_prost")
+use_repo(
+    rust_ext_prost,
+    "rules_rust_prost_deps",
+    "rules_rust_prost_deps__h2-0.4.6",
+    "rules_rust_prost_deps__heck",
+    "rules_rust_prost_deps__prost-0.13.1",
+    "rules_rust_prost_deps__prost-types-0.13.1",
+    "rules_rust_prost_deps__protoc-gen-prost-0.4.0",
+    "rules_rust_prost_deps__protoc-gen-tonic-0.4.1",
+    "rules_rust_prost_deps__tokio-1.39.3",
+    "rules_rust_prost_deps__tokio-stream-0.1.15",
+    "rules_rust_prost_deps__tonic-0.12.1",
+)
+
+register_toolchains(
+    "//:default_prost_toolchain",
+)

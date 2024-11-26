@@ -1,6 +1,6 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@rules_rust_ext//wasm_bindgen:repositories.bzl", "WASM_BINDGEN_VERSION")
-load("@rules_rust_ext//wasm_bindgen/3rdparty/crates:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust_wasm_bindgen//:repositories.bzl", "WASM_BINDGEN_VERSION")
+load("@rules_rust_wasm_bindgen//3rdparty/crates:defs.bzl", "aliases", "all_crate_deps")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -29,7 +29,7 @@ rust_binary(
 )
 
 alias(
-    name = "rules_rust_wasm_bindgen_cli",
+    name = "rules_rust_wasm_bindgen_deps_cli",
     actual = ":wasm-bindgen-cli",
     tags = ["manual"],
 )

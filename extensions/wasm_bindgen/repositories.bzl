@@ -16,7 +16,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//wasm_bindgen/3rdparty/crates:defs.bzl", "crate_repositories")
+load("//3rdparty/crates:defs.bzl", "crate_repositories")
 
 WASM_BINDGEN_VERSION = "0.2.92"
 
@@ -32,18 +32,18 @@ def rust_wasm_bindgen_dependencies():
     """
 
     direct_deps = [
-        struct(repo = "rules_rust_wasm_bindgen_cli", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen_deps_cli", is_dev_dep = False),
     ]
     maybe(
         http_archive,
-        name = "rules_rust_wasm_bindgen_cli",
+        name = "rules_rust_wasm_bindgen_deps_cli",
         sha256 = "08f61e21873f51e3059a8c7c3eef81ede7513d161cfc60751c7b2ffa6ed28270",
         urls = ["https://static.crates.io/crates/wasm-bindgen-cli/wasm-bindgen-cli-{}.crate".format(WASM_BINDGEN_VERSION)],
         type = "tar.gz",
         strip_prefix = "wasm-bindgen-cli-{}".format(WASM_BINDGEN_VERSION),
-        build_file = Label("//wasm_bindgen/3rdparty:BUILD.wasm-bindgen-cli.bazel"),
+        build_file = Label("//3rdparty:BUILD.wasm-bindgen-cli.bazel"),
         patch_args = ["-p1"],
-        patches = [Label("//wasm_bindgen/3rdparty/patches:resolver.patch")],
+        patches = [Label("//3rdparty/patches:resolver.patch")],
     )
 
     direct_deps.extend(crate_repositories())
@@ -60,7 +60,7 @@ def rust_wasm_bindgen_register_toolchains(register_toolchains = True):
     """
 
     if register_toolchains:
-        native.register_toolchains(str(Label("//wasm_bindgen:default_wasm_bindgen_toolchain")))
+        native.register_toolchains(str(Label("//:default_wasm_bindgen_toolchain")))
 
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_repositories(register_default_toolchain = True):
@@ -70,7 +70,7 @@ def rust_wasm_bindgen_repositories(register_default_toolchain = True):
 
     Args:
         register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
-            (`@rules_rust//wasm_bindgen:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
+            (`@rules_rust//:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
             that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
     """
 

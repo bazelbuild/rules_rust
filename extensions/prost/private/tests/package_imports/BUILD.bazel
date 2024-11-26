@@ -1,15 +1,15 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//prost:defs.bzl", "rust_prost_library")
+load("//:defs.bzl", "rust_prost_library")
 
-package(default_visibility = ["//prost/private/tests:__subpackages__"])
+package(default_visibility = ["//private/tests:__subpackages__"])
 
 proto_library(
     name = "package_import_proto",
     srcs = [
         "package_import.proto",
     ],
-    strip_import_prefix = "/prost/private/tests/package_imports",
+    strip_import_prefix = "/private/tests/package_imports",
 )
 
 rust_prost_library(
@@ -22,7 +22,7 @@ proto_library(
     srcs = [
         "package_importer.proto",
     ],
-    strip_import_prefix = "/prost/private/tests/package_imports",
+    strip_import_prefix = "/private/tests/package_imports",
     deps = [
         ":package_import_proto",
     ],

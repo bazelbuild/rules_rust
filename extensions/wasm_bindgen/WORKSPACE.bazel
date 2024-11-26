@@ -1,11 +1,11 @@
-workspace(name = "rules_rust_ext")
+workspace(name = "rules_rust_wasm_bindgen")
 
 # Users of `rules_rust` will commonly be unable to load it
 # using a `local_repository`. Instead, to setup the rules,
 # please see https://bazelbuild.github.io/rules_rust/#setup
 local_repository(
     name = "rules_rust",
-    path = "..",
+    path = "../..",
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -22,56 +22,15 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 
-# buildifier: disable=bzl-visibility
-load("//prost/private:repositories.bzl", "rust_prost_dependencies", "rust_prost_register_toolchains")
-
-rust_prost_dependencies()
-
-rust_prost_register_toolchains()
-
-load("//prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
-
-# buildifier: disable=bzl-visibility
-load("//prost/private/tests:deps.bzl", "prost_test_deps")
-
-prost_test_deps()
-
-# buildifier: disable=bzl-visibility
-load("//prost/private/tests:deps_transitive.bzl", "prost_test_transitive_deps")
-
-prost_test_transitive_deps()
-
-load("//protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
-
-rust_proto_protobuf_dependencies()
-
-rust_proto_protobuf_register_toolchains()
-
-load("//protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
-
-rust_proto_protobuf_transitive_repositories()
-
-load("//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
-
-rust_bindgen_dependencies()
-
-rust_bindgen_register_toolchains()
-
-load("//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
-
-rust_bindgen_transitive_dependencies()
-
-load("//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
+load("//:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
 
-load("//wasm_bindgen/rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
+load("//rules_js:repositories.bzl", "js_rust_wasm_bindgen_dependencies")
 
 js_rust_wasm_bindgen_dependencies()
 
-load("//wasm_bindgen/rules_nodejs:repositories.bzl", "nodejs_rust_wasm_bindgen_dependencies")
+load("//rules_nodejs:repositories.bzl", "nodejs_rust_wasm_bindgen_dependencies")
 
 nodejs_rust_wasm_bindgen_dependencies()
 

@@ -1,5 +1,6 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_rust_ext//protobuf:defs.bzl", "rust_proto_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "a_proto",
@@ -25,4 +26,9 @@ rust_proto_library(
         "//conditions:default": [],
     }),
     deps = [":b_proto"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [":b_rust"],
 )

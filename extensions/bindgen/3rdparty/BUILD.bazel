@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
-load("//bindgen:repositories.bzl", "BINDGEN_VERSION")
+load("//:repositories.bzl", "BINDGEN_VERSION")
 
 _BINDGEN_CLI_PACKAGES = {
     "clap": crate.spec(
@@ -50,7 +50,7 @@ crates_vendor(
             version = "1.6.1",
         ),
     }.items() + _BINDGEN_CLI_PACKAGES.items()),
-    repository_name = "rules_rust_bindgen",
+    repository_name = "rules_rust_bindgen_deps",
     tags = ["manual"],
 )
 
@@ -64,8 +64,8 @@ alias(
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        "//bindgen/3rdparty/crates:crates.bzl",
-        "//bindgen/3rdparty/crates:defs.bzl",
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
     ],
-    visibility = ["//bindgen:__pkg__"],
+    visibility = ["//:__pkg__"],
 )

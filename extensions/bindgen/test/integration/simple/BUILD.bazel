@@ -4,12 +4,12 @@ exports_files(
     [
         "simple.h",
     ],
-    visibility = ["//bindgen/test/integration:__pkg__"],
+    visibility = ["//test/integration:__pkg__"],
 )
 
 cc_library(
     name = "simple",
     srcs = ["simple.cc"],
     hdrs = ["simple.h"],
-    visibility = ["//bindgen/test/integration:__pkg__"],
+    visibility = ["//test/integration:__pkg__"],
 )

@@ -1,0 +1,27 @@
+# Git ignore patterns
+
+# Bazel
+/bazel-*
+user.bazelrc
+MODULE.bazel.lock
+
+# rust-analyzer
+rust-project.json
+
+# rustfmt
+*.rs.bk
+
+# Cargo
+**/target/
+
+# npm
+**/node_modules/
+
+# IDEs
+.vscode
+.idea
+.idea/**
+*.swp
+
+# BazelCI
+bazelci.py

@@ -22,7 +22,7 @@ load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:utils.bzl", "can_build_metadata", "compute_crate_name", "determine_output_hash", "find_toolchain", "transform_deps")
 load(
-    "//protobuf:toolchain.bzl",
+    "//:toolchain.bzl",
     _generate_proto = "rust_generate_proto",
     _generated_file_stem = "generated_file_stem",
 )
@@ -167,7 +167,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
     """
 
     # Create all the source in a specific folder
-    proto_toolchain = ctx.toolchains[Label("//protobuf:toolchain_type")]
+    proto_toolchain = ctx.toolchains[Label("//:toolchain_type")]
     output_dir = "%s.%s.rust" % (crate_name, "grpc" if is_grpc else "proto")
 
     # Generate the proto stubs
@@ -317,7 +317,7 @@ rust_proto_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//protobuf:optional_output_wrapper"),
+            default = Label("//:optional_output_wrapper"),
         ),
         "_process_wrapper": attr.label(
             default = Label("@rules_rust//util/process_wrapper"),
@@ -328,7 +328,7 @@ rust_proto_library = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//protobuf:toolchain_type")),
+        str(Label("//:toolchain_type")),
         str(Label("@rules_rust//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
@@ -338,7 +338,7 @@ Builds a Rust library crate from a set of `proto_library`s.
 Example:
 
 ```python
-load("@rules_rust_ext//protobuf:defs.bzl", "rust_proto_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "my_proto",
@@ -409,7 +409,7 @@ rust_grpc_library = rule(
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//protobuf:optional_output_wrapper"),
+            default = Label("//:optional_output_wrapper"),
         ),
         "_process_wrapper": attr.label(
             default = Label("@rules_rust//util/process_wrapper"),
@@ -420,7 +420,7 @@ rust_grpc_library = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//protobuf:toolchain_type")),
+        str(Label("//:toolchain_type")),
         str(Label("@rules_rust//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
@@ -430,7 +430,7 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@rules_rust_ext//protobuf:defs.bzl", "rust_grpc_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
 
 proto_library(
     name = "my_proto",

@@ -13,10 +13,10 @@ local_path_override(
     path = "../../..",
 )
 
-bazel_dep(name = "rules_rust_ext", version = "0.54.1")
+bazel_dep(name = "rules_rust_prost", version = "0.54.1")
 local_path_override(
-    module_name = "rules_rust_ext",
-    path = "../../../extensions",
+    module_name = "rules_rust_prost",
+    path = "../../../extensions/prost",
 )
 
 #
@@ -73,9 +73,6 @@ rust.toolchain(
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
-
-# Proto toolchain
-register_toolchains("@rules_rust_ext//protobuf:default-proto-toolchain")
 
 # Custom Prost toolchain
 register_toolchains("@//build/prost_toolchain")

@@ -1,8 +1,8 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("//prost:defs.bzl", "rust_prost_library")
+load("//:defs.bzl", "rust_prost_library")
 
-package(default_visibility = ["//prost/private/tests:__subpackages__"])
+package(default_visibility = ["//private/tests:__subpackages__"])
 
 proto_library(
     name = "helloworld_proto",
@@ -22,9 +22,9 @@ rust_binary(
     edition = "2021",
     deps = [
         ":helloworld_rs_proto",
-        "//prost/private/3rdparty/crates:prost",
-        "//prost/private/3rdparty/crates:tokio",
-        "//prost/private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates:prost",
+        "//private/3rdparty/crates:tokio",
+        "//private/3rdparty/crates:tonic",
     ],
 )
 
@@ -34,8 +34,8 @@ rust_binary(
     edition = "2021",
     deps = [
         ":helloworld_rs_proto",
-        "//prost/private/3rdparty/crates:prost",
-        "//prost/private/3rdparty/crates:tokio",
-        "//prost/private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates:prost",
+        "//private/3rdparty/crates:tokio",
+        "//private/3rdparty/crates:tonic",
     ],
 )

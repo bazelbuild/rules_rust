@@ -75,7 +75,7 @@ register_toolchains("@llvm_toolchain//:all")
 # 2 Register Proto toolchain
 ###############################################################################
 # Proto toolchain
-register_toolchains("@rules_rust_ext//protobuf:default-proto-toolchain")
+register_toolchains("@rules_rust_prost//:default_prost_toolchain")
 
 # Custom Prost toolchain will be added later. See next section
 
@@ -135,7 +135,7 @@ dedicated folder, for example: `build/`.
 Suppose you have your BUILD.bazl file in `build/prost_toolchain/BUILD.bazel`, then add the following content:
 
 ```starlark
-load("@rules_rust_ext//prost:defs.bzl", "rust_prost_toolchain")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
 load("@rules_rust//rust:defs.bzl", "rust_library_group")
 
 rust_library_group(
@@ -166,7 +166,7 @@ rust_prost_toolchain(
 toolchain(
     name = "prost_toolchain",
     toolchain = "prost_toolchain_impl",
-    toolchain_type = "@rules_rust_ext//prost:toolchain_type",
+    toolchain_type = "@rules_rust_prost//:toolchain_type",
 )
 ```
 
@@ -181,7 +181,7 @@ In your MODULE.bazel file, locate your toolchains and add the following entry ri
 # 2 Register Proto toolchain
 ###############################################################################
 # Proto toolchain
-register_toolchains("@rules_rust_ext//protobuf:default-proto-toolchain")
+register_toolchains("@rules_rust_prost//:default_prost_toolchain")
 
 # Custom Prost toolchain
 register_toolchains("@//build/prost_toolchain")
@@ -197,7 +197,7 @@ bindings for a proto file, just add the target:
 
 ```starlark
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_rust_ext//prost:defs.bzl", "rust_prost_library")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
 
 # Build proto files
 # https://bazelbuild.github.io/rules_rust/rust_proto.html#rust_proto_library

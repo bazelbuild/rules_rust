@@ -40,15 +40,15 @@ crates_vendor(
             version = "0.12.1",
         ),
     },
-    repository_name = "rules_rust_prost",
+    repository_name = "rules_rust_prost_deps",
     tags = ["manual"],
 )
 
 bzl_library(
     name = "bzl_lib",
     srcs = [
-        "//prost/private/3rdparty/crates:crates.bzl",
-        "//prost/private/3rdparty/crates:defs.bzl",
+        "//private/3rdparty/crates:crates.bzl",
+        "//private/3rdparty/crates:defs.bzl",
     ],
-    visibility = ["//prost/private:__pkg__"],
+    visibility = ["//private:__pkg__"],
 )

@@ -1,19 +1,13 @@
 """Bzlmod module extensions"""
 
-load("//bindgen:repositories.bzl", "rust_bindgen_dependencies")
-load("//prost:repositories.bzl", "rust_prost_dependencies")
-load("//protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
-load("//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies")
+load("//:repositories.bzl", "rust_prost_dependencies")
 
-def _rust_ext_impl(module_ctx):
+def _rust_ext_prost_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines
     # repositories.
     direct_deps = []
 
     direct_deps.extend(rust_prost_dependencies(bzlmod = True))
-    direct_deps.extend(rust_proto_protobuf_dependencies(bzlmod = True))
-    direct_deps.extend(rust_bindgen_dependencies())
-    direct_deps.extend(rust_wasm_bindgen_dependencies())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
@@ -23,7 +17,7 @@ def _rust_ext_impl(module_ctx):
         root_module_direct_dev_deps = [],
     )
 
-rust_ext = module_extension(
+rust_ext_prost = module_extension(
     doc = "Dependencies for rules_rust extensions.",
-    implementation = _rust_ext_impl,
+    implementation = _rust_ext_prost_impl,
 )

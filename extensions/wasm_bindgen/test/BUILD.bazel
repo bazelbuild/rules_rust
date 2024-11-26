@@ -13,9 +13,9 @@
 # limitations under the License.
 
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
-load("@rules_rust_ext//wasm_bindgen:defs.bzl", "rust_wasm_bindgen")
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen")
 
-package(default_visibility = ["//wasm_bindgen:__subpackages__"])
+package(default_visibility = ["//:__subpackages__"])
 
 exports_files([
     "hello_world_wasm_test.js",
@@ -27,7 +27,7 @@ rust_binary(
     srcs = ["main.rs"],
     edition = "2018",
     deps = [
-        "@rules_rust_ext//wasm_bindgen/3rdparty:wasm_bindgen",
+        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
     ],
 )
 
@@ -36,7 +36,7 @@ rust_shared_library(
     srcs = ["main.rs"],
     edition = "2018",
     deps = [
-        "@rules_rust_ext//wasm_bindgen/3rdparty:wasm_bindgen",
+        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
     ],
 )
 

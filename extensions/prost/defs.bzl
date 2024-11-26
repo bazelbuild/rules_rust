@@ -1,4 +1,4 @@
-"""# rules_rust_ext prost
+"""# rules_rust_prost
 
 These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [Rust][rust] with Bazel
 using [Prost][prost] and [Tonic][tonic]
@@ -142,7 +142,7 @@ register_toolchains("//toolchains:prost_toolchain")
 """
 
 load(
-    "//prost/private:prost.bzl",
+    "//private:prost.bzl",
     _rust_prost_library = "rust_prost_library",
     _rust_prost_toolchain = "rust_prost_toolchain",
 )

@@ -21,13 +21,13 @@ rust_binary(
 )
 
 toolchain(
-    name = "default-proto-toolchain",
-    toolchain = ":default-proto-toolchain-impl",
-    toolchain_type = "@rules_rust_ext//protobuf:toolchain_type",
+    name = "default_proto_toolchain",
+    toolchain = ":default_proto_toolchain_impl",
+    toolchain_type = "@rules_rust_protobuf//:toolchain_type",
 )
 
 rust_proto_toolchain(
-    name = "default-proto-toolchain-impl",
+    name = "default_proto_toolchain_impl",
     edition = "2018",
 )
 
@@ -46,7 +46,7 @@ bzl_library(
     ],
     deps = [
         ":protobuf_bzl_lib",
-        "//protobuf/3rdparty:bzl_lib",
+        "//3rdparty:bzl_lib",
         "@rules_proto//proto:defs",
         "@rules_proto//proto:repositories",
         "@rules_rust//rust:bzl_lib",
