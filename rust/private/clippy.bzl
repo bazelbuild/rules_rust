@@ -115,9 +115,9 @@ def _clippy_aspect_impl(target, ctx):
     # Gather the necessary rust flags to apply lints, if they were provided.
     clippy_flags = []
     lint_files = []
-    if hasattr(ctx.rule.attr, "lints"):
-        clippy_flags = clippy_flags + ctx.rule.attr.lints[LintsInfo].clippy_lint_flags
-        lint_files = lint_files + ctx.rule.attr.lints[LintsInfo].clippy_lint_files
+    if hasattr(ctx.rule.attr, "lint_config"):
+        clippy_flags = clippy_flags + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags
+        lint_files = lint_files + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
