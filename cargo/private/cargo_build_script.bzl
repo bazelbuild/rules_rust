@@ -350,9 +350,8 @@ def _cargo_build_script_impl(ctx):
 
     # If enabled, start with the default shell env, which contains any --action_env
     # settings passed in on the command line and defaults like $PATH.
-    if ctx.attr.use_default_shell_env {
+    if ctx.attr.use_default_shell_env:
         env.update(ctx.configuration.default_shell_env)
-    }
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
