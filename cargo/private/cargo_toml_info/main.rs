@@ -135,7 +135,7 @@ fn generate_lints_info(
             let workspace = workspace_manifest
                 .as_ref()
                 .and_then(|manifest| manifest.workspace.as_ref())
-                .ok_or_else(|| {
+                .ok_or({
                     "manifest inherits lints from the workspace, but no workspace manifest provided"
                 })?;
             workspace.lints.as_ref()
@@ -151,7 +151,7 @@ fn generate_lints_info(
         let file = File::create(&path)?;
         let mut writer = LineWriter::new(file);
 
-        if let Some(args) = format_lint_set(&lints, &group) {
+        if let Some(args) = format_lint_set(lints, &group) {
             for arg in args {
                 writeln!(&mut writer, "{arg}")?;
             }
@@ -188,7 +188,7 @@ impl TryFrom<std::env::Args> for Args {
             try_parse_named_arg(&manifest_raw_arg, "manifest_toml").map(PathBuf::from)?;
         let workspace_toml = args
             .peek()
-            .and_then(|arg| try_parse_named_arg(&arg, "workspace_toml").ok())
+            .and_then(|arg| try_parse_named_arg(arg, "workspace_toml").ok())
             .map(PathBuf::from);
         // If we got a workspace_toml arg make sure to consume it.
         if workspace_toml.is_some() {
@@ -207,7 +207,7 @@ impl TryFrom<std::env::Args> for Args {
 }
 
 /// Tries to parse the value from a named arg.
-fn try_parse_named_arg<'a, 'n>(arg: &'a str, name: &'n str) -> Result<&'a str, String> {
+fn try_parse_named_arg<'a>(arg: &'a str, name: &str) -> Result<&'a str, String> {
     arg.strip_prefix(&format!("--{name}="))
         .ok_or_else(|| format!("expected --{name}=<value>, found '{arg}'"))
 }
