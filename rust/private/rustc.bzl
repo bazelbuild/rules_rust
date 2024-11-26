@@ -1196,10 +1196,13 @@ def rustc_compile_action(
     stamp = is_stamping_enabled(attr)
 
     # Add flags for any 'rustc' lints that are specified.
+    #
+    # Exclude lints if we're building in the exec configuration to prevent crates
+    # used in build scripts from generating warnings.
     lint_files = []
-    if hasattr(ctx.attr, "lints") and ctx.attr.lints:
-        rust_flags = rust_flags + ctx.attr.lints[LintsInfo].rustc_lint_flags
-        lint_files = lint_files + ctx.attr.lints[LintsInfo].rustc_lint_files
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
+        rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
@@ -1560,8 +1563,8 @@ def rustc_compile_action(
 
     # A bit unfortunate, but sidecar the lints info so rustdoc can access the
     # set of lints from the target it is documenting.
-    if hasattr(ctx.attr, "lints") and ctx.attr.lints:
-        providers.append(ctx.attr.lints[LintsInfo])
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
+        providers.append(ctx.attr.lint_config[LintsInfo])
 
     return providers
 
