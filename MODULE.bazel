@@ -110,8 +110,3 @@ use_repo(
     "t3p__serde-1.0.214",
     "t3p__serde_json-1.0.132",
 )
-
-register_toolchains(
-    "//test/foreign_toolchain_make_variables:toolchain_for_test",
-    dev_dependency = True,
-)
