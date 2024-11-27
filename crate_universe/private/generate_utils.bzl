@@ -433,6 +433,7 @@ def execute_generator(
         repository_dir,
         cargo,
         rustc,
+        paths_to_track_file,
         metadata = None):
     """Execute the `cargo-bazel` binary to produce `BUILD` and `.bzl` files.
 
@@ -446,6 +447,7 @@ def execute_generator(
         repository_dir (path): The output path for the Bazel module and BUILD files.
         cargo (path): The path of a Cargo binary.
         rustc (path): The path of a Rustc binary.
+        paths_to_track_file (path): Path to file where generator should write which files should trigger re-generating as a JSON list.
         metadata (path, optional): The path to a Cargo metadata json file. If this is set, it indicates to
             the generator that repinning is required. This file must be adjacent to a `Cargo.toml` and
             `Cargo.lock` file.
@@ -470,7 +472,17 @@ def execute_generator(
         cargo,
         "--rustc",
         rustc,
+        "--nonhermetic-root-bazel-workspace-dir",
+        repository_ctx.workspace_root,
+        "--paths-to-track",
+        paths_to_track_file,
     ]
+
+    if repository_ctx.attr.generator:
+        args.extend([
+            "--generator",
+            repository_ctx.attr.generator,
+        ])
 
     if lockfile_path:
         args.extend([

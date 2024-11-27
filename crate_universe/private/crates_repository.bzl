@@ -71,6 +71,8 @@ def _crates_repository_impl(repository_ctx):
             "metadata": metadata_path,
         })
 
+    paths_to_track_file = repository_ctx.path("paths-to-track")
+
     # Run the generator
     execute_generator(
         repository_ctx = repository_ctx,
@@ -82,9 +84,14 @@ def _crates_repository_impl(repository_ctx):
         repository_dir = repository_ctx.path("."),
         cargo = cargo_path,
         rustc = rustc_path,
+        paths_to_track_file = paths_to_track_file,
         # sysroot = tools.sysroot,
         **kwargs
     )
+
+    paths_to_track = json.decode(repository_ctx.read(paths_to_track_file))
+    for path in paths_to_track:
+        repository_ctx.read(path)
 
     # Determine the set of reproducible values
     attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}

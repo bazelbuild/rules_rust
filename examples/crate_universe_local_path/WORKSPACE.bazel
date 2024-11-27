@@ -1,0 +1,31 @@
+local_repository(
+    name = "rules_rust",
+    path = "../../",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2018",
+)
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "workspace_crates_from_cargo_workspace",
+    cargo_lockfile = "//crates_from_workspace:Cargo.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    manifests = ["//crates_from_workspace:Cargo.toml"],
+)
+
+load("@workspace_crates_from_cargo_workspace//:defs.bzl", "crate_repositories")
+
+crate_repositories()

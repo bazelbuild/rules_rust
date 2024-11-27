@@ -708,6 +708,9 @@ impl CrateContext {
                         patch_tool.clone_from(&crate_extra.patch_tool);
                         patches.clone_from(&crate_extra.patches);
                     }
+                    SourceAnnotation::Path { .. } => {
+                        // We don't support applying patches to local path deps.
+                    }
                 }
             }
 
@@ -847,6 +850,7 @@ impl CrateContext {
 mod test {
     use super::*;
 
+    use camino::Utf8Path;
     use semver::Version;
 
     use crate::config::CrateAnnotations;
@@ -857,6 +861,7 @@ mod test {
             crate::test::metadata::common(),
             crate::test::lockfile::common(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -960,6 +965,7 @@ mod test {
             crate::test::metadata::build_scripts(),
             crate::test::lockfile::build_scripts(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -969,6 +975,7 @@ mod test {
             crate::test::metadata::crate_types(),
             crate::test::lockfile::crate_types(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -1272,6 +1279,7 @@ mod test {
             crate::test::metadata::abspath(),
             crate::test::lockfile::abspath(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 

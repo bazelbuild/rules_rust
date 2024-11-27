@@ -6,11 +6,12 @@ mod platforms;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::config::CrateId;
+use crate::config::{CrateId, RenderConfig};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
@@ -225,9 +226,26 @@ impl Context {
     }
 }
 
+/// All information needed to render a BUILD file for a single crate.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SingleBuildFileRenderContext {
+    /// The RenderConfig.
+    pub(crate) config: Arc<RenderConfig>,
+
+    /// See crate::config::Config.supported_platform_triples.
+    pub(crate) supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
+
+    /// See Context::conditions.
+    pub(crate) platform_conditions: Arc<BTreeMap<String, BTreeSet<TargetTriple>>>,
+
+    /// The CrateContext for the crate being rendered.
+    pub(crate) crate_context: Arc<CrateContext>,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use camino::Utf8Path;
     use semver::Version;
 
     use crate::config::Config;
@@ -237,6 +255,7 @@ mod test {
             crate::test::metadata::common(),
             crate::test::lockfile::common(),
             Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 
@@ -248,6 +267,7 @@ mod test {
             crate::test::metadata::alias(),
             crate::test::lockfile::alias(),
             Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 

@@ -6,6 +6,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
 load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
+load("//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
@@ -133,6 +134,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
     lockfile_path = tag_path.get_child("lockfile.json")
     module_ctx.file(lockfile_path, "")
 
+    paths_to_track_file = module_ctx.path("paths-to-track")
+
     cargo_bazel([
         "generate",
         "--cargo-lockfile",
@@ -148,7 +151,15 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         "--repin",
         "--lockfile",
         lockfile_path,
+        "--nonhermetic-root-bazel-workspace-dir",
+        module_ctx.path(Label("@@//:MODULE.bazel")).dirname,
+        "--paths-to-track",
+        paths_to_track_file,
     ])
+
+    paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
+    for path in paths_to_track:
+        module_ctx.read(path)
 
     crates_dir = tag_path.get_child(cfg.name)
     _generate_repo(
@@ -210,6 +221,22 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
                 remote = repo["remote"],
                 build_file_content = build_file_content,
                 strip_prefix = repo.get("strip_prefix", None),
+                **kwargs
+            )
+        elif "Path" in repo:
+            options = {
+                "config": rendering_config,
+                "crate_context": crate,
+                "platform_conditions": contents["conditions"],
+                "supported_platform_triples": cfg.supported_platform_triples,
+            }
+            kwargs = {}
+            if len(CARGO_BAZEL_URLS) == 0:
+                kwargs["generator"] = "@cargo_bazel_bootstrap//:cargo-bazel"
+            local_crate_mirror(
+                name = crate_repo_name,
+                options_json = json.encode(options),
+                path = repo["Path"]["path"],
                 **kwargs
             )
         else:

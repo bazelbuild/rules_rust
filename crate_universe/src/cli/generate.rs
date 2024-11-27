@@ -2,18 +2,21 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
+use camino::Utf8PathBuf;
 use cargo_lock::Lockfile;
 use clap::Parser;
 
 use crate::config::Config;
 use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
-use crate::metadata::{load_metadata, Annotations, Cargo};
+use crate::metadata::{load_metadata, Annotations, Cargo, SourceAnnotation};
 use crate::rendering::{write_outputs, Renderer};
 use crate::splicing::SplicingManifest;
 use crate::utils::normalize_cargo_file_paths;
+use crate::utils::starlark::Label;
 
 /// Command line options for the `generate` subcommand
 #[derive(Parser, Debug)]
@@ -63,6 +66,23 @@ pub struct GenerateOptions {
     /// If true, outputs will be printed instead of written to disk.
     #[clap(long)]
     pub dry_run: bool,
+
+    /// The path to the Bazel root workspace (i.e. the directory containing the WORKSPACE.bazel file or similar).
+    /// BE CAREFUL with this value. We never want to include it in a lockfile hash (to keep lockfiles portable),
+    /// which means you also should not use it anywhere that _should_ be guarded by a lockfile hash.
+    /// You basically never want to use this value.
+    #[clap(long)]
+    pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
+
+    #[clap(long)]
+    pub paths_to_track: PathBuf,
+
+    /// The label of this binary, if it was built in bootstrap mode.
+    /// BE CAREFUL with this value. We never want to include it in a lockfile hash (to keep lockfiles portable),
+    /// which means you also should not use it anywhere that _should_ be guarded by a lockfile hash.
+    /// You basically never want to use this value.
+    #[clap(long)]
+    pub(crate) generator: Option<Label>,
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
@@ -75,14 +95,25 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             let context = Context::try_from_path(lockfile)?;
 
             // Render build files
-            let outputs = Renderer::new(config.rendering, config.supported_platform_triples)
-                .render(&context)?;
+            let outputs = Renderer::new(
+                Arc::new(config.rendering),
+                Arc::new(config.supported_platform_triples),
+            )
+            .render(&context, opt.generator)?;
 
             // make file paths compatible with bazel labels
             let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
 
             // Write the outputs to disk
             write_outputs(normalized_outputs, opt.dry_run)?;
+
+            write_paths_to_track(
+                &opt.paths_to_track,
+                context
+                    .crates
+                    .values()
+                    .filter_map(|crate_context| crate_context.repository.as_ref()),
+            )?;
 
             return Ok(());
         }
@@ -112,17 +143,24 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     let (cargo_metadata, cargo_lockfile) = load_metadata(metadata_path)?;
 
     // Annotate metadata
-    let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
+    let annotations = Annotations::new(
+        cargo_metadata,
+        cargo_lockfile.clone(),
+        config.clone(),
+        &opt.nonhermetic_root_bazel_workspace_dir,
+    )?;
+
+    write_paths_to_track(&opt.paths_to_track, annotations.lockfile.crates.values())?;
 
     // Generate renderable contexts for each package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
     // Render build files
     let outputs = Renderer::new(
-        config.rendering.clone(),
-        config.supported_platform_triples.clone(),
+        Arc::new(config.rendering.clone()),
+        Arc::new(config.supported_platform_triples.clone()),
     )
-    .render(&context)?;
+    .render(&context, opt.generator)?;
 
     // make file paths compatible with bazel labels
     let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
@@ -158,4 +196,24 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
         .context("Failed to write Cargo.lock file back to the workspace.")?;
 
     Ok(())
+}
+
+fn write_paths_to_track<'a, SourceAnnotations: Iterator<Item = &'a SourceAnnotation>>(
+    output_file: &Path,
+    source_annotations: SourceAnnotations,
+) -> Result<()> {
+    let paths_to_track: std::collections::BTreeSet<_> = source_annotations
+        .filter_map(|v| {
+            if let SourceAnnotation::Path { path } = v {
+                Some(path.join("Cargo.toml"))
+            } else {
+                None
+            }
+        })
+        .collect();
+    std::fs::write(
+        output_file,
+        serde_json::to_string(&paths_to_track).context("Failed to serialize paths to track")?,
+    )
+    .context("Failed to write paths to track")
 }

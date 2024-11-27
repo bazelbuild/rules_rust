@@ -533,6 +533,22 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  crate_universe_local_path_external:
+    name: Crate Universe Local Path External
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_lazy_static_out_of_tree"
+    test_targets:
+      - "//..."
+  crate_universe_local_path_in_tree:
+    name: Crate Universe Local Path In Tree
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_lazy_static_in_tree"
+    test_targets:
+      - "//..."
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
