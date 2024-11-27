@@ -14,6 +14,10 @@ def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = rust_co
         name (str, optional): The name of the `cargo_bootstrap_repository`.
         rust_version (str, optional): The rust version to use. Defaults to the default of `cargo_bootstrap_repository`.
         **kwargs: kwargs to pass through to cargo_bootstrap_repository.
+
+    Returns:
+        list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+        defined by this macro.
     """
 
     maybe(
@@ -28,3 +32,8 @@ def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = rust_co
         timeout = 900,
         **kwargs
     )
+
+    return [struct(
+        repo = name,
+        is_dev_dep = False,
+    )]

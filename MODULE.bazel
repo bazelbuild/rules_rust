@@ -5,6 +5,10 @@ module(
     version = "0.54.1",
 )
 
+###############################################################################
+## Core
+###############################################################################
+
 bazel_dep(
     name = "bazel_features",
     version = "1.21.0",
@@ -31,20 +35,76 @@ bazel_dep(
     repo_name = "build_bazel_apple_support",
 )
 
+internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
+use_repo(
+    internal_deps,
+    "rrra__anyhow-1.0.71",
+    "rrra__clap-4.3.11",
+    "rrra__env_logger-0.10.0",
+    "rrra__itertools-0.11.0",
+    "rrra__log-0.4.19",
+    "rrra__serde-1.0.171",
+    "rrra__serde_json-1.0.102",
+    "rules_rust_tinyjson",
+)
+
+rust = use_extension("//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains(
+    "@rust_toolchains//:all",
+)
+
+rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
+use_repo(rust_host_tools, "rust_host_tools")
+
+rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)
+use_repo(
+    rust_test,
+    "buildkite_config",
+    "generated_inputs_in_external_repo",
+    "libc",
+    "rules_rust_test_load_arbitrary_tool",
+    "rules_rust_toolchain_test_target_json",
+    "t3p",
+    "t3p__serde-1.0.215",
+    "t3p__serde_json-1.0.133",
+)
+
+bazel_dep(
+    name = "rules_python",
+    version = "0.40.0",
+    dev_dependency = True,
+)
 bazel_dep(
     name = "rules_testing",
-    version = "0.6.0",
+    version = "0.7.0",
+    dev_dependency = True,
+)
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
     dev_dependency = True,
 )
 
-internal_deps = use_extension("//rust/private:extensions.bzl", "i")
+###############################################################################
+## Crate Universe
+###############################################################################
+
+crate_universe_internal_deps = use_extension(
+    "//crate_universe/private:internal_extensions.bzl",
+    "cu",
+)
 use_repo(
-    internal_deps,
+    crate_universe_internal_deps,
     "cargo_bazel.buildifier-darwin-amd64",
     "cargo_bazel.buildifier-darwin-arm64",
     "cargo_bazel.buildifier-linux-amd64",
     "cargo_bazel.buildifier-linux-arm64",
+    "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
+    "cargo_bazel_bootstrap",
     "cui",
     "cui__anyhow-1.0.89",
     "cui__camino-1.1.9",
@@ -76,37 +136,15 @@ use_repo(
     "cui__tracing-0.1.40",
     "cui__tracing-subscriber-0.3.18",
     "cui__url-2.5.2",
-    "rrra__anyhow-1.0.71",
-    "rrra__clap-4.3.11",
-    "rrra__env_logger-0.10.0",
-    "rrra__itertools-0.11.0",
-    "rrra__log-0.4.19",
-    "rrra__serde-1.0.171",
-    "rrra__serde_json-1.0.102",
-    "rules_rust_tinyjson",
 )
 
-rust = use_extension("//rust:extensions.bzl", "rust")
-rust.toolchain(edition = "2021")
-use_repo(rust, "rust_toolchains")
-
-register_toolchains(
-    "@rust_toolchains//:all",
+crate_universe_internal_dev_deps = use_extension(
+    "//crate_universe/private:internal_extensions.bzl",
+    "cu_dev",
+    dev_dependency = True,
 )
-
-rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
-use_repo(rust_host_tools, "rust_host_tools")
-
-cargo_bazel_bootstrap = use_extension("//crate_universe/private/module_extensions:cargo_bazel_bootstrap.bzl", "cargo_bazel_bootstrap")
-use_repo(cargo_bazel_bootstrap, "cargo_bazel_bootstrap")
-
-rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)
 use_repo(
-    rust_test,
-    "generated_inputs_in_external_repo",
-    "libc",
-    "rules_rust_test_load_arbitrary_tool",
-    "rules_rust_toolchain_test_target_json",
-    "t3p__serde-1.0.214",
-    "t3p__serde_json-1.0.132",
+    crate_universe_internal_dev_deps,
+    "cross_rs",
+    "cross_rs_host_bin",
 )

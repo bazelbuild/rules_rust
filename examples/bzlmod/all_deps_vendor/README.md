@@ -47,16 +47,16 @@ register_toolchains("@rust_toolchains//:all")
 ###############################################################################
 # R U S T  C R A T E S
 ###############################################################################
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 ```
 
 Note, it is important to load the crate_universe rules otherwise you will get an error
 as the rule set is needed in the vendored target.
 
-Assuming you have a package called `basic` in which you want to vendor dependencies, 
-then you create a folder `basic/3rdparty`. The folder name can be arbitrary, 
-but by convention, its either thirdparty or 3rdparty to indicate vendored dependencies. 
-In the 3rdparty folder, you add a target crates_vendor to declare your dependencies to vendor. In the example, we vendor a specific version of bzip2. 
+Assuming you have a package called `basic` in which you want to vendor dependencies,
+then you create a folder `basic/3rdparty`. The folder name can be arbitrary,
+but by convention, its either thirdparty or 3rdparty to indicate vendored dependencies.
+In the 3rdparty folder, you add a target crates_vendor to declare your dependencies to vendor. In the example, we vendor a specific version of bzip2.
 
 ```starlark
 load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
@@ -82,16 +82,16 @@ crates_vendor(
 ```
 
 Next, you have to run `Cargo build` to generate a Cargo.lock file with all resolved dependencies.
-Then, you rename Cargo.lock to Cargo.Bazel.lock and place it inside the `basic/3rdparty` folder. 
+Then, you rename Cargo.lock to Cargo.Bazel.lock and place it inside the `basic/3rdparty` folder.
 
 At this point, you have the following folder and files:
 
 ```
 basic
     ├── 3rdparty
-    │   ├── BUILD.bazel   
-    │   ├── Cargo.Bazel.lock   
-``` 
+    │   ├── BUILD.bazel
+    │   ├── Cargo.Bazel.lock
+```
 
 Now you can run the `crates_vendor` target:
 
@@ -102,14 +102,14 @@ This generates a crate folders with all configurations for the vendored dependen
 ```
 basic
     ├── 3rdparty
-    │   ├── cratea    
-    │   ├── BUILD.bazel   
-    │   ├── Cargo.Bazel.lock   
-``` 
+    │   ├── cratea
+    │   ├── BUILD.bazel
+    │   ├── Cargo.Bazel.lock
+```
 
 ## Usage
 
-Suppose you have an application in `basic/src` that is defined in `basic/BUILD.bazel` and 
+Suppose you have an application in `basic/src` that is defined in `basic/BUILD.bazel` and
 that depends on a vendored dependency. You find a list of all available vendored dependencies
 in the BUILD file of the generated folder: `basic/3rdparty/crates/BUILD.bazel`
 You declare a vendored dependency in you target as following:
@@ -128,7 +128,7 @@ rust_binary(
 ```
 Note, the vendored dependency is not yet accessible.
 
-Before you can build, you have to define how to load the vendored dependencies. For that, 
+Before you can build, you have to define how to load the vendored dependencies. For that,
 you first create a file `sys_deps.bzl` and add the following content:
 
 ```starlark
@@ -175,4 +175,4 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 # ....
 ```
 
-Your build will complete once skylib loads. 
+Your build will complete once skylib loads.

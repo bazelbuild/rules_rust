@@ -35,7 +35,7 @@ You find the latest version on the [release page](https://github.com/bazelbuild/
 After adding `rules_rust` in your MODULE.bazel, set the following to begin using `crate_universe`:
 
 ```starlark
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 //  # ... Dependencies
 use_repo(crate, "crates")
 ```
@@ -55,7 +55,7 @@ The crates_repository rule can ingest a root Cargo.toml file and generate Bazel 
 You find a complete example in the in the [example folder](../examples/bzlmod/all_crate_deps).
 
 ```starlark
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.from_cargo(
     name = "crates",
@@ -143,7 +143,7 @@ crates_repository supports this through the packages attribute,
 as shown below.
 
 ```starlark
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.spec(package = "serde", features = ["derive"], version = "1.0")
 crate.spec(package = "serde_json", version = "1.0")
@@ -218,7 +218,7 @@ register_toolchains("@rust_toolchains//:all")
 ###############################################################################
 # R U S T  C R A T E S
 ###############################################################################
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 ```
 
 Note, it is important to load the crate_universe rules otherwise you will get an error
@@ -326,7 +326,7 @@ There are some more examples of using crate_universe with bzlmod in the [example
 """
 
 load(
-    "//crate_universe:extension.bzl",
+    "//crate_universe:extensions.bzl",
     _crate = "crate",
 )
 

@@ -80,7 +80,7 @@ register_toolchains("@//build/prost_toolchain")
 ###############################################################################
 # R U S T  C R A T E S
 ###############################################################################
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 #
 # protobuf / gRPC dependencies

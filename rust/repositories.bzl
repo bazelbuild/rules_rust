@@ -123,6 +123,7 @@ _RUST_TOOLCHAIN_VERSIONS = [
 
 # buildifier: disable=unnamed-macro
 def rust_register_toolchains(
+        *,
         dev_components = False,
         edition = None,
         allocator_library = None,
@@ -136,7 +137,8 @@ def rust_register_toolchains(
         extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         versions = _RUST_TOOLCHAIN_VERSIONS,
-        aliases = {}):
+        aliases = {},
+        hub_name = None):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -171,6 +173,7 @@ def rust_register_toolchains(
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
         aliases (dict, optional): A mapping of "full" repository name to another name to use instead.
+        hub_name (str, optional): The name of the bzlmod hub repository for toolchains.
     """
     if not rustfmt_version:
         if len(versions) == 1:
@@ -198,6 +201,7 @@ def rust_register_toolchains(
 
     toolchain_names = []
     toolchain_labels = {}
+    toolchain_target_settings = {}
     toolchain_types = {}
     exec_compatible_with_by_toolchain = {}
     target_compatible_with_by_toolchain = {}
@@ -267,6 +271,7 @@ def rust_register_toolchains(
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
             target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
             toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
+            toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
 
         toolchain_names.append(rustfmt_repo_name)
         toolchain_labels[rustfmt_repo_name] = "@{}_tools//:rustfmt_toolchain".format(rustfmt_repo_name)
@@ -277,14 +282,16 @@ def rust_register_toolchains(
     if aliases:
         fail("No repositories were created matching the requested names to alias:\n{}".format("\n".join(sorted(aliases))))
 
-    toolchain_repository_hub(
-        name = "rust_toolchains",
-        toolchain_names = toolchain_names,
-        toolchain_labels = toolchain_labels,
-        toolchain_types = toolchain_types,
-        exec_compatible_with = exec_compatible_with_by_toolchain,
-        target_compatible_with = target_compatible_with_by_toolchain,
-    )
+    if hub_name:
+        toolchain_repository_hub(
+            name = hub_name,
+            toolchain_names = toolchain_names,
+            toolchain_labels = toolchain_labels,
+            toolchain_types = toolchain_types,
+            target_settings = toolchain_target_settings,
+            exec_compatible_with = exec_compatible_with_by_toolchain,
+            target_compatible_with = target_compatible_with_by_toolchain,
+        )
 
 # buildifier: disable=unnamed-macro
 def rust_repositories(**kwargs):

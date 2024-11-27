@@ -23,7 +23,6 @@ bzl_library(
         ":docs_deps",
         "@rules_rust//cargo:bzl_lib",
         "@rules_rust//crate_universe:bzl_lib",
-        "@rules_rust//crate_universe/private/module_extensions:bzl_lib",
         "@rules_rust//rust:bzl_lib",
         "@rules_rust_bindgen//:bzl_lib",
         "@rules_rust_prost//:bzl_lib",

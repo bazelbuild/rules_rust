@@ -916,6 +916,7 @@ toolchain(
     name = "{name}",
     exec_compatible_with = {exec_constraint_sets_serialized},
     target_compatible_with = {target_constraint_sets_serialized},
+    target_settings = {target_settings_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
     visibility = ["//visibility:public"],
@@ -926,12 +927,14 @@ def BUILD_for_toolchain_hub(
         toolchain_names,
         toolchain_labels,
         toolchain_types,
+        target_settings,
         target_compatible_with,
         exec_compatible_with):
     return "\n".join([_build_file_for_toolchain_hub_template.format(
         name = toolchain_name,
         exec_constraint_sets_serialized = json.encode(exec_compatible_with[toolchain_name]),
         target_constraint_sets_serialized = json.encode(target_compatible_with[toolchain_name]),
+        target_settings_serialized = json.encode(target_settings[toolchain_name]) if toolchain_name in target_settings else "None",
         toolchain = toolchain_labels[toolchain_name],
         toolchain_type = toolchain_types[toolchain_name],
     ) for toolchain_name in toolchain_names])
@@ -945,6 +948,7 @@ def _toolchain_repository_hub_impl(repository_ctx):
         toolchain_names = repository_ctx.attr.toolchain_names,
         toolchain_labels = repository_ctx.attr.toolchain_labels,
         toolchain_types = repository_ctx.attr.toolchain_types,
+        target_settings = repository_ctx.attr.target_settings,
         target_compatible_with = repository_ctx.attr.target_compatible_with,
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
     ))
@@ -961,6 +965,10 @@ toolchain_repository_hub = repository_rule(
         ),
         "target_compatible_with": attr.string_list_dict(
             doc = "A list of constraints for the target platform for this toolchain, keyed by toolchain name.",
+            mandatory = True,
+        ),
+        "target_settings": attr.string_list_dict(
+            doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
             mandatory = True,
         ),
         "toolchain_labels": attr.string_dict(

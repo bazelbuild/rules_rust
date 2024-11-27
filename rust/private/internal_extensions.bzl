@@ -1,7 +1,6 @@
 """Bzlmod module extensions that are only used internally"""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//crate_universe:repositories.bzl", "crate_universe_dependencies")
 load("//rust/private:repository_utils.bzl", "TINYJSON_KWARGS")
 load("//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
@@ -14,7 +13,6 @@ def _internal_deps_impl(module_ctx):
     direct_deps = [struct(repo = "rules_rust_tinyjson", is_dev_dep = False)]
     http_archive(**TINYJSON_KWARGS)
 
-    direct_deps.extend(crate_universe_dependencies())
     direct_deps.extend(rust_analyzer_dependencies())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev

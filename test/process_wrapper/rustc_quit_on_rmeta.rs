@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test {
-    use std::path::PathBuf;
     use std::process::Command;
     use std::str;
 
@@ -15,39 +14,10 @@ mod test {
         should_succeed: bool,
     ) -> String {
         let r = Runfiles::create().unwrap();
-        let fake_rustc = runfiles::rlocation!(
-            r,
-            [
-                "rules_rust",
-                "test",
-                "process_wrapper",
-                if cfg!(unix) {
-                    "fake_rustc"
-                } else {
-                    "fake_rustc.exe"
-                },
-            ]
-            .iter()
-            .collect::<PathBuf>()
-        )
-        .unwrap();
+        let fake_rustc = runfiles::rlocation!(r, env!("FAKE_RUSTC_RLOCATIONPATH")).unwrap();
 
-        let process_wrapper = runfiles::rlocation!(
-            r,
-            [
-                "rules_rust",
-                "util",
-                "process_wrapper",
-                if cfg!(unix) {
-                    "process_wrapper"
-                } else {
-                    "process_wrapper.exe"
-                },
-            ]
-            .iter()
-            .collect::<PathBuf>()
-        )
-        .unwrap();
+        let process_wrapper =
+            runfiles::rlocation!(r, env!("PROCESS_WRAPPER_RLOCATIONPATH")).unwrap();
 
         let output = Command::new(process_wrapper)
             .args(process_wrapper_args)

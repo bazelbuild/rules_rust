@@ -400,8 +400,6 @@ fn resolver_2_deps() {
         return;
     }
 
-    cargo_bazel::cli::init_logging("Splice", true);
-
     let r = runfiles::Runfiles::create().unwrap();
     let metadata = run(
         "resolver_2_deps_test",

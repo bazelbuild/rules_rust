@@ -98,7 +98,7 @@ register_toolchains("@rust_toolchains//:all")
 ###############################################################################
 # Rust Dependencies #
 ###############################################################################
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.spec(
     package = "mimalloc",
     version = "0.1.43",

@@ -16,6 +16,12 @@ bzlmod_flags: &bzlmod_flags
 bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
   # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
   - "--incompatible_use_plus_in_repo_names"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -89,6 +95,36 @@ tasks:
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: ubuntu2004
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
+  rbe_ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: rbe_ubuntu2004
+    shell_commands: *no_bzlmod_rbe_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+  macos_no_bzlmod:
+    name: No Bzlmod
+    platform: macos_arm64
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  windows_no_bzlmod:
+    name: No Bzlmod
+    platform: windows
+    shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_no_runfiles:

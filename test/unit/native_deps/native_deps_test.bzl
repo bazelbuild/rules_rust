@@ -129,6 +129,9 @@ def _extract_linker_args(argv):
         )
     ]
 
+def _get_workspace_prefix(ctx):
+    return "" if ctx.workspace_name in ["rules_rust", "_main"] else "external/rules_rust/"
+
 def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -136,7 +139,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
 
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
+    workspace_prefix = _get_workspace_prefix(ctx)
     link_args = _extract_linker_args(action.argv)
     if toolchain.target_os == "darwin":
         darwin_component = _get_darwin_component(link_args[-1])
@@ -190,7 +193,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
 
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "external/rules_rust/"
+    workspace_prefix = _get_workspace_prefix(ctx)
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     if toolchain.target_os == "darwin":
         darwin_component = _get_darwin_component(linker_args[-1])

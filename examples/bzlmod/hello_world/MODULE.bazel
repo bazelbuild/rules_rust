@@ -8,7 +8,7 @@ module(
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.5.0",
+    version = "1.7.1",
 )
 bazel_dep(
     name = "rules_rust",
@@ -23,7 +23,7 @@ local_path_override(
 
 # Option 1: Fully transient (Cargo.toml / Cargo.lock as source of truth).
 crate = use_extension(
-    "@rules_rust//crate_universe:extension.bzl",
+    "@rules_rust//crate_universe:extensions.bzl",
     "crate",
 )
 crate.from_cargo(

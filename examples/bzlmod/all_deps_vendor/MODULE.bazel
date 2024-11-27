@@ -37,4 +37,4 @@ register_toolchains("@rust_toolchains//:all")
 ###############################################################################
 # R U S T  C R A T E S
 ###############################################################################
-use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")

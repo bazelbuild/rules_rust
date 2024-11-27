@@ -1017,13 +1017,7 @@ mod test {
         // For testing, the rustc executable is a batch script and not a compiled executable.
         // any strings referring to it as an executable will need to be updated.
         let content = std::fs::read_to_string(&rustc_wrapper).unwrap();
-        std::fs::write(
-            &rustc_wrapper,
-            content
-                .replace("rustc.exe", "rustc.bat")
-                .replace("rustc\\.exe", "rustc\\.bat"),
-        )
-        .unwrap();
+        std::fs::write(&rustc_wrapper, content.replace(".exe", ".bat")).unwrap();
 
         (wrapper, rustc_wrapper)
     }

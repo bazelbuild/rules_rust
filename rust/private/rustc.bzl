@@ -2128,7 +2128,12 @@ def _add_per_crate_rustc_flags(ctx, args, crate_info, per_crate_rustc_flags):
             fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
 
         label_string = str(ctx.label)
-        label = label_string[1:] if label_string.startswith("@//") else label_string
+        if label_string.startswith("@//"):
+            label = label_string[1:]
+        elif label_string.startswith("@@//"):
+            label = label_string[2:]
+        else:
+            label = label_string
         execution_path = crate_info.root.path
 
         if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
