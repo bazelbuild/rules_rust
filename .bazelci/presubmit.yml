@@ -983,19 +983,16 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  # # TODO: https://github.com/bazelbuild/rules_rust/issues/3021
-  # # The length of the workspace name results in paths that are too long
-  # # on windows for linking.
-  # extensions_wasm_bindgen_windows:
-  #   platform: windows
-  #   name: Extensions wasm-bindgen
-  #   working_directory: extensions/wasm_bindgen
-  #   build_flags: *aspects_flags
-  #   test_flags: *aspects_flags
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
+  extensions_wasm_bindgen_windows:
+    platform: windows
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest

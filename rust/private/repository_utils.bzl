@@ -266,6 +266,7 @@ rust_toolchain(
     extra_rustc_flags = {extra_rustc_flags},
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
     opt_level = {opt_level},
+    tags = ["rust_version={version}"],
 )
 """
 
@@ -273,6 +274,7 @@ def BUILD_for_rust_toolchain(
         name,
         exec_triple,
         target_triple,
+        version,
         allocator_library,
         global_allocator_library,
         default_edition,
@@ -288,6 +290,7 @@ def BUILD_for_rust_toolchain(
         name (str): The name of the toolchain declaration
         exec_triple (triple): The rust-style target that this compiler runs on
         target_triple (triple): The rust-style target triple of the tool
+        version (str): The Rust version for the toolchain.
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common_link.
                                                   This target is only used in the target configuration; exec builds still use the symbols provided
@@ -340,6 +343,7 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
+        version = version,
     )
 
 _build_file_for_toolchain_template = """\

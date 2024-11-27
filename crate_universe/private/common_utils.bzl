@@ -94,6 +94,7 @@ def get_rust_tools(repository_ctx, host_triple):
         host_triple = host_triple,
         channel = channel,
         version = version,
+        compress_windows_names = repository_ctx.attr.compressed_windows_toolchain_names,
     )
 
 def _cargo_home_path(repository_ctx):

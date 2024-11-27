@@ -196,6 +196,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
     host_triple = get_host_triple(repository_ctx)
     cargo_template = repository_ctx.attr.rust_toolchain_cargo_template
     rustc_template = repository_ctx.attr.rust_toolchain_rustc_template
+    compress_windows_names = repository_ctx.attr.compressed_windows_toolchain_names
 
     tools = get_rust_tools(
         cargo_template = cargo_template,
@@ -203,6 +204,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         host_triple = host_triple,
         channel = channel,
         version = version,
+        compress_windows_names = compress_windows_names,
     )
 
     binary_name = repository_ctx.attr.binary or repository_ctx.name
@@ -263,6 +265,10 @@ cargo_bootstrap_repository = repository_rule(
             doc = "The path of the `Cargo.toml` file.",
             allow_single_file = ["Cargo.toml"],
             mandatory = True,
+        ),
+        "compressed_windows_toolchain_names": attr.bool(
+            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            default = True,
         ),
         "env": attr.string_dict(
             doc = (

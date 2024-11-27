@@ -60,4 +60,9 @@ nodejs_test(
         ":hello_world_web_wasm_bindgen",
     ],
     entry_point = "//test:hello_world_wasm_test.js",
+    # TODO: Fix test on Windows
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )

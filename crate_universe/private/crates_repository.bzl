@@ -215,6 +215,10 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             ),
             mandatory = True,
         ),
+        "compressed_windows_toolchain_names": attr.bool(
+            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            default = True,
+        ),
         "generate_binaries": attr.bool(
             doc = (
                 "Whether to generate `rust_binary` targets for all the binary crates in every package. " +

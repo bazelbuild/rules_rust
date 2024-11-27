@@ -11,6 +11,7 @@ def _internal_deps_impl(module_ctx):
     direct_deps.extend(cargo_bazel_bootstrap(
         rust_toolchain_cargo_template = "@rust_host_tools//:bin/{tool}",
         rust_toolchain_rustc_template = "@rust_host_tools//:bin/{tool}",
+        compressed_windows_toolchain_names = False,
     ))
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
@@ -35,6 +36,7 @@ def _internal_dev_deps_impl(module_ctx):
     direct_deps.extend(cross_installer_deps(
         rust_toolchain_cargo_template = "@rust_host_tools//:bin/{tool}",
         rust_toolchain_rustc_template = "@rust_host_tools//:bin/{tool}",
+        compressed_windows_toolchain_names = False,
     ))
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
