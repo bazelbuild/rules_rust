@@ -13,9 +13,9 @@ def cross_installer_deps():
         http_archive,
         name = "cross_rs",
         # v0.2.5+
-        urls = ["https://github.com/cross-rs/cross/archive/764d258e8b88323df7e88b1b6f178d09f951966a.zip"],
-        strip_prefix = "cross-764d258e8b88323df7e88b1b6f178d09f951966a",
-        integrity = "sha256-vC3qT2dzF6yEKCTGK3cHaSMZk/V5/LxZSHvT2Jo5qw8=",
+        urls = ["https://github.com/cross-rs/cross/archive/4090beca3cfffa44371a5bba524de3a578aa46c3.zip"],
+        strip_prefix = "cross-4090beca3cfffa44371a5bba524de3a578aa46c3",
+        integrity = "sha256-9lo/wRsDWdaTzt3kVSBWRfNp+DXeDZqrG3Z+10mE+fo=",
         build_file_content = """exports_files(["Cargo.toml", "Cargo.lock"], visibility = ["//visibility:public"])""",
     )
 
