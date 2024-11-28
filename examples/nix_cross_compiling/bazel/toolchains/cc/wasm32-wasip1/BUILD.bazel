@@ -53,7 +53,7 @@ llvm_cc_toolchain_config(
     ],
     supports_start_end_lib = False,
     tags = ["manual"],
-    target = "wasm32-wasi",
+    target = "wasm32-wasip1",
 )
 
 cc_toolchain(

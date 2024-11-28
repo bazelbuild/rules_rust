@@ -141,14 +141,14 @@ rust_stdlib_filegroup(
 )
 
 rust_stdlib_filegroup(
-    name = "rust_std-wasm32-wasi",
+    name = "rust_std-wasm32-wasip1",
     srcs = glob(
         [
-            "lib/rustlib/wasm32-wasi/lib/*.rlib",
-            "lib/rustlib/wasm32-wasi/lib/*.so",
-            "lib/rustlib/wasm32-wasi/lib/*.dylib",
-            "lib/rustlib/wasm32-wasi/lib/*.a",
-            "lib/rustlib/wasm32-wasi/lib/self-contained/**",
+            "lib/rustlib/wasm32-wasip1/lib/*.rlib",
+            "lib/rustlib/wasm32-wasip1/lib/*.so",
+            "lib/rustlib/wasm32-wasip1/lib/*.dylib",
+            "lib/rustlib/wasm32-wasip1/lib/*.a",
+            "lib/rustlib/wasm32-wasip1/lib/self-contained/**",
         ],
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
         allow_empty = True,

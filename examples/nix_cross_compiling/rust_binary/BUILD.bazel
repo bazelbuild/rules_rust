@@ -64,7 +64,7 @@ rust_binary(
 rust_binary(
     name = "rust_binary_wasm32-wasi",
     srcs = ["rust_binary_wasm32-wasi.rs"],  # See comments in `rust_binary_wasm32-wasi.rs`.
-    platform = "//bazel/platforms:wasm32-wasi",
+    platform = "//bazel/platforms:wasm32-wasip1",
     deps = [
         "//cc_library",
         "//rust_library",

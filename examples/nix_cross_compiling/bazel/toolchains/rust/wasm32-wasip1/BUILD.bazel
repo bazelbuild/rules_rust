@@ -12,13 +12,13 @@ rust_toolchain(
     extra_exec_rustc_flags = [],
     extra_rustc_flags = [],
     rust_doc = "@nix_rust//:rustdoc",
-    rust_std = "@nix_rust//:rust_std-wasm32-wasi",
+    rust_std = "@nix_rust//:rust_std-wasm32-wasip1",
     rustc = "@nix_rust//:rustc",
     rustc_lib = "@nix_rust//:rustc_lib",
     staticlib_ext = ".a",
     stdlib_linkflags = [],
     tags = ["manual"],
-    target_triple = "wasm32-wasi",
+    target_triple = "wasm32-wasip1",
 )
 
 toolchain(
