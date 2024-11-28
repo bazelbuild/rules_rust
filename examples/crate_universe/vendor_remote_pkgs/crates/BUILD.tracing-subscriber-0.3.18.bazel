@@ -78,7 +78,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -97,7 +96,7 @@ rust_library(
         "@crates_vendor_pkgs__sharded-slab-0.1.7//:sharded_slab",
         "@crates_vendor_pkgs__smallvec-1.13.2//:smallvec",
         "@crates_vendor_pkgs__thread_local-1.1.8//:thread_local",
-        "@crates_vendor_pkgs__tracing-core-0.1.32//:tracing_core",
+        "@crates_vendor_pkgs__tracing-core-0.1.33//:tracing_core",
         "@crates_vendor_pkgs__tracing-log-0.2.0//:tracing_log",
     ],
 )

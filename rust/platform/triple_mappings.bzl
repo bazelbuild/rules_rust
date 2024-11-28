@@ -395,7 +395,7 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple == "wasm32-wasi":
+    if target_triple in "wasm32-wasi":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",

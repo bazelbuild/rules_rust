@@ -68,7 +68,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -111,10 +110,6 @@ rust_library(
             "@rules_rust_wasm_bindgen_deps__windows-0.48.0//:windows",  # cfg(target_os = "windows")
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@rules_rust_wasm_bindgen_deps__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
-            "@rules_rust_wasm_bindgen_deps__wasm-bindgen-0.2.92//:wasm_bindgen",  # cfg(target_arch = "wasm32")
-        ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
             "@rules_rust_wasm_bindgen_deps__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
             "@rules_rust_wasm_bindgen_deps__wasm-bindgen-0.2.92//:wasm_bindgen",  # cfg(target_arch = "wasm32")
         ],

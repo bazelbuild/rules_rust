@@ -65,7 +65,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -81,8 +80,8 @@ rust_library(
     version = "0.7.1",
     deps = [
         "//vendor_local_pkgs/crates/form_urlencoded-1.2.1:form_urlencoded",
-        "//vendor_local_pkgs/crates/itoa-1.0.11:itoa",
+        "//vendor_local_pkgs/crates/itoa-1.0.14:itoa",
         "//vendor_local_pkgs/crates/ryu-1.0.18:ryu",
-        "//vendor_local_pkgs/crates/serde-1.0.214:serde",
+        "//vendor_local_pkgs/crates/serde-1.0.215:serde",
     ],
 )

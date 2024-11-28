@@ -1,5 +1,5 @@
 {
-  "checksum": "4ce263703fc55e73dbbd9ec2b2b1861be82bc9b9c8cbdb59d045db3355ddf241",
+  "checksum": "408c846f24d0eb8fc63dd9e63b9d48007e19120e8bb5eaba90ada5dc41b8048c",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -1037,9 +1037,6 @@
     ],
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
-    ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
     ],
     "wasm32-wasip1": [
       "wasm32-wasip1"

@@ -65,7 +65,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -80,6 +79,6 @@ rust_library(
     }),
     version = "1.4.2",
     deps = [
-        "//vendor_local_pkgs/crates/libc-0.2.161:libc",
+        "//vendor_local_pkgs/crates/libc-0.2.166:libc",
     ],
 )

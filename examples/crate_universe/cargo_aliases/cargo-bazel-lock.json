@@ -1,5 +1,5 @@
 {
-  "checksum": "72bc62e0cc45a664f35df0f1386d5f120cb84ca55fbf7ace99dd99c526b5b308",
+  "checksum": "1c0ab5e07f769e47dddec6f2a92558ef08af486c538ac9e0ca0f4161c113621b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3105,7 +3105,6 @@
     ],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi",
       "wasm32-wasip1"
     ],
     "cfg(unix)": [
@@ -3175,9 +3174,6 @@
     ],
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
-    ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
     ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
