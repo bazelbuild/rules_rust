@@ -53,6 +53,7 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         cfgs = base_info.cfgs,
         env = base_info.env,
         deps = base_info.deps,
+        id = base_info.id,
         crate_specs = depset(direct = [crate_spec], transitive = [base_info.crate_specs]),
         proc_macro_dylib_path = base_info.proc_macro_dylib_path,
         build_info = base_info.build_info,
@@ -72,20 +73,16 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
 
     return rust_analyzer_info
 
-def _accumulate_rust_analyzer_info(dep_infos_to_accumulate, label_index_to_accumulate, dep):
+def _accumulate_rust_analyzer_info(deps_details, dep):
     if dep == None:
         return
     if RustAnalyzerInfo in dep:
-        label_index_to_accumulate[dep.label] = dep[RustAnalyzerInfo]
-        dep_infos_to_accumulate.append(dep[RustAnalyzerInfo])
+        deps_details.label_to_id[dep.label] = dep[RustAnalyzerInfo].id
+        deps_details.crate_specs.append(dep[RustAnalyzerInfo].crate_specs)
     if RustAnalyzerGroupInfo in dep:
         for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
-            label_index_to_accumulate[expanded_dep.crate.owner] = expanded_dep
-            dep_infos_to_accumulate.append(expanded_dep)
-
-def _accumulate_rust_analyzer_infos(dep_infos_to_accumulate, label_index_to_accumulate, deps_attr):
-    for dep in deps_attr:
-        _accumulate_rust_analyzer_info(dep_infos_to_accumulate, label_index_to_accumulate, dep)
+            deps_details.label_to_id[expanded_dep.crate.owner] = expanded_dep
+            deps_details.crate_specs.append(dep[RustAnalyzerGroupInfo].crate_specs)
 
 def _rust_analyzer_aspect_impl(target, ctx):
     if (rust_common.crate_info not in target and
@@ -107,22 +104,25 @@ def _rust_analyzer_aspect_impl(target, ctx):
         cfgs += [f[6:] for f in ctx.rule.attr.rustc_flags if f.startswith("--cfg ") or f.startswith("--cfg=")]
 
     build_info = None
-    dep_infos = []
-    labels_to_rais = {}
+    deps_details = struct(label_to_id = {}, crate_specs = [])
 
     for dep in getattr(ctx.rule.attr, "deps", []):
         # Save BuildInfo if we find any (for build script output)
         if BuildInfo in dep:
             build_info = dep[BuildInfo]
 
-    _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "deps", []))
-    _accumulate_rust_analyzer_infos(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "proc_macro_deps", []))
+    for dep in getattr(ctx.rule.attr, "deps", []):
+        _accumulate_rust_analyzer_info(deps_details, dep)
+    for dep in getattr(ctx.rule.attr, "proc_macro_deps", []):
+        _accumulate_rust_analyzer_info(deps_details, dep)
+    _accumulate_rust_analyzer_info(deps_details, getattr(ctx.rule.attr, "crate", None))
+    _accumulate_rust_analyzer_info(deps_details, getattr(ctx.rule.attr, "actual", None))
 
-    _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "crate", None))
-    _accumulate_rust_analyzer_info(dep_infos, labels_to_rais, getattr(ctx.rule.attr, "actual", None))
+    deps = deps_details.label_to_id.values()
+    crate_specs = depset(transitive = deps_details.crate_specs)
 
     if rust_common.crate_group_info in target:
-        return [RustAnalyzerGroupInfo(deps = dep_infos)]
+        return [RustAnalyzerGroupInfo(deps = deps, crate_specs = crate_specs)]
     elif rust_common.crate_info in target:
         crate_info = target[rust_common.crate_info]
     elif rust_common.test_crate_info in target:
@@ -132,16 +132,20 @@ def _rust_analyzer_aspect_impl(target, ctx):
 
     aliases = {}
     for aliased_target, aliased_name in getattr(ctx.rule.attr, "aliases", {}).items():
-        if aliased_target.label in labels_to_rais:
-            aliases[labels_to_rais[aliased_target.label]] = aliased_name
+        if aliased_target.label in deps_details.label_to_id:
+            aliases[deps_details.label_to_id[aliased_target.label]] = aliased_name
+
+    # An arbitrary unique and stable identifier.
+    crate_id = "ID-" + crate_info.root.path
 
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
+        id = crate_id,
         aliases = aliases,
         crate = crate_info,
         cfgs = cfgs,
         env = crate_info.rustc_env,
-        deps = dep_infos,
-        crate_specs = depset(transitive = [dep.crate_specs for dep in dep_infos]),
+        deps = deps,
+        crate_specs = crate_specs,
         proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
         build_info = build_info,
     ))
@@ -190,14 +194,6 @@ rust_analyzer_aspect = aspect(
 _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
 
-def _crate_id(crate_info):
-    """Returns a unique stable identifier for a crate
-
-    Returns:
-        (string): This crate's unique stable id.
-    """
-    return "ID-" + crate_info.root.path
-
 def _create_single_crate(ctx, attrs, info):
     """Creates a crate in the rust-project.json format.
 
@@ -211,8 +207,7 @@ def _create_single_crate(ctx, attrs, info):
     """
     crate_name = info.crate.name
     crate = dict()
-    crate_id = _crate_id(info.crate)
-    crate["crate_id"] = crate_id
+    crate["crate_id"] = info.id
     crate["display_name"] = crate_name
     crate["edition"] = info.crate.edition
     crate["env"] = {}
@@ -260,8 +255,8 @@ def _create_single_crate(ctx, attrs, info):
     # There's one exception - if the dependency is the same crate name as the
     # the crate being processed, we don't add it as a dependency to itself. This is
     # common and expected - `rust_test.crate` pointing to the `rust_library`.
-    crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
-    crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases.items()}
+    crate["deps"] = [id for id in info.deps if id != info.id]
+    crate["aliases"] = info.aliases
     crate["cfg"] = info.cfgs
     crate["target"] = find_toolchain(ctx).target_flag_value
     if info.proc_macro_dylib_path != None:
