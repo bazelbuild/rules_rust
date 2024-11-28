@@ -172,7 +172,7 @@ RustAnalyzerInfo = provider(
 RustAnalyzerGroupInfo = provider(
     doc = "RustAnalyzerGroupInfo holds multiple RustAnalyzerInfos",
     fields = {
-        "deps": "List[String]: crate IDs of direct dependencies",
         "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
+        "deps": "List[String]: crate IDs of direct dependencies",
     },
 )
