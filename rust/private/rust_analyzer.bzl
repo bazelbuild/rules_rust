@@ -81,8 +81,8 @@ def _accumulate_rust_analyzer_info(deps_details, dep):
         deps_details.crate_specs.append(dep[RustAnalyzerInfo].crate_specs)
     if RustAnalyzerGroupInfo in dep:
         for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
-            deps_details.label_to_id[expanded_dep.crate.owner] = expanded_dep
-            deps_details.crate_specs.append(dep[RustAnalyzerGroupInfo].crate_specs)
+            deps_details.label_to_id[expanded_dep] = expanded_dep
+        deps_details.crate_specs.extend(dep[RustAnalyzerGroupInfo].crate_specs)
 
 def _rust_analyzer_aspect_impl(target, ctx):
     if (rust_common.crate_info not in target and
