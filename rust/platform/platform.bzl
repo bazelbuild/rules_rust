@@ -96,6 +96,14 @@ def declare_config_settings():
             "@platforms//os:wasi",
         ],
     )
+    
+    native.platform(
+        name = "wasip2",
+        constraint_values = [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+        ],
+    )
 
     # Add alias for wasi to maintain backwards compatibility.
     native.alias(
