@@ -86,6 +86,6 @@ alias(
 
 alias(
     name = "tracing-subscriber",
-    actual = "//vendor_local_pkgs/crates/tracing-subscriber-0.3.18:tracing_subscriber",
+    actual = "//vendor_local_pkgs/crates/tracing-subscriber-0.3.19:tracing_subscriber",
     tags = ["manual"],
 )

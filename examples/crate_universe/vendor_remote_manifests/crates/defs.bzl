@@ -561,22 +561,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__hermit-abi-0.3.9",
-        sha256 = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024",
+        name = "cvm__libc-0.2.167",
+        sha256 = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/hermit-abi/0.3.9/download"],
-        strip_prefix = "hermit-abi-0.3.9",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.hermit-abi-0.3.9.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__libc-0.2.166",
-        sha256 = "c2ccc108bbc0b1331bd061864e7cd823c0cab660bbe6970e66e2c0614decde36",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/libc/0.2.166/download"],
-        strip_prefix = "libc-0.2.166",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.166.bazel"),
+        urls = ["https://static.crates.io/crates/libc/0.2.167/download"],
+        strip_prefix = "libc-0.2.167",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.167.bazel"),
     )
 
     maybe(
@@ -621,12 +611,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__mio-1.0.2",
-        sha256 = "80e04d1dcff3aae0704555fe5fee3bcfaf3d1fdf8a7e521d5b9d2b42acb52cec",
+        name = "cvm__mio-1.0.3",
+        sha256 = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/mio/1.0.2/download"],
-        strip_prefix = "mio-1.0.2",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.mio-1.0.2.bazel"),
+        urls = ["https://static.crates.io/crates/mio/1.0.3/download"],
+        strip_prefix = "mio-1.0.3",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.mio-1.0.3.bazel"),
     )
 
     maybe(
@@ -771,12 +761,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__syn-2.0.89",
-        sha256 = "44d46482f1c1c87acd84dea20c1bf5ebff4c757009ed6bf19cfd36fb10e92c4e",
+        name = "cvm__syn-2.0.90",
+        sha256 = "919d3b74a5dd0ccd15aeb8f93e7006bd9e14c295087c9896a110f490752bcf31",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.89/download"],
-        strip_prefix = "syn-2.0.89",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.89.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.90/download"],
+        strip_prefix = "syn-2.0.90",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.90.bazel"),
     )
 
     maybe(

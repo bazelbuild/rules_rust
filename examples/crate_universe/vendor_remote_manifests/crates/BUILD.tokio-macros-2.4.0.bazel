@@ -81,6 +81,6 @@ rust_proc_macro(
     deps = [
         "@cvm__proc-macro2-1.0.92//:proc_macro2",
         "@cvm__quote-1.0.37//:quote",
-        "@cvm__syn-2.0.89//:syn",
+        "@cvm__syn-2.0.90//:syn",
     ],
 )

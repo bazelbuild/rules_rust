@@ -81,6 +81,6 @@ rust_proc_macro(
     deps = [
         "//vendor_local_pkgs/crates/proc-macro2-1.0.92:proc_macro2",
         "//vendor_local_pkgs/crates/quote-1.0.37:quote",
-        "//vendor_local_pkgs/crates/syn-2.0.89:syn",
+        "//vendor_local_pkgs/crates/syn-2.0.90:syn",
     ],
 )

@@ -84,6 +84,6 @@ rust_proc_macro(
     deps = [
         "@t3p__proc-macro2-1.0.92//:proc_macro2",
         "@t3p__quote-1.0.37//:quote",
-        "@t3p__syn-2.0.89//:syn",
+        "@t3p__syn-2.0.90//:syn",
     ],
 )

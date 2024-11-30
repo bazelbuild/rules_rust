@@ -485,12 +485,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "t3p__syn-2.0.89",
-        sha256 = "44d46482f1c1c87acd84dea20c1bf5ebff4c757009ed6bf19cfd36fb10e92c4e",
+        name = "t3p__syn-2.0.90",
+        sha256 = "919d3b74a5dd0ccd15aeb8f93e7006bd9e14c295087c9896a110f490752bcf31",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.89/download"],
-        strip_prefix = "syn-2.0.89",
-        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.syn-2.0.89.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.90/download"],
+        strip_prefix = "syn-2.0.90",
+        build_file = Label("@rules_rust//test/3rdparty/crates:BUILD.syn-2.0.90.bazel"),
     )
 
     maybe(

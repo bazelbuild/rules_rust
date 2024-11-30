@@ -302,7 +302,7 @@ _NORMAL_DEPENDENCIES = {
             "tower": Label("//vendor_local_pkgs/crates/tower-0.4.13:tower"),
             "tower-http": Label("//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http"),
             "tracing": Label("//vendor_local_pkgs/crates/tracing-0.1.41:tracing"),
-            "tracing-subscriber": Label("//vendor_local_pkgs/crates/tracing-subscriber-0.3.18:tracing_subscriber"),
+            "tracing-subscriber": Label("//vendor_local_pkgs/crates/tracing-subscriber-0.3.19:tracing_subscriber"),
         },
     },
 }
