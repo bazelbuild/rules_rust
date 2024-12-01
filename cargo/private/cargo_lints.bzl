@@ -48,7 +48,7 @@ def _extract_cargo_lints(ctx):
             clippy_lint_files = [clippy_lints_out],
             rustdoc_lint_flags = [],
             rustdoc_lint_files = [rustdoc_lints_out],
-        )
+        ),
     ]
 
 extract_cargo_lints = rule(

@@ -28,6 +28,10 @@ load(
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
 load(
+    "//rust/private:lints.bzl",
+    _rust_lint_config = "rust_lint_config",
+)
+load(
     "//rust/private:rust.bzl",
     _rust_binary = "rust_binary",
     _rust_library = "rust_library",
@@ -70,10 +74,6 @@ load(
     "//rust/private:unpretty.bzl",
     _rust_unpretty = "rust_unpretty",
     _rust_unpretty_aspect = "rust_unpretty_aspect",
-)
-load(
-    "//rust/private:lints.bzl",
-    _rust_lint_config = "rust_lint_config",
 )
 
 rust_library = _rust_library
