@@ -248,6 +248,18 @@ alias(
 )
 
 alias(
+    name = "wasm-bindgen-test-0.3.50",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.50//:wasm_bindgen_test",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-test",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.50//:wasm_bindgen_test",
+    tags = ["manual"],
+)
+
+alias(
     name = "wasmparser-0.214.0",
     actual = "@rrwbd__wasmparser-0.214.0//:wasmparser",
     tags = ["manual"],
