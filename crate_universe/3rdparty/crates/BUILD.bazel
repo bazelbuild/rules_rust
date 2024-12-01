@@ -210,3 +210,9 @@ alias(
     actual = "@cui__url-2.5.2//:url",
     tags = ["manual"],
 )
+
+alias(
+    name = "walkdir",
+    actual = "@cui__walkdir-2.5.0//:walkdir",
+    tags = ["manual"],
+)

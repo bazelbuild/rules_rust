@@ -323,6 +323,7 @@ _NORMAL_DEPENDENCIES = {
             "tracing": Label("@cui__tracing-0.1.40//:tracing"),
             "tracing-subscriber": Label("@cui__tracing-subscriber-0.3.18//:tracing_subscriber"),
             "url": Label("@cui__url-2.5.2//:url"),
+            "walkdir": Label("@cui__walkdir-2.5.0//:walkdir"),
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -2615,12 +2616,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__walkdir-2.3.3",
-        sha256 = "36df944cda56c7d8d8b7496af378e6b16de9284591917d307c9b4d313c44e698",
+        name = "cui__walkdir-2.5.0",
+        sha256 = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/walkdir/2.3.3/download"],
-        strip_prefix = "walkdir-2.3.3",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.walkdir-2.3.3.bazel"),
+        urls = ["https://static.crates.io/crates/walkdir/2.5.0/download"],
+        strip_prefix = "walkdir-2.5.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.walkdir-2.5.0.bazel"),
     )
 
     maybe(
@@ -2923,5 +2924,6 @@ def crate_repositories():
         struct(repo = "cui__tracing-0.1.40", is_dev_dep = False),
         struct(repo = "cui__tracing-subscriber-0.3.18", is_dev_dep = False),
         struct(repo = "cui__url-2.5.2", is_dev_dep = False),
+        struct(repo = "cui__walkdir-2.5.0", is_dev_dep = False),
         struct(repo = "cui__maplit-1.0.2", is_dev_dep = True),
     ]

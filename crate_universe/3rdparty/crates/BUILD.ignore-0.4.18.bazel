@@ -87,7 +87,7 @@ rust_library(
         "@cui__regex-1.11.0//:regex",
         "@cui__same-file-1.0.6//:same_file",
         "@cui__thread_local-1.1.4//:thread_local",
-        "@cui__walkdir-2.3.3//:walkdir",
+        "@cui__walkdir-2.5.0//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__winapi-util-0.1.5//:winapi_util",  # cfg(windows)

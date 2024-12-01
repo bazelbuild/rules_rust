@@ -77,7 +77,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.3.3",
+    version = "2.5.0",
     deps = [
         "@cui__same-file-1.0.6//:same_file",
     ] + select({
