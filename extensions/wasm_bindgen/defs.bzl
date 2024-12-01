@@ -50,7 +50,12 @@ load(
     _rust_wasm_bindgen = "rust_wasm_bindgen",
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
+load(
+    "//private:wasm_bindgen_test.bzl",
+    _rust_wasm_bindgen_test = "rust_wasm_bindgen_test",
+)
 
 rust_wasm_bindgen = _rust_wasm_bindgen
 rust_wasm_bindgen_toolchain = _rust_wasm_bindgen_toolchain
+rust_wasm_bindgen_test = _rust_wasm_bindgen_test
 RustWasmBindgenInfo = _RustWasmBindgenInfo

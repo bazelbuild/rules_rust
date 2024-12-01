@@ -1,20 +1,48 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//:defs.bzl", "rust_wasm_bindgen_toolchain")
-
-package(default_visibility = ["//visibility:public"])
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load(":defs.bzl", "rust_wasm_bindgen_toolchain")
 
 exports_files([
     "defs.bzl",
     "MODULE.bazel",
+    "webdriver.json",
 ])
 
 toolchain_type(
     name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "test_browser",
+    build_setting_default = "chrome",
+    values = [
+        "chrome",
+        "firefox",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_chrome",
+    flag_values = {
+        ":test_browser": "chrome",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_firefox",
+    flag_values = {
+        ":test_browser": "firefox",
+    },
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
     deps = [
         "//3rdparty:bzl_lib",
         "//private:bzl_lib",
@@ -23,11 +51,32 @@ bzl_library(
 
 rust_wasm_bindgen_toolchain(
     name = "default_wasm_bindgen_toolchain_impl",
-    bindgen = "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen_cli",
+    browser = select({
+        ":test_browser_chrome": "@chrome",
+        ":test_browser_firefox": "@firefox",
+    }),
+    browser_type = select({
+        ":test_browser_chrome": "chrome",
+        ":test_browser_firefox": "firefox",
+    }),
+    visibility = ["//visibility:public"],
+    wasm_bindgen_cli = "//3rdparty:wasm_bindgen_cli",
+    wasm_bindgen_test = "//3rdparty:wasm_bindgen_test",
+    wasm_bindgen_test_runner = "//3rdparty:wasm_bindgen_test_runner",
+    webdriver = select({
+        ":test_browser_chrome": "@chromedriver",
+        ":test_browser_firefox": "@geckodriver",
+    }),
+    webdriver_args = select({
+        ":test_browser_chrome": ["--verbose"],
+        ":test_browser_firefox": [],
+    }),
+    webdriver_json = "webdriver.json",
 )
 
 toolchain(
     name = "default_wasm_bindgen_toolchain",
     toolchain = "default_wasm_bindgen_toolchain_impl",
-    toolchain_type = "//:toolchain_type",
+    toolchain_type = ":toolchain_type",
+    visibility = ["//visibility:public"],
 )

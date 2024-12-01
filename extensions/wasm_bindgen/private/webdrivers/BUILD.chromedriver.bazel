@@ -1,0 +1,36 @@
+alias(
+    name = "chromedriver_macos",
+    actual = select({
+        "@platforms//cpu:x86_64": "@chromedriver_mac_x64",
+        "//conditions:default": "@chromedriver_mac_arm64",
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+alias(
+    name = "chromedriver_linux",
+    actual = select({
+        "@platforms//cpu:aarch64": "@chromedriver_linux_aarch64",
+        "//conditions:default": "@chromedriver_linux64",
+    }),
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "chromedriver_windows",
+    actual = select({
+        "@platforms//cpu:i386": "@chromedriver_win32",
+        "//conditions:default": "@chromedriver_win64",
+    }),
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+alias(
+    name = "chromedriver",
+    actual = select({
+        "@platforms//os:linux": "@chromedriver_linux64",
+        "@platforms//os:macos": ":chromedriver_macos",
+        "@platforms//os:windows": ":chromedriver_windows",
+    }),
+    visibility = ["//visibility:public"],
+)

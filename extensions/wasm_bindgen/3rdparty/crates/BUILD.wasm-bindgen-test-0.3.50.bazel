@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "js_sys",
+    name = "wasm_bindgen_test",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,16 +29,20 @@ rust_library(
         ],
     ),
     crate_features = [
+        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    proc_macro_deps = [
+        "@rrwbd__wasm-bindgen-test-macro-0.3.50//:wasm_bindgen_test_macro",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=js-sys",
+        "crate-name=wasm-bindgen-test",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,9 +86,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.3.77",
+    version = "0.3.50",
     deps = [
-        "@rrwbd__once_cell-1.20.2//:once_cell",
+        "@rrwbd__js-sys-0.3.77//:js_sys",
         "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",
+        "@rrwbd__wasm-bindgen-futures-0.4.50//:wasm_bindgen_futures",
     ],
 )
