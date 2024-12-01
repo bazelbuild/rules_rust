@@ -48,6 +48,7 @@ def _rust_lint_config(ctx):
         rustdoc_lint_files = [],
     )
 
+# buildifier: disable=unsorted-dict-items
 rust_lint_config = rule(
     implementation = _rust_lint_config,
     attrs = {

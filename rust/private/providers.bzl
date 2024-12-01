@@ -178,11 +178,11 @@ RustAnalyzerGroupInfo = provider(
 LintsInfo = provider(
     doc = "LintsInfo holds the 'allow', 'warn', etc. config for rustc, clippy, and rustdoc lints.",
     fields = {
-        "rustc_lint_flags": "List[String]: rustc flags to specify when building rust_* targets.",
-        "rustc_lint_files": "List[File]: list of files with rustc flags to specify when building rust_* targets.",
-        "clippy_lint_flags": "List[String]: rustc flags to specify when building clippy targets.",
         "clippy_lint_files": "List[File]: files with rustc args for clippy targets.",
-        "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
+        "clippy_lint_flags": "List[String]: rustc flags to specify when building clippy targets.",
+        "rustc_lint_files": "List[File]: list of files with rustc flags to specify when building rust_* targets.",
+        "rustc_lint_flags": "List[String]: rustc flags to specify when building rust_* targets.",
         "rustdoc_lint_files": "List[File]: files with rustc args for rustdoc target.",
+        "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
     },
 )

@@ -4,6 +4,7 @@ Rule used to retrieve the lints specified in the [lints section] of a `Cargo.tom
 [lints section](https://doc.rust-lang.org/cargo/reference/manifest.html#the-lints-section)
 """
 
+# buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "LintsInfo")
 
 def _extract_cargo_lints(ctx):
