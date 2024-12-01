@@ -645,12 +645,12 @@ _common_attrs = {
             linking a native library.
         """),
     ),
+    "edition": attr.string(
+        doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
+    ),
     "lint_config": attr.label(
         doc = "Set of lints to apply when building this crate.",
         providers = [LintsInfo],
-    ),
-    "edition": attr.string(
-        doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
     ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.
