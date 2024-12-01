@@ -6,12 +6,12 @@
 #     bazel run @@//3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "js_sys",
+rust_proc_macro(
+    name = "wasm_bindgen_test_macro",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,9 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -38,7 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=js-sys",
+        "crate-name=wasm-bindgen-test-macro",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,9 +79,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.3.77",
+    version = "0.3.50",
     deps = [
-        "@rrwbd__once_cell-1.20.2//:once_cell",
-        "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",
+        "@rrwbd__proc-macro2-1.0.92//:proc_macro2",
+        "@rrwbd__quote-1.0.38//:quote",
+        "@rrwbd__syn-2.0.95//:syn",
     ],
 )
