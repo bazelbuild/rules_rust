@@ -302,12 +302,14 @@ _NORMAL_DEPENDENCIES = {
             "rouille": Label("@rrwbd//:rouille-3.6.2"),
             "serde": Label("@rrwbd//:serde-1.0.217"),
             "serde_json": Label("@rrwbd//:serde_json-1.0.135"),
+            "shlex": Label("@rrwbd//:shlex-1.3.0"),
             "tempfile": Label("@rrwbd//:tempfile-3.15.0"),
             "ureq": Label("@rrwbd//:ureq-2.12.1"),
             "walrus": Label("@rrwbd//:walrus-0.23.3"),
             "wasm-bindgen": Label("@rrwbd//:wasm-bindgen-0.2.100"),
             "wasm-bindgen-cli-support": Label("@rrwbd//:wasm-bindgen-cli-support-0.2.100"),
             "wasm-bindgen-shared": Label("@rrwbd//:wasm-bindgen-shared-0.2.100"),
+            "wasm-bindgen-test": Label("@rrwbd//:wasm-bindgen-test-0.3.50"),
         },
     },
 }
@@ -407,6 +409,7 @@ _CONDITIONS = {
     "cfg(all(target_arch = \"aarch64\", target_env = \"msvc\", not(windows_raw_dylib)))": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
     "cfg(all(target_arch = \"aarch64\", target_os = \"windows\"))": ["@rules_rust//rust/platform:aarch64-pc-windows-msvc"],
     "cfg(all(target_arch = \"wasm32\", target_os = \"unknown\"))": ["@rules_rust//rust/platform:wasm32-unknown-unknown"],
+    "cfg(all(target_arch = \"wasm32\", wasm_bindgen_unstable_test_coverage))": [],
     "cfg(all(target_arch = \"x86\", target_env = \"gnu\", not(target_abi = \"llvm\"), not(windows_raw_dylib)))": ["@rules_rust//rust/platform:i686-unknown-linux-gnu"],
     "cfg(all(target_arch = \"x86\", target_env = \"msvc\", not(windows_raw_dylib)))": ["@rules_rust//rust/platform:i686-pc-windows-msvc"],
     "cfg(all(target_arch = \"x86_64\", target_env = \"gnu\", not(target_abi = \"llvm\"), not(windows_raw_dylib)))": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
@@ -417,6 +420,7 @@ _CONDITIONS = {
     "cfg(any(unix, target_os = \"wasi\"))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-unknown-fuchsia", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu", "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:wasm32-wasip1", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-fuchsia", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-pc-windows-msvc", "@rules_rust//rust/platform:aarch64-unknown-fuchsia", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu", "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710", "@rules_rust//rust/platform:aarch64-unknown-uefi", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-pc-windows-msvc", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:riscv32imc-unknown-none-elf", "@rules_rust//rust/platform:riscv64gc-unknown-none-elf", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:wasm32-unknown-unknown", "@rules_rust//rust/platform:wasm32-wasip1", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-pc-windows-msvc", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-fuchsia", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu", "@rules_rust//rust/platform:x86_64-unknown-none", "@rules_rust//rust/platform:x86_64-unknown-uefi"],
     "cfg(not(windows))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-unknown-fuchsia", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu", "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710", "@rules_rust//rust/platform:aarch64-unknown-uefi", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:riscv32imc-unknown-none-elf", "@rules_rust//rust/platform:riscv64gc-unknown-none-elf", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:thumbv7em-none-eabi", "@rules_rust//rust/platform:thumbv8m.main-none-eabi", "@rules_rust//rust/platform:wasm32-unknown-unknown", "@rules_rust//rust/platform:wasm32-wasip1", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-fuchsia", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu", "@rules_rust//rust/platform:x86_64-unknown-none", "@rules_rust//rust/platform:x86_64-unknown-uefi"],
+    "cfg(target_feature = \"atomics\")": [],
     "cfg(target_os = \"android\")": ["@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:x86_64-linux-android"],
     "cfg(target_os = \"haiku\")": [],
     "cfg(target_os = \"hermit\")": [],
@@ -1392,6 +1396,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "rrwbd__minicov-0.3.7",
+        sha256 = "f27fe9f1cc3c22e1687f9446c2083c4c5fc7f0bcf1c7a86bdbded14985895b4b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/minicov/0.3.7/download"],
+        strip_prefix = "minicov-0.3.7",
+        build_file = Label("//3rdparty/crates:BUILD.minicov-0.3.7.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rrwbd__miniz_oxide-0.8.2",
         sha256 = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394",
         type = "tar.gz",
@@ -1752,6 +1766,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "rrwbd__same-file-1.0.6",
+        sha256 = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/same-file/1.0.6/download"],
+        strip_prefix = "same-file-1.0.6",
+        build_file = Label("//3rdparty/crates:BUILD.same-file-1.0.6.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rrwbd__semver-1.0.24",
         sha256 = "3cb6eb87a131f756572d7fb904f6e7b68633f09cca868c5df1c4b8d1a694bbba",
         type = "tar.gz",
@@ -2072,6 +2096,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "rrwbd__walkdir-2.5.0",
+        sha256 = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/walkdir/2.5.0/download"],
+        strip_prefix = "walkdir-2.5.0",
+        build_file = Label("//3rdparty/crates:BUILD.walkdir-2.5.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rrwbd__walrus-0.23.3",
         sha256 = "6481311b98508f4bc2d0abbfa5d42172e7a54b4b24d8f15e28b0dc650be0c59f",
         type = "tar.gz",
@@ -2142,6 +2176,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "rrwbd__wasm-bindgen-futures-0.4.50",
+        sha256 = "555d470ec0bc3bb57890405e5d4322cc9ea83cebb085523ced7be4144dac1e61",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/wasm-bindgen-futures/0.4.50/download"],
+        strip_prefix = "wasm-bindgen-futures-0.4.50",
+        build_file = Label("//3rdparty/crates:BUILD.wasm-bindgen-futures-0.4.50.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "rrwbd__wasm-bindgen-macro-0.2.100",
         sha256 = "7fe63fc6d09ed3792bd0897b314f53de8e16568c2b3f7982f468c0bf9bd0b407",
         type = "tar.gz",
@@ -2178,6 +2222,26 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/wasm-bindgen-shared/0.2.100/download"],
         strip_prefix = "wasm-bindgen-shared-0.2.100",
         build_file = Label("//3rdparty/crates:BUILD.wasm-bindgen-shared-0.2.100.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "rrwbd__wasm-bindgen-test-0.3.50",
+        sha256 = "66c8d5e33ca3b6d9fa3b4676d774c5778031d27a578c2b007f905acf816152c3",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/wasm-bindgen-test/0.3.50/download"],
+        strip_prefix = "wasm-bindgen-test-0.3.50",
+        build_file = Label("//3rdparty/crates:BUILD.wasm-bindgen-test-0.3.50.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "rrwbd__wasm-bindgen-test-macro-0.3.50",
+        sha256 = "17d5042cc5fa009658f9a7333ef24291b1291a25b6382dd68862a7f3b969f69b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/wasm-bindgen-test-macro/0.3.50/download"],
+        strip_prefix = "wasm-bindgen-test-macro-0.3.50",
+        build_file = Label("//3rdparty/crates:BUILD.wasm-bindgen-test-macro-0.3.50.bazel"),
     )
 
     maybe(
@@ -2238,6 +2302,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/wasmprinter/0.214.0/download"],
         strip_prefix = "wasmprinter-0.214.0",
         build_file = Label("//3rdparty/crates:BUILD.wasmprinter-0.214.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "rrwbd__web-sys-0.3.77",
+        sha256 = "33b6dd2ef9186f1f2072e409e99cd22a975331a6b3591b12c764e0e55c60d5d2",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/web-sys/0.3.77/download"],
+        strip_prefix = "web-sys-0.3.77",
+        build_file = Label("//3rdparty/crates:BUILD.web-sys-0.3.77.bazel"),
     )
 
     maybe(
@@ -2499,12 +2573,14 @@ def crate_repositories():
         struct(repo = "rrwbd__serde-1.0.217", is_dev_dep = False),
         struct(repo = "rrwbd__serde_derive-1.0.217", is_dev_dep = False),
         struct(repo = "rrwbd__serde_json-1.0.135", is_dev_dep = False),
+        struct(repo = "rrwbd__shlex-1.3.0", is_dev_dep = False),
         struct(repo = "rrwbd__tempfile-3.15.0", is_dev_dep = False),
         struct(repo = "rrwbd__ureq-2.12.1", is_dev_dep = False),
         struct(repo = "rrwbd__walrus-0.23.3", is_dev_dep = False),
         struct(repo = "rrwbd__wasm-bindgen-0.2.100", is_dev_dep = False),
         struct(repo = "rrwbd__wasm-bindgen-cli-support-0.2.100", is_dev_dep = False),
         struct(repo = "rrwbd__wasm-bindgen-shared-0.2.100", is_dev_dep = False),
+        struct(repo = "rrwbd__wasm-bindgen-test-0.3.50", is_dev_dep = False),
         struct(repo = "rrwbd__assert_cmd-2.0.16", is_dev_dep = True),
         struct(repo = "rrwbd__diff-0.1.13", is_dev_dep = True),
         struct(repo = "rrwbd__predicates-3.1.3", is_dev_dep = True),
