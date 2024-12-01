@@ -27,7 +27,7 @@ pub fn generate_crate_info(
             "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
             rules_rust.as_ref()
         ))
-        .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs")
+        .arg("--output_groups=rust_analyzer_crate_spec,rust_analyzer_srcs")
         .args(targets)
         .output()?;
 
