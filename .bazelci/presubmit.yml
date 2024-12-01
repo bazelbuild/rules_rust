@@ -32,9 +32,20 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "-//test/unit/channel_transitions/..."
   - "-//test/unpretty/..."
 single_rust_channel_min_version_targets: &single_rust_channel_min_version_targets
-  <<: *single_rust_channel_targets
+  # START - Copied from 'single_rust_channel_targets'.
+  # TODO: Figure out how to do proper list inheritence.
+  - "--"
+  - "//..."
+  # TODO: Remove this and replace `cargo_bootstrap_repository` with a
+  # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
+  - "-//crate_universe/tools/cross_installer/..."
+  # These tests are expected to fail as they require both a nightly and stable toolchain.
+  - "-//test/unit/channel_transitions/..."
+  - "-//test/unpretty/..."
+  # END - Copied from 'single_rust_channel_targets'.
+  #
   # These tests exercise behavior only available versions of Rust >1.80
-  - "-//tests/unit/lint_flags/..."
+  - "-//test/unit/lint_flags/..."
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
