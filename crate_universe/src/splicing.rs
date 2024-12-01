@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
+use camino::{Utf8Path, Utf8PathBuf};
 use cargo_lock::package::SourceKind;
 use cargo_toml::Manifest;
 use serde::{Deserialize, Serialize};
@@ -33,10 +34,10 @@ pub(crate) struct SplicingManifest {
     pub(crate) direct_packages: DirectPackageManifest,
 
     /// A mapping of manifest paths to the labels representing them
-    pub(crate) manifests: BTreeMap<PathBuf, Label>,
+    pub(crate) manifests: BTreeMap<Utf8PathBuf, Label>,
 
     /// The path of a Cargo config file
-    pub(crate) cargo_config: Option<PathBuf>,
+    pub(crate) cargo_config: Option<Utf8PathBuf>,
 
     /// The Cargo resolver version to use for splicing
     pub(crate) resolver_version: cargo_toml::Resolver,
@@ -71,20 +72,20 @@ impl SplicingManifest {
             .into_iter()
             .map(|(path, label)| {
                 let resolved_path = path
-                    .to_string_lossy()
+                    .to_string()
                     .replace("${build_workspace_directory}", &workspace_dir_str)
                     .replace("${output_base}", &output_base_str);
-                (PathBuf::from(resolved_path), label)
+                (Utf8PathBuf::from(resolved_path), label)
             })
             .collect();
 
         // Ensure the cargo config is located at an absolute path
         let cargo_config = cargo_config.map(|path| {
             let resolved_path = path
-                .to_string_lossy()
+                .to_string()
                 .replace("${build_workspace_directory}", &workspace_dir_str)
                 .replace("${output_base}", &output_base_str);
-            PathBuf::from(resolved_path)
+            Utf8PathBuf::from(resolved_path)
         });
 
         Self {
@@ -125,17 +126,17 @@ impl TryFrom<SplicingManifest> for SplicingMetadata {
                 // workspace manifest is also included in the hash.
                 // See https://github.com/bazelbuild/rules_rust/issues/2016
                 let manifest_content = fs::read(&path)
-                    .with_context(|| format!("Failed to load manifest '{}'", path.display()))?;
+                    .with_context(|| format!("Failed to load manifest '{}'", path))?;
                 let manifest = cargo_toml::Manifest::from_slice(&manifest_content)
-                    .with_context(|| format!("Failed to parse manifest '{}'", path.display()))?;
+                    .with_context(|| format!("Failed to parse manifest '{}'", path))?;
                 Ok((label, manifest))
             })
             .collect::<Result<BTreeMap<Label, Manifest>>>()?;
 
         let cargo_config = match value.cargo_config {
             Some(path) => Some(
-                CargoConfig::try_from_path(&path)
-                    .with_context(|| format!("Failed to load cargo config '{}'", path.display()))?,
+                CargoConfig::try_from_path(path.as_std_path())
+                    .with_context(|| format!("Failed to load cargo config '{}'", path))?,
             ),
             None => None,
         };
@@ -206,7 +207,7 @@ impl TryFrom<serde_json::Value> for WorkspaceMetadata {
 impl WorkspaceMetadata {
     fn new(
         splicing_manifest: &SplicingManifest,
-        member_manifests: BTreeMap<&PathBuf, String>,
+        member_manifests: BTreeMap<&Utf8PathBuf, String>,
     ) -> Result<Self> {
         let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
@@ -257,8 +258,8 @@ impl WorkspaceMetadata {
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,
         resolver_data: TreeResolverMetadata,
-        input_manifest_path: &Path,
-        output_manifest_path: &Path,
+        input_manifest_path: &Utf8Path,
+        output_manifest_path: &Utf8Path,
     ) -> Result<()> {
         let mut manifest = read_manifest(input_manifest_path)?;
 
@@ -300,7 +301,7 @@ impl WorkspaceMetadata {
                 .join("config.toml");
 
             if config_path.exists() {
-                Some(CargoConfig::try_from_path(&config_path)?)
+                Some(CargoConfig::try_from_path(config_path.as_std_path())?)
             } else {
                 None
             }
@@ -395,7 +396,7 @@ impl WorkspaceMetadata {
         workspace_metaata.tree_metadata = resolver_data;
         workspace_metaata.inject_into(&mut manifest)?;
 
-        write_root_manifest(output_manifest_path, manifest)?;
+        write_root_manifest(output_manifest_path.as_std_path(), manifest)?;
 
         Ok(())
     }
@@ -424,13 +425,13 @@ impl WorkspaceMetadata {
 
 #[derive(Debug)]
 pub(crate) enum SplicedManifest {
-    Workspace(PathBuf),
-    Package(PathBuf),
-    MultiPackage(PathBuf),
+    Workspace(Utf8PathBuf),
+    Package(Utf8PathBuf),
+    MultiPackage(Utf8PathBuf),
 }
 
 impl SplicedManifest {
-    pub(crate) fn as_path_buf(&self) -> &PathBuf {
+    pub(crate) fn as_path_buf(&self) -> &Utf8PathBuf {
         match self {
             SplicedManifest::Workspace(p) => p,
             SplicedManifest::Package(p) => p,
@@ -439,8 +440,8 @@ impl SplicedManifest {
     }
 }
 
-pub(crate) fn read_manifest(manifest: &Path) -> Result<Manifest> {
-    let content = fs::read_to_string(manifest)?;
+pub(crate) fn read_manifest(manifest: &Utf8Path) -> Result<Manifest> {
+    let content = fs::read_to_string(manifest.as_std_path())?;
     cargo_toml::Manifest::from_str(content.as_str()).context("Failed to deserialize manifest")
 }
 
@@ -499,15 +500,15 @@ mod test {
             manifest.manifests,
             BTreeMap::from([
                 (
-                    PathBuf::from("${build_workspace_directory}/submod/Cargo.toml"),
+                    Utf8PathBuf::from("${build_workspace_directory}/submod/Cargo.toml"),
                     Label::from_str("//submod:Cargo.toml").unwrap()
                 ),
                 (
-                    PathBuf::from("${output_base}/external_crate/Cargo.toml"),
+                    Utf8PathBuf::from("${output_base}/external_crate/Cargo.toml"),
                     Label::from_str("@external_crate//:Cargo.toml").unwrap()
                 ),
                 (
-                    PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    Utf8PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
                     Label::from_str("//:Cargo.toml").unwrap()
                 ),
             ])
@@ -562,7 +563,9 @@ mod test {
         // Check cargo config
         assert_eq!(
             manifest.cargo_config,
-            Some(PathBuf::from("/tmp/abs/path/workspace/.cargo/config.toml"))
+            Some(Utf8PathBuf::from(
+                "/tmp/abs/path/workspace/.cargo/config.toml"
+            ))
         );
     }
 
@@ -578,7 +581,7 @@ mod test {
         let content = std::fs::read_to_string(path).unwrap();
 
         let mut manifest: SplicingManifest = serde_json::from_str(&content).unwrap();
-        manifest.cargo_config = Some(PathBuf::from(
+        manifest.cargo_config = Some(Utf8PathBuf::from(
             "${build_workspace_directory}/.cargo/config.toml",
         ));
         manifest = manifest.resolve(
@@ -591,15 +594,15 @@ mod test {
             manifest.manifests,
             BTreeMap::from([
                 (
-                    PathBuf::from("/tmp/abs/path/workspace/submod/Cargo.toml"),
+                    Utf8PathBuf::from("/tmp/abs/path/workspace/submod/Cargo.toml"),
                     Label::from_str("//submod:Cargo.toml").unwrap()
                 ),
                 (
-                    PathBuf::from("/tmp/output_base/external_crate/Cargo.toml"),
+                    Utf8PathBuf::from("/tmp/output_base/external_crate/Cargo.toml"),
                     Label::from_str("@external_crate//:Cargo.toml").unwrap()
                 ),
                 (
-                    PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    Utf8PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
                     Label::from_str("//:Cargo.toml").unwrap()
                 ),
             ])
@@ -635,15 +638,15 @@ mod test {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([
                 (
-                    workspace_manifest_path,
+                    Utf8PathBuf::try_from(workspace_manifest_path).unwrap(),
                     Label::from_str("//:Cargo.toml").unwrap(),
                 ),
                 (
-                    child_a_manifest_path,
+                    Utf8PathBuf::try_from(child_a_manifest_path).unwrap(),
                     Label::from_str("//child_a:Cargo.toml").unwrap(),
                 ),
                 (
-                    child_b_manifest_path,
+                    Utf8PathBuf::try_from(child_b_manifest_path).unwrap(),
                     Label::from_str("//child_b:Cargo.toml").unwrap(),
                 ),
             ]),

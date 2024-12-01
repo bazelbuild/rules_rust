@@ -130,16 +130,18 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         .resolve(&opt.workspace_dir, &output_base);
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
+    let temp_dir_path = Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
+        .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path));
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(PathBuf::from(temp_dir.as_ref()), splicing_manifest)
-        .context("Failed to create splicer")?;
+    let splicer =
+        Splicer::new(temp_dir_path, splicing_manifest).context("Failed to create splicer")?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(&cargo)
+        .splice_workspace(opt.nonhermetic_root_bazel_workspace_dir.as_std_path())
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile

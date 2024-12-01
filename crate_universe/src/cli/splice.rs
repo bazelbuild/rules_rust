@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
+use camino::Utf8PathBuf;
 use clap::Parser;
 
 use crate::cli::Result;
@@ -31,7 +32,7 @@ pub struct SpliceOptions {
     /// The directory in which to build the workspace. If this argument is not
     /// passed, a temporary directory will be generated.
     #[clap(long)]
-    pub workspace_dir: Option<PathBuf>,
+    pub workspace_dir: Option<Utf8PathBuf>,
 
     /// The location where the results of splicing are written.
     #[clap(long)]
@@ -56,6 +57,9 @@ pub struct SpliceOptions {
     /// The path to a rustc binary for use with Cargo
     #[clap(long, env = "RUSTC")]
     pub rustc: PathBuf,
+
+    #[clap(long)]
+    pub nonhermetic_root_bazel_workspace_dir: PathBuf,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -70,7 +74,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         Some(dir) => dir.clone(),
         None => {
             temp_dir = tempfile::tempdir().context("Failed to generate temporary directory")?;
-            temp_dir.as_ref().to_path_buf()
+            Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
+                .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path))
         }
     };
 
@@ -81,7 +86,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(&cargo)
+        .splice_workspace(&opt.nonhermetic_root_bazel_workspace_dir)
         .context("Failed to splice workspace")?;
 
     // Generate a lockfile
@@ -126,7 +131,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .with_context(|| {
             format!(
                 "The path {} is expected to have a parent directory",
-                manifest_path.as_path_buf().display()
+                manifest_path.as_path_buf()
             )
         })?
         .join("Cargo.lock");

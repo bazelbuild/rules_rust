@@ -149,6 +149,8 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         rustc,
         "--cargo-lockfile",
         cargo_lockfile,
+        "--nonhermetic-root-bazel-workspace-dir",
+        repository_ctx.workspace_root,
     ]
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory

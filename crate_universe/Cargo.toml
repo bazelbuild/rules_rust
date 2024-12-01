@@ -1,6 +1,46 @@
 [workspace]
 members = ["tools/cross_installer", "tools/urls_generator"]
-exclude = ["test_data"]
+exclude = [
+    "test_data/metadata/abspath",
+    "test_data/metadata/aliases",
+    "test_data/metadata/build_scripts",
+    "test_data/metadata/common",
+    "test_data/metadata/crate_combined_features",
+    "test_data/metadata/crate_optional_deps_disabled",
+    "test_data/metadata/crate_optional_deps_disabled_build_dep_enabled",
+    "test_data/metadata/crate_optional_deps_enabled",
+    "test_data/metadata/crate_renamed_optional_deps_disabled",
+    "test_data/metadata/crate_renamed_optional_deps_enabled",
+    "test_data/metadata/crate_types",
+    "test_data/metadata/example_proc_macro_dep",
+    "test_data/metadata/git_repos",
+    "test_data/metadata/has_package_metadata",
+    "test_data/metadata/host_specific_build_deps",
+    "test_data/metadata/multi_cfg_dep",
+    "test_data/metadata/multi_kind_proc_macro_dep",
+    "test_data/metadata/nested_build_dependencies",
+    "test_data/metadata/no_deps",
+    "test_data/metadata/resolver_2_deps",
+    "test_data/metadata/target_cfg_features",
+    "test_data/metadata/target_features",
+    "test_data/metadata/tree_data",
+    "test_data/metadata/workspace",
+    "test_data/metadata/workspace/child",
+    "test_data/metadata/workspace_path",
+    "test_data/metadata/workspace_path/child_a",
+    "test_data/metadata/workspace_path/child_b",
+    "test_data/test_data_passing_crate",
+    "test_data/workspace_examples/non-ws",
+    "test_data/workspace_examples/ws1",
+    "test_data/workspace_examples/ws1/ws1c1",
+    "test_data/workspace_examples/ws1/ws1c1/ws1c1c1",
+    "test_data/workspace_examples/ws1/ws1c2",
+    "test_data/workspace_examples/ws2",
+    "test_data/workspace_examples/ws2/ws2c1",
+    "test_data/workspace_examples/ws2/ws2excluded",
+    "test_data/workspace_examples/ws2/ws2excluded/ws2excluded2",
+    "test_data/workspace_examples/ws2/ws2excluded/ws2included",
+]
 
 [package]
 name = "cargo-bazel"

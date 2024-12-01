@@ -112,6 +112,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         ),
     )
 
+    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+
     splicing_output_dir = tag_path.get_child("splicing-output")
     splice_args = [
         "splice",
@@ -121,6 +123,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         config_file,
         "--splicing-manifest",
         splicing_manifest,
+        "--nonhermetic-root-bazel-workspace-dir",
+        nonhermetic_root_bazel_workspace_dir,
     ]
     if cargo_lockfile:
         splice_args.extend([
@@ -153,7 +157,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         "--lockfile",
         lockfile_path,
         "--nonhermetic-root-bazel-workspace-dir",
-        module_ctx.path(Label("@@//:MODULE.bazel")).dirname,
+        nonhermetic_root_bazel_workspace_dir,
         "--paths-to-track",
         paths_to_track_file,
         "--warnings-output-path",

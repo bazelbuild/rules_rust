@@ -12,6 +12,12 @@ elif [[ "$#" -eq 1 ]]; then
     path_dep_path="$1"
     copy_to="crates_from_workspace/$1"
     mkdir -p "${copy_to}"
+    sed_i=(sed -i)
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed_i=(sed -i '')
+    fi
+    "${sed_i[@]}" -e 's#manifests = \["//crates_from_workspace:Cargo\.toml"\],#manifests = ["//crates_from_workspace:Cargo.toml", "//crates_from_workspace:'"$1"'/Cargo.toml"],#g' WORKSPACE.bazel
+    "${sed_i[@]}" -e 's#manifests = \["//crates_from_workspace:Cargo\.toml"\],#manifests = ["//crates_from_workspace:Cargo.toml", "//crates_from_workspace:'"$1"'/Cargo.toml"],#g' MODULE.bazel
 else
     echo >&2 "Usage: $0 [/path/to/copy/to]"
     echo >&2 "If no arg is passed, a tempdir will be created"

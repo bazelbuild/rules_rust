@@ -28,6 +28,7 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/metadata/cargo_tree_rustc_wrapper.sh"),
     Label("//crate_universe:src/metadata/dependency.rs"),
     Label("//crate_universe:src/metadata/metadata_annotation.rs"),
+    Label("//crate_universe:src/metadata/workspace_discoverer.rs"),
     Label("//crate_universe:src/rendering.rs"),
     Label("//crate_universe:src/rendering/template_engine.rs"),
     Label("//crate_universe:src/rendering/templates/module_bzl.j2"),
