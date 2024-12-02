@@ -31,7 +31,7 @@ mod tests {
         let project: Project =
             serde_json::from_str(&content).expect("Failed to deserialize project JSON");
 
-        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/bazel
+        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/_bazel
         let output_base = project
             .sysroot_src
             .rsplitn(2, "/external/")
