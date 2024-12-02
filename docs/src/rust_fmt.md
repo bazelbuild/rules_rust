@@ -43,7 +43,7 @@ The `rustfmt_aspect` also uses a `--@rules_rust//rust/settings:rustfmt.toml` set
 file is used whenever `rustfmt` is run:
 
 ```text
-build --@rules_rust//rust/settings:rustfmt.toml=//rust/settings:rustfmt.toml
+build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 ```
 
 ### Tips
@@ -132,3 +132,5 @@ generated source files are also ignored by this aspect.
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rustfmt_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+
+

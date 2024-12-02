@@ -718,3 +718,5 @@ rust_test_suite(
 | <a id="rust_test_suite-srcs"></a>srcs |  All test sources, typically `glob(["tests/**/*.rs"])`.   |  none |
 | <a id="rust_test_suite-shared_srcs"></a>shared_srcs |  Optional argument for sources shared among tests, typically helper functions.   |  `[]` |
 | <a id="rust_test_suite-kwargs"></a>kwargs |  Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The `tags` argument is also passed to the generated `test_suite` target.   |  none |
+
+
