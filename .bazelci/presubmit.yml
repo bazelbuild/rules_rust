@@ -552,12 +552,12 @@ tasks:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
@@ -568,10 +568,10 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004

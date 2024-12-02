@@ -2155,7 +2155,7 @@ def _error_format_impl(ctx):
 error_format = rule(
     doc = (
         "Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values."
+        "flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values."
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
@@ -2176,7 +2176,7 @@ def _rustc_output_diagnostics_impl(ctx):
 
 rustc_output_diagnostics = rule(
     doc = (
-        "Setting this flag from the command line with `--@rules_rust//:rustc_output_diagnostics` " +
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
         "These are accessible via the " +
         "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
@@ -2191,11 +2191,11 @@ def _extra_rustc_flags_impl(ctx):
 
 extra_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
+        "Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
         "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
-        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
+        "use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
@@ -2206,7 +2206,7 @@ def _extra_rustc_flag_impl(ctx):
 
 extra_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. " +
+        "Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _extra_rustc_flag_impl,
@@ -2218,7 +2218,7 @@ def _extra_exec_rustc_flags_impl(ctx):
 
 extra_exec_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flags`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. " +
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
@@ -2231,7 +2231,7 @@ def _extra_exec_rustc_flag_impl(ctx):
 
 extra_exec_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flag`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
@@ -2243,7 +2243,7 @@ def _per_crate_rustc_flag_impl(ctx):
 
 per_crate_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//:experimental_per_crate_rustc_flag`. " +
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`. " +
         "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
         "The label matching uses the canonical form of the label (i.e //package:label_name)." +
         "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
@@ -2265,7 +2265,7 @@ no_std = rule(
         "No std; we need this so that we can distinguish between host and exec"
     ),
     attrs = {
-        "_no_std": attr.label(default = "//:no_std"),
+        "_no_std": attr.label(default = "//rust/settings:no_std"),
     },
     implementation = _no_std_impl,
 )

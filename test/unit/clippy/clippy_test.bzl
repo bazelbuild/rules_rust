@@ -94,8 +94,8 @@ test_clippy_aspect_action_has_warnings_flag_test = make_clippy_aspect_unittest(_
 clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(
     _clippy_aspect_with_explicit_flags_test_impl,
     config_settings = {
-        str(Label("//:clippy_flag")): _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
-        str(Label("//:clippy_flags")): _CLIPPY_EXPLICIT_FLAGS,
+        str(Label("//rust/settings:clippy_flag")): _CLIPPY_INDIVIDUALLY_ADDED_EXPLICIT_FLAGS,
+        str(Label("//rust/settings:clippy_flags")): _CLIPPY_EXPLICIT_FLAGS,
     },
 )
 

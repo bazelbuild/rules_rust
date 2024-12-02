@@ -14,7 +14,7 @@ rust_shared_library(
         "no_std.rs",
     ],
     crate_features = select({
-        "@rules_rust//:is_no_std": [],
+        "@rules_rust//rust/settings:is_no_std": [],
         "//conditions:default": ["std"],
     }),
     edition = "2021",

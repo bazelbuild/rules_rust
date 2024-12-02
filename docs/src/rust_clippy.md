@@ -34,7 +34,7 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 `clippy.toml`. Using a custom config file requires Rust 1.34.0 or newer.
 
 ```text
-build --@rules_rust//:clippy.toml=//:clippy.toml
+build --@rules_rust//rust/settings:clippy.toml=//rust/settings:clippy.toml
 ```
 
 <a id="rust_clippy"></a>
@@ -135,5 +135,3 @@ $ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect           
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_clippy_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-
-

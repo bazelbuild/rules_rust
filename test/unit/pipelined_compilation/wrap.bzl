@@ -88,7 +88,7 @@ wrap = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),

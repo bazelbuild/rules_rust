@@ -88,7 +88,7 @@ A rule for generating variables for dependent `cargo_build_script`s without a bu
 error_format(<a href="#error_format-name">name</a>)
 </pre>
 
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
+Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values.
 
 **ATTRIBUTES**
 
@@ -106,7 +106,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 extra_rustc_flag(<a href="#extra_rustc_flag-name">name</a>)
 </pre>
 
-Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
+Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
 
 **ATTRIBUTES**
 
@@ -124,7 +124,7 @@ Add additional rustc_flag from the command line with `--@rules_rust//:extra_rust
 extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
 </pre>
 
-Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration.
+Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration.
 
 **ATTRIBUTES**
 
@@ -1669,7 +1669,7 @@ Output Groups:
 
 - `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
-The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
+The build setting `@rules_rust//rust/settings:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
 used at runtime.
 
 [cs]: https://rust-lang.github.io/rustfmt/
@@ -1786,5 +1786,3 @@ A given instance of this rule should be accompanied by a toolchain_repository_pr
 | <a id="rust_toolchain_tools_repository-target_triple"></a>target_triple |  The Rust-style target that this compiler builds for.   | String | required |  |
 | <a id="rust_toolchain_tools_repository-urls"></a>urls |  A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).   | List of strings | optional |  `["https://static.rust-lang.org/dist/{}.tar.xz"]`  |
 | <a id="rust_toolchain_tools_repository-version"></a>version |  The version of the tool among "nightly", "beta", or an exact version.   | String | required |  |
-
-

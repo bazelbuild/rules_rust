@@ -892,7 +892,7 @@ rust_toolchain = rule(
             doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
         ),
         "_no_std": attr.label(
-            default = Label("//:no_std"),
+            default = Label("//rust/settings:no_std"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

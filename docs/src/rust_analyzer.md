@@ -85,7 +85,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 
 Add the following to your bazelrc:
 ```
-build --@rules_rust//:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
+build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 ```
 
 Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer) that automatically collects the outputs whenever you recompile.
@@ -141,5 +141,3 @@ Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.js
 | Name  | Description | Type | Mandatory | Default |
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="rust_analyzer_aspect-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-
-
