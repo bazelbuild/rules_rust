@@ -74,6 +74,7 @@ pub fn write_rust_project(
 
     rust_project::write_rust_project(
         rust_project_path.as_ref(),
+        workspace.as_ref(),
         execution_root.as_ref(),
         output_base.as_ref(),
         &rust_project,

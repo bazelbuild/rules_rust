@@ -187,6 +187,9 @@ rust_analyzer_aspect = aspect(
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
 )
 
+# Paths in the generated JSON file begin with one of these placeholders.
+# The gen_rust_project driver will replace them with absolute paths.
+_WORKSPACE_TEMPLATE = "__WORKSPACE__/"
 _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
 
@@ -222,7 +225,7 @@ def _create_single_crate(ctx, attrs, info):
     # TODO: Some folks may want to override this for vendored dependencies.
     is_external = info.crate.root.path.startswith("external/")
     is_generated = not info.crate.root.is_source
-    path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else ""
+    path_prefix = _EXEC_ROOT_TEMPLATE if is_external or is_generated else _WORKSPACE_TEMPLATE
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
     crate["source"] = {"exclude_dirs": [], "include_dirs": []}
@@ -231,7 +234,7 @@ def _create_single_crate(ctx, attrs, info):
         srcs = getattr(ctx.rule.files, "srcs", [])
         src_map = {src.short_path: src for src in srcs if src.is_source}
         if info.crate.root.short_path in src_map:
-            crate["root_module"] = src_map[info.crate.root.short_path].path
+            crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
             crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
 
     if info.build_info != None and info.build_info.out_dir != None:
@@ -263,7 +266,8 @@ def _create_single_crate(ctx, attrs, info):
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
     crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases.items()}
     crate["cfg"] = info.cfgs
-    crate["target"] = find_toolchain(ctx).target_flag_value
+    toolchain = find_toolchain(ctx)
+    crate["target"] = (_EXEC_ROOT_TEMPLATE + toolchain.target_json.path) if toolchain.target_json else toolchain.target_flag_value
     if info.proc_macro_dylib_path != None:
         crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib_path
     return crate
@@ -315,6 +319,8 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     sysroot_src = rustc_srcs.label.package + "/library"
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
+    else:
+        sysroot_src = _WORKSPACE_TEMPLATE + sysroot_src
 
     rustc = rust_analyzer_toolchain.rustc
     sysroot_dir, _, bin_dir = rustc.dirname.rpartition("/")
@@ -323,10 +329,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
             rustc.path,
         ))
 
-    sysroot = "{}/{}".format(
-        _OUTPUT_BASE_TEMPLATE,
-        sysroot_dir,
-    )
+    sysroot = _OUTPUT_BASE_TEMPLATE + sysroot_dir
 
     toolchain_info = {
         "sysroot": sysroot,
