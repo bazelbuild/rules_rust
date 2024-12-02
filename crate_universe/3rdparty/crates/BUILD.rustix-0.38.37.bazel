@@ -75,9 +75,6 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-unknown-unknown": {
             "@cui__errno-0.3.9//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-unknown-unknown
         },
-        "@rules_rust//rust/platform:wasm32-wasi": {
-            "@cui__errno-0.3.9//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-wasi
-        },
         "@rules_rust//rust/platform:wasm32-wasip1": {
             "@cui__errno-0.3.9//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-wasip1
         },
@@ -207,10 +204,6 @@ rust_library(
             "termios",  # s390x-unknown-linux-gnu
             "use-libc-auxv",  # s390x-unknown-linux-gnu
         ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
-            "default",  # wasm32-wasi
-            "use-libc-auxv",  # wasm32-wasi
-        ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "default",  # wasm32-wasip1
             "use-libc-auxv",  # wasm32-wasip1
@@ -289,7 +282,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -402,10 +394,6 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
             "@cui__errno-0.3.9//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-unknown-unknown
             "@cui__libc-0.2.161//:libc",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-unknown-unknown
-        ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
-            "@cui__errno-0.3.9//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-wasi
-            "@cui__libc-0.2.161//:libc",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-wasi
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "@cui__errno-0.3.9//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), wasm32-wasip1
@@ -559,10 +547,6 @@ cargo_build_script(
             "default",  # s390x-unknown-linux-gnu
             "termios",  # s390x-unknown-linux-gnu
             "use-libc-auxv",  # s390x-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
-            "default",  # wasm32-wasi
-            "use-libc-auxv",  # wasm32-wasi
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "default",  # wasm32-wasip1

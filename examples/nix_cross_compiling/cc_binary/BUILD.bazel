@@ -38,7 +38,7 @@ platform_transition_binary(
 platform_transition_binary(
     name = "cc_binary_wasm32-wasi",
     binary = ":cc_binary",
-    target_platform = "//bazel/platforms:wasm32-wasi",
+    target_platform = "//bazel/platforms:wasm32-wasip1",
 )
 
 # platform_transition_binary(

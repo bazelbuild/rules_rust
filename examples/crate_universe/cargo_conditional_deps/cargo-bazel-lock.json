@@ -1,5 +1,5 @@
 {
-  "checksum": "59be2ecd05a76e24ac796ef59c99aa8df9951f6f5a9e7985ae284c673013baa0",
+  "checksum": "2c38f2ac1146dce63a5309182f840cfcbda62249837fb70277a9becdcee1b82f",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -584,9 +584,6 @@
     ],
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
-    ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
     ],
     "wasm32-wasip1": [
       "wasm32-wasip1"

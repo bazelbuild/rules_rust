@@ -963,7 +963,7 @@ mod test {
             TargetTriple::from_bazel("powerpc-unknown-linux-gnu".to_owned()),
             TargetTriple::from_bazel("s390x-unknown-linux-gnu".to_owned()),
             TargetTriple::from_bazel("wasm32-unknown-unknown".to_owned()),
-            TargetTriple::from_bazel("wasm32-wasi".to_owned()),
+            TargetTriple::from_bazel("wasm32-wasip1".to_owned()),
             TargetTriple::from_bazel("x86_64-apple-darwin".to_owned()),
             TargetTriple::from_bazel("x86_64-apple-ios".to_owned()),
             TargetTriple::from_bazel("x86_64-linux-android".to_owned()),

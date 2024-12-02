@@ -59,7 +59,6 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
-    "wasm32-wasi": _support(std = True, host_tools = False),
     "wasm32-wasip1": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
@@ -396,7 +395,7 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple == "wasm32-wasi":
+    if target_triple in "wasm32-wasi":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",

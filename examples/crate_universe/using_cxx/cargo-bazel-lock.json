@@ -1,5 +1,5 @@
 {
-  "checksum": "f56264a830f95c58f95f6b381314a888926dd242ec2abf41fd6d2434eb712fab",
+  "checksum": "038f92a2c507806758ff479932973b98e70dd7ca6e15552ef5add8181bffe5b3",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -772,9 +772,6 @@
     ],
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
-    ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
     ],
     "wasm32-wasip1": [
       "wasm32-wasip1"

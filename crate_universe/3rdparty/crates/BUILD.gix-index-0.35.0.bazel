@@ -65,7 +65,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -184,10 +183,6 @@ rust_library(
             "@cui__rustix-0.38.37//:rustix",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@cui__libc-0.2.161//:libc",  # cfg(not(windows))
-            "@cui__rustix-0.38.37//:rustix",  # cfg(not(windows))
-        ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
             "@cui__libc-0.2.161//:libc",  # cfg(not(windows))
             "@cui__rustix-0.38.37//:rustix",  # cfg(not(windows))
         ],

@@ -65,7 +65,6 @@ rust_proc_macro(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -80,8 +79,8 @@ rust_proc_macro(
     }),
     version = "0.1.83",
     deps = [
-        "@crates_vendor_pkgs__proc-macro2-1.0.89//:proc_macro2",
+        "@crates_vendor_pkgs__proc-macro2-1.0.92//:proc_macro2",
         "@crates_vendor_pkgs__quote-1.0.37//:quote",
-        "@crates_vendor_pkgs__syn-2.0.85//:syn",
+        "@crates_vendor_pkgs__syn-2.0.89//:syn",
     ],
 )

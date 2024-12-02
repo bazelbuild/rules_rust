@@ -65,7 +65,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -81,9 +80,9 @@ rust_library(
     version = "0.4.4",
     deps = [
         "@cvm__async-stream-0.3.6//:async_stream",
-        "@cvm__bytes-1.8.0//:bytes",
+        "@cvm__bytes-1.9.0//:bytes",
         "@cvm__futures-core-0.3.31//:futures_core",
-        "@cvm__tokio-1.41.0//:tokio",
+        "@cvm__tokio-1.41.1//:tokio",
         "@cvm__tokio-stream-0.1.16//:tokio_stream",
     ],
 )

@@ -1,5 +1,5 @@
 {
-  "checksum": "481fd0b233da84d05be76eab0348aed71d77a697b3b5601bb66c73021dc3486d",
+  "checksum": "0463d554fa79618afcc05ee52f2009b9eb4e7db5474282c8e5d0f1fb37da4764",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -2383,7 +2383,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "wasm32-unknown-unknown",
-      "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
@@ -2394,7 +2394,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "wasm32-unknown-unknown",
-      "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
@@ -2402,7 +2402,7 @@
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasip1"
     ],
     "cfg(tokio_taskdump)": [],
     "cfg(unix)": [
@@ -2420,8 +2420,8 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

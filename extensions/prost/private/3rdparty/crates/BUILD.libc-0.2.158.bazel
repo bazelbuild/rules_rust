@@ -69,9 +69,6 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "extra_traits",  # s390x-unknown-linux-gnu
         ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
-            "extra_traits",  # wasm32-wasi
-        ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "extra_traits",  # wasm32-wasip1
         ],
@@ -129,7 +126,6 @@ rust_library(
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-        "@rules_rust//rust/platform:wasm32-wasi": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
@@ -206,9 +202,6 @@ cargo_build_script(
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "extra_traits",  # s390x-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:wasm32-wasi": [
-            "extra_traits",  # wasm32-wasi
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "extra_traits",  # wasm32-wasip1

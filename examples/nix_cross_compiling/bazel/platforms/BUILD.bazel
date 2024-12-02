@@ -49,7 +49,7 @@ platform(
 )
 
 platform(
-    name = "wasm32-wasi",
+    name = "wasm32-wasip1",
     constraint_values = [
         "@platforms//cpu:wasm32",
         "@platforms//os:wasi",

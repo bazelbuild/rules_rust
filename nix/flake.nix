@@ -1,6 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # Avoid need for https://github.com/nix-community/fenix/pull/180
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs?rev=614462224f836ca340aed96b86799ad09b4c2298";
+    };
 
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -15,7 +18,7 @@
           {
             packages = [
               pkgs.bazel-buildtools
-              pkgs.bazel_6
+              pkgs.bazel_7
               pkgs.cargo
               pkgs.rustc
               pkgs.rustfmt
