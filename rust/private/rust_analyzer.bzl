@@ -150,16 +150,16 @@ def _rust_analyzer_aspect_impl(target, ctx):
     # Exposed as an output group so they can be generated if needed.
     # Direct-dependencies only trades accuracy for speed - re-evaluate?
     required_srcs = depset(
-      transitive = [crate_info.srcs] + [dep.crate.srcs for dep in dep_infos],
-      # target.json is also required (in fact rust-analyzer may crash if it's missing)
-      direct = [toolchain.target_json for toolchain in [toolchain] if toolchain.target_json],
+        transitive = [crate_info.srcs] + [dep.crate.srcs for dep in dep_infos],
+        # target.json is also required (in fact rust-analyzer may crash if it's missing)
+        direct = [toolchain.target_json for toolchain in [toolchain] if toolchain.target_json],
     )
 
     return [
         rust_analyzer_info,
         OutputGroupInfo(
-          rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
-          rust_analyzer_srcs = required_srcs,
+            rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
+            rust_analyzer_srcs = required_srcs,
         ),
     ]
 
