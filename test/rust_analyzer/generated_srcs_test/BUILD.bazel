@@ -37,5 +37,5 @@ rust_test(
     deps = [
         "@rules_rust//test/3rdparty/crates:serde",
         "@rules_rust//test/3rdparty/crates:serde_json",
-    ]
+    ],
 )
