@@ -177,7 +177,7 @@ str: The name of a registerable rust_analyzer_toolchain.
 rust_register_toolchains(<a href="#rust_register_toolchains-dev_components">dev_components</a>, <a href="#rust_register_toolchains-edition">edition</a>, <a href="#rust_register_toolchains-allocator_library">allocator_library</a>, <a href="#rust_register_toolchains-global_allocator_library">global_allocator_library</a>,
                          <a href="#rust_register_toolchains-register_toolchains">register_toolchains</a>, <a href="#rust_register_toolchains-rustfmt_version">rustfmt_version</a>, <a href="#rust_register_toolchains-rust_analyzer_version">rust_analyzer_version</a>, <a href="#rust_register_toolchains-sha256s">sha256s</a>,
                          <a href="#rust_register_toolchains-extra_target_triples">extra_target_triples</a>, <a href="#rust_register_toolchains-extra_rustc_flags">extra_rustc_flags</a>, <a href="#rust_register_toolchains-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="#rust_register_toolchains-urls">urls</a>,
-                         <a href="#rust_register_toolchains-versions">versions</a>, <a href="#rust_register_toolchains-aliases">aliases</a>, <a href="#rust_register_toolchains-hub_name">hub_name</a>)
+                         <a href="#rust_register_toolchains-versions">versions</a>, <a href="#rust_register_toolchains-aliases">aliases</a>, <a href="#rust_register_toolchains-hub_name">hub_name</a>, <a href="#rust_register_toolchains-compact_windows_names">compact_windows_names</a>)
 </pre>
 
 Emits a default set of toolchains for Linux, MacOS, and Freebsd
@@ -217,6 +217,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-versions"></a>versions |  A list of toolchain versions to download. This parameter only accepts one versions per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.   |  `["1.83.0", "nightly/2024-11-28"]` |
 | <a id="rust_register_toolchains-aliases"></a>aliases |  A mapping of "full" repository name to another name to use instead.   |  `{}` |
 | <a id="rust_register_toolchains-hub_name"></a>hub_name |  The name of the bzlmod hub repository for toolchains.   |  `None` |
+| <a id="rust_register_toolchains-compact_windows_names"></a>compact_windows_names |  Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.   |  `True` |
 
 
 <a id="rust_repositories"></a>
@@ -246,7 +247,7 @@ rust_repository_set(<a href="#rust_repository_set-name">name</a>, <a href="#rust
                     <a href="#rust_repository_set-global_allocator_library">global_allocator_library</a>, <a href="#rust_repository_set-extra_target_triples">extra_target_triples</a>, <a href="#rust_repository_set-rustfmt_version">rustfmt_version</a>, <a href="#rust_repository_set-edition">edition</a>,
                     <a href="#rust_repository_set-dev_components">dev_components</a>, <a href="#rust_repository_set-extra_rustc_flags">extra_rustc_flags</a>, <a href="#rust_repository_set-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="#rust_repository_set-opt_level">opt_level</a>, <a href="#rust_repository_set-sha256s">sha256s</a>,
                     <a href="#rust_repository_set-urls">urls</a>, <a href="#rust_repository_set-auth">auth</a>, <a href="#rust_repository_set-netrc">netrc</a>, <a href="#rust_repository_set-auth_patterns">auth_patterns</a>, <a href="#rust_repository_set-register_toolchain">register_toolchain</a>, <a href="#rust_repository_set-exec_compatible_with">exec_compatible_with</a>,
-                    <a href="#rust_repository_set-default_target_compatible_with">default_target_compatible_with</a>, <a href="#rust_repository_set-aliases">aliases</a>)
+                    <a href="#rust_repository_set-default_target_compatible_with">default_target_compatible_with</a>, <a href="#rust_repository_set-aliases">aliases</a>, <a href="#rust_repository_set-compact_windows_names">compact_windows_names</a>)
 </pre>
 
 Assembles a remote repository for the given toolchain params, produces a proxy repository     to contain the toolchain declaration, and registers the toolchains.
@@ -278,6 +279,7 @@ Assembles a remote repository for the given toolchain params, produces a proxy r
 | <a id="rust_repository_set-exec_compatible_with"></a>exec_compatible_with |  A list of constraints for the execution platform for this toolchain.   |  `None` |
 | <a id="rust_repository_set-default_target_compatible_with"></a>default_target_compatible_with |  A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.   |  `None` |
 | <a id="rust_repository_set-aliases"></a>aliases |  Replacement names to use for toolchains created by this macro.   |  `{}` |
+| <a id="rust_repository_set-compact_windows_names"></a>compact_windows_names |  Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.   |  `True` |
 
 
 <a id="rust_toolchain_repository"></a>

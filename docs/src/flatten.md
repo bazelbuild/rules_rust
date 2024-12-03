@@ -1362,7 +1362,7 @@ str: The name of a registerable rust_analyzer_toolchain.
 rust_register_toolchains(<a href="#rust_register_toolchains-dev_components">dev_components</a>, <a href="#rust_register_toolchains-edition">edition</a>, <a href="#rust_register_toolchains-allocator_library">allocator_library</a>, <a href="#rust_register_toolchains-global_allocator_library">global_allocator_library</a>,
                          <a href="#rust_register_toolchains-register_toolchains">register_toolchains</a>, <a href="#rust_register_toolchains-rustfmt_version">rustfmt_version</a>, <a href="#rust_register_toolchains-rust_analyzer_version">rust_analyzer_version</a>, <a href="#rust_register_toolchains-sha256s">sha256s</a>,
                          <a href="#rust_register_toolchains-extra_target_triples">extra_target_triples</a>, <a href="#rust_register_toolchains-extra_rustc_flags">extra_rustc_flags</a>, <a href="#rust_register_toolchains-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="#rust_register_toolchains-urls">urls</a>,
-                         <a href="#rust_register_toolchains-versions">versions</a>, <a href="#rust_register_toolchains-aliases">aliases</a>, <a href="#rust_register_toolchains-hub_name">hub_name</a>)
+                         <a href="#rust_register_toolchains-versions">versions</a>, <a href="#rust_register_toolchains-aliases">aliases</a>, <a href="#rust_register_toolchains-hub_name">hub_name</a>, <a href="#rust_register_toolchains-compact_windows_names">compact_windows_names</a>)
 </pre>
 
 Emits a default set of toolchains for Linux, MacOS, and Freebsd
@@ -1402,6 +1402,7 @@ See `load_arbitrary_tool` in `@rules_rust//rust:repositories.bzl` for more detai
 | <a id="rust_register_toolchains-versions"></a>versions |  A list of toolchain versions to download. This parameter only accepts one versions per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.   |  `["1.83.0", "nightly/2024-11-28"]` |
 | <a id="rust_register_toolchains-aliases"></a>aliases |  A mapping of "full" repository name to another name to use instead.   |  `{}` |
 | <a id="rust_register_toolchains-hub_name"></a>hub_name |  The name of the bzlmod hub repository for toolchains.   |  `None` |
+| <a id="rust_register_toolchains-compact_windows_names"></a>compact_windows_names |  Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.   |  `True` |
 
 
 <a id="rust_repositories"></a>
@@ -1431,7 +1432,7 @@ rust_repository_set(<a href="#rust_repository_set-name">name</a>, <a href="#rust
                     <a href="#rust_repository_set-global_allocator_library">global_allocator_library</a>, <a href="#rust_repository_set-extra_target_triples">extra_target_triples</a>, <a href="#rust_repository_set-rustfmt_version">rustfmt_version</a>, <a href="#rust_repository_set-edition">edition</a>,
                     <a href="#rust_repository_set-dev_components">dev_components</a>, <a href="#rust_repository_set-extra_rustc_flags">extra_rustc_flags</a>, <a href="#rust_repository_set-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="#rust_repository_set-opt_level">opt_level</a>, <a href="#rust_repository_set-sha256s">sha256s</a>,
                     <a href="#rust_repository_set-urls">urls</a>, <a href="#rust_repository_set-auth">auth</a>, <a href="#rust_repository_set-netrc">netrc</a>, <a href="#rust_repository_set-auth_patterns">auth_patterns</a>, <a href="#rust_repository_set-register_toolchain">register_toolchain</a>, <a href="#rust_repository_set-exec_compatible_with">exec_compatible_with</a>,
-                    <a href="#rust_repository_set-default_target_compatible_with">default_target_compatible_with</a>, <a href="#rust_repository_set-aliases">aliases</a>)
+                    <a href="#rust_repository_set-default_target_compatible_with">default_target_compatible_with</a>, <a href="#rust_repository_set-aliases">aliases</a>, <a href="#rust_repository_set-compact_windows_names">compact_windows_names</a>)
 </pre>
 
 Assembles a remote repository for the given toolchain params, produces a proxy repository     to contain the toolchain declaration, and registers the toolchains.
@@ -1463,6 +1464,7 @@ Assembles a remote repository for the given toolchain params, produces a proxy r
 | <a id="rust_repository_set-exec_compatible_with"></a>exec_compatible_with |  A list of constraints for the execution platform for this toolchain.   |  `None` |
 | <a id="rust_repository_set-default_target_compatible_with"></a>default_target_compatible_with |  A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.   |  `None` |
 | <a id="rust_repository_set-aliases"></a>aliases |  Replacement names to use for toolchains created by this macro.   |  `{}` |
+| <a id="rust_repository_set-compact_windows_names"></a>compact_windows_names |  Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.   |  `True` |
 
 
 <a id="rust_test_suite"></a>
@@ -1697,8 +1699,9 @@ generated source files are also ignored by this aspect.
 
 <pre>
 cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_config">cargo_config</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>,
-                           <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>,
-                           <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>, <a href="#cargo_bootstrap_repository-version">version</a>)
+                           <a href="#cargo_bootstrap_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>,
+                           <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>,
+                           <a href="#cargo_bootstrap_repository-version">version</a>)
 </pre>
 
 A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
@@ -1715,6 +1718,7 @@ A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/c
 | <a id="cargo_bootstrap_repository-cargo_config"></a>cargo_config |  The path of the Cargo configuration (`Config.toml`) file.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
 | <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the `Cargo.toml` file.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-compressed_windows_toolchain_names"></a>compressed_windows_toolchain_names |  Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.   | Boolean | optional |  `True`  |
 | <a id="cargo_bootstrap_repository-env"></a>env |  A mapping of platform triple to a set of environment variables. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
 | <a id="cargo_bootstrap_repository-env_label"></a>env_label |  A mapping of platform triple to a set of environment variables. This attribute differs from `env` in that all variables passed here must be fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
 | <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  In `WORKSPACE` context only: a dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.<br><br>For example, an entry `"@foo": "@bar"` declares that, for any time this repository depends on `@foo` (such as a dependency on `@foo//some:target`, it should actually resolve that dependency within globally-declared `@bar` (`@bar//some:target`).<br><br>This attribute is _not_ supported in `MODULE.bazel` context (when invoking a repository rule inside a module extension's implementation function).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  |
