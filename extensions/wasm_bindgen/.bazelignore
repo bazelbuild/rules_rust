@@ -1,5 +1,7 @@
-examples
 bazel-out
 bazel-testlogs
-bazel-extensions
+bazel-wasm_bindgen
 bazel-bin
+
+# Deprecated
+rules_nodejs

@@ -16,20 +16,33 @@ local_path_override(
 
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.5.0",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
 )
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.9",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "llvm-project",
+    version = "17.0.3",
+)
+single_version_override(
+    module_name = "llvm-project",
+    patch_strip = 1,
+    patches = [
+        "@//3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch",
+    ],
 )
 
-rust_ext_bindgen = use_extension("//:extensions.bzl", "rust_ext_bindgen")
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
-    rust_ext_bindgen,
-    "llvm-raw",
-    "rules_rust_bindgen_deps",
+    rust_ext,
+    "rules_rust_bindgen__bindgen-cli-0.70.1",
     "rules_rust_bindgen_deps__bindgen-0.70.1",
-    "rules_rust_bindgen_deps__bindgen-cli-0.70.1",
     "rules_rust_bindgen_deps__clang-sys-1.8.1",
     "rules_rust_bindgen_deps__clap-4.5.17",
     "rules_rust_bindgen_deps__clap_complete-4.5.26",
@@ -38,4 +51,25 @@ use_repo(
 
 register_toolchains(
     "//:default_bindgen_toolchain",
+)
+
+bazel_dep(
+    name = "rules_testing",
+    version = "0.7.0",
+    dev_dependency = True,
+)
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
 )

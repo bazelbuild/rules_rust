@@ -1,5 +1,5 @@
 examples
 bazel-out
 bazel-testlogs
-bazel-extensions
+bazel-bindgen
 bazel-bin

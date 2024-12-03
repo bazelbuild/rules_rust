@@ -60,9 +60,8 @@ build --incompatible_merge_fixed_and_default_shell_env
 ## Bzlmod
 ###############################################################################
 
-# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
-# https://github.com/bazelbuild/rules_rust/issues/2181
-common --noenable_bzlmod --enable_workspace
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
 
 # Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
 common --lockfile_mode=off

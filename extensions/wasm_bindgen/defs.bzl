@@ -2,6 +2,11 @@
 
 Bazel rules for generating wasm modules for Javascript using [wasm-bindgen][wb].
 
+## Rules
+
+- [rust_wasm_bindgen](#rust_wasm_bindgen)
+- [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
+
 ## Setup
 
 To begin using the `wasm-bindgen` rules, users can load the necessary dependencies
@@ -22,15 +27,15 @@ should avoid calling `rust_wasm_bindgen_register_toolchains` and instead use the
 [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain) rule to define their own
 toolchains to register in the workspace.
 
-### Interfacing with Javascript rules
+## Interfacing with Javascript rules
 
 While it's recommended for users to mantain their own , in the
 `@rules_rust_wasm_bindgen` package there exists interface sub-packages for various
-Javascript Bazel rules. E.g. `build_bazel_rules_nodejs` or `aspect_rules_js`. The
-rules defined there are a more convenient way to use `rust_wasm_bindgen` with the
-associated javascript rules due to the inclusion of additional providers. Each
-directory contains a `defs.bzl` file that defines the different variants of
-`rust_wasm_bindgen`. (e.g. `nodejs_rust_wasm_bindgen` for the `rules_nodejs` submodule).
+Javascript Bazel rules. E.g. `aspect_rules_js`. The rules defined there are a more
+convenient way to use `rust_wasm_bindgen` with the associated javascript rules due
+to the inclusion of additional providers. Each directory contains a `defs.bzl` file
+that defines the different variants of `rust_wasm_bindgen`. (e.g. `js_rust_wasm_bindgen`
+for the `rules_js` submodule).
 
 
 [wb]: https://github.com/rustwasm/wasm-bindgen

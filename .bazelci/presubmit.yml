@@ -972,7 +972,11 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "--"
       - "//..."
+      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+      - "-//rules_js/test:hello_world_wasm_lib_test"
+      - "-//rules_js/test:hello_world_wasm_direct_test"
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen

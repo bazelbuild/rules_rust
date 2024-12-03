@@ -1,7 +1,7 @@
-diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
-index ec87a37e2..3cc9d21cb 100644
---- a/clang/BUILD.bazel
-+++ b/clang/BUILD.bazel
+diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+index 037719a51..476efdde8 100644
+--- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
 @@ -533,7 +533,7 @@ cc_library(
          "lib/Basic/*.h",
          "lib/Basic/Targets/*.cpp",
@@ -132,43 +132,16 @@ index ec87a37e2..3cc9d21cb 100644
      hdrs = glob(["include/clang/ExtractAPI/**/*.h"]),
      includes = ["include"],
      deps = [
-diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
-index 836d4049e..ffbdee993 100644
---- a/llvm/BUILD.bazel
-+++ b/llvm/BUILD.bazel
-@@ -66,7 +66,7 @@ enum_targets_gen(
- llvm_target_asm_parsers = [
-     t
-     for t in llvm_targets
--    if glob(["lib/Target/{}/AsmParser/CMakeLists.txt".format(t)])
-+    if glob(["lib/Target/{}/AsmParser/CMakeLists.txt".format(t)], allow_empty = True)
- ]
- 
- enum_targets_gen(
-@@ -81,7 +81,7 @@ enum_targets_gen(
- llvm_target_disassemblers = [
-     t
-     for t in llvm_targets
--    if glob(["lib/Target/{}/Disassembler/CMakeLists.txt".format(t)])
-+    if glob(["lib/Target/{}/Disassembler/CMakeLists.txt".format(t)], allow_empty = True)
- ]
- 
- enum_targets_gen(
+diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+index a7e9398ea..703103cc9 100644
+--- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
 @@ -96,7 +96,7 @@ enum_targets_gen(
  llvm_target_mcas = [
      t
      for t in llvm_targets
 -    if glob(["lib/Target/{}/MCA/CMakeLists.txt".format(t)])
 +    if glob(["lib/Target/{}/MCA/CMakeLists.txt".format(t)], allow_empty = True)
- ]
- 
- enum_targets_gen(
-@@ -111,7 +111,7 @@ enum_targets_gen(
- llvm_target_exegesis = [
-     t
-     for t in llvm_targets
--    if glob(["tools/llvm-exegesis/lib/{}/CMakeLists.txt".format(t)])
-+    if glob(["tools/llvm-exegesis/lib/{}/CMakeLists.txt".format(t)], allow_empty = True)
  ]
  
  enum_targets_gen(
@@ -564,15 +537,6 @@ index 836d4049e..ffbdee993 100644
          copts = llvm_copts,
          deps = [
              ":BinaryFormat",
-@@ -2361,7 +2363,7 @@ gentbl(
-         # distinction between these two.
-         hdrs = glob([
-             "lib/Target/" + target["name"] + "/Disassembler/*.h",
--        ]),
-+        ], allow_empty = True),
-         features = [
-             "-parse_headers",
-             "-header_modules",
 @@ -2374,7 +2376,7 @@ gentbl(
              "lib/Target/" + target["name"] + "/Disassembler/*.cpp",
              "lib/Target/" + target["name"] + "/Disassembler/*.c",
