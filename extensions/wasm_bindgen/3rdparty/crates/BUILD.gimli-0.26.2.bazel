@@ -90,8 +90,8 @@ rust_library(
     }),
     version = "0.26.2",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__fallible-iterator-0.2.0//:fallible_iterator",
-        "@rules_rust_wasm_bindgen_deps__indexmap-1.9.3//:indexmap",
-        "@rules_rust_wasm_bindgen_deps__stable_deref_trait-1.2.0//:stable_deref_trait",
+        "@rrwbd__fallible-iterator-0.2.0//:fallible_iterator",
+        "@rrwbd__indexmap-1.9.3//:indexmap",
+        "@rrwbd__stable_deref_trait-1.2.0//:stable_deref_trait",
     ],
 )

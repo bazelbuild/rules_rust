@@ -90,8 +90,8 @@ rust_library(
     }),
     version = "2.0.25",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__proc-macro2-1.0.64//:proc_macro2",
-        "@rules_rust_wasm_bindgen_deps__quote-1.0.29//:quote",
-        "@rules_rust_wasm_bindgen_deps__unicode-ident-1.0.10//:unicode_ident",
+        "@rrwbd__proc-macro2-1.0.64//:proc_macro2",
+        "@rrwbd__quote-1.0.29//:quote",
+        "@rrwbd__unicode-ident-1.0.10//:unicode_ident",
     ],
 )

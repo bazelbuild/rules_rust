@@ -80,7 +80,7 @@ rust_library(
     }),
     version = "0.3.3",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__doc-comment-0.3.3//:build_script_build",
+        "@rrwbd__doc-comment-0.3.3//:build_script_build",
     ],
 )
 

@@ -83,6 +83,6 @@ rust_library(
     }),
     version = "0.1.8",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__memchr-2.5.0//:memchr",
+        "@rrwbd__memchr-2.5.0//:memchr",
     ],
 )

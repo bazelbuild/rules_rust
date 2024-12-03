@@ -80,7 +80,7 @@ rust_library(
     }),
     version = "0.48.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__windows_i686_msvc-0.48.0//:build_script_build",
+        "@rrwbd__windows_i686_msvc-0.48.0//:build_script_build",
     ],
 )
 

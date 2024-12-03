@@ -37,7 +37,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-macro-0.2.92//:wasm_bindgen_macro",
+        "@rrwbd__wasm-bindgen-macro-0.2.92//:wasm_bindgen_macro",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -88,8 +88,8 @@ rust_library(
     }),
     version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-0.2.92//:build_script_build",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__wasm-bindgen-0.2.92//:build_script_build",
     ],
 )
 

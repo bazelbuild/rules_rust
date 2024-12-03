@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.1.5",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",
+        "@rrwbd__libc-0.2.150//:libc",
     ],
 )

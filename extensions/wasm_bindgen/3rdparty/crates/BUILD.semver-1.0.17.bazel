@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "1.0.17",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__semver-1.0.17//:build_script_build",
+        "@rrwbd__semver-1.0.17//:build_script_build",
     ],
 )
 

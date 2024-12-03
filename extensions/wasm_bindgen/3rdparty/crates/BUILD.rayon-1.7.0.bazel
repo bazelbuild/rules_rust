@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "1.7.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__either-1.8.1//:either",
-        "@rules_rust_wasm_bindgen_deps__rayon-core-1.11.0//:rayon_core",
+        "@rrwbd__either-1.8.1//:either",
+        "@rrwbd__rayon-core-1.11.0//:rayon_core",
     ],
 )

@@ -80,7 +80,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__iana-time-zone-haiku-0.1.2//:build_script_build",
+        "@rrwbd__iana-time-zone-haiku-0.1.2//:build_script_build",
     ],
 )
 
@@ -132,7 +132,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cc-1.0.83//:cc",
+        "@rrwbd__cc-1.0.83//:cc",
     ],
 )
 

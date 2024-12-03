@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.108.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__indexmap-2.0.0//:indexmap",
-        "@rules_rust_wasm_bindgen_deps__semver-1.0.17//:semver",
+        "@rrwbd__indexmap-2.0.0//:indexmap",
+        "@rrwbd__semver-1.0.17//:semver",
     ],
 )

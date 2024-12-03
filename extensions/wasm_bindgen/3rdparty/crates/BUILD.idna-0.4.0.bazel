@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "0.4.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__unicode-bidi-0.3.13//:unicode_bidi",
-        "@rules_rust_wasm_bindgen_deps__unicode-normalization-0.1.22//:unicode_normalization",
+        "@rrwbd__unicode-bidi-0.3.13//:unicode_bidi",
+        "@rrwbd__unicode-normalization-0.1.22//:unicode_normalization",
     ],
 )

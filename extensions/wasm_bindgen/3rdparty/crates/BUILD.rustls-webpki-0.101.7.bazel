@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "0.101.7",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__ring-0.17.5//:ring",
-        "@rules_rust_wasm_bindgen_deps__untrusted-0.9.0//:untrusted",
+        "@rrwbd__ring-0.17.5//:ring",
+        "@rrwbd__untrusted-0.9.0//:untrusted",
     ],
 )

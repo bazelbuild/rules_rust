@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.2.16",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__bitflags-1.3.2//:bitflags",
+        "@rrwbd__bitflags-1.3.2//:bitflags",
     ],
 )

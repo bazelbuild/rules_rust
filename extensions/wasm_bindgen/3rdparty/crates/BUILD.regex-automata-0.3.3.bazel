@@ -103,8 +103,8 @@ rust_library(
     }),
     version = "0.3.3",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__aho-corasick-1.0.2//:aho_corasick",
-        "@rules_rust_wasm_bindgen_deps__memchr-2.5.0//:memchr",
-        "@rules_rust_wasm_bindgen_deps__regex-syntax-0.7.4//:regex_syntax",
+        "@rrwbd__aho-corasick-1.0.2//:aho_corasick",
+        "@rrwbd__memchr-2.5.0//:memchr",
+        "@rrwbd__regex-syntax-0.7.4//:regex_syntax",
     ],
 )

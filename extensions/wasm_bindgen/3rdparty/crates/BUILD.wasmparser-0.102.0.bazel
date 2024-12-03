@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.102.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__indexmap-1.9.3//:indexmap",
-        "@rules_rust_wasm_bindgen_deps__url-2.4.0//:url",
+        "@rrwbd__indexmap-1.9.3//:indexmap",
+        "@rrwbd__url-2.4.0//:url",
     ],
 )

@@ -84,10 +84,10 @@ rust_library(
     }),
     version = "1.0.102",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__itoa-1.0.8//:itoa",
-        "@rules_rust_wasm_bindgen_deps__ryu-1.0.14//:ryu",
-        "@rules_rust_wasm_bindgen_deps__serde-1.0.171//:serde",
-        "@rules_rust_wasm_bindgen_deps__serde_json-1.0.102//:build_script_build",
+        "@rrwbd__itoa-1.0.8//:itoa",
+        "@rrwbd__ryu-1.0.14//:ryu",
+        "@rrwbd__serde-1.0.171//:serde",
+        "@rrwbd__serde_json-1.0.102//:build_script_build",
     ],
 )
 

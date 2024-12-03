@@ -82,8 +82,8 @@ rust_library(
     }),
     version = "2.1.5",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__difflib-0.4.0//:difflib",
-        "@rules_rust_wasm_bindgen_deps__itertools-0.10.5//:itertools",
-        "@rules_rust_wasm_bindgen_deps__predicates-core-1.0.6//:predicates_core",
+        "@rrwbd__difflib-0.4.0//:difflib",
+        "@rrwbd__itertools-0.10.5//:itertools",
+        "@rrwbd__predicates-core-1.0.6//:predicates_core",
     ],
 )

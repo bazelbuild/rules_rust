@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "1.0.9",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__predicates-core-1.0.6//:predicates_core",
-        "@rules_rust_wasm_bindgen_deps__termtree-0.4.1//:termtree",
+        "@rrwbd__predicates-core-1.0.6//:predicates_core",
+        "@rrwbd__termtree-0.4.1//:termtree",
     ],
 )

@@ -161,7 +161,7 @@ rust_library(
     }),
     version = "0.2.150",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:build_script_build",
+        "@rrwbd__libc-0.2.150//:build_script_build",
     ],
 )
 

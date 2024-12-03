@@ -82,7 +82,7 @@ rust_proc_macro(
     }),
     version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__quote-1.0.29//:quote",
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-macro-support-0.2.92//:wasm_bindgen_macro_support",
+        "@rrwbd__quote-1.0.29//:quote",
+        "@rrwbd__wasm-bindgen-macro-support-0.2.92//:wasm_bindgen_macro_support",
     ],
 )

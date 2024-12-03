@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "0.8.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__num-traits-0.2.15//:num_traits",
+        "@rrwbd__num-traits-0.2.15//:num_traits",
     ],
 )

@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.29.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__leb128-0.2.5//:leb128",
+        "@rrwbd__leb128-0.2.5//:leb128",
     ],
 )

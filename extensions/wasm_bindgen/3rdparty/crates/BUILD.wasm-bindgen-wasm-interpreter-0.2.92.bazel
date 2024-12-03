@@ -79,9 +79,9 @@ rust_library(
     }),
     version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen_deps__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen_deps__walrus-0.20.3//:walrus",
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-wasm-conventions-0.2.92//:wasm_bindgen_wasm_conventions",
+        "@rrwbd__anyhow-1.0.71//:anyhow",
+        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__walrus-0.20.3//:walrus",
+        "@rrwbd__wasm-bindgen-wasm-conventions-0.2.92//:wasm_bindgen_wasm_conventions",
     ],
 )

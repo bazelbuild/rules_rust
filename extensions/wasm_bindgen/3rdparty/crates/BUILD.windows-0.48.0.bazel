@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.48.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__windows-targets-0.48.1//:windows_targets",
+        "@rrwbd__windows-targets-0.48.1//:windows_targets",
     ],
 )

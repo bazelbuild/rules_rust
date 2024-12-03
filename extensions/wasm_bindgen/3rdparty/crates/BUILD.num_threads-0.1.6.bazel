@@ -80,28 +80,28 @@ rust_library(
     version = "0.1.6",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen_deps__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
+            "@rrwbd__libc-0.2.150//:libc",  # cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))
         ],
         "//conditions:default": [],
     }),

@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "1.6.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__tinyvec_macros-0.1.1//:tinyvec_macros",
+        "@rrwbd__tinyvec_macros-0.1.1//:tinyvec_macros",
     ],
 )

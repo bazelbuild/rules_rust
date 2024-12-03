@@ -80,7 +80,7 @@ rust_library(
     version = "1.9.0",
     deps = select({
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@rules_rust_wasm_bindgen_deps__instant-0.1.12//:instant",  # cfg(all(target_arch = "wasm32", not(target_os = "wasi")))
+            "@rrwbd__instant-0.1.12//:instant",  # cfg(all(target_arch = "wasm32", not(target_os = "wasi")))
         ],
         "//conditions:default": [],
     }),

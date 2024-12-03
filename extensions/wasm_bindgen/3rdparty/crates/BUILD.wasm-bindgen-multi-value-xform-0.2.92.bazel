@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen_deps__walrus-0.20.3//:walrus",
+        "@rrwbd__anyhow-1.0.71//:anyhow",
+        "@rrwbd__walrus-0.20.3//:walrus",
     ],
 )

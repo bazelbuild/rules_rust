@@ -84,11 +84,11 @@ rust_library(
     }),
     version = "0.9.15",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-epoch-0.9.15//:build_script_build",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-utils-0.8.16//:crossbeam_utils",
-        "@rules_rust_wasm_bindgen_deps__memoffset-0.9.0//:memoffset",
-        "@rules_rust_wasm_bindgen_deps__scopeguard-1.1.0//:scopeguard",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__crossbeam-epoch-0.9.15//:build_script_build",
+        "@rrwbd__crossbeam-utils-0.8.16//:crossbeam_utils",
+        "@rrwbd__memoffset-0.9.0//:memoffset",
+        "@rrwbd__scopeguard-1.1.0//:scopeguard",
     ],
 )
 
@@ -144,7 +144,7 @@ cargo_build_script(
     version = "0.9.15",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_wasm_bindgen_deps__autocfg-1.1.0//:autocfg",
+        "@rrwbd__autocfg-1.1.0//:autocfg",
     ],
 )
 

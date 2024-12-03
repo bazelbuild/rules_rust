@@ -80,11 +80,11 @@ rust_library(
     }),
     version = "1.11.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__crossbeam-channel-0.5.8//:crossbeam_channel",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-deque-0.8.3//:crossbeam_deque",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-utils-0.8.16//:crossbeam_utils",
-        "@rules_rust_wasm_bindgen_deps__num_cpus-1.16.0//:num_cpus",
-        "@rules_rust_wasm_bindgen_deps__rayon-core-1.11.0//:build_script_build",
+        "@rrwbd__crossbeam-channel-0.5.8//:crossbeam_channel",
+        "@rrwbd__crossbeam-deque-0.8.3//:crossbeam_deque",
+        "@rrwbd__crossbeam-utils-0.8.16//:crossbeam_utils",
+        "@rrwbd__num_cpus-1.16.0//:num_cpus",
+        "@rrwbd__rayon-core-1.11.0//:build_script_build",
     ],
 )
 

@@ -86,11 +86,11 @@ rust_library(
     }),
     version = "0.21.8",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen_deps__ring-0.17.5//:ring",
-        "@rules_rust_wasm_bindgen_deps__rustls-0.21.8//:build_script_build",
-        "@rules_rust_wasm_bindgen_deps__rustls-webpki-0.101.7//:webpki",
-        "@rules_rust_wasm_bindgen_deps__sct-0.7.1//:sct",
+        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__ring-0.17.5//:ring",
+        "@rrwbd__rustls-0.21.8//:build_script_build",
+        "@rrwbd__rustls-webpki-0.101.7//:webpki",
+        "@rrwbd__sct-0.7.1//:sct",
     ],
 )
 
@@ -135,7 +135,7 @@ cargo_build_script(
     ),
     edition = "2021",
     link_deps = [
-        "@rules_rust_wasm_bindgen_deps__ring-0.17.5//:ring",
+        "@rrwbd__ring-0.17.5//:ring",
     ],
     pkg_name = "rustls",
     rustc_flags = [

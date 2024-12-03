@@ -79,9 +79,9 @@ rust_library(
     }),
     version = "0.12.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__ascii-1.1.0//:ascii",
-        "@rules_rust_wasm_bindgen_deps__chunked_transfer-1.4.1//:chunked_transfer",
-        "@rules_rust_wasm_bindgen_deps__httpdate-1.0.2//:httpdate",
-        "@rules_rust_wasm_bindgen_deps__log-0.4.19//:log",
+        "@rrwbd__ascii-1.1.0//:ascii",
+        "@rrwbd__chunked_transfer-1.4.1//:chunked_transfer",
+        "@rrwbd__httpdate-1.0.2//:httpdate",
+        "@rrwbd__log-0.4.19//:log",
     ],
 )

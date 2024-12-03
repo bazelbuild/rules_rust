@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "1.2.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__percent-encoding-2.3.0//:percent_encoding",
+        "@rrwbd__percent-encoding-2.3.0//:percent_encoding",
     ],
 )

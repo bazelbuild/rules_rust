@@ -83,7 +83,7 @@ rust_library(
     }),
     version = "2.0.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__equivalent-1.0.1//:equivalent",
-        "@rules_rust_wasm_bindgen_deps__hashbrown-0.14.0//:hashbrown",
+        "@rrwbd__equivalent-1.0.1//:equivalent",
+        "@rrwbd__hashbrown-0.14.0//:hashbrown",
     ],
 )

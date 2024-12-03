@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.1.12",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
     ],
 )

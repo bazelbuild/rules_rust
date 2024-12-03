@@ -80,93 +80,93 @@ rust_library(
     }),
     version = "3.6.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen_deps__fastrand-1.9.0//:fastrand",
-        "@rules_rust_wasm_bindgen_deps__tempfile-3.6.0//:build_script_build",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__fastrand-1.9.0//:fastrand",
+        "@rrwbd__tempfile-3.6.0//:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrwbd__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrwbd__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
+            "@rrwbd__windows-sys-0.48.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rules_rust_wasm_bindgen_deps__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rrwbd__rustix-0.37.23//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "//conditions:default": [],
     }),
@@ -220,7 +220,7 @@ cargo_build_script(
     version = "3.6.0",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_wasm_bindgen_deps__autocfg-1.1.0//:autocfg",
+        "@rrwbd__autocfg-1.1.0//:autocfg",
     ],
 )
 

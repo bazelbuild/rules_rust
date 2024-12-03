@@ -86,8 +86,8 @@ rust_library(
     }),
     version = "0.2.17",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__lazy_static-1.4.0//:lazy_static",
-        "@rules_rust_wasm_bindgen_deps__memchr-2.5.0//:memchr",
-        "@rules_rust_wasm_bindgen_deps__regex-automata-0.1.10//:regex_automata",
+        "@rrwbd__lazy_static-1.4.0//:lazy_static",
+        "@rrwbd__memchr-2.5.0//:memchr",
+        "@rrwbd__regex-automata-0.1.10//:regex_automata",
     ],
 )

@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.2.60",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen_deps__wasmparser-0.108.0//:wasmparser",
+        "@rrwbd__anyhow-1.0.71//:anyhow",
+        "@rrwbd__wasmparser-0.108.0//:wasmparser",
     ],
 )

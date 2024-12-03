@@ -85,7 +85,7 @@ rust_library(
     }),
     version = "1.0.28",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__crc32fast-1.3.2//:crc32fast",
-        "@rules_rust_wasm_bindgen_deps__miniz_oxide-0.7.1//:miniz_oxide",
+        "@rrwbd__crc32fast-1.3.2//:crc32fast",
+        "@rrwbd__miniz_oxide-0.7.1//:miniz_oxide",
     ],
 )

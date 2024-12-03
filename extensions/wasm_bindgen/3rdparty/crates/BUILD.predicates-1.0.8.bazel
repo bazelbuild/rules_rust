@@ -86,10 +86,10 @@ rust_library(
     }),
     version = "1.0.8",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__difference-2.0.0//:difference",
-        "@rules_rust_wasm_bindgen_deps__float-cmp-0.8.0//:float_cmp",
-        "@rules_rust_wasm_bindgen_deps__normalize-line-endings-0.3.0//:normalize_line_endings",
-        "@rules_rust_wasm_bindgen_deps__predicates-core-1.0.6//:predicates_core",
-        "@rules_rust_wasm_bindgen_deps__regex-1.9.1//:regex",
+        "@rrwbd__difference-2.0.0//:difference",
+        "@rrwbd__float-cmp-0.8.0//:float_cmp",
+        "@rrwbd__normalize-line-endings-0.3.0//:normalize_line_endings",
+        "@rrwbd__predicates-core-1.0.6//:predicates_core",
+        "@rrwbd__regex-1.9.1//:regex",
     ],
 )

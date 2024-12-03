@@ -35,7 +35,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_wasm_bindgen_deps__walrus-macro-0.19.0//:walrus_macro",
+        "@rrwbd__walrus-macro-0.19.0//:walrus_macro",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -86,13 +86,13 @@ rust_library(
     }),
     version = "0.20.3",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__anyhow-1.0.71//:anyhow",
-        "@rules_rust_wasm_bindgen_deps__gimli-0.26.2//:gimli",
-        "@rules_rust_wasm_bindgen_deps__id-arena-2.2.1//:id_arena",
-        "@rules_rust_wasm_bindgen_deps__leb128-0.2.5//:leb128",
-        "@rules_rust_wasm_bindgen_deps__log-0.4.19//:log",
-        "@rules_rust_wasm_bindgen_deps__rayon-1.7.0//:rayon",
-        "@rules_rust_wasm_bindgen_deps__wasm-encoder-0.29.0//:wasm_encoder",
-        "@rules_rust_wasm_bindgen_deps__wasmparser-0.80.2//:wasmparser",
+        "@rrwbd__anyhow-1.0.71//:anyhow",
+        "@rrwbd__gimli-0.26.2//:gimli",
+        "@rrwbd__id-arena-2.2.1//:id_arena",
+        "@rrwbd__leb128-0.2.5//:leb128",
+        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__rayon-1.7.0//:rayon",
+        "@rrwbd__wasm-encoder-0.29.0//:wasm_encoder",
+        "@rrwbd__wasmparser-0.80.2//:wasmparser",
     ],
 )

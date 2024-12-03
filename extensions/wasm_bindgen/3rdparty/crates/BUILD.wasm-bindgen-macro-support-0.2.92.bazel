@@ -82,10 +82,10 @@ rust_library(
     }),
     version = "0.2.92",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__proc-macro2-1.0.64//:proc_macro2",
-        "@rules_rust_wasm_bindgen_deps__quote-1.0.29//:quote",
-        "@rules_rust_wasm_bindgen_deps__syn-2.0.25//:syn",
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-backend-0.2.92//:wasm_bindgen_backend",
-        "@rules_rust_wasm_bindgen_deps__wasm-bindgen-shared-0.2.92//:wasm_bindgen_shared",
+        "@rrwbd__proc-macro2-1.0.64//:proc_macro2",
+        "@rrwbd__quote-1.0.29//:quote",
+        "@rrwbd__syn-2.0.25//:syn",
+        "@rrwbd__wasm-bindgen-backend-0.2.92//:wasm_bindgen_backend",
+        "@rrwbd__wasm-bindgen-shared-0.2.92//:wasm_bindgen_shared",
     ],
 )

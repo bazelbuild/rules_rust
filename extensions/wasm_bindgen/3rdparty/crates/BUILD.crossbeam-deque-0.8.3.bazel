@@ -85,8 +85,8 @@ rust_library(
     }),
     version = "0.8.3",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-epoch-0.9.15//:crossbeam_epoch",
-        "@rules_rust_wasm_bindgen_deps__crossbeam-utils-0.8.16//:crossbeam_utils",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__crossbeam-epoch-0.9.15//:crossbeam_epoch",
+        "@rrwbd__crossbeam-utils-0.8.16//:crossbeam_utils",
     ],
 )

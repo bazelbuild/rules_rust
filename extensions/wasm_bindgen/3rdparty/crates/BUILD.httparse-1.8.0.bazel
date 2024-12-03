@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "1.8.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__httparse-1.8.0//:build_script_build",
+        "@rrwbd__httparse-1.8.0//:build_script_build",
     ],
 )
 

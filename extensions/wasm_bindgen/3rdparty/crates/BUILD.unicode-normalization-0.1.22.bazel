@@ -82,6 +82,6 @@ rust_library(
     }),
     version = "0.1.22",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__tinyvec-1.6.0//:tinyvec",
+        "@rrwbd__tinyvec-1.6.0//:tinyvec",
     ],
 )

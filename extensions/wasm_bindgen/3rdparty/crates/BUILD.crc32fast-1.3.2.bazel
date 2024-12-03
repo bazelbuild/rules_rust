@@ -84,8 +84,8 @@ rust_library(
     }),
     version = "1.3.2",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__cfg-if-1.0.0//:cfg_if",
-        "@rules_rust_wasm_bindgen_deps__crc32fast-1.3.2//:build_script_build",
+        "@rrwbd__cfg-if-1.0.0//:cfg_if",
+        "@rrwbd__crc32fast-1.3.2//:build_script_build",
     ],
 )
 

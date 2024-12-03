@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "2.6.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__unicase-2.6.0//:build_script_build",
+        "@rrwbd__unicase-2.6.0//:build_script_build",
     ],
 )
 
@@ -134,7 +134,7 @@ cargo_build_script(
     version = "2.6.0",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_wasm_bindgen_deps__version_check-0.9.4//:version_check",
+        "@rrwbd__version_check-0.9.4//:version_check",
     ],
 )
 

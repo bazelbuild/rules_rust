@@ -80,13 +80,13 @@ rust_library(
     version = "1.2.0",
     deps = select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
+            "@rrwbd__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
+            "@rrwbd__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_wasm_bindgen_deps__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
+            "@rrwbd__winapi-util-0.1.5//:winapi_util",  # cfg(windows)
         ],
         "//conditions:default": [],
     }),

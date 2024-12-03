@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "2.5.1",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__alloc-no-stdlib-2.0.4//:alloc_no_stdlib",
-        "@rules_rust_wasm_bindgen_deps__alloc-stdlib-0.2.2//:alloc_stdlib",
+        "@rrwbd__alloc-no-stdlib-2.0.4//:alloc_no_stdlib",
+        "@rrwbd__alloc-stdlib-0.2.2//:alloc_stdlib",
     ],
 )

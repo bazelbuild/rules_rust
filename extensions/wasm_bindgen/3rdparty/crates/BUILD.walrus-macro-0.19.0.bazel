@@ -79,9 +79,9 @@ rust_proc_macro(
     }),
     version = "0.19.0",
     deps = [
-        "@rules_rust_wasm_bindgen_deps__heck-0.3.3//:heck",
-        "@rules_rust_wasm_bindgen_deps__proc-macro2-1.0.64//:proc_macro2",
-        "@rules_rust_wasm_bindgen_deps__quote-1.0.29//:quote",
-        "@rules_rust_wasm_bindgen_deps__syn-1.0.109//:syn",
+        "@rrwbd__heck-0.3.3//:heck",
+        "@rrwbd__proc-macro2-1.0.64//:proc_macro2",
+        "@rrwbd__quote-1.0.29//:quote",
+        "@rrwbd__syn-1.0.109//:syn",
     ],
 )
