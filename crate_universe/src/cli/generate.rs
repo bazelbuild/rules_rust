@@ -117,6 +117,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
                     .crates
                     .values()
                     .filter_map(|crate_context| crate_context.repository.as_ref()),
+                context.unused_patches.iter(),
             )?;
 
             return Ok(());
@@ -154,7 +155,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
-    write_paths_to_track(&opt.paths_to_track, &opt.warnings_output_path, annotations.lockfile.crates.values())?;
+    write_paths_to_track(
+        &opt.paths_to_track,
+        &opt.warnings_output_path,
+        annotations.lockfile.crates.values(),
+        cargo_lockfile.patch.unused.iter(),
+    )?;
 
     // Generate renderable contexts for each package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
@@ -202,10 +208,15 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
     Ok(())
 }
 
-fn write_paths_to_track<'a, SourceAnnotations: Iterator<Item = &'a SourceAnnotation>>(
+fn write_paths_to_track<
+    'a,
+    SourceAnnotations: Iterator<Item = &'a SourceAnnotation>,
+    UnusedPatches: Iterator<Item = &'a cargo_lock::Dependency>,
+>(
     output_file: &Path,
     warnings_output_path: &Path,
     source_annotations: SourceAnnotations,
+    unused_patches: UnusedPatches,
 ) -> Result<()> {
     let paths_to_track: std::collections::BTreeSet<_> = source_annotations
         .filter_map(|v| {
@@ -226,10 +237,14 @@ fn write_paths_to_track<'a, SourceAnnotations: Iterator<Item = &'a SourceAnnotat
     for path_to_track in &paths_to_track {
         warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {path_to_track} is being used."));
     }
+    for unused_patch in unused_patches {
+        warnings.push(format!("You have a [patch] Cargo.toml entry that is being ignored by cargo. Unused patch: {} {}{}", unused_patch.name, unused_patch.version, if let Some(source) = unused_patch.source.as_ref() { format!(" ({})", source) } else { String::new() }));
+    }
 
     std::fs::write(
         warnings_output_path,
         serde_json::to_string(&warnings).context("Failed to serialize warnings to track")?,
-    ).context("Failed to write warnings file")?;
+    )
+    .context("Failed to write warnings file")?;
     Ok(())
 }

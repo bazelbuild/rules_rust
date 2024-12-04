@@ -174,6 +174,8 @@ pub(crate) enum SourceAnnotation {
 pub(crate) struct LockfileAnnotation {
     /// A mapping of crates/packages to additional source (network location) information.
     pub(crate) crates: BTreeMap<PackageId, SourceAnnotation>,
+
+    pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
 impl LockfileAnnotation {
@@ -210,7 +212,12 @@ impl LockfileAnnotation {
             })
             .collect::<Result<BTreeMap<PackageId, SourceAnnotation>>>()?;
 
-        Ok(Self { crates })
+        let unused_patches = lockfile.patch.unused.into_iter().collect();
+
+        Ok(Self {
+            crates,
+            unused_patches,
+        })
     }
 
     /// Resolve all URLs and checksum-like data for each package

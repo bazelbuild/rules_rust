@@ -45,6 +45,8 @@ pub(crate) struct Context {
 
     /// A list of crates visible to this bazel module.
     pub(crate) direct_dev_deps: BTreeSet<CrateId>,
+
+    pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
 impl Context {
@@ -140,6 +142,8 @@ impl Context {
             add_crate_ids(&mut direct_dev_deps, &deps.proc_macro_dev_deps);
         }
 
+        let unused_patches = annotations.lockfile.unused_patches;
+
         Ok(Self {
             checksum: None,
             crates,
@@ -148,6 +152,7 @@ impl Context {
             conditions,
             direct_dev_deps: direct_dev_deps.difference(&direct_deps).cloned().collect(),
             direct_deps,
+            unused_patches,
         })
     }
 
