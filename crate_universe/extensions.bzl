@@ -168,6 +168,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
 
     warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
     for warning in warnings_output_file:
+        # buildifier: disable=print
         print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)

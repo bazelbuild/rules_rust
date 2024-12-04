@@ -99,6 +99,7 @@ def _crates_repository_impl(repository_ctx):
 
     warnings_output_file = json.decode(repository_ctx.read(warnings_output_file))
     for warning in warnings_output_file:
+        # buildifier: disable=print
         print("WARN: {}".format(warning))
 
     # Determine the set of reproducible values
