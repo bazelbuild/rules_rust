@@ -103,7 +103,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
     crate_specs = []  # [depset of File - transitive crate_spec.json files]
     attrs = ctx.rule.attr
     all_deps = getattr(attrs, "deps", []) + getattr(attrs, "proc_macro_deps", []) + \
-               [dep for dep in [getattr(attrs, "crate", None), getattr(attrs, "actual")] if dep != None]
+               [dep for dep in [getattr(attrs, "crate", None), getattr(attrs, "actual", None)] if dep != None]
     for dep in all_deps:
         if RustAnalyzerInfo in dep:
             label_to_id[dep.label] = dep[RustAnalyzerInfo].id
