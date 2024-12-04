@@ -74,6 +74,10 @@ pub struct GenerateOptions {
     #[clap(long)]
     pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
 
+    /// Path to write a list of files which the repository_rule should watch.
+    /// If any of these paths change, the repository rule should be rerun.
+    /// These files may be outside of the Bazel-managed workspace.
+    /// A (possibly empty) JSON sorted array of strings will be unconditionally written to this file.
     #[clap(long)]
     pub paths_to_track: PathBuf,
 
@@ -84,6 +88,11 @@ pub struct GenerateOptions {
     #[clap(long)]
     pub(crate) generator: Option<Label>,
 
+    /// Path to write a list of warnings which the repository rule should emit.
+    /// A (possibly empty) JSON array of strings will be unconditionally written to this file.
+    /// Each warning should be printed.
+    /// This mechanism exists because this process's output is often hidden by default,
+    /// so this provides a way for the repository rule to force printing.
     #[clap(long)]
     pub warnings_output_path: PathBuf,
 }

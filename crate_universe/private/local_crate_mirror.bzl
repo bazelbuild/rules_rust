@@ -1,9 +1,4 @@
-"""`local_crate_mirror` rule implementation.
-
-This is a private implementation detail of crate_universe, and should not be relied on in manually written code.
-
-This is effectively a `local_repository` rule impementation, but where the BUILD.bazel file is generated using the `cargo-bazel render` command.
-"""
+"""`local_crate_mirror` rule implementation."""
 
 load("//crate_universe/private:common_utils.bzl", "execute")
 load("//crate_universe/private:generate_utils.bzl", "get_generator")
@@ -19,16 +14,19 @@ def _local_crate_mirror_impl(repository_ctx):
 
     execute(repository_ctx, ["bash", "-c", "cp -r {}/* {}/".format(path, repository_ctx.path("."))])
 
-    paths_to_track = execute(repository_ctx, ["bash", "-c", "find {} -type f".format(path)]).stdout.strip().split("\n")
+    paths_to_track = execute(repository_ctx, ["find", path, "-type", "f"]).stdout.strip().split("\n")
     for path_to_track in paths_to_track:
         if path_to_track:
             repository_ctx.read(path_to_track)
 
     execute(repository_ctx, [generator, "render", "--options-json", repository_ctx.attr.options_json, "--output-path", repository_ctx.path("BUILD.bazel")])
 
-    repository_ctx.file("WORKSPACE", "")
+    repository_ctx.file("WORKSPACE.bazel", "")
 
 local_crate_mirror = repository_rule(
+    doc = """This is a private implementation detail of crate_universe, and should not be relied on in manually written code.
+
+This is effectively a `local_repository` rule impementation, but where the BUILD.bazel file is generated using the `cargo-bazel render` command.""",
     implementation = _local_crate_mirror_impl,
     attrs = {
         "generator": attr.string(
