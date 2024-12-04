@@ -135,6 +135,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
     module_ctx.file(lockfile_path, "")
 
     paths_to_track_file = module_ctx.path("paths-to-track")
+    warnings_output_file = module_ctx.path("warnings-output-file")
 
     cargo_bazel([
         "generate",
@@ -155,11 +156,17 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         module_ctx.path(Label("@@//:MODULE.bazel")).dirname,
         "--paths-to-track",
         paths_to_track_file,
+        "--warnings-output-path",
+        warnings_output_file,
     ])
 
     paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
     for path in paths_to_track:
         module_ctx.read(path)
+
+    warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
+    for warning in warnings_output_file:
+        print("WARN: {}".format(warning))
 
     crates_dir = tag_path.get_child(cfg.name)
     _generate_repo(

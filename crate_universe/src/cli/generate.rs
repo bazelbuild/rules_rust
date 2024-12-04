@@ -83,6 +83,9 @@ pub struct GenerateOptions {
     /// You basically never want to use this value.
     #[clap(long)]
     pub(crate) generator: Option<Label>,
+
+    #[clap(long)]
+    pub warnings_output_path: PathBuf,
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
@@ -109,6 +112,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
 
             write_paths_to_track(
                 &opt.paths_to_track,
+                &opt.warnings_output_path,
                 context
                     .crates
                     .values()
@@ -150,7 +154,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
-    write_paths_to_track(&opt.paths_to_track, annotations.lockfile.crates.values())?;
+    write_paths_to_track(&opt.paths_to_track, &opt.warnings_output_path, annotations.lockfile.crates.values())?;
 
     // Generate renderable contexts for each package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
@@ -200,6 +204,7 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
 
 fn write_paths_to_track<'a, SourceAnnotations: Iterator<Item = &'a SourceAnnotation>>(
     output_file: &Path,
+    warnings_output_path: &Path,
     source_annotations: SourceAnnotations,
 ) -> Result<()> {
     let paths_to_track: std::collections::BTreeSet<_> = source_annotations
@@ -215,5 +220,16 @@ fn write_paths_to_track<'a, SourceAnnotations: Iterator<Item = &'a SourceAnnotat
         output_file,
         serde_json::to_string(&paths_to_track).context("Failed to serialize paths to track")?,
     )
-    .context("Failed to write paths to track")
+    .context("Failed to write paths to track")?;
+
+    let mut warnings = Vec::new();
+    for path_to_track in &paths_to_track {
+        warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {path_to_track} is being used."));
+    }
+
+    std::fs::write(
+        warnings_output_path,
+        serde_json::to_string(&warnings).context("Failed to serialize warnings to track")?,
+    ).context("Failed to write warnings file")?;
+    Ok(())
 }

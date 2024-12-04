@@ -72,6 +72,7 @@ def _crates_repository_impl(repository_ctx):
         })
 
     paths_to_track_file = repository_ctx.path("paths-to-track")
+    warnings_output_file = repository_ctx.path("warnings-output-file")
 
     # Run the generator
     execute_generator(
@@ -85,6 +86,7 @@ def _crates_repository_impl(repository_ctx):
         cargo = cargo_path,
         rustc = rustc_path,
         paths_to_track_file = paths_to_track_file,
+        warnings_output_file = warnings_output_file,
         # sysroot = tools.sysroot,
         **kwargs
     )
@@ -92,6 +94,10 @@ def _crates_repository_impl(repository_ctx):
     paths_to_track = json.decode(repository_ctx.read(paths_to_track_file))
     for path in paths_to_track:
         repository_ctx.read(path)
+
+    warnings_output_file = json.decode(repository_ctx.read(warnings_output_file))
+    for warning in warnings_output_file:
+        print("WARN: {}".format(warning))
 
     # Determine the set of reproducible values
     attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}
