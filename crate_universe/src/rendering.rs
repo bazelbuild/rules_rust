@@ -456,19 +456,25 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
-            compile_data: make_data_with_exclude(
-                platforms,
-                attrs
-                    .map(|attrs| attrs.compile_data_glob.clone())
-                    .unwrap_or_default(),
-                COMPILE_DATA_GLOB_EXCLUDES
-                    .iter()
-                    .map(|&pattern| pattern.to_owned())
-                    .collect(),
-                attrs
-                    .map(|attrs| attrs.compile_data.clone())
-                    .unwrap_or_default(),
-            ),
+            compile_data: {
+                let mut data = make_data_with_exclude(
+                    platforms,
+                    attrs
+                        .map(|attrs| attrs.compile_data_glob.clone())
+                        .unwrap_or_default(),
+                    COMPILE_DATA_GLOB_EXCLUDES
+                        .iter()
+                        .map(|&pattern| pattern.to_owned())
+                        .collect(),
+                    attrs
+                        .map(|attrs| attrs.compile_data.clone())
+                        .unwrap_or_default(),
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
@@ -658,11 +664,17 @@ impl Renderer {
         target: &TargetAttributes,
     ) -> Result<CommonAttrs> {
         Ok(CommonAttrs {
-            compile_data: make_data(
-                platforms,
-                krate.common_attrs.compile_data_glob.clone(),
-                krate.common_attrs.compile_data.clone(),
-            ),
+            compile_data: {
+                let mut data = make_data(
+                    platforms,
+                    krate.common_attrs.compile_data_glob.clone(),
+                    krate.common_attrs.compile_data.clone(),
+                );
+                if let Some(cd) = &target.compile_data {
+                    data.glob = cd.clone();
+                }
+                data
+            },
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_root: target.crate_root.clone(),
             data: make_data(
@@ -902,7 +914,8 @@ fn make_data_with_exclude(
                 .map(|&glob| glob.to_owned())
                 .chain(exclude)
                 .collect(),
-        },
+        }
+        .into(),
         select: SelectSet::new(select, platforms),
     }
 }

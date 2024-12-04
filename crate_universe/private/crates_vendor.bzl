@@ -289,6 +289,7 @@ def _crates_vendor_impl(ctx):
     environ = {
         "CARGO": _runfiles_path(toolchain.cargo, is_windows),
         "RUSTC": _runfiles_path(toolchain.rustc, is_windows),
+        # "RUST_BACKTRACE": 1,
     }
 
     args = ["vendor"]
@@ -514,12 +515,35 @@ directory next to where the target is defined. To run it, simply call:
 bazel run //3rdparty:crates_vendor
 ```
 
+### Patching
+
+If you need to replace crates in your third_party dependency tree with forks, the `patch` section can be used in your cargo manifest:
+
+```toml
+[patch.crates-io]
+fuse3 = { path = "forks/fuse3" }
+```
+
+A build file for the patched crate will still be generated under the vendor path
+(such as `crates/fuse3-0.6.1/BUILD.bazel`), but `cargo vendor` will NOT download the
+crate to that location, and the generated BUILD file will point to your copy. For this
+to work, you need to define the following filegroups in your patch crate's BUILD.bazel:
+`:srcs`, `:crate_root`, `:compile_data`, and (if the crate has a build script)
+`:build_script_crate_root`. See the
+[patching example](https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe/vendor_local_patching)
+for an example of what those BUILD files look like.
+
+This feature can also be used to avoid vendoring source code for crates that you never
+actually use for the platforms you're targeting. In that case you don't need an extra
+BUILD file, just crate a empty/stub Cargo.toml and `lib.rs`, and list the path to that
+in your `patch` section.
+
 <a id="#crates_vendor_repinning_updating_dependencies"></a>
 
 ### Repinning / Updating Dependencies
 
 Repinning dependencies is controlled by both the `CARGO_BAZEL_REPIN` environment variable or the `--repin`
-flag to the `crates_vendor` binary. To update dependencies, simply add the flag ro your `bazel run` invocation.
+flag to the `crates_vendor` binary. To update dependencies, simply add the flag to your `bazel run` invocation.
 
 ```shell
 bazel run //3rdparty:crates_vendor -- --repin

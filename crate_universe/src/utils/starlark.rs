@@ -126,7 +126,7 @@ pub(crate) struct CargoBuildScript {
     pub(crate) rustc_env_files: SelectSet<String>,
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub(crate) rustc_flags: SelectList<String>,
-    pub(crate) srcs: Glob,
+    pub(crate) srcs: GlobOrLabels,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub(crate) tags: Set<String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
@@ -197,7 +197,7 @@ pub(crate) struct CommonAttrs {
     pub(crate) rustc_env_files: SelectSet<String>,
     #[serde(skip_serializing_if = "SelectList::is_empty")]
     pub(crate) rustc_flags: SelectList<String>,
-    pub(crate) srcs: Glob,
+    pub(crate) srcs: GlobOrLabels,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub(crate) tags: Set<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -207,7 +207,7 @@ pub(crate) struct CommonAttrs {
 
 #[derive(Debug)]
 pub(crate) struct Data {
-    pub(crate) glob: Glob,
+    pub(crate) glob: GlobOrLabels,
     pub(crate) select: SelectSet<Label>,
 }
 

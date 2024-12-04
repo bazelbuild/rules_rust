@@ -2,8 +2,11 @@ use std::collections::BTreeSet;
 use std::fmt;
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
-use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
+use serde::Deserialize;
+
+use super::Label;
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub(crate) struct Glob {
@@ -103,5 +106,51 @@ impl<'de> Visitor<'de> for GlobVisitor {
             include: glob_map.include,
             exclude: glob_map.exclude,
         })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(untagged)]
+pub enum GlobOrLabels {
+    Glob(Glob),
+    Labels(Vec<Label>),
+}
+
+impl Default for GlobOrLabels {
+    fn default() -> Self {
+        Self::Glob(Glob::default())
+    }
+}
+
+impl From<Glob> for GlobOrLabels {
+    fn from(g: Glob) -> Self {
+        Self::Glob(g)
+    }
+}
+
+impl From<Vec<Label>> for GlobOrLabels {
+    fn from(v: Vec<Label>) -> Self {
+        Self::Labels(v)
+    }
+}
+
+impl Serialize for GlobOrLabels {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Glob(g) => g.serialize(serializer),
+            Self::Labels(l) => l.serialize(serializer),
+        }
+    }
+}
+
+impl GlobOrLabels {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Self::Glob(g) => !g.has_any_include(),
+            Self::Labels(l) => l.is_empty(),
+        }
     }
 }

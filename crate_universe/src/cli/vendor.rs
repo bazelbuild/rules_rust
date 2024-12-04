@@ -125,6 +125,7 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
     // Generate a splicer for creating a Cargo workspace manifest
     let splicer = Splicer::new(PathBuf::from(temp_dir.as_ref()), splicing_manifest)
         .context("Failed to create splicer")?;
+    // std::mem::forget(temp_dir);
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 

@@ -61,7 +61,7 @@ impl Context {
             .map(|annotation| {
                 let context = CrateContext::new(
                     annotation,
-                    &annotations.metadata.packages,
+                    &annotations.metadata,
                     &annotations.lockfile.crates,
                     &annotations.pairred_extras,
                     &annotations.metadata.workspace_metadata.tree_metadata,
