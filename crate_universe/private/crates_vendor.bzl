@@ -289,7 +289,6 @@ def _crates_vendor_impl(ctx):
     environ = {
         "CARGO": _runfiles_path(toolchain.cargo, is_windows),
         "RUSTC": _runfiles_path(toolchain.rustc, is_windows),
-        # "RUST_BACKTRACE": 1,
     }
 
     args = ["vendor"]

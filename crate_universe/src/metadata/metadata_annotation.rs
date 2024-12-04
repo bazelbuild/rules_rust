@@ -213,7 +213,6 @@ impl LockfileAnnotation {
         workspace_metadata: &WorkspaceMetadata,
     ) -> Result<SourceAnnotation> {
         let pkg = &metadata[&node.id];
-        println!("{} :  {}", pkg.name, pkg.id.repr);
 
         // Locate the matching lock package for the current crate
         let lock_pkg = match cargo_meta_pkg_to_locked_pkg(pkg, &lockfile.packages) {
