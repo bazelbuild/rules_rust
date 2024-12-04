@@ -73,17 +73,6 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
 
     return rust_analyzer_info
 
-def _accumulate_rust_analyzer_info(deps_details, dep):
-    if dep == None:
-        return
-    if RustAnalyzerInfo in dep:
-        deps_details.label_to_id[dep.label] = dep[RustAnalyzerInfo].id
-        deps_details.crate_specs.append(dep[RustAnalyzerInfo].crate_specs)
-    if RustAnalyzerGroupInfo in dep:
-        for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
-            deps_details.label_to_id[expanded_dep] = expanded_dep
-        deps_details.crate_specs.append(dep[RustAnalyzerGroupInfo].crate_specs)
-
 def _rust_analyzer_aspect_impl(target, ctx):
     if (rust_common.crate_info not in target and
         rust_common.test_crate_info not in target and
@@ -104,22 +93,28 @@ def _rust_analyzer_aspect_impl(target, ctx):
         cfgs += [f[6:] for f in ctx.rule.attr.rustc_flags if f.startswith("--cfg ") or f.startswith("--cfg=")]
 
     build_info = None
-    deps_details = struct(label_to_id = {}, crate_specs = [])
-
     for dep in getattr(ctx.rule.attr, "deps", []):
         # Save BuildInfo if we find any (for build script output)
         if BuildInfo in dep:
             build_info = dep[BuildInfo]
 
-    for dep in getattr(ctx.rule.attr, "deps", []):
-        _accumulate_rust_analyzer_info(deps_details, dep)
-    for dep in getattr(ctx.rule.attr, "proc_macro_deps", []):
-        _accumulate_rust_analyzer_info(deps_details, dep)
-    _accumulate_rust_analyzer_info(deps_details, getattr(ctx.rule.attr, "crate", None))
-    _accumulate_rust_analyzer_info(deps_details, getattr(ctx.rule.attr, "actual", None))
+    # Gather required info from dependencies.
+    label_to_id = {}  # {Label of dependency => crate_id}
+    crate_specs = []  # [depset of File - transitive crate_spec.json files]
+    attrs = ctx.rule.attr
+    all_deps = getattr(attrs, "deps", []) + getattr(attrs, "proc_macro_deps", []) + \
+               [dep for dep in [getattr(attrs, "crate", None), getattr(attrs, "actual")] if dep != None]
+    for dep in all_deps:
+        if RustAnalyzerInfo in dep:
+            label_to_id[dep.label] = dep[RustAnalyzerInfo].id
+            crate_specs.append(dep[RustAnalyzerInfo].crate_specs)
+        if RustAnalyzerGroupInfo in dep:
+            for expanded_dep in dep[RustAnalyzerGroupInfo].deps:
+                label_to_id[expanded_dep] = expanded_dep
+            crate_specs.append(dep[RustAnalyzerGroupInfo].crate_specs)
 
-    deps = deps_details.label_to_id.values()
-    crate_specs = depset(transitive = deps_details.crate_specs)
+    deps = label_to_id.values()
+    crate_specs = depset(transitive = crate_specs)
 
     if rust_common.crate_group_info in target:
         return [RustAnalyzerGroupInfo(deps = deps, crate_specs = crate_specs)]
@@ -130,10 +125,11 @@ def _rust_analyzer_aspect_impl(target, ctx):
     else:
         fail("Unexpected target type: {}".format(target))
 
-    aliases = {}
-    for aliased_target, aliased_name in getattr(ctx.rule.attr, "aliases", {}).items():
-        if aliased_target.label in deps_details.label_to_id:
-            aliases[deps_details.label_to_id[aliased_target.label]] = aliased_name
+    aliases = {
+        label_to_id[target.label]: name
+        for (target, name) in getattr(attrs, "aliases", {}).items()
+        if target.label in label_to_id
+    }
 
     # An arbitrary unique and stable identifier.
     crate_id = "ID-" + crate_info.root.path
