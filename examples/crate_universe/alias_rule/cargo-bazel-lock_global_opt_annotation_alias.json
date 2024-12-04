@@ -1,5 +1,5 @@
 {
-  "checksum": "9b0ee98f3a7a11ac67cfc8d6c9454a86db0212c64e95095c4fbb46fb2ce29703",
+  "checksum": "45e1290ebd0a736bac19eabee86e9386410c941d550179c221edbca4b8d5e6f6",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -221,5 +221,6 @@
   "direct_deps": [
     "test_data_passing_crate 0.1.0"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

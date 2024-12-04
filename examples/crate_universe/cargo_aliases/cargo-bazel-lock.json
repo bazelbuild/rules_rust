@@ -1,5 +1,5 @@
 {
-  "checksum": "302c37ca9329628c036fbc4839261329949c480d269ffa45c537f485da55d6a3",
+  "checksum": "5ed02b2b2f95b27a442e73cc92a802c24e0db36a09d1daf03198bcf538b30087",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3217,5 +3217,6 @@
   ],
   "direct_dev_deps": [
     "env_logger 0.9.3"
-  ]
+  ],
+  "unused_patches": []
 }

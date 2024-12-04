@@ -1,5 +1,5 @@
 {
-  "checksum": "1bfe374f81cdfc7748f6456fa03c0bc8119a5bbeb2dde6d71cafc033e7abfde3",
+  "checksum": "cba3188b84cdfad1cd0019b1ca89793c8db9c86f1ff2c483a47def462b2ce3d4",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -1077,5 +1077,6 @@
     "quote 1.0.32",
     "syn 2.0.28"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

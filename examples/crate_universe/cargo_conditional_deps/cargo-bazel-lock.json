@@ -1,5 +1,5 @@
 {
-  "checksum": "37f03db7ce7f90dfb1bd9b823ab34cffb4cbac54c1b70c91eba3c7a1cffa1566",
+  "checksum": "c3b7b22da137040aab45b4d7fca22113423c089a7eb5cbc5ab743cd52c990813",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -619,5 +619,6 @@
   "direct_deps": [
     "nix 0.26.2"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

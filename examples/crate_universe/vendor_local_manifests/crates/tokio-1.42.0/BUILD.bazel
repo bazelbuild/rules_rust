@@ -114,7 +114,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.41.1",
+    version = "1.42.0",
     deps = [
         "//vendor_local_manifests/crates/bytes-1.9.0:bytes",
         "//vendor_local_manifests/crates/mio-1.0.3:mio",

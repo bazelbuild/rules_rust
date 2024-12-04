@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "tokio_util",
+    name = "indexmap",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,9 +29,8 @@ rust_library(
         ],
     ),
     crate_features = [
-        "codec",
         "default",
-        "io",
+        "std",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -40,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=tokio-util",
+        "crate-name=indexmap",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,12 +81,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.7.12",
+    version = "2.7.0",
     deps = [
-        "@crates_vendor_pkgs__bytes-1.9.0//:bytes",
-        "@crates_vendor_pkgs__futures-core-0.3.31//:futures_core",
-        "@crates_vendor_pkgs__futures-sink-0.3.31//:futures_sink",
-        "@crates_vendor_pkgs__pin-project-lite-0.2.15//:pin_project_lite",
-        "@crates_vendor_pkgs__tokio-1.41.1//:tokio",
+        "@crates_vendor_pkgs__equivalent-1.0.1//:equivalent",
+        "@crates_vendor_pkgs__hashbrown-0.15.2//:hashbrown",
     ],
 )

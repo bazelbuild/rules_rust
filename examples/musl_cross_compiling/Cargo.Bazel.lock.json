@@ -1,5 +1,5 @@
 {
-  "checksum": "99e1870a03011adb71cbd618798bc7aa3d250451e51d2924d6895a1eda0d875f",
+  "checksum": "71b37f1de53a4c1484c2b12eef5f283383f0ca642ff3d9bb8ac900ac405b2c69",
   "crates": {
     "aes 0.8.4": {
       "name": "aes",
@@ -10856,5 +10856,6 @@
     "keyring 2.3.3",
     "syn 1.0.109"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

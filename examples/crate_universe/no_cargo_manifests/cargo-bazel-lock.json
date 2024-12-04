@@ -1,5 +1,5 @@
 {
-  "checksum": "86b6e08fe8d8eb9d20bcd652977b287934be90b20c4ce7e0fbc70d1a8bd3a101",
+  "checksum": "ed414e4ed65d5991b4fa58676dcedbbb139b7002aac2d102dec314845b9f7532",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",
@@ -6419,5 +6419,6 @@
     "tracing 0.1.37",
     "tracing-subscriber 0.3.16"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }
