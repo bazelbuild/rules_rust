@@ -12,7 +12,10 @@ def _local_crate_mirror_impl(repository_ctx):
 
     generator, _generator_sha256 = get_generator(repository_ctx, host_triple.str)
 
-    execute(repository_ctx, ["bash", "-c", "cp -r {}/* {}/".format(path, repository_ctx.path("."))])
+    # TODO: Work out why we can't just symlink here and actually copy.
+    # illicitonion thinks it may be that symlinks didn't get invalidated properly?
+    for child in repository_ctx.path(path).readdir():
+        repository_ctx.execute(["cp", "-r", child, repository_ctx.path(child.basename)])
 
     paths_to_track = execute(repository_ctx, ["find", path, "-type", "f"]).stdout.strip().split("\n")
     for path_to_track in paths_to_track:
