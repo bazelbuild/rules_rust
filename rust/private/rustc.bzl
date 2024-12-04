@@ -398,12 +398,11 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
+def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
-        attr (struct): Attributes to use in gathering linker args
         crate_type (str): The target crate's type (i.e. "bin", "proc-macro", etc.).
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
@@ -437,13 +436,6 @@ def get_linker_and_args(ctx, attr, crate_type, cc_toolchain, feature_configurati
     else:
         fail("Unknown `crate_type`: {}".format(crate_type))
 
-    # Add linkopts from dependencies. This includes linkopts from transitive
-    # dependencies since they get merged up.
-    for dep in getattr(attr, "deps", []):
-        if CcInfo in dep and dep[CcInfo].linking_context:
-            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
-                for flag in linker_input.user_link_flags:
-                    user_link_flags.append(flag)
     link_variables = cc_common.create_link_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -723,8 +715,14 @@ def collect_inputs(
         if build_info.flags:
             build_info_inputs.append(build_info.flags)
 
+    # The old default behavior was to include data files at compile time.
+    # This flag controls whether to include data files in compile_data.
+    data_included_in_inputs = []
+    if not toolchain._incompatible_do_not_include_data_in_compile_data:
+        data_included_in_inputs = getattr(files, "data", [])
+
     nolinkstamp_compile_inputs = depset(
-        getattr(files, "data", []) +
+        data_included_in_inputs +
         build_info_inputs +
         ([toolchain.target_json] if toolchain.target_json else []) +
         ([] if linker_script == None else [linker_script]),
@@ -1013,7 +1011,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(ctx, attr, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
+            ld, link_args, link_env = get_linker_and_args(ctx, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
@@ -1061,6 +1059,7 @@ def construct_arguments(
             ctx,
             crate_info.rustc_env,
             data_paths,
+            {},
         ))
 
     # Ensure the sysroot is set for the target platform
@@ -1104,6 +1103,7 @@ def construct_arguments(
             ctx,
             getattr(attr, "rustc_flags", []),
             data_paths,
+            {},
         ),
     )
 
@@ -1537,8 +1537,6 @@ def rustc_compile_action(
         output_group_info["dsym_folder"] = depset([dsym_folder])
     if build_metadata:
         output_group_info["build_metadata"] = depset([build_metadata])
-    if build_metadata:
-        output_group_info["build_metadata"] = depset([build_metadata])
         if rustc_rmeta_output:
             output_group_info["rustc_rmeta_output"] = depset([rustc_rmeta_output])
     if rustc_output:
@@ -1959,6 +1957,9 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
 
     return []
 
+def _add_user_link_flags(ret, linker_input):
+    ret.extend(["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags])
+
 def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
@@ -1977,6 +1978,7 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
                 ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_windows_msvc(make_link_flags_args):
@@ -1996,6 +1998,7 @@ def _make_link_flags_darwin(make_link_flags_args):
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _make_link_flags_default(make_link_flags_args):
@@ -2013,6 +2016,7 @@ def _make_link_flags_default(make_link_flags_args):
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
+    _add_user_link_flags(ret, linker_input)
     return ret
 
 def _libraries_dirnames(make_link_flags_args):
@@ -2151,7 +2155,7 @@ def _error_format_impl(ctx):
 error_format = rule(
     doc = (
         "Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values."
+        "flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values."
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
@@ -2172,7 +2176,7 @@ def _rustc_output_diagnostics_impl(ctx):
 
 rustc_output_diagnostics = rule(
     doc = (
-        "Setting this flag from the command line with `--@rules_rust//:rustc_output_diagnostics` " +
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
         "These are accessible via the " +
         "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
@@ -2187,11 +2191,11 @@ def _extra_rustc_flags_impl(ctx):
 
 extra_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
+        "Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
         "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
-        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
+        "use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
@@ -2202,11 +2206,11 @@ def _extra_rustc_flag_impl(ctx):
 
 extra_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. " +
+        "Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _extra_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _extra_exec_rustc_flags_impl(ctx):
@@ -2214,7 +2218,7 @@ def _extra_exec_rustc_flags_impl(ctx):
 
 extra_exec_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flags`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. " +
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
@@ -2227,11 +2231,11 @@ def _extra_exec_rustc_flag_impl(ctx):
 
 extra_exec_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flag`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _per_crate_rustc_flag_impl(ctx):
@@ -2239,7 +2243,7 @@ def _per_crate_rustc_flag_impl(ctx):
 
 per_crate_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//:experimental_per_crate_rustc_flag`. " +
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`. " +
         "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
         "The label matching uses the canonical form of the label (i.e //package:label_name)." +
         "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
@@ -2247,7 +2251,7 @@ per_crate_rustc_flag = rule(
         "Multiple uses are accumulated."
     ),
     implementation = _per_crate_rustc_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _no_std_impl(ctx):
@@ -2261,7 +2265,7 @@ no_std = rule(
         "No std; we need this so that we can distinguish between host and exec"
     ),
     attrs = {
-        "_no_std": attr.label(default = "//:no_std"),
+        "_no_std": attr.label(default = "//rust/settings:no_std"),
     },
     implementation = _no_std_impl,
 )

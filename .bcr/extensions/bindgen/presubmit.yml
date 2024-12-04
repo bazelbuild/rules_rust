@@ -1,0 +1,15 @@
+bcr_test_module:
+  module_path: "extensions/bindgen"
+  matrix:
+    platform: ["macos_arm64", "ubuntu2004", "windows"]
+    bazel: ["7.x"]
+  tasks:
+    run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
+      shell_commands:
+        - "rm MODULE.bazel.lock"
+      test_targets:
+        - "//..."

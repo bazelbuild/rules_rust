@@ -315,11 +315,6 @@ def _cargo_build_script_impl(ctx):
         extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
-    streams = struct(
-        stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
-        stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
-    )
-
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
@@ -362,7 +357,7 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
+    linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
@@ -412,6 +407,8 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
+    known_variables = {}
+
     # Gather data from the `toolchains` attribute.
     for target in ctx.attr.toolchains:
         if DefaultInfo in target:
@@ -426,7 +423,7 @@ def _cargo_build_script_impl(ctx):
             toolchain_tools.append(all_files)
         if platform_common.TemplateVariableInfo in target:
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
-            env.update(variables)
+            known_variables.update(variables)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
@@ -436,6 +433,7 @@ def _cargo_build_script_impl(ctx):
         getattr(ctx.attr, "tools", []) +
         script_info.data +
         script_info.tools,
+        known_variables,
     ))
 
     tools = depset(
@@ -460,9 +458,21 @@ def _cargo_build_script_impl(ctx):
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
-    args.add(streams.stdout, format = "--stdout=%s")
-    args.add(streams.stderr, format = "--stderr=%s")
     args.add(ctx.attr.rundir, format = "--rundir=%s")
+
+    output_groups = {
+        "out_dir": depset([out_dir]),
+    }
+
+    debug_std_streams_output_group = ctx.attr._debug_std_streams_output_group[BuildSettingInfo].value
+    if debug_std_streams_output_group:
+        debug_stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log")
+        debug_stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log")
+        args.add(debug_stdout, format = "--stdout=%s")
+        args.add(debug_stderr, format = "--stderr=%s")
+        extra_output.append(debug_stdout)
+        extra_output.append(debug_stderr)
+        output_groups["streams"] = depset([debug_stdout, debug_stderr])
 
     build_script_inputs = []
 
@@ -494,8 +504,6 @@ def _cargo_build_script_impl(ctx):
             link_flags,
             link_search_paths,
             dep_env_out,
-            streams.stdout,
-            streams.stderr,
         ] + extra_output,
         tools = tools,
         inputs = depset(build_script_inputs, transitive = extra_inputs),
@@ -523,8 +531,7 @@ def _cargo_build_script_impl(ctx):
             compile_data = depset(extra_output, transitive = script_data),
         ),
         OutputGroupInfo(
-            streams = depset([streams.stdout, streams.stderr]),
-            out_dir = depset([out_dir]),
+            **output_groups
         ),
     ]
 
@@ -609,6 +616,9 @@ cargo_build_script = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_debug_std_streams_output_group": attr.label(
+            default = Label("//cargo/settings:debug_std_streams_output_group"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),

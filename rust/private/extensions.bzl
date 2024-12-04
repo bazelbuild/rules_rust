@@ -1,14 +1,9 @@
 """Bzlmod module extensions that are only used internally"""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//bindgen:repositories.bzl", "rust_bindgen_dependencies")
 load("//crate_universe:repositories.bzl", "crate_universe_dependencies")
-load("//proto/prost:repositories.bzl", "rust_prost_dependencies")
-load("//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies")
 load("//rust/private:repository_utils.bzl", "TINYJSON_KWARGS")
-load("//test:deps.bzl", "rules_rust_test_deps")
 load("//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-load("//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_dependencies")
 
 def _internal_deps_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines
@@ -20,12 +15,7 @@ def _internal_deps_impl(module_ctx):
     http_archive(**TINYJSON_KWARGS)
 
     direct_deps.extend(crate_universe_dependencies())
-    direct_deps.extend(rust_prost_dependencies(bzlmod = True))
-    direct_deps.extend(rust_proto_protobuf_dependencies(bzlmod = True))
-    direct_deps.extend(rust_bindgen_dependencies())
     direct_deps.extend(rust_analyzer_dependencies())
-    direct_deps.extend(rust_wasm_bindgen_dependencies())
-    direct_deps.extend(rules_rust_test_deps())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used

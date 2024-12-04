@@ -265,7 +265,7 @@ mod test {
                 TargetTriple::from_bazel("aarch64-unknown-linux-gnu".to_owned()),
                 TargetTriple::from_bazel("aarch64-pc-windows-msvc".to_owned()),
                 TargetTriple::from_bazel("wasm32-unknown-unknown".to_owned()),
-                TargetTriple::from_bazel("wasm32-wasi".to_owned()),
+                TargetTriple::from_bazel("wasm32-wasip1".to_owned()),
                 TargetTriple::from_bazel("x86_64-apple-darwin".to_owned()),
                 TargetTriple::from_bazel("x86_64-pc-windows-msvc".to_owned()),
                 TargetTriple::from_bazel("x86_64-unknown-freebsd".to_owned()),
@@ -286,7 +286,7 @@ mod test {
         );
 
         assert_eq!(
-            Digest("5e0fd9106767c43deb77bb1024ca24e99685110a1085c03abc028c75e180831f".to_owned()),
+            Digest("b500cdfe8efb6c34dca8564e62c5330e0e7e3fe330c6e8399c645db397d76275".to_owned()),
             digest,
         );
     }

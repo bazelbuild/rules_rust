@@ -18,7 +18,7 @@ These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [R
 
 There are two rule sets. The first ruleset defines the `rust_prost_library` which generates Rust code
 using the [`prost`] and [`tonic`] dependencies. The second ruleset defines the `rust_proto_library` and
-`rust_grpc_library` rules which generate Rust code using the [`rust-protobuf`] dependencies. 
+`rust_grpc_library` rules which generate Rust code using the [`rust-protobuf`] dependencies.
 
 [rust]: http://www.rust-lang.org/
 [protobuf]: https://developers.google.com/protocol-buffers/
@@ -30,11 +30,11 @@ See the [protobuf example](../examples/proto) for a more complete example of use
 ### Prost Setup
 
 ```python
-load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
+load("@rules_rust_prost//:repositories.bzl", "rust_prost_dependencies")
 
 rust_prost_dependencies()
 
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
+load("@rules_rust_prost//:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
 rust_prost_transitive_repositories()
 ```
@@ -74,7 +74,7 @@ crates_repository(
             patches = [
                 # Note: You will need to use this patch until a version greater than `0.2.2` of
                 # `protoc-gen-prost` is released.
-                "@rules_rust//proto/prost/private/3rdparty/patches:protoc-gen-prost.patch",
+                "@rules_rust_prost///private/3rdparty/patches:protoc-gen-prost.patch",
             ],
         )],
         "protoc-gen-tonic": [crate.annotation(
@@ -109,7 +109,7 @@ You can then define a toolchain with the `rust_prost_toolchain` rule which uses 
 defined above. For example:
 
 ```python
-load("@rules_rust//proto/prost:defs.bzl", "rust_prost_toolchain")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
 load("@rules_rust//rust:defs.bzl", "rust_library_group")
 
 rust_library_group(
@@ -140,7 +140,7 @@ rust_prost_toolchain(
 toolchain(
     name = "prost_toolchain",
     toolchain = "prost_toolchain_impl",
-    toolchain_type = "@rules_rust//proto/prost:toolchain_type",
+    toolchain_type = "@rules_rust_prost//:toolchain_type",
 )
 ```
 
@@ -156,13 +156,13 @@ To use the Rust proto rules, add the following to your `WORKSPACE` file to add t
 external repositories for the Rust proto toolchain (in addition to the [rust rules setup](..)):
 
 ```python
-load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
+load("@rules_rust_protobuf//:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
 
 rust_proto_protobuf_dependencies()
 
 rust_proto_protobuf_register_toolchains()
 
-load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
+load("@rules_rust_protobuf//:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
 
 rust_proto_protobuf_transitive_repositories()
 ```
@@ -189,8 +189,8 @@ complex scenario (with more dependencies), you must redefine those
 dependencies.
 
 To do this, once you've imported the needed dependencies (see our
-[@rules_rust//proto/protobuf/3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/protobuf/3rdparty/BUILD.bazel)
-file to see the default dependencies), you need to create your own toolchain. 
+[@rules_rust_protobuf///3rdparty/BUILD.bazel](https://github.com/bazelbuild/rules_rust/blob/main/proto/protobuf/3rdparty/BUILD.bazel)
+file to see the default dependencies), you need to create your own toolchain.
 To do so you can create a BUILD file with your toolchain definition, for example:
 
 ```python
@@ -209,7 +209,7 @@ rust_proto_toolchain(
 toolchain(
     name = "proto-toolchain",
     toolchain = ":proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
+    toolchain_type = "@rules_rust_protobuf//:toolchain_type",
 )
 ```
 
@@ -266,7 +266,7 @@ Builds a Rust library crate from a set of `proto_library`s suitable for gRPC.
 Example:
 
 ```python
-load("@rules_rust//proto/protobuf:defs.bzl", "rust_grpc_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
 
 proto_library(
     name = "my_proto",
@@ -341,7 +341,7 @@ Builds a Rust library crate from a set of `proto_library`s.
 Example:
 
 ```python
-load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "my_proto",
@@ -422,7 +422,7 @@ A rule for generating a Rust library using Prost.
 rust_prost_transitive_repositories()
 </pre>
 
-Load transitive dependencies of the `@rules_rust//proto/protobuf` rules.
+Load transitive dependencies of the `@rules_rust_protobuf//` rules.
 
 This macro should be called immediately after the `rust_protobuf_dependencies` macro.
 
@@ -476,9 +476,6 @@ Register toolchains for proto compilation.
 rust_proto_protobuf_transitive_repositories()
 </pre>
 
-Load transitive dependencies of the `@rules_rust//proto/protobuf` rules.
+Load transitive dependencies of the `@rules_rust_protobuf//` rules.
 
 This macro should be called immediately after the `rust_protobuf_dependencies` macro.
-
-
-

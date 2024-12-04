@@ -1,5 +1,6 @@
 """A module is used to assist in bootstrapping cargo-bazel"""
 
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//cargo:defs.bzl", "cargo_bootstrap_repository")
 load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
 
@@ -14,7 +15,9 @@ def cargo_bazel_bootstrap(name = "cargo_bazel_bootstrap", rust_version = rust_co
         rust_version (str, optional): The rust version to use. Defaults to the default of `cargo_bootstrap_repository`.
         **kwargs: kwargs to pass through to cargo_bootstrap_repository.
     """
-    cargo_bootstrap_repository(
+
+    maybe(
+        cargo_bootstrap_repository,
         name = name,
         srcs = CARGO_BAZEL_SRCS,
         binary = "cargo-bazel",

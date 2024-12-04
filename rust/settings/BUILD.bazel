@@ -212,7 +212,7 @@ clippy_flags(
 
 clippy_flag(
     name = "clippy_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
@@ -228,7 +228,7 @@ extra_rustc_flags(
 
 extra_rustc_flag(
     name = "extra_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
@@ -244,12 +244,20 @@ extra_exec_rustc_flags(
 
 extra_exec_rustc_flag(
     name = "extra_exec_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
 per_crate_rustc_flag(
     name = "experimental_per_crate_rustc_flag",
-    build_setting_default = "",
+    build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+# A flag to control whether to include data files in compile_data.
+incompatible_flag(
+    name = "incompatible_do_not_include_data_in_compile_data",
+    build_setting_default = True,
+    issue = "https://github.com/bazelbuild/rules_rust/issues/2977",
     visibility = ["//visibility:public"],
 )

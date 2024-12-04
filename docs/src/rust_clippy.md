@@ -34,7 +34,7 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 `clippy.toml`. Using a custom config file requires Rust 1.34.0 or newer.
 
 ```text
-build --@rules_rust//:clippy.toml=//:clippy.toml
+build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
 ```
 
 <a id="rust_clippy"></a>

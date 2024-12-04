@@ -1,5 +1,7 @@
 # {version}
 
+Additional documentation can be found at: https://bazelbuild.github.io/rules_rust/#setup
+
 ## Bzlmod
 
 ```python
@@ -13,8 +15,100 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "rules_rust",
     integrity = "sha256-{sha256_base64}",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz"],
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-{version}.tar.gz"],
 )
 ```
 
-Additional documentation can be found at: https://bazelbuild.github.io/rules_rust/#setup
+## Extensions
+
+### Bindgen
+
+<details>
+
+#### Bzlmod
+
+```python
+bazel_dep(name = "rules_rust_bindgen", version = "{version}")
+```
+
+#### WORKSPACE
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_rust_bindgen",
+    integrity = "sha256-{ext_bindgen_sha256_base64}",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust_bindgen-{version}.tar.gz"],
+)
+```
+
+</details>
+
+### Prost
+
+<details>
+
+#### Bzlmod
+
+```python
+bazel_dep(name = "rules_rust_prost", version = "{version}")
+```
+
+#### WORKSPACE
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_rust_prost",
+    integrity = "sha256-{ext_prost_sha256_base64}",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust_prost-{version}.tar.gz"],
+)
+```
+
+</details>
+
+### Protobuf
+
+<details>
+
+#### Bzlmod
+
+```python
+bazel_dep(name = "rules_rust_protobuf", version = "{version}")
+```
+
+#### WORKSPACE
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_rust_protobuf",
+    integrity = "sha256-{ext_protobuf_sha256_base64}",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust_protobuf-{version}.tar.gz"],
+)
+```
+
+</details>
+
+### Wasm-Bindgen
+
+<details>
+
+#### Bzlmod
+
+```python
+bazel_dep(name = "rules_rust_wasm_bindgen", version = "{version}")
+```
+
+#### WORKSPACE
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_rust",
+    integrity = "sha256-{ext_wasm_bindgen_sha256_base64}",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust_wasm_bindgen-{version}.tar.gz"],
+)
+```
+
+</details>

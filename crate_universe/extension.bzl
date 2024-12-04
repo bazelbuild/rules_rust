@@ -107,7 +107,7 @@ def _generate_hub_and_spokes(module_ctx, cargo_bazel, cfg, annotations, cargo_lo
         executable = False,
         content = generate_splicing_manifest(
             packages = packages,
-            splicing_config = "",
+            splicing_config = cfg.splicing_config,
             cargo_config = cfg.cargo_config,
             manifests = manifests,
             manifest_to_path = module_ctx.path,
@@ -404,6 +404,7 @@ _from_cargo = tag_class(
         cargo_config = CRATES_VENDOR_ATTRS["cargo_config"],
         generate_binaries = CRATES_VENDOR_ATTRS["generate_binaries"],
         generate_build_scripts = CRATES_VENDOR_ATTRS["generate_build_scripts"],
+        splicing_config = CRATES_VENDOR_ATTRS["splicing_config"],
         supported_platform_triples = CRATES_VENDOR_ATTRS["supported_platform_triples"],
     ),
 )
@@ -540,6 +541,7 @@ _from_specs = tag_class(
         cargo_config = CRATES_VENDOR_ATTRS["cargo_config"],
         generate_binaries = CRATES_VENDOR_ATTRS["generate_binaries"],
         generate_build_scripts = CRATES_VENDOR_ATTRS["generate_build_scripts"],
+        splicing_config = CRATES_VENDOR_ATTRS["splicing_config"],
         supported_platform_triples = CRATES_VENDOR_ATTRS["supported_platform_triples"],
     ),
 )

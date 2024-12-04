@@ -15,7 +15,7 @@ bool_flag(
 # https://github.com/bazelbuild/bazel/issues/15486
 bool_flag(
     name = "incompatible_runfiles_cargo_manifest_dir",
-    build_setting_default = False,
+    build_setting_default = True,
 )
 
 # A flag which determines what files are retained in `CARGO_MANIFEST_DIR` directories
@@ -26,4 +26,11 @@ string_list_flag(
         ".lib",
         ".so",
     ],
+)
+
+# A flag which adds a `streams` output group to `cargo_build_script` targets that contain
+# the raw `stderr` and `stdout` streams from the build script.
+bool_flag(
+    name = "debug_std_streams_output_group",
+    build_setting_default = False,
 )

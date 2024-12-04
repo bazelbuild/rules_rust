@@ -51,6 +51,8 @@ def _rust_impl(module_ctx):
     toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
+        if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
+            fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
         if len(toolchain.versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
@@ -58,9 +60,13 @@ def _rust_impl(module_ctx):
             # valid.
             _empty_repository(name = "rust_toolchains")
         else:
+            extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
+
             rust_register_toolchains(
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
+                extra_rustc_flags = extra_rustc_flags,
+                extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
                 allocator_library = toolchain.allocator_library,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
@@ -69,7 +75,12 @@ def _rust_impl(module_ctx):
                 urls = toolchain.urls,
                 versions = toolchain.versions,
                 register_toolchains = False,
+                aliases = toolchain.aliases,
             )
+    metadata_kwargs = {}
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        metadata_kwargs["reproducible"] = True
+    return module_ctx.extension_metadata(**metadata_kwargs)
 
 _COMMON_TAG_KWARGS = dict(
     allocator_library = attr.string(
@@ -104,16 +115,34 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         extra_target_triples = attr.string_list(
             default = DEFAULT_EXTRA_TARGET_TRIPLES,
         ),
+        extra_exec_rustc_flags = attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        extra_rustc_flags = attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        extra_rustc_flags_triples = attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
+        ),
         rust_analyzer_version = attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
         ),
         versions = attr.string_list(
             doc = (
-                "A list of toolchain versions to download. This paramter only accepts one versions " +
+                "A list of toolchain versions to download. This parameter only accepts one version " +
                 "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
                 "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
+        ),
+        aliases = attr.string_dict(
+            doc = (
+                "Map of full toolchain repository name to an alias. If any repository is created by this " +
+                "extension matches a key in this dictionary, the name of the created repository will be " +
+                "remapped to the value instead. This may be required to work around path length limits " +
+                "on Windows."
+            ),
+            default = {},
         ),
         **_COMMON_TAG_KWARGS
     ),

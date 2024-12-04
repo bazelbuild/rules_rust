@@ -53,35 +53,51 @@ def rules_rust_dependencies():
         http_archive,
         name = "platforms",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
-            "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
         ],
-        sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+        sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
     )
+
+    # Avoid the following issue https://github.com/bazelbuild/rules_cc/issues/274
+    rules_cc_kwargs = {}
+    if native.bazel_version.startswith(("6", "7")):
+        rules_cc_kwargs.update({
+            "patch_args": ["-p1"],
+            "patches": [Label("//rust/private/3rdparty:rules_cc.patch")],
+        })
     maybe(
         http_archive,
         name = "rules_cc",
-        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.9/rules_cc-0.0.9.tar.gz"],
-        sha256 = "2037875b9a4456dce4a79d112a8ae885bbc4aad968e6587dca6e64f3a0900cdf",
-        strip_prefix = "rules_cc-0.0.9",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.17/rules_cc-0.0.17.tar.gz"],
+        sha256 = "abc605dd850f813bb37004b77db20106a19311a96b2da1c92b789da529d28fe1",
+        strip_prefix = "rules_cc-0.0.17",
+        **rules_cc_kwargs
     )
     maybe(
         http_archive,
         name = "rules_license",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_license/releases/download/0.0.8/rules_license-0.0.8.tar.gz",
-            "https://github.com/bazelbuild/rules_license/releases/download/0.0.8/rules_license-0.0.8.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_license/releases/download/1.0.0/rules_license-1.0.0.tar.gz",
+            "https://github.com/bazelbuild/rules_license/releases/download/1.0.0/rules_license-1.0.0.tar.gz",
         ],
-        sha256 = "241b06f3097fd186ff468832150d6cc142247dc42a32aaefb56d0099895fd229",
+        sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
+    )
+    maybe(
+        http_archive,
+        name = "bazel_features",
+        sha256 = "af3d4fb1cf4f25942cb4a933b1ad93a0ea9fe9ee70c2af7f369fb72a67c266e5",
+        strip_prefix = "bazel_features-1.21.0",
+        url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.21.0/bazel_features-v1.21.0.tar.gz",
     )
 
     maybe(
         http_archive,
         name = "bazel_skylib",
-        sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
+        sha256 = "bc283cdfcd526a52c3201279cda4bc298652efa898b10b4db0837dc51652756f",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
         ],
     )
 
@@ -90,8 +106,8 @@ def rules_rust_dependencies():
     maybe(
         http_archive,
         name = "build_bazel_apple_support",
-        sha256 = "1c4031e72b456a048d8177f59a5581808c07585fa9e255c6f5fefb8752af7e40",
-        url = "https://github.com/bazelbuild/apple_support/releases/download/1.13.0/apple_support.1.13.0.tar.gz",
+        sha256 = "b53f6491e742549f13866628ddffcc75d1f3b2d6987dc4f14a16b242113c890b",
+        url = "https://github.com/bazelbuild/apple_support/releases/download/1.17.1/apple_support.1.17.1.tar.gz",
     )
 
     # process_wrapper needs a low-dependency way to process json.
@@ -119,7 +135,8 @@ def rust_register_toolchains(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
-        versions = _RUST_TOOLCHAIN_VERSIONS):
+        versions = _RUST_TOOLCHAIN_VERSIONS,
+        aliases = {}):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -151,8 +168,9 @@ def rust_register_toolchains(
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
-        versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
+        versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
+        aliases (dict, optional): A mapping of "full" repository name to another name to use instead.
     """
     if not rustfmt_version:
         if len(versions) == 1:
@@ -171,6 +189,10 @@ def rust_register_toolchains(
 
     if not rust_analyzer_version:
         rust_analyzer_version = select_rust_version(versions)
+
+    # Convert to an unfrozen dict to remove mappings as they are used. This will allow us to determine if there
+    # are any unused aliases requested.
+    aliases = dict(aliases)
 
     rust_analyzer_repo_name = "rust_analyzer_{}".format(rust_analyzer_version.replace("/", "-"))
 
@@ -218,9 +240,12 @@ def rust_register_toolchains(
             sha256s = sha256s,
             urls = urls,
             versions = versions,
+            aliases = aliases,
         )
 
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
+        if rustfmt_repo_name in aliases:
+            rustfmt_repo_name = aliases.pop(rustfmt_repo_name)
 
         maybe(
             rustfmt_toolchain_repository,
@@ -236,7 +261,7 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with = None):
+        for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with = None, aliases = aliases):
             toolchain_names.append(toolchain.name)
             toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
             exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
@@ -248,6 +273,9 @@ def rust_register_toolchains(
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
         target_compatible_with_by_toolchain[rustfmt_repo_name] = []
         toolchain_types[rustfmt_repo_name] = "@rules_rust//rust/rustfmt:toolchain_type"
+
+    if aliases:
+        fail("No repositories were created matching the requested names to alias:\n{}".format("\n".join(sorted(aliases))))
 
     toolchain_repository_hub(
         name = "rust_toolchains",
@@ -924,7 +952,7 @@ rust_toolchain_set_repository = repository_rule(
     implementation = _rust_toolchain_set_repository_impl,
 )
 
-def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with):
+def _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, fallback_target_compatible_with, aliases = {}):
     extra_target_triples_list = extra_target_triples.keys() if type(extra_target_triples) == "dict" else extra_target_triples
 
     toolchain_repos = []
@@ -955,8 +983,12 @@ def _get_toolchain_repositories(name, exec_triple, extra_target_triples, version
 
         # Define toolchains for each requested version
         for channel in channels.values():
+            # Check if this toolchain is requested to be aliased.
+            full_name = "{}__{}__{}".format(name, target_triple, channel.name)
+            if full_name in aliases:
+                full_name = aliases.pop(full_name)
             toolchain_repos.append(struct(
-                name = "{}__{}__{}".format(name, target_triple, channel.name),
+                name = full_name,
                 target_triple = target_triple,
                 channel = channel,
                 target_constraints = target_constraints,
@@ -985,7 +1017,8 @@ def rust_repository_set(
         auth_patterns = None,
         register_toolchain = True,
         exec_compatible_with = None,
-        default_target_compatible_with = None):
+        default_target_compatible_with = None,
+        aliases = {}):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -1021,10 +1054,11 @@ def rust_repository_set(
         register_toolchain (bool): If True, the generated `rust_toolchain` target will become a registered toolchain.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         default_target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.
+        aliases (dict): Replacement names to use for toolchains created by this macro.
     """
 
     all_toolchain_names = []
-    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, default_target_compatible_with):
+    for toolchain in _get_toolchain_repositories(name, exec_triple, extra_target_triples, versions, default_target_compatible_with, aliases):
         # Infer toolchain-specific rustc flags depending on the type (list, dict, optional) of extra_rustc_flags
         if extra_rustc_flags == None:
             toolchain_extra_rustc_flags = []

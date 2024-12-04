@@ -22,6 +22,10 @@ rust_register_toolchains(
     ],
 )
 
+load("@rules_rust//rust:repositories_transitive.bzl", "rules_rust_transitive_dependencies")
+
+rules_rust_transitive_dependencies()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(

@@ -40,7 +40,7 @@ function test_all_and_apply() {
 
   temp_dir="$(mktemp -d -t ci-XXXXXXXXXX)"
   new_workspace="${temp_dir}/rules_rust_test_rustfmt"
-  
+
   mkdir -p "${new_workspace}/test/rustfmt" && \
   cp -r test/rustfmt/* "${new_workspace}/test/rustfmt/" && \
   cat << EOF > "${new_workspace}/WORKSPACE.bazel"
@@ -88,7 +88,7 @@ EOF
   done
 
   # Format all targets
-  bazel run @rules_rust//tools/rustfmt --@rules_rust//:rustfmt.toml=//test/rustfmt:test_rustfmt.toml
+  bazel run @rules_rust//tools/rustfmt --@rules_rust//rust/settings:rustfmt.toml=//test/rustfmt:test_rustfmt.toml
 
   # Ensure all tests pass
   check_build_result $TEST_OK "*"

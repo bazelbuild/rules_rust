@@ -1,5 +1,5 @@
 {
-  "checksum": "72dac153f551ab5be00366b6716e33a10a6bc293d2fa033955c4acf41fae56b5",
+  "checksum": "302c37ca9329628c036fbc4839261329949c480d269ffa45c537f485da55d6a3",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3105,7 +3105,7 @@
     ],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasip1"
     ],
     "cfg(unix)": [
       "aarch64-apple-darwin",
@@ -3175,8 +3175,8 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

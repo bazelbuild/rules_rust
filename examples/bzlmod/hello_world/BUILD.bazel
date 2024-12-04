@@ -4,18 +4,26 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
 package(default_visibility = ["//visibility:public"])
 
 rust_binary(
-    name = "hello_world_transient",
+    name = "hello_world_from_workspace_transient",
     srcs = ["src/main.rs"],
     deps = [
-        "@crates//:anyhow",
+        "@crates_in_workspace//:anyhow",
     ],
 )
 
 rust_binary(
-    name = "hello_world_vendored",
+    name = "hello_world_from_workspace_vendored",
     srcs = ["src/main.rs"],
     deps = [
-        "//third-party/crates:anyhow",
+        "//third-party-in-workspace/crates:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "hello_world_without_workspace_transient",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates_without_workspace//:anyhow",
     ],
 )
 
@@ -25,8 +33,9 @@ rust_binary(
         crate = ":hello_world_{}".format(target),
     )
     for target in [
-        "transient",
-        "vendored",
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
     ]
 ]
 
@@ -45,8 +54,9 @@ rust_binary(
         ],
     )
     for target in [
-        "transient",
-        "vendored",
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
     ]
 ]
 

@@ -104,7 +104,7 @@ TARGET_CONFIG = {
         link_action_configs = wasm_ld_link_action_configs,
         strip_action_configs = llvm_strip_strip_action_configs,
     ),
-    "wasm32-wasi": struct(
+    "wasm32-wasip1": struct(
         artifact_name_patterns = WASM_ARTIFACT_NAME_PATTERNS,
         compile_action_configs = clang_compile_action_configs,
         archive_action_configs = llvm_ar_archive_action_configs,

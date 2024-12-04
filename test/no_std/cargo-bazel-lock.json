@@ -1,5 +1,5 @@
 {
-  "checksum": "1232ca5f074dc96dd58035bbb76348a3cbad352e906043dfe83d952e894f667b",
+  "checksum": "acc8fe8d4a6e8442960b89343e23c7fcb85b3d5ddd92ad5a28739a492fa07ea3",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -157,8 +157,8 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"

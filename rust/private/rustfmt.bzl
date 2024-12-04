@@ -128,7 +128,7 @@ Output Groups:
 
 - `rustfmt_checks`: Executes `rustfmt --check` on the specified target.
 
-The build setting `@rules_rust//:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
+The build setting `@rules_rust//rust/settings:rustfmt.toml` is used to control the Rustfmt [configuration settings][cs]
 used at runtime.
 
 [cs]: https://rust-lang.github.io/rustfmt/
@@ -141,7 +141,7 @@ generated source files are also ignored by this aspect.
         "_config": attr.label(
             doc = "The `rustfmt.toml` file used for formatting",
             allow_single_file = True,
-            default = Label("//:rustfmt.toml"),
+            default = Label("//rust/settings:rustfmt.toml"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustfmt on all platforms",

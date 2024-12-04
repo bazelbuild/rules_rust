@@ -12,7 +12,7 @@ rust_test(
     srcs = [
         "main.rs",
     ],
-    data = [":flag_generator"],
+    compile_data = [":flag_generator"],
     edition = "2018",
     rustc_flags = [
         "@$(location :flag_generator)",

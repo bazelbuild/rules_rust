@@ -1,43 +1,57 @@
 #[cfg(test)]
 mod tests {
+    use serde::Deserialize;
     use std::env;
     use std::path::PathBuf;
 
-    #[test]
-    fn test_deps_of_crate_and_its_test_are_merged() {
-        let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
+    #[derive(Deserialize)]
+    struct Project {
+        sysroot_src: String,
+        crates: Vec<Crate>,
+    }
 
+    #[derive(Deserialize)]
+    struct Crate {
+        display_name: String,
+        root_module: String,
+        source: Option<Source>,
+    }
+
+    #[derive(Deserialize)]
+    struct Source {
+        include_dirs: Vec<String>,
+    }
+
+    #[test]
+    fn test_generated_srcs() {
+        let rust_project_path = PathBuf::from(env::var("RUST_PROJECT_JSON").unwrap());
         let content = std::fs::read_to_string(&rust_project_path)
             .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
-
-        let output_base = content
-            .lines()
-            .find(|text| text.trim_start().starts_with("\"sysroot_src\":"))
-            .map(|text| {
-                let mut split = text.splitn(2, "\"sysroot_src\": ");
-                let mut with_hash = split.nth(1).unwrap().trim().splitn(2, "/external/");
-                let mut output = with_hash.next().unwrap().rsplitn(2, '/');
-                output.nth(1).unwrap()
-            })
-            .expect("Failed to find sysroot entry.");
-
-        let expected = r#"{
-      "display_name": "generated_srcs",
-      "root_module": "lib.rs",
-      "edition": "2021",
-      "deps": [],
-      "is_workspace_member": true,
-      "source": {
-        "include_dirs": [
-          "#
-        .to_owned()
-            + output_base;
-
         println!("{}", content);
-        assert!(
-            content.contains(&expected),
-            "expected rust-project.json to contain the following block:\n{}",
-            expected
-        );
+        let project: Project =
+            serde_json::from_str(&content).expect("Failed to deserialize project JSON");
+
+        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/_bazel
+        let output_base = project
+            .sysroot_src
+            .rsplitn(2, "/external/")
+            .last()
+            .unwrap()
+            .rsplitn(2, '/')
+            .last()
+            .unwrap();
+        println!("output_base: {output_base}");
+
+        let gen = project
+            .crates
+            .iter()
+            .find(|c| &c.display_name == "generated_srcs")
+            .unwrap();
+        assert!(gen.root_module.starts_with("/"));
+        assert!(gen.root_module.ends_with("/lib.rs"));
+
+        let include_dirs = &gen.source.as_ref().unwrap().include_dirs;
+        assert!(include_dirs.len() == 1);
+        assert!(include_dirs[0].starts_with(output_base));
     }
 }

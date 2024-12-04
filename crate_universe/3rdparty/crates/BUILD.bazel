@@ -170,12 +170,6 @@ alias(
 )
 
 alias(
-    name = "spectral",
-    actual = "@cui__spectral-0.6.0//:spectral",
-    tags = ["manual"],
-)
-
-alias(
     name = "tempfile",
     actual = "@cui__tempfile-3.13.0//:tempfile",
     tags = ["manual"],

@@ -221,7 +221,11 @@ def _rust_binary_impl(ctx):
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
     _assert_correct_dep_mapping(ctx)
 
-    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    if ctx.attr.binary_name:
+        output_filename = ctx.attr.binary_name
+    else:
+        output_filename = ctx.label.name
+    output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
@@ -261,6 +265,7 @@ def _rust_binary_impl(ctx):
             ctx,
             ctx.attr.env,
             ctx.attr.data,
+            {},
         ),
     ))
 
@@ -345,7 +350,10 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         ))
+        aliases = dict(crate.aliases)
+        aliases.update(ctx.attr.aliases)
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
@@ -355,7 +363,7 @@ def _rust_test_impl(ctx):
             srcs = depset(srcs, transitive = [crate.srcs]),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
-            aliases = ctx.attr.aliases,
+            aliases = aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             edition = crate.edition,
@@ -394,6 +402,7 @@ def _rust_test_impl(ctx):
             ctx,
             ctx.attr.rustc_env,
             data_paths,
+            {},
         )
 
         # Target is a standalone crate. Build the test binary as its own crate.
@@ -430,6 +439,7 @@ def _rust_test_impl(ctx):
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
+        {},
     )
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
@@ -528,19 +538,19 @@ RUSTC_ATTRS = {
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
     "_error_format": attr.label(
-        default = Label("//:error_format"),
+        default = Label("//rust/settings:error_format"),
     ),
     "_extra_exec_rustc_flag": attr.label(
-        default = Label("//:extra_exec_rustc_flag"),
+        default = Label("//rust/settings:extra_exec_rustc_flag"),
     ),
     "_extra_exec_rustc_flags": attr.label(
-        default = Label("//:extra_exec_rustc_flags"),
+        default = Label("//rust/settings:extra_exec_rustc_flags"),
     ),
     "_extra_rustc_flag": attr.label(
-        default = Label("//:extra_rustc_flag"),
+        default = Label("//rust/settings:extra_rustc_flag"),
     ),
     "_extra_rustc_flags": attr.label(
-        default = Label("//:extra_rustc_flags"),
+        default = Label("//rust/settings:extra_rustc_flags"),
     ),
     "_is_proc_macro_dep": attr.label(
         default = Label("//rust/private:is_proc_macro_dep"),
@@ -549,7 +559,7 @@ RUSTC_ATTRS = {
         default = Label("//rust/private:is_proc_macro_dep_enabled"),
     ),
     "_per_crate_rustc_flag": attr.label(
-        default = Label("//:experimental_per_crate_rustc_flag"),
+        default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
@@ -559,7 +569,7 @@ RUSTC_ATTRS = {
         cfg = "exec",
     ),
     "_rustc_output_diagnostics": attr.label(
-        default = Label("//:rustc_output_diagnostics"),
+        default = Label("//rust/settings:rustc_output_diagnostics"),
     ),
 }
 
@@ -776,7 +786,7 @@ libc's `malloc`. This label must refer to a `cc_library` rule.
     ),
 }
 
-_rust_test_attrs = dict({
+_rust_test_attrs = {
     "crate": attr.label(
         mandatory = False,
         doc = dedent("""\
@@ -807,12 +817,12 @@ _rust_test_attrs = dict({
         """),
     ),
     "_use_grep_includes": attr.bool(default = True),
-}.items() + _coverage_attrs.items() + _experimental_use_cc_common_link_attrs.items())
+} | _coverage_attrs | _experimental_use_cc_common_link_attrs
 
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + {
+    attrs = _common_attrs | {
         "disable_pipelining": attr.bool(
             default = False,
             doc = dedent("""\
@@ -821,7 +831,7 @@ rust_library = rule(
                 crates will instead use the `.rlib` file.
             """),
         ),
-    }.items()),
+    },
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -910,7 +920,7 @@ _rust_static_library_transition = transition(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    attrs = dict(_common_attrs.items() + {
+    attrs = _common_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the static library to.",
             default = None,
@@ -918,7 +928,7 @@ rust_static_library = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     fragments = ["cpp"],
     cfg = _rust_static_library_transition,
     toolchains = [
@@ -956,7 +966,7 @@ _rust_shared_library_transition = transition(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = dict(_common_attrs.items() + _experimental_use_cc_common_link_attrs.items() + {
+    attrs = _common_attrs | _experimental_use_cc_common_link_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
@@ -965,7 +975,7 @@ rust_shared_library = rule(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
         "_use_grep_includes": attr.bool(default = True),
-    }.items()),
+    },
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
@@ -1030,7 +1040,13 @@ rust_proc_macro = rule(
     """),
 )
 
-_rust_binary_attrs = dict({
+_rust_binary_attrs = {
+    "binary_name": attr.string(
+        doc = dedent("""\
+            Override the resulting binary file name. By default, the binary file will be named using the `name` attribute on this rule,
+            however sometimes that is not deseriable.
+        """),
+    ),
     "crate_type": attr.string(
         doc = dedent("""\
             Crate type that will be passed to `rustc` to be used for building this crate.
@@ -1068,7 +1084,7 @@ _rust_binary_attrs = dict({
     ),
     "stamp": _stamp_attribute(default_value = -1),
     "_use_grep_includes": attr.bool(default = True),
-}.items() + _experimental_use_cc_common_link_attrs.items())
+} | _experimental_use_cc_common_link_attrs
 
 def _rust_binary_transition_impl(settings, attr):
     return {
@@ -1088,7 +1104,7 @@ _rust_binary_transition = transition(
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + _rust_binary_attrs.items() + {
+    attrs = _common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1096,7 +1112,7 @@ rust_binary = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,
@@ -1230,7 +1246,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs.items() + _rust_binary_attrs.items() + {
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1238,7 +1254,7 @@ rust_binary_without_process_wrapper = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    }),
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,
@@ -1277,7 +1293,7 @@ _rust_test_transition = transition(
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs.items() + _rust_test_attrs.items() + {
+    attrs = _common_attrs | _rust_test_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,
@@ -1285,7 +1301,7 @@ rust_test = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-    }.items()),
+    },
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_test_transition,
@@ -1476,6 +1492,10 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     """
     tests = []
 
+    # If test_suite.tests is empty, Bazel will unhelpfully include all tests
+    # from the package. Require an extra tag so they are filtered out again.
+    tags = ["restrict_" + name] + kwargs.pop("tags", [])
+
     for src in srcs:
         if not src.endswith(".rs"):
             fail("srcs should have `.rs` extensions")
@@ -1490,6 +1510,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
             name = test_name,
             crate_root = src,
             srcs = [src] + shared_srcs,
+            tags = tags,
             **kwargs
         )
         tests.append(test_name)
@@ -1497,7 +1518,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
     native.test_suite(
         name = name,
         tests = tests,
-        tags = kwargs.get("tags", None),
+        tags = tags,
     )
 
 rust_library_group = rule(
