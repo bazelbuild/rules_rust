@@ -1,5 +1,5 @@
 {
-  "homepage": "https://github.com/bazelbuild/rules_rust/tree/main/extensions/bindgen",
+  "homepage": "https://github.com/bazelbuild/rules_rust",
   "maintainers": [
     {
         "email": "26427366+UebelAndre@users.noreply.github.com",

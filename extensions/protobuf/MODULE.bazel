@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_protobuf",
-    version = "0.55.0",
+    version = "0.55.1",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.0",
+    version = "0.55.1",
 )
 local_path_override(
     module_name = "rules_rust",
