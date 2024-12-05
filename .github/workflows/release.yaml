@@ -137,11 +137,12 @@ jobs:
           # `examples/bzlmod` is included for the BCR presubmit; it must appear before --exclude="examples"
           tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz \
             -C ${{ github.workspace }} \
-            --exclude=".git" --exclude=".github" \
+            --exclude=".git" \
+            --exclude=".github" \
             --exclude="crate_universe/target" \
+            --exclude="extensions" \
             examples/bzlmod \
             --exclude="examples" \
-            --exclude="extensions" \
             .
 
           # Save the sha256 checksum of the distro archive to the environment
