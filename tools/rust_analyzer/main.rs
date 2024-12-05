@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::anyhow;
+use camino::Utf8PathBuf;
 use clap::Parser;
 use gen_rust_project_lib::generate_crate_info;
 use gen_rust_project_lib::write_rust_project;
@@ -110,19 +110,19 @@ fn parse_config() -> anyhow::Result<Config> {
 struct Config {
     /// The path to the Bazel workspace directory. If not specified, uses the result of `bazel info workspace`.
     #[clap(long, env = "BUILD_WORKSPACE_DIRECTORY")]
-    workspace: Option<PathBuf>,
+    workspace: Option<Utf8PathBuf>,
 
     /// The path to the Bazel execution root. If not specified, uses the result of `bazel info execution_root`.
     #[clap(long)]
-    execution_root: Option<PathBuf>,
+    execution_root: Option<Utf8PathBuf>,
 
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
     #[clap(long, env = "OUTPUT_BASE")]
-    output_base: Option<PathBuf>,
+    output_base: Option<Utf8PathBuf>,
 
     /// The path to a Bazel binary
     #[clap(long, default_value = "bazel")]
-    bazel: PathBuf,
+    bazel: Utf8PathBuf,
 
     /// Space separated list of target patterns that comes after all other args.
     #[clap(default_value = "@//...")]
