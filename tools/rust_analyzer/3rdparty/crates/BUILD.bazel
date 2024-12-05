@@ -44,6 +44,12 @@ alias(
 )
 
 alias(
+    name = "camino",
+    actual = "@rrra__camino-1.1.9//:camino",
+    tags = ["manual"],
+)
+
+alias(
     name = "clap-4.3.11",
     actual = "@rrra__clap-4.3.11//:clap",
     tags = ["manual"],

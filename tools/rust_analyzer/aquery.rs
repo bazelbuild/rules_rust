@@ -1,10 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::path::Path;
-use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::Context;
+use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -62,9 +61,9 @@ pub struct CrateSpecSource {
 }
 
 pub fn get_crate_specs(
-    bazel: &Path,
-    workspace: &Path,
-    execution_root: &Path,
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    execution_root: &Utf8Path,
     targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
@@ -95,10 +94,9 @@ pub fn get_crate_specs(
     let crate_specs = crate_spec_files
         .into_iter()
         .map(|file| {
-            let f = File::open(&file)
-                .with_context(|| format!("Failed to open file: {}", file.display()))?;
+            let f = File::open(&file).with_context(|| format!("Failed to open file: {}", file))?;
             serde_json::from_reader(f)
-                .with_context(|| format!("Failed to deserialize file: {}", file.display()))
+                .with_context(|| format!("Failed to deserialize file: {}", file))
         })
         .collect::<anyhow::Result<Vec<CrateSpec>>>()?;
 
@@ -106,9 +104,9 @@ pub fn get_crate_specs(
 }
 
 fn parse_aquery_output_files(
-    execution_root: &Path,
+    execution_root: &Utf8Path,
     aquery_stdout: &str,
-) -> anyhow::Result<Vec<PathBuf>> {
+) -> anyhow::Result<Vec<Utf8PathBuf>> {
     let out: AqueryOutput = serde_json::from_str(aquery_stdout).map_err(|_| {
         // Parsing to `AqueryOutput` failed, try parsing into a `serde_json::Value`:
         match serde_json::from_str::<serde_json::Value>(aquery_stdout) {
@@ -133,7 +131,7 @@ fn parse_aquery_output_files(
         .map(|pf| (pf.id, pf))
         .collect::<BTreeMap<_, _>>();
 
-    let mut output_files: Vec<PathBuf> = Vec::new();
+    let mut output_files: Vec<Utf8PathBuf> = Vec::new();
     for action in out.actions {
         for output_id in action.output_ids {
             let artifact = artifacts
@@ -155,15 +153,15 @@ fn parse_aquery_output_files(
 fn path_from_fragments(
     id: u32,
     fragments: &BTreeMap<u32, &PathFragment>,
-) -> anyhow::Result<PathBuf> {
+) -> anyhow::Result<Utf8PathBuf> {
     let path_fragment = fragments
         .get(&id)
         .expect("internal consistency error in bazel output");
 
     let buf = match path_fragment.parent_id {
         Some(parent_id) => path_from_fragments(parent_id, fragments)?
-            .join(PathBuf::from(&path_fragment.label.clone())),
-        None => PathBuf::from(&path_fragment.label.clone()),
+            .join(Utf8PathBuf::from(&path_fragment.label.clone())),
+        None => Utf8PathBuf::from(&path_fragment.label.clone()),
     };
 
     Ok(buf)

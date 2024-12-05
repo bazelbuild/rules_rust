@@ -1,16 +1,16 @@
 use std::collections::HashMap;
-use std::path::Path;
 use std::process::Command;
 
 use anyhow::anyhow;
+use camino::Utf8Path;
 use runfiles::Runfiles;
 
 mod aquery;
 mod rust_project;
 
 pub fn generate_crate_info(
-    bazel: impl AsRef<Path>,
-    workspace: impl AsRef<Path>,
+    bazel: impl AsRef<Utf8Path>,
+    workspace: impl AsRef<Utf8Path>,
     rules_rust: impl AsRef<str>,
     targets: &[String],
 ) -> anyhow::Result<()> {
@@ -43,13 +43,13 @@ pub fn generate_crate_info(
 }
 
 pub fn write_rust_project(
-    bazel: impl AsRef<Path>,
-    workspace: impl AsRef<Path>,
+    bazel: impl AsRef<Utf8Path>,
+    workspace: impl AsRef<Utf8Path>,
     rules_rust_name: &impl AsRef<str>,
     targets: &[String],
-    execution_root: impl AsRef<Path>,
-    output_base: impl AsRef<Path>,
-    rust_project_path: impl AsRef<Path>,
+    execution_root: impl AsRef<Utf8Path>,
+    output_base: impl AsRef<Utf8Path>,
+    rust_project_path: impl AsRef<Utf8Path>,
 ) -> anyhow::Result<()> {
     let crate_specs = aquery::get_crate_specs(
         bazel.as_ref(),
@@ -70,7 +70,12 @@ pub fn write_rust_project(
     let sysroot_src = &toolchain_info["sysroot_src"];
     let sysroot = &toolchain_info["sysroot"];
 
-    let rust_project = rust_project::generate_rust_project(sysroot, sysroot_src, &crate_specs)?;
+    let rust_project = rust_project::generate_rust_project(
+        workspace.as_ref(),
+        sysroot,
+        sysroot_src,
+        &crate_specs,
+    )?;
 
     rust_project::write_rust_project(
         rust_project_path.as_ref(),
