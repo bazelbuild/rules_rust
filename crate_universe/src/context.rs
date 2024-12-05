@@ -46,7 +46,7 @@ pub(crate) struct Context {
     /// A list of crates visible to this bazel module.
     pub(crate) direct_dev_deps: BTreeSet<CrateId>,
 
-    /// A list of `[patch]`` entries from the Cargo.lock file which were not used in the resolve.
+    /// A list of `[patch]` entries from the Cargo.lock file which were not used in the resolve.
     // TODO: Remove the serde(default) after this has been released for a few versions.
     // This prevents previous lockfiles (from before this field) from failing to parse with the current version of rules_rust.
     // After we've supported this (so serialised it in lockfiles) for a few versions,

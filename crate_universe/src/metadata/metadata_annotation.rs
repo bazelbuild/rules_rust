@@ -175,7 +175,7 @@ pub(crate) struct LockfileAnnotation {
     /// A mapping of crates/packages to additional source (network location) information.
     pub(crate) crates: BTreeMap<PackageId, SourceAnnotation>,
 
-    /// A list of `[patch]`` entries from the Cargo.lock file which were not used in the resolve.
+    /// A list of `[patch]` entries from the Cargo.lock file which were not used in the resolve.
     pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
