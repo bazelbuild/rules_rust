@@ -28,6 +28,12 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "alloc",
+        "default",
+        "serde",
+        "std",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_flags = [
@@ -78,4 +84,7 @@ rust_library(
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.9.0",
+    deps = [
+        "@cui__serde-1.0.210//:serde",
+    ],
 )

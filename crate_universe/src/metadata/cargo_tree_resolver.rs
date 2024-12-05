@@ -492,9 +492,11 @@ impl TreeResolver {
             .packages
             .iter()
             .filter(|p| {
-                p.targets
-                    .iter()
-                    .any(|t| t.kind.iter().any(|k| k == "proc-macro"))
+                p.targets.iter().any(|t| {
+                    t.kind
+                        .iter()
+                        .any(|k| matches!(k, cargo_metadata::TargetKind::ProcMacro))
+                })
             })
             // Filter out any in-workspace proc macros, populate dependency details for non-in-workspace proc macros.
             .filter_map(|pm| {

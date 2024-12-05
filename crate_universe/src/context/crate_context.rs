@@ -799,7 +799,7 @@ impl CrateContext {
                     );
 
                     // Conditionally check to see if the dependencies is a build-script target
-                    if include_build_scripts && kind == "custom-build" {
+                    if include_build_scripts && matches!(kind, cargo_metadata::TargetKind::CustomBuild) {
                         return Some(Ok(Rule::BuildScript(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -808,7 +808,7 @@ impl CrateContext {
                     }
 
                     // Check to see if the dependencies is a proc-macro target
-                    if kind == "proc-macro" {
+                    if matches!(kind, cargo_metadata::TargetKind::ProcMacro) {
                         return Some(Ok(Rule::ProcMacro(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -817,7 +817,7 @@ impl CrateContext {
                     }
 
                     // Check to see if the dependencies is a library target
-                    if ["lib", "rlib"].contains(&kind.as_str()) {
+                    if matches!(kind, cargo_metadata::TargetKind::Lib | cargo_metadata::TargetKind::RLib) {
                         return Some(Ok(Rule::Library(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -826,7 +826,7 @@ impl CrateContext {
                     }
 
                     // Check if the target kind is binary and is one of the ones included in gen_binaries
-                    if kind == "bin"
+                    if matches!(kind, cargo_metadata::TargetKind::Bin)
                         && match gen_binaries {
                             GenBinaries::All => true,
                             GenBinaries::Some(set) => set.contains(&target.name),
