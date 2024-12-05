@@ -34,6 +34,7 @@ ${{_ENVIRON[@]}} \\
 {env} \\
     "{bin}" \\
     {args} \\
+    --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
     "$@"
 """
 
@@ -42,7 +43,7 @@ _WINDOWS_WRAPPER = """\
 set RUNTIME_PWD=%CD%
 {env}
 
-{bin} {args} %*
+{bin} {args} --nonhermetic-root-bazel-workspace-dir=%BUILD_WORKSPACE_DIRECTORY% %*
 exit %ERRORLEVEL%
 """
 

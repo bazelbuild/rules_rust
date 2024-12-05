@@ -6,6 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
 use itertools::Itertools;
@@ -29,30 +30,34 @@ use crate::utils::{self, sanitize_repository_name};
 pub(crate) type Platforms = BTreeMap<String, BTreeSet<String>>;
 
 pub(crate) struct Renderer {
-    config: RenderConfig,
-    supported_platform_triples: BTreeSet<TargetTriple>,
-    engine: TemplateEngine,
+    config: Arc<RenderConfig>,
+    supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
 }
 
 impl Renderer {
     pub(crate) fn new(
-        config: RenderConfig,
-        supported_platform_triples: BTreeSet<TargetTriple>,
+        config: Arc<RenderConfig>,
+        supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
     ) -> Self {
-        let engine = TemplateEngine::new(&config);
         Self {
             config,
             supported_platform_triples,
-            engine,
         }
     }
 
-    pub(crate) fn render(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    pub(crate) fn render(
+        &self,
+        context: &Context,
+        generator: Option<Label>,
+    ) -> Result<BTreeMap<PathBuf, String>> {
+        let conditions = Arc::new(context.conditions.clone());
+        let engine = self.create_engine(Arc::clone(&conditions));
+
         let mut output = BTreeMap::new();
 
-        let platforms = self.render_platform_labels(context);
-        output.extend(self.render_build_files(context, &platforms)?);
-        output.extend(self.render_crates_module(context, &platforms)?);
+        let platforms = self.render_platform_labels(conditions);
+        output.extend(self.render_build_files(&engine, context, &platforms)?);
+        output.extend(self.render_crates_module(&engine, context, &platforms, generator)?);
 
         if let Some(vendor_mode) = &self.config.vendor_mode {
             match vendor_mode {
@@ -60,7 +65,7 @@ impl Renderer {
                     // Nothing to do for local vendor crate
                 }
                 crate::config::VendorMode::Remote => {
-                    output.extend(self.render_vendor_support_files(context)?);
+                    output.extend(self.render_vendor_support_files(&engine, context)?);
                 }
             }
         }
@@ -68,9 +73,22 @@ impl Renderer {
         Ok(output)
     }
 
-    fn render_platform_labels(&self, context: &Context) -> BTreeMap<String, BTreeSet<String>> {
-        context
-            .conditions
+    pub(crate) fn create_engine(
+        &self,
+        conditions: Arc<BTreeMap<String, BTreeSet<TargetTriple>>>,
+    ) -> TemplateEngine {
+        TemplateEngine::new(
+            Arc::clone(&self.config),
+            Arc::clone(&self.supported_platform_triples),
+            Arc::clone(&conditions),
+        )
+    }
+
+    pub(crate) fn render_platform_labels(
+        &self,
+        conditions: Arc<BTreeMap<String, BTreeSet<TargetTriple>>>,
+    ) -> BTreeMap<String, BTreeSet<String>> {
+        conditions
             .iter()
             .map(|(cfg, target_triples)| {
                 (
@@ -91,8 +109,10 @@ impl Renderer {
 
     fn render_crates_module(
         &self,
+        engine: &TemplateEngine,
         context: &Context,
         platforms: &Platforms,
+        generator: Option<Label>,
     ) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "defs.bzl")
             .context("Failed to resolve string to module file label")?;
@@ -106,11 +126,11 @@ impl Renderer {
         let mut map = BTreeMap::new();
         map.insert(
             Renderer::label_to_path(&module_label),
-            self.engine.render_module_bzl(context, platforms)?,
+            engine.render_module_bzl(context, platforms, generator)?,
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
-            self.render_module_build_file(context)?,
+            self.render_module_build_file(engine, context)?,
         );
         map.insert(
             Renderer::label_to_path(&module_alias_rules_label),
@@ -124,11 +144,15 @@ impl Renderer {
         Ok(map)
     }
 
-    fn render_module_build_file(&self, context: &Context) -> Result<String> {
+    fn render_module_build_file(
+        &self,
+        engine: &TemplateEngine,
+        context: &Context,
+    ) -> Result<String> {
         let mut starlark = Vec::new();
 
         // Banner comment for top of the file.
-        let header = self.engine.render_header()?;
+        let header = engine.render_header()?;
         starlark.push(Starlark::Verbatim(header));
 
         // Load any `alias_rule`s.
@@ -268,6 +292,7 @@ impl Renderer {
 
     fn render_build_files(
         &self,
+        engine: &TemplateEngine,
         context: &Context,
         platforms: &Platforms,
     ) -> Result<BTreeMap<PathBuf, String>> {
@@ -290,17 +315,22 @@ impl Renderer {
                 };
 
                 let filename = Renderer::label_to_path(&label);
-                let content = self.render_one_build_file(platforms, &context.crates[id])?;
+                let content = self.render_one_build_file(engine, platforms, &context.crates[id])?;
                 Ok((filename, content))
             })
             .collect()
     }
 
-    fn render_one_build_file(&self, platforms: &Platforms, krate: &CrateContext) -> Result<String> {
+    pub(crate) fn render_one_build_file(
+        &self,
+        engine: &TemplateEngine,
+        platforms: &Platforms,
+        krate: &CrateContext,
+    ) -> Result<String> {
         let mut starlark = Vec::new();
 
         // Banner comment for top of the file.
-        let header = self.engine.render_header()?;
+        let header = engine.render_header()?;
         starlark.push(Starlark::Verbatim(header));
 
         // Loads: map of bzl file to set of items imported from that file. These
@@ -763,14 +793,18 @@ impl Renderer {
         )
     }
 
-    fn render_vendor_support_files(&self, context: &Context) -> Result<BTreeMap<PathBuf, String>> {
+    fn render_vendor_support_files(
+        &self,
+        engine: &TemplateEngine,
+        context: &Context,
+    ) -> Result<BTreeMap<PathBuf, String>> {
         let module_label = render_module_label(&self.config.crates_module_template, "crates.bzl")
             .context("Failed to resolve string to module file label")?;
 
         let mut map = BTreeMap::new();
         map.insert(
             Renderer::label_to_path(&module_label),
-            self.engine.render_vendor_module_file(context)?,
+            engine.render_vendor_module_file(context)?,
         );
 
         Ok(map)
@@ -919,6 +953,7 @@ fn make_data(
 mod test {
     use super::*;
 
+    use camino::Utf8Path;
     use indoc::indoc;
 
     use crate::config::{Config, CrateId};
@@ -937,17 +972,17 @@ mod test {
         }
     }
 
-    fn mock_render_config(vendor_mode: Option<VendorMode>) -> RenderConfig {
-        RenderConfig {
+    fn mock_render_config(vendor_mode: Option<VendorMode>) -> Arc<RenderConfig> {
+        Arc::new(RenderConfig {
             repository_name: "test_rendering".to_owned(),
             regen_command: "cargo_bazel_regen_command".to_owned(),
             vendor_mode,
             ..RenderConfig::default()
-        }
+        })
     }
 
-    fn mock_supported_platform_triples() -> BTreeSet<TargetTriple> {
-        BTreeSet::from([
+    fn mock_supported_platform_triples() -> Arc<BTreeSet<TargetTriple>> {
+        Arc::new(BTreeSet::from([
             TargetTriple::from_bazel("aarch64-apple-darwin".to_owned()),
             TargetTriple::from_bazel("aarch64-apple-ios".to_owned()),
             TargetTriple::from_bazel("aarch64-linux-android".to_owned()),
@@ -970,7 +1005,7 @@ mod test {
             TargetTriple::from_bazel("x86_64-pc-windows-msvc".to_owned()),
             TargetTriple::from_bazel("x86_64-unknown-freebsd".to_owned()),
             TargetTriple::from_bazel("x86_64-unknown-linux-gnu".to_owned()),
-        ])
+        ]))
     }
 
     #[test]
@@ -1000,7 +1035,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1038,7 +1073,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1079,7 +1114,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1121,7 +1156,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1159,7 +1194,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1199,7 +1234,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1214,12 +1249,17 @@ mod test {
             generate_binaries: true,
             ..Config::default()
         };
-        let annotations =
-            Annotations::new(test::metadata::alias(), test::lockfile::alias(), config).unwrap();
+        let annotations = Annotations::new(
+            test::metadata::alias(),
+            test::lockfile::alias(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
         let context = Context::new(annotations, false).unwrap();
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
 
@@ -1254,7 +1294,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
 
@@ -1292,7 +1332,7 @@ mod test {
             mock_render_config(Some(VendorMode::Remote)),
             mock_supported_platform_triples(),
         );
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
         assert!(defs_module.contains("def crate_repositories():"));
@@ -1332,7 +1372,7 @@ mod test {
             mock_render_config(Some(VendorMode::Local)),
             mock_supported_platform_triples(),
         );
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         // Local vendoring does not produce a `crate_repositories` macro
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
@@ -1384,7 +1424,7 @@ mod test {
             mock_render_config(Some(VendorMode::Local)),
             mock_supported_platform_triples(),
         );
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1421,11 +1461,20 @@ mod test {
         let metadata = test::metadata::multi_cfg_dep();
         let lockfile = test::lockfile::multi_cfg_dep();
 
-        let annotations = Annotations::new(metadata, lockfile, config.clone()).unwrap();
+        let annotations = Annotations::new(
+            metadata,
+            lockfile,
+            config.clone(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
         let context = Context::new(annotations, false).unwrap();
 
-        let renderer = Renderer::new(config.rendering, config.supported_platform_triples);
-        let output = renderer.render(&context).unwrap();
+        let renderer = Renderer::new(
+            Arc::new(config.rendering),
+            Arc::new(config.supported_platform_triples),
+        );
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.cpufeatures-0.2.7.bazel"))
@@ -1491,7 +1540,7 @@ mod test {
         );
 
         let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1538,9 +1587,11 @@ mod test {
         );
 
         let mut render_config = mock_render_config(None);
-        render_config.generate_rules_license_metadata = true;
+        Arc::get_mut(&mut render_config)
+            .unwrap()
+            .generate_rules_license_metadata = true;
         let renderer = Renderer::new(render_config, mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1591,9 +1642,11 @@ mod test {
         );
 
         let mut render_config = mock_render_config(None);
-        render_config.generate_rules_license_metadata = true;
+        Arc::get_mut(&mut render_config)
+            .unwrap()
+            .generate_rules_license_metadata = true;
         let renderer = Renderer::new(render_config, mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1655,9 +1708,11 @@ mod test {
         );
 
         let mut render_config = mock_render_config(None);
-        render_config.generate_rules_license_metadata = true;
+        Arc::get_mut(&mut render_config)
+            .unwrap()
+            .generate_rules_license_metadata = true;
         let renderer = Renderer::new(render_config, mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
 
         let build_file_content = output
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
@@ -1727,11 +1782,12 @@ mod test {
 
         let mut config = mock_render_config(Some(VendorMode::Local));
         // change templates so it matches local vendor
-        config.build_file_template = "//{name}-{version}:BUILD.bazel".into();
+        Arc::get_mut(&mut config).unwrap().build_file_template =
+            "//{name}-{version}:BUILD.bazel".into();
 
         // Enable local vendor mode
         let renderer = Renderer::new(config, mock_supported_platform_triples());
-        let output = renderer.render(&context).unwrap();
+        let output = renderer.render(&context, None).unwrap();
         eprintln!("output before {:?}", output.keys());
         // Local vendoring does not produce a `crate_repositories` macro
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();

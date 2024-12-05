@@ -1,5 +1,5 @@
 {
-  "checksum": "4e0956b6c2f3558d412152466b93c63ac7d855625445a92c25e5ea9a209c1617",
+  "checksum": "948e07eb76c6cd446dd72d8dce87ee991117c89b3b8c8a31320e941e83e06e6c",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -2044,5 +2044,6 @@
     "ferris-says 0.2.1",
     "rand 0.7.3"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

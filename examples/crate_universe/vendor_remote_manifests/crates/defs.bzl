@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tokio": Label("@cvm__tokio-1.41.1//:tokio"),
+            "tokio": Label("@cvm__tokio-1.42.0//:tokio"),
         },
     },
 }
@@ -781,12 +781,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__tokio-1.41.1",
-        sha256 = "22cfb5bee7a6a52939ca9224d6ac897bb669134078daa8735560897f69de4d33",
+        name = "cvm__tokio-1.42.0",
+        sha256 = "5cec9b21b0450273377fc97bd4c33a8acffc8c996c987a7c5b319a0083707551",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio/1.41.1/download"],
-        strip_prefix = "tokio-1.41.1",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-1.41.1.bazel"),
+        urls = ["https://static.crates.io/crates/tokio/1.42.0/download"],
+        strip_prefix = "tokio-1.42.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-1.42.0.bazel"),
     )
 
     maybe(
@@ -950,7 +950,7 @@ def crate_repositories():
     )
 
     return [
-        struct(repo = "cvm__tokio-1.41.1", is_dev_dep = False),
+        struct(repo = "cvm__tokio-1.42.0", is_dev_dep = False),
         struct(repo = "cvm__tempfile-3.14.0", is_dev_dep = True),
         struct(repo = "cvm__tokio-test-0.4.4", is_dev_dep = True),
     ]

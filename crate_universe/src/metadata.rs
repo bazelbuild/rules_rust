@@ -4,6 +4,7 @@ mod cargo_bin;
 mod cargo_tree_resolver;
 mod dependency;
 mod metadata_annotation;
+mod workspace_discoverer;
 
 use std::env;
 use std::fs;
@@ -11,6 +12,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context, Result};
+use camino::Utf8Path;
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::Metadata as CargoMetadata;
 use tracing::debug;
@@ -19,6 +21,7 @@ pub(crate) use self::cargo_bin::*;
 pub(crate) use self::cargo_tree_resolver::*;
 pub(crate) use self::dependency::*;
 pub(crate) use self::metadata_annotation::*;
+pub(crate) use self::workspace_discoverer::*;
 
 // TODO: This should also return a set of [crate-index::IndexConfig]s for packages in metadata.packages
 /// A Trait for generating metadata (`cargo metadata` output and a lock file) from a Cargo manifest.
@@ -187,11 +190,11 @@ impl LockGenerator {
     #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        manifest_path: &Path,
+        manifest_path: &Utf8Path,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
     ) -> Result<cargo_lock::Lockfile> {
-        debug!("Generating Cargo Lockfile for {}", manifest_path.display());
+        debug!("Generating Cargo Lockfile for {}", manifest_path);
 
         let manifest_dir = manifest_path.parent().unwrap();
         let generated_lockfile_path = manifest_dir.join("Cargo.lock");
@@ -212,7 +215,7 @@ impl LockGenerator {
             fs::copy(lock, &generated_lockfile_path)?;
 
             if let Some(request) = update_request {
-                request.update(manifest_path, &self.cargo_bin)?;
+                request.update(manifest_path.as_std_path(), &self.cargo_bin)?;
             }
 
             // Ensure the Cargo cache is up to date to simulate the behavior
@@ -223,14 +226,14 @@ impl LockGenerator {
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
-                .current_dir(manifest_dir)
+                .current_dir(manifest_dir.as_std_path())
                 .arg("fetch")
                 .arg("--manifest-path")
-                .arg(manifest_path)
+                .arg(manifest_path.as_std_path())
                 .output()
                 .context(format!(
                     "Error running cargo to fetch crates '{}'",
-                    manifest_path.display()
+                    manifest_path
                 ))?;
 
             if !output.status.success() {
@@ -250,14 +253,14 @@ impl LockGenerator {
                 // Cargo detects config files based on `pwd` when running so
                 // to ensure user provided Cargo config files are used, it's
                 // critical to set the working directory to the manifest dir.
-                .current_dir(manifest_dir)
+                .current_dir(manifest_dir.as_std_path())
                 .arg("generate-lockfile")
                 .arg("--manifest-path")
-                .arg(manifest_path)
+                .arg(manifest_path.as_std_path())
                 .output()
                 .context(format!(
                     "Error running cargo to generate lockfile '{}'",
-                    manifest_path.display()
+                    manifest_path
                 ))?;
 
             if !output.status.success() {
@@ -269,7 +272,7 @@ impl LockGenerator {
 
         cargo_lock::Lockfile::load(&generated_lockfile_path).context(format!(
             "Failed to load lockfile: {}",
-            generated_lockfile_path.display()
+            generated_lockfile_path
         ))
     }
 }
@@ -291,12 +294,8 @@ impl VendorGenerator {
         }
     }
     #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
-    pub(crate) fn generate(&self, manifest_path: &Path, output_dir: &Path) -> Result<()> {
-        debug!(
-            "Vendoring {} to {}",
-            manifest_path.display(),
-            output_dir.display()
-        );
+    pub(crate) fn generate(&self, manifest_path: &Utf8Path, output_dir: &Path) -> Result<()> {
+        debug!("Vendoring {} to {}", manifest_path, output_dir.display());
         let manifest_dir = manifest_path.parent().unwrap();
 
         // Simply invoke `cargo generate-lockfile`
@@ -306,10 +305,10 @@ impl VendorGenerator {
             // Cargo detects config files based on `pwd` when running so
             // to ensure user provided Cargo config files are used, it's
             // critical to set the working directory to the manifest dir.
-            .current_dir(manifest_dir)
+            .current_dir(manifest_dir.as_std_path())
             .arg("vendor")
             .arg("--manifest-path")
-            .arg(manifest_path)
+            .arg(manifest_path.as_std_path())
             .arg("--locked")
             .arg("--versioned-dirs")
             .arg(output_dir)
@@ -318,7 +317,7 @@ impl VendorGenerator {
             .with_context(|| {
                 format!(
                     "Error running cargo to vendor sources for manifest '{}'",
-                    manifest_path.display()
+                    manifest_path
                 )
             })?;
 

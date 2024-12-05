@@ -1,5 +1,5 @@
 {
-  "checksum": "550eb42997db55d9a3cd9f5edf569bb0fef17de78d92235f813645141bc1cade",
+  "checksum": "21e2bab7f12122f69c5691692d140669cafd67e7db521433e269efbdb7b6c1c4",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -807,5 +807,6 @@
   "direct_deps": [
     "cxx 1.0.109"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

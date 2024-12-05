@@ -108,7 +108,7 @@ rust_library(
         "//vendor_local_pkgs/crates/serde_json-1.0.133:serde_json",
         "//vendor_local_pkgs/crates/serde_urlencoded-0.7.1:serde_urlencoded",
         "//vendor_local_pkgs/crates/sync_wrapper-0.1.2:sync_wrapper",
-        "//vendor_local_pkgs/crates/tokio-1.41.1:tokio",
+        "//vendor_local_pkgs/crates/tokio-1.42.0:tokio",
         "//vendor_local_pkgs/crates/tower-0.4.13:tower",
         "//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http",
         "//vendor_local_pkgs/crates/tower-layer-0.3.3:tower_layer",

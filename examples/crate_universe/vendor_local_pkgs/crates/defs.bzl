@@ -298,7 +298,7 @@ _NORMAL_DEPENDENCIES = {
             "mime": Label("//vendor_local_pkgs/crates/mime-0.3.17:mime"),
             "serde_json": Label("//vendor_local_pkgs/crates/serde_json-1.0.133:serde_json"),
             "socket2": Label("//vendor_local_pkgs/crates/socket2-0.4.10:socket2"),
-            "tokio": Label("//vendor_local_pkgs/crates/tokio-1.41.1:tokio"),
+            "tokio": Label("//vendor_local_pkgs/crates/tokio-1.42.0:tokio"),
             "tower": Label("//vendor_local_pkgs/crates/tower-0.4.13:tower"),
             "tower-http": Label("//vendor_local_pkgs/crates/tower-http-0.2.5:tower_http"),
             "tracing": Label("//vendor_local_pkgs/crates/tracing-0.1.41:tracing"),

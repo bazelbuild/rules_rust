@@ -220,13 +220,6 @@ stardoc(
     deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
 )
 
-stardoc(
-    name = "rust_wasm_bindgen_rules_nodejs",
-    out = "rust_wasm_bindgen_rules_nodejs.md",
-    input = "@rules_rust_wasm_bindgen//rules_nodejs:defs.bzl",
-    deps = ["@rules_rust_wasm_bindgen//rules_nodejs:bzl_lib"],
-)
-
 sh_binary(
     name = "update_docs",
     srcs = ["update_docs.sh"],

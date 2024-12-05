@@ -5,8 +5,10 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitStatus};
+use std::sync::Arc;
 
 use anyhow::{bail, Context as AnyhowContext, Result};
+use camino::Utf8PathBuf;
 use clap::Parser;
 
 use crate::config::{Config, VendorMode};
@@ -73,6 +75,13 @@ pub struct VendorOptions {
     /// If true, outputs will be printed instead of written to disk.
     #[clap(long)]
     pub dry_run: bool,
+
+    /// The path to the Bazel root workspace (i.e. the directory containing the WORKSPACE.bazel file or similar).
+    /// BE CAREFUL with this value. We never want to include it in a lockfile hash (to keep lockfiles portable),
+    /// which means you also should not use it anywhere that _should_ be guarded by a lockfile hash.
+    /// You basically never want to use this value.
+    #[clap(long)]
+    pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
 }
 
 /// Run buildifier on a given file.
@@ -121,16 +130,18 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         .resolve(&opt.workspace_dir, &output_base);
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
+    let temp_dir_path = Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
+        .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path));
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(PathBuf::from(temp_dir.as_ref()), splicing_manifest)
-        .context("Failed to create splicer")?;
+    let splicer =
+        Splicer::new(temp_dir_path, splicing_manifest).context("Failed to create splicer")?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(&cargo)
+        .splice_workspace(opt.nonhermetic_root_bazel_workspace_dir.as_std_path())
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile
@@ -165,17 +176,22 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         .generate(manifest_path.as_path_buf())?;
 
     // Annotate metadata
-    let annotations = Annotations::new(cargo_metadata, cargo_lockfile.clone(), config.clone())?;
+    let annotations = Annotations::new(
+        cargo_metadata,
+        cargo_lockfile.clone(),
+        config.clone(),
+        &opt.nonhermetic_root_bazel_workspace_dir,
+    )?;
 
     // Generate renderable contexts for earch package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
     // Render build files
     let outputs = Renderer::new(
-        config.rendering.clone(),
-        config.supported_platform_triples.clone(),
+        Arc::new(config.rendering.clone()),
+        Arc::new(config.supported_platform_triples),
     )
-    .render(&context)?;
+    .render(&context, None)?;
 
     // First ensure vendoring and rendering happen in a clean directory
     let vendor_dir_label = render_module_label(&config.rendering.crates_module_template, "BUILD")?;

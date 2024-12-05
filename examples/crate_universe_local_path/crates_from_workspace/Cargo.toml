@@ -1,0 +1,18 @@
+# TODO: This [workspace] section shouldn't be needed, but we currently treat any path dependency as a sign of being in a workspace.
+# Ideally we should be able to remove this section.
+[workspace]
+members = ["."]
+[package]
+name = "workspace"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "fake.rs"
+
+[dependencies]
+# Note: This is NOT expected to work out of the box.
+# The expectation is that you will `bazel run //:vendor_lazy_static` to set up a patch replacing this.
+lazy_static = "1.5.0"
+
+[patch.crates-io]

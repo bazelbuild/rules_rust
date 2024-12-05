@@ -1,5 +1,5 @@
 {
-  "checksum": "33fb44e14dab568acd00662671fc0954a1fdff66100d69e91bec0f27b90ff710",
+  "checksum": "02fd2f2332c6fc181280a70ce3c30e4e68ce2bb19ebbc32f8080fe8ae970dc14",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -3105,5 +3105,6 @@
     "boring 3.1.0",
     "libz-ng-sys 1.1.15"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

@@ -32,6 +32,11 @@ load("//:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositor
 
 rust_proto_protobuf_transitive_repositories()
 
+# Needed by protobuf
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()

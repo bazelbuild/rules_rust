@@ -2,11 +2,11 @@
 
 use well_known_types_proto::any_proto::google::protobuf::Any;
 use well_known_types_proto::api_proto::google::protobuf::{Api, Method, Mixin};
-use well_known_types_proto::compiler_plugin_proto::google::protobuf::compiler::Version;
 use well_known_types_proto::descriptor_proto::google::protobuf::DescriptorProto;
 use well_known_types_proto::duration_proto::google::protobuf::Duration;
 use well_known_types_proto::empty_proto::google::protobuf::Empty;
 use well_known_types_proto::field_mask_proto::google::protobuf::FieldMask;
+use well_known_types_proto::plugin_proto::google::protobuf::compiler::Version;
 use well_known_types_proto::source_context_proto::google::protobuf::SourceContext;
 use well_known_types_proto::struct_proto::google::protobuf::Struct;
 use well_known_types_proto::struct_proto::google::protobuf::Value;

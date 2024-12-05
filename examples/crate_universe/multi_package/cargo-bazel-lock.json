@@ -1,5 +1,5 @@
 {
-  "checksum": "3aaf5d493a950efdf45c8ebbde98bbc7c5e2c3edf04393883bd584840e19b4f1",
+  "checksum": "7762cdec969fbdff3a384e854e9603cdeee2cf6ae82ecc51524382fc12c26574",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -16228,5 +16228,6 @@
   "direct_dev_deps": [
     "hex-literal 0.3.4",
     "httpmock 0.6.7"
-  ]
+  ],
+  "unused_patches": []
 }
