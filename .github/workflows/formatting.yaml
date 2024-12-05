@@ -29,3 +29,16 @@ jobs:
           if [[ -n "$(git status --porcelain)" ]]; then
             exit 1
           fi
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install 'black==24.10.0' 'isort==5.13.2'
+      - name: Run black
+        run: |
+          python -m black --check --diff ./
+      - name: Run isort
+        run: |
+          python -m isort --profile=black --check-only ./
