@@ -40,16 +40,9 @@ def rust_proto_protobuf_dependencies(bzlmod = False):
         maybe(
             http_archive,
             name = "com_google_protobuf",
-            sha256 = "758249b537abba2f21ebc2d02555bf080917f0f2f88f4cbe2903e0e28c4187ed",
-            strip_prefix = "protobuf-3.10.0",
-            urls = [
-                "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/v3.10.0.tar.gz",
-            ],
-            patch_args = ["-p1"],
-            patches = [
-                Label("//3rdparty/patches:com_google_protobuf-v3.10.0-bzl_visibility.patch"),
-            ],
+            integrity = "sha256-fD69eq7dhvpdxHmg/agD9gLKr3jYr/fOg7ieG4rnRCo=",
+            strip_prefix = "protobuf-28.3",
+            urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protobuf-28.3.tar.gz"],
         )
 
     return crate_repositories()

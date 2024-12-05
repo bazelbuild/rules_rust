@@ -3,6 +3,7 @@
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
 def _resolve_repository_template(
+        *,
         template,
         abi = None,
         arch = None,
@@ -11,7 +12,8 @@ def _resolve_repository_template(
         tool = None,
         triple = None,
         vendor = None,
-        version = None):
+        version = None,
+        compress_windows_names = False):
     """Render values into a repository template string
 
     Args:
@@ -25,6 +27,8 @@ def _resolve_repository_template(
         triple (str, optional): The host triple
         vendor (str, optional): The host vendor name
         version (str, optional): The Rust version used in the toolchain.
+        compress_windows_names (bool): Whether or not the windows repositories are
+            to be in the compressed form.
     Returns:
         string: The resolved template string based on the given parameters
     """
@@ -52,9 +56,33 @@ def _resolve_repository_template(
     if channel:
         template = template.replace("{channel}", channel)
 
+    if compress_windows_names and system == "windows":
+        repo, _, target = template.partition("//")
+        prefix = ""
+        if repo.startswith("@"):
+            repo = repo[1:]
+            prefix = "@"
+        elif repo.startswith("@@"):
+            repo = repo[2:]
+            prefix = "@@"
+
+        suffix = ""
+        if repo.endswith("_tools"):
+            repo = repo[:-len("_tools")]
+            suffix = "_tools"
+
+        return "{}rw-{}{}//{}".format(prefix, abs(hash(repo)), suffix, target)
+
     return template
 
-def get_rust_tools(cargo_template, rustc_template, host_triple, channel, version):
+def get_rust_tools(
+        *,
+        cargo_template,
+        rustc_template,
+        host_triple,
+        channel,
+        version,
+        compress_windows_names):
     """Retrieve `cargo` and `rustc` labels based on the host triple.
 
     Args:
@@ -63,6 +91,8 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, channel, version
         host_triple (struct): The host's triple. See `@rules_rust//rust/platform:triple.bzl`.
         channel (str): The Rust toolchain channel.
         version (str): The version (or iso date in case of beta or nightly channels) of Cargo+Rustc to use.
+        compress_windows_names (bool): Whether or not the windows repositories are
+            to be in the compressed form.
 
     Returns:
         struct: A struct containing the labels of expected tools
@@ -79,6 +109,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, channel, version
         system = host_triple.system,
         abi = host_triple.abi,
         tool = "cargo" + extension,
+        compress_windows_names = compress_windows_names,
     ))
 
     rustc_label = Label(_resolve_repository_template(
@@ -91,6 +122,7 @@ def get_rust_tools(cargo_template, rustc_template, host_triple, channel, version
         system = host_triple.system,
         abi = host_triple.abi,
         tool = "rustc" + extension,
+        compress_windows_names = compress_windows_names,
     ))
 
     return struct(

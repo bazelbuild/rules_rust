@@ -28,7 +28,7 @@ use_repo(
 register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension(
-    "@rules_rust//crate_universe:extension.bzl",
+    "@rules_rust//crate_universe:extensions.bzl",
     "crate",
 )
 crate.from_cargo(

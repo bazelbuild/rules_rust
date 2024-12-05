@@ -1,5 +1,5 @@
 {
-  "checksum": "59be2ecd05a76e24ac796ef59c99aa8df9951f6f5a9e7985ae284c673013baa0",
+  "checksum": "c3b7b22da137040aab45b4d7fca22113423c089a7eb5cbc5ab743cd52c990813",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -585,9 +585,6 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
-    ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
@@ -622,5 +619,6 @@
   "direct_deps": [
     "nix 0.26.2"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

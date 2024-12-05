@@ -22,12 +22,15 @@ def triple(triple):
             - str (str): Original string representation of the triple
     """
     if triple in ("wasm32-wasi", "wasm32-wasip1"):
+        trip = triple
+        if trip == "wasm32-wasi":
+            trip = "wasm32-wasip1"
         return struct(
-            arch = triple.split("-")[0],
-            vendor = triple.split("-")[1],
-            system = triple.split("-")[1],
+            arch = trip.split("-")[0],
+            vendor = trip.split("-")[1],
+            system = trip.split("-")[1],
             abi = None,
-            str = triple,
+            str = trip,
         )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(

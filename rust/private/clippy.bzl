@@ -39,7 +39,7 @@ def _clippy_flag_impl(ctx):
 
 clippy_flag = rule(
     doc = (
-        "Add a custom clippy flag from the command line with `--@rules_rust//:clippy_flag`." +
+        "Add a custom clippy flag from the command line with `--@rules_rust//rust/settings:clippy_flag`." +
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _clippy_flag_impl,
@@ -51,7 +51,7 @@ def _clippy_flags_impl(ctx):
 
 clippy_flags = rule(
     doc = (
-        "Add custom clippy flags from the command line with `--@rules_rust//:clippy_flags`."
+        "Add custom clippy flags from the command line with `--@rules_rust//rust/settings:clippy_flags`."
     ),
     implementation = _clippy_flags_impl,
     build_setting = config.string_list(flag = True),
@@ -210,7 +210,7 @@ rust_clippy_aspect = aspect(
     attrs = {
         "_capture_output": attr.label(
             doc = "Value of the `capture_clippy_output` build setting",
-            default = Label("//:capture_clippy_output"),
+            default = Label("//rust/settings:capture_clippy_output"),
         ),
         "_cc_toolchain": attr.label(
             doc = (
@@ -222,26 +222,26 @@ rust_clippy_aspect = aspect(
         "_clippy_flag": attr.label(
             doc = "Arguments to pass to clippy." +
                   "Multiple uses are accumulated and appended after the extra_rustc_flags.",
-            default = Label("//:clippy_flag"),
+            default = Label("//rust/settings:clippy_flag"),
         ),
         "_clippy_flags": attr.label(
             doc = "Arguments to pass to clippy",
-            default = Label("//:clippy_flags"),
+            default = Label("//rust/settings:clippy_flags"),
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
             allow_single_file = True,
-            default = Label("//:clippy.toml"),
+            default = Label("//rust/settings:clippy.toml"),
         ),
         "_error_format": attr.label(
             doc = "The desired `--error-format` flags for clippy",
-            default = "//:error_format",
+            default = "//rust/settings:error_format",
         ),
         "_extra_rustc_flag": attr.label(
-            default = Label("//:extra_rustc_flag"),
+            default = Label("//rust/settings:extra_rustc_flag"),
         ),
         "_per_crate_rustc_flag": attr.label(
-            default = Label("//:experimental_per_crate_rustc_flag"),
+            default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",

@@ -303,7 +303,7 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
             while let Some(ancestor) = next {
                 if ancestor
                     .file_name()
-                    .map_or(false, |f| f.to_string_lossy().ends_with(".runfiles"))
+                    .is_some_and(|f| f.to_string_lossy().ends_with(".runfiles"))
                 {
                     return Ok(ancestor.to_path_buf());
                 }

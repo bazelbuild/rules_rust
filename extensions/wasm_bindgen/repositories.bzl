@@ -32,11 +32,11 @@ def rust_wasm_bindgen_dependencies():
     """
 
     direct_deps = [
-        struct(repo = "rules_rust_wasm_bindgen_deps_cli", is_dev_dep = False),
+        struct(repo = "rules_rust_wasm_bindgen_cli", is_dev_dep = False),
     ]
     maybe(
         http_archive,
-        name = "rules_rust_wasm_bindgen_deps_cli",
+        name = "rules_rust_wasm_bindgen_cli",
         sha256 = "08f61e21873f51e3059a8c7c3eef81ede7513d161cfc60751c7b2ffa6ed28270",
         urls = ["https://static.crates.io/crates/wasm-bindgen-cli/wasm-bindgen-cli-{}.crate".format(WASM_BINDGEN_VERSION)],
         type = "tar.gz",

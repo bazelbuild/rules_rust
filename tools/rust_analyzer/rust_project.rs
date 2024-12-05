@@ -243,10 +243,15 @@ fn detect_cycle<'a>(
 
 pub fn write_rust_project(
     rust_project_path: &Path,
+    workspace: &Path,
     execution_root: &Path,
     output_base: &Path,
     rust_project: &RustProject,
 ) -> anyhow::Result<()> {
+    let workspace = workspace
+        .to_str()
+        .ok_or_else(|| anyhow!("workspace is not valid UTF-8"))?;
+
     let execution_root = execution_root
         .to_str()
         .ok_or_else(|| anyhow!("execution_root is not valid UTF-8"))?;
@@ -272,7 +277,8 @@ pub fn write_rust_project(
     let rust_project_content = serde_json::to_string_pretty(rust_project)?
         .replace("${pwd}", execution_root)
         .replace("__EXEC_ROOT__", execution_root)
-        .replace("__OUTPUT_BASE__", output_base);
+        .replace("__OUTPUT_BASE__", output_base)
+        .replace("__WORKSPACE__", workspace);
 
     // Write the new rust-project.json file.
     std::fs::write(rust_project_path, rust_project_content)?;

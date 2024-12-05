@@ -1,5 +1,5 @@
 {
-  "checksum": "72bc62e0cc45a664f35df0f1386d5f120cb84ca55fbf7ace99dd99c526b5b308",
+  "checksum": "5ed02b2b2f95b27a442e73cc92a802c24e0db36a09d1daf03198bcf538b30087",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3105,7 +3105,6 @@
     ],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi",
       "wasm32-wasip1"
     ],
     "cfg(unix)": [
@@ -3176,9 +3175,6 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
-    ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
@@ -3221,5 +3217,6 @@
   ],
   "direct_dev_deps": [
     "env_logger 0.9.3"
-  ]
+  ],
+  "unused_patches": []
 }

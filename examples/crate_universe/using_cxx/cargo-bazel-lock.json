@@ -1,5 +1,5 @@
 {
-  "checksum": "f56264a830f95c58f95f6b381314a888926dd242ec2abf41fd6d2434eb712fab",
+  "checksum": "a002e03956b53a02d02140d0ff8befe0ef69a36f2dd32edf5517ac1c8233ba73",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -773,9 +773,6 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
-    ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
@@ -810,5 +807,6 @@
   "direct_deps": [
     "cxx 1.0.109"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

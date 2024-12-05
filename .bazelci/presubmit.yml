@@ -16,6 +16,12 @@ bzlmod_flags: &bzlmod_flags
 bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
   # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
   - "--incompatible_use_plus_in_repo_names"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -89,6 +95,36 @@ tasks:
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: ubuntu2004
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
+  rbe_ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: rbe_ubuntu2004
+    shell_commands: *no_bzlmod_rbe_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+  macos_no_bzlmod:
+    name: No Bzlmod
+    platform: macos_arm64
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  windows_no_bzlmod:
+    name: No Bzlmod
+    platform: windows
+    shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_no_runfiles:
@@ -497,6 +533,22 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  crate_universe_local_path_external:
+    name: Crate Universe Local Path External
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_lazy_static_out_of_tree"
+    test_targets:
+      - "//..."
+  crate_universe_local_path_in_tree:
+    name: Crate Universe Local Path In Tree
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_lazy_static_in_tree"
+    test_targets:
+      - "//..."
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
@@ -552,12 +604,12 @@ tasks:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
@@ -568,10 +620,10 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004
@@ -936,7 +988,11 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "--"
       - "//..."
+      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+      - "-//rules_js/test:hello_world_wasm_lib_test"
+      - "-//rules_js/test:hello_world_wasm_direct_test"
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
@@ -947,19 +1003,16 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  # # TODO: https://github.com/bazelbuild/rules_rust/issues/3021
-  # # The length of the workspace name results in paths that are too long
-  # # on windows for linking.
-  # extensions_wasm_bindgen_windows:
-  #   platform: windows
-  #   name: Extensions wasm-bindgen
-  #   working_directory: extensions/wasm_bindgen
-  #   build_flags: *aspects_flags
-  #   test_flags: *aspects_flags
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
+  extensions_wasm_bindgen_windows:
+    platform: windows
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest

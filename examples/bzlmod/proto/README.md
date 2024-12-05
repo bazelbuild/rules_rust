@@ -81,7 +81,7 @@ register_toolchains("@rules_rust_prost//:default_prost_toolchain")
 
 # 3 Register proto / prost / tonic crates
 ###############################################################################
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 # protobufs / gRPC
 crate.spec(

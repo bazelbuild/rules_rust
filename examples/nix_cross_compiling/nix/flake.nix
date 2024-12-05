@@ -1,6 +1,10 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    # Avoid need for https://github.com/nix-community/fenix/pull/180
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs?rev=614462224f836ca340aed96b86799ad09b4c2298";
+    };
 
     fenix = {
       url = "github:nix-community/fenix";
@@ -25,13 +29,12 @@
         complete.rustc
         complete.rustfmt
         complete.rust-src
-        complete.rust-analyzer
         targets."aarch64-apple-darwin".latest.rust-std
         targets."aarch64-apple-ios".latest.rust-std
         targets."aarch64-linux-android".latest.rust-std
         targets."aarch64-unknown-linux-gnu".latest.rust-std
         targets."wasm32-unknown-unknown".latest.rust-std
-        targets."wasm32-wasi".latest.rust-std
+        targets."wasm32-wasip1".latest.rust-std
         targets."x86_64-apple-darwin".latest.rust-std
         targets."x86_64-pc-windows-msvc".latest.rust-std
         targets."x86_64-unknown-linux-gnu".latest.rust-std
@@ -114,7 +117,6 @@
         paths = [
           llvm.libcxx.out
           llvm.libcxx.dev
-          llvm.libcxxabi.out
           llvm.libunwind.out
           pkgs.gcc13.cc.libgcc.out
           pkgs.gcc13.cc.libgcc.libgcc

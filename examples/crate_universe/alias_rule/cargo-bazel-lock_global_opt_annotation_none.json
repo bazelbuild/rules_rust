@@ -1,5 +1,5 @@
 {
-  "checksum": "211bdf539ae6acfe736c77dfff1386c971cd0b58b72b9fcc59023b3c031ceb31",
+  "checksum": "3d1971d2c03351f2b6d9ffdc78ace206e952773414bd20c0815ccfe606fcdc95",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -186,9 +186,6 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
-    ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
@@ -223,5 +220,6 @@
   "direct_deps": [
     "test_data_passing_crate 0.1.0"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

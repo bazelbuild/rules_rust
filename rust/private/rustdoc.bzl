@@ -321,7 +321,7 @@ rust_doc = rule(
             executable = True,
         ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",

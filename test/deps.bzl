@@ -24,8 +24,12 @@ rust_library(
 )
 """
 
-def rules_rust_test_deps():
+def rules_rust_test_deps(is_bzlmod = False):
     """Load dependencies for rules_rust tests
+
+    Args:
+        is_bzlmod (bool): Whether or not the context from which this macro
+            is called is bzlmod.
 
     Returns:
         list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
@@ -53,19 +57,26 @@ def rules_rust_test_deps():
         target_json = Label("//test/unit/toolchain:toolchain-test-triple.json"),
     )
 
-    maybe(
-        http_archive,
-        name = "rules_python",
-        sha256 = "778aaeab3e6cfd56d681c89f5c10d7ad6bf8d2f1a72de9de55b23081b2d31618",
-        strip_prefix = "rules_python-0.34.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.34.0/rules_python-0.34.0.tar.gz",
-    )
+    if not is_bzlmod:
+        maybe(
+            http_archive,
+            name = "rules_python",
+            sha256 = "690e0141724abb568267e003c7b6d9a54925df40c275a870a4d934161dc9dd53",
+            strip_prefix = "rules_python-0.40.0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.40.0/rules_python-0.40.0.tar.gz",
+        )
+
+        maybe(
+            http_archive,
+            name = "rules_testing",
+            sha256 = "28c2d174471b587bf0df1fd3a10313f22c8906caf4050f8b46ec4648a79f90c3",
+            strip_prefix = "rules_testing-0.7.0",
+            url = "https://github.com/bazelbuild/rules_testing/releases/download/v0.7.0/rules_testing-v0.7.0.tar.gz",
+        )
 
     direct_deps.extend([
         struct(repo = "libc", is_dev_dep = True),
         struct(repo = "rules_rust_toolchain_test_target_json", is_dev_dep = True),
-        struct(repo = "com_google_googleapis", is_dev_dep = True),
-        struct(repo = "rules_python", is_dev_dep = True),
     ])
 
     return direct_deps

@@ -1,6 +1,9 @@
 """Rust WASM-bindgen rules for interfacing with bazelbuild/rules_nodejs"""
 
 load("@rules_nodejs//nodejs:providers.bzl", "DeclarationInfo", "JSModuleInfo")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
 
 def _nodejs_rust_wasm_bindgen_impl(ctx):
@@ -11,14 +14,14 @@ def _nodejs_rust_wasm_bindgen_impl(ctx):
         toolchain = toolchain,
         wasm_file = ctx.attr.wasm_file,
         target_output = ctx.attr.target,
-        bindgen_flags = ctx.attr.bindgen_flags,
+        flags = ctx.attr.bindgen_flags,
     )
 
     # Return a structure that is compatible with the deps[] of a ts_library.
     declarations = info.ts
     es5_sources = info.js
 
-    return [
+    providers = [
         DefaultInfo(
             files = depset([info.wasm], transitive = [info.js, info.ts]),
         ),
@@ -33,6 +36,14 @@ def _nodejs_rust_wasm_bindgen_impl(ctx):
         ),
         info,
     ]
+
+    if RustAnalyzerGroupInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[RustAnalyzerGroupInfo])
+
+    if RustAnalyzerInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[RustAnalyzerInfo])
+
+    return providers
 
 nodejs_rust_wasm_bindgen = rule(
     doc = """\

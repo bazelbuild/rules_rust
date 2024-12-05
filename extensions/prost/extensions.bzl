@@ -2,7 +2,7 @@
 
 load("//:repositories.bzl", "rust_prost_dependencies")
 
-def _rust_ext_prost_impl(module_ctx):
+def _rust_ext_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines
     # repositories.
     direct_deps = []
@@ -17,7 +17,7 @@ def _rust_ext_prost_impl(module_ctx):
         root_module_direct_dev_deps = [],
     )
 
-rust_ext_prost = module_extension(
-    doc = "Dependencies for rules_rust extensions.",
-    implementation = _rust_ext_prost_impl,
+rust_ext = module_extension(
+    doc = "Dependencies for the rules_rust prost extension.",
+    implementation = _rust_ext_impl,
 )

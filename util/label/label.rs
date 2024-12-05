@@ -235,7 +235,7 @@ fn consume_package_name<'s>(input: &'s str, label: &'s str) -> Result<(&'s str, 
     };
 
     let (package_name, rest) = match (is_absolute, input.find(':')) {
-        (false, colon_pos) if colon_pos.map_or(true, |pos| pos != 0) => {
+        (false, colon_pos) if (colon_pos != Some(0)) => {
             return Err(LabelError(err(
                 label,
                 "relative packages are not permitted.",

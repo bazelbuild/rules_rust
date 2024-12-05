@@ -23,7 +23,6 @@ bzl_library(
         ":docs_deps",
         "@rules_rust//cargo:bzl_lib",
         "@rules_rust//crate_universe:bzl_lib",
-        "@rules_rust//crate_universe/private/module_extensions:bzl_lib",
         "@rules_rust//rust:bzl_lib",
         "@rules_rust_bindgen//:bzl_lib",
         "@rules_rust_prost//:bzl_lib",
@@ -219,13 +218,6 @@ stardoc(
     out = "rust_wasm_bindgen_rules_js.md",
     input = "@rules_rust_wasm_bindgen//rules_js:defs.bzl",
     deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
-)
-
-stardoc(
-    name = "rust_wasm_bindgen_rules_nodejs",
-    out = "rust_wasm_bindgen_rules_nodejs.md",
-    input = "@rules_rust_wasm_bindgen//rules_nodejs:defs.bzl",
-    deps = ["@rules_rust_wasm_bindgen//rules_nodejs:bzl_lib"],
 )
 
 sh_binary(

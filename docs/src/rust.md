@@ -40,7 +40,7 @@ Control whether to print clippy output or store it to a file, using the configur
 error_format(<a href="#error_format-name">name</a>)
 </pre>
 
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values.
+Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values.
 
 **ATTRIBUTES**
 
@@ -58,7 +58,7 @@ Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-argumen
 extra_rustc_flag(<a href="#extra_rustc_flag-name">name</a>)
 </pre>
 
-Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
+Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
 
 **ATTRIBUTES**
 
@@ -76,7 +76,7 @@ Add additional rustc_flag from the command line with `--@rules_rust//:extra_rust
 extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
 </pre>
 
-Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration.
+Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration.
 
 **ATTRIBUTES**
 

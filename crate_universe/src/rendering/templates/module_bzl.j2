@@ -18,6 +18,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_rust//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
 
 ###############################################################################
 # MACROS API
@@ -337,6 +338,17 @@ def crate_repositories():
 {% include "partials/module/repo_http.j2" %}
 {%- elif repository_type in ["Git"] %}
 {% include "partials/module/repo_git.j2" %}
+{%- elif repository_type in ["Path"] %}
+
+    local_crate_mirror(
+        name = "{{ crate_repository(name = crate.name, version = crate.version) }}",
+        {%- if generator %}
+        generator = "{{ generator }}",
+        {%- endif %}
+        options_json = "{{ local_crate_mirror_options_json(crate_context = crate) | replace(from='\', to='\\') | replace(from='"', to='\"') }}",
+        path = "{{attrs.path}}",
+    )
+
 {%- else %}
     {{ throw(message = "Unsupported checksum type: " ~ repository_type) }}
 {%- endif %}

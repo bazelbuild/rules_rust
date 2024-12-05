@@ -1,4 +1,4 @@
-"Module extensions for using rules_rust with bzlmod"
+"""Module extensions for using rules_rust with bzlmod"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
@@ -38,7 +38,7 @@ def _empty_repository_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel", "")
 
 _empty_repository = repository_rule(
-    doc = ("Declare an empty repository."),
+    doc = "Declare an empty repository.",
     implementation = _empty_repository_impl,
 )
 
@@ -63,6 +63,7 @@ def _rust_impl(module_ctx):
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
 
             rust_register_toolchains(
+                hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
@@ -82,60 +83,37 @@ def _rust_impl(module_ctx):
         metadata_kwargs["reproducible"] = True
     return module_ctx.extension_metadata(**metadata_kwargs)
 
-_COMMON_TAG_KWARGS = dict(
-    allocator_library = attr.string(
+_COMMON_TAG_KWARGS = {
+    "allocator_library": attr.string(
         doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
         default = "@rules_rust//ffi/cc/allocator_library",
     ),
-    dev_components = attr.bool(
+    "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
         default = False,
     ),
-    edition = attr.string(
+    "edition": attr.string(
         doc = (
             "The rust edition to be used by default (2015, 2018, or 2021). " +
             "If absent, every rule is required to specify its `edition` attribute."
         ),
     ),
-    rustfmt_version = attr.string(
+    "rustfmt_version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
         default = DEFAULT_NIGHTLY_VERSION,
     ),
-    sha256s = attr.string_dict(
+    "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
     ),
-    urls = attr.string_list(
+    "urls": attr.string_list(
         doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
         default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
     ),
-)
+}
 
 _RUST_TOOLCHAIN_TAG = tag_class(
-    attrs = dict(
-        extra_target_triples = attr.string_list(
-            default = DEFAULT_EXTRA_TARGET_TRIPLES,
-        ),
-        extra_exec_rustc_flags = attr.string_list(
-            doc = "Extra flags to pass to rustc in exec configuration",
-        ),
-        extra_rustc_flags = attr.string_list(
-            doc = "Extra flags to pass to rustc in non-exec configuration",
-        ),
-        extra_rustc_flags_triples = attr.string_list_dict(
-            doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
-        ),
-        rust_analyzer_version = attr.string(
-            doc = "The version of Rustc to pair with rust-analyzer.",
-        ),
-        versions = attr.string_list(
-            doc = (
-                "A list of toolchain versions to download. This parameter only accepts one version " +
-                "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
-                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
-            ),
-            default = _RUST_TOOLCHAIN_VERSIONS,
-        ),
-        aliases = attr.string_dict(
+    attrs = {
+        "aliases": attr.string_dict(
             doc = (
                 "Map of full toolchain repository name to an alias. If any repository is created by this " +
                 "extension matches a key in this dictionary, the name of the created repository will be " +
@@ -144,21 +122,43 @@ _RUST_TOOLCHAIN_TAG = tag_class(
             ),
             default = {},
         ),
-        **_COMMON_TAG_KWARGS
-    ),
+        "extra_exec_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        "extra_rustc_flags": attr.string_list(
+            doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "extra_rustc_flags_triples": attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.",
+        ),
+        "extra_target_triples": attr.string_list(
+            default = DEFAULT_EXTRA_TARGET_TRIPLES,
+        ),
+        "rust_analyzer_version": attr.string(
+            doc = "The version of Rustc to pair with rust-analyzer.",
+        ),
+        "versions": attr.string_list(
+            doc = (
+                "A list of toolchain versions to download. This parameter only accepts one version " +
+                "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
+                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
+            ),
+            default = _RUST_TOOLCHAIN_VERSIONS,
+        ),
+    } | _COMMON_TAG_KWARGS,
 )
 
 _RUST_HOST_TOOLS_TAG = tag_class(
-    attrs = dict(
-        version = attr.string(
+    attrs = {
+        "version": attr.string(
             default = rust_common.default_version,
             doc = "The version of Rust to use for tools executed on the Bazel host.",
         ),
-        **_COMMON_TAG_KWARGS
-    ),
+    } | _COMMON_TAG_KWARGS,
 )
 
 rust = module_extension(
+    doc = "Rust toolchain extension.",
     implementation = _rust_impl,
     tag_classes = {
         "toolchain": _RUST_TOOLCHAIN_TAG,
@@ -208,6 +208,7 @@ _conditional_rust_host_tools_args = {
 } if bazel_features.external_deps.module_extension_has_os_arch_dependent else {}
 
 rust_host_tools = module_extension(
+    doc = "An extension which exposes Rust tools compatible with the current host platform.",
     implementation = _rust_host_tools_impl,
     tag_classes = {
         "host_tools": _RUST_HOST_TOOLS_TAG,

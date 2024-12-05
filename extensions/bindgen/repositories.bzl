@@ -21,39 +21,54 @@ load("//3rdparty/crates:defs.bzl", "crate_repositories")
 BINDGEN_VERSION = "0.70.1"
 
 # buildifier: disable=unnamed-macro
-def rust_bindgen_dependencies():
+def rust_bindgen_dependencies(is_bzlmod = False):
     """Declare dependencies needed for bindgen.
+
+    Args:
+        is_bzlmod (bool): Whether or not this macro is called in a bzlmod context.
 
     Returns:
         list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
         defined by this macro.
     """
 
-    maybe(
-        http_archive,
-        name = "llvm-raw",
-        urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/llvm-project-14.0.6.src.tar.xz"],
-        strip_prefix = "llvm-project-14.0.6.src",
-        sha256 = "8b3cfd7bc695bd6cea0f37f53f0981f34f87496e79e2529874fd03a2f9dd3a8a",
-        build_file_content = "# empty",
-        patch_args = ["-p1"],
-        patches = [
-            Label("//3rdparty/patches:llvm-project.cxx17.patch"),
-            Label("//3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch"),
-        ],
-    )
+    if not is_bzlmod:
+        maybe(
+            http_archive,
+            name = "llvm-raw",
+            urls = ["https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.3/llvm-project-17.0.3.src.tar.xz"],
+            strip_prefix = "llvm-project-17.0.3.src",
+            integrity = "sha256-vloeRNZPMGu0T859NuOzmTaU6OYSKyNIYIkGKDwXbbg=",
+            build_file_content = "# empty",
+            patch_args = ["-p1"],
+            patches = [
+                # Label("//3rdparty/patches:llvm-project.cxx17.patch"),
+                Label("//3rdparty/patches:llvm-raw.incompatible_disallow_empty_glob.patch"),
+            ],
+        )
 
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = Label("//3rdparty:BUILD.zlib.bazel"),
-        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-        strip_prefix = "zlib-1.2.11",
-        urls = [
-            "https://zlib.net/zlib-1.2.11.tar.gz",
-            "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-        ],
-    )
+        maybe(
+            http_archive,
+            name = "zlib",
+            build_file = Label("//3rdparty:BUILD.zlib.bazel"),
+            sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+            strip_prefix = "zlib-1.2.11",
+            urls = [
+                "https://zlib.net/zlib-1.2.11.tar.gz",
+                "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
+            ],
+        )
+
+        maybe(
+            http_archive,
+            name = "zstd",
+            build_file = Label("//3rdparty:BUILD.zstd.bazel"),
+            sha256 = "7c42d56fac126929a6a85dbc73ff1db2411d04f104fae9bdea51305663a83fd0",
+            strip_prefix = "zstd-1.5.2",
+            urls = [
+                "https://github.com/facebook/zstd/releases/download/v1.5.2/zstd-1.5.2.tar.gz",
+            ],
+        )
 
     bindgen_name = "rules_rust_bindgen__bindgen-cli-{}".format(BINDGEN_VERSION)
     maybe(
@@ -67,7 +82,6 @@ def rust_bindgen_dependencies():
     )
 
     direct_deps = [
-        struct(repo = "llvm-raw", is_dev_dep = False),
         struct(repo = bindgen_name, is_dev_dep = False),
     ]
     direct_deps.extend(crate_repositories())
