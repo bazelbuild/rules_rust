@@ -11,6 +11,7 @@ toolchain_type(
 
 exports_files([
     "defs.bzl",
+    "MODULE.bazel",
 ])
 
 rust_binary(

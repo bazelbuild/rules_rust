@@ -35,6 +35,6 @@ fn module_bzl_has_correct_version() {
 
     assert_eq!(
         version, module_bazel_version,
-        "//:version.bzl and //:MODULE.bazel versions are out of sync"
+        "@rules_rust//:version.bzl and //:MODULE.bazel versions are out of sync"
     );
 }
