@@ -410,10 +410,6 @@ CRATES_VENDOR_ATTRS = {
         doc = "The path to an existing `Cargo.lock` file",
         allow_single_file = True,
     ),
-    "workspace_cargo_toml": attr.label(
-        doc = "The path to the workspace's `Cargo.toml` file",
-        allow_single_file = True,
-    ),
     "generate_binaries": attr.bool(
         doc = (
             "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
@@ -473,6 +469,10 @@ CRATES_VENDOR_ATTRS = {
     "vendor_path": attr.string(
         doc = "The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root",
         default = "crates",
+    ),
+    "workspace_cargo_toml": attr.label(
+        doc = "The path to the workspace's `Cargo.toml` file",
+        allow_single_file = True,
     ),
 }
 

@@ -232,9 +232,6 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             ),
             mandatory = True,
         ),
-        "workspace_cargo_toml": attr.label(
-            doc = "The path to the workspace `Cargo.toml` file.",
-        ),
         "compressed_windows_toolchain_names": attr.bool(
             doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
             default = True,
@@ -340,6 +337,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "supported_platform_triples": attr.string_list(
             doc = "A set of all platform triples to consider when generating dependencies.",
             default = SUPPORTED_PLATFORM_TRIPLES,
+        ),
+        "workspace_cargo_toml": attr.label(
+            doc = "The path to the workspace `Cargo.toml` file.",
         ),
     },
     environ = CRATES_REPOSITORY_ENVIRON,
