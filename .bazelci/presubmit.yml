@@ -1,13 +1,17 @@
 ---
 minimum_bazel_version: &minimum_bazel_version "7.4.1"
+minimum_bazel_shell_commands: &minimum_bazel_shell_commands
+  - echo "build --build_runfile_links" >> user.bazelrc
 no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
 no_bzlmod_shell_commands: &no_bzlmod_shell_commands
   - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "build --build_runfile_links" >> user.bazelrc
   - echo "7.4.1" > .bazelversion
 no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
   - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
   - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
   - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "build --build_runfile_links" >> user.bazelrc
   - echo "7.4.1" > .bazelversion
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
@@ -340,6 +344,7 @@ tasks:
     # If updating the minimum bazel version, please also update /docs/index.md
     bazel: *minimum_bazel_version
     platform: ubuntu1804
+    shell_commands: *minimum_bazel_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     coverage_targets: *default_linux_targets
@@ -348,6 +353,7 @@ tasks:
     name: "Min Bazel Version With Aspects"
     bazel: *minimum_bazel_version
     platform: ubuntu1804
+    shell_commands: *minimum_bazel_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags: *aspects_flags
