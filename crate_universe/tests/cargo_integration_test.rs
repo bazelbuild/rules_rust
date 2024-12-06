@@ -379,7 +379,7 @@ fn feature_generator_workspace_toml_file() {
             (
                 runfiles::rlocation!(
                     r,
-                    "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"
+                    "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.bazel.toml"
                 )
                 .unwrap()
                 .to_string_lossy()
@@ -398,7 +398,7 @@ fn feature_generator_workspace_toml_file() {
             ),
         ]),
         "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.lock",
-        Some("rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"),
+        Some("rules_rust/crate_universe/test_data/metadata/workspace/Cargo.bazel.toml"),
     );
 
     assert!(!metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu 0.14.0"].is_null());
