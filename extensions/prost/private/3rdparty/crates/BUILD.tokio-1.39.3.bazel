@@ -64,7 +64,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__tokio-macros-2.4.0//:tokio_macros",
+        "@rrprd__tokio-macros-2.4.0//:tokio_macros",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -115,157 +115,157 @@ rust_library(
     }),
     version = "1.39.3",
     deps = [
-        "@rules_rust_prost_deps__bytes-1.7.1//:bytes",
-        "@rules_rust_prost_deps__mio-1.0.2//:mio",
-        "@rules_rust_prost_deps__parking_lot-0.12.3//:parking_lot",
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__bytes-1.7.1//:bytes",
+        "@rrprd__mio-1.0.2//:mio",
+        "@rrprd__parking_lot-0.12.3//:parking_lot",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-darwin
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-darwin
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-darwin
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-darwin
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-ios
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-apple-ios
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-ios
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-ios-sim
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios-sim
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-apple-ios-sim
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-ios-sim
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-apple-ios-sim
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-linux-android
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-linux-android
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-linux-android
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-linux-android
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-pc-windows-msvc
-            "@rules_rust_prost_deps__windows-sys-0.52.0//:windows_sys",  # aarch64-pc-windows-msvc
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-pc-windows-msvc
+            "@rrprd__windows-sys-0.52.0//:windows_sys",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-fuchsia
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-fuchsia
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-unknown-fuchsia
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-fuchsia
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-fuchsia
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-nto-qnx710
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-nto-qnx710
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # aarch64-unknown-nto-qnx710
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-nto-qnx710
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # aarch64-unknown-nto-qnx710
+            "@rrprd__socket2-0.5.7//:socket2",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # arm-unknown-linux-gnueabi
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # arm-unknown-linux-gnueabi
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # arm-unknown-linux-gnueabi
+            "@rrprd__libc-0.2.158//:libc",  # arm-unknown-linux-gnueabi
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # arm-unknown-linux-gnueabi
+            "@rrprd__socket2-0.5.7//:socket2",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # armv7-linux-androideabi
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-linux-androideabi
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # armv7-linux-androideabi
+            "@rrprd__libc-0.2.158//:libc",  # armv7-linux-androideabi
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-linux-androideabi
+            "@rrprd__socket2-0.5.7//:socket2",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # armv7-unknown-linux-gnueabi
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-unknown-linux-gnueabi
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # armv7-unknown-linux-gnueabi
+            "@rrprd__libc-0.2.158//:libc",  # armv7-unknown-linux-gnueabi
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # armv7-unknown-linux-gnueabi
+            "@rrprd__socket2-0.5.7//:socket2",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-apple-darwin
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-apple-darwin
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # i686-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # i686-apple-darwin
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-apple-darwin
+            "@rrprd__socket2-0.5.7//:socket2",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-linux-android
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-linux-android
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # i686-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # i686-linux-android
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-linux-android
+            "@rrprd__socket2-0.5.7//:socket2",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # i686-pc-windows-msvc
-            "@rules_rust_prost_deps__windows-sys-0.52.0//:windows_sys",  # i686-pc-windows-msvc
+            "@rrprd__socket2-0.5.7//:socket2",  # i686-pc-windows-msvc
+            "@rrprd__windows-sys-0.52.0//:windows_sys",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-unknown-freebsd
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-freebsd
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # i686-unknown-freebsd
+            "@rrprd__libc-0.2.158//:libc",  # i686-unknown-freebsd
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-freebsd
+            "@rrprd__socket2-0.5.7//:socket2",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-unknown-linux-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-linux-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # i686-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # i686-unknown-linux-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # i686-unknown-linux-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # powerpc-unknown-linux-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # powerpc-unknown-linux-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # powerpc-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # powerpc-unknown-linux-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # powerpc-unknown-linux-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # riscv32imc-unknown-none-elf
+            "@rrprd__socket2-0.5.7//:socket2",  # riscv32imc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # riscv64gc-unknown-none-elf
+            "@rrprd__socket2-0.5.7//:socket2",  # riscv64gc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # s390x-unknown-linux-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # s390x-unknown-linux-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # s390x-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # s390x-unknown-linux-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # s390x-unknown-linux-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # thumbv7em-none-eabi
+            "@rrprd__socket2-0.5.7//:socket2",  # thumbv7em-none-eabi
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # thumbv8m.main-none-eabi
+            "@rrprd__socket2-0.5.7//:socket2",  # thumbv8m.main-none-eabi
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-apple-darwin
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-darwin
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-apple-darwin
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-darwin
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-apple-ios
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-ios
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-apple-ios
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-apple-ios
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-apple-ios
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-linux-android
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-linux-android
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-linux-android
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-linux-android
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-pc-windows-msvc
-            "@rules_rust_prost_deps__windows-sys-0.52.0//:windows_sys",  # x86_64-pc-windows-msvc
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-pc-windows-msvc
+            "@rrprd__windows-sys-0.52.0//:windows_sys",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-freebsd
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-freebsd
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-unknown-freebsd
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-freebsd
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-freebsd
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-fuchsia
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-fuchsia
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-unknown-fuchsia
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-fuchsia
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-fuchsia
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-            "@rules_rust_prost_deps__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rrprd__signal-hook-registry-1.4.2//:signal_hook_registry",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "@rules_rust_prost_deps__socket2-0.5.7//:socket2",  # x86_64-unknown-none
+            "@rrprd__socket2-0.5.7//:socket2",  # x86_64-unknown-none
         ],
         "//conditions:default": [],
     }),

@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "1.0.209",
     deps = [
-        "@rules_rust_prost_deps__serde-1.0.209//:build_script_build",
+        "@rrprd__serde-1.0.209//:build_script_build",
     ],
 )
 

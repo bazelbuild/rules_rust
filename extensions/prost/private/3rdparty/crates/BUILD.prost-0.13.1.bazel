@@ -37,7 +37,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__prost-derive-0.13.1//:prost_derive",
+        "@rrprd__prost-derive-0.13.1//:prost_derive",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -88,6 +88,6 @@ rust_library(
     }),
     version = "0.13.1",
     deps = [
-        "@rules_rust_prost_deps__bytes-1.7.1//:bytes",
+        "@rrprd__bytes-1.7.1//:bytes",
     ],
 )

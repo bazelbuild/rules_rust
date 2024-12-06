@@ -83,6 +83,6 @@ rust_library(
     }),
     version = "0.2.20",
     deps = [
-        "@rules_rust_prost_deps__zerocopy-0.7.35//:zerocopy",
+        "@rrprd__zerocopy-0.7.35//:zerocopy",
     ],
 )

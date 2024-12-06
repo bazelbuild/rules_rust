@@ -82,9 +82,9 @@ rust_library(
     }),
     version = "0.3.30",
     deps = [
-        "@rules_rust_prost_deps__futures-core-0.3.30//:futures_core",
-        "@rules_rust_prost_deps__futures-task-0.3.30//:futures_task",
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
-        "@rules_rust_prost_deps__pin-utils-0.1.0//:pin_utils",
+        "@rrprd__futures-core-0.3.30//:futures_core",
+        "@rrprd__futures-task-0.3.30//:futures_task",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__pin-utils-0.1.0//:pin_utils",
     ],
 )

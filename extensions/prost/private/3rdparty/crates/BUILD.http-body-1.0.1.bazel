@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "1.0.1",
     deps = [
-        "@rules_rust_prost_deps__bytes-1.7.1//:bytes",
-        "@rules_rust_prost_deps__http-1.1.0//:http",
+        "@rrprd__bytes-1.7.1//:bytes",
+        "@rrprd__http-1.1.0//:http",
     ],
 )

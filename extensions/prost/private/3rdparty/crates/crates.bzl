@@ -22,11 +22,11 @@ def crate_repositories():
     """
     maybe(
         crates_vendor_remote_repository,
-        name = "rules_rust_prost_deps",
+        name = "rrprd",
         build_file = Label("//private/3rdparty/crates:BUILD.bazel"),
         defs_module = Label("//private/3rdparty/crates:defs.bzl"),
     )
 
-    direct_deps = [struct(repo = "rules_rust_prost_deps", is_dev_dep = False)]
+    direct_deps = [struct(repo = "rrprd", is_dev_dep = False)]
     direct_deps.extend(_crate_repositories())
     return direct_deps

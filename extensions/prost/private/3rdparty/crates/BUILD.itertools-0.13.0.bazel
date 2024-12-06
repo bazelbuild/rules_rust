@@ -140,6 +140,6 @@ rust_library(
     }),
     version = "0.13.0",
     deps = [
-        "@rules_rust_prost_deps__either-1.13.0//:either",
+        "@rrprd__either-1.13.0//:either",
     ],
 )

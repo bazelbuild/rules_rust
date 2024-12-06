@@ -40,7 +40,9 @@ crates_vendor(
             version = "0.12.1",
         ),
     },
-    repository_name = "rules_rust_prost_deps",
+    # Shorten the repository name to avoid MAX_PATH issues on Windows
+    # `rules_rust_prost_deps` == `rrprd`
+    repository_name = "rrprd",
     tags = ["manual"],
 )
 

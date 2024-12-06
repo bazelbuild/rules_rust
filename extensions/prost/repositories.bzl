@@ -16,7 +16,7 @@ def rust_prost_dependencies(bzlmod = False):
     """
 
     direct_deps = [
-        struct(repo = "rules_rust_prost_deps__heck", is_dev_dep = False),
+        struct(repo = "rrprd__heck", is_dev_dep = False),
     ]
     if bzlmod:
         # Without bzlmod, this function is normally called by the
@@ -54,7 +54,7 @@ def rust_prost_dependencies(bzlmod = False):
 
     maybe(
         http_archive,
-        name = "rules_rust_prost_deps__heck",
+        name = "rrprd__heck",
         integrity = "sha256-IwTgCYP4f/s4tVtES147YKiEtdMMD8p9gv4zRJu+Veo=",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/heck/heck-0.5.0.crate"],

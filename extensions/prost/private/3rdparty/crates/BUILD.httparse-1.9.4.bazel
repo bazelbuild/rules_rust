@@ -84,7 +84,7 @@ rust_library(
     }),
     version = "1.9.4",
     deps = [
-        "@rules_rust_prost_deps__httparse-1.9.4//:build_script_build",
+        "@rrprd__httparse-1.9.4//:build_script_build",
     ],
 )
 

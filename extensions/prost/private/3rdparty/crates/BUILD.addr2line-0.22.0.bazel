@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.22.0",
     deps = [
-        "@rules_rust_prost_deps__gimli-0.29.0//:gimli",
+        "@rrprd__gimli-0.29.0//:gimli",
     ],
 )

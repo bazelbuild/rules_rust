@@ -84,8 +84,8 @@ rust_library(
     }),
     version = "0.4.12",
     deps = [
-        "@rules_rust_prost_deps__lock_api-0.4.12//:build_script_build",
-        "@rules_rust_prost_deps__scopeguard-1.2.0//:scopeguard",
+        "@rrprd__lock_api-0.4.12//:build_script_build",
+        "@rrprd__scopeguard-1.2.0//:scopeguard",
     ],
 )
 
@@ -141,7 +141,7 @@ cargo_build_script(
     version = "0.4.12",
     visibility = ["//visibility:private"],
     deps = [
-        "@rules_rust_prost_deps__autocfg-1.3.0//:autocfg",
+        "@rrprd__autocfg-1.3.0//:autocfg",
     ],
 )
 

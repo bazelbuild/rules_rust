@@ -88,6 +88,6 @@ rust_library(
     }),
     version = "0.4.7",
     deps = [
-        "@rules_rust_prost_deps__regex-syntax-0.8.4//:regex_syntax",
+        "@rrprd__regex-syntax-0.8.4//:regex_syntax",
     ],
 )

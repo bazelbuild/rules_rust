@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "0.12.3",
     deps = [
-        "@rules_rust_prost_deps__lock_api-0.4.12//:lock_api",
-        "@rules_rust_prost_deps__parking_lot_core-0.9.10//:parking_lot_core",
+        "@rrprd__lock_api-0.4.12//:lock_api",
+        "@rrprd__parking_lot_core-0.9.10//:parking_lot_core",
     ],
 )
