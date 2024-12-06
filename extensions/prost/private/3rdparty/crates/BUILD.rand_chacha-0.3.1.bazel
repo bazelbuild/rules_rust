@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "0.3.1",
     deps = [
-        "@rules_rust_prost_deps__ppv-lite86-0.2.20//:ppv_lite86",
-        "@rules_rust_prost_deps__rand_core-0.6.4//:rand_core",
+        "@rrprd__ppv-lite86-0.2.20//:ppv_lite86",
+        "@rrprd__rand_core-0.6.4//:rand_core",
     ],
 )

@@ -79,6 +79,6 @@ rust_library(
     }),
     version = "0.7.4",
     deps = [
-        "@rules_rust_prost_deps__adler-1.0.2//:adler",
+        "@rrprd__adler-1.0.2//:adler",
     ],
 )

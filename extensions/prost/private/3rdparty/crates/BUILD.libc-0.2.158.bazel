@@ -140,7 +140,7 @@ rust_library(
     }),
     version = "0.2.158",
     deps = [
-        "@rules_rust_prost_deps__libc-0.2.158//:build_script_build",
+        "@rrprd__libc-0.2.158//:build_script_build",
     ],
 )
 

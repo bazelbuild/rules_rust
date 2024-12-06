@@ -79,7 +79,7 @@ rust_library(
     }),
     version = "0.6.5",
     deps = [
-        "@rules_rust_prost_deps__fixedbitset-0.4.2//:fixedbitset",
-        "@rules_rust_prost_deps__indexmap-2.4.0//:indexmap",
+        "@rrprd__fixedbitset-0.4.2//:fixedbitset",
+        "@rrprd__indexmap-2.4.0//:indexmap",
     ],
 )

@@ -80,7 +80,7 @@ rust_library(
     }),
     version = "0.52.6",
     deps = [
-        "@rules_rust_prost_deps__windows_aarch64_gnullvm-0.52.6//:build_script_build",
+        "@rrprd__windows_aarch64_gnullvm-0.52.6//:build_script_build",
     ],
 )
 

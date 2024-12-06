@@ -89,80 +89,80 @@ rust_library(
     }),
     version = "0.8.5",
     deps = [
-        "@rules_rust_prost_deps__rand_chacha-0.3.1//:rand_chacha",
-        "@rules_rust_prost_deps__rand_core-0.6.4//:rand_core",
+        "@rrprd__rand_chacha-0.3.1//:rand_chacha",
+        "@rrprd__rand_core-0.6.4//:rand_core",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-ios
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-ios
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-apple-ios-sim
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-apple-ios-sim
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-fuchsia
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # aarch64-unknown-nto-qnx710
+            "@rrprd__libc-0.2.158//:libc",  # aarch64-unknown-nto-qnx710
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # arm-unknown-linux-gnueabi
+            "@rrprd__libc-0.2.158//:libc",  # arm-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # armv7-linux-androideabi
+            "@rrprd__libc-0.2.158//:libc",  # armv7-linux-androideabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # armv7-unknown-linux-gnueabi
+            "@rrprd__libc-0.2.158//:libc",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-unknown-freebsd
+            "@rrprd__libc-0.2.158//:libc",  # i686-unknown-freebsd
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # i686-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # powerpc-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # s390x-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-apple-darwin
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-apple-ios
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-apple-ios
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-linux-android
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-freebsd
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-freebsd
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-fuchsia
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-fuchsia
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rules_rust_prost_deps__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rrprd__libc-0.2.158//:libc",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),

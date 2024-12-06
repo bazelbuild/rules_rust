@@ -102,6 +102,6 @@ rust_library(
     }),
     version = "0.52.0",
     deps = [
-        "@rules_rust_prost_deps__windows-targets-0.52.6//:windows_targets",
+        "@rrprd__windows-targets-0.52.6//:windows_targets",
     ],
 )

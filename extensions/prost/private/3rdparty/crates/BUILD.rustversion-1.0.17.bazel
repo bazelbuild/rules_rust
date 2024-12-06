@@ -80,7 +80,7 @@ rust_proc_macro(
     }),
     version = "1.0.17",
     deps = [
-        "@rules_rust_prost_deps__rustversion-1.0.17//:build_script_build",
+        "@rrprd__rustversion-1.0.17//:build_script_build",
     ],
 )
 

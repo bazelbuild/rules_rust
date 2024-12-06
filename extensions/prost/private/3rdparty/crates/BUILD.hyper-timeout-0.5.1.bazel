@@ -79,10 +79,10 @@ rust_library(
     }),
     version = "0.5.1",
     deps = [
-        "@rules_rust_prost_deps__hyper-1.4.1//:hyper",
-        "@rules_rust_prost_deps__hyper-util-0.1.7//:hyper_util",
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
-        "@rules_rust_prost_deps__tokio-1.39.3//:tokio",
-        "@rules_rust_prost_deps__tower-service-0.3.3//:tower_service",
+        "@rrprd__hyper-1.4.1//:hyper",
+        "@rrprd__hyper-util-0.1.7//:hyper_util",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__tokio-1.39.3//:tokio",
+        "@rrprd__tower-service-0.3.3//:tower_service",
     ],
 )

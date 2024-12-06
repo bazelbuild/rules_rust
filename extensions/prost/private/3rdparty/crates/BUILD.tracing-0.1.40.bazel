@@ -37,7 +37,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__tracing-attributes-0.1.27//:tracing_attributes",
+        "@rrprd__tracing-attributes-0.1.27//:tracing_attributes",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -88,7 +88,7 @@ rust_library(
     }),
     version = "0.1.40",
     deps = [
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
-        "@rules_rust_prost_deps__tracing-core-0.1.32//:tracing_core",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__tracing-core-0.1.32//:tracing_core",
     ],
 )

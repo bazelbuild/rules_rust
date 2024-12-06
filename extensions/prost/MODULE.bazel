@@ -15,6 +15,10 @@ local_path_override(
 )
 
 bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
     name = "bazel_skylib",
     version = "1.7.1",
 )
@@ -35,16 +39,16 @@ bazel_dep(
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
-    "rules_rust_prost_deps",
-    "rules_rust_prost_deps__h2-0.4.6",
-    "rules_rust_prost_deps__heck",
-    "rules_rust_prost_deps__prost-0.13.1",
-    "rules_rust_prost_deps__prost-types-0.13.1",
-    "rules_rust_prost_deps__protoc-gen-prost-0.4.0",
-    "rules_rust_prost_deps__protoc-gen-tonic-0.4.1",
-    "rules_rust_prost_deps__tokio-1.39.3",
-    "rules_rust_prost_deps__tokio-stream-0.1.15",
-    "rules_rust_prost_deps__tonic-0.12.1",
+    "rrprd",
+    "rrprd__h2-0.4.6",
+    "rrprd__heck",
+    "rrprd__prost-0.13.1",
+    "rrprd__prost-types-0.13.1",
+    "rrprd__protoc-gen-prost-0.4.0",
+    "rrprd__protoc-gen-tonic-0.4.1",
+    "rrprd__tokio-1.39.3",
+    "rrprd__tokio-stream-0.1.15",
+    "rrprd__tonic-0.12.1",
 )
 
 register_toolchains(

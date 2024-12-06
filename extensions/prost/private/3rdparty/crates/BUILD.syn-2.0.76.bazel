@@ -146,8 +146,8 @@ rust_library(
     }),
     version = "2.0.76",
     deps = [
-        "@rules_rust_prost_deps__proc-macro2-1.0.86//:proc_macro2",
-        "@rules_rust_prost_deps__quote-1.0.37//:quote",
-        "@rules_rust_prost_deps__unicode-ident-1.0.12//:unicode_ident",
+        "@rrprd__proc-macro2-1.0.86//:proc_macro2",
+        "@rrprd__quote-1.0.37//:quote",
+        "@rrprd__unicode-ident-1.0.12//:unicode_ident",
     ],
 )

@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "0.3.30",
     deps = [
-        "@rules_rust_prost_deps__futures-core-0.3.30//:futures_core",
+        "@rrprd__futures-core-0.3.30//:futures_core",
     ],
 )

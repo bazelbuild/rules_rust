@@ -31,7 +31,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__pin-project-internal-1.1.5//:pin_project_internal",
+        "@rrprd__pin-project-internal-1.1.5//:pin_project_internal",
     ],
     rustc_flags = [
         "--cap-lints=allow",

@@ -80,9 +80,9 @@ rust_library(
     }),
     version = "0.2.22",
     deps = [
-        "@rules_rust_prost_deps__prettyplease-0.2.22//:build_script_build",
-        "@rules_rust_prost_deps__proc-macro2-1.0.86//:proc_macro2",
-        "@rules_rust_prost_deps__syn-2.0.76//:syn",
+        "@rrprd__prettyplease-0.2.22//:build_script_build",
+        "@rrprd__proc-macro2-1.0.86//:proc_macro2",
+        "@rrprd__syn-2.0.76//:syn",
     ],
 )
 

@@ -83,7 +83,7 @@ rust_library(
     }),
     version = "1.10.6",
     deps = [
-        "@rules_rust_prost_deps__regex-automata-0.4.7//:regex_automata",
-        "@rules_rust_prost_deps__regex-syntax-0.8.4//:regex_syntax",
+        "@rrprd__regex-automata-0.4.7//:regex_automata",
+        "@rrprd__regex-syntax-0.8.4//:regex_syntax",
     ],
 )

@@ -32,7 +32,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__async-trait-0.1.81//:async_trait",
+        "@rrprd__async-trait-0.1.81//:async_trait",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -83,17 +83,17 @@ rust_library(
     }),
     version = "0.4.3",
     deps = [
-        "@rules_rust_prost_deps__axum-core-0.4.3//:build_script_build",
-        "@rules_rust_prost_deps__bytes-1.7.1//:bytes",
-        "@rules_rust_prost_deps__futures-util-0.3.30//:futures_util",
-        "@rules_rust_prost_deps__http-1.1.0//:http",
-        "@rules_rust_prost_deps__http-body-1.0.1//:http_body",
-        "@rules_rust_prost_deps__http-body-util-0.1.2//:http_body_util",
-        "@rules_rust_prost_deps__mime-0.3.17//:mime",
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
-        "@rules_rust_prost_deps__sync_wrapper-0.1.2//:sync_wrapper",
-        "@rules_rust_prost_deps__tower-layer-0.3.3//:tower_layer",
-        "@rules_rust_prost_deps__tower-service-0.3.3//:tower_service",
+        "@rrprd__axum-core-0.4.3//:build_script_build",
+        "@rrprd__bytes-1.7.1//:bytes",
+        "@rrprd__futures-util-0.3.30//:futures_util",
+        "@rrprd__http-1.1.0//:http",
+        "@rrprd__http-body-1.0.1//:http_body",
+        "@rrprd__http-body-util-0.1.2//:http_body_util",
+        "@rrprd__mime-0.3.17//:mime",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__sync_wrapper-0.1.2//:sync_wrapper",
+        "@rrprd__tower-layer-0.3.3//:tower_layer",
+        "@rrprd__tower-service-0.3.3//:tower_service",
     ],
 )
 
@@ -133,7 +133,7 @@ cargo_build_script(
     edition = "2021",
     pkg_name = "axum-core",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__rustversion-1.0.17//:rustversion",
+        "@rrprd__rustversion-1.0.17//:rustversion",
     ],
     rustc_flags = [
         "--cap-lints=allow",

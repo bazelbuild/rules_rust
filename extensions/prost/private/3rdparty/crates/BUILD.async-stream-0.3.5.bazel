@@ -31,7 +31,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rules_rust_prost_deps__async-stream-impl-0.3.5//:async_stream_impl",
+        "@rrprd__async-stream-impl-0.3.5//:async_stream_impl",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -82,7 +82,7 @@ rust_library(
     }),
     version = "0.3.5",
     deps = [
-        "@rules_rust_prost_deps__futures-core-0.3.30//:futures_core",
-        "@rules_rust_prost_deps__pin-project-lite-0.2.14//:pin_project_lite",
+        "@rrprd__futures-core-0.3.30//:futures_core",
+        "@rrprd__pin-project-lite-0.2.14//:pin_project_lite",
     ],
 )
