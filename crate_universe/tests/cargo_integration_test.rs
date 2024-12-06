@@ -10,6 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{ensure, Context, Result};
+use camino::Utf8PathBuf;
 use cargo_bazel::cli::{splice, SpliceOptions};
 use serde_json::{json, Value};
 
@@ -65,7 +66,12 @@ fn setup_cargo_env(rfiles: &runfiles::Runfiles) -> Result<(PathBuf, PathBuf)> {
     Ok((cargo, rustc))
 }
 
-fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str) -> Value {
+fn run(
+    repository_name: &str,
+    manifests: HashMap<String, String>,
+    lockfile: &str,
+    workspace_cargo_toml: Option<&str>,
+) -> Value {
     let scratch = tempfile::tempdir().unwrap();
     let runfiles = runfiles::Runfiles::create().unwrap();
 
@@ -116,6 +122,9 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         cargo,
         rustc,
         nonhermetic_root_bazel_workspace_dir: PathBuf::from("/doesnotexist"),
+        workspace_cargo_toml: workspace_cargo_toml.map(|s| {
+            Utf8PathBuf::from_path_buf(runfiles::rlocation!(runfiles, s).unwrap()).unwrap()
+        }),
     })
     .unwrap();
 
@@ -149,6 +158,7 @@ fn feature_generator() {
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/target_features/Cargo.lock",
+        None,
     );
 
     assert_eq!(
@@ -267,6 +277,7 @@ fn feature_generator_cfg_features() {
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/target_cfg_features/Cargo.lock",
+        None,
     );
 
     assert_eq!(
@@ -348,6 +359,46 @@ fn feature_generator_workspace() {
             ),
         ]),
         "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.lock",
+        None,
+    );
+
+    assert!(!metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu 0.14.0"].is_null());
+}
+
+#[test]
+fn feature_generator_workspace_toml_file() {
+    if should_skip_test() {
+        eprintln!("Skipping!");
+        return;
+    }
+
+    let r = runfiles::Runfiles::create().unwrap();
+    let metadata = run(
+        "workspace_test",
+        HashMap::from([
+            (
+                runfiles::rlocation!(
+                    r,
+                    "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"
+                )
+                .unwrap()
+                .to_string_lossy()
+                .to_string(),
+                "//:test_input".to_string(),
+            ),
+            (
+                runfiles::rlocation!(
+                    r,
+                    "rules_rust/crate_universe/test_data/metadata/workspace/child/Cargo.toml"
+                )
+                .unwrap()
+                .to_string_lossy()
+                .to_string(),
+                "//crate_universe:test_data/metadata/workspace/child/Cargo.toml".to_string(),
+            ),
+        ]),
+        "rules_rust/crate_universe/test_data/metadata/workspace/Cargo.lock",
+        Some("rules_rust/crate_universe/test_data/metadata/workspace/Cargo.toml"),
     );
 
     assert!(!metadata["metadata"]["cargo-bazel"]["tree_metadata"]["wgpu 0.14.0"].is_null());
@@ -374,6 +425,7 @@ fn feature_generator_crate_combined_features() {
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.lock",
+        Some("rules_rust/crate_universe/test_data/metadata/crate_combined_features/Cargo.lock"),
     );
 
     // serde appears twice in the list of dependencies, with and without derive features
@@ -415,6 +467,7 @@ fn resolver_2_deps() {
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/resolver_2_deps/Cargo.lock",
+        None,
     );
 
     assert_eq!(
@@ -539,6 +592,7 @@ fn host_specific_build_deps() {
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.lock",
+        None,
     );
 
     assert_eq!(

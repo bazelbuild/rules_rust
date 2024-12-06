@@ -61,6 +61,7 @@ def _crates_repository_impl(repository_ctx):
             repository_ctx = repository_ctx,
             generator = generator,
             cargo_lockfile = lockfiles.cargo,
+            workspace_cargo_toml = repository_ctx.path(repository_ctx.attr.workspace_cargo_toml) if repository_ctx.attr.workspace_cargo_toml else None,
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             cargo = cargo_path,
@@ -230,6 +231,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "should be used here, which will keep the versions used by cargo and bazel in sync."
             ),
             mandatory = True,
+        ),
+        "workspace_cargo_toml": attr.label(
+            doc = "The path to the workspace `Cargo.toml` file.",
         ),
         "compressed_windows_toolchain_names": attr.bool(
             doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",

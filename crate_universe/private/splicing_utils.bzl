@@ -114,13 +114,14 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, config_path, cargo, rustc):
+def splice_workspace_manifest(repository_ctx, generator, workspace_cargo_toml, cargo_lockfile, splicing_manifest, config_path, cargo, rustc):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
         generator (path): The `cargo-bazel` binary.
         cargo_lockfile (path): The path to a "Cargo.lock" file.
+        workspace_cargo_toml (path): The path to the workspace's "Cargo.toml" file.
         splicing_manifest (path): The path to a splicing manifest.
         config_path: The path to the config file (containing `cargo_bazel::config::Config`.)
         cargo (path): The path to a Cargo binary.
@@ -152,6 +153,12 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
         "--nonhermetic-root-bazel-workspace-dir",
         repository_ctx.workspace_root,
     ]
+
+    if workspace_cargo_toml:
+        arguments.extend([
+            "--workspace-cargo-toml",
+            workspace_cargo_toml,
+        ])
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.

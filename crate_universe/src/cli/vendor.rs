@@ -82,6 +82,10 @@ pub struct VendorOptions {
     /// You basically never want to use this value.
     #[clap(long)]
     pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
+
+    /// The path to the workspace cargo toml file
+    #[clap(long)]
+    pub workspace_cargo_toml: Option<Utf8PathBuf>,
 }
 
 /// Run buildifier on a given file.
@@ -141,7 +145,10 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(opt.nonhermetic_root_bazel_workspace_dir.as_std_path())
+        .splice_workspace(
+            opt.nonhermetic_root_bazel_workspace_dir.as_std_path(),
+            opt.workspace_cargo_toml.as_deref(),
+        )
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile
