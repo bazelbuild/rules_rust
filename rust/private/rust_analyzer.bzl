@@ -188,7 +188,7 @@ rust_analyzer_aspect = aspect(
 )
 
 # Paths in the generated JSON file begin with one of these placeholders.
-# The gen_rust_project driver will replace them with absolute paths.
+# The `rust-analyzer` driver will replace them with absolute paths.
 _WORKSPACE_TEMPLATE = "__WORKSPACE__/"
 _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
@@ -229,6 +229,13 @@ def _create_single_crate(ctx, attrs, info):
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
     crate["source"] = {"exclude_dirs": [], "include_dirs": []}
+
+    # Store build system related info only for local crates
+    if not is_external and not is_generated:
+        crate["build"] = {
+            "label": ctx.label.package + ":" + ctx.label.name,
+            "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
+        }
 
     if is_generated:
         srcs = getattr(ctx.rule.files, "srcs", [])

@@ -498,7 +498,7 @@ def crate_repositories():
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/camino/1.1.9/download"],
         strip_prefix = "camino-1.1.9",
-        build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.camino-1.1.9.bazel"),
+        build_file = Label("@rules_rust//tools/rust_analyzer/3rdparty/crates:BUILD.camino-1.1.9.bazel"),
     )
 
     maybe(
