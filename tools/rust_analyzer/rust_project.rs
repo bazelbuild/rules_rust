@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Serialize;
 
-use crate::aquery::CrateSpec;
+use crate::aquery::{CrateSpec, CrateType};
 
 /// The format that rust_analyzer expects as a response when automatically invoked.
 #[derive(Debug, Serialize)]
@@ -157,6 +157,20 @@ pub enum TargetKind {
     /// Any kind of Cargo lib crate-type (dylib, rlib, proc-macro, ...).
     Lib,
     Test,
+}
+
+impl From<CrateType> for TargetKind {
+    fn from(value: CrateType) -> Self {
+        match value {
+            CrateType::Bin => Self::Bin,
+            CrateType::Rlib
+            | CrateType::Lib
+            | CrateType::Dylib
+            | CrateType::Cdylib
+            | CrateType::Staticlib
+            | CrateType::ProcMacro => Self::Lib,
+        }
+    }
 }
 
 /// A template-like structure for describing runnables.
@@ -310,7 +324,11 @@ pub fn generate_rust_project(
                     env: Some(c.env.clone()),
                     is_proc_macro: c.proc_macro_dylib_path.is_some(),
                     proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
-                    build: None,
+                    build: c.build.as_ref().map(|b| Build {
+                        label: b.label.clone(),
+                        build_file: b.build_file.clone(),
+                        target_kind: c.crate_type.into(),
+                    }),
                 });
             }
         }
@@ -383,22 +401,12 @@ fn detect_cycle<'a>(
 }
 
 pub fn write_rust_project(
-    rust_project_path: &Path,
-    workspace: &Path,
-    execution_root: &Path,
-    output_base: &Path,
+    rust_project_path: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    execution_root: &Utf8Path,
     rust_project: &RustProject,
 ) -> anyhow::Result<()> {
-    let workspace = workspace
-        .to_str()
-        .ok_or_else(|| anyhow!("workspace is not valid UTF-8"))?;
-
-    let execution_root = execution_root
-        .to_str()
-        .ok_or_else(|| anyhow!("execution_root is not valid UTF-8"))?;
-
-    let output_base = output_base.as_str();
-
     // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
     match std::fs::remove_file(rust_project_path) {
         Ok(_) => {}
@@ -413,16 +421,31 @@ pub fn write_rust_project(
 
     // Render the `rust-project.json` file and replace the exec root
     // placeholders with the path to the local exec root.
-    let rust_project_content = serde_json::to_string_pretty(rust_project)?
-        .replace("${pwd}", execution_root)
-        .replace("__EXEC_ROOT__", execution_root)
-        .replace("__OUTPUT_BASE__", output_base)
-        .replace("__WORKSPACE__", workspace);
+    let rust_project_content = serde_json::to_string_pretty(rust_project)?;
+    let rust_project_content = normalize_project_string(
+        &rust_project_content,
+        workspace,
+        output_base,
+        execution_root,
+    );
 
     // Write the new rust-project.json file.
     std::fs::write(rust_project_path, rust_project_content)?;
 
     Ok(())
+}
+
+pub fn normalize_project_string(
+    input: &str,
+    workspace: &Utf8Path,
+    output_base: &Utf8Path,
+    execution_root: &Utf8Path,
+) -> String {
+    input
+        .replace("__WORKSPACE__", workspace.as_str())
+        .replace("${pwd}", execution_root.as_str())
+        .replace("__EXEC_ROOT__", execution_root.as_str())
+        .replace("__OUTPUT_BASE__", output_base.as_str())
 }
 
 #[cfg(test)]
@@ -449,7 +472,8 @@ mod tests {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                build: None,
             }]),
         )
         .expect("expect success");
@@ -482,7 +506,8 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    build: None,
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -497,7 +522,8 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    build: None,
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -512,7 +538,8 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    build: None,
                 },
             ]),
         )
