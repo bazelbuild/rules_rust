@@ -92,8 +92,10 @@ fn discover_workspaces_with_cache(
                 true
             })
         {
-            let entry =
-                entry.context("Failed to walk filesystem finding workspace Cargo.toml files")?;
+            let Ok(entry) = entry else {
+                // Skip errors.
+                continue;
+            };
 
             if entry.file_name() != "Cargo.toml" {
                 continue;
