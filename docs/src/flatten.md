@@ -1170,9 +1170,9 @@ A collection of files either found within the `rust-stdlib` artifact or generate
 
 <pre>
 cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
-                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-data">data</a>, <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>,
-                   <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>, <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>,
-                   <a href="#cargo_build_script-pkg_name">pkg_name</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
+                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-use_default_shell_env">use_default_shell_env</a>, <a href="#cargo_build_script-data">data</a>,
+                   <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>,
+                   <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>, <a href="#cargo_build_script-pkg_name">pkg_name</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
 </pre>
 
 Compile and execute a rust build script to generate build attributes
@@ -1249,6 +1249,7 @@ The `hello_lib` target will be build with the flags and the environment variable
 | <a id="cargo_build_script-link_deps"></a>link_deps |  The subset of the (normal) dependencies of the crate that have the links attribute and therefore provide environment variables to this build script.   |  `[]` |
 | <a id="cargo_build_script-proc_macro_deps"></a>proc_macro_deps |  List of rust_proc_macro targets used to build the script.   |  `[]` |
 | <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  `{}` |
+| <a id="cargo_build_script-use_default_shell_env"></a>use_default_shell_env |  Whether or not to include the default shell environment for the build script action. If unset the global setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.   |  `None` |
 | <a id="cargo_build_script-data"></a>data |  Files needed by the build script.   |  `[]` |
 | <a id="cargo_build_script-compile_data"></a>compile_data |  Files needed for the compilation of the build script.   |  `[]` |
 | <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  `[]` |

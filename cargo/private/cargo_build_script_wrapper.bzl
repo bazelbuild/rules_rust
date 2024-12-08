@@ -10,6 +10,7 @@ load(
 load("//rust:defs.bzl", "rust_binary")
 
 def cargo_build_script(
+        *,
         name,
         edition = None,
         crate_name = None,
@@ -21,6 +22,7 @@ def cargo_build_script(
         link_deps = [],
         proc_macro_deps = [],
         build_script_env = {},
+        use_default_shell_env = None,
         data = [],
         compile_data = [],
         tools = [],
@@ -107,6 +109,8 @@ def cargo_build_script(
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
         build_script_env (dict, optional): Environment variables for build scripts.
+        use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
+            setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
         compile_data (list, optional): Files needed for the compilation of the build script.
         tools (list, optional): Tools (executables) needed by the build script.
@@ -191,6 +195,13 @@ def cargo_build_script(
         **wrapper_kwargs
     )
 
+    if use_default_shell_env == None:
+        sanitized_use_default_shell_env = -1
+    elif type(use_default_shell_env) == "bool":
+        sanitized_use_default_shell_env = 1 if use_default_shell_env else 0
+    else:
+        sanitized_use_default_shell_env = use_default_shell_env
+
     # This target executes the build script.
     _build_script_run(
         name = name,
@@ -198,6 +209,7 @@ def cargo_build_script(
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
+        use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,
         link_deps = link_deps,

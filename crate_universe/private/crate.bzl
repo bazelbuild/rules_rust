@@ -97,6 +97,7 @@ def _annotation(
         build_script_rundir = None,
         build_script_rustc_env = None,
         build_script_toolchains = None,
+        build_script_use_default_shell_env = None,
         compile_data = None,
         compile_data_glob = None,
         crate_features = None,
@@ -140,6 +141,8 @@ def _annotation(
         build_script_rustc_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
         build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
+        build_script_use_default_shell_env (int, optional): Whether or not to include the default shell environment for the build
+            script action.
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
             attribute.
@@ -197,6 +200,7 @@ def _annotation(
             build_script_rundir = build_script_rundir,
             build_script_rustc_env = build_script_rustc_env,
             build_script_toolchains = _stringify_list(build_script_toolchains),
+            build_script_use_default_shell_env = build_script_use_default_shell_env,
             compile_data = _stringify_list(compile_data),
             compile_data_glob = compile_data_glob,
             crate_features = crate_features,
