@@ -61,6 +61,7 @@ def _crates_repository_impl(repository_ctx):
             repository_ctx = repository_ctx,
             generator = generator,
             cargo_lockfile = lockfiles.cargo,
+            workspace_cargo_toml = repository_ctx.path(repository_ctx.attr.workspace_cargo_toml) if repository_ctx.attr.workspace_cargo_toml else None,
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             cargo = cargo_path,
@@ -336,6 +337,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "supported_platform_triples": attr.string_list(
             doc = "A set of all platform triples to consider when generating dependencies.",
             default = SUPPORTED_PLATFORM_TRIPLES,
+        ),
+        "workspace_cargo_toml": attr.label(
+            doc = "The path to the workspace `Cargo.toml` file.",
         ),
     },
     environ = CRATES_REPOSITORY_ENVIRON,

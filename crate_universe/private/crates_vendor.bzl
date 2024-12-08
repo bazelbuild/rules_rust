@@ -326,6 +326,14 @@ def _crates_vendor_impl(ctx):
         ])
         cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
 
+    # Add an optional `Cargo.toml` file.
+    if ctx.attr.workspace_cargo_toml:
+        args.extend([
+            "--workspace-cargo-toml",
+            _runfiles_path(ctx.file.workspace_cargo_toml, is_windows),
+        ])
+        cargo_bazel_runfiles.extend([ctx.file.workspace_cargo_toml])
+
     # Optionally include buildifier
     if ctx.attr.buildifier:
         args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier, is_windows)])
@@ -461,6 +469,10 @@ CRATES_VENDOR_ATTRS = {
     "vendor_path": attr.string(
         doc = "The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root",
         default = "crates",
+    ),
+    "workspace_cargo_toml": attr.label(
+        doc = "The path to the workspace's `Cargo.toml` file",
+        allow_single_file = True,
     ),
 }
 
