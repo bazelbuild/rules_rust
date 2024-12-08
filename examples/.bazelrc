@@ -29,3 +29,6 @@ build --tool_java_language_version=21
 # This import should always be last to allow users to override
 # settings for local development.
 try-import %workspace%/user.bazelrc
+
+# Enable using cc_shared_library
+common --experimental_cc_shared_library
