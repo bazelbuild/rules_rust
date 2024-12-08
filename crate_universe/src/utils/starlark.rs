@@ -133,6 +133,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) tools: SelectSet<Label>,
     #[serde(skip_serializing_if = "Set::is_empty")]
     pub(crate) toolchains: Set<Label>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_default_shell_env: Option<i32>,
     pub(crate) version: String,
     pub(crate) visibility: Set<String>,
 }
