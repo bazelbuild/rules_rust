@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_bindgen",
-    version = "0.55.1",
+    version = "0.55.2",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.1",
+    version = "0.55.2",
 )
 local_path_override(
     module_name = "rules_rust",
