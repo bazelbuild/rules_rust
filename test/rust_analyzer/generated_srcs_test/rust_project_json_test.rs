@@ -48,7 +48,9 @@ mod tests {
             .find(|c| &c.display_name == "generated_srcs")
             .unwrap();
         assert!(gen.root_module.starts_with("/"));
-        assert!(gen.root_module.ends_with("/lib.rs"));
+        assert!(gen
+            .root_module
+            .ends_with("rules_rust_test_rust_analyzer/lib.rs"));
 
         let include_dirs = &gen.source.as_ref().unwrap().include_dirs;
         assert!(include_dirs.len() == 1);
