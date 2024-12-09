@@ -1,9 +1,9 @@
 fixedReleaser:
   login: scentini
   email: 11149636+scentini@users.noreply.github.com
-  moduleRoots:
-    - "."
-    - "extensions/bindgen"
-    - "extensions/prost"
-    - "extensions/protobuf"
-    - "extensions/wasm_bindgen"
+moduleRoots:
+  - "."
+  - "extensions/bindgen"
+  - "extensions/prost"
+  - "extensions/protobuf"
+  - "extensions/wasm_bindgen"
