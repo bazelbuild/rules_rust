@@ -105,7 +105,7 @@ bazel_dep(name = "rules_rust_wasm_bindgen", version = "{version}")
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
-    name = "rules_rust",
+    name = "rules_rust_wasm_bindgen",
     integrity = "sha256-{ext_wasm_bindgen_sha256_base64}",
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust_wasm_bindgen-{version}.tar.gz"],
 )
