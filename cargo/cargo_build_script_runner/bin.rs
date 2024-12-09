@@ -93,7 +93,7 @@ fn run_buildrs() -> Result<(), String> {
     command
         .current_dir(&working_directory)
         .envs(target_env_vars)
-        .env("OUT_DIR", out_dir_abs)
+        .env("OUT_DIR", out_dir_abs.clone())
         .env("CARGO_MANIFEST_DIR", manifest_dir)
         .env("RUSTC", rustc)
         .env("RUST_BACKTRACE", "full");
@@ -230,6 +230,8 @@ fn run_buildrs() -> Result<(), String> {
     if let Some(cargo_manifest_maker) = cargo_manifest_maker {
         cargo_manifest_maker.drain_runfiles_dir().unwrap();
     }
+
+    replace_symlinks_in_out_dir(&out_dir_abs)?;
 
     Ok(())
 }
@@ -718,6 +720,52 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
         .into_iter()
         .map(|(key, value)| (format!("CARGO_CFG_{}", key.to_uppercase()), value.join(",")))
         .collect()
+}
+
+/// Iterates over the given directory recursively and resolves any symlinks
+///
+/// Symlinks shouldn't present in `out_dir` as those amy contain paths to sandboxes which doesn't exists anymore.
+/// Therefore, bazel will fail because of dangling symlinks.
+fn replace_symlinks_in_out_dir(out_dir: &Path) -> Result<(), String> {
+    if out_dir.is_dir() {
+        let out_dir_paths = std::fs::read_dir(out_dir).map_err(|e| {
+            format!(
+                "Failed to read directory `{}` with {:?}",
+                out_dir.display(),
+                e
+            )
+        })?;
+        for entry in out_dir_paths {
+            let entry =
+                entry.map_err(|e| format!("Failed to read directory entry with  {:?}", e,))?;
+            let path = entry.path();
+
+            if path.is_symlink() {
+                let target_path = std::fs::read_link(&path).map_err(|e| {
+                    format!("Failed to read symlink `{}` with {:?}", path.display(), e,)
+                })?;
+                std::fs::remove_file(&path)
+                    .map_err(|e| format!("Failed remove file `{}` with {:?}", path.display(), e))?;
+                std::fs::copy(&target_path, &path).map_err(|e| {
+                    format!(
+                        "Failed to copy `{} -> {}` with {:?}",
+                        target_path.display(),
+                        path.display(),
+                        e
+                    )
+                })?;
+            } else if path.is_dir() {
+                replace_symlinks_in_out_dir(&path).map_err(|e| {
+                    format!(
+                        "Failed to normalize nested directory `{}` with {}",
+                        path.display(),
+                        e,
+                    )
+                })?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn main() {
