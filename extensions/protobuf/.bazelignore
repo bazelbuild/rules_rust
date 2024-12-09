@@ -1,5 +1,6 @@
-examples
-bazel-out
-bazel-testlogs
-bazel-protobuf
+.bcr
 bazel-bin
+bazel-out
+bazel-protobuf
+bazel-testlogs
+examples

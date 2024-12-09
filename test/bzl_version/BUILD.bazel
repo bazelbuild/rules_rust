@@ -1,3 +1,5 @@
+load("//:version.bzl", "VERSION")
+load("//rust:defs.bzl", "rust_test")
 load(":bzl_version_test.bzl", "bzl_version_test")
 
 exports_files([
@@ -8,4 +10,18 @@ exports_files([
 bzl_version_test(
     name = "bzl_version_test",
     module_bazel = "//:MODULE.bazel",
+)
+
+rust_test(
+    name = "presubmit_validation_test",
+    srcs = ["presubmit_validation_test.rs"],
+    data = ["//.bcr:extension_presubmits"],
+    edition = "2021",
+    rustc_env = {
+        "PRESUBMIT_RLOCATIONPATHS": "$(rlocationpaths //.bcr:extension_presubmits)",
+        "RULES_RUST_VERSION": VERSION,
+    },
+    deps = [
+        "//tools/runfiles",
+    ],
 )

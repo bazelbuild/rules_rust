@@ -1,0 +1,7 @@
+filegroup(
+    name = "extension_presubmits",
+    srcs = glob([
+        "extensions/**/presubmit.yml",
+    ]),
+    visibility = ["//test/bzl_version:__pkg__"],
+)

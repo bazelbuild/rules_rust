@@ -8,8 +8,11 @@ bcr_test_module:
       name: "Run test module"
       platform: ${{ platform }}
       bazel: ${{ bazel }}
-      # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
       shell_commands:
-        - "rm MODULE.bazel.lock || true"
+        # Vendor the core rules to avoid failures from use of `local_path_override`
+        - "mkdir -p .bcr/core && curl -L https://github.com/bazelbuild/rules_rust/releases/download/0.55.4/rules_rust-0.55.4.tar.gz | tar -xz -C .bcr/core && echo 'common --override_module=rules_rust=.bcr/core' > user.bazelrc"
+      batch_commands:
+        # Vendor the core rules to avoid failures from use of `local_path_override`
+        - "(if not exist .bcr\\core mkdir .bcr\\core) && curl -L https://github.com/bazelbuild/rules_rust/releases/download/0.55.4/rules_rust-0.55.4.tar.gz | tar -xz -C .bcr\\core && echo common --override_module=rules_rust=.bcr/core > user.bazelrc"
       test_targets:
         - "//..."

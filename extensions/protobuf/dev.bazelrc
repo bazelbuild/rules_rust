@@ -1,0 +1,5 @@
+# A Bazel configuration flag used to locate the core rules when developing
+# within the `rules_rust` repository. This file should not be used by
+# external consumers
+
+common --override_module=rules_rust=../../
