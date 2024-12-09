@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_wasm_bindgen",
-    version = "0.55.2",
+    version = "0.55.3",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.2",
+    version = "0.55.3",
 )
 local_path_override(
     module_name = "rules_rust",
