@@ -933,6 +933,12 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+    shell_commands:
+      # Vendor the core rules to avoid failures from use of `local_path_override`
+      - "mkdir -p .bcr/core && curl -L https://github.com/bazelbuild/rules_rust/releases/download/0.55.3/rules_rust-0.55.3.tar.gz | tar -xz -C .bcr/core && echo 'common --override_module=rules_rust=.bcr/core' > user.bazelrc"
+    batch_commands:
+      # Vendor the core rules to avoid failures from use of `local_path_override`
+      - "(if not exist .bcr\\core mkdir .bcr\\core) && curl -L https://github.com/bazelbuild/rules_rust/releases/download/0.55.3/rules_rust-0.55.3.tar.gz | tar -xz -C .bcr\\core && echo common --override_module=rules_rust=.bcr/core > user.bazelrc"
   extensions_prost_linux_rbe:
     platform: rbe_ubuntu2004
     name: Extensions Prost
@@ -962,6 +968,12 @@ tasks:
     working_directory: extensions/prost
     build_flags: *aspects_flags
     test_flags: *aspects_flags
+    shell_commands:
+      # Vendor the core rules to avoid failures from use of `local_path_override`
+      - "mkdir -p .bcr/core && curl -L https://github.com/bazelbuild/rules_rust/releases/download/0.55.3/rules_rust-0.55.3.tar.gz | tar -xz -C .bcr/core && echo 'common --override_module=rules_rust=.bcr/core' > user.bazelrc"
+    batch_commands:
+      # Vendor the core rules to avoid failures from use of `local_path_override`
+      - "(if not exist .bcr\\core mkdir .bcr\\core) && powershell.exe -c 'Invoke-WebRequest -Uri https://github.com/bazelbuild/rules_rust/releases/download/0.55.4/rules_rust-0.55.4.tar.gz -OutFile rules_rust.tar.gz' && tar -xzf rules_rust.tar -C .bcr\\core && del rules_rust.tar.gz && echo common --override_module=rules_rust=.bcr/core > user.bazelrc"
     build_targets:
       - "//..."
     test_targets:
