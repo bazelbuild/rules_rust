@@ -227,7 +227,10 @@ jobs:
           # Generate the release notes
           sed 's#{version}#${{ env.RELEASE_VERSION }}#g' ${{ github.workspace }}/.github/release_notes.template \
           | sed 's#{sha256_base64}#${{ env.ARCHIVE_SHA256_BASE64 }}#g' \
-          | sed 's#{ext_sha256_base64}#${{ env.ARCHIVE_EXT_SHA256_BASE64 }}#g' \
+          | sed 's#{ext_bindgen_sha256_base64}#${{ env.ARCHIVE_EXT_BINDGEN_SHA256_BASE64 }}#g' \
+          | sed 's#{ext_prost_sha256_base64}#${{ env.ARCHIVE_EXT_PROST_SHA256_BASE64 }}#g' \
+          | sed 's#{ext_protobuf_sha256_base64}#${{ env.ARCHIVE_EXT_PROTOBUF_SHA256_BASE64 }}#g' \
+          | sed 's#{ext_wasm_bindgen_sha256_base64}#${{ env.ARCHIVE_EXT_WASM_BINDGEN_SHA256_BASE64 }}#g' \
           > ${{ github.workspace }}/.github/release_notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1

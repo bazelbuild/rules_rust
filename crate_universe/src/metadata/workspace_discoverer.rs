@@ -92,8 +92,25 @@ fn discover_workspaces_with_cache(
                 true
             })
         {
-            let entry =
-                entry.context("Failed to walk filesystem finding workspace Cargo.toml files")?;
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(err) => {
+                    if let Some(io_err) = err.io_error() {
+                        if let Some(path) = err.path() {
+                            if let Ok(symlink_metadata) = std::fs::symlink_metadata(path) {
+                                if symlink_metadata.is_symlink()
+                                    && io_err.kind() == std::io::ErrorKind::NotFound
+                                {
+                                    // Ignore dangling symlinks
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    return Err(err)
+                        .context("Failed to walk filesystem finding workspace Cargo.toml files");
+                }
+            };
 
             if entry.file_name() != "Cargo.toml" {
                 continue;
@@ -200,28 +217,22 @@ mod test {
                 .unwrap();
         let root_dir = Utf8PathBuf::from_path_buf(root_dir).unwrap();
 
-        let _symlink = DeleteOnDropDirSymlink::symlink(
+        let _manifest_symlink = DeleteOnDropDirSymlink::symlink(
             Path::new("..").join("symlinked"),
             root_dir.join("ws1").join("bazel-ws1").into_std_path_buf(),
         )
         .unwrap();
 
-        let mut workspaces_to_members = BTreeMap::new();
-        workspaces_to_members.insert(
-            root_dir.join("ws1").join("Cargo.toml"),
-            BTreeSet::from([
-                // This isn't at the bazel repo root level, so gets included.
-                root_dir.join("ws1").join("bazel-ws1").join("Cargo.toml"),
-                root_dir.join("ws1").join("ws1c1").join("Cargo.toml"),
-                root_dir
-                    .join("ws1")
-                    .join("ws1c1")
-                    .join("ws1c1c1")
-                    .join("Cargo.toml"),
-                root_dir.join("ws1").join("ws1c2").join("Cargo.toml"),
-            ]),
-        );
-        workspaces_to_members.insert(
+        let mut expected = ws1_discovered_workspaces(&root_dir);
+
+        // This isn't at the bazel repo root level, so gets included.
+        expected
+            .workspaces_to_members
+            .get_mut(&root_dir.join("ws1").join("Cargo.toml"))
+            .unwrap()
+            .insert(root_dir.join("ws1").join("bazel-ws1").join("Cargo.toml"));
+
+        expected.workspaces_to_members.insert(
             root_dir.join("ws2").join("Cargo.toml"),
             BTreeSet::from([
                 root_dir.join("ws2").join("ws2c1").join("Cargo.toml"),
@@ -232,7 +243,8 @@ mod test {
                     .join("Cargo.toml"),
             ]),
         );
-        let non_workspaces = BTreeSet::from([
+
+        expected.non_workspaces.extend([
             root_dir.join("non-ws").join("Cargo.toml"),
             root_dir.join("ws2").join("ws2excluded").join("Cargo.toml"),
             root_dir
@@ -254,10 +266,6 @@ mod test {
             root_dir.as_std_path(),
         )
         .unwrap();
-        let expected = DiscoveredWorkspaces {
-            workspaces_to_members,
-            non_workspaces,
-        };
 
         assert_eq!(expected, actual);
     }
@@ -277,6 +285,50 @@ mod test {
         )
         .unwrap();
 
+        let expected = ws1_discovered_workspaces(&root_dir);
+
+        let actual = discover_workspaces(
+            vec![root_dir.join("ws1/ws1c1/Cargo.toml")]
+                .into_iter()
+                .collect(),
+            &BTreeMap::new(),
+            root_dir.join("ws1").as_std_path(),
+        )
+        .unwrap();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_discover_ignores_dangling_symlinks() {
+        let _guard = FILESYSTEM_GUARD.lock().unwrap();
+        let r = runfiles::Runfiles::create().unwrap();
+        let root_dir =
+            runfiles::rlocation!(r, "rules_rust/crate_universe/test_data/workspace_examples")
+                .unwrap();
+        let root_dir = Utf8PathBuf::from_path_buf(root_dir).unwrap();
+
+        let _dangling_symlink = DeleteOnDropDirSymlink::symlink(
+            non_existing_path(),
+            root_dir.join("ws1").join("dangling").into_std_path_buf(),
+        )
+        .unwrap();
+
+        let expected = ws1_discovered_workspaces(&root_dir);
+
+        let actual = discover_workspaces(
+            vec![root_dir.join("ws1/ws1c1/Cargo.toml")]
+                .into_iter()
+                .collect(),
+            &BTreeMap::new(),
+            root_dir.as_std_path(),
+        )
+        .unwrap();
+
+        assert_eq!(expected, actual);
+    }
+
+    fn ws1_discovered_workspaces(root_dir: &Utf8Path) -> DiscoveredWorkspaces {
         let mut workspaces_to_members = BTreeMap::new();
         workspaces_to_members.insert(
             root_dir.join("ws1").join("Cargo.toml"),
@@ -292,20 +344,10 @@ mod test {
         );
         let non_workspaces = BTreeSet::new();
 
-        let actual = discover_workspaces(
-            vec![root_dir.join("ws1/ws1c1/Cargo.toml")]
-                .into_iter()
-                .collect(),
-            &BTreeMap::new(),
-            root_dir.join("ws1").as_std_path(),
-        )
-        .unwrap();
-        let expected = DiscoveredWorkspaces {
+        DiscoveredWorkspaces {
             workspaces_to_members,
             non_workspaces,
-        };
-
-        assert_eq!(expected, actual);
+        }
     }
 
     struct DeleteOnDropDirSymlink(PathBuf);
@@ -333,5 +375,15 @@ mod test {
         fn drop(&mut self) {
             std::fs::remove_dir(&self.0).expect("Failed to delete symlink");
         }
+    }
+
+    #[cfg(unix)]
+    fn non_existing_path() -> PathBuf {
+        PathBuf::from("/doesnotexist")
+    }
+
+    #[cfg(windows)]
+    fn non_existing_path() -> PathBuf {
+        PathBuf::from("Z:\\doesnotexist")
     }
 }

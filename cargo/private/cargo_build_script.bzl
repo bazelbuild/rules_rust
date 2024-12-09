@@ -346,9 +346,12 @@ def _cargo_build_script_impl(ctx):
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    # Start with the default shell env, which contains any --action_env
-    # settings passed in on the command line.
-    env = dict(ctx.configuration.default_shell_env)
+    env = dict({})
+
+    # If enabled, start with the default shell env, which contains any --action_env
+    # settings passed in on the command line and defaults like $PATH.
+    if ctx.attr.use_default_shell_env:
+        env.update(ctx.configuration.default_shell_env)
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -534,9 +537,9 @@ def _cargo_build_script_impl(ctx):
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
-        # Set use_default_shell_env so that $PATH is set, as tools like Cmake
-        # may want to probe $PATH for helper tools.
-        use_default_shell_env = True,
+        # If enabled, sets the $PATH environment variable so tools like `cmake`
+        # can probe $PATH for helper tools. Defaults to `True`.
+        use_default_shell_env = ctx.attr.use_default_shell_env,
     )
 
     return [
@@ -624,6 +627,14 @@ cargo_build_script = rule(
             doc = "Tools required by the build script.",
             allow_files = True,
             cfg = "exec",
+        ),
+        "use_default_shell_env": attr.bool(
+            doc = dedent("""\
+                Whether or not to include the default shell environment for the build
+                script action. By default Bazel's `default_shell_env` is set for build
+                script actions so crates like `cmake` can probe $PATH to find tools.
+            """),
+            default = True,
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
