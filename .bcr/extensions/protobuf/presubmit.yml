@@ -10,6 +10,6 @@ bcr_test_module:
       bazel: ${{ bazel }}
       # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
       shell_commands:
-        - "rm MODULE.bazel.lock"
+        - "rm MODULE.bazel.lock || true"
       test_targets:
         - "//..."
