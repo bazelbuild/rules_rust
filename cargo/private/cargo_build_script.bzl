@@ -348,9 +348,16 @@ def _cargo_build_script_impl(ctx):
 
     env = dict({})
 
+    if ctx.attr.use_default_shell_env == -1:
+        use_default_shell_env = ctx.attr._default_use_default_shell_env[BuildSettingInfo].value
+    elif ctx.attr.use_default_shell_env == 0:
+        use_default_shell_env = False
+    else:
+        use_default_shell_env = True
+
     # If enabled, start with the default shell env, which contains any --action_env
     # settings passed in on the command line and defaults like $PATH.
-    if ctx.attr.use_default_shell_env:
+    if use_default_shell_env:
         env.update(ctx.configuration.default_shell_env)
 
     env.update({
@@ -537,9 +544,7 @@ def _cargo_build_script_impl(ctx):
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
-        # If enabled, sets the $PATH environment variable so tools like `cmake`
-        # can probe $PATH for helper tools. Defaults to `True`.
-        use_default_shell_env = ctx.attr.use_default_shell_env,
+        use_default_shell_env = use_default_shell_env,
     )
 
     return [
@@ -628,13 +633,14 @@ cargo_build_script = rule(
             allow_files = True,
             cfg = "exec",
         ),
-        "use_default_shell_env": attr.bool(
+        "use_default_shell_env": attr.int(
             doc = dedent("""\
                 Whether or not to include the default shell environment for the build
                 script action. By default Bazel's `default_shell_env` is set for build
                 script actions so crates like `cmake` can probe $PATH to find tools.
             """),
-            default = True,
+            default = -1,
+            values = [-1, 0, 1],
         ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
@@ -653,6 +659,9 @@ cargo_build_script = rule(
         ),
         "_debug_std_streams_output_group": attr.label(
             default = Label("//cargo/settings:debug_std_streams_output_group"),
+        ),
+        "_default_use_default_shell_env": attr.label(
+            default = Label("//cargo/settings:use_default_shell_env"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),

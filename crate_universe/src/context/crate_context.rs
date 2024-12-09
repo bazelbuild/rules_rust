@@ -242,6 +242,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) toolchains: BTreeSet<Label>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_default_shell_env: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -268,6 +271,7 @@ impl Default for BuildScriptAttributes {
             tools: Default::default(),
             links: Default::default(),
             toolchains: Default::default(),
+            use_default_shell_env: None,
         }
     }
 }
@@ -654,6 +658,11 @@ impl CrateContext {
                 if let Some(extra) = &crate_extra.build_script_env {
                     attrs.build_script_env =
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
+                }
+
+                // Default Shell Env
+                if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
+                    attrs.use_default_shell_env = Some(*extra);
                 }
 
                 if let Some(rundir) = &crate_extra.build_script_rundir {
