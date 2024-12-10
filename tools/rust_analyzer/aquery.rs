@@ -85,6 +85,7 @@ pub fn get_crate_specs(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    config_group: Option<&str>,
     targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
@@ -99,6 +100,7 @@ pub fn get_crate_specs(
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg(format!("--output_base={output_base}"))
         .arg("aquery")
+        .args(config_group.map(|s| format!("--config={s}")))
         .arg("--include_aspects")
         .arg("--include_artifacts")
         // This just makes the `rust-analyzer` integration more resilient,
