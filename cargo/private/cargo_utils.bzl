@@ -1,6 +1,7 @@
 """Utility functions for the cargo rules"""
 
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
+load("//rust/private:utils.bzl", "abs")
 
 def _resolve_repository_template(
         *,

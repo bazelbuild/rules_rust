@@ -175,6 +175,7 @@ def get_lib_name_for_windows(lib):
 
     return libname
 
+# TODO: remove after dropping support for Bazel < 7 when `abs` is a global
 def abs(value):
     """Returns the absolute value of a number.
 

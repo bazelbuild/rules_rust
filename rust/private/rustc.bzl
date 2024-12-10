@@ -35,10 +35,10 @@ load(
     "get_lib_name_for_windows",
     "get_preferred_artifact",
     "is_exec_configuration",
+    "is_std_dylib",
     "make_static_lib_symlink",
     "relativize",
 )
-load(":utils.bzl", "is_std_dylib")
 
 # This feature is disabled unless one of the dependencies is a cc_library.
 # Authors of C++ toolchains can place linker flags that should only be applied
