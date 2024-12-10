@@ -17,6 +17,7 @@ pub fn generate_crate_info(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
     workspace: &Utf8Path,
+    config_group: Option<&str>,
     rules_rust: &str,
     targets: &[String],
 ) -> anyhow::Result<()> {
@@ -30,6 +31,7 @@ pub fn generate_crate_info(
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg(format!("--output_base={output_base}"))
         .arg("build")
+        .args(config_group.map(|s| format!("--config={s}")))
         .arg("--norun_validations")
         // This just makes the `rust-analyzer` integration more resilient,
         // in particular when being used to auto-discover workspaces.
@@ -64,6 +66,7 @@ pub fn discover_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    config_group: Option<&str>,
     rules_rust_name: &str,
     targets: &[String],
     buildfile: Utf8PathBuf,
@@ -73,6 +76,7 @@ pub fn discover_rust_project(
         output_base,
         workspace,
         execution_root,
+        config_group,
         rules_rust_name,
         targets,
     )?;
@@ -109,6 +113,7 @@ pub fn write_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    config_group: Option<&str>,
     rules_rust_name: &str,
     targets: &[String],
     rust_project_path: &Utf8Path,
@@ -118,6 +123,7 @@ pub fn write_rust_project(
         output_base,
         workspace,
         execution_root,
+        config_group,
         rules_rust_name,
         targets,
     )?;
@@ -138,6 +144,7 @@ fn generate_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    config_group: Option<&str>,
     rules_rust_name: &str,
     targets: &[String],
 ) -> anyhow::Result<RustProject> {
@@ -146,6 +153,7 @@ fn generate_rust_project(
         output_base,
         workspace,
         execution_root,
+        config_group,
         targets,
         rules_rust_name,
     )?;

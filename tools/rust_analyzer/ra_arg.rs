@@ -21,15 +21,23 @@ impl RustAnalyzerArg {
         bazel: &Utf8Path,
         output_base: &Utf8Path,
         workspace: &Utf8Path,
+        config_group: Option<&str>,
     ) -> anyhow::Result<(Utf8PathBuf, Vec<String>)> {
         match self {
             Self::Path(file) => {
-                let buildfile =
-                    query_buildfile_for_source_file(bazel, output_base, workspace, &file)?;
-                query_targets(bazel, output_base, workspace, &buildfile).map(|t| (buildfile, t))
+                let buildfile = query_buildfile_for_source_file(
+                    bazel,
+                    output_base,
+                    workspace,
+                    config_group,
+                    &file,
+                )?;
+                query_targets(bazel, output_base, workspace, config_group, &buildfile)
+                    .map(|t| (buildfile, t))
             }
             Self::Buildfile(buildfile) => {
-                query_targets(bazel, output_base, workspace, &buildfile).map(|t| (buildfile, t))
+                query_targets(bazel, output_base, workspace, config_group, &buildfile)
+                    .map(|t| (buildfile, t))
             }
         }
     }
@@ -56,6 +64,7 @@ fn query_buildfile_for_source_file(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
     workspace: &Utf8Path,
+    config_group: Option<&str>,
     file: &Utf8Path,
 ) -> anyhow::Result<Utf8PathBuf> {
     log::info!("running bazel query on source file: {file}");
@@ -71,6 +80,7 @@ fn query_buildfile_for_source_file(
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg(format!("--output_base={output_base}"))
         .arg("query")
+        .args(config_group.map(|s| format!("--config={s}")))
         .arg("--output=package")
         .arg(stripped_file)
         .output()
@@ -108,6 +118,7 @@ fn query_targets(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
     workspace: &Utf8Path,
+    config_group: Option<&str>,
     buildfile: &Utf8Path,
 ) -> anyhow::Result<Vec<String>> {
     log::info!("running bazel query on buildfile: {buildfile}");
@@ -129,6 +140,7 @@ fn query_targets(
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg(format!("--output_base={output_base}"))
         .arg("query")
+        .args(config_group.map(|s| format!("--config={s}")))
         .arg(format!(
             "kind(\"rust_(library|binary|proc_macro|test)\", {targets})"
         ))

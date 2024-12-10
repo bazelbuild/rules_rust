@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use anyhow::bail;
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Args, Parser};
 
 #[derive(Debug)]
@@ -21,6 +21,9 @@ where
     /// The path to a Bazel binary
     pub bazel: Utf8PathBuf,
 
+    /// A `--config` directive that gets passed to Bazel to be able to pass custom configurations.
+    pub config_group: Option<String>,
+
     /// Binary specific config options
     pub specific: T,
 }
@@ -36,6 +39,7 @@ where
             mut execution_root,
             mut output_base,
             bazel,
+            config_group,
             specific,
         } = ConfigParser::parse();
 
@@ -45,6 +49,7 @@ where
                 execution_root: execution_root.unwrap(),
                 output_base: output_base.unwrap(),
                 bazel,
+                config_group,
                 specific,
             });
         }
@@ -52,24 +57,19 @@ where
         // We need some info from `bazel info`. Fetch it now.
         let mut bazel_info_command = Command::new(&bazel);
 
-        // Switch to the workspace directory if one was provided.
-        if let Some(workspace) = &workspace {
-            bazel_info_command.current_dir(workspace);
-        }
-
-        // Set the output_base if one was provided.
-        if let Some(output_base) = &output_base {
-            bazel_info_command.arg(format!("--output_base={output_base}"));
-        }
-
-        bazel_info_command
+        // Execute bazel info.
+        let output = bazel_info_command
+            // Switch to the workspace directory if one was provided.
+            .current_dir(workspace.as_deref().unwrap_or(Utf8Path::new(".")))
             .env_remove("BAZELISK_SKIP_WRAPPER")
             .env_remove("BUILD_WORKING_DIRECTORY")
             .env_remove("BUILD_WORKSPACE_DIRECTORY")
-            .arg("info");
+            // Set the output_base if one was provided.
+            .args(output_base.as_ref().map(|s| format!("--output_base={s}")))
+            .arg("info")
+            .args(config_group.as_ref().map(|s| format!("--config={s}")))
+            .output()?;
 
-        // Execute bazel info.
-        let output = bazel_info_command.output()?;
         if !output.status.success() {
             let status = output.status;
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -99,6 +99,7 @@ where
             execution_root: execution_root.expect("'execution_root' must exist in bazel info"),
             output_base: output_base.expect("'output_base' must exist in bazel info"),
             bazel,
+            config_group,
             specific,
         };
 
@@ -126,6 +127,10 @@ where
     /// The path to a Bazel binary
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
+
+    /// A `--config` directive that gets passed to Bazel to be able to pass custom configurations.
+    #[clap(long)]
+    config_group: Option<String>,
 
     /// Binary specific config options
     #[command(flatten)]
