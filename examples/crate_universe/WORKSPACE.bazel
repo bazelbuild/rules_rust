@@ -630,23 +630,7 @@ load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_depende
 rules_foreign_cc_dependencies()
 
 http_archive(
-    name = "aspect_bazel_lib",
-    sha256 = "f5ea76682b209cc0bd90d0f5a3b26d2f7a6a2885f0c5f615e72913f4805dbb0d",
-    strip_prefix = "bazel-lib-2.5.0",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.5.0/bazel-lib-v2.5.0.tar.gz",
-)
-
-load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
-
-aspect_bazel_lib_dependencies()
-
-aspect_bazel_lib_register_toolchains()
-
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-git_repository(
     name = "boringssl",
-    commit = "44b3df6f03d85c901767250329c571db405122d5",
     patch_args = ["-p1"],
     patches = [
         "//complicated_dependencies:boringssl-filegroup.patch",
@@ -654,7 +638,8 @@ git_repository(
         # This forces our local system-includes to be chosen with higher priority, which avoids conflicts.
         "//complicated_dependencies:boringssl-system-includes.patch",
     ],
-    remote = "https://github.com/google/boringssl.git",
+    strip_prefix = "boringssl-44b3df6f03d85c901767250329c571db405122d5",
+    urls = ["https://github.com/google/boringssl/archive/44b3df6f03d85c901767250329c571db405122d5.zip"],
 )
 
 crates_repository(
