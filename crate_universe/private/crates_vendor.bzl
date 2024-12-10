@@ -30,7 +30,7 @@ fi
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
 exec env - \\
-${{_ENVIRON[@]}} \\
+"${{_ENVIRON[@]}}" \\
 {env} \\
     "{bin}" \\
     {args} \\
