@@ -1,19 +1,19 @@
-load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(":boringssl_utils.bzl", "boringssl_build_script_dir")
+
+rust_binary(
+    name = "build_script_dir_maker",
+    srcs = ["build_script_dir_maker.rs"],
+    edition = "2021",
+)
 
 # This target lays out the output needed from boringssl in the directory structure needed by the boring-sys build script.
-copy_to_directory(
+boringssl_build_script_dir(
     name = "boringssl_gen_dir",
-    srcs = [
-        "@boringssl//:crypto",
-        "@boringssl//:ssl",
-    ],
     out = "boringssl_gen_dir_out",
-    include_external_repositories = ["*"],
-    replace_prefixes = {
-        "libcrypto.a": "build/libcrypto.a",
-        "libssl.a": "build/libssl.a",
-    },
+    crypto = "@boringssl//:crypto",
+    ssl = "@boringssl//:ssl",
     visibility = ["//visibility:public"],
 )
 
