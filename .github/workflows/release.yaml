@@ -158,6 +158,7 @@ jobs:
           tar -czf ${{ github.workspace }}/.github/rules_rust_bindgen.tar.gz \
             -C ${{ github.workspace }}/extensions/bindgen \
             --exclude="examples" \
+            --exclude="dev.bazelrc" \
             .
 
           # Save the sha256 checksum of the distro archive to the environment
@@ -169,6 +170,7 @@ jobs:
           tar -czf ${{ github.workspace }}/.github/rules_rust_prost.tar.gz \
             -C ${{ github.workspace }}/extensions/prost \
             --exclude="examples" \
+            --exclude="dev.bazelrc" \
             .
 
           # Save the sha256 checksum of the distro archive to the environment
@@ -180,6 +182,7 @@ jobs:
           tar -czf ${{ github.workspace }}/.github/rules_rust_protobuf.tar.gz \
             -C ${{ github.workspace }}/extensions/protobuf \
             --exclude="examples" \
+            --exclude="dev.bazelrc" \
             .
 
           # Save the sha256 checksum of the distro archive to the environment
@@ -191,6 +194,7 @@ jobs:
           tar -czf ${{ github.workspace }}/.github/rules_rust_wasm_bindgen.tar.gz \
             -C ${{ github.workspace }}/extensions/wasm_bindgen \
             --exclude="examples" \
+            --exclude="dev.bazelrc" \
             .
 
           # Save the sha256 checksum of the distro archive to the environment

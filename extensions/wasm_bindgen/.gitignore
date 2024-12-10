@@ -25,3 +25,4 @@ rust-project.json
 
 # BazelCI
 bazelci.py
+.bcr/core

@@ -9,9 +9,9 @@ bcr_test_module:
       name: "Run test module"
       platform: ${{ platform }}
       bazel: ${{ bazel }}
-      # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
       shell_commands:
-        - "rm MODULE.bazel.lock"
+        # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
+        - "rm MODULE.bazel.lock || true"
       run_targets:
         - "//third-party-in-workspace:vendor"
         - "@rules_rust//tools/rust_analyzer:gen_rust_project"
@@ -28,9 +28,9 @@ bcr_test_module_windows:
       name: "Run test module"
       platform: windows
       bazel: ${{ bazel }}
-      # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
       shell_commands:
-        - "rm MODULE.bazel.lock"
+        # Remove the lockfile because we generate on Bazel 7, but test on Bazel 6 which may not be able to parse a future-generated lockfile.
+        - "rm MODULE.bazel.lock || true"
       run_targets:
         - "//third-party-in-workspace:vendor"
       build_targets:
