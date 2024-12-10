@@ -456,7 +456,7 @@ mod tests {
     #[test]
     fn generate_rust_project_single() {
         let project = generate_rust_project(
-            "workspace",
+            Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
             &BTreeSet::from([CrateSpec {
@@ -489,7 +489,7 @@ mod tests {
     #[test]
     fn generate_rust_project_with_deps() {
         let project = generate_rust_project(
-            "workspace",
+            Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
             &BTreeSet::from([

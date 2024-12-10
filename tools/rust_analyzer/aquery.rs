@@ -263,7 +263,7 @@ mod test {
                 crate_type: CrateType::Rlib,
                 build: Some(CrateSpecBuild {
                     label: "//:test".to_owned(),
-                    build_file: "BUILD.bazel".to_owned(),
+                    build_file: "BUILD.bazel".to_owned().into(),
                 }),
             },
             CrateSpec {
@@ -333,7 +333,10 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
-                    build: None
+                    build: Some(CrateSpecBuild {
+                        label: "//:test".to_owned(),
+                        build_file: "BUILD.bazel".to_owned().into(),
+                    }),
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),

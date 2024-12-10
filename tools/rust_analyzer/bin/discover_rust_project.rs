@@ -59,7 +59,7 @@ fn project_discovery() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
-        &rules_rust_name,
+        rules_rust_name,
         &targets,
         buildfile,
     )
