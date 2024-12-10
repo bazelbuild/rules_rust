@@ -140,97 +140,21 @@ jobs:
             --exclude=".git" \
             --exclude=".github" \
             --exclude="crate_universe/target" \
-            --exclude="extensions" \
             examples/bzlmod \
             --exclude="examples" \
             .
 
-          # Save the sha256 checksum of the distro archive to the environment
-          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
-          echo "ARCHIVE_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
-        env:
-          CARGO_BAZEL_GENERATOR_URL: file://${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-gnu/cargo-bazel
-          ARTIFACTS_DIR: ${{ github.workspace }}/crate_universe/target/artifacts
-          URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
-      - name: Create the rules extensions archive for Bindgen
-        run: |
-          # Build an archive of the repo contents.
-          tar -czf ${{ github.workspace }}/.github/rules_rust_bindgen.tar.gz \
-            -C ${{ github.workspace }}/extensions/bindgen \
-            --exclude="examples" \
-            .
-
-          # Save the sha256 checksum of the distro archive to the environment
-          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust_bindgen.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
-          echo "ARCHIVE_EXT_BINDGEN_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
-      - name: Create the rules extensions archive for Prost
-        run: |
-          # Build an archive of the repo contents.
-          tar -czf ${{ github.workspace }}/.github/rules_rust_prost.tar.gz \
-            -C ${{ github.workspace }}/extensions/prost \
-            --exclude="examples" \
-            .
-
-          # Save the sha256 checksum of the distro archive to the environment
-          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust_prost.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
-          echo "ARCHIVE_EXT_PROST_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
-      - name: Create the rules extensions archive for Protobuf
-        run: |
-          # Build an archive of the repo contents.
-          tar -czf ${{ github.workspace }}/.github/rules_rust_protobuf.tar.gz \
-            -C ${{ github.workspace }}/extensions/protobuf \
-            --exclude="examples" \
-            .
-
-          # Save the sha256 checksum of the distro archive to the environment
-          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust_protobuf.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
-          echo "ARCHIVE_EXT_PROTOBUF_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
-      - name: Create the rules extensions archive for wasm-bindgen
-        run: |
-          # Build an archive of the repo contents.
-          tar -czf ${{ github.workspace }}/.github/rules_rust_wasm_bindgen.tar.gz \
-            -C ${{ github.workspace }}/extensions/wasm_bindgen \
-            --exclude="examples" \
-            .
-
-          # Save the sha256 checksum of the distro archive to the environment
-          sha256_base64="$(shasum --algorithm 256 ${{ github.workspace }}/.github/rules_rust_wasm_bindgen.tar.gz | awk '{ print $1 }' | xxd -r -p | base64)"
-          echo "ARCHIVE_EXT_WASM_BINDGEN_SHA256_BASE64=${sha256_base64}" >> $GITHUB_ENV
       # Upload the artifact in case creating a release fails so all artifacts can then be manually recovered.
       - uses: actions/upload-artifact@v3
         with:
           name: "rules_rust.tar.gz"
           path: ${{ github.workspace }}/.github/rules_rust.tar.gz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: "rules_rust_bindgen.tar.gz"
-          path: ${{ github.workspace }}/.github/rules_rust_bindgen.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: "rules_rust_prost.tar.gz"
-          path: ${{ github.workspace }}/.github/rules_rust_prost.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: "rules_rust_protobuf.tar.gz"
-          path: ${{ github.workspace }}/.github/rules_rust_protobuf.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: "rules_rust_wasm_bindgen.tar.gz"
-          path: ${{ github.workspace }}/.github/rules_rust_wasm_bindgen.tar.gz
-          if-no-files-found: error
       - name: Generate release notes
         run: |
           # Generate the release notes
           sed 's#{version}#${{ env.RELEASE_VERSION }}#g' ${{ github.workspace }}/.github/release_notes.template \
           | sed 's#{sha256_base64}#${{ env.ARCHIVE_SHA256_BASE64 }}#g' \
-          | sed 's#{ext_bindgen_sha256_base64}#${{ env.ARCHIVE_EXT_BINDGEN_SHA256_BASE64 }}#g' \
-          | sed 's#{ext_prost_sha256_base64}#${{ env.ARCHIVE_EXT_PROST_SHA256_BASE64 }}#g' \
-          | sed 's#{ext_protobuf_sha256_base64}#${{ env.ARCHIVE_EXT_PROTOBUF_SHA256_BASE64 }}#g' \
-          | sed 's#{ext_wasm_bindgen_sha256_base64}#${{ env.ARCHIVE_EXT_WASM_BINDGEN_SHA256_BASE64 }}#g' \
           > ${{ github.workspace }}/.github/release_notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -251,43 +175,6 @@ jobs:
           upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: rules_rust-${{ env.RELEASE_VERSION }}.tar.gz
           asset_path: ${{ github.workspace }}/.github/rules_rust.tar.gz
-          asset_content_type: application/gzip
-
-      - name: "Upload the bindgen extension archive"
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
-          asset_name: rules_rust_bindgen-${{ env.RELEASE_VERSION }}.tar.gz
-          asset_path: ${{ github.workspace }}/.github/rules_rust_bindgen.tar.gz
-          asset_content_type: application/gzip
-      - name: "Upload the prost extension archive"
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
-          asset_name: rules_rust_prost-${{ env.RELEASE_VERSION }}.tar.gz
-          asset_path: ${{ github.workspace }}/.github/rules_rust_prost.tar.gz
-          asset_content_type: application/gzip
-      - name: "Upload the protobuf extension archive"
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
-          asset_name: rules_rust_protobuf-${{ env.RELEASE_VERSION }}.tar.gz
-          asset_path: ${{ github.workspace }}/.github/rules_rust_protobuf.tar.gz
-          asset_content_type: application/gzip
-      - name: "Upload the wasm_bindgen extension archive"
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
-          asset_name: rules_rust_wasm_bindgen-${{ env.RELEASE_VERSION }}.tar.gz
-          asset_path: ${{ github.workspace }}/.github/rules_rust_wasm_bindgen.tar.gz
           asset_content_type: application/gzip
 
       # There must be a upload action for each platform triple we create
