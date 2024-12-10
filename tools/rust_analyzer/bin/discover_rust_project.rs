@@ -28,6 +28,7 @@ fn project_discovery() -> anyhow::Result<()> {
         execution_root,
         output_base,
         bazel,
+        config_group,
         specific,
     } = Config::parse_and_refine()?;
 
@@ -45,13 +46,21 @@ fn project_discovery() -> anyhow::Result<()> {
 
     log::info!("got rust-analyzer argument: {ra_arg}");
 
-    let (buildfile, targets) = ra_arg.query_target_details(&bazel, &output_base, &workspace)?;
+    let (buildfile, targets) =
+        ra_arg.query_target_details(&bazel, &output_base, &workspace, config_group.as_deref())?;
 
     log::debug!("got buildfile: {buildfile}");
     log::debug!("got targets: {targets:?}");
 
     // Generate the crate specs.
-    generate_crate_info(&bazel, &output_base, &workspace, rules_rust_name, &targets)?;
+    generate_crate_info(
+        &bazel,
+        &output_base,
+        &workspace,
+        config_group.as_deref(),
+        rules_rust_name,
+        &targets,
+    )?;
 
     // Use the generated files to print the rust-project.json.
     discover_rust_project(
@@ -59,6 +68,7 @@ fn project_discovery() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
+        config_group.as_deref(),
         rules_rust_name,
         &targets,
         buildfile,

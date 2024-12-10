@@ -21,6 +21,7 @@ fn main() -> anyhow::Result<()> {
         execution_root,
         output_base,
         bazel,
+        config_group,
         specific,
     } = Config::parse_and_refine()?;
 
@@ -29,7 +30,14 @@ fn main() -> anyhow::Result<()> {
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
     // Generate the crate specs.
-    generate_crate_info(&bazel, &output_base, &workspace, rules_rust_name, &targets)?;
+    generate_crate_info(
+        &bazel,
+        &output_base,
+        &workspace,
+        config_group.as_deref(),
+        rules_rust_name,
+        &targets,
+    )?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
@@ -37,6 +45,7 @@ fn main() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
+        config_group.as_deref(),
         rules_rust_name,
         &targets,
         &workspace.join("rust-project.json"),
