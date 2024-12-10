@@ -77,6 +77,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
         ignore_tags = [
             "no_clippy",
             "no_lint",
+            "nolint",
             "noclippy",
         ]
         for tag in aspect_ctx.rule.attr.tags:
@@ -92,6 +93,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
         return None
 
 def _clippy_aspect_impl(target, ctx):
+    # Exit early if a target already has a clippy output group. This
+    # can be useful for rules which always want to inhibit clippy.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "clippy_checks"):
+            return []
+
     crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
         return [ClippyInfo(output = depset([]))]

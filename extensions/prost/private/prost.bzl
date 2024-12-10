@@ -275,6 +275,13 @@ def _rust_prost_aspect_impl(target, ctx):
         build_info = dep_variant_info.build_info,
     ))
 
+    # Avoid running clippy or rustfmt on these targets the outputs
+    # are all generated sources with no guarantee to be compliant.
+    inhibit_output_groups = {
+        "clippy_checks": depset(),
+        "rustfmt_checks": depset(),
+    }
+
     return [
         ProstProtoInfo(
             dep_variant_info = dep_variant_info,
@@ -285,6 +292,7 @@ def _rust_prost_aspect_impl(target, ctx):
         OutputGroupInfo(
             rust_generated_srcs = [lib_rs],
             proto_descriptor_set = [proto_info.direct_descriptor_set],
+            **inhibit_output_groups
         ),
     ]
 
