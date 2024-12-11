@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_bindgen",
-    version = "0.55.4",
+    version = "0.55.5",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.4",
+    version = "0.55.5",
 )
 bazel_dep(
     name = "bazel_skylib",
