@@ -15,7 +15,7 @@
 """A module defining clippy rules"""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo")
+load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo", "LintsInfo")
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -112,6 +112,13 @@ def _clippy_aspect_impl(target, ctx):
         aliases = crate_info.aliases,
     )
 
+    # Gather the necessary rust flags to apply lints, if they were provided.
+    clippy_flags = []
+    lint_files = []
+    if hasattr(ctx.rule.attr, "lint_config") and ctx.rule.attr.lint_config:
+        clippy_flags = clippy_flags + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags
+        lint_files = lint_files + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
         ctx.rule.file,
@@ -124,6 +131,7 @@ def _clippy_aspect_impl(target, ctx):
         crate_info,
         dep_info,
         build_info,
+        lint_files,
     )
 
     args, env = construct_arguments(
@@ -150,7 +158,9 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
-    clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+    # Then append the clippy flags specified from the command line, so they override what is
+    # specified on the library.
+    clippy_flags = clippy_flags + ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
 
     if hasattr(ctx.attr, "_clippy_flag"):
         clippy_flags = clippy_flags + ctx.attr._clippy_flag[ClippyFlagsInfo].clippy_flags
