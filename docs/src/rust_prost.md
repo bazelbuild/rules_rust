@@ -192,3 +192,57 @@ Rust Prost toolchain rule.
 | <a id="rust_prost_toolchain-tonic_runtime"></a>tonic_runtime |  The Tonic runtime crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 
 
+<a id="rust_prost_transform"></a>
+
+## rust_prost_transform
+
+<pre>
+rust_prost_transform(<a href="#rust_prost_transform-name">name</a>, <a href="#rust_prost_transform-deps">deps</a>, <a href="#rust_prost_transform-srcs">srcs</a>, <a href="#rust_prost_transform-prost_opts">prost_opts</a>, <a href="#rust_prost_transform-tonic_opts">tonic_opts</a>)
+</pre>
+
+A rule for transforming the outputs of `ProstGenProto` actions.
+
+This rule is used by adding it to the `data` attribute of `proto_library` targets. E.g.
+```python
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+
+rust_prost_transform(
+    name = "a_transform",
+    srcs = [
+        "a_src.rs",
+    ],
+)
+
+proto_library(
+    name = "a_proto",
+    srcs = [
+        "a.proto",
+    ],
+    data = [
+        ":transform",
+    ],
+)
+
+rust_prost_library(
+    name = "a_rs_proto",
+    proto = ":a_proto",
+)
+```
+
+The `rust_prost_library` will spawn an action on the `a_proto` target which consumes the
+`a_transform` rule to provide a means of granularly modifying a proto library for `ProstGenProto`
+actions with minimal impact to other consumers.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_prost_transform-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_prost_transform-deps"></a>deps |  Additional dependencies to add to the compiled crate.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
+| <a id="rust_prost_transform-srcs"></a>srcs |  Additional source files to include in generated Prost source code.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
+| <a id="rust_prost_transform-prost_opts"></a>prost_opts |  Additional options to add to Prost.   | List of strings | optional |  `[]`  |
+| <a id="rust_prost_transform-tonic_opts"></a>tonic_opts |  Additional options to add to Tonic.   | List of strings | optional |  `[]`  |
+
+
