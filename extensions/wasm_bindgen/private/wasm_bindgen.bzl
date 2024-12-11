@@ -53,24 +53,28 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
             wasm_file,
         ))
 
-    bindgen_wasm_module = ctx.actions.declare_file(ctx.label.name + "_bg.wasm")
+    out_name = ctx.label.name
+    if ctx.attr.out_name:
+        out_name = ctx.attr.out_name
 
-    js_out = [ctx.actions.declare_file(ctx.label.name + ".js")]
+    bindgen_wasm_module = ctx.actions.declare_file(out_name + "_bg.wasm")
+
+    js_out = [ctx.actions.declare_file(out_name + ".js")]
     ts_out = []
     if not "--no-typescript" in flags:
-        ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
+        ts_out.append(ctx.actions.declare_file(out_name + ".d.ts"))
 
     if target_output == "bundler":
-        js_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.js"))
+        js_out.append(ctx.actions.declare_file(out_name + "_bg.js"))
         if not "--no-typescript" in flags:
-            ts_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.wasm.d.ts"))
+            ts_out.append(ctx.actions.declare_file(out_name + "_bg.wasm.d.ts"))
 
     outputs = [bindgen_wasm_module] + js_out + ts_out
 
     args = ctx.actions.args()
     args.add("--target", target_output)
     args.add("--out-dir", bindgen_wasm_module.dirname)
-    args.add("--out-name", ctx.label.name)
+    args.add("--out-name", out_name)
     args.add_all(flags)
     args.add(input_file)
 
@@ -120,6 +124,9 @@ WASM_BINDGEN_ATTR = {
     "bindgen_flags": attr.string_list(
         doc = "Flags to pass directly to the wasm-bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
     ),
+    "out_name": attr.string(
+        doc = "Set a custom output filename (Without extension. Defaults to target name).",
+    ),
     "target": attr.string(
         doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
         default = "bundler",
@@ -150,30 +157,7 @@ Generates javascript and typescript bindings for a webassembly module using [was
 
 An example of this rule in use can be seen at [@rules_rust//examples/wasm](../examples/wasm)
 """,
-    attrs = {
-        "bindgen_flags": attr.string_list(
-            doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
-        ),
-        "target": attr.string(
-            doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
-            default = "bundler",
-            values = ["web", "bundler", "nodejs", "no-modules", "deno"],
-        ),
-        "target_arch": attr.string(
-            doc = "The target architecture to use for the wasm-bindgen command line option.",
-            default = "wasm32",
-            values = ["wasm32", "wasm64"],
-        ),
-        "wasm_file": attr.label(
-            doc = "The `.wasm` file or crate to generate bindings for.",
-            allow_single_file = True,
-            cfg = wasm_bindgen_transition,
-            mandatory = True,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
+    attrs = WASM_BINDGEN_ATTR,
     toolchains = [
         str(Label("//:toolchain_type")),
     ],
