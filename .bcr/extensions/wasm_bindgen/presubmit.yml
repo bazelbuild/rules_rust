@@ -1,5 +1,5 @@
 bcr_test_module:
-  module_path: "extensions/wasm_bindgen"
+  module_path: ""
   matrix:
     platform: ["macos_arm64", "ubuntu2004", "windows"]
     bazel: ["7.x"]
