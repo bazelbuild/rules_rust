@@ -1,7 +1,11 @@
 bcr_test_module:
   module_path: ""
   matrix:
-    platform: ["macos_arm64", "ubuntu2004", "windows"]
+    platform:
+      - "macos_arm64"
+      - "ubuntu2004"
+      # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
+      # - "windows"
     bazel: ["7.x"]
   tasks:
     run_tests:
