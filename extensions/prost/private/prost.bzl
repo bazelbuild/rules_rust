@@ -19,6 +19,7 @@ load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:utils.bzl", "can_build_metadata")
 load("//:providers.bzl", "ProstProtoInfo")
+load(":prost_transform.bzl", "ProstTransformInfo")
 
 RUST_EDITION = "2021"
 
@@ -39,7 +40,15 @@ def _create_proto_lang_toolchain(ctx, prost_toolchain):
 
     return proto_lang_toolchain
 
-def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_toolchain = None):
+def _compile_proto(
+        *,
+        ctx,
+        crate_name,
+        proto_info,
+        transform_infos,
+        deps,
+        prost_toolchain,
+        rustfmt_toolchain = None):
     deps_info_file = ctx.actions.declare_file(ctx.label.name + ".prost_deps_info")
     dep_package_infos = [dep[ProstProtoInfo].package_info for dep in deps]
     ctx.actions.write(
@@ -53,6 +62,15 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     proto_compiler = prost_toolchain.proto_compiler
     tools = depset([proto_compiler.executable])
 
+    tonic_opts = []
+    prost_opts = []
+    additional_srcs = []
+    for transform_info in transform_infos:
+        tonic_opts.extend(transform_info.tonic_opts)
+        prost_opts.extend(transform_info.prost_opts)
+        additional_srcs.append(transform_info.srcs)
+
+    all_additional_srcs = depset(transitive = additional_srcs)
     direct_crate_names = [dep[ProstProtoInfo].dep_variant_info.crate_info.name for dep in deps]
     additional_args = ctx.actions.args()
 
@@ -65,7 +83,8 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
     additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
     additional_args.add("--prost_opt=compile_well_known_types")
     additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
-    additional_args.add_all(prost_toolchain.prost_opts, format_each = "--prost_opt=%s")
+    additional_args.add("--additional_srcs={}".format(",".join([f.path for f in all_additional_srcs.to_list()])))
+    additional_args.add_all(prost_toolchain.prost_opts + prost_opts, format_each = "--prost_opt=%s")
 
     if prost_toolchain.tonic_plugin:
         tonic_plugin = prost_toolchain.tonic_plugin[DefaultInfo].files_to_run
@@ -73,14 +92,18 @@ def _compile_proto(ctx, crate_name, proto_info, deps, prost_toolchain, rustfmt_t
         additional_args.add("--tonic_opt=no_include")
         additional_args.add("--tonic_opt=compile_well_known_types")
         additional_args.add("--is_tonic")
-        additional_args.add_all(prost_toolchain.tonic_opts, format_each = "--tonic_opt=%s")
+
+        additional_args.add_all(prost_toolchain.tonic_opts + tonic_opts, format_each = "--tonic_opt=%s")
         tools = depset([tonic_plugin.executable], transitive = [tools])
 
     if rustfmt_toolchain:
         additional_args.add("--rustfmt={}".format(rustfmt_toolchain.rustfmt.path))
         tools = depset(transitive = [tools, rustfmt_toolchain.all_files])
 
-    additional_inputs = depset([deps_info_file, proto_info.direct_descriptor_set] + [dep[ProstProtoInfo].package_info for dep in deps])
+    additional_inputs = depset(
+        [deps_info_file, proto_info.direct_descriptor_set] + [dep[ProstProtoInfo].package_info for dep in deps],
+        transitive = [all_additional_srcs],
+    )
 
     proto_common.compile(
         actions = ctx.actions,
@@ -116,7 +139,14 @@ def _get_cc_info(providers):
             return provider
     fail("Couldn't find a CcInfo in the list of providers")
 
-def _compile_rust(ctx, attr, crate_name, src, deps, edition):
+def _compile_rust(
+        *,
+        ctx,
+        attr,
+        crate_name,
+        src,
+        deps,
+        edition):
     """Compiles a Rust source file.
 
     Args:
@@ -233,7 +263,14 @@ def _rust_prost_aspect_impl(target, ctx):
         if RustAnalyzerInfo in proto_dep:
             rust_analyzer_deps.append(proto_dep[RustAnalyzerInfo])
 
-    deps = runtime_deps + direct_deps
+    transform_infos = []
+    for data_target in getattr(ctx.rule.attr, "data", []):
+        if ProstTransformInfo in data_target:
+            transform_infos.append(data_target[ProstTransformInfo])
+
+    rust_deps = runtime_deps + direct_deps
+    for transform_info in transform_infos:
+        rust_deps.extend(transform_info.deps)
 
     crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
 
@@ -243,6 +280,7 @@ def _rust_prost_aspect_impl(target, ctx):
         ctx = ctx,
         crate_name = crate_name,
         proto_info = proto_info,
+        transform_infos = transform_infos,
         deps = proto_deps,
         prost_toolchain = prost_toolchain,
         rustfmt_toolchain = rustfmt_toolchain,
@@ -253,7 +291,7 @@ def _rust_prost_aspect_impl(target, ctx):
         attr = ctx.rule.attr,
         crate_name = crate_name,
         src = lib_rs,
-        deps = deps,
+        deps = rust_deps,
         edition = RUST_EDITION,
     )
 
@@ -495,7 +533,7 @@ def _current_prost_runtime_impl(ctx):
     )]
 
 current_prost_runtime = rule(
-    doc = "A rule for accessing the current Prost toolchain components needed by the process wrapper",
+    doc = "A rule for accessing the current Prost toolchain components needed by the process wrapper.",
     provides = [rust_common.crate_group_info],
     implementation = _current_prost_runtime_impl,
     toolchains = [TOOLCHAIN_TYPE],
