@@ -57,19 +57,24 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
     if ctx.attr.out_name:
         out_name = ctx.attr.out_name
 
-    bindgen_wasm_module = ctx.actions.declare_file(out_name + "_bg.wasm")
+    bindgen_wasm_module = ctx.actions.declare_file("{}/{}_bg.wasm".format(ctx.label.name, out_name))
+    snippets = ctx.actions.declare_directory("{}/snippets".format(ctx.label.name))
 
-    js_out = [ctx.actions.declare_file(out_name + ".js")]
+    js_out = [ctx.actions.declare_file("{}/{}.js".format(ctx.label.name, out_name))]
     ts_out = []
     if not "--no-typescript" in flags:
-        ts_out.append(ctx.actions.declare_file(out_name + ".d.ts"))
+        ts_out.append(ctx.actions.declare_file("{}/{}.d.ts".format(ctx.label.name, out_name)))
 
     if target_output == "bundler":
-        js_out.append(ctx.actions.declare_file(out_name + "_bg.js"))
+        js_out.append(ctx.actions.declare_file("{}/{}_bg.js".format(ctx.label.name, out_name)))
         if not "--no-typescript" in flags:
-            ts_out.append(ctx.actions.declare_file(out_name + "_bg.wasm.d.ts"))
+            ts_out.append(ctx.actions.declare_file("{}/{}_bg.wasm.d.ts".format(ctx.label.name, out_name)))
 
-    outputs = [bindgen_wasm_module] + js_out + ts_out
+    elif target_output == "web":
+        if not "--no-typescript" in flags:
+            ts_out.append(ctx.actions.declare_file("{}/{}_bg.wasm.d.ts".format(ctx.label.name, out_name)))
+
+    outputs = [bindgen_wasm_module, snippets] + js_out + ts_out
 
     args = ctx.actions.args()
     args.add("--target", target_output)
@@ -92,6 +97,8 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
         wasm = bindgen_wasm_module,
         js = depset(js_out),
         ts = depset(ts_out),
+        snippets = snippets,
+        root = bindgen_wasm_module.dirname,
     )
 
 def _rust_wasm_bindgen_impl(ctx):
@@ -107,7 +114,10 @@ def _rust_wasm_bindgen_impl(ctx):
 
     providers = [
         DefaultInfo(
-            files = depset([info.wasm], transitive = [info.js, info.ts]),
+            files = depset(
+                [info.wasm, info.snippets],
+                transitive = [info.js, info.ts],
+            ),
         ),
         info,
     ]
