@@ -34,3 +34,10 @@ bool_flag(
     name = "debug_std_streams_output_group",
     build_setting_default = False,
 )
+
+# A flag which controls the global default of `ctx.actions.run.use_default_shell_env`
+# for `cargo_build_script` targets.
+bool_flag(
+    name = "use_default_shell_env",
+    build_setting_default = True,
+)
