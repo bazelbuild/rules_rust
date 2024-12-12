@@ -1,6 +1,7 @@
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 rust_binary(
     name = "hello",

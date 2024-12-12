@@ -87,6 +87,16 @@ def rules_rust_dependencies():
     )
     maybe(
         http_archive,
+        name = "rules_shell",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+            "https://github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+        ],
+        sha256 = "d8cd4a3a91fc1dc68d4c7d6b655f09def109f7186437e3f50a9b60ab436a0c53",
+        strip_prefix = "rules_shell-0.3.0",
+    )
+    maybe(
+        http_archive,
         name = "bazel_features",
         sha256 = "af3d4fb1cf4f25942cb4a933b1ad93a0ea9fe9ee70c2af7f369fb72a67c266e5",
         strip_prefix = "bazel_features-1.21.0",

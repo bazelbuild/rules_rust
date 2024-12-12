@@ -96,6 +96,8 @@ def BUILD_for_cargo(target_triple):
     )
 
 _build_file_for_rustfmt_template = """\
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
 filegroup(
     name = "rustfmt_bin",
     srcs = ["bin/rustfmt{binary_ext}"],
