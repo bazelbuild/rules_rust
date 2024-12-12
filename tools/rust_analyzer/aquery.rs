@@ -103,14 +103,6 @@ pub fn get_crate_specs(
         .args(config_group.map(|s| format!("--config={s}")))
         .arg("--include_aspects")
         .arg("--include_artifacts")
-        // This just makes the `rust-analyzer` integration more resilient,
-        // in particular when being used to auto-discover workspaces.
-        //
-        // Identifying only compatible targets is tricky and, while
-        // that would be ideal, skipping incompatible targets does not
-        // seem like the worst thing since the purpose of `rust-analyzer`
-        // is helpful IDE support, not 100% correct results.
-        .arg("--skip_incompatible_explicit_targets")
         .arg(format!(
             "--aspects={rules_rust_name}//rust:defs.bzl%rust_analyzer_aspect"
         ))

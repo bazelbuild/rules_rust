@@ -49,6 +49,7 @@ fn project_discovery() -> anyhow::Result<()> {
     let (buildfile, targets) =
         ra_arg.query_target_details(&bazel, &output_base, &workspace, config_group.as_deref())?;
 
+    let targets = &[targets];
     log::debug!("got buildfile: {buildfile}");
     log::debug!("got targets: {targets:?}");
 
@@ -59,7 +60,7 @@ fn project_discovery() -> anyhow::Result<()> {
         &workspace,
         config_group.as_deref(),
         rules_rust_name,
-        &targets,
+        targets,
     )?;
 
     // Use the generated files to print the rust-project.json.
@@ -70,7 +71,7 @@ fn project_discovery() -> anyhow::Result<()> {
         &execution_root,
         config_group.as_deref(),
         rules_rust_name,
-        &targets,
+        targets,
         buildfile,
     )
 }
