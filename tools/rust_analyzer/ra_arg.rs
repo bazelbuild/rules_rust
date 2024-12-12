@@ -22,7 +22,7 @@ impl RustAnalyzerArg {
         output_base: &Utf8Path,
         workspace: &Utf8Path,
         config_group: Option<&str>,
-    ) -> anyhow::Result<(Utf8PathBuf, Vec<String>)> {
+    ) -> anyhow::Result<(Utf8PathBuf, String)> {
         match self {
             Self::Path(file) => {
                 let buildfile = query_buildfile_for_source_file(
@@ -32,12 +32,10 @@ impl RustAnalyzerArg {
                     config_group,
                     &file,
                 )?;
-                query_targets(bazel, output_base, workspace, config_group, &buildfile)
-                    .map(|t| (buildfile, t))
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
             }
             Self::Buildfile(buildfile) => {
-                query_targets(bazel, output_base, workspace, config_group, &buildfile)
-                    .map(|t| (buildfile, t))
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
             }
         }
     }
@@ -114,14 +112,8 @@ fn query_buildfile_for_source_file(
     bail!("no buildfile found for {file}");
 }
 
-fn query_targets(
-    bazel: &Utf8Path,
-    output_base: &Utf8Path,
-    workspace: &Utf8Path,
-    config_group: Option<&str>,
-    buildfile: &Utf8Path,
-) -> anyhow::Result<Vec<String>> {
-    log::info!("running bazel query on buildfile: {buildfile}");
+fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::Result<String> {
+    log::info!("getting targets for buildfile: {buildfile}");
 
     let parent_dir = buildfile
         .strip_prefix(workspace)
@@ -129,29 +121,9 @@ fn query_targets(
         .parent();
 
     let targets = match parent_dir {
-        Some(p) if !p.as_str().is_empty() => format!("{p}/..."),
+        Some(p) if !p.as_str().is_empty() => format!("//{p}/..."),
         _ => "//...".to_string(),
     };
-
-    let query_output = Command::new(bazel)
-        .current_dir(workspace)
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
-        .arg(format!("--output_base={output_base}"))
-        .arg("query")
-        .args(config_group.map(|s| format!("--config={s}")))
-        .arg(format!(
-            "kind(\"rust_(library|binary|proc_macro|test)\", {targets})"
-        ))
-        .output()
-        .with_context(|| format!("failed to run bazel query for buildfile: {buildfile}"))?;
-
-    log::debug!("{}", String::from_utf8_lossy(&query_output.stderr));
-    log::info!("bazel query for buildfile {buildfile} finished");
-
-    let text = String::from_utf8(query_output.stdout)?;
-    let targets = text.lines().map(ToOwned::to_owned).collect();
 
     Ok(targets)
 }
