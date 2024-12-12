@@ -32,12 +32,16 @@ pub struct RustProject {
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(default)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
     display_name: Option<String>,
+
+    /// Target triple for this Crate.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    target: Option<String>,
 
     /// Path to the root module of the crate.
     root_module: String,
@@ -60,10 +64,6 @@ pub struct Crate {
     /// `["unix", "feature=\"foo\"", "feature=\"bar\""]`.
     cfg: Vec<String>,
 
-    /// Target triple for this Crate.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    target: Option<String>,
-
     /// Environment variables, used for the `env!` macro
     #[serde(skip_serializing_if = "Option::is_none")]
     env: Option<BTreeMap<String, String>>,
@@ -76,7 +76,7 @@ pub struct Crate {
     proc_macro_dylib_path: Option<String>,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Source {
     include_dirs: Vec<String>,
     exclude_dirs: Vec<String>,
@@ -89,7 +89,7 @@ impl Source {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dependency {
     /// Index of a crate in the `crates` array.
     #[serde(rename = "crate")]
@@ -205,6 +205,8 @@ pub fn generate_rust_project(
         std::mem::swap(&mut unmerged_crates, &mut skipped_crates);
         skipped_crates.clear();
     }
+
+    project.crates.sort();
 
     Ok(project)
 }
