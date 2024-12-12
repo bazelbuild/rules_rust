@@ -7,6 +7,8 @@
 
 set -euo pipefail
 
+set -x
+
 if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
   echo "This script should be run under Bazel"
   exit 1
@@ -43,14 +45,14 @@ function test_all_and_apply() {
 
   mkdir -p "${new_workspace}/test/rustfmt" && \
   cp -r test/rustfmt/* "${new_workspace}/test/rustfmt/" && \
-  cat << EOF > "${new_workspace}/WORKSPACE.bazel"
-workspace(name = "rules_rust_test_rustfmt")
-local_repository(
-    name = "rules_rust",
+  cat << EOF > "${new_workspace}/MODULE.bazel"
+module(name = "rules_rust_test_rustfmt")
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 EOF
   # See github.com/bazelbuild/rules_rust/issues/2317.
   echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
