@@ -17,6 +17,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
 load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
+load(":compat.bzl", "abs")
 
 UNSUPPORTED_FEATURES = [
     "thin_lto",
@@ -174,20 +175,6 @@ def get_lib_name_for_windows(lib):
     libname = ".".join(comps[:-1])
 
     return libname
-
-# TODO: remove after dropping support for Bazel < 7 when `abs` is a global
-def abs(value):
-    """Returns the absolute value of a number.
-
-    Args:
-      value (int): A number.
-
-    Returns:
-      int: The absolute value of the number.
-    """
-    if value < 0:
-        return -value
-    return value
 
 def determine_output_hash(crate_root, label):
     """Generates a hash of the crate root file's path.

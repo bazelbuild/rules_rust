@@ -27,7 +27,6 @@ load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = 
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
     "//rust/private:utils.bzl",
-    "abs",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -39,6 +38,7 @@ load(
     "make_static_lib_symlink",
     "relativize",
 )
+load("//rust/private:compat.bzl", "abs")
 
 # This feature is disabled unless one of the dependencies is a cc_library.
 # Authors of C++ toolchains can place linker flags that should only be applied
