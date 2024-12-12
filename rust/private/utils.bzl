@@ -16,8 +16,8 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
-load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
 load(":compat.bzl", "abs")
+load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
 
 UNSUPPORTED_FEATURES = [
     "thin_lto",

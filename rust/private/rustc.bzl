@@ -23,6 +23,7 @@ load(
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:compat.bzl", "abs")
 load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
@@ -38,7 +39,6 @@ load(
     "make_static_lib_symlink",
     "relativize",
 )
-load("//rust/private:compat.bzl", "abs")
 
 # This feature is disabled unless one of the dependencies is a cc_library.
 # Authors of C++ toolchains can place linker flags that should only be applied
