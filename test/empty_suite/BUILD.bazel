@@ -1,3 +1,4 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
 
 # This package has a rust_test_suite containing no tests.

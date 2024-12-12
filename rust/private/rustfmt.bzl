@@ -98,6 +98,12 @@ def _perform_check(edition, srcs, ctx):
     return marker
 
 def _rustfmt_aspect_impl(target, ctx):
+    # Exit early if a target already has a rustfmt output group. This
+    # can be useful for rules which always want to inhibit rustfmt.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "rustfmt_checks"):
+            return []
+
     crate_info = _get_rustfmt_ready_crate_info(target)
 
     if not crate_info:

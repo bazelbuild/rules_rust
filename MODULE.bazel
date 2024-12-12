@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.55.3",
+    version = "0.55.6",
 )
 
 ###############################################################################
@@ -28,6 +28,10 @@ bazel_dep(
 bazel_dep(
     name = "rules_license",
     version = "1.0.0",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
 )
 bazel_dep(
     name = "apple_support",

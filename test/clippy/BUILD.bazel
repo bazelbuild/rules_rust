@@ -8,6 +8,7 @@ load(
     "rust_static_library",
     "rust_test",
 )
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 package(default_visibility = ["//test:__subpackages__"])
 

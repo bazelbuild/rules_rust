@@ -52,3 +52,7 @@ bazel_dep(
     name = "rules_cc",
     version = "0.0.17",
 )
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)

@@ -66,6 +66,10 @@ common:no-bzlmod --noenable_bzlmod --enable_workspace
 # Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
 common --lockfile_mode=off
 
+# Allow bazel configuration flags to locate the core rules to avoid adding local
+# override paths to the `MODULE.bazel` file and breaking downstream consumers.
+common --override_module=rules_rust=../../
+
 ###############################################################################
 ## Custom user flags
 ##

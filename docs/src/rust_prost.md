@@ -142,6 +142,25 @@ register_toolchains("//toolchains:prost_toolchain")
 ---
 ---
 
+<a id="rust_prost_library"></a>
+
+## rust_prost_library
+
+<pre>
+rust_prost_library(<a href="#rust_prost_library-name">name</a>, <a href="#rust_prost_library-proto">proto</a>)
+</pre>
+
+A rule for generating a Rust library using Prost.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="rust_prost_library-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="rust_prost_library-proto"></a>proto |  A `proto_library` target for which to generate Rust gencode.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+
+
 <a id="rust_prost_toolchain"></a>
 
 ## rust_prost_toolchain
@@ -171,24 +190,5 @@ Rust Prost toolchain rule.
 | <a id="rust_prost_toolchain-tonic_plugin"></a>tonic_plugin |  Additional plugins to add to Tonic.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
 | <a id="rust_prost_toolchain-tonic_plugin_flag"></a>tonic_plugin_flag |  Tonic plugin flag format. (e.g. `--plugin=protoc-gen-tonic=%s`))   | String | optional |  `"--plugin=protoc-gen-tonic=%s"`  |
 | <a id="rust_prost_toolchain-tonic_runtime"></a>tonic_runtime |  The Tonic runtime crates to use.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
-
-
-<a id="rust_prost_library"></a>
-
-## rust_prost_library
-
-<pre>
-rust_prost_library(<a href="#rust_prost_library-name">name</a>, <a href="#rust_prost_library-kwargs">kwargs</a>)
-</pre>
-
-A rule for generating a Rust library using Prost.
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="rust_prost_library-name"></a>name |  The name of the target.   |  none |
-| <a id="rust_prost_library-kwargs"></a>kwargs |  Additional keyword arguments for the underlying `rust_prost_library` rule.   |  none |
 
 

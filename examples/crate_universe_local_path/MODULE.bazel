@@ -4,6 +4,8 @@ local_path_override(
     path = "../..",
 )
 
+bazel_dep(name = "rules_shell", version = "0.3.0")
+
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
 use_repo(

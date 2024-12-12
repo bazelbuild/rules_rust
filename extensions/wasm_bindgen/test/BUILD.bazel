@@ -26,6 +26,7 @@ rust_binary(
     name = "hello_world_bin_wasm",
     srcs = ["main.rs"],
     edition = "2018",
+    target_compatible_with = ["@platforms//cpu:wasm32"],
     deps = [
         "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
     ],
@@ -35,6 +36,7 @@ rust_shared_library(
     name = "hello_world_lib_wasm",
     srcs = ["main.rs"],
     edition = "2018",
+    target_compatible_with = ["@platforms//cpu:wasm32"],
     deps = [
         "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
     ],

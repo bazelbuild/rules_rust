@@ -8,6 +8,7 @@ load(
     "rust_static_library",
     "rustfmt_test",
 )
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 _VARIANTS = {
     "rust_binary": rust_binary,
@@ -115,7 +116,7 @@ def rustfmt_integration_test_suite(name, **kwargs):
         **kwargs
     )
 
-    native.sh_binary(
+    sh_binary(
         name = "{}.test_runner".format(name),
         srcs = ["rustfmt_failure_test.sh"],
         testonly = True,
