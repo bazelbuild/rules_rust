@@ -1,9 +1,9 @@
 """Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
-load("@rules_rust//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect", "rust_clippy_aspect", "rust_common", "rustfmt_aspect")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
+load("@rules_rust//rust/private:providers.bzl", "ClippyInfo", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//:providers.bzl", "RustWasmBindgenInfo")
 load(":transitions.bzl", "wasm_bindgen_transition")
 
@@ -118,6 +118,18 @@ def _rust_wasm_bindgen_impl(ctx):
     if RustAnalyzerInfo in ctx.attr.wasm_file:
         providers.append(ctx.attr.wasm_file[RustAnalyzerInfo])
 
+    if ClippyInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[ClippyInfo])
+
+    if OutputGroupInfo in ctx.attr.wasm_file:
+        output_info = ctx.attr.wasm_file[OutputGroupInfo]
+        output_groups = {}
+        for group in ["rusfmt_checks", "clippy_checks", "rust_analyzer_crate_spec"]:
+            if hasattr(output_info, group):
+                output_groups[group] = getattr(output_info, group)
+
+        providers.append(OutputGroupInfo(**output_groups))
+
     return providers
 
 WASM_BINDGEN_ATTR = {
@@ -140,6 +152,11 @@ WASM_BINDGEN_ATTR = {
     "wasm_file": attr.label(
         doc = "The `.wasm` file or crate to generate bindings for.",
         allow_single_file = True,
+        aspects = [
+            rust_analyzer_aspect,
+            rustfmt_aspect,
+            rust_clippy_aspect,
+        ],
         cfg = wasm_bindgen_transition,
         mandatory = True,
     ),
