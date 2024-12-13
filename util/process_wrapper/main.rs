@@ -90,9 +90,12 @@ fn main() -> Result<(), ProcessWrapperError> {
         })
         .stderr(Stdio::piped());
     log!("{:#?}", command);
-    let mut child = command
-        .spawn()
-        .map_err(|e| ProcessWrapperError(format!("failed to spawn child process: {}", e)))?;
+    let mut child = command.spawn().map_err(|e| {
+        ProcessWrapperError(format!(
+            "failed to spawn child process: {}\n{:#?}",
+            e, command
+        ))
+    })?;
 
     let mut stderr: Box<dyn io::Write> = if let Some(stderr_file) = opts.stderr_file {
         Box::new(
