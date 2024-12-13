@@ -45,6 +45,8 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         RustAnalyzerInfo: Info with the embedded spec file.
     """
     crate_spec = ctx.actions.declare_file("{}.rust_analyzer_crate_spec.json".format(owner.name))
+    proc_macro_dylibs = [base_info.proc_macro_dylib] if base_info.proc_macro_dylib else None
+    build_info_out_dirs = [base_info.build_info.out_dir] if base_info.build_info != None and base_info.build_info.out_dir != None else None
 
     # Recreate the provider with the spec file embedded in it.
     rust_analyzer_info = RustAnalyzerInfo(
@@ -54,7 +56,9 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         env = base_info.env,
         deps = base_info.deps,
         crate_specs = depset(direct = [crate_spec], transitive = [base_info.crate_specs]),
-        proc_macro_dylib_path = base_info.proc_macro_dylib_path,
+        proc_macro_dylibs = depset(direct = proc_macro_dylibs, transitive = [base_info.proc_macro_dylibs]),
+        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [base_info.build_info_out_dirs]),
+        proc_macro_dylib = base_info.proc_macro_dylib,
         build_info = base_info.build_info,
     )
 
@@ -135,6 +139,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
         if aliased_target.label in labels_to_rais:
             aliases[labels_to_rais[aliased_target.label]] = aliased_name
 
+    proc_macro_dylib = find_proc_macro_dylib(toolchain, target)
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = aliases,
         crate = crate_info,
@@ -142,23 +148,29 @@ def _rust_analyzer_aspect_impl(target, ctx):
         env = crate_info.rustc_env,
         deps = dep_infos,
         crate_specs = depset(transitive = [dep.crate_specs for dep in dep_infos]),
-        proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
+        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in dep_infos]),
+        build_info_out_dirs = depset(transitive = [dep.build_info_out_dirs for dep in dep_infos]),
+        proc_macro_dylib = proc_macro_dylib,
         build_info = build_info,
     ))
 
     return [
         rust_analyzer_info,
-        OutputGroupInfo(rust_analyzer_crate_spec = rust_analyzer_info.crate_specs),
+        OutputGroupInfo(
+            rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
+            rust_analyzer_proc_macro_dylibs = rust_analyzer_info.proc_macro_dylibs,
+            rust_analyzer_build_info_out_dirs = rust_analyzer_info.build_info_out_dirs,
+        ),
     ]
 
-def find_proc_macro_dylib_path(toolchain, target):
-    """Find the proc_macro_dylib_path of target. Returns None if target crate is not type proc-macro.
+def find_proc_macro_dylib(toolchain, target):
+    """Find the proc_macro_dylib of target. Returns None if target crate is not type proc-macro.
 
     Args:
         toolchain: The current rust toolchain.
         target: The current target.
     Returns:
-        (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
+        (File): The path to the proc macro dylib, or None if this crate is not a proc-macro.
     """
     if rust_common.crate_info in target:
         crate_info = target[rust_common.crate_info]
@@ -174,7 +186,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     for action in target.actions:
         for output in action.outputs.to_list():
             if output.extension == dylib_ext[1:]:
-                return output.path
+                return output
 
     # Failed to find the dylib path inside a proc-macro crate.
     # TODO: Should this be an error?
@@ -275,8 +287,8 @@ def _create_single_crate(ctx, attrs, info):
     crate["cfg"] = info.cfgs
     toolchain = find_toolchain(ctx)
     crate["target"] = (_EXEC_ROOT_TEMPLATE + toolchain.target_json.path) if toolchain.target_json else toolchain.target_flag_value
-    if info.proc_macro_dylib_path != None:
-        crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib_path
+    if info.proc_macro_dylib != None:
+        crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib.path
     return crate
 
 def _rust_analyzer_toolchain_impl(ctx):

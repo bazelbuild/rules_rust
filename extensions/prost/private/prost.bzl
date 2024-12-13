@@ -306,7 +306,9 @@ def _rust_prost_aspect_impl(target, ctx):
         env = dep_variant_info.crate_info.rustc_env,
         deps = rust_analyzer_deps,
         crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
-        proc_macro_dylib_path = None,
+        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in rust_analyzer_deps]),
+        build_info_out_dirs = depset(transitive = [dep.build_info_out_dirs for dep in rust_analyzer_deps]),
+        proc_macro_dylib = None,
         build_info = dep_variant_info.build_info,
     ))
 
