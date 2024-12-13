@@ -271,7 +271,9 @@ def _rust_prost_aspect_impl(target, ctx):
         env = dep_variant_info.crate_info.rustc_env,
         deps = depset([dep.id for dep in rust_analyzer_deps]).to_list(),
         crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
-        proc_macro_dylib_path = None,
+        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in rust_analyzer_deps]),
+        build_info_out_dirs = depset(transitive = [dep.build_info_out_dirs for dep in rust_analyzer_deps]),
+        proc_macro_dylib = None,
         build_info = dep_variant_info.build_info,
     ))
 
@@ -354,6 +356,8 @@ def _rust_prost_library_impl(ctx):
         ),
         RustAnalyzerGroupInfo(
             crate_specs = proto_dep[RustAnalyzerInfo].crate_specs,
+            proc_macro_dylibs = proto_dep[RustAnalyzerInfo].proc_macro_dylibs,
+            build_script_out_dirs = proto_dep[RustAnalyzerInfo].build_script_out_dirs,
             deps = proto_dep[RustAnalyzerInfo].deps,
         ),
     ]
