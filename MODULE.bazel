@@ -30,6 +30,10 @@ bazel_dep(
     version = "1.0.0",
 )
 bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)
+bazel_dep(
     name = "apple_support",
     version = "1.17.1",
     repo_name = "build_bazel_apple_support",

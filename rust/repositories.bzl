@@ -5,6 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//rust/platform:triple.bzl", "get_host_triple", "triple")
 load("//rust/platform:triple_mappings.bzl", "triple_to_constraint_set")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:compat.bzl", "abs")
 load(
     "//rust/private:repository_utils.bzl",
     "BUILD_for_rust_analyzer_proc_macro_srv",
@@ -84,6 +85,16 @@ def rules_rust_dependencies():
             "https://github.com/bazelbuild/rules_license/releases/download/1.0.0/rules_license-1.0.0.tar.gz",
         ],
         sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
+    )
+    maybe(
+        http_archive,
+        name = "rules_shell",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+            "https://github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+        ],
+        sha256 = "d8cd4a3a91fc1dc68d4c7d6b655f09def109f7186437e3f50a9b60ab436a0c53",
+        strip_prefix = "rules_shell-0.3.0",
     )
     maybe(
         http_archive,

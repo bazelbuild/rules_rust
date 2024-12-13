@@ -1,5 +1,5 @@
 {
-  "checksum": "d5ca19189b4dfb2aefc3f5a41377a684870b9c6e45f8a6f6c58dd4b2135172f5",
+  "checksum": "30e56edfcbb3f5a972bfdcd6a35dafb5809e824eac7a378c62be952968ea37a1",
   "crates": {
     "async-trait 0.1.64": {
       "name": "async-trait",

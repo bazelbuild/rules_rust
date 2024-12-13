@@ -2,6 +2,20 @@
 
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 
+# TODO: remove after dropping support for Bazel < 7 when `abs` is a global
+def abs(value):
+    """Returns the absolute value of a number.
+
+    Args:
+      value (int): A number.
+
+    Returns:
+      int: The absolute value of the number.
+    """
+    if value < 0:
+        return -value
+    return value
+
 def _resolve_repository_template(
         *,
         template,
