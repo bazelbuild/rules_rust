@@ -67,7 +67,7 @@ extract_cargo_lints = rule(
         "_cargo_toml_info": attr.label(
             allow_single_file = True,
             executable = True,
-            default = "@rules_rust//cargo/private/cargo_toml_info",
+            default = Label("//cargo/private/cargo_toml_info:cargo_toml_info"),
             cfg = "exec",
         ),
     },
