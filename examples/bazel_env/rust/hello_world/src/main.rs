@@ -15,3 +15,9 @@
 fn main() {
     println!("Hello, world!");
 }
+
+// Note: Would normally cause Rustc to lint `dead_code` but we allow this lint in the Cargo.toml of
+// this crate.
+fn unused(x: usize) -> String {
+    format!("I am unused {x}")
+}
