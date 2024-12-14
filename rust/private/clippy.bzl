@@ -116,8 +116,12 @@ def _clippy_aspect_impl(target, ctx):
     clippy_flags = []
     lint_files = []
     if hasattr(ctx.rule.attr, "lint_config") and ctx.rule.attr.lint_config:
-        clippy_flags = clippy_flags + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags
-        lint_files = lint_files + ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files
+        clippy_flags = clippy_flags + \
+                       ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags + \
+                       ctx.rule.attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + \
+                     ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files + \
+                     ctx.rule.attr.lint_config[LintsInfo].rustc_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
@@ -171,7 +175,7 @@ def _clippy_aspect_impl(target, ctx):
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
         args.process_wrapper_flags.add("--stderr-file", clippy_out)
 
-        if clippy_flags:
+        if clippy_flags or lint_files:
             args.rustc_flags.add_all(clippy_flags)
 
         # If we are capturing the output, we want the build system to be able to keep going
@@ -183,7 +187,7 @@ def _clippy_aspect_impl(target, ctx):
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
         args.process_wrapper_flags.add("--touch-file", clippy_out)
 
-        if clippy_flags:
+        if clippy_flags or lint_files:
             args.rustc_flags.add_all(clippy_flags)
         else:
             # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
