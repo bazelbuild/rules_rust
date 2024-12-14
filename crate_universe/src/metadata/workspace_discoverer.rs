@@ -50,14 +50,15 @@ fn discover_workspaces_with_cache(
     };
 
     // First pass: Discover workspace parents.
-    for cargo_toml_path in cargo_toml_paths {
-        if let Some(workspace_parent) = discover_workspace_parent(&cargo_toml_path, manifest_cache)
-        {
+    for cargo_toml_path in &cargo_toml_paths {
+        if let Some(workspace_parent) = discover_workspace_parent(cargo_toml_path, manifest_cache) {
             discovered_workspaces
                 .workspaces_to_members
                 .insert(workspace_parent, BTreeSet::new());
         } else {
-            discovered_workspaces.non_workspaces.insert(cargo_toml_path);
+            discovered_workspaces
+                .non_workspaces
+                .insert(cargo_toml_path.clone());
         }
     }
 
@@ -69,6 +70,24 @@ fn discover_workspaces_with_cache(
         .collect::<BTreeSet<_>>()
     {
         let workspace_manifest = manifest_cache.get(&workspace_path).unwrap();
+
+        let workspace_explicit_members = workspace_manifest
+            .workspace
+            .as_ref()
+            .and_then(|workspace| {
+                // Unfortunately cargo_toml doesn't preserve presence/absence of this field, so we infer empty means absent.
+                if workspace.members.is_empty() {
+                    return None;
+                }
+                let members = workspace
+                    .members
+                    .iter()
+                    .map(|member| glob::Pattern::new(member).map_err(anyhow::Error::from))
+                    .collect::<Result<BTreeSet<_>>>();
+                Some(members)
+            })
+            .transpose()?;
+
         'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(true)
             .follow_root_links(true)
@@ -141,19 +160,54 @@ fn discover_workspaces_with_cache(
                 bail!("Found manifest at {} which is a member of the workspace at {} which isn't included in the crates_universe", child_path, actual_workspace_path);
             }
 
-            for exclude in &workspace_manifest.workspace.as_ref().unwrap().exclude {
-                let exclude_path = workspace_path.parent().unwrap().join(exclude);
-                if exclude_path == child_path.parent().unwrap() {
-                    discovered_workspaces.non_workspaces.insert(child_path);
+            let dir_relative_to_workspace_dir = child_path
+                .parent()
+                .unwrap()
+                .strip_prefix(workspace_path.parent().unwrap());
+
+            if let Ok(dir_relative_to_workspace_dir) = dir_relative_to_workspace_dir {
+                use itertools::Itertools;
+                if workspace_manifest
+                    .workspace
+                    .as_ref()
+                    .unwrap()
+                    .exclude
+                    .contains(&dir_relative_to_workspace_dir.components().join("/"))
+                {
                     continue 'per_child;
                 }
             }
 
-            discovered_workspaces
-                .workspaces_to_members
-                .get_mut(&actual_workspace_path)
-                .unwrap()
-                .insert(child_path.clone());
+            if let (Ok(dir_relative_to_workspace_dir), Some(workspace_explicit_members)) = (
+                dir_relative_to_workspace_dir,
+                workspace_explicit_members.as_ref(),
+            ) {
+                if workspace_explicit_members
+                    .iter()
+                    .any(|glob| glob.matches(dir_relative_to_workspace_dir.as_str()))
+                {
+                    discovered_workspaces
+                        .workspaces_to_members
+                        .get_mut(&actual_workspace_path)
+                        .unwrap()
+                        .insert(child_path.clone());
+                }
+            } else {
+                discovered_workspaces
+                    .workspaces_to_members
+                    .get_mut(&actual_workspace_path)
+                    .unwrap()
+                    .insert(child_path.clone());
+            }
+        }
+    }
+
+    for cargo_toml_path in cargo_toml_paths {
+        if !discovered_workspaces
+            .all_workspaces_and_members()
+            .contains(&cargo_toml_path)
+        {
+            discovered_workspaces.non_workspaces.insert(cargo_toml_path);
         }
     }
 
@@ -247,18 +301,14 @@ mod test {
         expected.non_workspaces.extend([
             root_dir.join("non-ws").join("Cargo.toml"),
             root_dir.join("ws2").join("ws2excluded").join("Cargo.toml"),
-            root_dir
-                .join("ws2")
-                .join("ws2excluded")
-                .join("ws2excluded2")
-                .join("Cargo.toml"),
         ]);
 
         let actual = discover_workspaces(
             vec![
-                root_dir.join("ws1/ws1c1/Cargo.toml"),
-                root_dir.join("ws2/Cargo.toml"),
-                root_dir.join("non-ws/Cargo.toml"),
+                root_dir.join("ws1").join("ws1c1").join("Cargo.toml"),
+                root_dir.join("ws2").join("Cargo.toml"),
+                root_dir.join("ws2").join("ws2excluded").join("Cargo.toml"),
+                root_dir.join("non-ws").join("Cargo.toml"),
             ]
             .into_iter()
             .collect(),
@@ -294,7 +344,7 @@ mod test {
         let expected = ws1_discovered_workspaces(&root_dir);
 
         let actual = discover_workspaces(
-            vec![root_dir.join("ws1/ws1c1/Cargo.toml")]
+            vec![root_dir.join("ws1").join("ws1c1").join("Cargo.toml")]
                 .into_iter()
                 .collect(),
             &BTreeMap::new(),
@@ -323,9 +373,68 @@ mod test {
         let expected = ws1_discovered_workspaces(&root_dir);
 
         let actual = discover_workspaces(
-            vec![root_dir.join("ws1/ws1c1/Cargo.toml")]
+            vec![root_dir.join("ws1").join("ws1c1").join("Cargo.toml")]
                 .into_iter()
                 .collect(),
+            &BTreeMap::new(),
+            root_dir.as_std_path(),
+        )
+        .unwrap();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_discover_explicit_members() {
+        let r = runfiles::Runfiles::create().unwrap();
+        let root_dir =
+            runfiles::rlocation!(r, "rules_rust/crate_universe/test_data/workspace_examples")
+                .unwrap();
+        let root_dir = Utf8PathBuf::from_path_buf(root_dir).unwrap();
+
+        let mut workspaces_to_members = BTreeMap::<Utf8PathBuf, BTreeSet<Utf8PathBuf>>::new();
+
+        let mut includes_members = BTreeSet::new();
+        let includes_root = root_dir.join("includes");
+        for child in [
+            vec!["explicit-child"],
+            vec!["glob-char1"],
+            vec!["glob-char2"],
+            vec!["glob-direct-children", "grandchild1"],
+            vec!["glob-direct-children", "grandchild2"],
+            vec!["glob-transitive-children", "level1", "anchor"],
+            vec!["glob-transitive-children", "level1", "level2", "anchor"],
+            vec![
+                "glob-transitive-children",
+                "level1",
+                "level2",
+                "level3",
+                "anchor",
+            ],
+        ] {
+            let mut path = includes_root.clone();
+            for path_part in child {
+                path.push(path_part);
+            }
+            path.push("Cargo.toml");
+            includes_members.insert(path);
+        }
+
+        workspaces_to_members.insert(includes_root.join("Cargo.toml"), includes_members);
+        let non_workspaces = BTreeSet::<Utf8PathBuf>::new();
+
+        let expected = DiscoveredWorkspaces {
+            workspaces_to_members,
+            non_workspaces,
+        };
+
+        let actual = discover_workspaces(
+            vec![root_dir
+                .join("includes")
+                .join("explicit-child")
+                .join("Cargo.toml")]
+            .into_iter()
+            .collect(),
             &BTreeMap::new(),
             root_dir.as_std_path(),
         )
