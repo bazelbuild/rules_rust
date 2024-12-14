@@ -304,6 +304,7 @@ _NORMAL_DEPENDENCIES = {
             "cfg-expr": Label("@cui__cfg-expr-0.17.2//:cfg_expr"),
             "clap": Label("@cui__clap-4.3.11//:clap"),
             "crates-index": Label("@cui__crates-index-3.3.0//:crates_index"),
+            "glob": Label("@cui__glob-0.3.1//:glob"),
             "hex": Label("@cui__hex-0.4.3//:hex"),
             "itertools": Label("@cui__itertools-0.13.0//:itertools"),
             "normpath": Label("@cui__normpath-1.3.0//:normpath"),
@@ -1512,6 +1513,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/gix-worktree/0.37.0/download"],
         strip_prefix = "gix-worktree-0.37.0",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-worktree-0.37.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__glob-0.3.1",
+        sha256 = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/glob/0.3.1/download"],
+        strip_prefix = "glob-0.3.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.glob-0.3.1.bazel"),
     )
 
     maybe(
@@ -2944,6 +2955,7 @@ def crate_repositories():
         struct(repo = "cui__cfg-expr-0.17.2", is_dev_dep = False),
         struct(repo = "cui__clap-4.3.11", is_dev_dep = False),
         struct(repo = "cui__crates-index-3.3.0", is_dev_dep = False),
+        struct(repo = "cui__glob-0.3.1", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
         struct(repo = "cui__indoc-2.0.5", is_dev_dep = False),
         struct(repo = "cui__itertools-0.13.0", is_dev_dep = False),

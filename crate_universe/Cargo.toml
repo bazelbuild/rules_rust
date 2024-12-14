@@ -93,6 +93,7 @@ tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 url = "2.5.2"
 walkdir = "2.5.0"
+glob = "0.3.1"
 
 [dev-dependencies]
 maplit = "1.0.2"
