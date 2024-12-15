@@ -18,6 +18,7 @@
 - [Upstream Tooling](./upstream_tooling.md)
 - [Extensions](./extensions.md)
     - [bindgen](./rust_bindgen.md)
+    - [mdbook](./rust_mdbook.md)
     - [prost](./rust_prost.md)
     - [protobuf](./rust_protobuf.md)
     - [wasm_bindgen](./rust_wasm_bindgen.md)
