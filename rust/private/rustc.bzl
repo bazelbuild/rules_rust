@@ -24,6 +24,7 @@ load(
 )
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:compat.bzl", "abs")
+load("//rust/private:lto.bzl", "construct_lto_arguments")
 load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load("//rust/private:stamp.bzl", "is_stamping_enabled")
 load(
@@ -998,6 +999,7 @@ def construct_arguments(
     data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     add_edition_flags(rustc_flags, crate_info)
+    _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1582,6 +1584,18 @@ def _collect_nonstatic_linker_inputs(cc_info):
                 libraries = depset(dylibs),
             ))
     return shared_linker_inputs
+
+def _add_lto_flags(ctx, toolchain, args, crate):
+    """Adds flags to an Args object to configure LTO for 'rustc'.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        args (Args): A reference to an Args object
+        crate (CrateInfo): A CrateInfo provider
+    """
+    lto_args = construct_lto_arguments(ctx, toolchain, crate)
+    args.add_all(lto_args)
 
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules

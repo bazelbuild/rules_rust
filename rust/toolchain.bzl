@@ -3,6 +3,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:lto.bzl", "RustLtoInfo")
 load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
 load(
     "//rust/private:rustfmt.bzl",
@@ -517,6 +518,7 @@ def _rust_toolchain_impl(ctx):
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
     no_std = ctx.attr._no_std[BuildSettingInfo].value
+    lto = ctx.attr._lto[RustLtoInfo]
 
     experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
     if _experimental_use_cc_common_link(ctx):
@@ -701,6 +703,7 @@ def _rust_toolchain_impl(ctx):
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
+        _lto = lto,
     )
     return [
         toolchain,
@@ -893,6 +896,10 @@ rust_toolchain = rule(
         ),
         "_no_std": attr.label(
             default = Label("//rust/settings:no_std"),
+        ),
+        "_lto": attr.label(
+            providers = [RustLtoInfo],
+            default = Label("//rust/settings:lto"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

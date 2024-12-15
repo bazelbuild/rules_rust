@@ -14,6 +14,7 @@ load(
     "per_crate_rustc_flag",
     "rustc_output_diagnostics",
 )
+load("//rust/private:lto.bzl", "rust_lto_flag")
 load("//rust/private:unpretty.bzl", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
@@ -45,6 +46,12 @@ rust_unpretty_flag(
         "mir",
         "normal",
     ],
+    visibility = ["//visibility:public"],
+)
+
+rust_lto_flag(
+    name = "lto",
+    build_setting_default = "unspecified",
     visibility = ["//visibility:public"],
 )
 
