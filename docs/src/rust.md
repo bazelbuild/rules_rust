@@ -12,6 +12,7 @@
 * [error_format](#error_format)
 * [extra_rustc_flag](#extra_rustc_flag)
 * [extra_rustc_flags](#extra_rustc_flags)
+* [lto](#lto)
 * [capture_clippy_output](#capture_clippy_output)
 
 <a id="capture_clippy_output"></a>
@@ -85,6 +86,30 @@ Add additional rustc_flags from the command line with `--@rules_rust//rust/setti
 | :------------- | :------------- | :------------- | :------------- | :------------- |
 | <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
 
+
+<a id="lto"></a>
+
+## lto (link time optimization)
+
+<pre>
+lto=(<a href="#lto-level">level</a>)
+</pre>
+
+Link time optimization can be configured from the command line using `--@rules_rust//rust/settings:lto`. This flag modifies how Bazel applies the following options when invoking `rustc`:
+
+* [`lto`](https://doc.rust-lang.org/rustc/codegen-options/index.html#lto)
+* [`embed-bitcode`](https://doc.rust-lang.org/rustc/codegen-options/index.html#embed-bitcode)
+* [`linker-plugin-lto`](https://doc.rust-lang.org/rustc/codegen-options/index.html#linker-plugin-lto)
+
+For example, when `lto` is enabled, Bazel will specify `-Clinker-plugin-lto` when building an `rlib`, causing Rust to skip generating object files entirely and replacing them with LLVM bitcode.
+
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Possible Values | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="lto-level"></a>level |  Level of link time optimization applied.  | `"off", "thin", "fat"` | required | "thin local LTO" |
 
 <a id="rust_binary"></a>
 
