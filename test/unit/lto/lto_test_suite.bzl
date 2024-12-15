@@ -80,6 +80,7 @@ def lto_test_suite(name):
         name = "crate_lib",
         out = "lib.rs",
         content = [
+            "#[allow(dead_code)]",
             "fn add() {}",
             "",
         ],

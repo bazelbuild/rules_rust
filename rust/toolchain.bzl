@@ -894,12 +894,12 @@ rust_toolchain = rule(
             default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
             doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
         ),
-        "_no_std": attr.label(
-            default = Label("//rust/settings:no_std"),
-        ),
         "_lto": attr.label(
             providers = [RustLtoInfo],
             default = Label("//rust/settings:lto"),
+        ),
+        "_no_std": attr.label(
+            default = Label("//rust/settings:no_std"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),
