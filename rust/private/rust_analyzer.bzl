@@ -232,6 +232,7 @@ def _create_single_crate(ctx, attrs, info):
     crate["edition"] = info.crate.edition
     crate["env"] = {}
     crate["crate_type"] = info.crate.type
+    crate["is_test"] = info.crate.is_test
 
     # Switch on external/ to determine if crates are in the workspace or remote.
     # TODO: Some folks may want to override this for vendored dependencies.
