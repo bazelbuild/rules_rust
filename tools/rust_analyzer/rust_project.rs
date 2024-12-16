@@ -159,20 +159,6 @@ pub enum TargetKind {
     Test,
 }
 
-impl From<CrateType> for TargetKind {
-    fn from(value: CrateType) -> Self {
-        match value {
-            CrateType::Bin => Self::Bin,
-            CrateType::Rlib
-            | CrateType::Lib
-            | CrateType::Dylib
-            | CrateType::Cdylib
-            | CrateType::Staticlib
-            | CrateType::ProcMacro => Self::Lib,
-        }
-    }
-}
-
 /// A template-like structure for describing runnables.
 ///
 /// These are used for running and debugging binaries and tests without encoding
@@ -286,6 +272,18 @@ pub fn generate_rust_project(
             } else {
                 log::trace!("Merging crate {}", &c.crate_id);
                 merged_crates_index.insert(c.crate_id.clone(), project.crates.len());
+
+                let target_kind = match c.crate_type {
+                    CrateType::Bin if c.is_test => TargetKind::Test,
+                    CrateType::Bin => TargetKind::Bin,
+                    CrateType::Rlib
+                    | CrateType::Lib
+                    | CrateType::Dylib
+                    | CrateType::Cdylib
+                    | CrateType::Staticlib
+                    | CrateType::ProcMacro => TargetKind::Lib,
+                };
+
                 project.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
                     root_module: c.root_module.clone(),
@@ -326,7 +324,7 @@ pub fn generate_rust_project(
                     build: c.build.as_ref().map(|b| Build {
                         label: b.label.clone(),
                         build_file: b.build_file.clone(),
-                        target_kind: c.crate_type.into(),
+                        target_kind,
                     }),
                 });
             }
@@ -472,6 +470,7 @@ mod tests {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             }]),
         )
@@ -506,6 +505,7 @@ mod tests {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None,
                 },
                 CrateSpec {
@@ -522,6 +522,7 @@ mod tests {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None,
                 },
                 CrateSpec {
@@ -538,6 +539,7 @@ mod tests {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None,
                 },
             ]),

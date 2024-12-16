@@ -51,6 +51,7 @@ pub struct CrateSpec {
     pub env: BTreeMap<String, String>,
     pub target: String,
     pub crate_type: CrateType,
+    pub is_test: bool,
     pub build: Option<CrateSpecBuild>,
 }
 
@@ -226,6 +227,7 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
                 existing.display_name = spec.display_name;
                 existing.crate_type = CrateType::Rlib;
                 existing.build = spec.build;
+                existing.is_test = spec.is_test;
             }
 
             // For proc-macro crates that exist within the workspace, there will be a
@@ -267,6 +269,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: Some(CrateSpecBuild {
                     label: "//:test".to_owned(),
                     build_file: "BUILD.bazel".to_owned().into(),
@@ -286,6 +289,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -302,6 +306,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -318,6 +323,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Bin,
+                is_test: true,
                 build: None,
             },
         ];
@@ -339,6 +345,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: Some(CrateSpecBuild {
                         label: "//:test".to_owned(),
                         build_file: "BUILD.bazel".to_owned().into(),
@@ -358,6 +365,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None
                 },
                 CrateSpec {
@@ -374,6 +382,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None
                 },
             ])
@@ -397,6 +406,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Bin,
+                is_test: true,
                 build: None,
             },
             CrateSpec {
@@ -413,6 +423,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -429,6 +440,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -445,6 +457,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
         ];
@@ -466,6 +479,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None
                 },
                 CrateSpec {
@@ -482,6 +496,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None
                 },
                 CrateSpec {
@@ -498,6 +513,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::Rlib,
+                    is_test: false,
                     build: None
                 },
             ])
@@ -526,6 +542,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -542,6 +559,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Bin,
+                is_test: true,
                 build: None,
             },
             CrateSpec {
@@ -558,6 +576,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Bin,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -574,6 +593,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::Rlib,
+                is_test: false,
                 build: None,
             },
         ];
@@ -596,6 +616,7 @@ mod test {
                         env: BTreeMap::new(),
                         target: "x86_64-unknown-linux-gnu".into(),
                         crate_type: CrateType::Rlib,
+                        is_test: false,
                         build: None,
                     },
                     CrateSpec {
@@ -612,6 +633,7 @@ mod test {
                         env: BTreeMap::new(),
                         target: "x86_64-unknown-linux-gnu".into(),
                         crate_type: CrateType::Rlib,
+                        is_test: false,
                         build: None
                     },
                 ])
@@ -642,6 +664,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::ProcMacro,
+                is_test: false,
                 build: None,
             },
             CrateSpec {
@@ -660,6 +683,7 @@ mod test {
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
                 crate_type: CrateType::ProcMacro,
+                is_test: false,
                 build: None,
             },
         ];
@@ -684,6 +708,7 @@ mod test {
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: CrateType::ProcMacro,
+                    is_test: false,
                     build: None,
                 },])
             );
