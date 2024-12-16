@@ -217,7 +217,6 @@ pub struct Runnable {
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RunnableKind {
-    /// This seems useless in the RA code.
     Check,
 
     /// Can run a binary.

@@ -203,9 +203,20 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
             existing.deps.extend(spec.deps);
+            existing.env.extend(spec.env);
 
             spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
             existing.cfg.extend(spec.cfg);
+
+            if let Some(source) = spec.source {
+                let existing_source = existing.source.get_or_insert_with(|| CrateSpecSource {
+                    exclude_dirs: Vec::new(),
+                    include_dirs: Vec::new(),
+                });
+
+                existing_source.exclude_dirs.extend(source.exclude_dirs);
+                existing_source.include_dirs.extend(source.include_dirs);
+            }
 
             // display_name should match the library's crate name because Rust Analyzer
             // seems to use display_name for matching crate entries in rust-project.json
@@ -213,7 +224,8 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
             // https://github.com/bazelbuild/rules_rust/issues/1032
             if spec.crate_type == CrateType::Rlib {
                 existing.display_name = spec.display_name;
-                existing.crate_type = CrateType::Rlib
+                existing.crate_type = CrateType::Rlib;
+                existing.build = spec.build;
             }
 
             // For proc-macro crates that exist within the workspace, there will be a
