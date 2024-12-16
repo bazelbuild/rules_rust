@@ -3,7 +3,12 @@
 Definitions for all `@rules_rust//rust` settings
 """
 
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load(
+    "@bazel_skylib//rules:common_settings.bzl",
+    "bool_flag",
+    "int_flag",
+    "string_flag",
+)
 load(
     "//rust:defs.bzl",
     _capture_clippy_output = "capture_clippy_output",
@@ -327,4 +332,17 @@ def incompatible_do_not_include_data_in_compile_data():
         name = "incompatible_do_not_include_data_in_compile_data",
         build_setting_default = True,
         issue = "https://github.com/bazelbuild/rules_rust/issues/2977",
+    )
+
+def codegen_units():
+    """The default value for `--codegen-units` which also affects resource allocation for rustc actions.
+
+    Note that any value 0 or less will prevent this flag from being passed by Bazel and allow rustc to
+    perform it's default behavior.
+
+    https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+    """
+    int_flag(
+        name = "codegen_units",
+        build_setting_default = -1,
     )

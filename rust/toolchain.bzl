@@ -707,6 +707,7 @@ def _rust_toolchain_impl(ctx):
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _lto = lto,
+        _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
     )
     return [
         toolchain,
@@ -879,6 +880,9 @@ rust_toolchain = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_codegen_units": attr.label(
+            default = Label("//rust/settings:codegen_units"),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),

@@ -22,13 +22,14 @@ load(
     "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
-load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:compat.bzl", "abs")
-load("//rust/private:lto.bzl", "construct_lto_arguments")
-load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
-load("//rust/private:stamp.bzl", "is_stamping_enabled")
+load(":common.bzl", "rust_common")
+load(":compat.bzl", "abs")
+load(":lto.bzl", "construct_lto_arguments")
+load(":providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
+load(":stamp.bzl", "is_stamping_enabled")
 load(
-    "//rust/private:utils.bzl",
+    ":utils.bzl",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -792,6 +793,7 @@ def collect_inputs(
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
+        *,
         ctx,
         attr,
         file,
@@ -1000,6 +1002,7 @@ def construct_arguments(
 
     add_edition_flags(rustc_flags, crate_info)
     _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
+    _add_codegen_units_flags(toolchain, rustc_flags)
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1124,6 +1127,7 @@ def construct_arguments(
     return args, env
 
 def rustc_compile_action(
+        *,
         ctx,
         attr,
         toolchain,
@@ -1337,6 +1341,7 @@ def rustc_compile_action(
                 len(crate_info.srcs.to_list()),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            resource_set = get_rustc_resource_set(toolchain),
         )
         if args_metadata:
             ctx.actions.run(
@@ -1372,6 +1377,7 @@ def rustc_compile_action(
                 len(crate_info.srcs.to_list()),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            resource_set = get_rustc_resource_set(toolchain),
         )
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
@@ -1596,6 +1602,20 @@ def _add_lto_flags(ctx, toolchain, args, crate):
     """
     lto_args = construct_lto_arguments(ctx, toolchain, crate)
     args.add_all(lto_args)
+
+def _add_codegen_units_flags(toolchain, args):
+    """Adds flags to an Args object to configure codgen_units for 'rustc'.
+
+    https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+
+    Args:
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        args (Args): A reference to an Args object
+    """
+    if not is_codegen_units_enabled(toolchain):
+        return
+
+    args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
