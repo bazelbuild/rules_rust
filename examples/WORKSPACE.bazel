@@ -28,6 +28,10 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 
+load("@rules_rust//cargo:deps.bzl", "cargo_dependencies")
+
+cargo_dependencies()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # We need to load rules_java before anything proto-related happens because otherwise it will pull in its own rules_java which isn't compatible with rules_jvm_external.

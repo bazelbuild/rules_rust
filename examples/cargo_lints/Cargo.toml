@@ -1,0 +1,17 @@
+[package]
+name = "hello_world"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+
+[lints.rust]
+dead_code = "allow"
+
+[lints.clippy]
+absurd_extreme_comparisons = "allow"
+needless_if = "allow"
+
+[lints.rustdoc]
+invalid_html_tags = "allow"
