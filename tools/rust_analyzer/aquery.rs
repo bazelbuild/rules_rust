@@ -226,8 +226,13 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
             if spec.crate_type == CrateType::Rlib {
                 existing.display_name = spec.display_name;
                 existing.crate_type = CrateType::Rlib;
-                existing.build = spec.build;
                 existing.is_test = spec.is_test;
+            }
+
+            // We want to use the test target's build label to provide
+            // unit tests codelens actions for library crates in IDEs.
+            if spec.is_test {
+                existing.build = spec.build;
             }
 
             // For proc-macro crates that exist within the workspace, there will be a
