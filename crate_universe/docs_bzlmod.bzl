@@ -25,7 +25,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
-```starlark
+```python
 bazel_dep(name = "rules_rust", version = "0.49.3")
 ```
 
@@ -34,7 +34,7 @@ You find the latest version on the [release page](https://github.com/bazelbuild/
 
 After adding `rules_rust` in your MODULE.bazel, set the following to begin using `crate_universe`:
 
-```starlark
+```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 //  # ... Dependencies
 use_repo(crate, "crates")
@@ -54,7 +54,7 @@ One of the simpler ways to wire up dependencies would be to first structure your
 The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
 You find a complete example in the in the [example folder](../examples/bzlmod/all_crate_deps).
 
-```starlark
+```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.from_cargo(
@@ -73,7 +73,7 @@ Since these macros come from the generated repository, the dependencies and alia
 they return will automatically update BUILD targets. In your BUILD files,
 you use these macros for a Rust library as shown below:
 
-```starlark
+```python
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
@@ -107,7 +107,7 @@ rust_test(
 For a Rust binary that does not depend on any macro, use the following configuration
 in your build file:
 
-```starlark
+```python
 rust_binary(
     name = "bin",
     srcs = ["src/main.rs"],
@@ -142,7 +142,7 @@ In situations like this, it may be desirable to have a “Cargo free” setup. Y
 crates_repository supports this through the packages attribute,
 as shown below.
 
-```starlark
+```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.spec(package = "serde", features = ["derive"], version = "1.0")
@@ -156,7 +156,7 @@ use_repo(crate, "crates")
 Consuming dependencies may be more ergonomic in this case through the aliases defined in the new repository.
 In your BUILD files, you use direct dependencies as shown below:
 
-```starlark
+```python
 rust_binary(
     name = "bin",
     crate_root = "src/main.rs",
@@ -185,7 +185,7 @@ You find a complete example in the in the [example folder](../examples/bzlmod/al
 
 For the setup, you need to add the skylib in addition to the rust rules to your MODUE.bazel.
 
-```starlark
+```python
 module(
     name = "deps_vendored",
     version = "0.0.0"
@@ -230,7 +230,7 @@ but by convention, its either thirdparty or 3rdparty to indicate vendored depend
 In the 3rdparty folder, you add a target crates_vendor to declare your dependencies to vendor.
 In the example, we vendor a specific version of bzip2.
 
-```starlark
+```python
 load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 crates_vendor(
@@ -284,7 +284,7 @@ that depends on a vendored dependency. You find a list of all available vendored
 in the BUILD file of the generated folder: `basic/3rdparty/crates/BUILD.bazel`
 You declare a vendored dependency in you target as following:
 
-```starlark
+```python
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
@@ -298,7 +298,7 @@ Note, the vendored dependency is not yet accessible because you have to define f
 how to load the vendored dependencies. For that, you first create a file `sys_deps.bzl`
 and add the following content:
 
-```starlark
+```python
 # rename the default name "crate_repositories" in case you import multiple vendored folders.
 load("//basic/3rdparty/crates:defs.bzl", basic_crate_repositories = "crate_repositories")
 
@@ -314,7 +314,7 @@ just load the vendored dependencies.
 In a WORKSPACE configuration, you would just load and call sys_deps(), but in a MODULE configuration, you cannot do that.
 Instead, you create a new file `WORKSPACE.bzlmod` and add the following content.
 
-```starlark
+```python
 load("//:sys_deps.bzl", "sys_deps")
 sys_deps()
 ```

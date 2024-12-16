@@ -486,6 +486,10 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
+            use_default_shell_env: krate
+                .build_script_attrs
+                .as_ref()
+                .and_then(|a| a.use_default_shell_env),
             compile_data: make_data_with_exclude(
                 platforms,
                 attrs
@@ -1086,6 +1090,7 @@ mod test {
     fn render_cargo_build_script() {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+
         context.crates.insert(
             crate_id.clone(),
             CrateContext {
@@ -1120,10 +1125,105 @@ mod test {
             .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
             .unwrap();
 
-        assert!(build_file_content.contains("cargo_build_script("));
-        assert!(build_file_content.contains("name = \"build_script_build\""));
-        assert!(build_file_content.contains("\"crate-name=mock_crate\""));
-        assert!(build_file_content.contains("compile_data = glob("));
+        assert!(
+            build_file_content.contains("cargo_build_script("),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("name = \"build_script_build\""),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("\"crate-name=mock_crate\""),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("compile_data = glob("),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            !build_file_content.contains("use_default_shell_env ="),
+            "```\n{}```\n",
+            build_file_content
+        );
+
+        // Ensure `cargo_build_script` requirements are met
+        assert!(build_file_content.contains("name = \"_bs\""));
+    }
+
+    #[test]
+    fn render_cargo_build_script_complex() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+
+        let attrs = BuildScriptAttributes {
+            use_default_shell_env: Some(1),
+            ..BuildScriptAttributes::default()
+        };
+
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
+                    crate_name: "build_script_build".to_owned(),
+                    crate_root: Some("build.rs".to_owned()),
+                    ..TargetAttributes::default()
+                })]),
+                // Build script attributes are required.
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: Some(attrs),
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(
+            build_file_content.contains("cargo_build_script("),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("name = \"build_script_build\""),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("\"crate-name=mock_crate\""),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("compile_data = glob("),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("use_default_shell_env = 1"),
+            "```\n{}```\n",
+            build_file_content
+        );
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"_bs\""));

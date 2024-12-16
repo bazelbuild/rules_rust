@@ -2,7 +2,7 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:repositories.bzl", "rust_register_toolchains", "rust_toolchain_tools_repository")
+load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES", "rust_register_toolchains", "rust_repository_set", "rust_toolchain_tools_repository")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load(
     "//rust/private:repository_utils.bzl",
@@ -48,6 +48,47 @@ def _rust_impl(module_ctx):
     # See https://github.com/bazelbuild/bazel/discussions/22024 for discussion.
     root, rules_rust = _find_modules(module_ctx)
 
+    toolchain_triples = dict(DEFAULT_TOOLCHAIN_TRIPLES)
+
+    repository_sets = root.tags.repository_set
+
+    grouped_repository_sets = {}
+    for repository_set in repository_sets:
+        if repository_set.name not in grouped_repository_sets:
+            grouped_repository_sets[repository_set.name] = {
+                "allocator_library": repository_set.allocator_library,
+                "dev_components": repository_set.dev_components,
+                "edition": repository_set.edition,
+                "exec_triple": repository_set.exec_triple,
+                "extra_target_triples": {repository_set.target_triple: [str(v) for v in repository_set.target_compatible_with]},
+                "name": repository_set.name,
+                "rustfmt_version": repository_set.rustfmt_version,
+                "sha256s": repository_set.sha256s,
+                "urls": repository_set.urls,
+                "versions": repository_set.versions,
+            }
+        else:
+            for attr_name in _RUST_REPOSITORY_SET_TAG_ATTRS.keys():
+                if attr_name in ["extra_target_triples", "name", "target_compatible_with", "target_triple"]:
+                    continue
+                attr_value = getattr(repository_set, attr_name, None)
+                if attr_value:
+                    default_value = _COMMON_TAG_DEFAULTS.get(attr_name, None)
+                    if not default_value or attr_value != default_value:
+                        fail("You must only set {} on the first call to repository_set for a particular name but it was set multiple times for {}".format(attr_name, repository_set.name))
+            grouped_repository_sets[repository_set.name]["extra_target_triples"][repository_set.target_triple] = [str(v) for v in repository_set.target_compatible_with]
+
+    extra_toolchain_infos = {}
+
+    for repository_set in grouped_repository_sets.values():
+        toolchain_infos = rust_repository_set(
+            register_toolchain = False,
+            **repository_set
+        )
+        extra_toolchain_infos.update(**toolchain_infos)
+        if toolchain_triples.get(repository_set["exec_triple"]) == repository_set["name"]:
+            toolchain_triples.pop(repository_set["exec_triple"], None)
+
     toolchains = root.tags.toolchain or rules_rust.tags.toolchain
 
     for toolchain in toolchains:
@@ -77,16 +118,24 @@ def _rust_impl(module_ctx):
                 versions = toolchain.versions,
                 register_toolchains = False,
                 aliases = toolchain.aliases,
+                toolchain_triples = toolchain_triples,
+                extra_toolchain_infos = extra_toolchain_infos,
             )
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
         metadata_kwargs["reproducible"] = True
     return module_ctx.extension_metadata(**metadata_kwargs)
 
+_COMMON_TAG_DEFAULTS = {
+    "allocator_library": "@rules_rust//ffi/cc/allocator_library",
+    "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
+    "urls": DEFAULT_STATIC_RUST_URL_TEMPLATES,
+}
+
 _COMMON_TAG_KWARGS = {
     "allocator_library": attr.string(
         doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
-        default = "@rules_rust//ffi/cc/allocator_library",
+        default = _COMMON_TAG_DEFAULTS["allocator_library"],
     ),
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
@@ -100,16 +149,34 @@ _COMMON_TAG_KWARGS = {
     ),
     "rustfmt_version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
-        default = DEFAULT_NIGHTLY_VERSION,
+        default = _COMMON_TAG_DEFAULTS["rustfmt_version"],
     ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
     ),
     "urls": attr.string_list(
         doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",
-        default = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        default = _COMMON_TAG_DEFAULTS["urls"],
     ),
 }
+
+_RUST_REPOSITORY_SET_TAG_ATTRS = {
+    "exec_triple": attr.string(doc = "Exec triple for this repository_set."),
+    "name": attr.string(doc = "Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing."),
+    "target_compatible_with": attr.label_list(doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for."),
+    "target_triple": attr.string(doc = "target_triple to configure."),
+    "versions": attr.string_list(
+        doc = (
+            "A list of toolchain versions to download. This parameter only accepts one version " +
+            "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
+            "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
+        ),
+    ),
+} | _COMMON_TAG_KWARGS
+
+_RUST_REPOSITORY_SET_TAG = tag_class(
+    attrs = _RUST_REPOSITORY_SET_TAG_ATTRS,
+)
 
 _RUST_TOOLCHAIN_TAG = tag_class(
     attrs = {
@@ -161,6 +228,7 @@ rust = module_extension(
     doc = "Rust toolchain extension.",
     implementation = _rust_impl,
     tag_classes = {
+        "repository_set": _RUST_REPOSITORY_SET_TAG,
         "toolchain": _RUST_TOOLCHAIN_TAG,
     },
 )

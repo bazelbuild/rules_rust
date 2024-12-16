@@ -4,6 +4,7 @@ fixedReleaser:
 moduleRoots:
   - "."
   - "extensions/bindgen"
+  - "extensions/mdbook"
   - "extensions/prost"
   - "extensions/protobuf"
   - "extensions/wasm_bindgen"
