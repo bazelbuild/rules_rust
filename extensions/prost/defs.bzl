@@ -146,6 +146,11 @@ load(
     _rust_prost_library = "rust_prost_library",
     _rust_prost_toolchain = "rust_prost_toolchain",
 )
+load(
+    "//private:prost_transform.bzl",
+    _rust_prost_transform = "rust_prost_transform",
+)
 
 rust_prost_library = _rust_prost_library
 rust_prost_toolchain = _rust_prost_toolchain
+rust_prost_transform = _rust_prost_transform

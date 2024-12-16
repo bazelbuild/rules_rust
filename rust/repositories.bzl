@@ -152,7 +152,10 @@ def rust_register_toolchains(
         versions = _RUST_TOOLCHAIN_VERSIONS,
         aliases = {},
         hub_name = None,
-        compact_windows_names = _COMPACT_WINDOWS_NAMES):
+        compact_windows_names = _COMPACT_WINDOWS_NAMES,
+        toolchain_triples = DEFAULT_TOOLCHAIN_TRIPLES,
+        rustfmt_toolchain_triples = DEFAULT_TOOLCHAIN_TRIPLES,
+        extra_toolchain_infos = None):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -190,6 +193,9 @@ def rust_register_toolchains(
         hub_name (str, optional): The name of the bzlmod hub repository for toolchains.
         compact_windows_names (bool): Whether or not to produce compact repository names for windows
             toolchains. This is to avoid MAX_PATH issues.
+        toolchain_triples (dict[str, str], optional): Mapping of rust target triple -> repository name to create.
+        rustfmt_toolchain_triples (dict[str, str], optional): Like toolchain_triples, but for rustfmt toolchains.
+        extra_toolchain_infos: (dict[str, dict], optional): Mapping of information about extra toolchains which were created outside of this call, which should be added to the hub repo.
     """
     if not rustfmt_version:
         if len(versions) == 1:
@@ -243,7 +249,7 @@ def rust_register_toolchains(
             rust_analyzer_repo_name,
         ))
 
-    for exec_triple, name in DEFAULT_TOOLCHAIN_TRIPLES.items():
+    for exec_triple, name in toolchain_triples.items():
         maybe(
             rust_repository_set,
             name = name,
@@ -263,6 +269,23 @@ def rust_register_toolchains(
             aliases = aliases,
         )
 
+        for toolchain in _get_toolchain_repositories(
+            name = name,
+            exec_triple = exec_triple,
+            extra_target_triples = extra_target_triples,
+            versions = versions,
+            fallback_target_compatible_with = None,
+            aliases = aliases,
+            compact_windows_names = compact_windows_names,
+        ):
+            toolchain_names.append(toolchain.name)
+            toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
+            exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
+            target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
+            toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
+            toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
+
+    for exec_triple, name in rustfmt_toolchain_triples.items():
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
         if rustfmt_repo_name in aliases:
             rustfmt_repo_name = aliases.pop(rustfmt_repo_name)
@@ -281,22 +304,6 @@ def rust_register_toolchains(
                 rustfmt_repo_name,
             ))
 
-        for toolchain in _get_toolchain_repositories(
-            name = name,
-            exec_triple = exec_triple,
-            extra_target_triples = extra_target_triples,
-            versions = versions,
-            fallback_target_compatible_with = None,
-            aliases = aliases,
-            compact_windows_names = compact_windows_names,
-        ):
-            toolchain_names.append(toolchain.name)
-            toolchain_labels[toolchain.name] = "@{}//:{}".format(toolchain.name + "_tools", "rust_toolchain")
-            exec_compatible_with_by_toolchain[toolchain.name] = triple_to_constraint_set(exec_triple)
-            target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
-            toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
-            toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
-
         toolchain_names.append(rustfmt_repo_name)
         toolchain_labels[rustfmt_repo_name] = "@{}_tools//:rustfmt_toolchain".format(rustfmt_repo_name)
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
@@ -307,6 +314,15 @@ def rust_register_toolchains(
         fail("No repositories were created matching the requested names to alias:\n{}".format("\n".join(sorted(aliases))))
 
     if hub_name:
+        if extra_toolchain_infos:
+            for name, info in extra_toolchain_infos.items():
+                toolchain_names.append(name)
+                toolchain_labels[name] = info["tools_toolchain_label"]
+                exec_compatible_with_by_toolchain[name] = info["exec_compatible_with"]
+                target_compatible_with_by_toolchain[name] = info["target_compatible_with"]
+                toolchain_target_settings[name] = info["target_settings"]
+                toolchain_types[name] = info["toolchain_type"]
+
         toolchain_repository_hub(
             name = hub_name,
             toolchain_names = toolchain_names,
@@ -628,7 +644,7 @@ def rust_toolchain_repository(
         auth_patterns (list, optional): A list of patterns to match against urls for which the auth object should be used.
 
     Returns:
-        str: The name of the registerable toolchain created by this rule.
+        dict[str, str]: Information about the registerable toolchain created by this rule.
     """
     if exec_compatible_with == None:
         exec_compatible_with = triple_to_constraint_set(exec_triple)
@@ -660,18 +676,28 @@ def rust_toolchain_repository(
 
     channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
 
+    tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
+
+    toolchain_type = "@rules_rust//rust:toolchain"
+
     toolchain_repository_proxy(
         name = name,
-        toolchain = "@{}//:rust_toolchain".format(tools_repo_name),
+        toolchain = tools_toolchain_label,
         target_settings = channel_target_settings + target_settings,
-        toolchain_type = "@rules_rust//rust:toolchain",
+        toolchain_type = toolchain_type,
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
     )
 
-    return "@{name}//:toolchain".format(
-        name = name,
-    )
+    return {
+        "exec_compatible_with": exec_compatible_with,
+        "name": name,
+        "target_compatible_with": target_compatible_with,
+        "target_settings": target_settings,
+        "toolchain_label": "@{name}//:toolchain".format(name = name),
+        "toolchain_type": toolchain_type,
+        "tools_toolchain_label": tools_toolchain_label,
+    }
 
 _RUST_ANALYZER_TOOLCHAIN_TOOLS_REPOSITORY_ATTRS = {
     "auth": attr.string_dict(
@@ -1131,9 +1157,13 @@ def rust_repository_set(
         aliases (dict): Replacement names to use for toolchains created by this macro.
         compact_windows_names (bool): Whether or not to produce compact repository names for windows
             toolchains. This is to avoid MAX_PATH issues.
+
+    Returns:
+        dict[str, dict]: A dict of informations about all generated toolchains.
     """
 
-    all_toolchain_names = []
+    all_toolchain_details = {}
+    toolchain_labels = []
     for toolchain in _get_toolchain_repositories(
         name = name,
         exec_triple = exec_triple,
@@ -1153,7 +1183,7 @@ def rust_repository_set(
         else:
             fail("extra_rustc_flags should be a list or a dict")
 
-        all_toolchain_names.append(rust_toolchain_repository(
+        toolchain_info = rust_toolchain_repository(
             name = toolchain.name,
             allocator_library = allocator_library,
             global_allocator_library = global_allocator_library,
@@ -1175,16 +1205,20 @@ def rust_repository_set(
             version = toolchain.channel.version,
             exec_compatible_with = exec_compatible_with,
             target_compatible_with = toolchain.target_constraints,
-        ))
+        )
+        toolchain_labels.append(toolchain_info["toolchain_label"])
+        all_toolchain_details[toolchain.name] = toolchain_info
 
     # This repository exists to allow `rust_repository_set` to work with the `maybe` wrapper.
     rust_toolchain_set_repository(
         name = name,
-        toolchains = all_toolchain_names,
+        toolchains = toolchain_labels,
     )
 
     # Register toolchains
     if register_toolchain:
-        native.register_toolchains(*all_toolchain_names)
+        native.register_toolchains(*toolchain_labels)
         native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain")))
         native.register_toolchains(str(Label("//rust/private/dummy_cc_toolchain:dummy_cc_wasm64_toolchain")))
+
+    return all_toolchain_details

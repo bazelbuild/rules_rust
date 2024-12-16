@@ -85,7 +85,7 @@ fn discover_workspaces_with_cache(
                     return true;
                 }
                 if let Some(file_name) = e.file_name().to_str() {
-                    if file_name.starts_with("bazel-") {
+                    if file_name.starts_with("bazel-") || file_name.starts_with(".bazel") {
                         return false;
                     }
                 }
@@ -279,9 +279,15 @@ mod test {
                 .unwrap();
         let root_dir = Utf8PathBuf::from_path_buf(root_dir).unwrap();
 
-        let _symlink = DeleteOnDropDirSymlink::symlink(
+        let _symlink1 = DeleteOnDropDirSymlink::symlink(
             Path::new("..").join("symlinked"),
             root_dir.join("ws1").join("bazel-ws1").into_std_path_buf(),
+        )
+        .unwrap();
+
+        let _symlink2 = DeleteOnDropDirSymlink::symlink(
+            Path::new("..").join("symlinked"),
+            root_dir.join("ws1").join(".bazel").into_std_path_buf(),
         )
         .unwrap();
 

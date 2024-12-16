@@ -102,6 +102,9 @@ impl Module {
     }
 }
 
+const ADDITIONAL_CONTENT_HEADER: &str =
+    "// A D D I T I O N A L   S O U R C E S ========================================";
+
 /// Generate a lib.rs file with all prost/tonic outputs embeeded in modules which
 /// mirror the proto packages. For the example proto file we would expect to see
 /// the Rust output that follows it.
@@ -152,6 +155,7 @@ fn generate_lib_rs(
     prost_outputs: &BTreeSet<PathBuf>,
     is_tonic: bool,
     direct_dep_crate_names: Vec<String>,
+    additional_content: String,
 ) -> String {
     let mut contents = vec!["// @generated".to_string(), "".to_string()];
     for crate_name in direct_dep_crate_names {
@@ -193,6 +197,14 @@ fn generate_lib_rs(
 
     let mut content = String::new();
     write_module(&mut content, &module_info, 0);
+
+    if !additional_content.is_empty() {
+        return format!(
+            "{}\n\n{}\n\n{}",
+            content, ADDITIONAL_CONTENT_HEADER, additional_content
+        );
+    }
+
     content
 }
 
@@ -421,6 +433,9 @@ struct Args {
     /// The proto files to compile.
     proto_files: Vec<PathBuf>,
 
+    /// Additional source files to append to the generated rust source.
+    additional_srcs: Vec<PathBuf>,
+
     /// The include directories.
     includes: Vec<String>,
 
@@ -454,6 +469,7 @@ impl Args {
         let mut crate_name: Option<String> = None;
         let mut package_info_file: Option<PathBuf> = None;
         let mut proto_files: Vec<PathBuf> = Vec::new();
+        let mut additional_srcs: Vec<PathBuf> = Vec::new();
         let mut includes = Vec::new();
         let mut descriptor_set = None;
         let mut out_librs: Option<PathBuf> = None;
@@ -519,6 +535,12 @@ impl Args {
                         {
                             tonic_or_prost_opts.push(format!("extern_path={}", flag.trim()));
                         }
+                    }
+                }
+                ("--additional_srcs", value) => {
+                    if !value.is_empty() {
+                        additional_srcs
+                            .extend(value.split(',').map(PathBuf::from).collect::<Vec<_>>());
                     }
                 }
                 ("--direct_dep_crate_names", value) => {
@@ -614,6 +636,7 @@ impl Args {
             crate_name: crate_name.unwrap(),
             package_info_file: package_info_file.unwrap(),
             proto_files,
+            additional_srcs,
             includes,
             descriptor_set: descriptor_set.unwrap(),
             out_librs: out_librs.unwrap(),
@@ -717,6 +740,7 @@ fn main() {
         label,
         package_info_file,
         proto_files,
+        additional_srcs,
         includes,
         descriptor_set,
         out_librs,
@@ -733,6 +757,19 @@ fn main() {
     let package_name = get_package_name(&descriptor_set).unwrap_or_default();
     let expect_rs = expect_fs_file_to_be_generated(&descriptor_set);
     let has_services = has_services(&descriptor_set);
+    let additional_content = additional_srcs
+        .into_iter()
+        .map(|f| {
+            fs::read_to_string(&f).unwrap_or_else(|e| {
+                panic!(
+                    "Failed to read additional source file: `{}`\n{:?}",
+                    f.display(),
+                    e
+                )
+            })
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     if has_services && !is_tonic {
         eprintln!("Warning: Service definitions will not be generated because the prost toolchain did not define a tonic plugin.");
@@ -875,7 +912,12 @@ fn main() {
     // Write outputs
     fs::write(
         &out_librs,
-        generate_lib_rs(&rust_files, is_tonic, direct_dep_crate_names),
+        generate_lib_rs(
+            &rust_files,
+            is_tonic,
+            direct_dep_crate_names,
+            additional_content,
+        ),
     )
     .expect("Failed to write file.");
     fs::write(

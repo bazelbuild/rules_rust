@@ -45,6 +45,30 @@ http_archive(
 
 </details>
 
+### MdBook
+
+<details>
+
+#### Bzlmod
+
+```python
+bazel_dep(name = "rules_rust_mdbook", version = "{version}")
+```
+
+#### WORKSPACE
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_rust_mdbook",
+    integrity = "sha256-{sha256_base64}",
+    strip_prefix = "extensions/mdbook",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-{version}.tar.gz"],
+)
+```
+
+</details>
+
 ### Prost
 
 <details>
