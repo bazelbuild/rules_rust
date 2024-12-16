@@ -150,7 +150,7 @@ pub struct Build {
     pub target_kind: TargetKind,
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TargetKind {
     Bin,
@@ -213,6 +213,7 @@ pub enum RunnableKind {
 }
 
 pub fn generate_rust_project(
+    bazel: &Utf8Path,
     workspace: &Utf8Path,
     sysroot: &str,
     sysroot_src: &str,
@@ -224,13 +225,13 @@ pub fn generate_rust_project(
         crates: Vec::new(),
         runnables: vec![
             Runnable {
-                program: "bazel".to_owned(),
+                program: bazel.to_string(),
                 args: vec!["build".to_owned(), "{label}".to_owned()],
                 cwd: workspace.to_owned(),
                 kind: RunnableKind::Check,
             },
             Runnable {
-                program: "bazel".to_owned(),
+                program: bazel.to_string(),
                 args: vec![
                     "test".to_owned(),
                     "{label}".to_owned(),
@@ -283,6 +284,17 @@ pub fn generate_rust_project(
                     | CrateType::Staticlib
                     | CrateType::ProcMacro => TargetKind::Lib,
                 };
+
+                if let Some(build) = &c.build {
+                    if target_kind == TargetKind::Bin {
+                        project.runnables.push(Runnable {
+                            program: bazel.to_string(),
+                            args: vec!["run".to_string(), build.label.to_owned()],
+                            cwd: workspace.to_owned(),
+                            kind: RunnableKind::Run,
+                        });
+                    }
+                }
 
                 project.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
