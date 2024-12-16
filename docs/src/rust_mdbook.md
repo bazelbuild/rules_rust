@@ -12,16 +12,15 @@ Bazel rules for [mdBook](https://github.com/rust-lang/mdBook).
 
 ## Setup
 
+### bzlmod
+
 ```python
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
+```
 
-# See releases for urls and checksums
-http_archive(
-    name = "rules_mdbook",
-    integrity = "{integrity}",
-    urls = ["https://github.com/abrisco/rules_mdbook/releases/download/{version}/rules_mdbook-{version}.tar.gz"],
-)
+### WORKSPACE
 
+```python
 load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()
