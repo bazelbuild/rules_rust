@@ -663,7 +663,6 @@ def _rust_toolchain_impl(ctx):
         clippy_driver = sysroot.clippy,
         cargo_clippy = sysroot.cargo_clippy,
         compilation_mode_opts = compilation_mode_opts,
-        crosstool_files = ctx.files._cc_toolchain,
         default_edition = ctx.attr.default_edition,
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
@@ -876,10 +875,6 @@ rust_toolchain = rule(
                 "The platform triple for the toolchains target environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
-        ),
-        # TODO: #3115 - Remove this attribute.
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
