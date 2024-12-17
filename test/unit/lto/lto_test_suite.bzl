@@ -39,7 +39,7 @@ def _lto_test_impl(ctx, lto_setting, embed_bitcode, linker_plugin):
     return analysistest.end(env)
 
 def _lto_level_default(ctx):
-    return _lto_test_impl(ctx, None, "no", False)
+    return _lto_test_impl(ctx, None, None, False)
 
 _lto_level_default_test = analysistest.make(
     _lto_level_default,
