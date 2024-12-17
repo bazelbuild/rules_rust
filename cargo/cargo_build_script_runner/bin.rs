@@ -272,40 +272,6 @@ fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
     }
 }
 
-/// Check if the system supports symlinks by attempting to create one.
-fn system_supports_symlinks(test_dir: &Path) -> Result<bool, String> {
-    let test_file = test_dir.join("cbsr.txt");
-    std::fs::write(&test_file, "").map_err(|e| {
-        format!(
-            "Failed to write test file for checking symlink support '{}' with {:?}",
-            test_file.display(),
-            e
-        )
-    })?;
-    let test_link = test_dir.join("cbsr.link.txt");
-    match symlink(&test_file, &test_link) {
-        Err(_) => {
-            std::fs::remove_file(test_file).map_err(|e| {
-                format!("Failed to delete file {} with {:?}", test_link.display(), e)
-            })?;
-            Ok(false)
-        }
-        Ok(_) => {
-            remove_symlink(&test_link).map_err(|e| {
-                format!(
-                    "Failed to remove symlink {} with {:?}",
-                    test_link.display(),
-                    e
-                )
-            })?;
-            std::fs::remove_file(test_file).map_err(|e| {
-                format!("Failed to delete file {} with {:?}", test_link.display(), e)
-            })?;
-            Ok(true)
-        }
-    }
-}
-
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.
 fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
     symlink(original, link)
@@ -336,13 +302,6 @@ fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
     } else {
         Err(err)
     }
-}
-
-fn is_dir_empty(path: &Path) -> Result<bool, String> {
-    let mut entries = std::fs::read_dir(path)
-        .map_err(|e| format!("Failed to read directory: {} with {:?}", path.display(), e))?;
-
-    Ok(entries.next().is_none())
 }
 
 type RlocationPath = String;
@@ -408,41 +367,6 @@ impl RunfilesMaker {
     }
 
     /// Create a runfiles directory.
-    #[cfg(target_family = "unix")]
-    fn create_runfiles_dir(&self) -> Result<(), String> {
-        for (src, dest) in &self.runfiles {
-            let abs_dest = self.output_dir.join(dest);
-
-            if let Some(parent) = abs_dest.parent() {
-                if !parent.exists() {
-                    std::fs::create_dir_all(parent).map_err(|e| {
-                        format!(
-                            "Failed to create parent directory '{}' for '{}' with {:?}",
-                            parent.display(),
-                            abs_dest.display(),
-                            e
-                        )
-                    })?;
-                }
-            }
-
-            let abs_src = std::env::current_dir().unwrap().join(src);
-
-            symlink(&abs_src, &abs_dest).map_err(|e| {
-                format!(
-                    "Failed to link `{} -> {}` with {:?}",
-                    abs_src.display(),
-                    abs_dest.display(),
-                    e
-                )
-            })?;
-        }
-
-        Ok(())
-    }
-
-    /// Create a runfiles directory.
-    #[cfg(target_family = "windows")]
     fn create_runfiles_dir(&self) -> Result<(), String> {
         if !self.output_dir.exists() {
             std::fs::create_dir_all(&self.output_dir).map_err(|e| {
@@ -454,8 +378,6 @@ impl RunfilesMaker {
             })?;
         }
 
-        let supports_symlinks = system_supports_symlinks(&self.output_dir)?;
-
         for (src, dest) in &self.runfiles {
             let abs_dest = self.output_dir.join(dest);
             if let Some(parent) = abs_dest.parent() {
@@ -469,68 +391,6 @@ impl RunfilesMaker {
                         )
                     })?;
                 }
-            }
-
-            if supports_symlinks {
-                let abs_src = std::env::current_dir().unwrap().join(src);
-
-                symlink(&abs_src, &abs_dest).map_err(|e| {
-                    format!(
-                        "Failed to link `{} -> {}` with {:?}",
-                        abs_src.display(),
-                        abs_dest.display(),
-                        e
-                    )
-                })?;
-            } else {
-                std::fs::copy(src, &abs_dest).map_err(|e| {
-                    format!(
-                        "Failed to copy `{} -> {}` with {:?}",
-                        src.display(),
-                        abs_dest.display(),
-                        e
-                    )
-                })?;
-            }
-        }
-        Ok(())
-    }
-
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
-    ///
-    /// The Unix implementation assumes symlinks are supported and that the runfiles directory
-    /// was created using symlinks.
-    fn drain_runfiles_dir_unix(&self) -> Result<(), String> {
-        for (src, dest) in &self.runfiles {
-            let abs_dest = self.output_dir.join(dest);
-
-            remove_symlink(&abs_dest).map_err(|e| {
-                format!(
-                    "Failed to delete symlink '{}' with {:?}",
-                    abs_dest.display(),
-                    e
-                )
-            })?;
-
-            if !self
-                .filename_suffixes_to_retain
-                .iter()
-                .any(|suffix| dest.ends_with(suffix))
-            {
-                if let Some(parent) = abs_dest.parent() {
-                    if is_dir_empty(parent).map_err(|e| {
-                        format!("Failed to determine if directory was empty with: {:?}", e)
-                    })? {
-                        std::fs::remove_dir(parent).map_err(|e| {
-                            format!(
-                                "Failed to delete directory {} with {:?}",
-                                parent.display(),
-                                e
-                            )
-                        })?;
-                    }
-                }
-                continue;
             }
 
             std::fs::copy(src, &abs_dest).map_err(|e| {
@@ -546,10 +406,7 @@ impl RunfilesMaker {
     }
 
     /// Delete runfiles from the runfiles directory that do not match user defined suffixes
-    ///
-    /// The Windows implementation assumes symlinks are not supported and real files will have
-    /// been copied into the runfiles directoriy.
-    fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
+    fn drain_runfiles_dir(&self) -> Result<(), String> {
         for dest in self.runfiles.values() {
             if !self
                 .filename_suffixes_to_retain
@@ -565,21 +422,6 @@ impl RunfilesMaker {
             })?;
         }
         Ok(())
-    }
-
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
-    fn drain_runfiles_dir(&self) -> Result<(), String> {
-        if cfg!(target_family = "windows") {
-            // If symlinks are supported then symlinks will have been used.
-            let supports_symlinks = system_supports_symlinks(&self.output_dir)?;
-            if supports_symlinks {
-                self.drain_runfiles_dir_unix()
-            } else {
-                self.drain_runfiles_dir_windows()
-            }
-        } else {
-            self.drain_runfiles_dir_unix()
-        }
     }
 }
 
