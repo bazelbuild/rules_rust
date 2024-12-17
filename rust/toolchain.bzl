@@ -1,4 +1,7 @@
-"""The rust_toolchain rule definition and implementation."""
+"""# Rust Toolchains
+
+Toolchain rules for Rust.
+"""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/platform:triple.bzl", "triple")

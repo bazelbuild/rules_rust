@@ -116,6 +116,8 @@ configuration.
 ## rust_grpc_library
 
 <pre>
+load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
+
 rust_grpc_library(<a href="#rust_grpc_library-name">name</a>, <a href="#rust_grpc_library-deps">deps</a>, <a href="#rust_grpc_library-crate_name">crate_name</a>, <a href="#rust_grpc_library-rust_deps">rust_deps</a>, <a href="#rust_grpc_library-rustc_flags">rustc_flags</a>)
 </pre>
 
@@ -160,6 +162,8 @@ rust_binary(
 ## rust_proto_library
 
 <pre>
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
+
 rust_proto_library(<a href="#rust_proto_library-name">name</a>, <a href="#rust_proto_library-deps">deps</a>, <a href="#rust_proto_library-crate_name">crate_name</a>, <a href="#rust_proto_library-rust_deps">rust_deps</a>, <a href="#rust_proto_library-rustc_flags">rustc_flags</a>)
 </pre>
 

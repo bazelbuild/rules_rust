@@ -147,6 +147,8 @@ register_toolchains("//toolchains:prost_toolchain")
 ## rust_prost_library
 
 <pre>
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
+
 rust_prost_library(<a href="#rust_prost_library-name">name</a>, <a href="#rust_prost_library-proto">proto</a>)
 </pre>
 
@@ -166,6 +168,8 @@ A rule for generating a Rust library using Prost.
 ## rust_prost_toolchain
 
 <pre>
+load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
+
 rust_prost_toolchain(<a href="#rust_prost_toolchain-name">name</a>, <a href="#rust_prost_toolchain-include_transitive_deps">include_transitive_deps</a>, <a href="#rust_prost_toolchain-prost_opts">prost_opts</a>, <a href="#rust_prost_toolchain-prost_plugin">prost_plugin</a>, <a href="#rust_prost_toolchain-prost_plugin_flag">prost_plugin_flag</a>,
                      <a href="#rust_prost_toolchain-prost_runtime">prost_runtime</a>, <a href="#rust_prost_toolchain-prost_types">prost_types</a>, <a href="#rust_prost_toolchain-proto_compiler">proto_compiler</a>, <a href="#rust_prost_toolchain-tonic_opts">tonic_opts</a>, <a href="#rust_prost_toolchain-tonic_plugin">tonic_plugin</a>,
                      <a href="#rust_prost_toolchain-tonic_plugin_flag">tonic_plugin_flag</a>, <a href="#rust_prost_toolchain-tonic_runtime">tonic_runtime</a>)
@@ -197,6 +201,8 @@ Rust Prost toolchain rule.
 ## rust_prost_transform
 
 <pre>
+load("@rules_rust_prost//:defs.bzl", "rust_prost_transform")
+
 rust_prost_transform(<a href="#rust_prost_transform-name">name</a>, <a href="#rust_prost_transform-deps">deps</a>, <a href="#rust_prost_transform-srcs">srcs</a>, <a href="#rust_prost_transform-prost_opts">prost_opts</a>, <a href="#rust_prost_transform-tonic_opts">tonic_opts</a>)
 </pre>
 

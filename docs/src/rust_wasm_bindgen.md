@@ -47,6 +47,8 @@ for the `rules_js` submodule).
 ## rust_wasm_bindgen
 
 <pre>
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen")
+
 rust_wasm_bindgen(<a href="#rust_wasm_bindgen-name">name</a>, <a href="#rust_wasm_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_wasm_bindgen-out_name">out_name</a>, <a href="#rust_wasm_bindgen-target">target</a>, <a href="#rust_wasm_bindgen-target_arch">target_arch</a>, <a href="#rust_wasm_bindgen-wasm_file">wasm_file</a>)
 </pre>
 
@@ -74,6 +76,8 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 ## rust_wasm_bindgen_toolchain
 
 <pre>
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen_toolchain")
+
 rust_wasm_bindgen_toolchain(<a href="#rust_wasm_bindgen_toolchain-name">name</a>, <a href="#rust_wasm_bindgen_toolchain-bindgen">bindgen</a>)
 </pre>
 
@@ -121,13 +125,14 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 ## RustWasmBindgenInfo
 
 <pre>
+load("@rules_rust_wasm_bindgen//:defs.bzl", "RustWasmBindgenInfo")
+
 RustWasmBindgenInfo(<a href="#RustWasmBindgenInfo-js">js</a>, <a href="#RustWasmBindgenInfo-root">root</a>, <a href="#RustWasmBindgenInfo-snippets">snippets</a>, <a href="#RustWasmBindgenInfo-ts">ts</a>, <a href="#RustWasmBindgenInfo-wasm">wasm</a>)
 </pre>
 
 Info about wasm-bindgen outputs.
 
 **FIELDS**
-
 
 | Name  | Description |
 | :------------- | :------------- |

@@ -1,4 +1,7 @@
-"""Common definitions for the `@rules_rust//cargo` package"""
+"""# Cargo
+
+Common definitions for the `@rules_rust//cargo` package
+"""
 
 load(
     "//cargo/private:cargo_bootstrap.bzl",

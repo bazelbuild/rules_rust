@@ -47,11 +47,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "stardoc",
-    version = "0.6.2",
+    version = "0.7.2",
 )
 bazel_dep(
     name = "protobuf",
-    version = "27.0",
+    version = "29.0",
     repo_name = "com_google_protobuf",
 )
 bazel_dep(

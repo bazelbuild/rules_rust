@@ -40,6 +40,8 @@ rules_mdbook_transitive_deps()
 ## mdbook
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook")
+
 mdbook(<a href="#mdbook-name">name</a>, <a href="#mdbook-srcs">srcs</a>, <a href="#mdbook-book">book</a>, <a href="#mdbook-plugins">plugins</a>)
 </pre>
 
@@ -61,6 +63,8 @@ Rules to create book from markdown files using `mdBook`.
 ## mdbook_server
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook_server")
+
 mdbook_server(<a href="#mdbook_server-name">name</a>, <a href="#mdbook_server-book">book</a>, <a href="#mdbook_server-hostname">hostname</a>, <a href="#mdbook_server-port">port</a>)
 </pre>
 
@@ -82,6 +86,8 @@ Spawn an mdbook server for a given `mdbook` target.
 ## mdbook_toolchain
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook_toolchain")
+
 mdbook_toolchain(<a href="#mdbook_toolchain-name">name</a>, <a href="#mdbook_toolchain-mdbook">mdbook</a>, <a href="#mdbook_toolchain-plugins">plugins</a>)
 </pre>
 

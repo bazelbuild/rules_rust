@@ -1,14 +1,21 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Doc
 
-* [rust_doc](#rust_doc)
-* [rust_doc_test](#rust_doc_test)
+Public entry point to all Rust rules and supported APIs.
+
+
+## Rules
+
+- [rust_doc](#rust_doc)
+- [rust_doc_test](#rust_doc_test)
+
 
 <a id="rust_doc"></a>
 
 ## rust_doc
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_doc")
+
 rust_doc(<a href="#rust_doc-name">name</a>, <a href="#rust_doc-crate">crate</a>, <a href="#rust_doc-html_after_content">html_after_content</a>, <a href="#rust_doc-html_before_content">html_before_content</a>, <a href="#rust_doc-html_in_header">html_in_header</a>, <a href="#rust_doc-markdown_css">markdown_css</a>,
          <a href="#rust_doc-rustc_flags">rustc_flags</a>, <a href="#rust_doc-rustdoc_flags">rustdoc_flags</a>)
 </pre>
@@ -69,6 +76,8 @@ Running `bazel build //hello_lib:hello_lib_doc` will build a zip file containing
 ## rust_doc_test
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_doc_test")
+
 rust_doc_test(<a href="#rust_doc_test-name">name</a>, <a href="#rust_doc_test-deps">deps</a>, <a href="#rust_doc_test-crate">crate</a>, <a href="#rust_doc_test-proc_macro_deps">proc_macro_deps</a>)
 </pre>
 

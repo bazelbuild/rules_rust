@@ -1,9 +1,3 @@
-<!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Clippy
-
-* [rust_clippy](#rust_clippy)
-* [rust_clippy_aspect](#rust_clippy_aspect)
-
 
 ## Overview
 
@@ -37,11 +31,23 @@ the upstream implementation of clippy, this file must be named either `.clippy.t
 build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
 ```
 
+
+## Rules
+
+- [rust_clippy](#rust_clippy)
+
+## Aspects
+
+- [rust_clippy_aspect](#rust_clippy_aspect)
+
+
 <a id="rust_clippy"></a>
 
 ## rust_clippy
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_clippy")
+
 rust_clippy(<a href="#rust_clippy-name">name</a>, <a href="#rust_clippy-deps">deps</a>)
 </pre>
 
@@ -95,6 +101,8 @@ rust_clippy(
 ## rust_clippy_aspect
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_clippy_aspect")
+
 rust_clippy_aspect(<a href="#rust_clippy_aspect-name">name</a>)
 </pre>
 
