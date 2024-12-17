@@ -101,10 +101,10 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
     if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx):
         args.append("lto={}".format(mode))
 
-    if format in ["unspecified", "object_and_bitcode"]:
+    if mode == "unspecified" or format == "object_and_bitcode":
         # Embedding LLVM bitcode in object files is `rustc's` default.
         args.extend([])
-    elif format in ["off", "only_object"]:
+    elif mode == "off" or format == "only_object":
         args.extend(["embed-bitcode=no"])
     elif format == "only_bitcode":
         args.extend(["linker-plugin-lto"])
