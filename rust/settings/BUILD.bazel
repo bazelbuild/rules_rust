@@ -5,6 +5,7 @@ load(
     "clippy_flag",
     "clippy_flags",
     "clippy_toml",
+    "codegen_units",
     "error_format",
     "experimental_link_std_dylib",
     "experimental_per_crate_rustc_flag",
@@ -54,6 +55,8 @@ clippy_flag()
 clippy_flags()
 
 clippy_toml()
+
+codegen_units()
 
 error_format()
 
