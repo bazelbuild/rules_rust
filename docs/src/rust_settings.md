@@ -58,6 +58,23 @@ Note that this setting is actually called `clippy.toml`.
 
 
 
+<a id="codegen_units"></a>
+
+## codegen_units
+
+<pre>
+--@rules_rust//rust/settings:codegen_units
+</pre>
+
+The default value for `--codegen-units` which also affects resource allocation for rustc actions.
+
+Note that any value 0 or less will prevent this flag from being passed by Bazel and allow rustc to
+perform it's default behavior.
+
+https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+
+
+
 <a id="error_format"></a>
 
 ## error_format
