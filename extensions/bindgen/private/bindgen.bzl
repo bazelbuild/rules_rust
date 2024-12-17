@@ -394,9 +394,6 @@ rust_bindgen = rule(
             doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
             default = False,
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_process_wrapper": attr.label(
             default = Label("@rules_rust//util/process_wrapper"),
             executable = True,

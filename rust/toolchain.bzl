@@ -874,6 +874,7 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
         ),
+        # TODO: #3115 - Remove this attribute.
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),

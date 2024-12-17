@@ -654,9 +654,6 @@ cargo_build_script = rule(
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
             default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_debug_std_streams_output_group": attr.label(
             default = Label("//cargo/settings:debug_std_streams_output_group"),
         ),

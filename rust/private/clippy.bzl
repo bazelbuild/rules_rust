@@ -219,13 +219,6 @@ rust_clippy_aspect = aspect(
             doc = "Value of the `capture_clippy_output` build setting",
             default = Label("//rust/settings:capture_clippy_output"),
         ),
-        "_cc_toolchain": attr.label(
-            doc = (
-                "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
-                "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_clippy_flag": attr.label(
             doc = "Arguments to pass to clippy." +
                   "Multiple uses are accumulated and appended after the extra_rustc_flags.",
