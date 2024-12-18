@@ -46,6 +46,14 @@ _lto_level_default_test = analysistest.make(
     config_settings = {},
 )
 
+def _lto_level_manual(ctx):
+    return _lto_test_impl(ctx, None, None, False)
+
+_lto_level_manual_test = analysistest.make(
+    _lto_level_manual,
+    config_settings = {str(Label("//rust/settings:lto")): "manual"},
+)
+
 def _lto_level_off(ctx):
     return _lto_test_impl(ctx, "off", "no", False)
 
@@ -97,6 +105,11 @@ def lto_test_suite(name):
         target_under_test = ":lib",
     )
 
+    _lto_level_manual_test(
+        name = "lto_level_manual_test",
+        target_under_test = ":lib",
+    )
+
     _lto_level_off_test(
         name = "lto_level_off_test",
         target_under_test = ":lib",
@@ -116,6 +129,7 @@ def lto_test_suite(name):
         name = name,
         tests = [
             ":lto_level_default_test",
+            ":lto_level_manual_test",
             ":lto_level_off_test",
             ":lto_level_thin_test",
             ":lto_level_fat_test",

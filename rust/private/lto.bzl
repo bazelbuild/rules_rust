@@ -3,6 +3,8 @@
 load("//rust/private:utils.bzl", "is_exec_configuration")
 
 _LTO_MODES = [
+    # Do nothing, let the user manually handle LTO.
+    "manual",
     # Default. No mode has been explicitly set, rustc will do "thin local" LTO
     # between the codegen units of a single crate.
     "unspecified",
@@ -94,8 +96,12 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
         list: A list of strings that are valid flags for 'rustc'.
     """
     mode = toolchain._lto.mode
-    format = _determine_lto_object_format(ctx, toolchain, crate_info)
 
+    # The user is handling LTO on their own, don't add any arguments.
+    if mode == "manual":
+        return []
+
+    format = _determine_lto_object_format(ctx, toolchain, crate_info)
     args = []
 
     if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx):
