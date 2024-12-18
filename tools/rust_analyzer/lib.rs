@@ -10,6 +10,7 @@ mod rust_project;
 
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
+    output_base: impl AsRef<Path>,
     workspace: impl AsRef<Path>,
     rules_rust: impl AsRef<str>,
     targets: &[String],
@@ -21,6 +22,7 @@ pub fn generate_crate_info(
         .env_remove("BAZELISK_SKIP_WRAPPER")
         .env_remove("BUILD_WORKING_DIRECTORY")
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
+        .arg(format!("--output_base={}", output_base.as_ref().display()))
         .arg("build")
         .arg("--norun_validations")
         .arg(format!(
