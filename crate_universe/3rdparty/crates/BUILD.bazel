@@ -86,6 +86,12 @@ alias(
 )
 
 alias(
+    name = "glob",
+    actual = "@cui__glob-0.3.1//:glob",
+    tags = ["manual"],
+)
+
+alias(
     name = "hex",
     actual = "@cui__hex-0.4.3//:hex",
     tags = ["manual"],
