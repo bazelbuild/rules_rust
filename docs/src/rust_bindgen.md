@@ -46,6 +46,8 @@ toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen
 ## rust_bindgen
 
 <pre>
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen")
+
 rust_bindgen(<a href="#rust_bindgen-name">name</a>, <a href="#rust_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen-cc_lib">cc_lib</a>, <a href="#rust_bindgen-clang_flags">clang_flags</a>, <a href="#rust_bindgen-header">header</a>, <a href="#rust_bindgen-merge_cc_lib_objects_into_rlib">merge_cc_lib_objects_into_rlib</a>,
              <a href="#rust_bindgen-wrap_static_fns">wrap_static_fns</a>)
 </pre>
@@ -71,6 +73,8 @@ Generates a rust source file from a cc_library and a header.
 ## rust_bindgen_toolchain
 
 <pre>
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
+
 rust_bindgen_toolchain(<a href="#rust_bindgen_toolchain-name">name</a>, <a href="#rust_bindgen_toolchain-bindgen">bindgen</a>, <a href="#rust_bindgen_toolchain-clang">clang</a>, <a href="#rust_bindgen_toolchain-default_rustfmt">default_rustfmt</a>, <a href="#rust_bindgen_toolchain-libclang">libclang</a>, <a href="#rust_bindgen_toolchain-libstdcxx">libstdcxx</a>)
 </pre>
 
@@ -119,6 +123,8 @@ For additional information, see the [Bazel toolchains documentation](https://doc
 ## rust_bindgen_library
 
 <pre>
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
+
 rust_bindgen_library(<a href="#rust_bindgen_library-name">name</a>, <a href="#rust_bindgen_library-header">header</a>, <a href="#rust_bindgen_library-cc_lib">cc_lib</a>, <a href="#rust_bindgen_library-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen_library-bindgen_features">bindgen_features</a>, <a href="#rust_bindgen_library-clang_flags">clang_flags</a>,
                      <a href="#rust_bindgen_library-wrap_static_fns">wrap_static_fns</a>, <a href="#rust_bindgen_library-kwargs">kwargs</a>)
 </pre>

@@ -529,14 +529,6 @@ def _stamp_attribute(default_value):
 
 # Internal attributes core to Rustc actions.
 RUSTC_ATTRS = {
-    "_cc_toolchain": attr.label(
-        doc = (
-            "In order to use find_cc_toolchain, your rule has to depend " +
-            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
-            "docs for details."
-        ),
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-    ),
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
     ),

@@ -1,16 +1,31 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+
 # Cargo
 
-* [cargo_bootstrap_repository](#cargo_bootstrap_repository)
-* [cargo_build_script](#cargo_build_script)
-* [cargo_dep_env](#cargo_dep_env)
-* [cargo_env](#cargo_env)
+Common definitions for the `@rules_rust//cargo` package
+
+
+## Rules
+
+- [cargo_dep_env](#cargo_dep_env)
+
+## Functions
+
+- [cargo_build_script](#cargo_build_script)
+- [cargo_env](#cargo_env)
+
+## Repository Rules
+
+- [cargo_bootstrap_repository](#cargo_bootstrap_repository)
+
 
 <a id="cargo_dep_env"></a>
 
 ## cargo_dep_env
 
 <pre>
+load("@rules_rust//cargo:defs.bzl", "cargo_dep_env")
+
 cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-src">src</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>)
 </pre>
 
@@ -31,6 +46,8 @@ A rule for generating variables for dependent `cargo_build_script`s without a bu
 ## cargo_build_script
 
 <pre>
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+
 cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
                    <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-use_default_shell_env">use_default_shell_env</a>, <a href="#cargo_build_script-data">data</a>,
                    <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>,
@@ -132,6 +149,8 @@ The `hello_lib` target will be build with the flags and the environment variable
 ## cargo_env
 
 <pre>
+load("@rules_rust//cargo:defs.bzl", "cargo_env")
+
 cargo_env(<a href="#cargo_env-env">env</a>)
 </pre>
 
@@ -179,6 +198,8 @@ str: A json encoded string of the environment variables
 ## cargo_bootstrap_repository
 
 <pre>
+load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository")
+
 cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_config">cargo_config</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>,
                            <a href="#cargo_bootstrap_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>,
                            <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>,

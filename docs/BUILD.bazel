@@ -2,7 +2,6 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_rust_mdbook//:defs.bzl", "mdbook", "mdbook_server")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@stardoc//stardoc:stardoc.bzl", "stardoc")
-load("//:page.bzl", "gen_header", "page")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -33,127 +32,131 @@ bzl_library(
     ],
 )
 
-PAGES = dict([
-    page(
-        name = "cargo",
-        symbols = [
-            "cargo_bootstrap_repository",
-            "cargo_build_script",
-            "cargo_dep_env",
-            "cargo_env",
-        ],
-    ),
-    page(
-        name = "rust",
-        symbols = [
-            "rust_binary",
-            "rust_library",
-            "rust_library_group",
-            "rust_static_library",
-            "rust_shared_library",
-            "rust_proc_macro",
-            "rust_test",
-            "rust_test_suite",
-            "error_format",
-            "extra_rustc_flag",
-            "extra_rustc_flags",
-            "capture_clippy_output",
-        ],
-    ),
-    page(
-        name = "providers",
-        symbols = [
-            "CrateInfo",
-            "DepInfo",
-            "StdLibInfo",
-        ],
-    ),
-    page(
-        name = "rust_analyzer",
-        header_template = ":rust_analyzer.vm",
-        symbols = [
-            "rust_analyzer_aspect",
-            "rust_analyzer_toolchain",
-        ],
-    ),
-    page(
-        name = "rust_clippy",
-        header_template = ":rust_clippy.vm",
-        symbols = [
-            "rust_clippy",
-            "rust_clippy_aspect",
-        ],
-    ),
-    page(
-        name = "rust_doc",
-        symbols = [
-            "rust_doc",
-            "rust_doc_test",
-        ],
-    ),
-    page(
-        name = "rust_fmt",
-        header_template = ":rust_fmt.vm",
-        symbols = [
-            "rustfmt_aspect",
-            "rustfmt_test",
-            "rustfmt_toolchain",
-        ],
-    ),
-    page(
-        name = "rust_repositories",
-        symbols = [
-            "rules_rust_dependencies",
-            "rust_analyzer_toolchain_repository",
-            "rust_register_toolchains",
-            "rust_repositories",
-            "rust_repository_set",
-            "rust_stdlib_filegroup",
-            "rust_toolchain_repository_proxy",
-            "rust_toolchain_repository",
-            "rust_toolchain_tools_repository",
-            "rust_toolchain",
-        ],
-    ),
-    page(
-        name = "settings",
-        symbols = [
-            "incompatible_flag",
-            "fail_when_enabled",
-        ],
-    ),
-])
-
-# Generate headers for each page
-[gen_header(page = p) for p in PAGES.values()]
-
-[
-    stardoc(
-        name = "%s_md" % k,
-        out = "%s.md" % k,
-        header_template = ":%s_gen_header_vm" % k,
-        input = ":symbols.bzl",
-        symbol_names = PAGES[k].symbols,
-        deps = [":all_docs"],
-    )
-    for k in PAGES.keys()
-]
-
-genrule(
-    name = "flatten_header_vm",
-    outs = ["flatten_header.vm"],
-    cmd = ">$@ echo '# Rust rules\n\n%s\n'" % "\n".join(
-        sorted(["* [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k].symbols]),
-    ),
-    output_to_bindir = True,
+stardoc(
+    name = "cargo",
+    out = "cargo.md",
+    input = "@rules_rust//cargo:defs.bzl",
+    symbol_names = [
+        "cargo_bootstrap_repository",
+        "cargo_build_script",
+        "cargo_dep_env",
+        "cargo_env",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
 )
 
 stardoc(
-    name = "flatten_md",
-    out = "flatten.md",
-    header_template = ":flatten_header_vm",
-    input = ":symbols.bzl",
-    symbol_names = sorted([symbol for k in PAGES.keys() for symbol in PAGES[k].symbols]),
+    name = "rust",
+    out = "rust.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_binary",
+        "rust_library",
+        "rust_library_group",
+        "rust_static_library",
+        "rust_shared_library",
+        "rust_proc_macro",
+        "rust_test",
+        "rust_test_suite",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "providers",
+    out = "providers.md",
+    input = "@rules_rust//rust/private:providers.bzl",
+    symbol_names = [
+        "CrateInfo",
+        "DepInfo",
+        "StdLibInfo",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_analyzer",
+    out = "rust_analyzer.md",
+    header_template = ":rust_analyzer.vm",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_analyzer_aspect",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_clippy",
+    out = "rust_clippy.md",
+    header_template = ":rust_clippy.vm",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_clippy",
+        "rust_clippy_aspect",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_doc",
+    out = "rust_doc.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_doc",
+        "rust_doc_test",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_fmt",
+    out = "rust_fmt.md",
+    header_template = ":rust_fmt.vm",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rustfmt_aspect",
+        "rustfmt_test",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_repositories",
+    out = "rust_repositories.md",
+    input = "@rules_rust//rust:repositories.bzl",
+    symbol_names = [
+        "rules_rust_dependencies",
+        "rust_analyzer_toolchain_repository",
+        "rust_register_toolchains",
+        "rust_repositories",
+        "rust_repository_set",
+        "rust_stdlib_filegroup",
+        "rust_toolchain_repository_proxy",
+        "rust_toolchain_repository",
+        "rust_toolchain_tools_repository",
+        "rust_toolchain",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_toolchains",
+    out = "rust_toolchains.md",
+    input = "@rules_rust//rust:toolchain.bzl",
+    symbol_names = [
+        "rust_toolchain",
+        "rustfmt_toolchain",
+        "rust_analyzer_toolchain",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
 )
 
@@ -227,6 +230,22 @@ stardoc(
     out = "rust_wasm_bindgen_rules_js.md",
     input = "@rules_rust_wasm_bindgen//rules_js:defs.bzl",
     deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_settings",
+    out = "rust_settings.md",
+    func_template = "rust_settings_func.vm",
+    input = "@rules_rust//rust/settings:settings.bzl",
+    deps = ["@rules_rust//rust:bzl_lib"],
+)
+
+stardoc(
+    name = "cargo_settings",
+    out = "cargo_settings.md",
+    func_template = "cargo_settings_func.vm",
+    input = "@rules_rust//cargo/settings:settings.bzl",
+    deps = ["@rules_rust//cargo:bzl_lib"],
 )
 
 mdbook(

@@ -7,6 +7,8 @@ Rust WASM-bindgen rules for interfacing with aspect-build/rules_js
 ## js_rust_wasm_bindgen
 
 <pre>
+load("@rules_rust_wasm_bindgen//rules_js:defs.bzl", "js_rust_wasm_bindgen")
+
 js_rust_wasm_bindgen(<a href="#js_rust_wasm_bindgen-name">name</a>, <a href="#js_rust_wasm_bindgen-bindgen_flags">bindgen_flags</a>, <a href="#js_rust_wasm_bindgen-out_name">out_name</a>, <a href="#js_rust_wasm_bindgen-target">target</a>, <a href="#js_rust_wasm_bindgen-target_arch">target_arch</a>, <a href="#js_rust_wasm_bindgen-wasm_file">wasm_file</a>)
 </pre>
 

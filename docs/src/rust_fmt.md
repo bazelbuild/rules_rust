@@ -1,10 +1,3 @@
-<!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Fmt
-
-* [rustfmt_aspect](#rustfmt_aspect)
-* [rustfmt_test](#rustfmt_test)
-* [rustfmt_toolchain](#rustfmt_toolchain)
-
 
 ## Overview
 
@@ -59,11 +52,23 @@ without failing.
 [rfcp]: https://github.com/rust-lang-nursery/fmt-rfcs
 [rgp]: https://rust-lang.github.io/rustfmt/
 
+
+## Rules
+
+- [rustfmt_test](#rustfmt_test)
+
+## Aspects
+
+- [rustfmt_aspect](#rustfmt_aspect)
+
+
 <a id="rustfmt_test"></a>
 
 ## rustfmt_test
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rustfmt_test")
+
 rustfmt_test(<a href="#rustfmt_test-name">name</a>, <a href="#rustfmt_test-targets">targets</a>)
 </pre>
 
@@ -78,32 +83,13 @@ A test rule for performing `rustfmt --check` on a set of targets
 | <a id="rustfmt_test-targets"></a>targets |  Rust targets to run `rustfmt --check` on.   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
 
 
-<a id="rustfmt_toolchain"></a>
-
-## rustfmt_toolchain
-
-<pre>
-rustfmt_toolchain(<a href="#rustfmt_toolchain-name">name</a>, <a href="#rustfmt_toolchain-rustc">rustc</a>, <a href="#rustfmt_toolchain-rustc_lib">rustc_lib</a>, <a href="#rustfmt_toolchain-rustfmt">rustfmt</a>)
-</pre>
-
-A toolchain for [rustfmt](https://rust-lang.github.io/rustfmt/)
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rustfmt_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-| <a id="rustfmt_toolchain-rustc"></a>rustc |  The location of the `rustc` binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
-| <a id="rustfmt_toolchain-rustc_lib"></a>rustc_lib |  The libraries used by rustc during compilation.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
-| <a id="rustfmt_toolchain-rustfmt"></a>rustfmt |  The location of the `rustfmt` binary. Can be a direct source or a filegroup containing one item.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-
-
 <a id="rustfmt_aspect"></a>
 
 ## rustfmt_aspect
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rustfmt_aspect")
+
 rustfmt_aspect(<a href="#rustfmt_aspect-name">name</a>)
 </pre>
 

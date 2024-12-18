@@ -12,16 +12,15 @@ Bazel rules for [mdBook](https://github.com/rust-lang/mdBook).
 
 ## Setup
 
+### bzlmod
+
 ```python
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
+```
 
-# See releases for urls and checksums
-http_archive(
-    name = "rules_mdbook",
-    integrity = "{integrity}",
-    urls = ["https://github.com/abrisco/rules_mdbook/releases/download/{version}/rules_mdbook-{version}.tar.gz"],
-)
+### WORKSPACE
 
+```python
 load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()
@@ -41,6 +40,8 @@ rules_mdbook_transitive_deps()
 ## mdbook
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook")
+
 mdbook(<a href="#mdbook-name">name</a>, <a href="#mdbook-srcs">srcs</a>, <a href="#mdbook-book">book</a>, <a href="#mdbook-plugins">plugins</a>)
 </pre>
 
@@ -62,6 +63,8 @@ Rules to create book from markdown files using `mdBook`.
 ## mdbook_server
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook_server")
+
 mdbook_server(<a href="#mdbook_server-name">name</a>, <a href="#mdbook_server-book">book</a>, <a href="#mdbook_server-hostname">hostname</a>, <a href="#mdbook_server-port">port</a>)
 </pre>
 
@@ -83,6 +86,8 @@ Spawn an mdbook server for a given `mdbook` target.
 ## mdbook_toolchain
 
 <pre>
+load("@rules_rust_mdbook//:defs.bzl", "mdbook_toolchain")
+
 mdbook_toolchain(<a href="#mdbook_toolchain-name">name</a>, <a href="#mdbook_toolchain-mdbook">mdbook</a>, <a href="#mdbook_toolchain-plugins">plugins</a>)
 </pre>
 

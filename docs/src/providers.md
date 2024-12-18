@@ -1,15 +1,22 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Providers
 
-* [CrateInfo](#CrateInfo)
-* [DepInfo](#DepInfo)
-* [StdLibInfo](#StdLibInfo)
+Module containing definitions of all Rust providers.
+
+
+## Providers
+
+- [CrateInfo](#CrateInfo)
+- [DepInfo](#DepInfo)
+- [StdLibInfo](#StdLibInfo)
+
 
 <a id="CrateInfo"></a>
 
 ## CrateInfo
 
 <pre>
+load("@rules_rust//rust/private:providers.bzl", "CrateInfo")
+
 CrateInfo(<a href="#CrateInfo-aliases">aliases</a>, <a href="#CrateInfo-compile_data">compile_data</a>, <a href="#CrateInfo-compile_data_targets">compile_data_targets</a>, <a href="#CrateInfo-data">data</a>, <a href="#CrateInfo-deps">deps</a>, <a href="#CrateInfo-edition">edition</a>, <a href="#CrateInfo-is_test">is_test</a>, <a href="#CrateInfo-metadata">metadata</a>, <a href="#CrateInfo-name">name</a>,
           <a href="#CrateInfo-output">output</a>, <a href="#CrateInfo-owner">owner</a>, <a href="#CrateInfo-proc_macro_deps">proc_macro_deps</a>, <a href="#CrateInfo-root">root</a>, <a href="#CrateInfo-rustc_env">rustc_env</a>, <a href="#CrateInfo-rustc_env_files">rustc_env_files</a>, <a href="#CrateInfo-rustc_output">rustc_output</a>,
           <a href="#CrateInfo-rustc_rmeta_output">rustc_rmeta_output</a>, <a href="#CrateInfo-srcs">srcs</a>, <a href="#CrateInfo-std_dylib">std_dylib</a>, <a href="#CrateInfo-type">type</a>, <a href="#CrateInfo-wrapped_crate_type">wrapped_crate_type</a>)
@@ -18,7 +25,6 @@ CrateInfo(<a href="#CrateInfo-aliases">aliases</a>, <a href="#CrateInfo-compile_
 A provider containing general Crate information.
 
 **FIELDS**
-
 
 | Name  | Description |
 | :------------- | :------------- |
@@ -50,6 +56,8 @@ A provider containing general Crate information.
 ## DepInfo
 
 <pre>
+load("@rules_rust//rust/private:providers.bzl", "DepInfo")
+
 DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates">direct_crates</a>, <a href="#DepInfo-link_search_path_files">link_search_path_files</a>, <a href="#DepInfo-transitive_build_infos">transitive_build_infos</a>,
         <a href="#DepInfo-transitive_crate_outputs">transitive_crate_outputs</a>, <a href="#DepInfo-transitive_crates">transitive_crates</a>, <a href="#DepInfo-transitive_data">transitive_data</a>, <a href="#DepInfo-transitive_metadata_outputs">transitive_metadata_outputs</a>,
         <a href="#DepInfo-transitive_noncrates">transitive_noncrates</a>, <a href="#DepInfo-transitive_proc_macro_data">transitive_proc_macro_data</a>)
@@ -58,7 +66,6 @@ DepInfo(<a href="#DepInfo-dep_env">dep_env</a>, <a href="#DepInfo-direct_crates"
 A provider containing information about a Crate's dependencies.
 
 **FIELDS**
-
 
 | Name  | Description |
 | :------------- | :------------- |
@@ -79,6 +86,8 @@ A provider containing information about a Crate's dependencies.
 ## StdLibInfo
 
 <pre>
+load("@rules_rust//rust/private:providers.bzl", "StdLibInfo")
+
 StdLibInfo(<a href="#StdLibInfo-alloc_files">alloc_files</a>, <a href="#StdLibInfo-between_alloc_and_core_files">between_alloc_and_core_files</a>, <a href="#StdLibInfo-between_core_and_std_files">between_core_and_std_files</a>, <a href="#StdLibInfo-core_files">core_files</a>,
            <a href="#StdLibInfo-dot_a_files">dot_a_files</a>, <a href="#StdLibInfo-memchr_files">memchr_files</a>, <a href="#StdLibInfo-panic_files">panic_files</a>, <a href="#StdLibInfo-self_contained_files">self_contained_files</a>, <a href="#StdLibInfo-srcs">srcs</a>, <a href="#StdLibInfo-std_dylib">std_dylib</a>, <a href="#StdLibInfo-std_files">std_files</a>,
            <a href="#StdLibInfo-std_rlibs">std_rlibs</a>, <a href="#StdLibInfo-test_files">test_files</a>)
@@ -87,7 +96,6 @@ StdLibInfo(<a href="#StdLibInfo-alloc_files">alloc_files</a>, <a href="#StdLibIn
 A collection of files either found within the `rust-stdlib` artifact or generated based on existing files.
 
 **FIELDS**
-
 
 | Name  | Description |
 | :------------- | :------------- |

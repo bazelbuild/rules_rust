@@ -1,89 +1,21 @@
 <!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust
 
-* [rust_binary](#rust_binary)
-* [rust_library](#rust_library)
-* [rust_library_group](#rust_library_group)
-* [rust_static_library](#rust_static_library)
-* [rust_shared_library](#rust_shared_library)
-* [rust_proc_macro](#rust_proc_macro)
-* [rust_test](#rust_test)
-* [rust_test_suite](#rust_test_suite)
-* [error_format](#error_format)
-* [extra_rustc_flag](#extra_rustc_flag)
-* [extra_rustc_flags](#extra_rustc_flags)
-* [capture_clippy_output](#capture_clippy_output)
-
-<a id="capture_clippy_output"></a>
-
-## capture_clippy_output
-
-<pre>
-capture_clippy_output(<a href="#capture_clippy_output-name">name</a>)
-</pre>
-
-Control whether to print clippy output or store it to a file, using the configured error_format.
-
-**ATTRIBUTES**
+Public entry point to all Rust rules and supported APIs.
 
 
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="capture_clippy_output-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+## Rules
 
+- [rust_binary](#rust_binary)
+- [rust_library](#rust_library)
+- [rust_library_group](#rust_library_group)
+- [rust_proc_macro](#rust_proc_macro)
+- [rust_shared_library](#rust_shared_library)
+- [rust_static_library](#rust_static_library)
+- [rust_test](#rust_test)
 
-<a id="error_format"></a>
+## Functions
 
-## error_format
-
-<pre>
-error_format(<a href="#error_format-name">name</a>)
-</pre>
-
-Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="error_format-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-
-
-<a id="extra_rustc_flag"></a>
-
-## extra_rustc_flag
-
-<pre>
-extra_rustc_flag(<a href="#extra_rustc_flag-name">name</a>)
-</pre>
-
-Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. Multiple uses are accumulated and appended after the extra_rustc_flags.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="extra_rustc_flag-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-
-
-<a id="extra_rustc_flags"></a>
-
-## extra_rustc_flags
-
-<pre>
-extra_rustc_flags(<a href="#extra_rustc_flags-name">name</a>)
-</pre>
-
-Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. This flag should only be used for flags that need to be applied across the entire build. For options that apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration.
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="extra_rustc_flags-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+- [rust_test_suite](#rust_test_suite)
 
 
 <a id="rust_binary"></a>
@@ -91,6 +23,8 @@ Add additional rustc_flags from the command line with `--@rules_rust//rust/setti
 ## rust_binary
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
 rust_binary(<a href="#rust_binary-name">name</a>, <a href="#rust_binary-deps">deps</a>, <a href="#rust_binary-srcs">srcs</a>, <a href="#rust_binary-data">data</a>, <a href="#rust_binary-aliases">aliases</a>, <a href="#rust_binary-alwayslink">alwayslink</a>, <a href="#rust_binary-binary_name">binary_name</a>, <a href="#rust_binary-compile_data">compile_data</a>, <a href="#rust_binary-crate_features">crate_features</a>,
             <a href="#rust_binary-crate_name">crate_name</a>, <a href="#rust_binary-crate_root">crate_root</a>, <a href="#rust_binary-crate_type">crate_type</a>, <a href="#rust_binary-edition">edition</a>, <a href="#rust_binary-env">env</a>, <a href="#rust_binary-experimental_use_cc_common_link">experimental_use_cc_common_link</a>,
             <a href="#rust_binary-linker_script">linker_script</a>, <a href="#rust_binary-malloc">malloc</a>, <a href="#rust_binary-out_binary">out_binary</a>, <a href="#rust_binary-platform">platform</a>, <a href="#rust_binary-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_binary-rustc_env">rustc_env</a>, <a href="#rust_binary-rustc_env_files">rustc_env_files</a>,
@@ -221,6 +155,8 @@ is available under the key `dsym_folder` in `OutputGroupInfo`.
 ## rust_library
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
 rust_library(<a href="#rust_library-name">name</a>, <a href="#rust_library-deps">deps</a>, <a href="#rust_library-srcs">srcs</a>, <a href="#rust_library-data">data</a>, <a href="#rust_library-aliases">aliases</a>, <a href="#rust_library-alwayslink">alwayslink</a>, <a href="#rust_library-compile_data">compile_data</a>, <a href="#rust_library-crate_features">crate_features</a>, <a href="#rust_library-crate_name">crate_name</a>,
              <a href="#rust_library-crate_root">crate_root</a>, <a href="#rust_library-disable_pipelining">disable_pipelining</a>, <a href="#rust_library-edition">edition</a>, <a href="#rust_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_library-rustc_env">rustc_env</a>, <a href="#rust_library-rustc_env_files">rustc_env_files</a>,
              <a href="#rust_library-rustc_flags">rustc_flags</a>, <a href="#rust_library-stamp">stamp</a>, <a href="#rust_library-version">version</a>)
@@ -319,6 +255,8 @@ INFO: Elapsed time: 1.245s, Critical Path: 1.01s
 ## rust_library_group
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_library_group")
+
 rust_library_group(<a href="#rust_library_group-name">name</a>, <a href="#rust_library_group-deps">deps</a>)
 </pre>
 
@@ -369,6 +307,8 @@ rust_library(
 ## rust_proc_macro
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+
 rust_proc_macro(<a href="#rust_proc_macro-name">name</a>, <a href="#rust_proc_macro-deps">deps</a>, <a href="#rust_proc_macro-srcs">srcs</a>, <a href="#rust_proc_macro-data">data</a>, <a href="#rust_proc_macro-aliases">aliases</a>, <a href="#rust_proc_macro-alwayslink">alwayslink</a>, <a href="#rust_proc_macro-compile_data">compile_data</a>, <a href="#rust_proc_macro-crate_features">crate_features</a>,
                 <a href="#rust_proc_macro-crate_name">crate_name</a>, <a href="#rust_proc_macro-crate_root">crate_root</a>, <a href="#rust_proc_macro-edition">edition</a>, <a href="#rust_proc_macro-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_proc_macro-rustc_env">rustc_env</a>, <a href="#rust_proc_macro-rustc_env_files">rustc_env_files</a>,
                 <a href="#rust_proc_macro-rustc_flags">rustc_flags</a>, <a href="#rust_proc_macro-stamp">stamp</a>, <a href="#rust_proc_macro-version">version</a>)
@@ -405,6 +345,8 @@ Builds a Rust proc-macro crate.
 ## rust_shared_library
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_shared_library")
+
 rust_shared_library(<a href="#rust_shared_library-name">name</a>, <a href="#rust_shared_library-deps">deps</a>, <a href="#rust_shared_library-srcs">srcs</a>, <a href="#rust_shared_library-data">data</a>, <a href="#rust_shared_library-aliases">aliases</a>, <a href="#rust_shared_library-alwayslink">alwayslink</a>, <a href="#rust_shared_library-compile_data">compile_data</a>, <a href="#rust_shared_library-crate_features">crate_features</a>,
                     <a href="#rust_shared_library-crate_name">crate_name</a>, <a href="#rust_shared_library-crate_root">crate_root</a>, <a href="#rust_shared_library-edition">edition</a>, <a href="#rust_shared_library-experimental_use_cc_common_link">experimental_use_cc_common_link</a>, <a href="#rust_shared_library-malloc">malloc</a>,
                     <a href="#rust_shared_library-platform">platform</a>, <a href="#rust_shared_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_shared_library-rustc_env">rustc_env</a>, <a href="#rust_shared_library-rustc_env_files">rustc_env_files</a>, <a href="#rust_shared_library-rustc_flags">rustc_flags</a>, <a href="#rust_shared_library-stamp">stamp</a>,
@@ -453,6 +395,8 @@ When building the whole binary in Bazel, use `rust_library` instead.
 ## rust_static_library
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+
 rust_static_library(<a href="#rust_static_library-name">name</a>, <a href="#rust_static_library-deps">deps</a>, <a href="#rust_static_library-srcs">srcs</a>, <a href="#rust_static_library-data">data</a>, <a href="#rust_static_library-aliases">aliases</a>, <a href="#rust_static_library-alwayslink">alwayslink</a>, <a href="#rust_static_library-compile_data">compile_data</a>, <a href="#rust_static_library-crate_features">crate_features</a>,
                     <a href="#rust_static_library-crate_name">crate_name</a>, <a href="#rust_static_library-crate_root">crate_root</a>, <a href="#rust_static_library-edition">edition</a>, <a href="#rust_static_library-platform">platform</a>, <a href="#rust_static_library-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_static_library-rustc_env">rustc_env</a>,
                     <a href="#rust_static_library-rustc_env_files">rustc_env_files</a>, <a href="#rust_static_library-rustc_flags">rustc_flags</a>, <a href="#rust_static_library-stamp">stamp</a>, <a href="#rust_static_library-version">version</a>)
@@ -498,6 +442,8 @@ When building the whole binary in Bazel, use `rust_library` instead.
 ## rust_test
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
 rust_test(<a href="#rust_test-name">name</a>, <a href="#rust_test-deps">deps</a>, <a href="#rust_test-srcs">srcs</a>, <a href="#rust_test-data">data</a>, <a href="#rust_test-aliases">aliases</a>, <a href="#rust_test-alwayslink">alwayslink</a>, <a href="#rust_test-compile_data">compile_data</a>, <a href="#rust_test-crate">crate</a>, <a href="#rust_test-crate_features">crate_features</a>,
           <a href="#rust_test-crate_name">crate_name</a>, <a href="#rust_test-crate_root">crate_root</a>, <a href="#rust_test-edition">edition</a>, <a href="#rust_test-env">env</a>, <a href="#rust_test-env_inherit">env_inherit</a>, <a href="#rust_test-experimental_use_cc_common_link">experimental_use_cc_common_link</a>, <a href="#rust_test-malloc">malloc</a>,
           <a href="#rust_test-platform">platform</a>, <a href="#rust_test-proc_macro_deps">proc_macro_deps</a>, <a href="#rust_test-rustc_env">rustc_env</a>, <a href="#rust_test-rustc_env_files">rustc_env_files</a>, <a href="#rust_test-rustc_flags">rustc_flags</a>, <a href="#rust_test-stamp">stamp</a>,
@@ -657,6 +603,8 @@ Run the test with `bazel test //hello_lib:greeting_test`.
 ## rust_test_suite
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_test_suite")
+
 rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-shared_srcs">shared_srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
 </pre>
 

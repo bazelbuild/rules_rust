@@ -526,16 +526,24 @@ fn host_specific_build_deps() {
     }
 
     let r = runfiles::Runfiles::create().unwrap();
+
+    let src_cargo_toml = runfiles::rlocation!(
+        r,
+        "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.toml"
+    )
+    .unwrap();
+
+    // Put Cargo.toml into writable directory structure and create target/ directory to verify that
+    // cargo does not incorrectly cache rustc info in target/.rustc_info.json file.
+    let scratch = tempfile::tempdir().unwrap();
+    let cargo_toml = scratch.path().join("Cargo.toml");
+    fs::copy(src_cargo_toml, &cargo_toml).unwrap();
+    fs::create_dir(scratch.path().join("target")).unwrap();
+
     let metadata = run(
         "host_specific_build_deps",
         HashMap::from([(
-            runfiles::rlocation!(
-                r,
-                "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.toml"
-            )
-            .unwrap()
-            .to_string_lossy()
-            .to_string(),
+            cargo_toml.to_string_lossy().to_string(),
             "//:test_input".to_string(),
         )]),
         "rules_rust/crate_universe/test_data/metadata/host_specific_build_deps/Cargo.lock",

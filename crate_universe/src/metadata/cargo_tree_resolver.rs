@@ -150,6 +150,7 @@ impl TreeResolver {
                     // host triple instead of the host triple detected by rustc.
                     .env("RUSTC_WRAPPER", rustc_wrapper)
                     .env("HOST_TRIPLE", host_triple)
+                    .env("CARGO_CACHE_RUSTC_INFO", "0")
                     .current_dir(manifest_path.parent().expect("All manifests should have a valid parent."))
                     .arg("tree")
                     .arg("--manifest-path")

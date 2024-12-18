@@ -299,15 +299,12 @@ def _rust_prost_aspect_impl(target, ctx):
     # https://github.com/rust-analyzer/rust-analyzer/blob/2021-11-15/crates/project_model/src/workspace.rs#L529-L531
     cfgs = ["test", "debug_assertions"]
 
-    crate_id = "prost-" + dep_variant_info.crate_info.root.path
-
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
-        id = crate_id,
         aliases = {},
         crate = dep_variant_info.crate_info,
         cfgs = cfgs,
         env = dep_variant_info.crate_info.rustc_env,
-        deps = depset([dep.id for dep in rust_analyzer_deps]).to_list(),
+        deps = rust_analyzer_deps,
         crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
         proc_macro_dylib_path = None,
         build_info = dep_variant_info.build_info,
@@ -390,10 +387,7 @@ def _rust_prost_library_impl(ctx):
             rust_generated_srcs = rust_generated_srcs,
             proto_descriptor_set = proto_descriptor_set,
         ),
-        RustAnalyzerGroupInfo(
-            crate_specs = proto_dep[RustAnalyzerInfo].crate_specs,
-            deps = proto_dep[RustAnalyzerInfo].deps,
-        ),
+        RustAnalyzerGroupInfo(deps = [proto_dep[RustAnalyzerInfo]]),
     ]
 
 rust_prost_library = rule(

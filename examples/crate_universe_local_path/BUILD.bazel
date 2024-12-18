@@ -12,3 +12,19 @@ sh_binary(
         "vendored_lazy_static",
     ],
 )
+
+sh_binary(
+    name = "vendor_edit_test_out_of_tree",
+    srcs = ["vendor_edit_test.sh"],
+    args = [
+        "//:vendor_lazy_static_out_of_tree",
+    ],
+)
+
+sh_binary(
+    name = "vendor_edit_test_in_tree",
+    srcs = ["vendor_edit_test.sh"],
+    args = [
+        "//:vendor_lazy_static_in_tree",
+    ],
+)

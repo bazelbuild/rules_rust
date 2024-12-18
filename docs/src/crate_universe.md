@@ -299,6 +299,8 @@ There is an example of this in the "complicated dependencies" section of https:/
 ## crates_vendor
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crates_vendor")
+
 crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-bazel">bazel</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-cargo_lockfile">cargo_lockfile</a>,
               <a href="#crates_vendor-generate_binaries">generate_binaries</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#crates_vendor-manifests">manifests</a>,
               <a href="#crates_vendor-mode">mode</a>, <a href="#crates_vendor-packages">packages</a>, <a href="#crates_vendor-render_config">render_config</a>, <a href="#crates_vendor-repository_name">repository_name</a>, <a href="#crates_vendor-splicing_config">splicing_config</a>,
@@ -405,6 +407,8 @@ call against the generated workspace. The following table describes how to contr
 ## aliases
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "aliases")
+
 aliases(<a href="#aliases-normal">normal</a>, <a href="#aliases-normal_dev">normal_dev</a>, <a href="#aliases-proc_macro">proc_macro</a>, <a href="#aliases-proc_macro_dev">proc_macro_dev</a>, <a href="#aliases-build">build</a>, <a href="#aliases-build_proc_macro">build_proc_macro</a>, <a href="#aliases-package_name">package_name</a>)
 </pre>
 
@@ -437,6 +441,8 @@ dict: The aliases of all associated packages
 ## all_crate_deps
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "all_crate_deps")
+
 all_crate_deps(<a href="#all_crate_deps-normal">normal</a>, <a href="#all_crate_deps-normal_dev">normal_dev</a>, <a href="#all_crate_deps-proc_macro">proc_macro</a>, <a href="#all_crate_deps-proc_macro_dev">proc_macro_dev</a>, <a href="#all_crate_deps-build">build</a>, <a href="#all_crate_deps-build_proc_macro">build_proc_macro</a>,
                <a href="#all_crate_deps-package_name">package_name</a>)
 </pre>
@@ -470,6 +476,8 @@ list: A list of labels to generated rust targets (str)
 ## crate.annotation
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
                  <a href="#crate.annotation-build_script_compile_data">build_script_compile_data</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>,
                  <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
@@ -533,6 +541,8 @@ string: A json encoded string containing the specified version and separately al
 ## crate.select
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+
 crate.select(<a href="#crate.select-common">common</a>, <a href="#crate.select-selects">selects</a>)
 </pre>
 
@@ -556,6 +566,8 @@ struct: A struct representing the Starlark Select.
 ## crate.spec
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+
 crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
 </pre>
 
@@ -592,6 +604,8 @@ string: A json encoded string of all inputs
 ## crate.workspace_member
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+
 crate.workspace_member(<a href="#crate.workspace_member-version">version</a>, <a href="#crate.workspace_member-sha256">sha256</a>)
 </pre>
 
@@ -615,6 +629,8 @@ string: A json encoded string of all inputs
 ## crate_deps
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_deps")
+
 crate_deps(<a href="#crate_deps-deps">deps</a>, <a href="#crate_deps-package_name">package_name</a>)
 </pre>
 
@@ -638,6 +654,8 @@ list: A list of labels to generated rust targets (str)
 ## crate_repositories
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_repositories")
+
 crate_repositories()
 </pre>
 
@@ -654,6 +672,8 @@ A list of repos visible to the module through the module extension.
 ## crate_universe_dependencies
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_universe_dependencies")
+
 crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>, <a href="#crate_universe_dependencies-kwargs">kwargs</a>)
 </pre>
 
@@ -679,6 +699,8 @@ list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
 ## render_config
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "render_config")
+
 render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
               <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
               <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>,
@@ -727,6 +749,8 @@ string: A json encoded struct to match the Rust `config::RenderConfig` struct
 ## splicing_config
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "splicing_config")
+
 splicing_config(<a href="#splicing_config-resolver_version">resolver_version</a>)
 </pre>
 
@@ -752,6 +776,8 @@ str: A json encoded string of the parameters provided
 ## crates_repository
 
 <pre>
+load("@rules_rust//crate_universe:docs_workspace.bzl", "crates_repository")
+
 crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-cargo_lockfile">cargo_lockfile</a>,
                   <a href="#crates_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#crates_repository-generate_binaries">generate_binaries</a>, <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>,
                   <a href="#crates_repository-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#crates_repository-generator">generator</a>, <a href="#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="#crates_repository-generator_urls">generator_urls</a>,
@@ -882,6 +908,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
 **ENVIRONMENT VARIABLES**
 
 This repository rule depends on the following environment variables:
+
 * `CARGO_BAZEL_GENERATOR_URL`
 * `CARGO_BAZEL_GENERATOR_SHA256`
 * `CARGO_BAZEL_REPIN`

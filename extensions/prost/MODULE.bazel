@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_prost",
-    version = "0.55.6",
+    version = "0.56.0",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.6",
+    version = "0.56.0",
 )
 bazel_dep(
     name = "platforms",

@@ -1,9 +1,3 @@
-<!-- Generated with Stardoc: http://skydoc.bazel.build -->
-# Rust Analyzer
-
-* [rust_analyzer_aspect](#rust_analyzer_aspect)
-* [rust_analyzer_toolchain](#rust_analyzer_toolchain)
-
 
 ## Overview
 
@@ -92,25 +86,10 @@ Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualst
 
 
 
-<a id="rust_analyzer_toolchain"></a>
 
-## rust_analyzer_toolchain
+## Aspects
 
-<pre>
-rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-proc_macro_srv">proc_macro_srv</a>, <a href="#rust_analyzer_toolchain-rustc">rustc</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>)
-</pre>
-
-A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).
-
-**ATTRIBUTES**
-
-
-| Name  | Description | Type | Mandatory | Default |
-| :------------- | :------------- | :------------- | :------------- | :------------- |
-| <a id="rust_analyzer_toolchain-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
-| <a id="rust_analyzer_toolchain-proc_macro_srv"></a>proc_macro_srv |  The path to a `rust_analyzer_proc_macro_srv` binary.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
-| <a id="rust_analyzer_toolchain-rustc"></a>rustc |  The path to a `rustc` binary.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
-| <a id="rust_analyzer_toolchain-rustc_srcs"></a>rustc_srcs |  The source code of rustc.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+- [rust_analyzer_aspect](#rust_analyzer_aspect)
 
 
 <a id="rust_analyzer_aspect"></a>
@@ -118,6 +97,8 @@ A toolchain for [rust-analyzer](https://rust-analyzer.github.io/).
 ## rust_analyzer_aspect
 
 <pre>
+load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect")
+
 rust_analyzer_aspect(<a href="#rust_analyzer_aspect-name">name</a>)
 </pre>
 
