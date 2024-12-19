@@ -64,6 +64,10 @@ build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:strict --output_groups=+clippy_checks
 EOF
 
+    if [[ -f "${workspace_root}/.bazelversion" ]]; then
+        cp "${workspace_root}/.bazelversion" "${new_workspace}/.bazelversion"
+    fi
+
     mkdir -p "${new_workspace}/${package_dir}"
     cp -r "${workspace_root}/${package_dir}/3rdparty" "${new_workspace}/${package_dir}/"
 
