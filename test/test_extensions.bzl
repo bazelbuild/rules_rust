@@ -2,13 +2,11 @@
 
 load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 load("//test:deps.bzl", "rules_rust_test_deps")
-load("//test/3rdparty/crates:crates.bzl", test_crate_repositories = "crate_repositories")
 
 def _rust_test_impl(module_ctx):
     deps = []
 
     deps.extend(rules_rust_test_deps())
-    deps.extend(test_crate_repositories())
 
     rbe_preconfig(
         name = "buildkite_config",
