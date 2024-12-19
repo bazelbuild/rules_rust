@@ -38,6 +38,9 @@ test_crate_repositories()
 EOF
 
     cat <<EOF >"${new_workspace}/.bazelrc"
+# TODO: support bzlmod
+common --noenable_bzlmod
+common --enable_workspace
 build --keep_going
 test --test_output=errors
 # The 'strict' config is used to ensure extra checks are run on the test
