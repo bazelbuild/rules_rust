@@ -28,7 +28,7 @@ class LicenseCheckTest(unittest.TestCase):
     # If this dependency is ever changed, you may need to update this test to reflect that
     def check_license(self, file_name, top_level_target):
         info = load_licenses_info(os.path.join(os.path.dirname(__file__), file_name))
-        self.assertEqual(len(info), 1) 
+        self.assertEqual(len(info), 1)
         all_crate_deps = info[0]
         self.assertEqual(all_crate_deps["top_level_target"], top_level_target)
         self.assertEqual(len(all_crate_deps["dependencies"]), 3)
@@ -58,6 +58,7 @@ class LicenseCheckTest(unittest.TestCase):
         )
         self.assertTrue(apache_found, "Apache-2.0 license not found.")
         self.assertTrue(mit_found, "MIT license not found.")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=3)
