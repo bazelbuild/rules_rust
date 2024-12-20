@@ -1,0 +1,50 @@
+load("@crates//:defs.bzl", "all_crate_deps")
+load("@crates_from_spec//:defs.bzl", all_crate_deps_from_spec = "all_crate_deps")
+load("@rules_license//sample_reports:licenses_used.bzl", "licenses_used")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "all_crate_deps",
+    srcs = ["src/main.rs"],
+    deps = all_crate_deps(normal = True),
+)
+
+rust_binary(
+    name = "all_crate_deps_from_spec",
+    srcs = ["src/main.rs"],
+    deps = all_crate_deps_from_spec(normal = True),
+)
+
+rust_doc(
+    name = "all_crate_deps_doc",
+    crate = ":all_crate_deps",
+)
+
+licenses_used(
+    name = "licenses_used",
+    out = "license_info.json",
+    deps = [
+        ":all_crate_deps",
+    ],
+)
+
+licenses_used(
+    name = "licenses_used_from_spec",
+    out = "license_info_from_spec.json",
+    deps = [
+        ":all_crate_deps_from_spec",
+    ],
+)
+
+py_test(
+    name = "license_check_test",
+    srcs = ["license_check_test.py"],
+    data = [
+        ":license_info.json",
+        ":license_info_from_spec.json",
+    ],
+    python_version = "PY3",
+)
