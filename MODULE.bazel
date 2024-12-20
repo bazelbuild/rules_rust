@@ -69,11 +69,11 @@ use_repo(
     "buildkite_config",
     "generated_inputs_in_external_repo",
     "libc",
+    "rtra",
+    "rtra__serde-1.0.216",
+    "rtra__serde_json-1.0.133",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
-    "t3p",
-    "t3p__serde-1.0.215",
-    "t3p__serde_json-1.0.133",
 )
 
 bazel_dep(

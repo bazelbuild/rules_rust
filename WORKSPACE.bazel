@@ -49,14 +49,3 @@ http_archive(
 #
 # load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 # rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu2004-bazel-java11")
-
-http_archive(
-    name = "rules_testing",
-    sha256 = "02c62574631876a4e3b02a1820cb51167bb9cdcdea2381b2fa9d9b8b11c407c4",
-    strip_prefix = "rules_testing-0.6.0",
-    url = "https://github.com/bazelbuild/rules_testing/releases/download/v0.6.0/rules_testing-v0.6.0.tar.gz",
-)
-
-load("//test/3rdparty/crates:crates.bzl", test_crate_repositories = "crate_repositories")
-
-test_crate_repositories()

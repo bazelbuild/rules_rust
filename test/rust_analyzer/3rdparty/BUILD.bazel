@@ -1,4 +1,4 @@
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -14,10 +14,10 @@ crates_vendor(
             version = "1",
         ),
     },
-    # Short for 'test 3rdparty'. Keep this short to reduce the risk to
-    # bump into absolute path length issues on Windows. See:
+    # Short for 'rust_test_rust_analyzer'. Keep this short to reduce
+    # the risk to bump into absolute path length issues on Windows. See:
     # https://github.com/bazelbuild/rules_rust/issues/1120
-    repository_name = "t3p",
+    repository_name = "rtra",
     tags = ["manual"],
     vendor_path = "crates",
 )
