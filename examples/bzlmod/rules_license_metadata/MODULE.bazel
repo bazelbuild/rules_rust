@@ -1,0 +1,54 @@
+"""bazelbuild/rules_rust - bzlmod example"""
+
+module(
+    name = "rules_license_metadata_bzlmod_example",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(
+    name = "rules_rust",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(
+    rust,
+    "rust_toolchains",
+)
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    generate_rules_license_metadata = True,
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "crates")
+
+crate_from_spec = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_from_spec.spec(
+    package = "anyhow",
+    version = "1.0.79",
+)
+crate_from_spec.from_specs(
+    name = "crates_from_spec",
+    generate_rules_license_metadata = True,
+)
+use_repo(crate_from_spec, "crates_from_spec")

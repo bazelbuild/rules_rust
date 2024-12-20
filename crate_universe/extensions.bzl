@@ -25,6 +25,8 @@ _OPT_BOOL_VALUES = {
     "on": True,
 }
 
+GENERATE_RULES_LICENSE_METADATA_ATTR = attr.bool(doc = "Generate rules_license metadata for third party crates", default = False)
+
 def _get_or_insert(d, key, value):
     if key not in d:
         d[key] = value
@@ -78,6 +80,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
 
     rendering_config = json.decode(render_config(
         regen_command = "Run 'cargo update [--workspace]'",
+        generate_rules_license_metadata = cfg.generate_rules_license_metadata,
     ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
@@ -512,6 +515,8 @@ _from_cargo = tag_class(
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
         "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    } | {
+        "generate_rules_license_metadata": GENERATE_RULES_LICENSE_METADATA_ATTR,
     },
 )
 
@@ -653,6 +658,8 @@ _from_specs = tag_class(
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
         "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    } | {
+        "generate_rules_license_metadata": GENERATE_RULES_LICENSE_METADATA_ATTR,
     },
 )
 
