@@ -56,6 +56,36 @@ rust_test(
     }),
 )
 
+rust_library(
+    name = "matrix_dynamically_linked_with_shared_library",
+    srcs = [
+        "src/ffi.rs",
+        "src/matrix.rs",
+    ],
+    crate_root = "src/matrix.rs",
+    target_compatible_with = select({
+        # TODO: Make this work on windows
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [
+        "//ffi/rust_calling_c/c:shared_native_matrix_so",
+        "@libc",
+    ],
+)
+
+rust_test(
+    name = "matrix_with_cc_shared_library_test",
+    crate = ":matrix_dynamically_linked_with_shared_library",
+    target_compatible_with = select({
+        # TODO: This test requires --incompatible_macos_set_install_name and Bazel 4.2.0+
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        # TODO: Make this work on windows
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 rust_doc(
     name = "matrix_dylib_doc",
     crate = ":matrix_dynamically_linked",

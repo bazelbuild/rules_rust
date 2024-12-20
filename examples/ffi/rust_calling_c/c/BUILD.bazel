@@ -36,3 +36,14 @@ cc_binary(
     copts = ["-std=c99"],
     linkshared = True,
 )
+
+cc_import(
+    name = "shared_native_matrix_so",
+    shared_library = ":native_matrix_shared",
+)
+
+cc_shared_library(
+    name = "native_matrix_shared",
+    shared_lib_name = "libnative_matrix_shared.so",
+    deps = [":native_matrix"],
+)
