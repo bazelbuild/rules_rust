@@ -61,15 +61,31 @@ function test_all() {
 
   mkdir -p "${NEW_WORKSPACE}/test/clippy" && \
   cp -r test/clippy/* "${NEW_WORKSPACE}/test/clippy/" && \
-  cat << EOF > "${NEW_WORKSPACE}/WORKSPACE.bazel"
-workspace(name = "rules_rust_test_clippy")
-local_repository(
-    name = "rules_rust",
+  cat << EOF > "${NEW_WORKSPACE}/MODULE.bazel"
+module(name = "rules_rust_test_clippy")
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
 EOF
+
+  if [[ -f "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" ]]; then
+    cp "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" "${NEW_WORKSPACE}/.bazelversion"
+  fi
 
   # Drop the 'noclippy' tags
   if [ "$(uname)" == "Darwin" ]; then
