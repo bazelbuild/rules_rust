@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ffi/rust_calling_c/c/matrix.h"
+#include "rust_calling_c/example_2/c/matrix.h"
 
 #include <stdio.h>
 #include <string.h>

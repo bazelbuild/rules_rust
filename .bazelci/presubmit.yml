@@ -469,8 +469,6 @@ tasks:
     rbe_examples_targets: &rbe_examples_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # See https://github.com/bazelbuild/bazel/issues/9987
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
@@ -748,11 +746,38 @@ tasks:
       - "//:all"
     test_targets:
       - "//..."
-  bzlmod_ffi:
-    name: FFI with bzlmod
+  example_ffi_linux:
     platform: ubuntu2004
     working_directory: examples/bzlmod/ffi
+    name: FFI Example
     build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # TODO: https://github.com/bazelbuild/bazel/issues/9987
+  # example_ffi_linux_rbe:
+  #   platform: rbe_ubuntu2004
+  #   working_directory: examples/bzlmod/ffi
+  #   name: FFI Example
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
+  example_ffi_macos:
+    platform: macos_arm64
+    working_directory: examples/bzlmod/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_ffi_windows:
+    platform: windows
+    working_directory: examples/bzlmod/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
       - "//..."
   ubuntu2004_bzlmod_bcr:
     name: bzlmod BCR presubmit

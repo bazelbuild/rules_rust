@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library", "cc_test")
 
-package(default_visibility = ["//ffi/rust_calling_c:__subpackages__"])
+package(default_visibility = ["//rust_calling_c/example_2:__subpackages__"])
 
 cc_library(
     name = "native_matrix",
