@@ -402,7 +402,7 @@ tasks:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
     run_targets:
-      - "//test/rustfmt:rustfmt_integration_test_suite.test_runner"
+      - "//test/rustfmt:rustfmt_failure_tester"
   rust_analyzer_tests:
     name: Rust-Analyzer Tests
     platform: ubuntu2004

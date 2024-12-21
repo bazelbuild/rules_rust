@@ -43,17 +43,33 @@ function test_all_and_apply() {
 
   mkdir -p "${new_workspace}/test/rustfmt" && \
   cp -r test/rustfmt/* "${new_workspace}/test/rustfmt/" && \
-  cat << EOF > "${new_workspace}/WORKSPACE.bazel"
-workspace(name = "rules_rust_test_rustfmt")
-local_repository(
-    name = "rules_rust",
+  cat << EOF > "${new_workspace}/MODULE.bazel"
+module(name = "rules_rust_test_rustfmt")
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
 EOF
   # See github.com/bazelbuild/rules_rust/issues/2317.
   echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
+
+  if [[ -f "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" ]]; then
+    cp "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" "${new_workspace}/.bazelversion"
+  fi
 
   # Drop the 'norustfmt' tags
   if [ "$(uname)" == "Darwin" ]; then
