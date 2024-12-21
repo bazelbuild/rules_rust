@@ -1,0 +1,30 @@
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "libgit2-sys": [crate.annotation(
+            gen_build_script = False,
+            # libgit2 comes from `@rules_rust_examples_sys//:extensions.bzl`.
+            # The targets are defined at `@rules_rust_examples_sys//complex/3rdparty:BUILD.libgit2.bazel`.
+            deps = ["@libgit2"],
+        )],
+        "libz-sys": [crate.annotation(
+            gen_build_script = False,
+            # zlib comes from `@rules_rust_examples_sys//:extensions.bzl`
+            # The targets are defined at `@rules_rust_examples_sys//complex/3rdparty:BUILD.zlib.bazel`.
+            deps = ["@zlib"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = True,
+    mode = "remote",
+    packages = {
+        "git2": crate.spec(
+            default_features = False,
+            version = "=0.14.4",
+        ),
+    },
+    repository_name = "complex_sys",
+    tags = ["manual"],
+)

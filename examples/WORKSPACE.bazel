@@ -77,10 +77,6 @@ load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_depende
 
 rules_foreign_cc_dependencies()
 
-load("//sys:sys_deps.bzl", "sys_deps")
-
-sys_deps()
-
 local_repository(
     name = "rules_rust_example_cargo_manifest_dir",
     path = "cargo_manifest_dir/external_crate",

@@ -469,8 +469,6 @@ tasks:
     rbe_examples_targets: &rbe_examples_targets
       - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
       - "//..."
-      # TODO: This requires an updated `rules_foreign_cc`
-      - "-//sys/..."
       # See https://github.com/bazelbuild/bazel/issues/9987
       - "-//ffi/rust_calling_c:matrix_dylib_test"
     shell_commands:
@@ -800,6 +798,38 @@ tasks:
   #     - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   #   test_targets:
   #     - "//..."
+  example_sys_linux:
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_linux_rbe:
+    platform: ubuntu2004
+    working_directory: examples/bzlmod/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_macos:
+    platform: macos_arm64
+    working_directory: examples/bzlmod/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_windows:
+    platform: windows
+    working_directory: examples/bzlmod/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   ubuntu2004_bzlmod_plus_repo_names_bcr:
     name: bzlmod BCR presubmit w/ incompatible flags
     # A newer version than is specified in the .bazel_version file is needed for
