@@ -5,8 +5,9 @@ load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
-load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
+load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", generate_render_config = "render_config")
 load("//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
+load("//crate_universe/private:splicing_utils.bzl", generate_splicing_config = "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
@@ -61,7 +62,88 @@ def _annotations_for_repo(module_annotations, repo_specific_annotations):
         _get_or_insert(annotations, crate, []).extend(values)
     return annotations
 
-def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo_lockfile = None, manifests = {}, packages = {}):
+def _collect_render_config(module, repository):
+    """Collect the render_config for the given crate_universe module.
+
+    Args:
+        module (StarlarkBazelModule): The current `crate` module.
+        repository (str): The name of the repository to collect the config for.
+
+    Returns:
+        dict: The rendering config to use.
+    """
+
+    config = None
+    for raw_config in module.tags.render_config:
+        if not raw_config.repositories:
+            continue
+
+        if not repository in raw_config.repositories:
+            continue
+
+        if config:
+            fail("Multiple render configs provided for module `{}`. Only 1 is allowed.".format(
+                module.name,
+            ))
+
+        config_kwargs = {attr: getattr(raw_config, attr) for attr in dir(raw_config)}
+
+        if "repositories" in config_kwargs:
+            config_kwargs.pop("repositories")
+
+        # bzlmod doesn't allow passing `None` as a default parameter to indicate a value was
+        # not provided. So for backward compatibility, certain empty values are assumed to be
+        # not provided and thus are converted explicitly to `None`.
+        for null_defaults in ["vendor_mode", "regen_command", "default_package_name"]:
+            if config_kwargs[null_defaults] == "":
+                config_kwargs[null_defaults] = None
+
+        config = json.decode(generate_render_config(**config_kwargs))
+
+    if not config:
+        config = json.decode(generate_render_config())
+
+    if not config["regen_command"]:
+        config["regen_command"] = "bazel mod show_repo '{}'".format(module.name)
+
+    return config
+
+def _collect_splicing_config(module, repository):
+    """Collect the splicing_config for the given crate_universe module.
+
+    Args:
+        module (StarlarkBazelModule): The current `crate` module.
+        repository (str): The name of the repository to collect the config for.
+
+    Returns:
+        dict: The splicing config to use.
+    """
+    config = None
+    for raw_config in module.tags.splicing_config:
+        if not raw_config.repositories:
+            continue
+
+        if not repository in raw_config.repositories:
+            continue
+
+        if config:
+            fail("Multiple render configs provided for module `{}`. Only 1 is allowed.".format(
+                module.name,
+            ))
+
+        config_kwargs = {attr: getattr(raw_config, attr) for attr in dir(raw_config)}
+
+        if "repositories" in config_kwargs:
+            config_kwargs.pop("repositories")
+
+        config = json.decode(generate_splicing_config(**config_kwargs))
+
+    if not config:
+        config = json.decode(generate_splicing_config())
+
+    return config
+
+def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, render_config, splicing_config, cargo_lockfile = None, manifests = {}, packages = {}):
     """Generates repositories for the transitive closure of crates defined by manifests and packages.
 
     Args:
@@ -69,6 +151,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         cargo_bazel (function): A function that can be called to execute cargo_bazel.
         cfg (object): The module tag from `from_cargo` or `from_specs`
         annotations (dict): The set of annotation tag classes that apply to this closure, keyed by crate name.
+        render_config (dict): The render config to use.
+        splicing_config (dict): The splicing config to use.
         cargo_lockfile (path): Path to Cargo.lock, if we have one. This is optional for `from_specs` closures.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -76,9 +160,6 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
 
     tag_path = module_ctx.path(cfg.name)
 
-    rendering_config = json.decode(render_config(
-        regen_command = "Run 'cargo update [--workspace]'",
-    ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
         config_file,
@@ -94,7 +175,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
             output_pkg = cfg.name,
             workspace_name = cfg.name,
             generate_binaries = cfg.generate_binaries,
-            render_config = rendering_config,
+            render_config = render_config,
             repository_ctx = module_ctx,
         ),
     )
@@ -105,7 +186,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         executable = False,
         content = generate_splicing_manifest(
             packages = packages,
-            splicing_config = cfg.splicing_config,
+            splicing_config = splicing_config,
             cargo_config = cfg.cargo_config,
             manifests = manifests,
             manifest_to_path = module_ctx.path,
@@ -239,7 +320,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
             )
         elif "Path" in repo:
             options = {
-                "config": rendering_config,
+                "config": render_config,
                 "crate_context": crate,
                 "platform_conditions": contents["conditions"],
                 "supported_platform_triples": cfg.supported_platform_triples,
@@ -454,6 +535,9 @@ def _crate_impl(module_ctx):
                 repo_specific_annotations.get(cfg.name),
             )
 
+            render_config = _collect_render_config(module = mod)
+            splicing_config = _collect_splicing_config(module = mod)
+
             cargo_lockfile = module_ctx.path(cfg.cargo_lockfile)
             manifests = {str(module_ctx.path(m)): str(m) for m in cfg.manifests}
             _generate_hub_and_spokes(
@@ -462,6 +546,8 @@ def _crate_impl(module_ctx):
                 cfg = cfg,
                 annotations = annotations,
                 cargo_lockfile = cargo_lockfile,
+                render_config = render_config,
+                splicing_config = splicing_config,
                 manifests = manifests,
             )
 
@@ -476,12 +562,17 @@ def _crate_impl(module_ctx):
                 repo_specific_annotations.get(cfg.name),
             )
 
+            render_config = _collect_render_config(mod, cfg.name)
+            splicing_config = _collect_splicing_config(mod, cfg.name)
+
             packages = {p.package: _package_to_json(p) for p in mod.tags.spec}
             _generate_hub_and_spokes(
                 module_ctx = module_ctx,
                 cargo_bazel = cargo_bazel,
                 cfg = cfg,
                 annotations = annotations,
+                render_config = render_config,
+                splicing_config = splicing_config,
                 packages = packages,
             )
 
@@ -510,13 +601,13 @@ _from_cargo = tag_class(
         "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
         "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-        "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
     },
 )
 
 # This should be kept in sync with crate_universe/private/crate.bzl.
 _annotation = tag_class(
+    doc = "A collection of extra attributes and settings for a particular crate.",
     attrs = {
         "additive_build_file": attr.label(
             doc = "A file containing extra contents to write to the bottom of generated BUILD files.",
@@ -651,13 +742,13 @@ _from_specs = tag_class(
         "cargo_config": CRATES_VENDOR_ATTRS["cargo_config"],
         "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-        "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
     },
 )
 
 # This should be kept in sync with crate_universe/private/crate.bzl.
 _spec = tag_class(
+    doc = "A constructor for a crate dependency.",
     attrs = {
         "artifact": attr.string(
             doc = "Set to 'bin' to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.",
@@ -694,6 +785,90 @@ _spec = tag_class(
     },
 )
 
+_splicing_config = tag_class(
+    doc = "Various settings used to configure Cargo manifest splicing behavior.",
+    attrs = {
+        "repositories": attr.string_list(
+            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+            default = [],
+        ),
+    } | {
+        "resolver_version": attr.string(
+            doc = "The [resolver version](https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions) to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See `crates_repository::packages`",
+            default = "2",
+        ),
+    },
+)
+
+_render_config = tag_class(
+    doc = """\
+Various settings used to configure rendered outputs.
+
+The template parameters each support a select number of format keys. A description of each key
+can be found below where the supported keys for each template can be found in the parameter docs
+
+| key | definition |
+| --- | --- |
+| `name` | The name of the crate. Eg `tokio` |
+| `repository` | The rendered repository name for the crate. Directly relates to `crate_repository_template`. |
+| `triple` | A platform triple. Eg `x86_64-unknown-linux-gnu` |
+| `version` | The crate version. Eg `1.2.3` |
+| `target` | The library or binary target of the crate |
+| `file` | The basename of a file |
+""",
+    attrs = {
+        "repositories": attr.string_list(
+            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+            default = [],
+        ),
+    } | {
+        "build_file_template": attr.string(
+            doc = "The base template to use for BUILD file names. The available format keys are [`{name}`, {version}`].",
+            default = "//:BUILD.{name}-{version}.bazel",
+        ),
+        "crate_label_template": attr.string(
+            doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
+            default = "@{repository}__{name}-{version}//:{target}",
+        ),
+        "crate_repository_template": attr.string(
+            doc = "The base template to use for Crate label repository names. The available format keys are [`{repository}`, `{name}`, `{version}`].",
+            default = "{repository}__{name}-{version}",
+        ),
+        "crates_module_template": attr.string(
+            doc = "The pattern to use for the `defs.bzl` and `BUILD.bazel` file names used for the crates module. The available format keys are [`{file}`].",
+            default = "//:{file}",
+        ),
+        "default_alias_rule": attr.string(
+            doc = "Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.",
+            default = "alias",
+        ),
+        "default_package_name": attr.string(
+            doc = "The default package name to use in the rendered macros. This affects the auto package detection of things like `all_crate_deps`.",
+            default = "",
+        ),
+        "generate_rules_license_metadata": attr.bool(
+            doc = "Whether to generate rules license metedata.",
+            default = False,
+        ),
+        "generate_target_compatible_with": attr.bool(
+            doc = "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` being targeted that isn't declared in `supported_platform_triples`.",
+            default = True,
+        ),
+        "platforms_template": attr.string(
+            doc = "The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [`{triple}`].",
+            default = "@rules_rust//rust/platform:{triple}",
+        ),
+        "regen_command": attr.string(
+            doc = "An optional command to demonstrate how generated files should be regenerated.",
+            default = "",
+        ),
+        "vendor_mode": attr.string(
+            doc = "An optional configuration for rendering content to be rendered into repositories.",
+            default = "",
+        ),
+    },
+)
+
 _conditional_crate_args = {
     "arch_dependent": True,
     "os_dependent": True,
@@ -706,7 +881,9 @@ crate = module_extension(
         "annotation": _annotation,
         "from_cargo": _from_cargo,
         "from_specs": _from_specs,
+        "render_config": _render_config,
         "spec": _spec,
+        "splicing_config": _splicing_config,
     },
     **_conditional_crate_args
 )

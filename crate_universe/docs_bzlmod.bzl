@@ -147,7 +147,7 @@ crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.spec(package = "serde", features = ["derive"], version = "1.0")
 crate.spec(package = "serde_json", version = "1.0")
-crate.spec(package = "tokio", default_features=False, features = ["macros", "net", "rt-multi-thread"], version = "1.38")
+crate.spec(package = "tokio", default_features = False, features = ["macros", "net", "rt-multi-thread"], version = "1.38")
 
 crate.from_specs()
 use_repo(crate, "crates")

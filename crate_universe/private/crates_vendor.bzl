@@ -1,6 +1,6 @@
 """Rules for vendoring Bazel targets into existing workspaces"""
 
-load("//crate_universe/private:generate_utils.bzl", "compile_config", "render_config")
+load("//crate_universe/private:generate_utils.bzl", "compile_config", generate_render_config = "render_config")
 load("//crate_universe/private:splicing_utils.bzl", "kebab_case_keys", generate_splicing_config = "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
@@ -50,7 +50,7 @@ exit %ERRORLEVEL%
 CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
 
 def _default_render_config():
-    return json.decode(render_config())
+    return json.decode(generate_render_config())
 
 def _runfiles_path(file, is_windows):
     if is_windows:
@@ -116,12 +116,18 @@ def _write_splicing_manifest(ctx):
     # Manifests are required to be single files
     manifests = {_prepare_manifest_path(m): str(m.label) for m in ctx.attr.manifests}
 
+    splicing_config_str = ctx.attr.splicing_config
+    if not splicing_config_str:
+        splicing_config_str = generate_splicing_config()
+
+    splicing_config = dict(json.decode(splicing_config_str))
+
     manifest = _write_data_file(
         ctx = ctx,
         name = "cargo-bazel-splicing-manifest.json",
         data = generate_splicing_manifest(
             packages = ctx.attr.packages,
-            splicing_config = ctx.attr.splicing_config,
+            splicing_config = splicing_config,
             cargo_config = ctx.attr.cargo_config,
             manifests = manifests,
             manifest_to_path = _prepare_manifest_path,
@@ -134,7 +140,7 @@ def _write_splicing_manifest(ctx):
     runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, runfiles
 
-def generate_splicing_manifest(packages, splicing_config, cargo_config, manifests, manifest_to_path):
+def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manifests, manifest_to_path):
     # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
@@ -142,7 +148,6 @@ def generate_splicing_manifest(packages, splicing_config, cargo_config, manifest
         for (pkg, data) in packages.items()
     }
 
-    config = json.decode(splicing_config or generate_splicing_config())
     splicing_manifest_content = {
         "cargo_config": str(manifest_to_path(cargo_config)) if cargo_config else None,
         "direct_packages": direct_packages_info,
@@ -150,7 +155,7 @@ def generate_splicing_manifest(packages, splicing_config, cargo_config, manifest
     }
 
     return json.encode_indent(
-        dict(dict(config).items() + splicing_manifest_content.items()),
+        dict(splicing_config.items() + splicing_manifest_content.items()),
         indent = " " * 4,
     )
 
@@ -255,9 +260,14 @@ def generate_config_file(
 
     for key in updates:
         if (render_config[key] != default_render_config[key]) and key not in excluded_from_key_check:
+            if hasattr(ctx, "label"):
+                label = ctx.label
+            else:
+                # Suggests bzlmod
+                label = "UNKNOWN"
             fail("The `crates_vendor.render_config` attribute does not support the `{}` parameter. Please update {} to remove this value.".format(
                 key,
-                ctx.label,
+                label,
             ))
 
     render_config.update(updates)
