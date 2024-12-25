@@ -163,14 +163,14 @@ stardoc(
 stardoc(
     name = "crate_universe_workspace",
     out = "crate_universe.md",
-    input = "@rules_rust//crate_universe:docs_workspace.bzl",
+    input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
 
 stardoc(
     name = "crate_universe_bzlmod",
     out = "crate_universe_bzlmod.md",
-    input = "@rules_rust//crate_universe:docs_bzlmod.bzl",
+    input = "@rules_rust//crate_universe:extensions.bzl",
     deps = [":all_docs"],
 )
 
