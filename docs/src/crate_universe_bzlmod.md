@@ -261,9 +261,9 @@ At this point, you have the following folder and files:
 
 ```
 basic
-    âââ 3rdparty
-    â   âââ BUILD.bazel
-    â   âââ Cargo.Bazel.lock
+    |-- 3rdparty
+    |   |-- BUILD.bazel
+    |   |-- Cargo.Bazel.lock
 ```
 
 Now you can run the `crates_vendor` target:
@@ -274,10 +274,10 @@ This generates a crate folders with all configurations for the vendored dependen
 
 ```
 basic
-    âââ 3rdparty
-    â   âââ cratea
-    â   âââ BUILD.bazel
-    â   âââ Cargo.Bazel.lock
+    |-- 3rdparty
+    |   |-- cratea
+    |   |-- BUILD.bazel
+    |   |-- Cargo.Bazel.lock
 ```
 
 Suppose you have an application in `basic/src` that is defined in `basic/BUILD.bazel` and
@@ -329,7 +329,7 @@ There are some more examples of using crate_universe with bzlmod in the [example
 ## crate
 
 <pre>
-crate = use_extension("@rules_rust//crate_universe:docs_bzlmod.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.annotation(<a href="#crate.annotation-deps">deps</a>, <a href="#crate.annotation-data">data</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
                  <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="#crate.annotation-build_script_deps">build_script_deps</a>, <a href="#crate.annotation-build_script_env">build_script_env</a>,
                  <a href="#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>, <a href="#crate.annotation-build_script_rundir">build_script_rundir</a>, <a href="#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>,
