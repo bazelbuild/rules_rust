@@ -57,9 +57,6 @@ pub struct SpliceOptions {
     /// The path to a rustc binary for use with Cargo
     #[clap(long, env = "RUSTC")]
     pub rustc: PathBuf,
-
-    #[clap(long)]
-    pub nonhermetic_root_bazel_workspace_dir: PathBuf,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -86,7 +83,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace(&opt.nonhermetic_root_bazel_workspace_dir)
+        .splice_workspace()
         .context("Failed to splice workspace")?;
 
     // Generate a lockfile

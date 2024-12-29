@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -30,18 +29,16 @@ impl DiscoveredWorkspaces {
 pub(crate) fn discover_workspaces(
     cargo_toml_paths: BTreeSet<Utf8PathBuf>,
     known_manifests: &BTreeMap<Utf8PathBuf, Manifest>,
-    bazel_workspace_root: &Path,
 ) -> Result<DiscoveredWorkspaces> {
     let mut manifest_cache = ManifestCache {
         cache: BTreeMap::new(),
         known_manifests,
     };
-    discover_workspaces_with_cache(cargo_toml_paths, bazel_workspace_root, &mut manifest_cache)
+    discover_workspaces_with_cache(cargo_toml_paths, &mut manifest_cache)
 }
 
 fn discover_workspaces_with_cache(
     cargo_toml_paths: BTreeSet<Utf8PathBuf>,
-    bazel_workspace_root: &Path,
     manifest_cache: &mut ManifestCache,
 ) -> Result<DiscoveredWorkspaces> {
     let mut discovered_workspaces = DiscoveredWorkspaces {
@@ -288,7 +285,6 @@ mod test {
             .into_iter()
             .collect(),
             &BTreeMap::new(),
-            root_dir.as_std_path(),
         )
         .unwrap();
 
@@ -323,7 +319,6 @@ mod test {
                 .into_iter()
                 .collect(),
             &BTreeMap::new(),
-            root_dir.join("ws1").as_std_path(),
         )
         .unwrap();
 
@@ -352,7 +347,6 @@ mod test {
                 .into_iter()
                 .collect(),
             &BTreeMap::new(),
-            root_dir.as_std_path(),
         )
         .unwrap();
 
@@ -411,7 +405,6 @@ mod test {
             .into_iter()
             .collect(),
             &BTreeMap::new(),
-            root_dir.as_std_path(),
         )
         .unwrap();
 

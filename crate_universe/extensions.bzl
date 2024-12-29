@@ -517,8 +517,6 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, rende
         ),
     )
 
-    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
-
     splicing_output_dir = tag_path.get_child("splicing-output")
     splice_args = [
         "splice",
@@ -528,8 +526,6 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, rende
         config_file,
         "--splicing-manifest",
         splicing_manifest,
-        "--nonhermetic-root-bazel-workspace-dir",
-        nonhermetic_root_bazel_workspace_dir,
     ]
     if cargo_lockfile:
         splice_args.extend([
@@ -542,6 +538,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, rende
     # repos.
     lockfile_path = tag_path.get_child("lockfile.json")
     module_ctx.file(lockfile_path, "")
+
+    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 
     paths_to_track_file = module_ctx.path("paths-to-track")
     warnings_output_file = module_ctx.path("warnings-output-file")

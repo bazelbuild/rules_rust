@@ -115,7 +115,6 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         config,
         cargo,
         rustc,
-        nonhermetic_root_bazel_workspace_dir: PathBuf::from("/doesnotexist"),
     })
     .unwrap();
 
