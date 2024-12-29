@@ -530,13 +530,13 @@ def _crate_impl(module_ctx):
             local_repos.append(cfg.name)
 
         for cfg in mod.tags.from_cargo:
+            render_config = _collect_render_config(mod, cfg.name)
+            splicing_config = _collect_splicing_config(mod, cfg.name)
+
             annotations = _annotations_for_repo(
                 module_annotations,
                 repo_specific_annotations.get(cfg.name),
             )
-
-            render_config = _collect_render_config(module = mod)
-            splicing_config = _collect_splicing_config(module = mod)
 
             cargo_lockfile = module_ctx.path(cfg.cargo_lockfile)
             manifests = {str(module_ctx.path(m)): str(m) for m in cfg.manifests}
