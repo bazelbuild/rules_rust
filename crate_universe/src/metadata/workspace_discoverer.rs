@@ -89,27 +89,9 @@ fn discover_workspaces_with_cache(
             .transpose()?;
 
         'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
-            .follow_links(true)
-            .follow_root_links(true)
+            .follow_links(false)
+            .follow_root_links(false)
             .into_iter()
-            // Avoid traversing the bazel-$workspace symlink which mirrors the whole source root.
-            // This is not super correct - technically the symlinks can be renamed,
-            // and technically people can create symlinks they care about which match this pattern to.
-            // But it's Good Enough.
-            .filter_entry(|e| {
-                if !e.path_is_symlink() {
-                    return true;
-                }
-                if e.path().parent().unwrap() != bazel_workspace_root {
-                    return true;
-                }
-                if let Some(file_name) = e.file_name().to_str() {
-                    if file_name.starts_with("bazel-") || file_name.starts_with(".bazel") {
-                        return false;
-                    }
-                }
-                true
-            })
         {
             let entry = match entry {
                 Ok(entry) => entry,
@@ -278,13 +260,6 @@ mod test {
         .unwrap();
 
         let mut expected = ws1_discovered_workspaces(&root_dir);
-
-        // This isn't at the bazel repo root level, so gets included.
-        expected
-            .workspaces_to_members
-            .get_mut(&root_dir.join("ws1").join("Cargo.toml"))
-            .unwrap()
-            .insert(root_dir.join("ws1").join("bazel-ws1").join("Cargo.toml"));
 
         expected.workspaces_to_members.insert(
             root_dir.join("ws2").join("Cargo.toml"),
