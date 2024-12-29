@@ -299,7 +299,7 @@ There is an example of this in the "complicated dependencies" section of https:/
 ## crates_vendor
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crates_vendor")
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
 
 crates_vendor(<a href="#crates_vendor-name">name</a>, <a href="#crates_vendor-annotations">annotations</a>, <a href="#crates_vendor-bazel">bazel</a>, <a href="#crates_vendor-buildifier">buildifier</a>, <a href="#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="#crates_vendor-cargo_config">cargo_config</a>, <a href="#crates_vendor-cargo_lockfile">cargo_lockfile</a>,
               <a href="#crates_vendor-generate_binaries">generate_binaries</a>, <a href="#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="#crates_vendor-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#crates_vendor-manifests">manifests</a>,
@@ -402,81 +402,12 @@ call against the generated workspace. The following table describes how to contr
 | <a id="crates_vendor-vendor_path"></a>vendor_path |  The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root   | String | optional |  `"crates"`  |
 
 
-<a id="aliases"></a>
-
-## aliases
-
-<pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "aliases")
-
-aliases(<a href="#aliases-normal">normal</a>, <a href="#aliases-normal_dev">normal_dev</a>, <a href="#aliases-proc_macro">proc_macro</a>, <a href="#aliases-proc_macro_dev">proc_macro_dev</a>, <a href="#aliases-build">build</a>, <a href="#aliases-build_proc_macro">build_proc_macro</a>, <a href="#aliases-package_name">package_name</a>)
-</pre>
-
-Produces a map of Crate alias names to their original label
-
-If no dependency kinds are specified, `normal` and `proc_macro` are used by default.
-Setting any one flag will otherwise determine the contents of the returned dict.
-
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="aliases-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  `False` |
-| <a id="aliases-normal_dev"></a>normal_dev |  If True, normal dev dependencies will be included in the output list..   |  `False` |
-| <a id="aliases-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="aliases-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="aliases-build"></a>build |  If True, build dependencies are included in the output list.   |  `False` |
-| <a id="aliases-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="aliases-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to `native.package_name()` when unset.   |  `None` |
-
-**RETURNS**
-
-dict: The aliases of all associated packages
-
-
-<a id="all_crate_deps"></a>
-
-## all_crate_deps
-
-<pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "all_crate_deps")
-
-all_crate_deps(<a href="#all_crate_deps-normal">normal</a>, <a href="#all_crate_deps-normal_dev">normal_dev</a>, <a href="#all_crate_deps-proc_macro">proc_macro</a>, <a href="#all_crate_deps-proc_macro_dev">proc_macro_dev</a>, <a href="#all_crate_deps-build">build</a>, <a href="#all_crate_deps-build_proc_macro">build_proc_macro</a>,
-               <a href="#all_crate_deps-package_name">package_name</a>)
-</pre>
-
-Finds the fully qualified label of all requested direct crate dependencies     for the package where this macro is called.
-
-If no parameters are set, all normal dependencies are returned. Setting any one flag will
-otherwise impact the contents of the returned list.
-
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="all_crate_deps-normal"></a>normal |  If True, normal dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-normal_dev"></a>normal_dev |  If True, normal dev dependencies will be included in the output list..   |  `False` |
-| <a id="all_crate_deps-proc_macro"></a>proc_macro |  If True, proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-proc_macro_dev"></a>proc_macro_dev |  If True, dev proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-build"></a>build |  If True, build dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-build_proc_macro"></a>build_proc_macro |  If True, build proc_macro dependencies are included in the output list.   |  `False` |
-| <a id="all_crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to `native.package_name()` when unset.   |  `None` |
-
-**RETURNS**
-
-list: A list of labels to generated rust targets (str)
-
-
 <a id="crate.annotation"></a>
 
 ## crate.annotation
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+load("@rules_rust//crate_universe:defs.bzl", "crate")
 
 crate.annotation(<a href="#crate.annotation-version">version</a>, <a href="#crate.annotation-additive_build_file">additive_build_file</a>, <a href="#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="#crate.annotation-alias_rule">alias_rule</a>,
                  <a href="#crate.annotation-build_script_compile_data">build_script_compile_data</a>, <a href="#crate.annotation-build_script_data">build_script_data</a>, <a href="#crate.annotation-build_script_tools">build_script_tools</a>,
@@ -541,7 +472,7 @@ string: A json encoded string containing the specified version and separately al
 ## crate.select
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+load("@rules_rust//crate_universe:defs.bzl", "crate")
 
 crate.select(<a href="#crate.select-common">common</a>, <a href="#crate.select-selects">selects</a>)
 </pre>
@@ -566,7 +497,7 @@ struct: A struct representing the Starlark Select.
 ## crate.spec
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+load("@rules_rust//crate_universe:defs.bzl", "crate")
 
 crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
 </pre>
@@ -604,7 +535,7 @@ string: A json encoded string of all inputs
 ## crate.workspace_member
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate")
+load("@rules_rust//crate_universe:defs.bzl", "crate")
 
 crate.workspace_member(<a href="#crate.workspace_member-version">version</a>, <a href="#crate.workspace_member-sha256">sha256</a>)
 </pre>
@@ -624,82 +555,12 @@ Define information for extra workspace members
 string: A json encoded string of all inputs
 
 
-<a id="crate_deps"></a>
-
-## crate_deps
-
-<pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_deps")
-
-crate_deps(<a href="#crate_deps-deps">deps</a>, <a href="#crate_deps-package_name">package_name</a>)
-</pre>
-
-Finds the fully qualified label of the requested crates for the package where this macro is called.
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="crate_deps-deps"></a>deps |  The desired list of crate targets.   |  none |
-| <a id="crate_deps-package_name"></a>package_name |  The package name of the set of dependencies to look up. Defaults to `native.package_name()`.   |  `None` |
-
-**RETURNS**
-
-list: A list of labels to generated rust targets (str)
-
-
-<a id="crate_repositories"></a>
-
-## crate_repositories
-
-<pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_repositories")
-
-crate_repositories()
-</pre>
-
-A macro for defining repositories for all generated crates.
-
-
-**RETURNS**
-
-A list of repos visible to the module through the module extension.
-
-
-<a id="crate_universe_dependencies"></a>
-
-## crate_universe_dependencies
-
-<pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crate_universe_dependencies")
-
-crate_universe_dependencies(<a href="#crate_universe_dependencies-rust_version">rust_version</a>, <a href="#crate_universe_dependencies-bootstrap">bootstrap</a>, <a href="#crate_universe_dependencies-kwargs">kwargs</a>)
-</pre>
-
-Define dependencies of the `cargo-bazel` Rust target
-
-**PARAMETERS**
-
-
-| Name  | Description | Default Value |
-| :------------- | :------------- | :------------- |
-| <a id="crate_universe_dependencies-rust_version"></a>rust_version |  The version of rust to use when generating dependencies.   |  `"1.83.0"` |
-| <a id="crate_universe_dependencies-bootstrap"></a>bootstrap |  If true, a `cargo_bootstrap_repository` target will be generated.   |  `False` |
-| <a id="crate_universe_dependencies-kwargs"></a>kwargs |  Arguments to pass through to cargo_bazel_bootstrap.   |  none |
-
-**RETURNS**
-
-list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
-  defined by this macro.
-
-
 <a id="render_config"></a>
 
 ## render_config
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "render_config")
+load("@rules_rust//crate_universe:defs.bzl", "render_config")
 
 render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
               <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
@@ -749,7 +610,7 @@ string: A json encoded struct to match the Rust `config::RenderConfig` struct
 ## splicing_config
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "splicing_config")
+load("@rules_rust//crate_universe:defs.bzl", "splicing_config")
 
 splicing_config(<a href="#splicing_config-resolver_version">resolver_version</a>)
 </pre>
@@ -776,7 +637,7 @@ str: A json encoded string of the parameters provided
 ## crates_repository
 
 <pre>
-load("@rules_rust//crate_universe:docs_workspace.bzl", "crates_repository")
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(<a href="#crates_repository-name">name</a>, <a href="#crates_repository-annotations">annotations</a>, <a href="#crates_repository-cargo_config">cargo_config</a>, <a href="#crates_repository-cargo_lockfile">cargo_lockfile</a>,
                   <a href="#crates_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#crates_repository-generate_binaries">generate_binaries</a>, <a href="#crates_repository-generate_build_scripts">generate_build_scripts</a>,

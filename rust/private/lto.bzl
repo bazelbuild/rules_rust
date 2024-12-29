@@ -3,6 +3,8 @@
 load("//rust/private:utils.bzl", "is_exec_configuration")
 
 _LTO_MODES = [
+    # Do nothing, let the user manually handle LTO.
+    "manual",
     # Default. No mode has been explicitly set, rustc will do "thin local" LTO
     # between the codegen units of a single crate.
     "unspecified",
@@ -64,8 +66,6 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
         return "only_object"
 
     perform_linking = crate_info.type in ["bin", "staticlib", "cdylib"]
-
-    # is_linkable = crate_info.type in ["lib", "rlib", "dylib", "proc-macro"]
     is_dynamic = crate_info.type in ["dylib", "cdylib", "proc-macro"]
     needs_object = perform_linking or is_dynamic
 
@@ -94,17 +94,21 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
         list: A list of strings that are valid flags for 'rustc'.
     """
     mode = toolchain._lto.mode
-    format = _determine_lto_object_format(ctx, toolchain, crate_info)
 
+    # The user is handling LTO on their own, don't add any arguments.
+    if mode == "manual":
+        return []
+
+    format = _determine_lto_object_format(ctx, toolchain, crate_info)
     args = []
 
     if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx):
         args.append("lto={}".format(mode))
 
-    if format in ["unspecified", "object_and_bitcode"]:
+    if format == "object_and_bitcode":
         # Embedding LLVM bitcode in object files is `rustc's` default.
         args.extend([])
-    elif format in ["off", "only_object"]:
+    elif format == "only_object":
         args.extend(["embed-bitcode=no"])
     elif format == "only_bitcode":
         args.extend(["linker-plugin-lto"])

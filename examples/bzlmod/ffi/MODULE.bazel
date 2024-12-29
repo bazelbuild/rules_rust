@@ -1,5 +1,5 @@
 module(
-    name = "ffi",
+    name = "rules_rust_example_ffi",
     version = "0.0.0",
 )
 
@@ -11,6 +11,11 @@ bazel_dep(name = "rules_rust", version = "0.46.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../../..",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
 )
 
 ###############################################################################
@@ -30,3 +35,99 @@ rust.toolchain(
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# F F I   T A R G E T   D E P S
+###############################################################################
+
+bazel_dep(
+    name = "rules_java",
+    version = "8.6.3",
+)
+bazel_dep(
+    name = "rules_jvm_external",
+    version = "6.6",
+)
+
+java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
+use_repo(java_toolchains, "remote_java_tools")
+use_repo(java_toolchains, "remote_java_tools_linux")
+use_repo(java_toolchains, "remote_java_tools_windows")
+use_repo(java_toolchains, "remote_java_tools_darwin_x86_64")
+use_repo(java_toolchains, "remote_java_tools_darwin_arm64")
+
+JDKS = {
+    # Must match JDK repos defined in remote_jdk21_repos()
+    "21": [
+        "linux",
+        "linux_aarch64",
+        "linux_ppc64le",
+        "linux_s390x",
+        "macos",
+        "macos_aarch64",
+        "win",
+        "win_arm64",
+    ],
+}
+
+REMOTE_JDK_REPOS = [
+    (("remote_jdk" if version == "8" else "remotejdk") + version + "_" + platform)
+    for version in JDKS
+    for platform in JDKS[version]
+]
+
+[
+    use_repo(
+        java_toolchains,
+        repo + "_toolchain_config_repo",
+    )
+    for repo in REMOTE_JDK_REPOS
+]
+
+[
+    register_toolchains("@" + name + "_toolchain_config_repo//:all")
+    for name in REMOTE_JDK_REPOS
+]
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = [
+        "net.java.dev.jna:jna:5.14.0",
+        "org.hamcrest:hamcrest:2.2",
+    ],
+    lock_file = "@//:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+use_repo(maven, "maven")
+
+# https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "libc",
+    build_file_content = """\
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "libc",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2015",
+    rustc_flags = [
+        # In most cases, warnings in 3rd party crates are not interesting as
+        # they're out of the control of consumers. The flag here silences
+        # warnings. For more details see:
+        # https://doc.rust-lang.org/rustc/lints/levels.html
+        "--cap-lints=allow",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "1ac4c2ac6ed5a8fb9020c166bc63316205f1dc78d4b964ad31f4f21eb73f0c6d",
+    strip_prefix = "libc-0.2.20",
+    urls = [
+        "https://mirror.bazel.build/github.com/rust-lang/libc/archive/0.2.20.zip",
+        "https://github.com/rust-lang/libc/archive/0.2.20.zip",
+    ],
+)

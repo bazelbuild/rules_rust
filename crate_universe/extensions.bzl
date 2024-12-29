@@ -1,12 +1,337 @@
-"""Module extension for generating third-party crates for use in bazel."""
+"""# Crate Universe
+
+Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
+
+This doc describes using crate_universe with bzlmod.
+
+If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe.html).
+
+There are some examples of using crate_universe with bzlmod in the [example folder](../examples/bzlmod).
+
+# Table of Contents
+
+1. [Setup](#Setup)
+2. [Dependencies](#dependencies)
+    * [Cargo Workspace](#cargo-workspaces)
+    * [Direct Packages](#direct-dependencies)
+    * [Vendored Dependencies](#vendored-dependencies)
+3. [Crate reference](#crate)
+   * [from_cargo](#from_cargo)
+   * [from_specs](#from_specs)
+
+
+## Setup
+
+To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
+
+```python
+bazel_dep(name = "rules_rust", version = "0.49.3")
+```
+
+You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
+
+
+After adding `rules_rust` in your MODULE.bazel, set the following to begin using `crate_universe`:
+
+```python
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+//  # ... Dependencies
+use_repo(crate, "crates")
+```
+
+## Dependencies
+
+There are three different ways to declare dependencies in your MODULE.
+
+1) Cargo workspace
+2) Direct Dependencies
+3) Vendored Dependencies
+
+### Cargo Workspaces
+
+One of the simpler ways to wire up dependencies would be to first structure your project into a Cargo workspace.
+The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
+You find a complete example in the in the [example folder](../examples/bzlmod/all_crate_deps).
+
+```python
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "crates")
+```
+
+The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
+Notably, the all_crate_deps and aliases macros (
+see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe.html#dependencies-api)) commonly allow the
+Cargo.toml files to be the single source of truth for dependencies.
+Since these macros come from the generated repository, the dependencies and alias definitions
+they return will automatically update BUILD targets. In your BUILD files,
+you use these macros for a Rust library as shown below:
+
+```python
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "lib",
+    aliases = aliases(),
+    deps = all_crate_deps(
+        normal = True,
+    ),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":lib",
+    aliases = aliases(
+        normal_dev = True,
+        proc_macro_dev = True,
+    ),
+    deps = all_crate_deps(
+        normal_dev = True,
+    ),
+    proc_macro_deps = all_crate_deps(
+        proc_macro_dev = True,
+    ),
+)
+```
+
+For a Rust binary that does not depend on any macro, use the following configuration
+in your build file:
+
+```python
+rust_binary(
+    name = "bin",
+    srcs = ["src/main.rs"],
+    deps = all_crate_deps(normal = True),
+)
+```
+
+You have to repin before your first build to ensure all Bazel targets for the macros
+are generated.
+
+Dependency syncing and updating is done in the repository rule which means it's done during the
+analysis phase of builds. As mentioned in the environments variable table above, the `CARGO_BAZEL_REPIN`
+(or `REPIN`) environment variables can be used to force the rule to update dependencies and potentially
+render a new lockfile. Given an instance of this repository rule named `crates`, the easiest way to
+repin dependencies is to run:
+
+```shell
+CARGO_BAZEL_REPIN=1 bazel sync --only=crates
+```
+
+This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN`
+environment variable can also be used to customize how dependencies are updated.
+For more details about repin, [please refer to the documentation](https://bazelbuild.github.io/rules_rust/crate_universe.html#crates_vendor).
+
+### Direct Dependencies
+
+In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
+etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
+begin to be confused about missing targets or environment variables defined only in Bazel.
+In situations like this, it may be desirable to have a “Cargo free” setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
+
+crates_repository supports this through the packages attribute,
+as shown below.
+
+```python
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.spec(package = "serde", features = ["derive"], version = "1.0")
+crate.spec(package = "serde_json", version = "1.0")
+crate.spec(package = "tokio", default_features = False, features = ["macros", "net", "rt-multi-thread"], version = "1.38")
+
+crate.from_specs()
+use_repo(crate, "crates")
+```
+
+Consuming dependencies may be more ergonomic in this case through the aliases defined in the new repository.
+In your BUILD files, you use direct dependencies as shown below:
+
+```python
+rust_binary(
+    name = "bin",
+    crate_root = "src/main.rs",
+    srcs = glob([
+        "src/*.rs",
+    ]),
+    deps = [
+        # External crates
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+    visibility = ["//visibility:public"],
+)
+```
+
+Notice, direct dependencies do not need repining.
+Only a cargo workspace needs updating whenever the underlying Cargo.toml file changed.
+
+### Vendored Dependencies
+
+In some cases, it is require that all external dependencies are vendored, meaning downloaded
+and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
+or to ensure full build reproducibility since no download error could possibly occur.
+You find a complete example in the in the [example folder](../examples/bzlmod/all_deps_vendor).
+
+For the setup, you need to add the skylib in addition to the rust rules to your MODUE.bazel.
+
+```python
+module(
+    name = "deps_vendored",
+    version = "0.0.0"
+)
+###############################################################################
+# B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
+###############################################################################
+# https://github.com/bazelbuild/bazel-skylib/releases/
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.49.3")
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+# Rust toolchain
+RUST_EDITION = "2021"
+RUST_VERSION = "1.80.1"
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = RUST_EDITION,
+    versions = [RUST_VERSION],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# R U S T  C R A T E S
+###############################################################################
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+```
+
+Note, it is important to load the crate_universe rules otherwise you will get an error
+as the rule set is needed in the vendored target.
+
+Assuming you have a package called `basic` in which you want to vendor dependencies,
+then you create a folder `basic/3rdparty`. The folder name can be arbitrary,
+but by convention, its either thirdparty or 3rdparty to indicate vendored dependencies.
+In the 3rdparty folder, you add a target crates_vendor to declare your dependencies to vendor.
+In the example, we vendor a specific version of bzip2.
+
+```python
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "bzip2-sys": [crate.annotation(
+            gen_build_script = True,
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = False,
+    mode = "remote",
+    packages = {
+        "bzip2": crate.spec(
+            version = "=0.3.3",
+        ),
+    },
+    repository_name = "basic",
+    tags = ["manual"],
+)
+```
+
+Next, you have to run `Cargo build` to generate a Cargo.lock file with all resolved dependencies.
+Then, you rename Cargo.lock to Cargo.Bazel.lock and place it inside the `basic/3rdparty` folder.
+
+At this point, you have the following folder and files:
+
+```
+basic
+    |-- 3rdparty
+    |   |-- BUILD.bazel
+    |   |-- Cargo.Bazel.lock
+```
+
+Now you can run the `crates_vendor` target:
+
+`bazel run //basic/3rdparty:crates_vendor`
+
+This generates a crate folders with all configurations for the vendored dependencies.
+
+```
+basic
+    |-- 3rdparty
+    |   |-- cratea
+    |   |-- BUILD.bazel
+    |   |-- Cargo.Bazel.lock
+```
+
+Suppose you have an application in `basic/src` that is defined in `basic/BUILD.bazel` and
+that depends on a vendored dependency. You find a list of all available vendored dependencies
+in the BUILD file of the generated folder: `basic/3rdparty/crates/BUILD.bazel`
+You declare a vendored dependency in you target as following:
+
+```python
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "hello_sys",
+    srcs = ["src/main.rs"],
+    deps = ["//basic/3rdparty/crates:bzip2"],
+    visibility = ["//visibility:public"],
+)
+```
+Note, the vendored dependency is not yet accessible because you have to define first
+how to load the vendored dependencies. For that, you first create a file `sys_deps.bzl`
+and add the following content:
+
+```python
+# rename the default name "crate_repositories" in case you import multiple vendored folders.
+load("//basic/3rdparty/crates:defs.bzl", basic_crate_repositories = "crate_repositories")
+
+def sys_deps():
+    # Load the vendored dependencies
+    basic_crate_repositories()
+```
+
+This is straightforward, you import the generated crate_repositories from the crates folder,
+rename it to avoid name clashes in case you import from multiple vendored folders, and then
+just load the vendored dependencies.
+
+In a WORKSPACE configuration, you would just load and call sys_deps(), but in a MODULE configuration, you cannot do that.
+Instead, you create a new file `WORKSPACE.bzlmod` and add the following content.
+
+```python
+load("//:sys_deps.bzl", "sys_deps")
+sys_deps()
+```
+
+Now, you can build the project as usual.
+
+There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/).
+
+"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//crate_universe/private:crates_vendor.bzl", "CRATES_VENDOR_ATTRS", "generate_config_file", "generate_splicing_manifest")
-load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", "render_config")
+load("//crate_universe/private:generate_utils.bzl", "CARGO_BAZEL_GENERATOR_SHA256", "CARGO_BAZEL_GENERATOR_URL", "GENERATOR_ENV_VARS", generate_render_config = "render_config")
 load("//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
+load("//crate_universe/private:splicing_utils.bzl", generate_splicing_config = "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
@@ -61,7 +386,88 @@ def _annotations_for_repo(module_annotations, repo_specific_annotations):
         _get_or_insert(annotations, crate, []).extend(values)
     return annotations
 
-def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo_lockfile = None, manifests = {}, packages = {}):
+def _collect_render_config(module, repository):
+    """Collect the render_config for the given crate_universe module.
+
+    Args:
+        module (StarlarkBazelModule): The current `crate` module.
+        repository (str): The name of the repository to collect the config for.
+
+    Returns:
+        dict: The rendering config to use.
+    """
+
+    config = None
+    for raw_config in module.tags.render_config:
+        if not raw_config.repositories:
+            continue
+
+        if not repository in raw_config.repositories:
+            continue
+
+        if config:
+            fail("Multiple render configs provided for module `{}`. Only 1 is allowed.".format(
+                module.name,
+            ))
+
+        config_kwargs = {attr: getattr(raw_config, attr) for attr in dir(raw_config)}
+
+        if "repositories" in config_kwargs:
+            config_kwargs.pop("repositories")
+
+        # bzlmod doesn't allow passing `None` as a default parameter to indicate a value was
+        # not provided. So for backward compatibility, certain empty values are assumed to be
+        # not provided and thus are converted explicitly to `None`.
+        for null_defaults in ["vendor_mode", "regen_command", "default_package_name"]:
+            if config_kwargs[null_defaults] == "":
+                config_kwargs[null_defaults] = None
+
+        config = json.decode(generate_render_config(**config_kwargs))
+
+    if not config:
+        config = json.decode(generate_render_config())
+
+    if not config["regen_command"]:
+        config["regen_command"] = "bazel mod show_repo '{}'".format(module.name)
+
+    return config
+
+def _collect_splicing_config(module, repository):
+    """Collect the splicing_config for the given crate_universe module.
+
+    Args:
+        module (StarlarkBazelModule): The current `crate` module.
+        repository (str): The name of the repository to collect the config for.
+
+    Returns:
+        dict: The splicing config to use.
+    """
+    config = None
+    for raw_config in module.tags.splicing_config:
+        if not raw_config.repositories:
+            continue
+
+        if not repository in raw_config.repositories:
+            continue
+
+        if config:
+            fail("Multiple render configs provided for module `{}`. Only 1 is allowed.".format(
+                module.name,
+            ))
+
+        config_kwargs = {attr: getattr(raw_config, attr) for attr in dir(raw_config)}
+
+        if "repositories" in config_kwargs:
+            config_kwargs.pop("repositories")
+
+        config = json.decode(generate_splicing_config(**config_kwargs))
+
+    if not config:
+        config = json.decode(generate_splicing_config())
+
+    return config
+
+def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, render_config, splicing_config, cargo_lockfile = None, manifests = {}, packages = {}):
     """Generates repositories for the transitive closure of crates defined by manifests and packages.
 
     Args:
@@ -69,6 +475,8 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         cargo_bazel (function): A function that can be called to execute cargo_bazel.
         cfg (object): The module tag from `from_cargo` or `from_specs`
         annotations (dict): The set of annotation tag classes that apply to this closure, keyed by crate name.
+        render_config (dict): The render config to use.
+        splicing_config (dict): The splicing config to use.
         cargo_lockfile (path): Path to Cargo.lock, if we have one. This is optional for `from_specs` closures.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -76,9 +484,6 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
 
     tag_path = module_ctx.path(cfg.name)
 
-    rendering_config = json.decode(render_config(
-        regen_command = "Run 'cargo update [--workspace]'",
-    ))
     config_file = tag_path.get_child("config.json")
     module_ctx.file(
         config_file,
@@ -94,7 +499,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
             output_pkg = cfg.name,
             workspace_name = cfg.name,
             generate_binaries = cfg.generate_binaries,
-            render_config = rendering_config,
+            render_config = render_config,
             repository_ctx = module_ctx,
         ),
     )
@@ -105,7 +510,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
         executable = False,
         content = generate_splicing_manifest(
             packages = packages,
-            splicing_config = cfg.splicing_config,
+            splicing_config = splicing_config,
             cargo_config = cfg.cargo_config,
             manifests = manifests,
             manifest_to_path = module_ctx.path,
@@ -239,7 +644,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, cargo
             )
         elif "Path" in repo:
             options = {
-                "config": rendering_config,
+                "config": render_config,
                 "crate_context": crate,
                 "platform_conditions": contents["conditions"],
                 "supported_platform_triples": cfg.supported_platform_triples,
@@ -449,6 +854,9 @@ def _crate_impl(module_ctx):
             local_repos.append(cfg.name)
 
         for cfg in mod.tags.from_cargo:
+            render_config = _collect_render_config(mod, cfg.name)
+            splicing_config = _collect_splicing_config(mod, cfg.name)
+
             annotations = _annotations_for_repo(
                 module_annotations,
                 repo_specific_annotations.get(cfg.name),
@@ -462,6 +870,8 @@ def _crate_impl(module_ctx):
                 cfg = cfg,
                 annotations = annotations,
                 cargo_lockfile = cargo_lockfile,
+                render_config = render_config,
+                splicing_config = splicing_config,
                 manifests = manifests,
             )
 
@@ -476,12 +886,17 @@ def _crate_impl(module_ctx):
                 repo_specific_annotations.get(cfg.name),
             )
 
+            render_config = _collect_render_config(mod, cfg.name)
+            splicing_config = _collect_splicing_config(mod, cfg.name)
+
             packages = {p.package: _package_to_json(p) for p in mod.tags.spec}
             _generate_hub_and_spokes(
                 module_ctx = module_ctx,
                 cargo_bazel = cargo_bazel,
                 cfg = cfg,
                 annotations = annotations,
+                render_config = render_config,
+                splicing_config = splicing_config,
                 packages = packages,
             )
 
@@ -510,13 +925,13 @@ _from_cargo = tag_class(
         "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
         "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-        "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
     },
 )
 
 # This should be kept in sync with crate_universe/private/crate.bzl.
 _annotation = tag_class(
+    doc = "A collection of extra attributes and settings for a particular crate.",
     attrs = {
         "additive_build_file": attr.label(
             doc = "A file containing extra contents to write to the bottom of generated BUILD files.",
@@ -651,13 +1066,13 @@ _from_specs = tag_class(
         "cargo_config": CRATES_VENDOR_ATTRS["cargo_config"],
         "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
         "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-        "splicing_config": CRATES_VENDOR_ATTRS["splicing_config"],
         "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
     },
 )
 
 # This should be kept in sync with crate_universe/private/crate.bzl.
 _spec = tag_class(
+    doc = "A constructor for a crate dependency.",
     attrs = {
         "artifact": attr.string(
             doc = "Set to 'bin' to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.",
@@ -694,6 +1109,90 @@ _spec = tag_class(
     },
 )
 
+_splicing_config = tag_class(
+    doc = "Various settings used to configure Cargo manifest splicing behavior.",
+    attrs = {
+        "repositories": attr.string_list(
+            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+            default = [],
+        ),
+    } | {
+        "resolver_version": attr.string(
+            doc = "The [resolver version](https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions) to use in generated Cargo manifests. This flag is **only** used when splicing a manifest from direct package definitions. See `crates_repository::packages`",
+            default = "2",
+        ),
+    },
+)
+
+_render_config = tag_class(
+    doc = """\
+Various settings used to configure rendered outputs.
+
+The template parameters each support a select number of format keys. A description of each key
+can be found below where the supported keys for each template can be found in the parameter docs
+
+| key | definition |
+| --- | --- |
+| `name` | The name of the crate. Eg `tokio` |
+| `repository` | The rendered repository name for the crate. Directly relates to `crate_repository_template`. |
+| `triple` | A platform triple. Eg `x86_64-unknown-linux-gnu` |
+| `version` | The crate version. Eg `1.2.3` |
+| `target` | The library or binary target of the crate |
+| `file` | The basename of a file |
+""",
+    attrs = {
+        "repositories": attr.string_list(
+            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+            default = [],
+        ),
+    } | {
+        "build_file_template": attr.string(
+            doc = "The base template to use for BUILD file names. The available format keys are [`{name}`, {version}`].",
+            default = "//:BUILD.{name}-{version}.bazel",
+        ),
+        "crate_label_template": attr.string(
+            doc = "The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].",
+            default = "@{repository}__{name}-{version}//:{target}",
+        ),
+        "crate_repository_template": attr.string(
+            doc = "The base template to use for Crate label repository names. The available format keys are [`{repository}`, `{name}`, `{version}`].",
+            default = "{repository}__{name}-{version}",
+        ),
+        "crates_module_template": attr.string(
+            doc = "The pattern to use for the `defs.bzl` and `BUILD.bazel` file names used for the crates module. The available format keys are [`{file}`].",
+            default = "//:{file}",
+        ),
+        "default_alias_rule": attr.string(
+            doc = "Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.",
+            default = "alias",
+        ),
+        "default_package_name": attr.string(
+            doc = "The default package name to use in the rendered macros. This affects the auto package detection of things like `all_crate_deps`.",
+            default = "",
+        ),
+        "generate_rules_license_metadata": attr.bool(
+            doc = "Whether to generate rules license metedata.",
+            default = False,
+        ),
+        "generate_target_compatible_with": attr.bool(
+            doc = "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` being targeted that isn't declared in `supported_platform_triples`.",
+            default = True,
+        ),
+        "platforms_template": attr.string(
+            doc = "The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [`{triple}`].",
+            default = "@rules_rust//rust/platform:{triple}",
+        ),
+        "regen_command": attr.string(
+            doc = "An optional command to demonstrate how generated files should be regenerated.",
+            default = "",
+        ),
+        "vendor_mode": attr.string(
+            doc = "An optional configuration for rendering content to be rendered into repositories.",
+            default = "",
+        ),
+    },
+)
+
 _conditional_crate_args = {
     "arch_dependent": True,
     "os_dependent": True,
@@ -706,7 +1205,9 @@ crate = module_extension(
         "annotation": _annotation,
         "from_cargo": _from_cargo,
         "from_specs": _from_specs,
+        "render_config": _render_config,
         "spec": _spec,
+        "splicing_config": _splicing_config,
     },
     **_conditional_crate_args
 )
