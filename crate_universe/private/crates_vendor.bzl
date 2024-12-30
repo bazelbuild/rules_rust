@@ -8,6 +8,18 @@ load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
 
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+# shellcheck disable=SC1090
+source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || \\
+    source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || \
+    source "$0.runfiles/$f" 2>/dev/null || \\
+    source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+    source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+    {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
 set -euo pipefail
 
 export RUNTIME_PWD="$(pwd)"
@@ -15,10 +27,13 @@ if [[ -z "${{BAZEL_REAL:-}}" ]]; then
     BAZEL_REAL="$(which bazel || echo 'bazel')"
 fi
 
+_BIN="$(rlocation "{bin}")"
+
 _ENVIRON=()
 _ENVIRON+=(BAZEL_REAL="${{BAZEL_REAL}}")
 _ENVIRON+=(BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}")
 _ENVIRON+=(PATH="${{PATH}}")
+{env}
 
 if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
     _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
@@ -31,8 +46,7 @@ fi
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
 exec env - \\
 "${{_ENVIRON[@]}}" \\
-{env} \\
-    "{bin}" \\
+    "${{_BIN}}" \\
     {args} \\
     --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
     "$@"
@@ -40,10 +54,71 @@ exec env - \\
 
 _WINDOWS_WRAPPER = """\
 @ECHO OFF
+
+SETLOCAL ENABLEEXTENSIONS
+SETLOCAL ENABLEDELAYEDEXPANSION
+
+@REM Usage of rlocation function:
+@REM        call :rlocation <runfile_path> <abs_path>
+@REM        The rlocation function maps the given <runfile_path> to its absolute
+@REM        path and stores the result in a variable named <abs_path>.
+@REM        This function fails if the <runfile_path> doesn't exist in mainifest
+@REM        file.
+:: Start of rlocation
+goto :rlocation_end
+:rlocation
+if "%~2" equ "" (
+    echo>&2 ERROR: Expected two arguments for rlocation function.
+    exit 1
+)
+if exist "%RUNFILES_DIR%" (
+    set RUNFILES_MANIFEST_FILE=%RUNFILES_DIR%_manifest
+)
+if "%RUNFILES_MANIFEST_FILE%" equ "" (
+    set RUNFILES_MANIFEST_FILE=%~f0.runfiles\\MANIFEST
+)
+if not exist "%RUNFILES_MANIFEST_FILE%" (
+    set RUNFILES_MANIFEST_FILE=%~f0.runfiles_manifest
+)
+set MF=%RUNFILES_MANIFEST_FILE:/=\\%
+if not exist "%MF%" (
+    echo>&2 ERROR: Manifest file %MF% does not exist.
+    exit 1
+)
+set runfile_path=%~1
+for /F "tokens=2* usebackq" %%i in (`%SYSTEMROOT%\\system32\\findstr.exe /l /c:"!runfile_path! " "%MF%"`) do (
+    set abs_path=%%i
+)
+if "!abs_path!" equ "" (
+    echo>&2 ERROR: !runfile_path! not found in runfiles manifest
+    exit 1
+)
+set %~2=!abs_path!
+exit /b 0
+:rlocation_end
+
+
+@REM Function to replace forward slashes with backslashes.
+goto :slocation_end
+:slocation
+set "input=%~1"
+set "varName=%~2"
+set "output="
+
+@REM Replace forward slashes with backslashes
+set "output=%input:/=\\%"
+
+@REM Assign the sanitized path to the specified variable
+set "%varName%=%output%"
+exit /b 0
+:slocation_end
+
 set RUNTIME_PWD=%CD%
 {env}
 
-{bin} {args} --nonhermetic-root-bazel-workspace-dir=%BUILD_WORKSPACE_DIRECTORY% %*
+call :rlocation "{bin}" _BIN
+
+%_BIN% {args} --nonhermetic-root-bazel-workspace-dir=%BUILD_WORKSPACE_DIRECTORY% %*
 exit %ERRORLEVEL%
 """
 
@@ -52,13 +127,32 @@ CARGO_BAZEL_GENERATOR_PATH = "CARGO_BAZEL_GENERATOR_PATH"
 def _default_render_config():
     return json.decode(generate_render_config())
 
-def _runfiles_path(file, is_windows):
-    if is_windows:
-        runtime_pwd_var = "%RUNTIME_PWD%"
-    else:
-        runtime_pwd_var = "${RUNTIME_PWD}"
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
 
-    return "{}/{}".format(runtime_pwd_var, file.short_path)
+    return "{}/{}".format(workspace_name, file.short_path)
+
+def _sys_runfile_env(ctx, name, file, is_windows):
+    if is_windows:
+        return "call :rlocation \"{}\" {}".format(
+            _rlocationpath(file, ctx.workspace_name),
+            name,
+        )
+
+    return "\n".join([
+        "export {}=\"$(rlocation \"{}\")\"".format(
+            name,
+            _rlocationpath(file, ctx.workspace_name),
+        ),
+        "_ENVIRON+=({0}=\"${{{0}}}\")".format(name),
+    ])
+
+def _expand_env(value, is_windows):
+    if is_windows:
+        return "%{}%".format(value)
+
+    return "\"${{{}}}\"".format(value)
 
 def _is_windows(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
@@ -136,9 +230,10 @@ def _write_splicing_manifest(ctx):
 
     is_windows = _is_windows(ctx)
 
-    args = ["--splicing-manifest", _runfiles_path(manifest, is_windows)]
+    env = [_sys_runfile_env(ctx, "SPLICING_MANIFEST", manifest, is_windows)]
+    args = ["--splicing-manifest", _expand_env("SPLICING_MANIFEST", is_windows)]
     runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
-    return args, runfiles
+    return args, env, runfiles
 
 def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manifests, manifest_to_path):
     # Deserialize information about direct packages
@@ -183,9 +278,10 @@ def _write_config_file(ctx):
     )
 
     is_windows = _is_windows(ctx)
-    args = ["--config", _runfiles_path(config, is_windows)]
+    env = [_sys_runfile_env(ctx, "CONFIG", config, is_windows)]
+    args = ["--config", _expand_env("CONFIG", is_windows)]
     runfiles = [config] + ctx.files.manifests
-    return args, runfiles
+    return args, env, runfiles
 
 def generate_config_file(
         ctx,
@@ -297,10 +393,10 @@ def _crates_vendor_impl(ctx):
     toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
     is_windows = _is_windows(ctx)
 
-    environ = {
-        "CARGO": _runfiles_path(toolchain.cargo, is_windows),
-        "RUSTC": _runfiles_path(toolchain.rustc, is_windows),
-    }
+    environ = [
+        _sys_runfile_env(ctx, "CARGO", toolchain.cargo, is_windows),
+        _sys_runfile_env(ctx, "RUSTC", toolchain.rustc, is_windows),
+    ]
 
     args = ["vendor"]
 
@@ -310,7 +406,7 @@ def _crates_vendor_impl(ctx):
     if CARGO_BAZEL_GENERATOR_PATH in ctx.configuration.default_shell_env:
         bin_path = ctx.configuration.default_shell_env[CARGO_BAZEL_GENERATOR_PATH]
     elif ctx.executable.cargo_bazel:
-        bin_path = _runfiles_path(ctx.executable.cargo_bazel, is_windows)
+        bin_path = _rlocationpath(ctx.executable.cargo_bazel, ctx.workspace_name)
         cargo_bazel_runfiles.append(ctx.executable.cargo_bazel)
     else:
         fail("{} is missing either the `cargo_bazel` attribute or the '{}' action env".format(
@@ -319,54 +415,57 @@ def _crates_vendor_impl(ctx):
         ))
 
     # Generate config file
-    config_args, config_runfiles = _write_config_file(ctx)
+    config_args, config_env, config_runfiles = _write_config_file(ctx)
+    environ.extend(config_env)
     args.extend(config_args)
     cargo_bazel_runfiles.extend(config_runfiles)
 
     # Generate splicing manifest
-    splicing_manifest_args, splicing_manifest_runfiles = _write_splicing_manifest(ctx)
+    splicing_manifest_args, splicing_manifest_env, splicing_manifest_runfiles = _write_splicing_manifest(ctx)
+    environ.extend(splicing_manifest_env)
     args.extend(splicing_manifest_args)
     cargo_bazel_runfiles.extend(splicing_manifest_runfiles)
 
     # Add an optional `Cargo.lock` file.
     if ctx.attr.cargo_lockfile:
-        args.extend([
-            "--cargo-lockfile",
-            _runfiles_path(ctx.file.cargo_lockfile, is_windows),
-        ])
+        environ.append(_sys_runfile_env(ctx, "CARGO_LOCK", ctx.file.cargo_lockfile, is_windows))
+        args.extend(["--cargo-lockfile", _expand_env("CARGO_LOCK", is_windows)])
         cargo_bazel_runfiles.extend([ctx.file.cargo_lockfile])
 
     # Optionally include buildifier
     if ctx.attr.buildifier:
-        args.extend(["--buildifier", _runfiles_path(ctx.executable.buildifier, is_windows)])
+        environ.append(_sys_runfile_env(ctx, "BUILDIFIER", ctx.executable.buildifier, is_windows))
+        args.extend(["--buildifier", _expand_env("BUILDIFIER", is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.buildifier)
 
     # Optionally include an explicit `bazel` path
     if ctx.attr.bazel:
-        args.extend(["--bazel", _runfiles_path(ctx.executable.bazel, is_windows)])
+        environ.append(_sys_runfile_env(ctx, "BAZEL_REAL", ctx.executable.bazel, is_windows))
+        args.extend(["--bazel", _expand_env("BAZEL_REAL", is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.bazel)
 
     # Determine platform specific settings
     if is_windows:
         extension = ".bat"
         template = _WINDOWS_WRAPPER
-        env_template = "\nset {}={}"
     else:
         extension = ".sh"
         template = _UNIX_WRAPPER
-        env_template = "{}={}"
 
     # Write the wrapper script
     runner = ctx.actions.declare_file(ctx.label.name + extension)
     ctx.actions.write(
         output = runner,
         content = template.format(
-            env = " ".join([env_template.format(key, val) for key, val in environ.items()]),
+            env = "\n".join(environ),
             bin = bin_path,
             args = " ".join(args),
         ),
         is_executable = True,
     )
+
+    if runner.basename.endswith(".sh"):
+        cargo_bazel_runfiles.append(ctx.file._bash_runfiles)
 
     return DefaultInfo(
         files = depset([runner]),
@@ -471,6 +570,12 @@ CRATES_VENDOR_ATTRS = {
     "vendor_path": attr.string(
         doc = "The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root",
         default = "crates",
+    ),
+    "_bash_runfiles": attr.label(
+        doc = "The runfiles library for bash.",
+        cfg = "target",
+        allow_single_file = True,
+        default = Label("@bazel_tools//tools/bash/runfiles"),
     ),
 }
 
