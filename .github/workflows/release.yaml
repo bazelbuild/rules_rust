@@ -134,13 +134,13 @@ jobs:
           bazel clean
 
           # Build an archive of the repo contents.
-          # `examples/bzlmod` is included for the BCR presubmit; it must appear before --exclude="examples"
+          # `examples/hello_world` is included for the BCR presubmit; it must appear before --exclude="examples"
           tar -czf ${{ github.workspace }}/.github/rules_rust.tar.gz \
             -C ${{ github.workspace }} \
             --exclude=".git" \
             --exclude=".github" \
             --exclude="crate_universe/target" \
-            examples/bzlmod \
+            examples/hello_world \
             --exclude="examples" \
             .
 

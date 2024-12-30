@@ -1,0 +1,3 @@
+/bazel-*
+.DS_Store
+user.bazelrc

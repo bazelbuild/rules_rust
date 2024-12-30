@@ -5,7 +5,7 @@ bcr_test_module:
     bazel: ["7.x"]
   tasks:
     run_tests:
-      working_directory: examples/bzlmod/hello_world
+      working_directory: examples/hello_world
       name: "Run test module"
       platform: ${{ platform }}
       bazel: ${{ bazel }}
@@ -24,7 +24,7 @@ bcr_test_module_windows:
     bazel: ["7.x"]
   tasks:
     run_tests:
-      working_directory: examples/bzlmod/hello_world
+      working_directory: examples/hello_world
       name: "Run test module"
       platform: windows
       bazel: ${{ bazel }}
