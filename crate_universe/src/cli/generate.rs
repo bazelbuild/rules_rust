@@ -1,5 +1,6 @@
 //! The cli entrypoint for the `generate` subcommand
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -233,7 +234,7 @@ fn write_paths_to_track<
     source_annotations: SourceAnnotations,
     unused_patches: UnusedPatches,
 ) -> Result<()> {
-    let paths_to_track: std::collections::BTreeSet<_> = source_annotations
+    let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
             if let SourceAnnotation::Path { path } = v {
                 Some(path.join("Cargo.toml"))
@@ -241,6 +242,10 @@ fn write_paths_to_track<
                 None
             }
         })
+        .collect();
+    let paths_to_track: BTreeSet<_> = source_annotation_manifests
+        .iter()
+        .cloned()
         .chain(manifests)
         .collect();
     std::fs::write(
@@ -250,8 +255,8 @@ fn write_paths_to_track<
     .context("Failed to write paths to track")?;
 
     let mut warnings = Vec::new();
-    for path_to_track in &paths_to_track {
-        warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {path_to_track} is being used."));
+    for source_annotation_manifest in &source_annotation_manifests {
+        warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {source_annotation_manifest} is being used."));
     }
     for unused_patch in unused_patches {
         warnings.push(format!("You have a [patch] Cargo.toml entry that is being ignored by cargo. Unused patch: {} {}{}", unused_patch.name, unused_patch.version, if let Some(source) = unused_patch.source.as_ref() { format!(" ({})", source) } else { String::new() }));
