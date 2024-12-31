@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//rust:defs.bzl", "rust_library")
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -78,6 +78,14 @@ _lto_level_fat_test = analysistest.make(
     config_settings = {str(Label("//rust/settings:lto")): "fat"},
 )
 
+def _lto_proc_macro(ctx):
+    return _lto_test_impl(ctx, None, "no", False)
+
+_lto_proc_macro_test = analysistest.make(
+    _lto_proc_macro,
+    config_settings = {str(Label("//rust/settings:lto")): "thin"},
+)
+
 def lto_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -96,6 +104,12 @@ def lto_test_suite(name):
 
     rust_library(
         name = "lib",
+        srcs = [":lib.rs"],
+        edition = "2021",
+    )
+
+    rust_proc_macro(
+        name = "proc_macro",
         srcs = [":lib.rs"],
         edition = "2021",
     )
@@ -125,6 +139,11 @@ def lto_test_suite(name):
         target_under_test = ":lib",
     )
 
+    _lto_proc_macro_test(
+        name = "lto_proc_macro_test",
+        target_under_test = ":proc_macro",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -133,5 +152,6 @@ def lto_test_suite(name):
             ":lto_level_off_test",
             ":lto_level_thin_test",
             ":lto_level_fat_test",
+            ":lto_proc_macro_test",
         ],
     )

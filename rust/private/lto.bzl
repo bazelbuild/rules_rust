@@ -60,7 +60,7 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
     if is_exec_configuration(ctx):
         return "only_object"
 
-    mode = toolchain._lto.mode
+    mode = toolchain.lto.mode
 
     if mode in ["off", "unspecified"]:
         return "only_object"
@@ -75,9 +75,10 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
         # If we're building an 'rlib' and LTO is enabled, then we can skip
         # generating object files entirely.
         return "only_bitcode"
-    elif crate_info.type == "dylib":
+    elif crate_info.type in ["dylib", "proc-macro"]:
         # If we're a dylib and we're running LTO, then only emit object code
         # because 'rustc' doesn't currently support LTO with dylibs.
+        # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
         return "only_object"
     else:
         return "object_and_bitcode"
@@ -93,7 +94,7 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
     Returns:
         list: A list of strings that are valid flags for 'rustc'.
     """
-    mode = toolchain._lto.mode
+    mode = toolchain.lto.mode
 
     # The user is handling LTO on their own, don't add any arguments.
     if mode == "manual":
@@ -102,7 +103,8 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
     format = _determine_lto_object_format(ctx, toolchain, crate_info)
     args = []
 
-    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx):
+    # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
+    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx) and crate_info.type != "proc-macro":
         args.append("lto={}".format(mode))
 
     if format == "object_and_bitcode":
