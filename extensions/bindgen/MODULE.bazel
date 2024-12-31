@@ -23,14 +23,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "llvm-project",
-    version = "17.0.3",
-)
-single_version_override(
-    module_name = "llvm-project",
-    patch_strip = 1,
-    patches = [
-        "@//3rdparty/patches:llvm-project.incompatible_disallow_empty_glob.patch",
-    ],
+    version = "17.0.3.bcr.1",
 )
 
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
