@@ -622,18 +622,6 @@ crates_vendor_packages_repositories()
 ###############################################################################
 
 http_archive(
-    name = "rules_foreign_cc",
-    sha256 = "1eee5d216a3cec7a4c731f71ed731ac353290b1db61ab68b79440655bcb9acaa",
-    strip_prefix = "rules_foreign_cc-7ce62009557d73da9aa0d2a1ca7eded49078b3cf",
-    # Pulls in https://github.com/bazelbuild/rules_foreign_cc/pull/1163 and https://github.com/bazelbuild/rules_foreign_cc/pull/1199 which aren't currently in a release.
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/7ce62009557d73da9aa0d2a1ca7eded49078b3cf.tar.gz",
-)
-
-load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-
-rules_foreign_cc_dependencies()
-
-http_archive(
     name = "boringssl",
     patch_args = ["-p1"],
     patches = [
@@ -669,18 +657,6 @@ crates_repository(
                 ],
             ),
         ],
-        # zlib-ng-sys's build script invokes cmake, so we need to make cmake available.
-        # Fortunately, rules_foreign_cc has a cmake toolchain we can use.
-        "libz-ng-sys": [crate.annotation(
-            # Setting build_script_data makes the files available on disk when the rule runs.
-            build_script_data = ["@rules_foreign_cc//toolchains:current_cmake_toolchain"],
-            build_script_env = {
-                # The toolchain supplies a value of $(CMAKE) which is an execroot-relative path, so we need to prefix it with $${pwd}/ because build scripts don't typically run in the execroot unlike most bazel rules, for improved compatibility with Cargo.
-                "CMAKE": "$${pwd}/$(CMAKE)",
-            },
-            # Setting build_script_toolchains makes makefile variable substitution work so that we can reference $(CNAME) in attributes.
-            build_script_toolchains = ["@rules_foreign_cc//toolchains:current_cmake_toolchain"],
-        )],
     },
     cargo_lockfile = "//complicated_dependencies:Cargo.Bazel.lock",
     # `generator` is not necessary in official releases.
@@ -690,9 +666,6 @@ crates_repository(
     packages = {
         "boring": crate.spec(
             version = "3.0.4",
-        ),
-        "libz-ng-sys": crate.spec(
-            version = "=1.1.15",
         ),
     },
     splicing_config = splicing_config(
