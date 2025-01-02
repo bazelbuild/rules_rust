@@ -1,5 +1,5 @@
 {
-  "checksum": "28f4f0fa7041149dea9b25b240a6f93ba16d4fc5a8fc2ed3faa774e9b42807e7",
+  "checksum": "3a7407830584f061151aeff5247eeaa5e475960e95529260c17bd6132fff70a7",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -689,10 +689,6 @@
             {
               "id": "boring 3.1.0",
               "target": "boring"
-            },
-            {
-              "id": "libz-ng-sys 1.1.15",
-              "target": "libz_ng_sys"
             }
           ],
           "selects": {}
@@ -1215,103 +1211,6 @@
         "ISC"
       ],
       "license_file": "LICENSE"
-    },
-    "libz-ng-sys 1.1.15": {
-      "name": "libz-ng-sys",
-      "version": "1.1.15",
-      "package_url": "https://github.com/rust-lang/libz-sys",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/libz-ng-sys/1.1.15/download",
-          "sha256": "c6409efc61b12687963e602df8ecf70e8ddacf95bc6576bcf16e3ac6328083c5"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "libz_ng_sys",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build_zng",
-            "crate_root": "build_zng.rs",
-            "srcs": {
-              "allow_empty": true,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "libz_ng_sys",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "libc 0.2.154",
-              "target": "libc"
-            },
-            {
-              "id": "libz-ng-sys 1.1.15",
-              "target": "build_script_build_zng"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "1.1.15"
-      },
-      "build_script_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "data": {
-          "common": [
-            "@rules_foreign_cc//toolchains:current_cmake_toolchain"
-          ],
-          "selects": {}
-        },
-        "data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "cmake 0.1.50",
-              "target": "cmake"
-            }
-          ],
-          "selects": {}
-        },
-        "build_script_env": {
-          "common": {
-            "CMAKE": "$${pwd}/$(CMAKE)"
-          },
-          "selects": {}
-        },
-        "links": "z-ng",
-        "toolchains": [
-          "@rules_foreign_cc//toolchains:current_cmake_toolchain"
-        ]
-      },
-      "license": "MIT OR Apache-2.0",
-      "license_ids": [
-        "Apache-2.0",
-        "MIT"
-      ],
-      "license_file": "LICENSE-APACHE"
     },
     "memchr 2.7.2": {
       "name": "memchr",
@@ -3102,8 +3001,7 @@
     ]
   },
   "direct_deps": [
-    "boring 3.1.0",
-    "libz-ng-sys 1.1.15"
+    "boring 3.1.0"
   ],
   "direct_dev_deps": [],
   "unused_patches": []
