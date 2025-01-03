@@ -17,7 +17,7 @@ for d in extensions/*; do
   popd
 done
 
-for d in examples/crate_universe/vendor_*; do
+for d in examples/crate_universe/vendor_*/; do
   (cd "${d}" && CARGO_BAZEL_REPIN=true bazel run :crates_vendor)
 done
 
