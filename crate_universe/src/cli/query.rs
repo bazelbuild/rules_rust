@@ -42,7 +42,11 @@ pub fn query(opt: QueryOptions) -> Result<()> {
     // Read the lockfile
     let content = match fs::read_to_string(&opt.lockfile) {
         Ok(c) => c,
-        Err(_) => bail!("Unable to read lockfile"),
+        Err(e) => bail!(
+            "Unable to read lockfile `{}`\n{:?}",
+            opt.lockfile.display(),
+            e
+        ),
     };
 
     // Deserialize it so we can easily compare it with

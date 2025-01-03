@@ -29,6 +29,7 @@ bazel_dep(
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
+    "rrwbd",
     "rrwbd__anyhow-1.0.71",
     "rrwbd__assert_cmd-1.0.8",
     "rrwbd__diff-0.1.13",

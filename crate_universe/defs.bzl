@@ -272,7 +272,7 @@ Some build scripts can be made to work by pulling in some extra files and making
 
 Commonly this is done by passing the file to the `build_script_data` annotation for the crate, and using `build_script_env` to tell the build script where the file is. That env var may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A
 
-There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds libz-ng-sys.
+There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
 
 ### Building with Bazel and supplying via an override
 

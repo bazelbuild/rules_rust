@@ -89,6 +89,6 @@ rust_library(
         "@rmdbi__parking_lot-0.12.3//:parking_lot",
         "@rmdbi__phf_shared-0.10.0//:phf_shared",
         "@rmdbi__precomputed-hash-0.1.1//:precomputed_hash",
-        "@rmdbi__serde-1.0.216//:serde",
+        "@rmdbi__serde-1.0.217//:serde",
     ],
 )

@@ -60,6 +60,11 @@ pub(crate) struct RenderConfig {
     #[serde(default = "default_crate_label_template")]
     pub(crate) crate_label_template: String,
 
+    /// The pattern to use for a crate alias.
+    /// Eg. `@{repository}//:{name}-{version}-{target}`
+    #[serde(default = "default_crate_alias_template")]
+    pub(crate) crate_alias_template: String,
+
     /// The pattern to use for the `defs.bzl` and `BUILD.bazel`
     /// file names used for the crates module.
     /// Eg. `//:{file}`
@@ -109,6 +114,7 @@ impl Default for RenderConfig {
             repository_name: String::default(),
             build_file_template: default_build_file_template(),
             crate_label_template: default_crate_label_template(),
+            crate_alias_template: default_crate_alias_template(),
             crates_module_template: default_crates_module_template(),
             crate_repository_template: default_crate_repository_template(),
             default_alias_rule: AliasRule::default(),
@@ -138,6 +144,10 @@ fn default_crates_module_template() -> String {
 
 fn default_crate_label_template() -> String {
     "@{repository}__{name}-{version}//:{target}".to_owned()
+}
+
+fn default_crate_alias_template() -> String {
+    "//:{name}-{version}".to_owned()
 }
 
 fn default_crate_repository_template() -> String {

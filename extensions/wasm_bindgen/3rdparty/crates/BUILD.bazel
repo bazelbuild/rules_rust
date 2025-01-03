@@ -32,8 +32,20 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "anyhow-1.0.71",
+    actual = "@rrwbd__anyhow-1.0.71//:anyhow",
+    tags = ["manual"],
+)
+
+alias(
     name = "anyhow",
     actual = "@rrwbd__anyhow-1.0.71//:anyhow",
+    tags = ["manual"],
+)
+
+alias(
+    name = "assert_cmd-1.0.8",
+    actual = "@rrwbd__assert_cmd-1.0.8//:assert_cmd",
     tags = ["manual"],
 )
 
@@ -44,8 +56,20 @@ alias(
 )
 
 alias(
+    name = "diff-0.1.13",
+    actual = "@rrwbd__diff-0.1.13//:diff",
+    tags = ["manual"],
+)
+
+alias(
     name = "diff",
     actual = "@rrwbd__diff-0.1.13//:diff",
+    tags = ["manual"],
+)
+
+alias(
+    name = "docopt-1.1.1",
+    actual = "@rrwbd__docopt-1.1.1//:docopt",
     tags = ["manual"],
 )
 
@@ -56,8 +80,20 @@ alias(
 )
 
 alias(
+    name = "env_logger-0.8.4",
+    actual = "@rrwbd__env_logger-0.8.4//:env_logger",
+    tags = ["manual"],
+)
+
+alias(
     name = "env_logger",
     actual = "@rrwbd__env_logger-0.8.4//:env_logger",
+    tags = ["manual"],
+)
+
+alias(
+    name = "log-0.4.19",
+    actual = "@rrwbd__log-0.4.19//:log",
     tags = ["manual"],
 )
 
@@ -68,8 +104,20 @@ alias(
 )
 
 alias(
+    name = "predicates-1.0.8",
+    actual = "@rrwbd__predicates-1.0.8//:predicates",
+    tags = ["manual"],
+)
+
+alias(
     name = "predicates",
     actual = "@rrwbd__predicates-1.0.8//:predicates",
+    tags = ["manual"],
+)
+
+alias(
+    name = "rayon-1.7.0",
+    actual = "@rrwbd__rayon-1.7.0//:rayon",
     tags = ["manual"],
 )
 
@@ -80,8 +128,20 @@ alias(
 )
 
 alias(
+    name = "rouille-3.6.2",
+    actual = "@rrwbd__rouille-3.6.2//:rouille",
+    tags = ["manual"],
+)
+
+alias(
     name = "rouille",
     actual = "@rrwbd__rouille-3.6.2//:rouille",
+    tags = ["manual"],
+)
+
+alias(
+    name = "serde-1.0.171",
+    actual = "@rrwbd__serde-1.0.171//:serde",
     tags = ["manual"],
 )
 
@@ -92,8 +152,20 @@ alias(
 )
 
 alias(
+    name = "serde_derive-1.0.171",
+    actual = "@rrwbd__serde_derive-1.0.171//:serde_derive",
+    tags = ["manual"],
+)
+
+alias(
     name = "serde_derive",
     actual = "@rrwbd__serde_derive-1.0.171//:serde_derive",
+    tags = ["manual"],
+)
+
+alias(
+    name = "serde_json-1.0.102",
+    actual = "@rrwbd__serde_json-1.0.102//:serde_json",
     tags = ["manual"],
 )
 
@@ -104,8 +176,20 @@ alias(
 )
 
 alias(
+    name = "tempfile-3.6.0",
+    actual = "@rrwbd__tempfile-3.6.0//:tempfile",
+    tags = ["manual"],
+)
+
+alias(
     name = "tempfile",
     actual = "@rrwbd__tempfile-3.6.0//:tempfile",
+    tags = ["manual"],
+)
+
+alias(
+    name = "ureq-2.8.0",
+    actual = "@rrwbd__ureq-2.8.0//:ureq",
     tags = ["manual"],
 )
 
@@ -116,8 +200,20 @@ alias(
 )
 
 alias(
+    name = "walrus-0.20.3",
+    actual = "@rrwbd__walrus-0.20.3//:walrus",
+    tags = ["manual"],
+)
+
+alias(
     name = "walrus",
     actual = "@rrwbd__walrus-0.20.3//:walrus",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-0.2.92",
+    actual = "@rrwbd__wasm-bindgen-0.2.92//:wasm_bindgen",
     tags = ["manual"],
 )
 
@@ -128,8 +224,20 @@ alias(
 )
 
 alias(
+    name = "wasm-bindgen-cli-support-0.2.92",
+    actual = "@rrwbd__wasm-bindgen-cli-support-0.2.92//:wasm_bindgen_cli_support",
+    tags = ["manual"],
+)
+
+alias(
     name = "wasm-bindgen-cli-support",
     actual = "@rrwbd__wasm-bindgen-cli-support-0.2.92//:wasm_bindgen_cli_support",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-shared-0.2.92",
+    actual = "@rrwbd__wasm-bindgen-shared-0.2.92//:wasm_bindgen_shared",
     tags = ["manual"],
 )
 
@@ -140,8 +248,20 @@ alias(
 )
 
 alias(
+    name = "wasmparser-0.102.0",
+    actual = "@rrwbd__wasmparser-0.102.0//:wasmparser",
+    tags = ["manual"],
+)
+
+alias(
     name = "wasmparser",
     actual = "@rrwbd__wasmparser-0.102.0//:wasmparser",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasmprinter-0.2.60",
+    actual = "@rrwbd__wasmprinter-0.2.60//:wasmprinter",
     tags = ["manual"],
 )
 

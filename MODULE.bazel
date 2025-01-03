@@ -42,6 +42,7 @@ bazel_dep(
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
     internal_deps,
+    "rrra",
     "rrra__anyhow-1.0.71",
     "rrra__clap-4.3.11",
     "rrra__env_logger-0.10.0",
@@ -61,7 +62,18 @@ register_toolchains(
 )
 
 rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
-use_repo(rust_host_tools, "rust_host_tools")
+rust_host_tools.host_tools(
+    name = "rust_host_tools",
+)
+rust_host_tools.host_tools(
+    name = "rust_host_tools_nightly",
+    version = "nightly",
+)
+use_repo(
+    rust_host_tools,
+    "rust_host_tools",
+    "rust_host_tools_nightly",
+)
 
 rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)
 use_repo(
@@ -70,8 +82,8 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.216",
-    "rtra__serde_json-1.0.133",
+    "rtra__serde-1.0.217",
+    "rtra__serde_json-1.0.134",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )

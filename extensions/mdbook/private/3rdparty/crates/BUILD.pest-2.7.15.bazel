@@ -85,7 +85,7 @@ rust_library(
     version = "2.7.15",
     deps = [
         "@rmdbi__memchr-2.7.4//:memchr",
-        "@rmdbi__thiserror-2.0.7//:thiserror",
+        "@rmdbi__thiserror-2.0.9//:thiserror",
         "@rmdbi__ucd-trie-0.1.7//:ucd_trie",
     ],
 )

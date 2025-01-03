@@ -1,6 +1,6 @@
 """Utilities directly related to the `splicing` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN", "cargo_environ", "execute")
+load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_REPIN", "REPIN")
 
 def splicing_config(resolver_version = "2"):
     """Various settings used to configure Cargo manifest splicing behavior.
@@ -114,42 +114,44 @@ def create_splicing_manifest(repository_ctx):
 
     return splicing_manifest
 
-def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicing_manifest, config_path, cargo, rustc):
+def splice_workspace_manifest(
+        *,
+        repository_ctx,
+        cargo_bazel_fn,
+        cargo_lockfile,
+        splicing_manifest,
+        config_path,
+        output_dir):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
-        repository_ctx (repository_ctx): The rule's context object.
-        generator (path): The `cargo-bazel` binary.
+        repository_ctx (repository_ctx or module_ctx): The repository's context object.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
         cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
-        config_path: The path to the config file (containing `cargo_bazel::config::Config`.)
-        cargo (path): The path to a Cargo binary.
-        rustc (path): The Path to a Rustc binary.
+        config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
+        output_dir (path): THe location in which to write splicing outputs.
 
     Returns:
         path: The path to a Cargo metadata json file found in the spliced workspace root.
     """
-    repository_ctx.report_progress("Splicing Cargo workspace.")
-
-    splicing_output_dir = repository_ctx.path("splicing-output")
 
     # Generate a workspace root which contains all workspace members
     arguments = [
-        generator,
         "splice",
         "--output-dir",
-        splicing_output_dir,
+        output_dir,
         "--splicing-manifest",
         splicing_manifest,
         "--config",
         config_path,
-        "--cargo",
-        cargo,
-        "--rustc",
-        rustc,
-        "--cargo-lockfile",
-        cargo_lockfile,
     ]
+
+    if cargo_lockfile:
+        arguments.extend([
+            "--cargo-lockfile",
+            cargo_lockfile,
+        ])
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.
@@ -159,31 +161,26 @@ def splice_workspace_manifest(repository_ctx, generator, cargo_lockfile, splicin
             repository_ctx.path("splicing-workspace"),
         ])
 
-    env = {
-        "CARGO": str(cargo),
-        "RUSTC": str(rustc),
-        "RUST_BACKTRACE": "full",
-    }
+    env = {}
 
     # Ensure the short hand repin variable is set to the full name.
     if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
         env["CARGO_BAZEL_REPIN"] = repository_ctx.os.environ[REPIN]
 
-    # Add any Cargo environment variables to the `cargo-bazel` execution
-    env |= cargo_environ(repository_ctx)
-
-    execute(
-        repository_ctx = repository_ctx,
+    cargo_bazel_fn(
         args = arguments,
         env = env,
     )
 
     # This file must have been produced by the execution above.
-    spliced_lockfile = repository_ctx.path(splicing_output_dir.get_child("Cargo.lock"))
+    spliced_lockfile = repository_ctx.path(output_dir.get_child("Cargo.lock"))
     if not spliced_lockfile.exists:
         fail("Lockfile file does not exist: " + str(spliced_lockfile))
-    spliced_metadata = repository_ctx.path(splicing_output_dir.get_child("metadata.json"))
+    spliced_metadata = repository_ctx.path(output_dir.get_child("metadata.json"))
     if not spliced_metadata.exists:
         fail("Metadata file does not exist: " + str(spliced_metadata))
 
-    return spliced_metadata
+    return struct(
+        metadata = spliced_metadata,
+        cargo_lock = spliced_lockfile,
+    )

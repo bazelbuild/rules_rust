@@ -161,10 +161,18 @@ _COMMON_TAG_KWARGS = {
 }
 
 _RUST_REPOSITORY_SET_TAG_ATTRS = {
-    "exec_triple": attr.string(doc = "Exec triple for this repository_set."),
-    "name": attr.string(doc = "Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing."),
-    "target_compatible_with": attr.label_list(doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for."),
-    "target_triple": attr.string(doc = "target_triple to configure."),
+    "exec_triple": attr.string(
+        doc = "Exec triple for this repository_set.",
+    ),
+    "name": attr.string(
+        doc = "Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing.",
+    ),
+    "target_compatible_with": attr.label_list(
+        doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for.",
+    ),
+    "target_triple": attr.string(
+        doc = "target_triple to configure.",
+    ),
     "versions": attr.string_list(
         doc = (
             "A list of toolchain versions to download. This parameter only accepts one version " +
@@ -217,9 +225,13 @@ _RUST_TOOLCHAIN_TAG = tag_class(
 
 _RUST_HOST_TOOLS_TAG = tag_class(
     attrs = {
+        "name": attr.string(
+            doc = "The name of the module to create",
+            default = "rust_host_tools",
+        ),
         "version": attr.string(
-            default = rust_common.default_version,
             doc = "The version of Rust to use for tools executed on the Bazel host.",
+            default = rust_common.default_version,
         ),
     } | _COMMON_TAG_KWARGS,
 )
@@ -236,34 +248,34 @@ rust = module_extension(
 # This is a separate module extension so that only the host tools are
 # marked as reproducible and os and arch dependent
 def _rust_host_tools_impl(module_ctx):
-    root, _ = _find_modules(module_ctx)
-
-    if len(root.tags.host_tools) == 1:
-        attrs = root.tags.host_tools[0]
-
-        host_tools = {
-            "allocator_library": attrs.allocator_library,
-            "dev_components": attrs.dev_components,
-            "edition": attrs.edition,
-            "rustfmt_version": attrs.rustfmt_version,
-            "sha256s": attrs.sha256s,
-            "urls": attrs.urls,
-            "version": attrs.version,
-        }
-    elif not root.tags.host_tools:
-        host_tools = {
-            "version": rust_common.default_version,
-        }
-    else:
-        fail("Multiple host_tools were defined in your root MODULE.bazel")
-
     host_triple = get_host_triple(module_ctx)
-    rust_toolchain_tools_repository(
-        name = "rust_host_tools",
-        exec_triple = host_triple.str,
-        target_triple = host_triple.str,
-        **host_tools
-    )
+
+    for mod in module_ctx.modules:
+        for host_tools in mod.tags.host_tools:
+            attrs = {key: getattr(host_tools, key) for key in dir(host_tools)}
+
+            # Allow shorthand versions to follow the defaults
+            # defined by rules_rust.
+            if attrs["version"] == "nightly":
+                attrs["version"] = DEFAULT_NIGHTLY_VERSION
+
+            rust_toolchain_tools_repository(
+                exec_triple = host_triple.str,
+                target_triple = host_triple.str,
+                **attrs
+            )
+
+        # If no tags were specified, create a default repository.
+        if not mod.tags.host_tools:
+            attrs = {
+                "name": "rust_host_tools",
+                "version": rust_common.default_version,
+            }
+            rust_toolchain_tools_repository(
+                exec_triple = host_triple.str,
+                target_triple = host_triple.str,
+                **attrs
+            )
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:

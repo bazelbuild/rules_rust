@@ -295,16 +295,16 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "axum": Label("@crates_vendor_pkgs__axum-0.4.8//:axum"),
-            "hyper": Label("@crates_vendor_pkgs__hyper-0.14.31//:hyper"),
-            "mime": Label("@crates_vendor_pkgs__mime-0.3.17//:mime"),
-            "serde_json": Label("@crates_vendor_pkgs__serde_json-1.0.133//:serde_json"),
-            "socket2": Label("@crates_vendor_pkgs__socket2-0.4.10//:socket2"),
-            "tokio": Label("@crates_vendor_pkgs__tokio-1.42.0//:tokio"),
-            "tower": Label("@crates_vendor_pkgs__tower-0.4.13//:tower"),
-            "tower-http": Label("@crates_vendor_pkgs__tower-http-0.2.5//:tower_http"),
-            "tracing": Label("@crates_vendor_pkgs__tracing-0.1.41//:tracing"),
-            "tracing-subscriber": Label("@crates_vendor_pkgs__tracing-subscriber-0.3.19//:tracing_subscriber"),
+            "axum": Label("@crates_vendor_pkgs//:axum-0.4.8"),
+            "hyper": Label("@crates_vendor_pkgs//:hyper-0.14.32"),
+            "mime": Label("@crates_vendor_pkgs//:mime-0.3.17"),
+            "serde_json": Label("@crates_vendor_pkgs//:serde_json-1.0.134"),
+            "socket2": Label("@crates_vendor_pkgs//:socket2-0.4.10"),
+            "tokio": Label("@crates_vendor_pkgs//:tokio-1.42.0"),
+            "tower": Label("@crates_vendor_pkgs//:tower-0.4.13"),
+            "tower-http": Label("@crates_vendor_pkgs//:tower-http-0.2.5"),
+            "tracing": Label("@crates_vendor_pkgs//:tracing-0.1.41"),
+            "tracing-subscriber": Label("@crates_vendor_pkgs//:tracing-subscriber-0.3.19"),
         },
     },
 }
@@ -702,12 +702,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__hyper-0.14.31",
-        sha256 = "8c08302e8fa335b151b788c775ff56e7a03ae64ff85c548ee820fecb70356e85",
+        name = "crates_vendor_pkgs__hyper-0.14.32",
+        sha256 = "41dfc780fdec9373c01bae43289ea34c972e40ee3c9f6b3c8801a35f35586ce7",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/hyper/0.14.31/download"],
-        strip_prefix = "hyper-0.14.31",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.hyper-0.14.31.bazel"),
+        urls = ["https://static.crates.io/crates/hyper/0.14.32/download"],
+        strip_prefix = "hyper-0.14.32",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.hyper-0.14.32.bazel"),
     )
 
     maybe(
@@ -742,12 +742,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__libc-0.2.167",
-        sha256 = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc",
+        name = "crates_vendor_pkgs__libc-0.2.169",
+        sha256 = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/libc/0.2.167/download"],
-        strip_prefix = "libc-0.2.167",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.libc-0.2.167.bazel"),
+        urls = ["https://static.crates.io/crates/libc/0.2.169/download"],
+        strip_prefix = "libc-0.2.169",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.libc-0.2.169.bazel"),
     )
 
     maybe(
@@ -802,12 +802,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__miniz_oxide-0.8.0",
-        sha256 = "e2d80299ef12ff69b16a84bb182e3b9df68b5a91574d3d4fa6e41b65deec4df1",
+        name = "crates_vendor_pkgs__miniz_oxide-0.8.2",
+        sha256 = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/miniz_oxide/0.8.0/download"],
-        strip_prefix = "miniz_oxide-0.8.0",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.miniz_oxide-0.8.0.bazel"),
+        urls = ["https://static.crates.io/crates/miniz_oxide/0.8.2/download"],
+        strip_prefix = "miniz_oxide-0.8.2",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.miniz_oxide-0.8.2.bazel"),
     )
 
     maybe(
@@ -832,12 +832,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__object-0.36.5",
-        sha256 = "aedf0a2d09c573ed1d8d85b30c119153926a2b36dce0ab28322c09a117a4683e",
+        name = "crates_vendor_pkgs__object-0.36.7",
+        sha256 = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/object/0.36.5/download"],
-        strip_prefix = "object-0.36.5",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.object-0.36.5.bazel"),
+        urls = ["https://static.crates.io/crates/object/0.36.7/download"],
+        strip_prefix = "object-0.36.7",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.object-0.36.7.bazel"),
     )
 
     maybe(
@@ -942,22 +942,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__quote-1.0.37",
-        sha256 = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af",
+        name = "crates_vendor_pkgs__quote-1.0.38",
+        sha256 = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/quote/1.0.37/download"],
-        strip_prefix = "quote-1.0.37",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.quote-1.0.37.bazel"),
+        urls = ["https://static.crates.io/crates/quote/1.0.38/download"],
+        strip_prefix = "quote-1.0.38",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.quote-1.0.38.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__redox_syscall-0.5.7",
-        sha256 = "9b6dfecf2c74bce2466cabf93f6664d6998a69eb21e39f4207930065b27b771f",
+        name = "crates_vendor_pkgs__redox_syscall-0.5.8",
+        sha256 = "03a862b389f93e68874fbf580b9de08dd02facb9a788ebadaf4a3fd33cf58834",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/redox_syscall/0.5.7/download"],
-        strip_prefix = "redox_syscall-0.5.7",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.redox_syscall-0.5.7.bazel"),
+        urls = ["https://static.crates.io/crates/redox_syscall/0.5.8/download"],
+        strip_prefix = "redox_syscall-0.5.8",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.redox_syscall-0.5.8.bazel"),
     )
 
     maybe(
@@ -992,32 +992,32 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__serde-1.0.215",
-        sha256 = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f",
+        name = "crates_vendor_pkgs__serde-1.0.217",
+        sha256 = "02fc4265df13d6fa1d00ecff087228cc0a2b5f3c0e87e258d8b94a156e984c70",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde/1.0.215/download"],
-        strip_prefix = "serde-1.0.215",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde-1.0.215.bazel"),
+        urls = ["https://static.crates.io/crates/serde/1.0.217/download"],
+        strip_prefix = "serde-1.0.217",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde-1.0.217.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__serde_derive-1.0.215",
-        sha256 = "ad1e866f866923f252f05c889987993144fb74e722403468a4ebd70c3cd756c0",
+        name = "crates_vendor_pkgs__serde_derive-1.0.217",
+        sha256 = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_derive/1.0.215/download"],
-        strip_prefix = "serde_derive-1.0.215",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde_derive-1.0.215.bazel"),
+        urls = ["https://static.crates.io/crates/serde_derive/1.0.217/download"],
+        strip_prefix = "serde_derive-1.0.217",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde_derive-1.0.217.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__serde_json-1.0.133",
-        sha256 = "c7fceb2473b9166b2294ef05efcb65a3db80803f0b03ef86a5fc88a2b85ee377",
+        name = "crates_vendor_pkgs__serde_json-1.0.134",
+        sha256 = "d00f4175c42ee48b15416f6193a959ba3a0d67fc699a0db9ad12df9f83991c7d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.133/download"],
-        strip_prefix = "serde_json-1.0.133",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde_json-1.0.133.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.134/download"],
+        strip_prefix = "serde_json-1.0.134",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.serde_json-1.0.134.bazel"),
     )
 
     maybe(
@@ -1092,12 +1092,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__syn-2.0.90",
-        sha256 = "919d3b74a5dd0ccd15aeb8f93e7006bd9e14c295087c9896a110f490752bcf31",
+        name = "crates_vendor_pkgs__syn-2.0.94",
+        sha256 = "987bc0be1cdea8b10216bd06e2ca407d40b9543468fafd3ddfb02f36e77f71f3",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.90/download"],
-        strip_prefix = "syn-2.0.90",
-        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.syn-2.0.90.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.94/download"],
+        strip_prefix = "syn-2.0.94",
+        build_file = Label("@examples//vendor_remote_pkgs/crates:BUILD.syn-2.0.94.bazel"),
     )
 
     maybe(
@@ -1422,9 +1422,9 @@ def crate_repositories():
 
     return [
         struct(repo = "crates_vendor_pkgs__axum-0.4.8", is_dev_dep = False),
-        struct(repo = "crates_vendor_pkgs__hyper-0.14.31", is_dev_dep = False),
+        struct(repo = "crates_vendor_pkgs__hyper-0.14.32", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__mime-0.3.17", is_dev_dep = False),
-        struct(repo = "crates_vendor_pkgs__serde_json-1.0.133", is_dev_dep = False),
+        struct(repo = "crates_vendor_pkgs__serde_json-1.0.134", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__socket2-0.4.10", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__tokio-1.42.0", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__tower-0.4.13", is_dev_dep = False),

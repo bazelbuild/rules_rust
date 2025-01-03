@@ -88,7 +88,7 @@ rust_library(
         "@rmdbi__memchr-2.7.4//:memchr",
         "@rmdbi__pulldown-cmark-0.10.3//:build_script_build",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
-        "@rmdbi__unicase-2.8.0//:unicase",
+        "@rmdbi__unicase-2.8.1//:unicase",
     ],
 )
 

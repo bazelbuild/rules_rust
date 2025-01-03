@@ -429,9 +429,15 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
+      - "--"
       - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
     test_targets:
+      - "--"
       - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
     build_flags: *aspects_flags
   crate_universe_examples_macos:
     name: Crate Universe Examples

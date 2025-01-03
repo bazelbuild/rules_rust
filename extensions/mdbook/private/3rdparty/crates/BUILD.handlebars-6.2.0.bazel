@@ -88,8 +88,8 @@ rust_library(
         "@rmdbi__log-0.4.22//:log",
         "@rmdbi__num-order-1.2.0//:num_order",
         "@rmdbi__pest-2.7.15//:pest",
-        "@rmdbi__serde-1.0.216//:serde",
-        "@rmdbi__serde_json-1.0.133//:serde_json",
+        "@rmdbi__serde-1.0.217//:serde",
+        "@rmdbi__serde_json-1.0.134//:serde_json",
         "@rmdbi__thiserror-1.0.69//:thiserror",
     ],
 )

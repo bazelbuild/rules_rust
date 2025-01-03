@@ -295,13 +295,13 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "anyhow": Label("@rrra__anyhow-1.0.71//:anyhow"),
-            "clap": Label("@rrra__clap-4.3.11//:clap"),
-            "env_logger": Label("@rrra__env_logger-0.10.0//:env_logger"),
-            "itertools": Label("@rrra__itertools-0.11.0//:itertools"),
-            "log": Label("@rrra__log-0.4.19//:log"),
-            "serde": Label("@rrra__serde-1.0.171//:serde"),
-            "serde_json": Label("@rrra__serde_json-1.0.102//:serde_json"),
+            "anyhow": Label("@rrra//:anyhow-1.0.71"),
+            "clap": Label("@rrra//:clap-4.3.11"),
+            "env_logger": Label("@rrra//:env_logger-0.10.0"),
+            "itertools": Label("@rrra//:itertools-0.11.0"),
+            "log": Label("@rrra//:log-0.4.19"),
+            "serde": Label("@rrra//:serde-1.0.171"),
+            "serde_json": Label("@rrra//:serde_json-1.0.102"),
         },
     },
 }

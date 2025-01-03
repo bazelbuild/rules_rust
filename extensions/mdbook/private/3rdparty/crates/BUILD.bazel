@@ -32,6 +32,12 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "mdbook-0.4.42",
+    actual = "@rmdbi__mdbook-0.4.42//:mdbook",
+    tags = ["manual"],
+)
+
+alias(
     name = "mdbook",
     actual = "@rmdbi__mdbook-0.4.42//:mdbook",
     tags = ["manual"],

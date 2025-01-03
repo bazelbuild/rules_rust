@@ -328,11 +328,15 @@ def generate_config_file(
         crate_label_template = "//{}/{{name}}-{{version}}:{{target}}".format(
             output_pkg,
         )
+        crate_alias_template = crate_label_template
     else:
         build_file_base_template = "//{}:BUILD.{{name}}-{{version}}.bazel".format(output_pkg)
         if workspace_name != "":
             build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel".format(workspace_name, output_pkg)
         crate_label_template = render_config["crate_label_template"]
+        crate_alias_template = "@{{repository}}//:{{name}}-{{version}}".format(
+            output_pkg,
+        )
 
     # If `workspace_name` is blank (such as when using modules), the `@{}//{}:{{file}}` template would generate
     # a reference like `Label(@//<stuff>)`. This causes issues if the module doing the `crates_vendor`ing is not the root module.
@@ -346,13 +350,14 @@ def generate_config_file(
 
     updates = {
         "build_file_template": build_file_base_template,
+        "crate_alias_template": crate_alias_template,
         "crate_label_template": crate_label_template,
         "crates_module_template": crates_module_template_value,
         "vendor_mode": mode,
     }
 
     # "crate_label_template" is explicitly supported above in non-local modes
-    excluded_from_key_check = ["crate_label_template"]
+    excluded_from_key_check = ["crate_label_template", "crate_alias_template"]
 
     for key in updates:
         if (render_config[key] != default_render_config[key]) and key not in excluded_from_key_check:
