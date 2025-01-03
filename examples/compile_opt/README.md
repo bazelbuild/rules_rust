@@ -17,7 +17,7 @@ config_setting(
 2) Add config option in `.bazelrc` to enable LTO together with optimized build.
 
 ```Starlark
-common:opt -c opt
+common:opt --compilation_mode=opt
 common:opt --@rules_rust//rust/settings:lto=thin
 ```
 
