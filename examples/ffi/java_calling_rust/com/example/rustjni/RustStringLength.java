@@ -2,10 +2,8 @@ package com.example.rustjni;
 
 import com.google.devtools.build.runfiles.AutoBazelRepository;
 import com.google.devtools.build.runfiles.Runfiles;
-
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-
 import java.io.IOException;
 
 @AutoBazelRepository
@@ -22,7 +20,9 @@ public interface RustStringLength extends Library {
             extension = "dll";
         }
         Runfiles.Preloaded runfiles = Runfiles.preload();
-        String dylibPath = runfiles.withSourceRepository(AutoBazelRepository_RustStringLength.NAME).rlocation("rules_rust_example_ffi/java_calling_rust/rust-crate/" + prefix + "rstrlen." + extension);
+        String dylibPath = runfiles.withSourceRepository(AutoBazelRepository_RustStringLength.NAME)
+                               .rlocation("rules_rust_example_ffi/java_calling_rust/rust-crate/"
+                                   + prefix + "rstrlen." + extension);
 
         return Native.load(dylibPath, RustStringLength.class);
     }
