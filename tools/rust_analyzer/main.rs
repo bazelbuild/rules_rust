@@ -36,6 +36,7 @@ fn main() -> anyhow::Result<()> {
     // Generate the crate specs.
     generate_crate_info(
         &config.bazel,
+        output_base,
         workspace_root,
         rules_rust_name,
         &config.targets,
@@ -65,6 +66,11 @@ fn parse_config() -> anyhow::Result<Config> {
 
     // We need some info from `bazel info`. Fetch it now.
     let mut bazel_info_command = Command::new(&config.bazel);
+
+    if let Some(output_base) = &config.output_base {
+        bazel_info_command.arg(format!("--output_base={}", output_base.display()));
+    }
+
     bazel_info_command
         .env_remove("BAZELISK_SKIP_WRAPPER")
         .env_remove("BUILD_WORKING_DIRECTORY")
