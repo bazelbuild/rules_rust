@@ -82,8 +82,8 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.216",
-    "rtra__serde_json-1.0.133",
+    "rtra__serde-1.0.217",
+    "rtra__serde_json-1.0.134",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )

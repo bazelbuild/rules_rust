@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tokio": Label("@cvm__tokio-1.42.0//:tokio"),
+            "tokio": Label("@cvm//:tokio-1.42.0"),
         },
     },
 }
@@ -310,8 +310,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("@cvm__tempfile-3.14.0//:tempfile"),
-            "tokio-test": Label("@cvm__tokio-test-0.4.4//:tokio_test"),
+            "tempfile": Label("@cvm//:tempfile-3.15.0"),
+            "tokio-test": Label("@cvm//:tokio-test-0.4.4"),
         },
     },
 }
@@ -531,12 +531,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__fastrand-2.2.0",
-        sha256 = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4",
+        name = "cvm__fastrand-2.3.0",
+        sha256 = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/fastrand/2.2.0/download"],
-        strip_prefix = "fastrand-2.2.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.fastrand-2.2.0.bazel"),
+        urls = ["https://static.crates.io/crates/fastrand/2.3.0/download"],
+        strip_prefix = "fastrand-2.3.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.fastrand-2.3.0.bazel"),
     )
 
     maybe(
@@ -551,6 +551,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cvm__getrandom-0.2.15",
+        sha256 = "c4567c8db10ae91089c99af84c68c38da3ec2f087c3f82960bcdbf3656b6f4d7",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/getrandom/0.2.15/download"],
+        strip_prefix = "getrandom-0.2.15",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.getrandom-0.2.15.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cvm__gimli-0.31.1",
         sha256 = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f",
         type = "tar.gz",
@@ -561,12 +571,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__libc-0.2.167",
-        sha256 = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc",
+        name = "cvm__libc-0.2.169",
+        sha256 = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/libc/0.2.167/download"],
-        strip_prefix = "libc-0.2.167",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.167.bazel"),
+        urls = ["https://static.crates.io/crates/libc/0.2.169/download"],
+        strip_prefix = "libc-0.2.169",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.libc-0.2.169.bazel"),
     )
 
     maybe(
@@ -601,12 +611,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__miniz_oxide-0.8.0",
-        sha256 = "e2d80299ef12ff69b16a84bb182e3b9df68b5a91574d3d4fa6e41b65deec4df1",
+        name = "cvm__miniz_oxide-0.8.2",
+        sha256 = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/miniz_oxide/0.8.0/download"],
-        strip_prefix = "miniz_oxide-0.8.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.miniz_oxide-0.8.0.bazel"),
+        urls = ["https://static.crates.io/crates/miniz_oxide/0.8.2/download"],
+        strip_prefix = "miniz_oxide-0.8.2",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.miniz_oxide-0.8.2.bazel"),
     )
 
     maybe(
@@ -621,12 +631,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__object-0.36.5",
-        sha256 = "aedf0a2d09c573ed1d8d85b30c119153926a2b36dce0ab28322c09a117a4683e",
+        name = "cvm__object-0.36.7",
+        sha256 = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/object/0.36.5/download"],
-        strip_prefix = "object-0.36.5",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.object-0.36.5.bazel"),
+        urls = ["https://static.crates.io/crates/object/0.36.7/download"],
+        strip_prefix = "object-0.36.7",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.object-0.36.7.bazel"),
     )
 
     maybe(
@@ -681,22 +691,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__quote-1.0.37",
-        sha256 = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af",
+        name = "cvm__quote-1.0.38",
+        sha256 = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/quote/1.0.37/download"],
-        strip_prefix = "quote-1.0.37",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.quote-1.0.37.bazel"),
+        urls = ["https://static.crates.io/crates/quote/1.0.38/download"],
+        strip_prefix = "quote-1.0.38",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.quote-1.0.38.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__redox_syscall-0.5.7",
-        sha256 = "9b6dfecf2c74bce2466cabf93f6664d6998a69eb21e39f4207930065b27b771f",
+        name = "cvm__redox_syscall-0.5.8",
+        sha256 = "03a862b389f93e68874fbf580b9de08dd02facb9a788ebadaf4a3fd33cf58834",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/redox_syscall/0.5.7/download"],
-        strip_prefix = "redox_syscall-0.5.7",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.7.bazel"),
+        urls = ["https://static.crates.io/crates/redox_syscall/0.5.8/download"],
+        strip_prefix = "redox_syscall-0.5.8",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.redox_syscall-0.5.8.bazel"),
     )
 
     maybe(
@@ -711,12 +721,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__rustix-0.38.41",
-        sha256 = "d7f649912bc1495e167a6edee79151c84b1bad49748cb4f1f1167f459f6224f6",
+        name = "cvm__rustix-0.38.42",
+        sha256 = "f93dc38ecbab2eb790ff964bb77fa94faf256fd3e73285fd7ba0903b76bedb85",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/rustix/0.38.41/download"],
-        strip_prefix = "rustix-0.38.41",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.rustix-0.38.41.bazel"),
+        urls = ["https://static.crates.io/crates/rustix/0.38.42/download"],
+        strip_prefix = "rustix-0.38.42",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.rustix-0.38.42.bazel"),
     )
 
     maybe(
@@ -761,22 +771,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__syn-2.0.90",
-        sha256 = "919d3b74a5dd0ccd15aeb8f93e7006bd9e14c295087c9896a110f490752bcf31",
+        name = "cvm__syn-2.0.94",
+        sha256 = "987bc0be1cdea8b10216bd06e2ca407d40b9543468fafd3ddfb02f36e77f71f3",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.90/download"],
-        strip_prefix = "syn-2.0.90",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.90.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.94/download"],
+        strip_prefix = "syn-2.0.94",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.syn-2.0.94.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__tempfile-3.14.0",
-        sha256 = "28cce251fcbc87fac86a866eeb0d6c2d536fc16d06f184bb61aeae11aa4cee0c",
+        name = "cvm__tempfile-3.15.0",
+        sha256 = "9a8a559c81686f576e8cd0290cd2a24a2a9ad80c98b3478856500fcbd7acd704",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tempfile/3.14.0/download"],
-        strip_prefix = "tempfile-3.14.0",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tempfile-3.14.0.bazel"),
+        urls = ["https://static.crates.io/crates/tempfile/3.15.0/download"],
+        strip_prefix = "tempfile-3.15.0",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tempfile-3.15.0.bazel"),
     )
 
     maybe(
@@ -801,12 +811,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__tokio-stream-0.1.16",
-        sha256 = "4f4e6ce100d0eb49a2734f8c0812bcd324cf357d21810932c5df6b96ef2b86f1",
+        name = "cvm__tokio-stream-0.1.17",
+        sha256 = "eca58d7bba4a75707817a2c44174253f9236b2d5fbd055602e9d5c07c139a047",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio-stream/0.1.16/download"],
-        strip_prefix = "tokio-stream-0.1.16",
-        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-stream-0.1.16.bazel"),
+        urls = ["https://static.crates.io/crates/tokio-stream/0.1.17/download"],
+        strip_prefix = "tokio-stream-0.1.17",
+        build_file = Label("@examples//vendor_remote_manifests/crates:BUILD.tokio-stream-0.1.17.bazel"),
     )
 
     maybe(
@@ -951,6 +961,6 @@ def crate_repositories():
 
     return [
         struct(repo = "cvm__tokio-1.42.0", is_dev_dep = False),
-        struct(repo = "cvm__tempfile-3.14.0", is_dev_dep = True),
+        struct(repo = "cvm__tempfile-3.15.0", is_dev_dep = True),
         struct(repo = "cvm__tokio-test-0.4.4", is_dev_dep = True),
     ]

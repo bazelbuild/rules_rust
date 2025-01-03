@@ -86,7 +86,7 @@ rust_library(
     deps = [
         "@rmdbi__mime-0.3.17//:mime",
         "@rmdbi__mime_guess-2.0.5//:build_script_build",
-        "@rmdbi__unicase-2.8.0//:unicase",
+        "@rmdbi__unicase-2.8.1//:unicase",
     ],
 )
 
@@ -142,7 +142,7 @@ cargo_build_script(
     version = "2.0.5",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__unicase-2.8.0//:unicase",
+        "@rmdbi__unicase-2.8.1//:unicase",
     ],
 )
 

@@ -82,8 +82,8 @@ rust_library(
         "@rmdbi__bumpalo-3.16.0//:bumpalo",
         "@rmdbi__log-0.4.22//:log",
         "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
-        "@rmdbi__quote-1.0.37//:quote",
-        "@rmdbi__syn-2.0.90//:syn",
+        "@rmdbi__quote-1.0.38//:quote",
+        "@rmdbi__syn-2.0.94//:syn",
         "@rmdbi__wasm-bindgen-shared-0.2.99//:wasm_bindgen_shared",
     ],
 )
