@@ -127,10 +127,9 @@ fn project_discovery() -> anyhow::Result<()> {
 
     log::info!("got rust-analyzer argument: {ra_arg}");
 
-    let (buildfile, targets) =
-        ra_arg.query_target_details(&bazel, &output_base, &workspace, config_group.as_deref())?;
-
+    let (buildfile, targets) = ra_arg.query_target_details(&workspace)?;
     let targets = &[targets];
+
     log::debug!("got buildfile: {buildfile}");
     log::debug!("got targets: {targets:?}");
 

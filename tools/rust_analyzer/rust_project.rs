@@ -2,9 +2,9 @@
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::fmt::Display;
-use std::process::Command;
+use std::fs;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
@@ -12,6 +12,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::aquery::{CrateSpec, CrateType};
+use crate::BUILD_FILE_NAMES;
 
 /// The argument that `rust-analyzer` can pass to the workspace discovery command.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -25,20 +26,11 @@ impl RustAnalyzerArg {
     /// Consumes itself to return a build file and the targets to build.
     pub fn query_target_details(
         self,
-        bazel: &Utf8Path,
-        output_base: &Utf8Path,
         workspace: &Utf8Path,
-        config_group: Option<&str>,
     ) -> anyhow::Result<(Utf8PathBuf, String)> {
         match self {
             Self::Path(file) => {
-                let buildfile = Self::query_buildfile_for_source_file(
-                    bazel,
-                    output_base,
-                    workspace,
-                    config_group,
-                    &file,
-                )?;
+                let buildfile = Self::source_file_to_buildfile(&file)?;
                 Self::buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
             }
             Self::Buildfile(buildfile) => {
@@ -49,56 +41,26 @@ impl RustAnalyzerArg {
 
     /// `rust-analyzer` associates workspaces with buildfiles. Therefore, when it passes in a
     /// source file path, we use this function to identify the buildfile the file belongs to.
-    fn query_buildfile_for_source_file(
-        bazel: &Utf8Path,
-        output_base: &Utf8Path,
-        workspace: &Utf8Path,
-        config_group: Option<&str>,
-        file: &Utf8Path,
-    ) -> anyhow::Result<Utf8PathBuf> {
-        log::info!("running bazel query on source file: {file}");
+    fn source_file_to_buildfile(file: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
+        // Skip the first element as it's always the full file path.
+        for dir in file.ancestors().skip(1) {
+            for entry in fs::read_dir(dir)? {
+                // Continue iteration if a path is not UTF8.
+                let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
+                    continue;
+                };
 
-        let stripped_file = file
-            .strip_prefix(workspace)
-            .with_context(|| format!("{file} not part of workspace"))?;
+                // Guard against directory names that would match items
+                // from [`BUILD_FILE_NAMES`].
+                if !path.is_file() {
+                    continue;
+                }
 
-        let query_output = Command::new(bazel)
-            .current_dir(workspace)
-            .env_remove("BAZELISK_SKIP_WRAPPER")
-            .env_remove("BUILD_WORKING_DIRECTORY")
-            .env_remove("BUILD_WORKSPACE_DIRECTORY")
-            .arg(format!("--output_base={output_base}"))
-            .arg("query")
-            .args(config_group.map(|s| format!("--config={s}")))
-            .arg("--output=package")
-            .arg(stripped_file)
-            .output()
-            .with_context(|| {
-                format!("failed to run bazel query for source file: {stripped_file}")
-            })?;
-
-        log::debug!("{}", String::from_utf8_lossy(&query_output.stderr));
-        log::info!("bazel query for source file {file} finished");
-
-        let text = String::from_utf8(query_output.stdout)?;
-        let mut lines = text.lines();
-
-        let package = match lines.next() {
-            Some(package) if lines.next().is_none() => package,
-            // We were passed a Rust source file path.
-            // Technically, if the file is used in multiple packages
-            // this will error out.
-            //
-            // I don't think there's any valid reason for such a situation
-            // though, so the check here is more for error handling's sake.
-            Some(_) => bail!("multiple packages returned for {stripped_file}"),
-            None => bail!("no package found for {stripped_file}"),
-        };
-
-        for res in std::fs::read_dir(workspace.join(package))? {
-            let entry = res?;
-            if entry.file_name() == "BUILD.bazel" || entry.file_name() == "BUILD" {
-                return entry.path().try_into().map_err(From::from);
+                if let Some(filename) = path.file_name() {
+                    if BUILD_FILE_NAMES.contains(&filename) {
+                        return Ok(path);
+                    }
+                }
             }
         }
 
