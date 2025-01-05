@@ -23,7 +23,7 @@ fn main() -> anyhow::Result<()> {
         bazel,
         config_group,
         specific,
-    } = Config::parse_and_refine()?;
+    } = Config::parse()?;
 
     let GenerateProjectArgs { targets } = specific;
 

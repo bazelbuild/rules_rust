@@ -33,7 +33,7 @@ where
     T: Args,
 {
     // Parse the configuration flags and supplement with bazel info as needed.
-    pub fn parse_and_refine() -> anyhow::Result<Self> {
+    pub fn parse() -> anyhow::Result<Self> {
         let ConfigParser {
             mut workspace,
             mut execution_root,

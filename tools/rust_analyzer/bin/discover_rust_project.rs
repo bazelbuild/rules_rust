@@ -34,7 +34,7 @@ fn project_discovery() -> anyhow::Result<()> {
         bazel,
         config_group,
         specific,
-    } = Config::parse_and_refine()?;
+    } = Config::parse()?;
 
     let DiscoverProjectArgs {
         default_buildfile,
