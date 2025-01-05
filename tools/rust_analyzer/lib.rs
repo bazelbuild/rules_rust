@@ -160,5 +160,5 @@ fn generate_rust_project(
     let sysroot_src = &toolchain_info["sysroot_src"];
     let sysroot = &toolchain_info["sysroot"];
 
-    rust_project::generate_rust_project(bazel, workspace, sysroot, sysroot_src, &crate_specs)
+    rust_project::assemble_rust_project(bazel, workspace, sysroot, sysroot_src, &crate_specs)
 }

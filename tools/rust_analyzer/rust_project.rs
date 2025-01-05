@@ -340,7 +340,7 @@ pub enum RunnableKind {
     TestOne,
 }
 
-pub fn generate_rust_project(
+pub fn assemble_rust_project(
     bazel: &Utf8Path,
     workspace: &Utf8Path,
     sysroot: &str,
@@ -592,7 +592,7 @@ mod tests {
     /// A simple example with a single crate and no dependencies.
     #[test]
     fn generate_rust_project_single() {
-        let project = generate_rust_project(
+        let project = assemble_rust_project(
             Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
@@ -626,7 +626,7 @@ mod tests {
     /// An example with a one crate having two dependencies.
     #[test]
     fn generate_rust_project_with_deps() {
-        let project = generate_rust_project(
+        let project = assemble_rust_project(
             Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
