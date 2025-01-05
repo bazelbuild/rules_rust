@@ -159,7 +159,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
         OutputGroupInfo(
             rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
             rust_analyzer_proc_macro_dylibs = rust_analyzer_info.proc_macro_dylibs,
-            rust_analyzer_build_info_out_dirs = rust_analyzer_info.build_info_out_dirs,
+            rust_analyzer_srcs = rust_analyzer_info.build_info_out_dirs,
         ),
     ]
 
