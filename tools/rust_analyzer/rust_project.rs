@@ -115,7 +115,7 @@ impl RustAnalyzerArg {
             .parent();
 
         let targets = match parent_dir {
-            Some(p) if !p.as_str().is_empty() => format!("//{p}/..."),
+            Some(p) if !p.as_str().is_empty() => format!("//{p}:all"),
             _ => "//...".to_string(),
         };
 
