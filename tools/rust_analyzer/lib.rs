@@ -12,6 +12,11 @@ use runfiles::Runfiles;
 use rust_project::RustProject;
 pub use rust_project::{DiscoverProject, NormalizedProjectString, RustAnalyzerArg};
 
+pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
+    &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
+
+pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
+
 pub fn generate_crate_info(
     bazel: &Utf8Path,
     output_base: &Utf8Path,

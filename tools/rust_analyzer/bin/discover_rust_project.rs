@@ -2,8 +2,11 @@
 //! Check the `rust-analyzer` user manual (<https://rust-analyzer.github.io/manual.html>),
 //! particularly the `rust-analyzer.workspace.discoverConfig` section, for more details.
 
+use std::convert::TryFrom;
 use std::env;
+use std::fs;
 
+use anyhow::bail;
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
 use clap::Args;
@@ -11,17 +14,13 @@ use env_logger::Target;
 use env_logger::WriteStyle;
 use gen_rust_project_lib::DiscoverProject;
 use gen_rust_project_lib::NormalizedProjectString;
+use gen_rust_project_lib::WORKSPACE_ROOT_FILE_NAMES;
 use gen_rust_project_lib::{generate_crate_info, generate_rust_project, Config, RustAnalyzerArg};
 use log::LevelFilter;
 use std::io::Write;
 
 #[derive(Debug, Args)]
 struct DiscoverProjectArgs {
-    /// The build file to use as Rust workspace root when not
-    /// using the `rust-analyzer` argument.
-    #[clap(long, default_value = "BUILD.bazel")]
-    default_buildfile: Utf8PathBuf,
-
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
 }
@@ -77,6 +76,34 @@ fn discovery_failure(error: anyhow::Error) {
     println!("{discovery_str}");
 }
 
+/// Looks within the current directory for a file that marks a bazel workspace.
+///
+/// # Errors
+///
+/// Returns an error if no file from [`WORKSPACE_ROOT_FILE_NAMES`] is found.
+fn find_workspace_root() -> anyhow::Result<Utf8PathBuf> {
+    for entry in fs::read_dir(env::current_dir()?)? {
+        // Continue iteration if a path is not UTF8.
+        let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
+            continue;
+        };
+
+        // Guard against directory names that would match items
+        // from [`WORKSPACE_ROOT_FILE_NAMES`].
+        if !path.is_file() {
+            continue;
+        }
+
+        if let Some(filename) = path.file_name() {
+            if WORKSPACE_ROOT_FILE_NAMES.contains(&filename) {
+                return Ok(path);
+            }
+        }
+    }
+
+    bail!("no bazel workspace root file found")
+}
+
 fn project_discovery() -> anyhow::Result<()> {
     let Config {
         workspace,
@@ -88,13 +115,12 @@ fn project_discovery() -> anyhow::Result<()> {
     } = Config::parse()?;
 
     let DiscoverProjectArgs {
-        default_buildfile,
         rust_analyzer_argument,
     } = specific;
 
     let ra_arg = match rust_analyzer_argument {
         Some(ra_arg) => ra_arg,
-        None => RustAnalyzerArg::Buildfile(workspace.join(default_buildfile)),
+        None => RustAnalyzerArg::Buildfile(find_workspace_root()?),
     };
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
