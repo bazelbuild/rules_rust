@@ -4,14 +4,14 @@
 
 use std::env;
 
+use camino::Utf8Path;
 use camino::Utf8PathBuf;
 use clap::Args;
 use env_logger::Target;
 use env_logger::WriteStyle;
-use gen_rust_project_lib::{
-    discover_rust_project, discovery_failure, discovery_progress, generate_crate_info, Config,
-    RustAnalyzerArg,
-};
+use gen_rust_project_lib::DiscoverProject;
+use gen_rust_project_lib::NormalizedProjectString;
+use gen_rust_project_lib::{generate_crate_info, generate_rust_project, Config, RustAnalyzerArg};
 use log::LevelFilter;
 use std::io::Write;
 
@@ -24,6 +24,57 @@ struct DiscoverProjectArgs {
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
+}
+
+fn discover_rust_project(
+    bazel: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    execution_root: &Utf8Path,
+    config_group: Option<&str>,
+    rules_rust_name: &str,
+    targets: &[String],
+    buildfile: Utf8PathBuf,
+) -> anyhow::Result<()> {
+    let project = generate_rust_project(
+        bazel,
+        output_base,
+        workspace,
+        execution_root,
+        config_group,
+        rules_rust_name,
+        targets,
+    )?;
+
+    let discovery_str = DiscoverProject::Finished { buildfile, project }
+        .as_normalized_project_string(workspace, output_base, execution_root)?;
+
+    println!("{discovery_str}");
+
+    Ok(())
+}
+
+/// Log formatting function that generates and writes a [`DiscoverProject::Progress`]
+/// message which `rust-analyzer` can display.
+fn discovery_progress(message: String) -> String {
+    DiscoverProject::Progress { message }
+        .as_project_string()
+        .expect("represent discovery error as string")
+}
+
+/// Construct and print a [`DiscoverProject::Error`] to transmit a
+/// project discovery failure to `rust-analyzer`.
+fn discovery_failure(error: anyhow::Error) {
+    let discovery = DiscoverProject::Error {
+        error: format!("could not generate rust-project.json: {error}"),
+        source: error.source().as_ref().map(ToString::to_string),
+    };
+
+    let discovery_str = discovery
+        .as_project_string()
+        .expect("represent discovery error as string");
+
+    println!("{discovery_str}");
 }
 
 fn project_discovery() -> anyhow::Result<()> {

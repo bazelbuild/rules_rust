@@ -4,7 +4,6 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
 use std::fmt::Display;
-use std::io::ErrorKind;
 use std::process::Command;
 use std::str::FromStr;
 
@@ -138,6 +137,31 @@ impl FromStr for RustAnalyzerArg {
     }
 }
 
+/// Trait used to convert a type that represents a Rust project into a string,
+/// normalizing it by replacing placeholders with the required counterparts.
+pub trait NormalizedProjectString {
+    /// Method that defines the conversion to a [`String`].
+    fn as_project_string(&self) -> anyhow::Result<String>;
+
+    /// Method that converts the type to a [`String`] through [`NormalizedProjectString::as_project_string`]
+    /// and then performs the placeholders replacements.
+    fn as_normalized_project_string(
+        &self,
+        workspace: &Utf8Path,
+        output_base: &Utf8Path,
+        execution_root: &Utf8Path,
+    ) -> anyhow::Result<String> {
+        let normalized = self
+            .as_project_string()?
+            .replace("__WORKSPACE__", workspace.as_str())
+            .replace("${pwd}", execution_root.as_str())
+            .replace("__EXEC_ROOT__", execution_root.as_str())
+            .replace("__OUTPUT_BASE__", output_base.as_str());
+
+        Ok(normalized)
+    }
+}
+
 /// The format that rust_analyzer expects as a response when automatically invoked.
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind")]
@@ -154,6 +178,12 @@ pub enum DiscoverProject {
     Progress {
         message: String,
     },
+}
+
+impl NormalizedProjectString for DiscoverProject {
+    fn as_project_string(&self) -> anyhow::Result<String> {
+        serde_json::to_string(&self).map_err(From::from)
+    }
 }
 
 /// A `rust-project.json` workspace representation. See
@@ -177,6 +207,12 @@ pub struct RustProject {
     /// The set of runnables, such as tests or benchmarks,
     /// that can be found in the crate.
     runnables: Vec<Runnable>,
+}
+
+impl NormalizedProjectString for RustProject {
+    fn as_project_string(&self) -> anyhow::Result<String> {
+        serde_json::to_string_pretty(&self).map_err(From::from)
+    }
 }
 
 /// A `rust-project.json` crate representation. See
@@ -537,54 +573,6 @@ fn detect_cycle<'a>(
     None
 }
 
-pub fn write_rust_project(
-    rust_project_path: &Utf8Path,
-    output_base: &Utf8Path,
-    workspace: &Utf8Path,
-    execution_root: &Utf8Path,
-    rust_project: &RustProject,
-) -> anyhow::Result<()> {
-    // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
-    match std::fs::remove_file(rust_project_path) {
-        Ok(_) => {}
-        Err(err) if err.kind() == ErrorKind::NotFound => {}
-        Err(err) => {
-            return Err(anyhow!(
-                "Unexpected error removing old rust-project.json: {}",
-                err
-            ))
-        }
-    }
-
-    // Render the `rust-project.json` file and replace the exec root
-    // placeholders with the path to the local exec root.
-    let rust_project_content = serde_json::to_string_pretty(rust_project)?;
-    let rust_project_content = normalize_project_string(
-        &rust_project_content,
-        workspace,
-        output_base,
-        execution_root,
-    );
-
-    // Write the new rust-project.json file.
-    std::fs::write(rust_project_path, rust_project_content)?;
-
-    Ok(())
-}
-
-pub fn normalize_project_string(
-    input: &str,
-    workspace: &Utf8Path,
-    output_base: &Utf8Path,
-    execution_root: &Utf8Path,
-) -> String {
-    input
-        .replace("__WORKSPACE__", workspace.as_str())
-        .replace("${pwd}", execution_root.as_str())
-        .replace("__EXEC_ROOT__", execution_root.as_str())
-        .replace("__OUTPUT_BASE__", output_base.as_str())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -593,6 +581,7 @@ mod tests {
     #[test]
     fn generate_rust_project_single() {
         let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
             Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
@@ -627,6 +616,7 @@ mod tests {
     #[test]
     fn generate_rust_project_with_deps() {
         let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
             Utf8Path::new("workspace"),
             "sysroot",
             "sysroot_src",
