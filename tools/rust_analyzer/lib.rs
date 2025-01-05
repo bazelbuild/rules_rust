@@ -1,6 +1,5 @@
 mod aquery;
 mod config;
-mod ra_arg;
 mod rust_project;
 
 use std::collections::HashMap;
@@ -9,8 +8,8 @@ use std::process::Command;
 use anyhow::bail;
 use camino::{Utf8Path, Utf8PathBuf};
 pub use config::Config;
-pub use ra_arg::RustAnalyzerArg;
 use runfiles::Runfiles;
+pub use rust_project::RustAnalyzerArg;
 use rust_project::{normalize_project_string, DiscoverProject, RustProject};
 
 pub fn generate_crate_info(
