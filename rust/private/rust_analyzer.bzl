@@ -243,7 +243,8 @@ def _create_single_crate(ctx, attrs, info):
     crate["root_module"] = path_prefix + info.crate.root.path
     crate["source"] = {"exclude_dirs": [], "include_dirs": []}
 
-    # Store build system related info only for local crates
+    # We're only interested in the build info for local crates as these are the
+    # only ones for which we want build file watching and code lens runnables support.
     if not is_external and not is_generated:
         crate["build"] = {
             "label": ctx.label.package + ":" + ctx.label.name,
