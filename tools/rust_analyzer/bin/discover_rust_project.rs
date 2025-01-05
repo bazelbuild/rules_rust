@@ -1,3 +1,7 @@
+//! Binary used for automatic Rust workspace discovery by `rust-analyzer`.
+//! Check the `rust-analyzer` user manual (<https://rust-analyzer.github.io/manual.html>),
+//! particularly the `rust-analyzer.workspace.discoverConfig` section, for more details.
+
 use std::env;
 
 use camino::Utf8PathBuf;
