@@ -399,10 +399,9 @@ def _collect_render_config(module, repository):
 
     config = None
     for raw_config in module.tags.render_config:
-        if not raw_config.repositories:
-            continue
-
-        if not repository in raw_config.repositories:
+        # if the repositories is empty we apply the config to all repositories
+        # otherwise we filter for the requested repositories
+        if raw_config.repositories and repository not in raw_config.repositories:
             continue
 
         if config:
@@ -582,6 +581,7 @@ def _generate_hub_and_spokes(*, module_ctx, cargo_bazel, cfg, annotations, rende
     _generate_repo(
         name = cfg.name,
         contents = {
+            "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
             "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
             "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
         },

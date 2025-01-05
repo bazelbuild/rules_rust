@@ -140,7 +140,7 @@ def parse_alias_rule(value):
     Returns:
         value: A Rust compatible `AliasRule`.
     """
-    if value == None:
+    if not value:
         return None
 
     if value == "alias" or value == "dbg" or value == "fastbuild" or value == "opt":

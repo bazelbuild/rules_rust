@@ -1,0 +1,57 @@
+"""Partial MODULE.bazel for alias_rule"""
+
+# Repository for test alias_rule_global_alias_annotation_none
+gaan = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+gaan.spec(package = "test_data_passing_crate", version = "0.1.0")
+gaan.annotation(crate = "test_data_passing_crate", alias_rule = "")
+gaan.render_config(default_alias_rule = "alias")
+gaan.from_specs(name = "alias_rule_global_alias_annotation_none")
+use_repo(gaan, "alias_rule_global_alias_annotation_none")
+
+# Repository for test alias_rule_global_alias_annotation_opt
+gaao = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+gaao.spec(package = "test_data_passing_crate", version = "0.1.0")
+gaao.annotation(crate = "test_data_passing_crate", alias_rule = "opt")
+gaao.render_config(default_alias_rule = "alias")
+gaao.from_specs(name = "alias_rule_global_alias_annotation_opt")
+use_repo(gaao, "alias_rule_global_alias_annotation_opt")
+
+# Repository for test alias_rule_global_custom_annotation_none
+gcan = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+gcan.spec(package = "test_data_passing_crate", version = "0.1.0")
+gcan.annotation(crate = "test_data_passing_crate", alias_rule = "")
+gcan.render_config(default_alias_rule = "@@//alias_rule:alias_rules.bzl:alias_rule")
+gcan.from_specs(name = "alias_rule_global_custom_annotation_none")
+use_repo(gcan, "alias_rule_global_custom_annotation_none")
+
+# Repository for test alias_rule_global_dbg_annotation_fastbuild
+gdaf = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+gdaf.spec(package = "test_data_passing_crate", version = "0.1.0")
+gdaf.annotation(crate = "test_data_passing_crate", alias_rule = "fastbuild")
+gdaf.render_config(default_alias_rule = "dbg")
+gdaf.from_specs(name = "alias_rule_global_dbg_annotation_fastbuild")
+use_repo(gdaf, "alias_rule_global_dbg_annotation_fastbuild")
+
+# Repository for test alias_rule_global_opt_annotation_alias
+goaa = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+goaa.spec(package = "test_data_passing_crate", version = "0.1.0")
+goaa.annotation(crate = "test_data_passing_crate", alias_rule = "alias")
+goaa.render_config(default_alias_rule = "opt")
+goaa.from_specs(name = "alias_rule_global_opt_annotation_alias")
+use_repo(goaa, "alias_rule_global_opt_annotation_alias")
+
+# Repository for test alias_rule_global_opt_annotation_dbg
+goad = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+goad.spec(package = "test_data_passing_crate", version = "0.1.0")
+goad.annotation(crate = "test_data_passing_crate", alias_rule = "dbg")
+goad.render_config(default_alias_rule = "opt")
+goad.from_specs(name = "alias_rule_global_opt_annotation_dbg")
+use_repo(goad, "alias_rule_global_opt_annotation_dbg")
+
+# Repository for test alias_rule_global_alias_annotation_none
+goan = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", isolate = True)
+goan.spec(package = "test_data_passing_crate", version = "0.1.0")
+goan.annotation(crate = "test_data_passing_crate", alias_rule = "")
+goan.render_config(default_alias_rule = "opt")
+goan.from_specs(name = "alias_rule_global_opt_annotation_none")
+use_repo(goan, "alias_rule_global_opt_annotation_none")
