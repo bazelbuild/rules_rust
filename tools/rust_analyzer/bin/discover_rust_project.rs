@@ -81,8 +81,8 @@ fn discovery_failure(error: anyhow::Error) {
 /// # Errors
 ///
 /// Returns an error if no file from [`WORKSPACE_ROOT_FILE_NAMES`] is found.
-fn find_workspace_root() -> anyhow::Result<Utf8PathBuf> {
-    for entry in fs::read_dir(env::current_dir()?)? {
+fn find_workspace_root_file(workspace: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
+    for entry in fs::read_dir(&workspace)? {
         // Continue iteration if a path is not UTF8.
         let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
             continue;
@@ -101,7 +101,7 @@ fn find_workspace_root() -> anyhow::Result<Utf8PathBuf> {
         }
     }
 
-    bail!("no bazel workspace root file found")
+    bail!("no root file found for bazel workspace {workspace}")
 }
 
 fn project_discovery() -> anyhow::Result<()> {
@@ -120,7 +120,7 @@ fn project_discovery() -> anyhow::Result<()> {
 
     let ra_arg = match rust_analyzer_argument {
         Some(ra_arg) => ra_arg,
-        None => RustAnalyzerArg::Buildfile(find_workspace_root()?),
+        None => RustAnalyzerArg::Buildfile(find_workspace_root_file(&workspace)?),
     };
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
