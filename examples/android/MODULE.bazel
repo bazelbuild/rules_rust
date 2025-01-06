@@ -94,3 +94,11 @@ REMOTE_JDK_REPOS = [
     register_toolchains("@" + name + "_toolchain_config_repo//:all")
     for name in REMOTE_JDK_REPOS
 ]
+
+android_ndk_repository_extension = use_extension(
+    "@rules_android_ndk//:extension.bzl",
+    "android_ndk_repository_extension",
+)
+use_repo(android_ndk_repository_extension, "androidndk")
+
+register_toolchains("@androidndk//:all")
