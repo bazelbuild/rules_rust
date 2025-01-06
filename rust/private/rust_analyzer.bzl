@@ -45,8 +45,6 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         RustAnalyzerInfo: Info with the embedded spec file.
     """
     crate_spec = ctx.actions.declare_file("{}.rust_analyzer_crate_spec.json".format(owner.name))
-    proc_macro_dylibs = [base_info.proc_macro_dylib] if base_info.proc_macro_dylib else None
-    build_info_out_dirs = [base_info.build_info.out_dir] if base_info.build_info != None and base_info.build_info.out_dir != None else None
 
     # Recreate the provider with the spec file embedded in it.
     rust_analyzer_info = RustAnalyzerInfo(
@@ -56,8 +54,8 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         env = base_info.env,
         deps = base_info.deps,
         crate_specs = depset(direct = [crate_spec], transitive = [base_info.crate_specs]),
-        proc_macro_dylibs = depset(direct = proc_macro_dylibs, transitive = [base_info.proc_macro_dylibs]),
-        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [base_info.build_info_out_dirs]),
+        proc_macro_dylibs = depset(transitive = [base_info.proc_macro_dylibs]),
+        build_info_out_dirs = depset(transitive = [base_info.build_info_out_dirs]),
         proc_macro_dylib = base_info.proc_macro_dylib,
         build_info = base_info.build_info,
     )
@@ -140,6 +138,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
             aliases[labels_to_rais[aliased_target.label]] = aliased_name
 
     proc_macro_dylib = find_proc_macro_dylib(toolchain, target)
+    proc_macro_dylibs = [proc_macro_dylib] if proc_macro_dylib else None
+    build_info_out_dirs = [build_info.out_dir] if build_info != None and build_info.out_dir != None else None
 
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = aliases,
@@ -148,8 +148,8 @@ def _rust_analyzer_aspect_impl(target, ctx):
         env = crate_info.rustc_env,
         deps = dep_infos,
         crate_specs = depset(transitive = [dep.crate_specs for dep in dep_infos]),
-        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in dep_infos]),
-        build_info_out_dirs = depset(transitive = [dep.build_info_out_dirs for dep in dep_infos]),
+        proc_macro_dylibs = depset(direct = proc_macro_dylibs, transitive = [dep.proc_macro_dylibs for dep in dep_infos]),
+        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [dep.build_info_out_dirs for dep in dep_infos]),
         proc_macro_dylib = proc_macro_dylib,
         build_info = build_info,
     ))
