@@ -44,7 +44,7 @@ rust_lto_flag = rule(
 )
 
 def _determine_lto_object_format(ctx, toolchain, crate_info):
-    """Determines if we should run LTO and what bitcode should get included in a built artifact.
+    """Determines what bitcode should get included in a built artifact.
 
     Args:
         ctx (ctx): The calling rule's context object.
@@ -76,12 +76,38 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
         # generating object files entirely.
         return "only_bitcode"
     elif crate_info.type in ["dylib", "proc-macro"]:
-        # If we're a dylib and we're running LTO, then only emit object code
-        # because 'rustc' doesn't currently support LTO with dylibs.
-        # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
+        # If we're a dylib or a proc-macro and we're running LTO, then only emit
+        # object code because 'rustc' doesn't currently support LTO for these targets.
         return "only_object"
     else:
         return "object_and_bitcode"
+
+def _determine_experimental_xlang_lto(ctx, toolchain, crate_info):
+    """Determines if we should use Linker-plugin-based LTO, to enable cross language optimizations.
+
+    'rustc' has a `linker-plugin-lto` codegen option which delays LTO to the actual linking step.
+    If your C/C++ code is built with an LLVM toolchain (e.g. clang) and was built with LTO enabled,
+    then the linker can perform optimizations across programming language boundaries.
+
+    See <https://doc.rust-lang.org/rustc/linker-plugin-lto.html>
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        crate_info (CrateInfo): The CrateInfo provider of the target crate.
+
+    Returns:
+        bool: Whether or not to specify `-Clinker-plugin-lto` when building this crate.
+    """
+
+    feature_enabled = toolchain._experimental_cross_language_lto
+    rust_lto_enabled = toolchain.lto.mode in ["thin", "fat"]
+    correct_crate_type = crate_info.type in ["bin"]
+
+    # TODO(parkmycar): We could try to detect if LTO is enabled for C code using
+    # `ctx.fragments.cpp.copts` but I'm not sure how reliable that is.
+
+    return feature_enabled and rust_lto_enabled and correct_crate_type and not is_exec_configuration(ctx)
 
 def construct_lto_arguments(ctx, toolchain, crate_info):
     """Returns a list of 'rustc' flags to configure link time optimization.
@@ -101,10 +127,16 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
         return []
 
     format = _determine_lto_object_format(ctx, toolchain, crate_info)
+    xlang_enabled = _determine_experimental_xlang_lto(ctx, toolchain, crate_info)
     args = []
 
-    # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
-    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx) and crate_info.type != "proc-macro":
+    # Only tell `rustc` to use LTO if it's enabled, the crate we're currently building has bitcode
+    # embeded, and we're not building in the exec configuration.
+    #
+    # We skip running LTO when building for the exec configuration because the exec config is used
+    # for local tools, like build scripts or proc-macros, and LTO isn't really needed in those
+    # scenarios. Note, this also mimics Cargo's behavior.
+    if mode in ["thin", "fat", "off"] and crate_info.type != "proc-macro" and not is_exec_configuration(ctx):
         args.append("lto={}".format(mode))
 
     if format == "object_and_bitcode":
@@ -116,5 +148,8 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
         args.extend(["linker-plugin-lto"])
     else:
         fail("unrecognized LTO object format {}".format(format))
+
+    if xlang_enabled:
+        args.append("linker-plugin-lto")
 
     return ["-C{}".format(arg) for arg in args]

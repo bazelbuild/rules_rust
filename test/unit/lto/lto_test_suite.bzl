@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_binary")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -86,6 +86,39 @@ _lto_proc_macro_test = analysistest.make(
     config_settings = {str(Label("//rust/settings:lto")): "thin"},
 )
 
+def _lto_xlang_bin_off(ctx):
+    return _lto_test_impl(ctx, "off", "no", False)
+
+_lto_xlang_bin_off_test = analysistest.make(
+    _lto_xlang_bin_off,
+    config_settings = {
+        str(Label("//rust/settings:lto")): "off",
+        str(Label("//rust/settings:experimental_cross_language_lto")): True,
+    },
+)
+
+def _lto_xlang_bin_thin(ctx):
+    return _lto_test_impl(ctx, "thin", None, True)
+
+_lto_xlang_bin_thin_test = analysistest.make(
+    _lto_xlang_bin_thin,
+    config_settings = {
+        str(Label("//rust/settings:lto")): "thin",
+        str(Label("//rust/settings:experimental_cross_language_lto")): True,
+    },
+)
+
+def _lto_xlang_lib_off(ctx):
+    return _lto_test_impl(ctx, "off", "no", False)
+
+_lto_xlang_lib_off_test = analysistest.make(
+    _lto_xlang_lib_off,
+    config_settings = {
+        str(Label("//rust/settings:lto")): "off",
+        str(Label("//rust/settings:experimental_cross_language_lto")): False,
+    },
+)
+
 def lto_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -102,6 +135,15 @@ def lto_test_suite(name):
         ],
     )
 
+    write_file(
+        name = "crate_bin",
+        out = "main.rs",
+        content = [
+            "fn main() {}",
+            "",
+        ],
+    )
+
     rust_library(
         name = "lib",
         srcs = [":lib.rs"],
@@ -111,6 +153,12 @@ def lto_test_suite(name):
     rust_proc_macro(
         name = "proc_macro",
         srcs = [":lib.rs"],
+        edition = "2021",
+    )
+
+    rust_binary(
+        name = "binary",
+        srcs = [":main.rs"],
         edition = "2021",
     )
 
@@ -144,6 +192,21 @@ def lto_test_suite(name):
         target_under_test = ":proc_macro",
     )
 
+    _lto_xlang_bin_off_test(
+        name = "lto_xlang_bin_off_test",
+        target_under_test = ":binary",
+    )
+
+    _lto_xlang_bin_thin_test(
+        name = "lto_xlang_bin_thin_test",
+        target_under_test = ":binary",
+    )
+
+    _lto_xlang_lib_off_test(
+        name = "lto_xlang_lib_off_test",
+        target_under_test = ":lib",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -153,5 +216,8 @@ def lto_test_suite(name):
             ":lto_level_thin_test",
             ":lto_level_fat_test",
             ":lto_proc_macro_test",
+            ":lto_xlang_bin_off_test",
+            ":lto_xlang_bin_thin_test",
+            ":lto_xlang_lib_off_test",
         ],
     )

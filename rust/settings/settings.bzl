@@ -56,6 +56,17 @@ def lto():
         build_setting_default = "unspecified",
     )
 
+def experimental_cross_language_lto():
+    """A build setting which specifies whether or not to specify `linker-plugin-lto` and perform \
+    cross language optimizations.
+
+    See: <https://doc.rust-lang.org/rustc/linker-plugin-lto.html>
+    """
+    bool_flag(
+        name = "experimental_cross_language_lto",
+        build_setting_default = False,
+    )
+
 def rename_first_party_crates():
     """A flag controlling whether to rename first-party crates such that their names \
     encode the Bazel package and target name, instead of just the target name.

@@ -698,6 +698,7 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
+        _experimental_cross_language_lto = ctx.attr._experimental_cross_language_lto[BuildSettingInfo].value,
         _experimental_link_std_dylib = _experimental_link_std_dylib(ctx),
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
@@ -884,6 +885,9 @@ rust_toolchain = rule(
         ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
+        ),
+        "_experimental_cross_language_lto": attr.label(
+            default = Label("//rust/settings:experimental_cross_language_lto"),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
