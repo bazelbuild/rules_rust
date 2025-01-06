@@ -117,6 +117,8 @@ fn project_discovery() -> anyhow::Result<()> {
     let DiscoverProjectArgs {
         rust_analyzer_argument,
     } = specific;
+    
+    log::info!("got rust-analyzer argument: {rust_analyzer_argument:?}");
 
     let ra_arg = match rust_analyzer_argument {
         Some(ra_arg) => ra_arg,
@@ -125,7 +127,7 @@ fn project_discovery() -> anyhow::Result<()> {
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
-    log::info!("got rust-analyzer argument: {ra_arg}");
+    log::info!("resolved rust-analyzer argument: {ra_arg}");
 
     let (buildfile, targets) = ra_arg.query_target_details(&workspace)?;
     let targets = &[targets];
