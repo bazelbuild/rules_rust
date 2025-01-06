@@ -50,16 +50,10 @@ struct LintsArgs {
     output_rustc_lints: PathBuf,
     output_clippy_lints: PathBuf,
     output_rustdoc_lints: PathBuf,
-    // TODO(parkmycar): Support Rust's new --check-cfg once cargo-toml is updated.
-    //
-    // See: <https://gitlab.com/lib.rs/cargo_toml/-/issues/34>
-    #[allow(dead_code)]
-    output_rustc_check_cfg: PathBuf,
 }
 
 enum LintGroup {
     Rustc,
-    RustCheckCfg,
     Clippy,
     RustDoc,
 }
@@ -68,7 +62,6 @@ impl LintGroup {
     pub fn key(&self) -> &'static str {
         match self {
             LintGroup::Rustc => "rust",
-            LintGroup::RustCheckCfg => "check-cfg",
             LintGroup::Clippy => "clippy",
             LintGroup::RustDoc => "rustdoc",
         }
@@ -87,8 +80,6 @@ impl LintGroup {
             LintGroup::Rustc => format!("--{level}={name}"),
             LintGroup::Clippy => format!("--{level}=clippy::{name}"),
             LintGroup::RustDoc => format!("--{level}=rustdoc::{name}"),
-            // TODO: Support check-cfg once cargo_toml supports it.
-            LintGroup::RustCheckCfg => "".to_string(),
         }
     }
 }
@@ -118,7 +109,6 @@ fn generate_lints_info(
 
     let LintsArgs {
         output_rustc_lints,
-        output_rustc_check_cfg,
         output_clippy_lints,
         output_rustdoc_lints,
     } = args;
@@ -127,7 +117,6 @@ fn generate_lints_info(
         (LintGroup::Rustc, output_rustc_lints),
         (LintGroup::Clippy, output_clippy_lints),
         (LintGroup::RustDoc, output_rustdoc_lints),
-        (LintGroup::RustCheckCfg, output_rustc_check_cfg),
     ];
 
     let lints = match &crate_manifest.lints {
@@ -220,9 +209,8 @@ enum Command {
     /// Expects 4 filesystem paths in this order:
     ///
     /// 1. output for rustc lints
-    /// 2. output for rust check-cfg lints
-    /// 3. output for clippy lints
-    /// 4. output for rustdoc lints
+    /// 2. output for clippy lints
+    /// 3. output for rustdoc lints
     ///
     Lints(LintsArgs),
 }
@@ -244,10 +232,6 @@ impl TryFrom<RemainingArgs> for Command {
                     .next()
                     .map(PathBuf::from)
                     .ok_or(Cow::Borrowed("expected output path for rustc lints"))?;
-                let output_rustc_check_cfg = args
-                    .next()
-                    .map(PathBuf::from)
-                    .ok_or(Cow::Borrowed("expected output path for rustc check-cfg"))?;
                 let output_clippy_lints = args
                     .next()
                     .map(PathBuf::from)
@@ -265,7 +249,6 @@ impl TryFrom<RemainingArgs> for Command {
 
                 Ok(Command::Lints(LintsArgs {
                     output_rustc_lints,
-                    output_rustc_check_cfg,
                     output_clippy_lints,
                     output_rustdoc_lints,
                 }))

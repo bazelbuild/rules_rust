@@ -20,16 +20,14 @@ def _extract_cargo_lints(ctx):
 
     # Files to output our formatted arguments into.
     rustc_lints_out = ctx.actions.declare_file(ctx.label.name + ".rustc" + ".lints")
-    rustc_check_cfg_out = ctx.actions.declare_file(ctx.label.name + ".rustc_check_cfg" + ".lints")
     clippy_lints_out = ctx.actions.declare_file(ctx.label.name + ".clippy" + ".lints")
     rustdoc_lints_out = ctx.actions.declare_file(ctx.label.name + ".rustdoc" + ".lints")
 
     args.add(rustc_lints_out)
-    args.add(rustc_check_cfg_out)
     args.add(clippy_lints_out)
     args.add(rustdoc_lints_out)
 
-    outputs = [rustc_lints_out, rustc_check_cfg_out, clippy_lints_out, rustdoc_lints_out]
+    outputs = [rustc_lints_out, clippy_lints_out, rustdoc_lints_out]
 
     ctx.actions.run(
         outputs = outputs,
