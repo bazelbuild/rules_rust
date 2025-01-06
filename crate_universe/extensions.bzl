@@ -424,10 +424,9 @@ def _collect_render_config(module, repository):
 
     config = None
     for raw_config in module.tags.render_config:
-        if not raw_config.repositories:
-            continue
-
-        if not repository in raw_config.repositories:
+        # if the repositories is empty we apply the config to all repositories
+        # otherwise we filter for the requested repositories
+        if raw_config.repositories and repository not in raw_config.repositories:
             continue
 
         if config:
@@ -480,10 +479,9 @@ def _collect_splicing_config(module, repository):
     """
     config = None
     for raw_config in module.tags.splicing_config:
-        if not raw_config.repositories:
-            continue
-
-        if not repository in raw_config.repositories:
+        # if the repositories is empty we apply the config to all repositories
+        # otherwise we filter for the requested repositories
+        if raw_config.repositories and repository not in raw_config.repositories:
             continue
 
         if config:
