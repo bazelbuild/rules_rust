@@ -34,7 +34,6 @@ bazel_dep(
     version = "0.6.0",
     repo_name = "build_bazel_rules_android",
 )
-
 bazel_dep(
     name = "rules_android_ndk",
     version = "0.1.2",
