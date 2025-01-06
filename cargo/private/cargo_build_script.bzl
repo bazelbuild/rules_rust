@@ -648,7 +648,7 @@ cargo_build_script = rule(
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
-            default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
+            default = Label("//cargo/cargo_build_script_runner:runner"),
             cfg = "exec",
         ),
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
