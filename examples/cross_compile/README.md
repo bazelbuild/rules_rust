@@ -11,7 +11,7 @@ The example code is setup to cross compile from the following hosts to the the f
 * {darwin, aarch64 (Apple Silicon)} -> {linux, x86_64}
 * {darwin, aarch64 (Apple Silicon)} -> {linux, aarch64}
 
-Cross compilation from Linux to Apple may work, but has not been tested. 
+Cross compilation from Linux to Apple may work, but has not been tested.
 
 You cross-compile by calling the target.
 
@@ -23,7 +23,7 @@ or
 
 
 You can also build all targets at once:
- 
+
 
 `bazel build //...`
 
@@ -43,7 +43,7 @@ You add the required rules for cross compilation to your MODULE.bazel as shown b
 ```Starlark
 # Get latest release from:
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.52.0")
+bazel_dep(name = "rules_rust", version = "0.57.0")
 
 # https://github.com/bazelbuild/platforms/releases
 bazel_dep(name = "platforms", version = "0.0.10")
@@ -57,8 +57,8 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 
 ## LLVM Configuration
 
-Next, you have to configure the LLVM toolchain because rules_rust still needs a cpp toolchain for cross compilation and you have to add the specific platform triplets to the Rust toolchain. 
-Suppose you want to compile a Rust binary that supports linux on both, X86 and ARM. 
+Next, you have to configure the LLVM toolchain because rules_rust still needs a cpp toolchain for cross compilation and you have to add the specific platform triplets to the Rust toolchain.
+Suppose you want to compile a Rust binary that supports linux on both, X86 and ARM.
 In that case, you have to configure three LLVM targets:
 
 1) LLVM for the host
@@ -88,14 +88,14 @@ http_archive(
 ```
 
 Here, we declare to new http downloads that retrieve the sysroot for linux_x64 (Intel/AMD) and linux_aarch64 (ARM/Apple Silicon). The buildfile is a simple filegroup and located in the /build/sysroot directory. You have to copy it in your project directory to make the sysroots work. Note, these are only
-sysroots, that means you have to configure LLVM next to use these files. 
+sysroots, that means you have to configure LLVM next to use these files.
 
-If you need a custom sysroot, for example to cross compile system dependencies such as openssl, 
+If you need a custom sysroot, for example to cross compile system dependencies such as openssl,
 libpq (postgres client library) or similar, read through the excellent tutorial by Steven Casagrande:
 
 https://steven.casagrande.io/posts/2024/sysroot-generation-toolchains-llvm/
 
-As mentioned earlier, three LLVM targets need to be configured and to do just that, 
+As mentioned earlier, three LLVM targets need to be configured and to do just that,
 please add the following to your MODULE.bazel
 
 ```Starlark
@@ -128,7 +128,7 @@ register_toolchains(
 
 For simplicity, all toolchains are pinned to LLVM version 16 because it is one of the few releases that supports many targets and runs on older linux distributions i.e. Ubuntu 18.04. If you target modern CPU's i.e. ARMv9 that require a more recent LLVM version, see the complete [list off all LLVM releases and supported platforms.](https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl) Also, it is possible to pin different targets to different LLVM versions; [see the documentation for details](https://github.com/bazel-contrib/toolchains_llvm/tree/master?tab=readme-ov-file#per-host-architecture-llvm-version).
 
-If you face difficulties with building LLVM on older linux distros or your CI, 
+If you face difficulties with building LLVM on older linux distros or your CI,
 please take a look at the [LLVM Troubleshooting guide](README_LLVM_Troubleshooting) for known issues.
 
 
@@ -138,7 +138,7 @@ The Rust toolchain only need to know the additional platform triplets to downloa
 or or modify your MODULE.bazel with the following entry:
 
 ```Starlark
-RUST_EDITION = "2021"  
+RUST_EDITION = "2021"
 RUST_VERSION = "1.81.0"
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")

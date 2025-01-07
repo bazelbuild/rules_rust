@@ -8,7 +8,7 @@ module(
 ###############################################################################
 # Get latest rules_rust release from:
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.52.0")
+bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../..",

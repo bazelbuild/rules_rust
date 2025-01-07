@@ -1,13 +1,13 @@
 # Rust FFI
 
 In case of an existing C++, Rust can call into the C++ function via FFI.
-With Bazel, this is straightforward. However, your C++ API needs an extern "C" 
+With Bazel, this is straightforward. However, your C++ API needs an extern "C"
 declaration to generate the C compatibility required for FFI.
 
 ## Setup
 
-The setup is twofold, the Rust rules are declared in the MODULE file, 
-but the rules_cc are not yet available in the Bazelmod format and thus are declared in 
+The setup is twofold, the Rust rules are declared in the MODULE file,
+but the rules_cc are not yet available in the Bazelmod format and thus are declared in
 the WORKSPACE.bzlmod file.
 
 In your MODULE.bazel file, ensure to have the following entry:
@@ -21,7 +21,7 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.46.0")
+bazel_dep(name = "rules_rust", version = "0.57.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -73,8 +73,8 @@ cc_library(
 )
 ```
 
-In some cases, you have to deal with non standard naming. In that case you define a 
-custom gen_rule to take of that and then define a cc_import.  
+In some cases, you have to deal with non standard naming. In that case you define a
+custom gen_rule to take of that and then define a cc_import.
 
 ```starlark
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
@@ -94,10 +94,10 @@ cc_import(
 )
 ```
 
-## Rust Callsite 
+## Rust Callsite
 
 On the Rust side, interestingly, you just declare the cc_import as a dependency of
-your Rust target. 
+your Rust target.
 
 ```starlark
 load("@rules_rust//rust:defs.bzl", "rust_shared_library")
@@ -111,7 +111,7 @@ rust_shared_library(
 )
 ```
 
-Then in your Rust source file, your create a FFI binding and wrap the call to it into unsafe. You can do that because the Rust standard library provides all the c raw types for FFI so you just import them and unsafe informs the Rust borrow checker to hold off certain checks. The public Rust function f() can then be used in regular Rust code. 
+Then in your Rust source file, your create a FFI binding and wrap the call to it into unsafe. You can do that because the Rust standard library provides all the c raw types for FFI so you just import them and unsafe informs the Rust borrow checker to hold off certain checks. The public Rust function f() can then be used in regular Rust code.
 
 ```rust
 use std::os::raw::c_int;
@@ -132,6 +132,3 @@ pub fn f() {
 And with that, you build your FFI target as usual:
 
 `bazel build //...`
-
-
-
