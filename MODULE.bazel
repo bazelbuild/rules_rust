@@ -108,7 +108,6 @@ use_repo(
     "cargo_bazel.buildifier-linux-arm64",
     "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
-    "cargo_bazel_bootstrap",
     "cui",
     "cui__anyhow-1.0.89",
     "cui__camino-1.1.9",
@@ -142,6 +141,15 @@ use_repo(
     "cui__tracing-subscriber-0.3.18",
     "cui__url-2.5.2",
     "cui__walkdir-2.5.0",
+)
+
+crate_universe_internal_non_repro_deps = use_extension(
+    "//crate_universe/private:internal_extensions.bzl",
+    "cu_nr",
+)
+use_repo(
+    crate_universe_internal_non_repro_deps,
+    "cargo_bazel_bootstrap",
 )
 
 crate_universe_internal_dev_deps = use_extension(
