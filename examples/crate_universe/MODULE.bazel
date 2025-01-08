@@ -610,14 +610,14 @@ use_repo(
     "crates_vendor_pkgs__mime-0.3.17",
     "crates_vendor_pkgs__serde_json-1.0.135",
     "crates_vendor_pkgs__socket2-0.4.10",
-    "crates_vendor_pkgs__tokio-1.42.0",
+    "crates_vendor_pkgs__tokio-1.43.0",
     "crates_vendor_pkgs__tower-0.4.13",
     "crates_vendor_pkgs__tower-http-0.2.5",
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
     "cvm__tempfile-3.15.0",
-    "cvm__tokio-1.42.0",
+    "cvm__tokio-1.43.0",
     "cvm__tokio-test-0.4.4",
 )
 

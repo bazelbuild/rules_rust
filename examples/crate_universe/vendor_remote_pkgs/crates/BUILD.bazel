@@ -92,14 +92,14 @@ alias(
 )
 
 alias(
-    name = "tokio-1.42.0",
-    actual = "@crates_vendor_pkgs__tokio-1.42.0//:tokio",
+    name = "tokio-1.43.0",
+    actual = "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "@crates_vendor_pkgs__tokio-1.42.0//:tokio",
+    actual = "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
     tags = ["manual"],
 )
 

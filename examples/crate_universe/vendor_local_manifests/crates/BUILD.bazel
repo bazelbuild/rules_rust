@@ -43,14 +43,14 @@ alias(
 )
 
 alias(
-    name = "tokio-1.42.0",
-    actual = "//vendor_local_manifests/crates/tokio-1.42.0:tokio",
+    name = "tokio-1.43.0",
+    actual = "//vendor_local_manifests/crates/tokio-1.43.0:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "//vendor_local_manifests/crates/tokio-1.42.0:tokio",
+    actual = "//vendor_local_manifests/crates/tokio-1.43.0:tokio",
     tags = ["manual"],
 )
 
