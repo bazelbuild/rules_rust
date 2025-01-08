@@ -2,7 +2,7 @@
 The dependencies for running the gen_rust_project binary.
 """
 
-load("//tools/rust_analyzer/3rdparty/crates:defs.bzl", "crate_repositories")
+load("//tools/rust_analyzer/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def rust_analyzer_dependencies():
     """Define dependencies of the `rust_analyzer` Bazel tools"""

@@ -1,0 +1,701 @@
+"""rules_rust/examples/crate_universe"""
+
+module(
+    name = "examples",
+    version = "0.0.0",
+)
+
+###############################################################################
+# B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
+###############################################################################
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.46.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+
+dev = use_extension("//:vendor_extensions.bzl", "dev", dev_dependency = True)
+use_repo(
+    dev,
+    "buildkite_config",
+)
+
+# https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# A L I A S   R U L E
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_alias_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_alias_annotation_none.annotation(
+    alias_rule = "",  # `None` cannot be represented here so an empty string is used instead.
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+)
+alias_rule_global_alias_annotation_none.render_config(
+    default_alias_rule_name = "alias",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+)
+alias_rule_global_alias_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_alias_annotation_none.from_cargo(
+    name = "alias_rule_global_alias_annotation_none",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_alias_annotation_none,
+    "alias_rule_global_alias_annotation_none",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_alias_annotation_opt = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_alias_annotation_opt.annotation(
+    alias_rule = "opt",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+)
+alias_rule_global_alias_annotation_opt.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+    version = "0.1.0",
+)
+alias_rule_global_alias_annotation_opt.render_config(
+    default_alias_rule_name = "alias",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+)
+alias_rule_global_alias_annotation_opt.from_specs(
+    name = "alias_rule_global_alias_annotation_opt",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_opt.json",
+)
+use_repo(
+    alias_rule_global_alias_annotation_opt,
+    "alias_rule_global_alias_annotation_opt",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_opt_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_none.annotation(
+    alias_rule = "",  # `None` cannot be represented here so `""` is used instead.
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+)
+alias_rule_global_opt_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_none.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+)
+alias_rule_global_opt_annotation_none.from_specs(
+    name = "alias_rule_global_opt_annotation_none",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_none,
+    "alias_rule_global_opt_annotation_none",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_opt_annotation_alias = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_alias.annotation(
+    alias_rule = "alias",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+)
+alias_rule_global_opt_annotation_alias.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_alias.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+)
+alias_rule_global_opt_annotation_alias.from_specs(
+    name = "alias_rule_global_opt_annotation_alias",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_alias.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_alias,
+    "alias_rule_global_opt_annotation_alias",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_opt_annotation_dbg = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_dbg.annotation(
+    alias_rule = "dbg",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+)
+alias_rule_global_opt_annotation_dbg.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_dbg.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_dbg.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+)
+alias_rule_global_opt_annotation_dbg.from_specs(
+    name = "alias_rule_global_opt_annotation_dbg",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_opt_annotation_dbg.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_dbg,
+    "alias_rule_global_opt_annotation_dbg",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_dbg_annotation_fastbuild = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_dbg_annotation_fastbuild.annotation(
+    alias_rule = "fastbuild",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+)
+alias_rule_global_dbg_annotation_fastbuild.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+    version = "0.1.0",
+)
+alias_rule_global_dbg_annotation_fastbuild.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+    version = "0.1.0",
+)
+alias_rule_global_dbg_annotation_fastbuild.render_config(
+    default_alias_rule_name = "dbg",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+)
+alias_rule_global_dbg_annotation_fastbuild.from_specs(
+    name = "alias_rule_global_dbg_annotation_fastbuild",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_dbg_annotation_fastbuild.json",
+)
+use_repo(
+    alias_rule_global_dbg_annotation_fastbuild,
+    "alias_rule_global_dbg_annotation_fastbuild",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+alias_rule_global_custom_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_custom_annotation_none.annotation(
+    alias_rule = "",  # `None` cannot be represented here so an empty string is used instead.
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+)
+alias_rule_global_custom_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_custom_annotation_none.render_config(
+    default_alias_rule_bzl = "//alias_rule:alias_rules.bzl",
+    default_alias_rule_name = "alias_rule",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+)
+alias_rule_global_custom_annotation_none.from_specs(
+    name = "alias_rule_global_custom_annotation_none",
+    cargo_lockfile = "//alias_rule:Cargo.lock",
+    lockfile = "//alias_rule:cargo-bazel-lock_global_custom_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_custom_annotation_none,
+    "alias_rule_global_custom_annotation_none",
+)
+
+###############################################################################
+# C A R G O   A L I A S E S
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+cargo_aliases = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+cargo_aliases.annotation(
+    crate = "names",
+    repositories = ["cargo_aliases"],
+    shallow_since = "1646516410 -0700",
+    version = "0.12.1-dev",
+)
+cargo_aliases.from_cargo(
+    name = "cargo_aliases",
+    cargo_lockfile = "//cargo_aliases:Cargo.Bazel.lock",
+    lockfile = "//cargo_aliases:cargo-bazel-lock.json",
+    manifests = ["//cargo_aliases:Cargo.toml"],
+)
+use_repo(
+    cargo_aliases,
+    "cargo_aliases",
+)
+
+###############################################################################
+# C A R G O   B I N D E P S
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_bindeps.from_cargo(
+    name = "crate_index_cargo_bindeps",
+    cargo_lockfile = "//cargo_bindeps:Cargo.lock",
+    generate_binaries = True,
+    host_tools_repo = "rust_host_tools_nightly",
+    manifests = ["//cargo_bindeps:Cargo.toml"],
+)
+use_repo(
+    crate_index_cargo_bindeps,
+    "crate_index_cargo_bindeps",
+)
+
+###############################################################################
+# C A R G O   L O C A L
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_local = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_local.from_cargo(
+    name = "crate_index_cargo_local",
+    cargo_lockfile = "//cargo_local:Cargo.lock",
+    manifests = ["//cargo_local:Cargo.toml"],
+)
+use_repo(
+    crate_index_cargo_local,
+    "crate_index_cargo_local",
+)
+
+###############################################################################
+# C A R G O   R E M O T E
+###############################################################################
+
+http_archive(
+    name = "names",
+    build_file = "//cargo_remote:BUILD.names.bazel",
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_remote = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_remote.from_cargo(
+    name = "crate_index_cargo_remote",
+    cargo_lockfile = "@names//:Cargo.lock",
+    manifests = ["@names//:Cargo.toml"],
+)
+use_repo(
+    crate_index_cargo_remote,
+    "crate_index_cargo_remote",
+)
+
+###############################################################################
+# C A R G O   W O R K S P A C E
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_workspace = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_workspace.from_cargo(
+    name = "crate_index_cargo_workspace",
+    cargo_config = "//cargo_workspace:.cargo/config.toml",
+    cargo_lockfile = "//cargo_workspace:Cargo.Bazel.lock",
+    lockfile = "//cargo_workspace:cargo-bazel-lock.json",
+    manifests = [
+        "//cargo_workspace:Cargo.toml",
+        "//cargo_workspace/num_printer:Cargo.toml",
+        "//cargo_workspace/printer:Cargo.toml",
+        "//cargo_workspace/rng:Cargo.toml",
+    ],
+)
+use_repo(
+    crate_index_cargo_workspace,
+    "crate_index_cargo_workspace",
+)
+
+###############################################################################
+# C A R G O   C O N D I T I O N A L   D E P S
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_conditional_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_conditional_deps.from_cargo(
+    name = "crate_index_cargo_conditional_deps",
+    cargo_lockfile = "//cargo_conditional_deps:Cargo.Bazel.lock",
+    lockfile = "//cargo_conditional_deps:cargo-bazel-lock.json",
+    manifests = [
+        "//cargo_conditional_deps:Cargo.toml",
+    ],
+)
+use_repo(
+    crate_index_cargo_conditional_deps,
+    "crate_index_cargo_conditional_deps",
+)
+
+###############################################################################
+# M U L T I   P A C K A G E
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+multi_pkg_example = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+multi_pkg_example.annotation(
+    crate = "curl-sys",
+    gen_build_script = "off",
+    repositories = ["m_pkgs"],
+    deps = [
+        "@m_pkgs__curl//:curl",
+    ],
+)
+multi_pkg_example.annotation(
+    crate = "httpmock",
+    repositories = ["m_pkgs"],
+    shallow_since = "1673473097 +0100",
+)
+multi_pkg_example.annotation(
+    crate = "isahc",
+    repositories = ["m_pkgs"],
+    shallow_since = "1667787880 -0600",
+)
+multi_pkg_example.annotation(
+    build_script_data_glob = ["nghttp2/**"],
+    crate = "libnghttp2-sys",
+    data_glob = ["nghttp2/**"],
+    repositories = ["m_pkgs"],
+)
+multi_pkg_example.annotation(
+    build_script_data_glob = ["vendor/**"],
+    crate = "wepoll-ffi",
+    repositories = ["m_pkgs"],
+)
+multi_pkg_example.from_cargo(
+    # Note: m_pkgs == multi_pkg_example` to avoid MAX_PATH issues on Windows
+    name = "m_pkgs",
+    cargo_lockfile = "//multi_package:Cargo.Bazel.lock",
+    lockfile = "//multi_package:cargo-bazel-lock.json",
+    manifests = [
+        "//multi_package/pkg_a:Cargo.toml",
+        "//multi_package/sub_pkgs/pkg_b:Cargo.toml",
+        "//multi_package/sub_pkgs/pkg_c:Cargo.toml",
+    ],
+)
+use_repo(
+    multi_pkg_example,
+    "m_pkgs",
+)
+
+http_archive(
+    name = "m_pkgs__curl",
+    build_file = "//multi_package/3rdparty:BUILD.curl.bazel",
+    integrity = "sha256-c6Sw6ZWWoJ+lkkpPt+S5lahf2g0YosAquc8TS+vOBO4=",
+    strip_prefix = "curl-8.10.1",
+    type = "tar.xz",
+    urls = [
+        "https://curl.se/download/curl-8.10.1.tar.xz",
+        "https://github.com/curl/curl/releases/download/curl-8_10_1/curl-8.10.1.tar.xz",
+    ],
+)
+
+###############################################################################
+# N O   C A R G O   M A N I F E S T S
+###############################################################################
+
+no_cargo = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+no_cargo.annotation(
+    compile_data_glob = ["**/*.md"],
+    crate = "axum",
+    repositories = ["no_cargo"],
+)
+no_cargo.spec(
+    package = "axum",
+    repositories = ["no_cargo"],
+    version = "0.4.0",
+)
+no_cargo.spec(
+    features = ["full"],
+    package = "hyper",
+    repositories = ["no_cargo"],
+    version = "0.14.22",
+)
+no_cargo.spec(
+    package = "mime",
+    repositories = ["no_cargo"],
+    version = "0.3",
+)
+no_cargo.spec(
+    package = "serde_json",
+    repositories = ["no_cargo"],
+    version = "1.0",
+)
+
+# TODO: This dependency is added and pinned forward due to the
+# following issue: https://github.com/hyperium/hyper/issues/3038
+no_cargo.spec(
+    features = ["all"],
+    package = "socket2",
+    repositories = ["no_cargo"],
+    version = "0.4.7",
+)
+no_cargo.spec(
+    features = ["full"],
+    package = "tokio",
+    repositories = ["no_cargo"],
+    version = "1.17.0",
+)
+no_cargo.spec(
+    features = ["util"],
+    package = "tower",
+    repositories = ["no_cargo"],
+    version = "0.4",
+)
+no_cargo.spec(
+    features = ["trace"],
+    package = "tower-http",
+    repositories = ["no_cargo"],
+    version = "0.2.1",
+)
+no_cargo.spec(
+    package = "tracing",
+    repositories = ["no_cargo"],
+    version = "0.1",
+)
+no_cargo.spec(
+    package = "tracing-subscriber",
+    repositories = ["no_cargo"],
+    version = "0.3",
+)
+no_cargo.splicing_config(
+    repositories = ["no_cargo"],
+    resolver_version = "2",
+)
+no_cargo.from_specs(
+    name = "no_cargo",
+)
+use_repo(
+    no_cargo,
+    "no_cargo",
+)
+
+###############################################################################
+# U S I N G   C X X   C R A T E
+###############################################################################
+
+# CXX crate is a bit different since there are C++ headers provided.
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+using_cxx = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+using_cxx.spec(
+    package = "cxx",
+    repositories = ["using_cxx"],
+    version = "1.0.109",
+)
+using_cxx.splicing_config(
+    repositories = ["using_cxx"],
+    resolver_version = "2",
+)
+using_cxx.from_specs(
+    name = "using_cxx",
+    cargo_lockfile = "//using_cxx:Cargo.Bazel.lock",
+    lockfile = "//using_cxx:cargo-bazel-lock.json",
+)
+use_repo(
+    using_cxx,
+    "using_cxx",
+)
+
+# The codegen tool needed by cxx.
+http_archive(
+    name = "cxxbridge-cmd",
+    build_file_content = """
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@cxxbridge_cmd_deps//:defs.bzl", "aliases", "all_crate_deps")
+
+rust_binary(
+    name = "cxxbridge-cmd",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    compile_data = [
+        "src/gen/include/cxx.h",
+    ],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ),
+)
+    """,
+    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
+    strip_prefix = "cxxbridge-cmd-1.0.109",
+    type = "tar.gz",
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.109.crate"],
+)
+
+cxxbridge_cmd_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+cxxbridge_cmd_deps.splicing_config(
+    repositories = ["cxxbridge_cmd_deps"],
+    resolver_version = "2",
+)
+cxxbridge_cmd_deps.from_cargo(
+    name = "cxxbridge_cmd_deps",
+    cargo_lockfile = "//using_cxx:cxxbridge-cmd.Cargo.lock",
+    lockfile = "//using_cxx:cxxbridge-cmd.cargo-bazel-lock.json",
+    manifests = ["@cxxbridge-cmd//:Cargo.toml"],
+)
+use_repo(
+    cxxbridge_cmd_deps,
+    "cxxbridge_cmd_deps",
+)
+
+###############################################################################
+# V E N D O R E D
+###############################################################################
+
+http_archive(
+    name = "names_external",
+    build_file = "//cargo_remote:BUILD.names.bazel",
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
+)
+
+vendored = use_extension("//:vendor_extensions.bzl", "vendored")
+use_repo(
+    vendored,
+    "crates_vendor",
+    "crates_vendor__clap-3.1.5",
+    "crates_vendor__rand-0.8.5",
+    "crates_vendor__version-sync-0.9.4",
+    "crates_vendor_pkgs",
+    "crates_vendor_pkgs__axum-0.4.8",
+    "crates_vendor_pkgs__hyper-0.14.32",
+    "crates_vendor_pkgs__mime-0.3.17",
+    "crates_vendor_pkgs__serde_json-1.0.135",
+    "crates_vendor_pkgs__socket2-0.4.10",
+    "crates_vendor_pkgs__tokio-1.42.0",
+    "crates_vendor_pkgs__tower-0.4.13",
+    "crates_vendor_pkgs__tower-http-0.2.5",
+    "crates_vendor_pkgs__tracing-0.1.41",
+    "crates_vendor_pkgs__tracing-subscriber-0.3.19",
+    "cvm",
+    "cvm__tempfile-3.15.0",
+    "cvm__tokio-1.42.0",
+    "cvm__tokio-test-0.4.4",
+)
+
+###############################################################################
+# C O M P L I C A T E D   D E P E N D E N C I E S
+###############################################################################
+
+bazel_dep(
+    name = "boringssl",
+    version = "0.20241209.0",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+complicated_dependencies = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+inject_repo(complicated_dependencies, "boringssl")
+
+complicated_dependencies.annotation(
+    build_script_data = [
+        "@@//complicated_dependencies:boringssl_gen_dir",
+    ],
+    build_script_env = {
+        # Ideally this would use an execpath macro, but we need to point at a directory and that's fiddly. We could probably
+        # copy the director somewhere and point at that... For now, this works.
+        "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)/include",
+        "BORING_BSSL_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)",
+    },
+    compile_data = [
+        "@@//complicated_dependencies:boringssl_gen_dir",
+    ],
+    crate = "boring-sys",
+    repositories = ["complicated_dependencies"],
+)
+complicated_dependencies.spec(
+    package = "boring",
+    repositories = ["complicated_dependencies"],
+    version = "3.0.4",
+)
+complicated_dependencies.splicing_config(
+    repositories = ["complicated_dependencies"],
+    resolver_version = "2",
+)
+complicated_dependencies.from_specs(
+    name = "complicated_dependencies",
+    cargo_lockfile = "//complicated_dependencies:Cargo.Bazel.lock",
+    lockfile = "//complicated_dependencies:cargo-bazel-lock.json",
+)
+use_repo(
+    complicated_dependencies,
+    "complicated_dependencies",
+)
+
+###############################################################################
+# O V E R R I D E  T A R G E T
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+override_target = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+override_target.annotation(
+    crate = "foo",
+    override_target_lib = "//override_target:foo",
+    repositories = ["override_target"],
+)
+override_target.spec(
+    package = "foo",
+    repositories = ["override_target"],
+    version = "0.0.0",
+)
+override_target.splicing_config(
+    repositories = ["override_target"],
+    resolver_version = "2",
+)
+override_target.from_cargo(
+    name = "override_target",
+    cargo_lockfile = "//override_target:Cargo.Bazel.lock",
+    lockfile = "//override_target:cargo-bazel-lock.json",
+)
+use_repo(
+    override_target,
+    "override_target",
+)

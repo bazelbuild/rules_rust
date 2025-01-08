@@ -80,7 +80,7 @@ rust_proc_macro(
     version = "2.4.0",
     deps = [
         "@crates_vendor_pkgs__proc-macro2-1.0.92//:proc_macro2",
-        "@crates_vendor_pkgs__quote-1.0.37//:quote",
-        "@crates_vendor_pkgs__syn-2.0.90//:syn",
+        "@crates_vendor_pkgs__quote-1.0.38//:quote",
+        "@crates_vendor_pkgs__syn-2.0.95//:syn",
     ],
 )

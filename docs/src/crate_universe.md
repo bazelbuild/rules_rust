@@ -274,7 +274,7 @@ Some build scripts can be made to work by pulling in some extra files and making
 
 Commonly this is done by passing the file to the `build_script_data` annotation for the crate, and using `build_script_env` to tell the build script where the file is. That env var may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A
 
-There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds libz-ng-sys.
+There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
 
 ### Building with Bazel and supplying via an override
 
@@ -562,10 +562,10 @@ string: A json encoded string of all inputs
 <pre>
 load("@rules_rust//crate_universe:defs.bzl", "render_config")
 
-render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_repository_template">crate_repository_template</a>,
-              <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>, <a href="#render_config-default_package_name">default_package_name</a>,
-              <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>, <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>,
-              <a href="#render_config-generate_rules_license_metadata">generate_rules_license_metadata</a>)
+render_config(<a href="#render_config-build_file_template">build_file_template</a>, <a href="#render_config-crate_label_template">crate_label_template</a>, <a href="#render_config-crate_alias_template">crate_alias_template</a>,
+              <a href="#render_config-crate_repository_template">crate_repository_template</a>, <a href="#render_config-crates_module_template">crates_module_template</a>, <a href="#render_config-default_alias_rule">default_alias_rule</a>,
+              <a href="#render_config-default_package_name">default_package_name</a>, <a href="#render_config-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="#render_config-platforms_template">platforms_template</a>,
+              <a href="#render_config-regen_command">regen_command</a>, <a href="#render_config-vendor_mode">vendor_mode</a>, <a href="#render_config-generate_rules_license_metadata">generate_rules_license_metadata</a>)
 </pre>
 
 Various settings used to configure rendered outputs
@@ -590,6 +590,7 @@ can be found below where the supported keys for each template can be found in th
 | :------------- | :------------- | :------------- |
 | <a id="render_config-build_file_template"></a>build_file_template |  The base template to use for BUILD file names. The available format keys are [`{name}`, {version}`].   |  `"//:BUILD.{name}-{version}.bazel"` |
 | <a id="render_config-crate_label_template"></a>crate_label_template |  The base template to use for crate labels. The available format keys are [`{repository}`, `{name}`, `{version}`, `{target}`].   |  `"@{repository}__{name}-{version}//:{target}"` |
+| <a id="render_config-crate_alias_template"></a>crate_alias_template |  The template to use when referring to generated aliases within the external repository. The available format keys are [`{repository}`, `{name}`, `{version}`].   |  `"//:{name}-{version}"` |
 | <a id="render_config-crate_repository_template"></a>crate_repository_template |  The base template to use for Crate label repository names. The available format keys are [`{repository}`, `{name}`, `{version}`].   |  `"{repository}__{name}-{version}"` |
 | <a id="render_config-crates_module_template"></a>crates_module_template |  The pattern to use for the `defs.bzl` and `BUILD.bazel` file names used for the crates module. The available format keys are [`{file}`].   |  `"//:{file}"` |
 | <a id="render_config-default_alias_rule"></a>default_alias_rule |  Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.   |  `"alias"` |
@@ -656,7 +657,7 @@ Environment Variables:
 | --- | --- |
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
-| `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
+| `CARGO_BAZEL_ISOLATED` | An authoritative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 

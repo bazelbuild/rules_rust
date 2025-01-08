@@ -32,8 +32,20 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "grpc-0.6.2",
+    actual = "@rules_rust_protobuf_deps__grpc-0.6.2//:grpc",
+    tags = ["manual"],
+)
+
+alias(
     name = "grpc",
     actual = "@rules_rust_protobuf_deps__grpc-0.6.2//:grpc",
+    tags = ["manual"],
+)
+
+alias(
+    name = "grpc-compiler-0.6.2",
+    actual = "@rules_rust_protobuf_deps__grpc-compiler-0.6.2//:grpc_compiler",
     tags = ["manual"],
 )
 
@@ -44,8 +56,20 @@ alias(
 )
 
 alias(
+    name = "log-0.4.17",
+    actual = "@rules_rust_protobuf_deps__log-0.4.17//:log",
+    tags = ["manual"],
+)
+
+alias(
     name = "log",
     actual = "@rules_rust_protobuf_deps__log-0.4.17//:log",
+    tags = ["manual"],
+)
+
+alias(
+    name = "protobuf-2.8.2",
+    actual = "@rules_rust_protobuf_deps__protobuf-2.8.2//:protobuf",
     tags = ["manual"],
 )
 
@@ -56,14 +80,32 @@ alias(
 )
 
 alias(
+    name = "protobuf-codegen-2.8.2",
+    actual = "@rules_rust_protobuf_deps__protobuf-codegen-2.8.2//:protobuf_codegen",
+    tags = ["manual"],
+)
+
+alias(
     name = "protobuf-codegen",
     actual = "@rules_rust_protobuf_deps__protobuf-codegen-2.8.2//:protobuf_codegen",
     tags = ["manual"],
 )
 
 alias(
+    name = "tls-api-0.1.22",
+    actual = "@rules_rust_protobuf_deps__tls-api-0.1.22//:tls_api",
+    tags = ["manual"],
+)
+
+alias(
     name = "tls-api",
     actual = "@rules_rust_protobuf_deps__tls-api-0.1.22//:tls_api",
+    tags = ["manual"],
+)
+
+alias(
+    name = "tls-api-stub-0.1.22",
+    actual = "@rules_rust_protobuf_deps__tls-api-stub-0.1.22//:tls_api_stub",
     tags = ["manual"],
 )
 
