@@ -119,7 +119,7 @@ rust_library(
         "@cvm__bytes-1.9.0//:bytes",
         "@cvm__mio-1.0.3//:mio",
         "@cvm__parking_lot-0.12.3//:parking_lot",
-        "@cvm__pin-project-lite-0.2.15//:pin_project_lite",
+        "@cvm__pin-project-lite-0.2.16//:pin_project_lite",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cvm__libc-0.2.169//:libc",  # aarch64-apple-darwin

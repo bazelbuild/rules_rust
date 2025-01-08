@@ -119,7 +119,7 @@ rust_library(
         "//vendor_local_manifests/crates/bytes-1.9.0:bytes",
         "//vendor_local_manifests/crates/mio-1.0.3:mio",
         "//vendor_local_manifests/crates/parking_lot-0.12.3:parking_lot",
-        "//vendor_local_manifests/crates/pin-project-lite-0.2.15:pin_project_lite",
+        "//vendor_local_manifests/crates/pin-project-lite-0.2.16:pin_project_lite",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "//vendor_local_manifests/crates/libc-0.2.169:libc",  # aarch64-apple-darwin
