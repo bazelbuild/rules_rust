@@ -1,10 +1,9 @@
-# `.bazelrc` is a Bazel configuration file.
-# https://bazel.build/docs/best-practices#bazelrc-file
-
-# Required on windows
-common --enable_platform_specific_config
-startup --windows_enable_symlinks
-build:windows --enable_runfiles
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
 
 # Enable rustfmt for all targets in the workspace
 build:rustfmt --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
@@ -14,16 +13,15 @@ build:rustfmt --output_groups=+rustfmt_checks
 build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:clippy --output_groups=+clippy_checks
 
-# Confirm crate universe works without relying on the legacy
-# external symlink in runfiles.
+###############################################################################
+## Incompatibility flags
+###############################################################################
+
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
 build --nolegacy_external_runfiles
-
-# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
-# https://github.com/bazelbuild/rules_rust/issues/2181
-common --noenable_bzlmod
-
-# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
-build --incompatible_disallow_empty_glob
 
 # Required for cargo_build_script support before Bazel 7
 build --incompatible_merge_fixed_and_default_shell_env
@@ -31,6 +29,22 @@ build --incompatible_merge_fixed_and_default_shell_env
 # https://github.com/bazelbuild/bazel/issues/23043.
 build --incompatible_autoload_externally=
 
-# This import should always be last to allow users to override
-# settings for local development.
+###############################################################################
+## Bzlmod
+###############################################################################
+
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
+
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
+
 try-import %workspace%/user.bazelrc

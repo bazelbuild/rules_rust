@@ -93,7 +93,7 @@ fn run_buildrs() -> Result<(), String> {
     command
         .current_dir(&working_directory)
         .envs(target_env_vars)
-        .env("OUT_DIR", out_dir_abs)
+        .env("OUT_DIR", &out_dir_abs)
         .env("CARGO_MANIFEST_DIR", manifest_dir)
         .env("RUSTC", rustc)
         .env("RUST_BACKTRACE", "full");
@@ -228,9 +228,10 @@ fn run_buildrs() -> Result<(), String> {
 
     // Delete any runfiles that do not need to be propagated to down stream dependents.
     if let Some(cargo_manifest_maker) = cargo_manifest_maker {
-        cargo_manifest_maker.drain_runfiles_dir().unwrap();
+        cargo_manifest_maker
+            .drain_runfiles_dir(&out_dir_abs)
+            .unwrap();
     }
-
     Ok(())
 }
 
@@ -568,18 +569,19 @@ impl RunfilesMaker {
     }
 
     /// Delete runfiles from the runfiles directory that do not match user defined suffixes
-    fn drain_runfiles_dir(&self) -> Result<(), String> {
+    fn drain_runfiles_dir(&self, out_dir: &Path) -> Result<(), String> {
         if cfg!(target_family = "windows") {
             // If symlinks are supported then symlinks will have been used.
             let supports_symlinks = system_supports_symlinks(&self.output_dir)?;
             if supports_symlinks {
-                self.drain_runfiles_dir_unix()
+                self.drain_runfiles_dir_unix()?;
             } else {
-                self.drain_runfiles_dir_windows()
+                self.drain_runfiles_dir_windows()?;
             }
         } else {
-            self.drain_runfiles_dir_unix()
+            self.drain_runfiles_dir_unix()?;
         }
+        replace_symlinks_in_out_dir(out_dir)
     }
 }
 
@@ -720,6 +722,56 @@ fn parse_rustc_cfg_output(stdout: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
+/// Iterates over the given directory recursively and resolves any symlinks
+///
+/// Symlinks shouldn't present in `out_dir` as those amy contain paths to sandboxes which doesn't exists anymore.
+/// Therefore, bazel will fail because of dangling symlinks.
+fn replace_symlinks_in_out_dir(out_dir: &Path) -> Result<(), String> {
+    if out_dir.is_dir() {
+        let out_dir_paths = std::fs::read_dir(out_dir).map_err(|e| {
+            format!(
+                "Failed to read directory `{}` with {:?}",
+                out_dir.display(),
+                e
+            )
+        })?;
+        for entry in out_dir_paths {
+            let entry =
+                entry.map_err(|e| format!("Failed to read directory entry with  {:?}", e,))?;
+            let path = entry.path();
+
+            if path.is_symlink() {
+                let target_path = std::fs::read_link(&path).map_err(|e| {
+                    format!("Failed to read symlink `{}` with {:?}", path.display(), e,)
+                })?;
+                // we don't want to replace relative symlinks
+                if target_path.is_relative() {
+                    continue;
+                }
+                std::fs::remove_file(&path)
+                    .map_err(|e| format!("Failed remove file `{}` with {:?}", path.display(), e))?;
+                std::fs::copy(&target_path, &path).map_err(|e| {
+                    format!(
+                        "Failed to copy `{} -> {}` with {:?}",
+                        target_path.display(),
+                        path.display(),
+                        e
+                    )
+                })?;
+            } else if path.is_dir() {
+                replace_symlinks_in_out_dir(&path).map_err(|e| {
+                    format!(
+                        "Failed to normalize nested directory `{}` with {}",
+                        path.display(),
+                        e,
+                    )
+                })?;
+            }
+        }
+    }
+    Ok(())
+}
+
 fn main() {
     std::process::exit(match run_buildrs() {
         Ok(_) => 0,
@@ -734,6 +786,9 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use std::fs;
+    use std::io::Write;
 
     #[test]
     fn rustc_cfg_parsing() {
@@ -774,5 +829,68 @@ windows
         let tree = parse_rustc_cfg_output(windows_output);
         assert_eq!(tree["CARGO_CFG_WINDOWS"], "");
         assert_eq!(tree["CARGO_CFG_TARGET_FAMILY"], "windows");
+    }
+
+    fn prepare_output_dir_with_symlinks() -> PathBuf {
+        let test_tmp = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        let out_dir = test_tmp.join("out_dir");
+        fs::create_dir(&out_dir).unwrap();
+        let nested_dir = out_dir.join("nested");
+        fs::create_dir(&nested_dir).unwrap();
+
+        let temp_dir_file = test_tmp.join("outside.txt");
+        let mut file = fs::File::create(&temp_dir_file).unwrap();
+        file.write_all(b"outside world").unwrap();
+        // symlink abs path outside of the out_dir
+        symlink(&temp_dir_file, &out_dir.join("outside.txt")).unwrap();
+
+        let inside_dir_file = out_dir.join("inside.txt");
+        let mut file = fs::File::create(inside_dir_file).unwrap();
+        file.write_all(b"inside world").unwrap();
+        // symlink relative next to the file in the out_dir
+        symlink(
+            &PathBuf::from("inside.txt"),
+            &out_dir.join("inside_link.txt"),
+        )
+        .unwrap();
+        // symlink relative within a subdir in the out_dir
+        symlink(
+            &PathBuf::from("..").join("inside.txt"),
+            &out_dir.join("nested").join("inside_link.txt"),
+        )
+        .unwrap();
+
+        out_dir
+    }
+
+    #[cfg(any(target_family = "windows", target_family = "unix"))]
+    #[test]
+    fn replace_symlinks_in_out_dir() {
+        let out_dir = prepare_output_dir_with_symlinks();
+        super::replace_symlinks_in_out_dir(&out_dir).unwrap();
+
+        // this should be replaced because it is an absolute symlink
+        let file_path = out_dir.join("outside.txt");
+        assert!(!file_path.is_symlink());
+        let contents = fs::read_to_string(file_path).unwrap();
+        assert_eq!(contents, "outside world");
+
+        // this is the file created inside the out_dir
+        let file_path = out_dir.join("inside.txt");
+        assert!(!file_path.is_symlink());
+        let contents = fs::read_to_string(file_path).unwrap();
+        assert_eq!(contents, "inside world");
+
+        // this is the symlink in the out_dir
+        let file_path = out_dir.join("inside_link.txt");
+        assert!(file_path.is_symlink());
+        let contents = fs::read_to_string(file_path).unwrap();
+        assert_eq!(contents, "inside world");
+
+        // this is the symlink in the out_dir under another directory which refers to ../inside.txt
+        let file_path = out_dir.join("nested").join("inside_link.txt");
+        assert!(file_path.is_symlink());
+        let contents = fs::read_to_string(file_path).unwrap();
+        assert_eq!(contents, "inside world");
     }
 }
