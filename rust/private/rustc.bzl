@@ -25,7 +25,7 @@ load(
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -638,6 +638,7 @@ def collect_inputs(
         crate_info,
         dep_info,
         build_info,
+        lint_files,
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
@@ -655,6 +656,7 @@ def collect_inputs(
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
+        lint_files (list): List of files with rustc args for the Crate's lint settings.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
         force_depend_on_objects (bool, optional): Forces dependencies of this rule to be objects rather than
@@ -784,12 +786,16 @@ def collect_inputs(
         include_link_flags = include_link_flags,
     )
 
+    # TODO(parkmycar): Cleanup the handling of lint_files here.
+    if lint_files:
+        build_flags_files = depset(lint_files, transitive = [build_flags_files])
+
     # For backwards compatibility, we also check the value of the `rustc_env_files` attribute when
     # `crate_info.rustc_env_files` is not populated.
     build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
-    compile_inputs = depset(build_env_files, transitive = [build_script_compile_inputs, compile_inputs])
+    compile_inputs = depset(build_env_files + lint_files, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
@@ -1195,6 +1201,15 @@ def rustc_compile_action(
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
+    # Add flags for any 'rustc' lints that are specified.
+    #
+    # Exclude lints if we're building in the exec configuration to prevent crates
+    # used in build scripts from generating warnings.
+    lint_files = []
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
+        rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -1206,6 +1221,7 @@ def rustc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        lint_files = lint_files,
         stamp = stamp,
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
@@ -1552,6 +1568,11 @@ def rustc_compile_action(
 
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
+
+    # A bit unfortunate, but sidecar the lints info so rustdoc can access the
+    # set of lints from the target it is documenting.
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
+        providers.append(ctx.attr.lint_config[LintsInfo])
 
     return providers
 

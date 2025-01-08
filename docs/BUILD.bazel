@@ -34,7 +34,7 @@ bzl_library(
 
 stardoc(
     name = "cargo",
-    out = "cargo.md",
+    out = "src/cargo.md",
     input = "@rules_rust//cargo:defs.bzl",
     symbol_names = [
         "cargo_bootstrap_repository",
@@ -48,7 +48,7 @@ stardoc(
 
 stardoc(
     name = "rust",
-    out = "rust.md",
+    out = "src/rust.md",
     input = "@rules_rust//rust:defs.bzl",
     symbol_names = [
         "rust_binary",
@@ -66,7 +66,7 @@ stardoc(
 
 stardoc(
     name = "providers",
-    out = "providers.md",
+    out = "src/providers.md",
     input = "@rules_rust//rust/private:providers.bzl",
     symbol_names = [
         "CrateInfo",
@@ -79,7 +79,7 @@ stardoc(
 
 stardoc(
     name = "rust_analyzer",
-    out = "rust_analyzer.md",
+    out = "src/rust_analyzer.md",
     header_template = ":rust_analyzer.vm",
     input = "@rules_rust//rust:defs.bzl",
     symbol_names = [
@@ -91,7 +91,7 @@ stardoc(
 
 stardoc(
     name = "rust_clippy",
-    out = "rust_clippy.md",
+    out = "src/rust_clippy.md",
     header_template = ":rust_clippy.vm",
     input = "@rules_rust//rust:defs.bzl",
     symbol_names = [
@@ -104,7 +104,7 @@ stardoc(
 
 stardoc(
     name = "rust_doc",
-    out = "rust_doc.md",
+    out = "src/rust_doc.md",
     input = "@rules_rust//rust:defs.bzl",
     symbol_names = [
         "rust_doc",
@@ -116,7 +116,7 @@ stardoc(
 
 stardoc(
     name = "rust_fmt",
-    out = "rust_fmt.md",
+    out = "src/rust_fmt.md",
     header_template = ":rust_fmt.vm",
     input = "@rules_rust//rust:defs.bzl",
     symbol_names = [
@@ -129,7 +129,7 @@ stardoc(
 
 stardoc(
     name = "rust_repositories",
-    out = "rust_repositories.md",
+    out = "src/rust_repositories.md",
     input = "@rules_rust//rust:repositories.bzl",
     symbol_names = [
         "rules_rust_dependencies",
@@ -149,7 +149,7 @@ stardoc(
 
 stardoc(
     name = "rust_toolchains",
-    out = "rust_toolchains.md",
+    out = "src/rust_toolchains.md",
     input = "@rules_rust//rust:toolchain.bzl",
     symbol_names = [
         "rust_toolchain",
@@ -162,14 +162,14 @@ stardoc(
 
 stardoc(
     name = "crate_universe_workspace",
-    out = "crate_universe.md",
+    out = "src/crate_universe.md",
     input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
 
 stardoc(
     name = "crate_universe_bzlmod",
-    out = "crate_universe_bzlmod.md",
+    out = "src/crate_universe_bzlmod.md",
     input = "@rules_rust//crate_universe:extensions.bzl",
     deps = [":all_docs"],
 )
@@ -192,49 +192,49 @@ bzl_library(
 
 stardoc(
     name = "rust_bindgen",
-    out = "rust_bindgen.md",
+    out = "src/rust_bindgen.md",
     input = "@rules_rust_bindgen//:defs.bzl",
     deps = [":bindgen_lib"],
 )
 
 stardoc(
     name = "rust_mdbook",
-    out = "rust_mdbook.md",
+    out = "src/rust_mdbook.md",
     input = "@rules_rust_mdbook//:defs.bzl",
     deps = ["@rules_rust_mdbook//:bzl_lib"],
 )
 
 stardoc(
     name = "rust_protobuf",
-    out = "rust_protobuf.md",
+    out = "src/rust_protobuf.md",
     input = "@rules_rust_protobuf//:defs.bzl",
     deps = ["@rules_rust_protobuf//:bzl_lib"],
 )
 
 stardoc(
     name = "rust_prost",
-    out = "rust_prost.md",
+    out = "src/rust_prost.md",
     input = "@rules_rust_prost//:defs.bzl",
     deps = ["@rules_rust_prost//:bzl_lib"],
 )
 
 stardoc(
     name = "rust_wasm_bindgen",
-    out = "rust_wasm_bindgen.md",
+    out = "src/rust_wasm_bindgen.md",
     input = "@rules_rust_wasm_bindgen//:defs.bzl",
     deps = ["@rules_rust_wasm_bindgen//:bzl_lib"],
 )
 
 stardoc(
     name = "rust_wasm_bindgen_rules_js",
-    out = "rust_wasm_bindgen_rules_js.md",
+    out = "src/rust_wasm_bindgen_rules_js.md",
     input = "@rules_rust_wasm_bindgen//rules_js:defs.bzl",
     deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
 )
 
 stardoc(
     name = "rust_settings",
-    out = "rust_settings.md",
+    out = "src/rust_settings.md",
     func_template = "rust_settings_func.vm",
     input = "@rules_rust//rust/settings:settings.bzl",
     deps = ["@rules_rust//rust:bzl_lib"],
@@ -242,7 +242,7 @@ stardoc(
 
 stardoc(
     name = "cargo_settings",
-    out = "cargo_settings.md",
+    out = "src/cargo_settings.md",
     func_template = "cargo_settings_func.vm",
     input = "@rules_rust//cargo/settings:settings.bzl",
     deps = ["@rules_rust//cargo:bzl_lib"],
@@ -250,7 +250,27 @@ stardoc(
 
 mdbook(
     name = "book",
-    srcs = glob(["src/**/*.md"]),
+    srcs = glob(["src/**/*.md"]) + [
+        ":cargo",
+        ":cargo_settings",
+        ":crate_universe_bzlmod",
+        ":crate_universe_workspace",
+        ":providers",
+        ":rust",
+        ":rust_analyzer",
+        ":rust_bindgen",
+        ":rust_clippy",
+        ":rust_doc",
+        ":rust_fmt",
+        ":rust_mdbook",
+        ":rust_prost",
+        ":rust_protobuf",
+        ":rust_repositories",
+        ":rust_settings",
+        ":rust_toolchains",
+        ":rust_wasm_bindgen",
+        ":rust_wasm_bindgen_rules_js",
+    ],
     book = "book.toml",
 )
 
@@ -262,16 +282,6 @@ alias(
 mdbook_server(
     name = "server",
     book = ":book",
-)
-
-sh_binary(
-    name = "update_docs",
-    srcs = ["update_docs.sh"],
-)
-
-sh_binary(
-    name = "test_docs",
-    srcs = ["test_docs.sh"],
 )
 
 sh_binary(
