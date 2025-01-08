@@ -1,5 +1,5 @@
 {
-  "checksum": "6443f683ff5bc954759f8b885a0836fcbde2b25f4f55184b9814e37eff7edd80",
+  "checksum": "491337a5234db5a98370adb2e8e62b8316abcc536dc5f33ad1db7e2ea0b532a0",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -79,7 +79,7 @@
       ],
       "license_file": null,
       "override_targets": {
-        "lib": "@//override_target:foo"
+        "lib": "@@//override_target:foo"
       }
     }
   },

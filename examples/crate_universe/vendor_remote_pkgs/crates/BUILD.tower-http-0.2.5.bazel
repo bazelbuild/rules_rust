@@ -94,7 +94,7 @@ rust_library(
         "@crates_vendor_pkgs__http-0.2.12//:http",
         "@crates_vendor_pkgs__http-body-0.4.6//:http_body",
         "@crates_vendor_pkgs__http-range-header-0.3.1//:http_range_header",
-        "@crates_vendor_pkgs__pin-project-lite-0.2.15//:pin_project_lite",
+        "@crates_vendor_pkgs__pin-project-lite-0.2.16//:pin_project_lite",
         "@crates_vendor_pkgs__tower-0.4.13//:tower",
         "@crates_vendor_pkgs__tower-layer-0.3.3//:tower_layer",
         "@crates_vendor_pkgs__tower-service-0.3.3//:tower_service",

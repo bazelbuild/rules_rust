@@ -295,13 +295,13 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "grpc": Label("@rules_rust_protobuf_deps__grpc-0.6.2//:grpc"),
-            "grpc-compiler": Label("@rules_rust_protobuf_deps__grpc-compiler-0.6.2//:grpc_compiler"),
-            "log": Label("@rules_rust_protobuf_deps__log-0.4.17//:log"),
-            "protobuf": Label("@rules_rust_protobuf_deps__protobuf-2.8.2//:protobuf"),
-            "protobuf-codegen": Label("@rules_rust_protobuf_deps__protobuf-codegen-2.8.2//:protobuf_codegen"),
-            "tls-api": Label("@rules_rust_protobuf_deps__tls-api-0.1.22//:tls_api"),
-            "tls-api-stub": Label("@rules_rust_protobuf_deps__tls-api-stub-0.1.22//:tls_api_stub"),
+            "grpc": Label("@rules_rust_protobuf_deps//:grpc-0.6.2"),
+            "grpc-compiler": Label("@rules_rust_protobuf_deps//:grpc-compiler-0.6.2"),
+            "log": Label("@rules_rust_protobuf_deps//:log-0.4.17"),
+            "protobuf": Label("@rules_rust_protobuf_deps//:protobuf-2.8.2"),
+            "protobuf-codegen": Label("@rules_rust_protobuf_deps//:protobuf-codegen-2.8.2"),
+            "tls-api": Label("@rules_rust_protobuf_deps//:tls-api-0.1.22"),
+            "tls-api-stub": Label("@rules_rust_protobuf_deps//:tls-api-stub-0.1.22"),
         },
     },
 }

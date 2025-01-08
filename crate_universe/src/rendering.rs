@@ -209,15 +209,9 @@ impl Renderer {
                 .unwrap_or(&self.config.default_alias_rule);
 
             if let Some(library_target_name) = &krate.library_target_name {
-                let rename = dep.alias.as_ref().unwrap_or(&krate.name);
                 dependencies.push(Alias {
                     rule: alias_rule.rule(),
-                    // If duplicates exist, include version to disambiguate them.
-                    name: if context.has_duplicate_workspace_member_dep(&dep) {
-                        format!("{}-{}", rename, krate.version)
-                    } else {
-                        rename.clone()
-                    },
+                    name: format!("{}-{}", krate.name, krate.version),
                     actual: self.crate_label(
                         &krate.name,
                         &krate.version.to_string(),
@@ -225,6 +219,38 @@ impl Renderer {
                     ),
                     tags: BTreeSet::from(["manual".to_owned()]),
                 });
+
+                let shorthand = if let Some(rename) = dep.alias.as_ref() {
+                    dependencies.push(Alias {
+                        rule: alias_rule.rule(),
+                        name: format!("{}-{}", rename, krate.version),
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version.to_string(),
+                            library_target_name,
+                        ),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                    rename
+                } else {
+                    &krate.name
+                };
+
+                // Add a shorthand for crate names as long as there isn't a duplicate
+                // entry. Shorthands for duplicate entries would lead to ambiguous
+                // dependencies.
+                if !context.has_duplicate_workspace_member_dep(&dep) {
+                    dependencies.push(Alias {
+                        rule: alias_rule.rule(),
+                        name: shorthand.clone(),
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version.to_string(),
+                            library_target_name,
+                        ),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                }
             }
 
             for (alias, target) in &krate.extra_aliased_targets {

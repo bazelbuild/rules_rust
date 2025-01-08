@@ -53,7 +53,11 @@ crate.annotation(
 
 # Option 2: Vendored crates
 crate_repositories = use_extension("//third-party-in-workspace:extension.bzl", "crate_repositories")
-use_repo(crate_repositories, "vendor__anyhow-1.0.77")
+use_repo(
+    crate_repositories,
+    "vendor",
+    "vendor__anyhow-1.0.77",
+)
 
 # Another example of Option 1, but where the Cargo.toml file isn't a [workspace]
 crate.from_cargo(

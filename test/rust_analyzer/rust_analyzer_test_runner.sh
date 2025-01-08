@@ -47,8 +47,8 @@ rust_analyzer_test = use_extension("//test/rust_analyzer/3rdparty:extensions.bzl
 use_repo(
     rust_analyzer_test,
     "rtra",
-    "rtra__serde-1.0.216",
-    "rtra__serde_json-1.0.133",
+    "rtra__serde-1.0.217",
+    "rtra__serde_json-1.0.134",
 )
 EOF
 
