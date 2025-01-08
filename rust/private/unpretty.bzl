@@ -137,6 +137,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
         proc_macro_deps = crate_info.proc_macro_deps,
         aliases = crate_info.aliases,
     )
+    lint_files = []
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
@@ -150,6 +151,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
         crate_info,
         dep_info,
         build_info,
+        lint_files,
     )
 
     output_groups = {}

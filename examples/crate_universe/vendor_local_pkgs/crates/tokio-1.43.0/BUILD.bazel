@@ -64,7 +64,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "//vendor_local_pkgs/crates/tokio-macros-2.4.0:tokio_macros",
+        "//vendor_local_pkgs/crates/tokio-macros-2.5.0:tokio_macros",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -113,7 +113,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.42.0",
+    version = "1.43.0",
     deps = [
         "//vendor_local_pkgs/crates/bytes-1.9.0:bytes",
         "//vendor_local_pkgs/crates/mio-1.0.3:mio",

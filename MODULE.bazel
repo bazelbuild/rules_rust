@@ -53,6 +53,12 @@ use_repo(
     "rules_rust_tinyjson",
 )
 
+cargo_internal_deps = use_extension("//cargo/private:internal_extensions.bzl", "i")
+use_repo(
+    cargo_internal_deps,
+    "rrcti__cargo_toml-0.20.5",
+)
+
 rust = use_extension("//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
 use_repo(rust, "rust_toolchains")
