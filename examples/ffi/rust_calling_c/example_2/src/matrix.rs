@@ -25,6 +25,14 @@ pub struct Matrix {
 }
 
 /// Wrapper around low-level FFI Matrix API.
+///
+/// Here is a simple example of how to use the Matrix struct:
+/// ```
+/// use matrix::Matrix;
+/// let matrix = Matrix::new(2, 4, &[11, 12, 13, 14, 21, 22, 23, 24]);
+/// assert_eq!(2, matrix.rows());
+/// assert_eq!(4, matrix.cols());
+/// ```
 impl Matrix {
     /// Constructs a new Matrix from the given data. Matrix returned contains a copy of the data
     /// provided.

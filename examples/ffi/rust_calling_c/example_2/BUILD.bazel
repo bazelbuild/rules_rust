@@ -1,4 +1,4 @@
-load("@rules_rust//rust:defs.bzl", "rust_doc", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
 
 package(default_visibility = ["//rust_calling_c/example_2:__subpackages__"])
 
@@ -21,6 +21,11 @@ rust_test(
 
 rust_doc(
     name = "matrix_doc",
+    crate = ":matrix",
+)
+
+rust_doc_test(
+    name = "matrix_doc_test",
     crate = ":matrix",
 )
 
