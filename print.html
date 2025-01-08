@@ -2984,32 +2984,6 @@ allowlist:</p>
 </code></pre>
 <p>You can run them via <code>bazel run</code>, e.g. <code>bazel run @rules_rust//tools/upstream_wrapper:cargo -- check</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="extensions"><a class="header" href="#extensions">Extensions</a></h1>
-<p>Bazel rules for interfacing with other rules and integrations with popular 3rd party tools.</p>
-<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
-<p>The extension rules are released with each release of <code>rules_rust</code> (core) which can be found on <a href="https://github.com/bazelbuild/rules_rust/releases">the GitHub Releases page</a>. We recommend using the latest release from that page.</p>
-<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
-<p>Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.</p>
-<p>To use <code>rules_rust</code> extensions in a project using bzlmod, add the following to your <code>MODULE.bazel</code> file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust_{EXTENSION}", version = "{VERSION}")
-</code></pre>
-<p>Don't forget to substitute in your desired release's version number and <code>{EXTENSION}</code> with the
-name of the desired extension. E.g.:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "0.55.0")
-</code></pre>
-<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
-<p>To use <code>rules_rust</code> extensions in a project using a WORKSPACE file, add the following to your <code>WORKSPACE</code> file to add the external repositories for the Rust toolchain:</p>
-<pre><code class="language-python">load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# To find additional information on this release or newer ones visit:
-# https://github.com/bazelbuild/rules_rust/releases
-http_archive(
-    name = "rules_rust_{EXTENSION}",
-    # See releases page
-)
-
-# Refer to the documentation of the desired rules for how to load other necessary dependencies.
-</code></pre>
-<p>Don't forget to substitute in your desired release's version number, integrity hash, and <code>{EXTENSION}</code> with the name of the desired extension.</p>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_bindgen"><a class="header" href="#rules_rust_bindgen">rules_rust_bindgen</a></h1>
 <p>These rules are for using <a href="https://github.com/rust-lang/rust-bindgen">Bindgen</a> to generate <a href="http://www.rust-lang.org/">Rust</a> bindings to C (and some C++) libraries.</p>
@@ -3019,7 +2993,7 @@ http_archive(
 <li><a href="rust_bindgen.html#rust_bindgen_library">rust_bindgen_library</a></li>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
+<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
 <p>To use the Rust bindgen rules, add the following to your <code>WORKSPACE</code> file to add the
 external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
@@ -3127,11 +3101,11 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 <li><a href="rust_mdbook.html#mdbook_server">mdbook_server</a></li>
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
-<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
-<h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">bzlmod</a></h3>
+<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
+<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">bzlmod</a></h3>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
-<h3 id="workspace-2"><a class="header" href="#workspace-2">WORKSPACE</a></h3>
+<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
 <pre><code class="language-python">load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()
@@ -3199,7 +3173,7 @@ using <a href="https://github.com/tokio-rs/prost">Prost</a> and <a href="https:/
 <li><a href="rust_prost.html#rust_prost_library">rust_prost_library</a></li>
 <li><a href="rust_prost.html#rust_prost_toolchain">rust_prost_toolchain</a></li>
 </ul>
-<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
+<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
 <pre><code class="language-python">load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
 rust_prost_dependencies()
@@ -3390,7 +3364,7 @@ actions with minimal impact to other consumers.</p>
 <h1 id="rules_rust_protobuf"><a class="header" href="#rules_rust_protobuf">rules_rust_protobuf</a></h1>
 <p>These build rules are used for building <a href="https://developers.google.com/protocol-buffers/">protobufs</a>/<a href="https://grpc.io">gRPC</a> in <a href="http://www.rust-lang.org/">Rust</a> with Bazel
 using <a href="https://github.com/stepancheg/rust-protobuf/"><code>rust-protobuf</code></a>.</p>
-<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
+<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
 <p>To use the Rust proto rules, add the following to your <code>WORKSPACE</code> file to add the
 external repositories for the Rust proto toolchain (in addition to the <a href="..">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
@@ -3549,7 +3523,7 @@ rust_binary(
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a></li>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-11"><a class="header" href="#setup-11">Setup</a></h2>
+<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
 <p>To begin using the <code>wasm-bindgen</code> rules, users can load the necessary dependencies
 in their workspace by adding the following to their <code>WORKSPACE.bazel</code> file.</p>
 <pre><code class="language-python">load("@rules_rust_wasm_bindgen//:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")

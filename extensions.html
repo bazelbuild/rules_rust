@@ -156,32 +156,6 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="extensions"><a class="header" href="#extensions">Extensions</a></h1>
-<p>Bazel rules for interfacing with other rules and integrations with popular 3rd party tools.</p>
-<h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
-<p>The extension rules are released with each release of <code>rules_rust</code> (core) which can be found on <a href="https://github.com/bazelbuild/rules_rust/releases">the GitHub Releases page</a>. We recommend using the latest release from that page.</p>
-<h3 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h3>
-<p>Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.</p>
-<p>To use <code>rules_rust</code> extensions in a project using bzlmod, add the following to your <code>MODULE.bazel</code> file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust_{EXTENSION}", version = "{VERSION}")
-</code></pre>
-<p>Don't forget to substitute in your desired release's version number and <code>{EXTENSION}</code> with the
-name of the desired extension. E.g.:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "0.55.0")
-</code></pre>
-<h3 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h3>
-<p>To use <code>rules_rust</code> extensions in a project using a WORKSPACE file, add the following to your <code>WORKSPACE</code> file to add the external repositories for the Rust toolchain:</p>
-<pre><code class="language-python">load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# To find additional information on this release or newer ones visit:
-# https://github.com/bazelbuild/rules_rust/releases
-http_archive(
-    name = "rules_rust_{EXTENSION}",
-    # See releases page
-)
-
-# Refer to the documentation of the desired rules for how to load other necessary dependencies.
-</code></pre>
-<p>Don't forget to substitute in your desired release's version number, integrity hash, and <code>{EXTENSION}</code> with the name of the desired extension.</p>
 
                     </main>
 
