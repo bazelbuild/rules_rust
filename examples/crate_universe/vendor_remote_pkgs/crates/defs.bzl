@@ -300,7 +300,7 @@ _NORMAL_DEPENDENCIES = {
             "mime": Label("@crates_vendor_pkgs//:mime-0.3.17"),
             "serde_json": Label("@crates_vendor_pkgs//:serde_json-1.0.135"),
             "socket2": Label("@crates_vendor_pkgs//:socket2-0.4.10"),
-            "tokio": Label("@crates_vendor_pkgs//:tokio-1.42.0"),
+            "tokio": Label("@crates_vendor_pkgs//:tokio-1.43.0"),
             "tower": Label("@crates_vendor_pkgs//:tower-0.4.13"),
             "tower-http": Label("@crates_vendor_pkgs//:tower-http-0.2.5"),
             "tracing": Label("@crates_vendor_pkgs//:tracing-0.1.41"),
@@ -1122,22 +1122,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__tokio-1.42.0",
-        sha256 = "5cec9b21b0450273377fc97bd4c33a8acffc8c996c987a7c5b319a0083707551",
+        name = "crates_vendor_pkgs__tokio-1.43.0",
+        sha256 = "3d61fa4ffa3de412bfea335c6ecff681de2b609ba3c77ef3e00e521813a9ed9e",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio/1.42.0/download"],
-        strip_prefix = "tokio-1.42.0",
-        build_file = Label("//vendor_remote_pkgs/crates:BUILD.tokio-1.42.0.bazel"),
+        urls = ["https://static.crates.io/crates/tokio/1.43.0/download"],
+        strip_prefix = "tokio-1.43.0",
+        build_file = Label("//vendor_remote_pkgs/crates:BUILD.tokio-1.43.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "crates_vendor_pkgs__tokio-macros-2.4.0",
-        sha256 = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752",
+        name = "crates_vendor_pkgs__tokio-macros-2.5.0",
+        sha256 = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio-macros/2.4.0/download"],
-        strip_prefix = "tokio-macros-2.4.0",
-        build_file = Label("//vendor_remote_pkgs/crates:BUILD.tokio-macros-2.4.0.bazel"),
+        urls = ["https://static.crates.io/crates/tokio-macros/2.5.0/download"],
+        strip_prefix = "tokio-macros-2.5.0",
+        build_file = Label("//vendor_remote_pkgs/crates:BUILD.tokio-macros-2.5.0.bazel"),
     )
 
     maybe(
@@ -1426,7 +1426,7 @@ def crate_repositories():
         struct(repo = "crates_vendor_pkgs__mime-0.3.17", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__serde_json-1.0.135", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__socket2-0.4.10", is_dev_dep = False),
-        struct(repo = "crates_vendor_pkgs__tokio-1.42.0", is_dev_dep = False),
+        struct(repo = "crates_vendor_pkgs__tokio-1.43.0", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__tower-0.4.13", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__tower-http-0.2.5", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__tracing-0.1.41", is_dev_dep = False),

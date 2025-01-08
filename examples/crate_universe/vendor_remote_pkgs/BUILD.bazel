@@ -8,6 +8,7 @@ crates_vendor(
             compile_data_glob = ["**/*.md"],
         )],
     },
+    cargo_lockfile = ":Cargo.lock",
     mode = "remote",
     packages = {
         "axum": crate.spec(
