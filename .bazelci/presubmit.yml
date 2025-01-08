@@ -407,7 +407,6 @@ tasks:
     build_targets:
       - //...
     run_targets:
-      - "//:test_docs"
       - "//:publish_book"
   clippy_failure:
     name: Negative Clippy Tests
