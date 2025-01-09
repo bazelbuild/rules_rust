@@ -212,6 +212,8 @@ also be set in the project's <code>.bazelrc</code> file.</p>
 <h2 id="supported-bazel-versions"><a class="header" href="#supported-bazel-versions">Supported bazel versions</a></h2>
 <p>The oldest version of Bazel the <code>main</code> branch is tested against is <code>7.4.1</code>. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.</p>
 <p>We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.</p>
+<h3 id="workspace-support"><a class="header" href="#workspace-support">WORKSPACE support</a></h3>
+<p>WORKSPACE support is officially tested with Bazel 7 for as long as that is the min supported version. While it may work with later versions, compatibility with those versions is not guaranteed or actively verified.</p>
 <h2 id="supported-platforms"><a class="header" href="#supported-platforms">Supported platforms</a></h2>
 <p>We aim to support Linux and macOS.</p>
 <p>We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.</p>
