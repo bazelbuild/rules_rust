@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "clap",
+    name = "darling_core",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,15 +29,8 @@ rust_library(
         ],
     ),
     crate_features = [
-        "cargo",
-        "color",
-        "default",
-        "error-context",
-        "help",
-        "std",
+        "strsim",
         "suggestions",
-        "usage",
-        "wrap_help",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -46,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=clap",
+        "crate-name=darling_core",
         "manual",
         "noclippy",
         "norustfmt",
@@ -88,8 +81,13 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "4.5.23",
+    version = "0.20.10",
     deps = [
-        "@rmdbi__clap_builder-4.5.23//:clap_builder",
+        "@rmdbi__fnv-1.0.7//:fnv",
+        "@rmdbi__ident_case-1.0.1//:ident_case",
+        "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
+        "@rmdbi__quote-1.0.38//:quote",
+        "@rmdbi__strsim-0.11.1//:strsim",
+        "@rmdbi__syn-2.0.95//:syn",
     ],
 )

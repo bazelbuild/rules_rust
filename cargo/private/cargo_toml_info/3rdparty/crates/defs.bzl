@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "cargo_toml": Label("@rrcti__cargo_toml-0.20.5//:cargo_toml"),
+            "cargo_toml": Label("@rrcti//:cargo_toml-0.20.5"),
         },
     },
 }

@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "phf_generator",
+    name = "handlebars",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,14 +28,20 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    proc_macro_deps = [
+        "@rmdbi__pest_derive-2.7.15//:pest_derive",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=phf_generator",
+        "crate-name=handlebars",
         "manual",
         "noclippy",
         "norustfmt",
@@ -77,9 +83,14 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.2",
+    version = "6.3.0",
     deps = [
-        "@rmdbi__phf_shared-0.11.2//:phf_shared",
-        "@rmdbi__rand-0.8.5//:rand",
+        "@rmdbi__derive_builder-0.20.2//:derive_builder",
+        "@rmdbi__log-0.4.22//:log",
+        "@rmdbi__num-order-1.2.0//:num_order",
+        "@rmdbi__pest-2.7.15//:pest",
+        "@rmdbi__serde-1.0.217//:serde",
+        "@rmdbi__serde_json-1.0.135//:serde_json",
+        "@rmdbi__thiserror-2.0.10//:thiserror",
     ],
 )

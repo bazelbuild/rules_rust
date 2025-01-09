@@ -6,12 +6,12 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "clap_complete",
+rust_proc_macro(
+    name = "darling_macro",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,9 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "default",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -38,7 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=clap_complete",
+        "crate-name=darling_macro",
         "manual",
         "noclippy",
         "norustfmt",
@@ -80,8 +77,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "4.5.40",
+    version = "0.20.10",
     deps = [
-        "@rmdbi__clap-4.5.23//:clap",
+        "@rmdbi__darling_core-0.20.10//:darling_core",
+        "@rmdbi__quote-1.0.38//:quote",
+        "@rmdbi__syn-2.0.95//:syn",
     ],
 )

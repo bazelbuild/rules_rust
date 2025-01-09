@@ -48,7 +48,7 @@ use_repo(
     rust_analyzer_test,
     "rtra",
     "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.134",
+    "rtra__serde_json-1.0.135",
 )
 EOF
 

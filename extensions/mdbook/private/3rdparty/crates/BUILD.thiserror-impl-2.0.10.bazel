@@ -6,12 +6,12 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "pest_generator",
+rust_proc_macro(
+    name = "thiserror_impl",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,9 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -38,7 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=pest_generator",
+        "crate-name=thiserror-impl",
         "manual",
         "noclippy",
         "norustfmt",
@@ -80,10 +77,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.7.15",
+    version = "2.0.10",
     deps = [
-        "@rmdbi__pest-2.7.15//:pest",
-        "@rmdbi__pest_meta-2.7.15//:pest_meta",
         "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
         "@rmdbi__quote-1.0.38//:quote",
         "@rmdbi__syn-2.0.95//:syn",
