@@ -96,6 +96,24 @@ def _define_test_targets():
     )
 
     native.genrule(
+        name = "generated_compile_data",
+        outs = ["generated.txt"],
+        cmd = "echo 'generated compile data contents' > $@",
+    )
+
+    rust_library(
+        name = "compile_data_gen",
+        srcs = ["compile_data_gen.rs"],
+        compile_data = [":generated.txt"],
+        edition = "2021",
+    )
+
+    rust_test(
+        name = "compile_data_gen_unit_test",
+        crate = ":compile_data_gen",
+    )
+
+    native.genrule(
         name = "generated_src",
         outs = ["generated.rs"],
         cmd = """echo 'pub const GENERATED: &str = "generated";' > $@""",

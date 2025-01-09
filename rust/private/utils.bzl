@@ -811,7 +811,11 @@ def transform_sources(ctx, srcs, compile_data, crate_root):
         Tuple(List[File], List[File], File): The transformed srcs, compile_data
                                              and crate_root
     """
-    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+    has_generated_sources = (
+        len([src for src in srcs if not src.is_source]) +
+        len([src for src in compile_data if not src.is_source]) >
+        0
+    )
 
     if not has_generated_sources:
         return srcs, compile_data, crate_root
