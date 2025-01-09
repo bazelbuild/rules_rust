@@ -10,32 +10,32 @@ bazel_dep(name = "bazel_features", version = "1.21.0")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "aspect_rules_js", version = "2.1.1")
+bazel_dep(name = "aspect_rules_js", version = "2.1.2")
 
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
     "rrwbd",
-    "rrwbd__anyhow-1.0.71",
-    "rrwbd__assert_cmd-1.0.8",
+    "rrwbd__anyhow-1.0.95",
+    "rrwbd__assert_cmd-2.0.16",
+    "rrwbd__clap-4.5.29",
     "rrwbd__diff-0.1.13",
-    "rrwbd__docopt-1.1.1",
-    "rrwbd__env_logger-0.8.4",
-    "rrwbd__log-0.4.19",
-    "rrwbd__predicates-1.0.8",
-    "rrwbd__rayon-1.7.0",
+    "rrwbd__env_logger-0.11.6",
+    "rrwbd__log-0.4.22",
+    "rrwbd__predicates-3.1.3",
+    "rrwbd__rayon-1.10.0",
     "rrwbd__rouille-3.6.2",
-    "rrwbd__serde-1.0.171",
-    "rrwbd__serde_derive-1.0.171",
-    "rrwbd__serde_json-1.0.102",
-    "rrwbd__tempfile-3.6.0",
-    "rrwbd__ureq-2.8.0",
-    "rrwbd__walrus-0.20.3",
-    "rrwbd__wasm-bindgen-0.2.92",
-    "rrwbd__wasm-bindgen-cli-support-0.2.92",
-    "rrwbd__wasm-bindgen-shared-0.2.92",
-    "rrwbd__wasmparser-0.102.0",
-    "rrwbd__wasmprinter-0.2.60",
+    "rrwbd__serde-1.0.217",
+    "rrwbd__serde_derive-1.0.217",
+    "rrwbd__serde_json-1.0.135",
+    "rrwbd__tempfile-3.15.0",
+    "rrwbd__ureq-2.12.1",
+    "rrwbd__walrus-0.23.3",
+    "rrwbd__wasm-bindgen-0.2.100",
+    "rrwbd__wasm-bindgen-cli-support-0.2.100",
+    "rrwbd__wasm-bindgen-shared-0.2.100",
+    "rrwbd__wasmparser-0.214.0",
+    "rrwbd__wasmprinter-0.214.0",
     "rules_rust_wasm_bindgen_cli",
 )
 

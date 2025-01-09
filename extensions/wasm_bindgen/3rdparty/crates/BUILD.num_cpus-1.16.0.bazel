@@ -82,103 +82,103 @@ rust_library(
     version = "1.16.0",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [
-            "@rrwbd__libc-0.2.150//:libc",  # cfg(not(windows))
+            "@rrwbd__libc-0.2.169//:libc",  # cfg(not(windows))
         ],
         "//conditions:default": [],
     }),
