@@ -1,5 +1,4 @@
 mod aquery;
-mod config;
 mod rust_project;
 
 use std::collections::HashMap;
@@ -7,7 +6,6 @@ use std::process::Command;
 
 use anyhow::bail;
 use camino::Utf8Path;
-pub use config::Config;
 use runfiles::Runfiles;
 use rust_project::RustProject;
 pub use rust_project::{DiscoverProject, NormalizedProjectString, RustAnalyzerArg};
