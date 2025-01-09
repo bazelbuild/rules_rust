@@ -9,6 +9,11 @@ local_path_override(
     path = "../..",
 )
 
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = "2021",
