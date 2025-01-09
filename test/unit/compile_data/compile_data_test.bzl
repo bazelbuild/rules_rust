@@ -95,6 +95,24 @@ def _define_test_targets():
         crate = ":compile_data_env",
     )
 
+    native.genrule(
+        name = "generated_src",
+        outs = ["generated.rs"],
+        cmd = """echo 'pub const GENERATED: &str = "generated";' > $@""",
+    )
+
+    rust_library(
+        name = "compile_data_gen_srcs",
+        srcs = ["compile_data_gen_srcs.rs", ":generated.rs"],
+        compile_data = ["compile_data.txt"],
+        edition = "2021",
+    )
+
+    rust_test(
+        name = "compile_data_gen_srcs_unit_test",
+        crate = ":compile_data_gen_srcs",
+    )
+
 def compile_data_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
