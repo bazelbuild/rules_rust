@@ -18,7 +18,7 @@ crate_universe_dependencies(bootstrap = True)
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
-    name = "workspace_crates_from_cargo_workspace",
+    name = "crates_from_cargo_workspace",
     cargo_lockfile = "//crates_from_workspace:Cargo.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
@@ -26,6 +26,6 @@ crates_repository(
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
 
-load("@workspace_crates_from_cargo_workspace//:defs.bzl", "crate_repositories")
+load("@crates_from_cargo_workspace//:defs.bzl", "crate_repositories")
 
 crate_repositories()

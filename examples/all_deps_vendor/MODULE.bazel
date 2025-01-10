@@ -37,4 +37,10 @@ register_toolchains("@rust_toolchains//:all")
 ###############################################################################
 # R U S T  C R A T E S
 ###############################################################################
-use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+deps = use_extension("//:extensions.bzl", "rust_example")
+use_repo(
+    deps,
+    "basic",
+    "basic__bzip2-0.3.3",
+)

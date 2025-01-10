@@ -89,19 +89,19 @@ rust_library(
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-apple-darwin
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-apple-ios
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-apple-ios-sim
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-linux-android
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-pc-windows-msvc
@@ -109,39 +109,39 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-unknown-fuchsia
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-unknown-linux-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # aarch64-unknown-nto-qnx710
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # arm-unknown-linux-gnueabi
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # armv7-linux-androideabi
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # armv7-unknown-linux-gnueabi
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # i686-apple-darwin
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # i686-linux-android
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # i686-pc-windows-msvc
@@ -149,35 +149,35 @@ rust_library(
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # i686-unknown-freebsd
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # i686-unknown-linux-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # powerpc-unknown-linux-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # s390x-unknown-linux-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # wasm32-wasip1
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-apple-darwin
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-apple-ios
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-linux-android
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-pc-windows-msvc
@@ -185,19 +185,19 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-unknown-freebsd
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-unknown-fuchsia
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-unknown-linux-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
             "@rmdbi__getrandom-0.2.15//:getrandom",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-            "@rmdbi__rustix-0.38.42//:rustix",  # cfg(any(unix, target_os = "wasi"))
+            "@rmdbi__rustix-0.38.43//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "//conditions:default": [],
     }),

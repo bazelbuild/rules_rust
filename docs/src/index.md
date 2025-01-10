@@ -89,6 +89,10 @@ The oldest version of Bazel the `main` branch is tested against is `7.4.1`. Prev
 
 We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.
 
+### WORKSPACE support
+
+WORKSPACE support is officially tested with Bazel 7 for as long as that is the min supported version. While it may work with later versions, compatibility with those versions is not guaranteed or actively verified.
+
 ## Supported platforms
 
 We aim to support Linux and macOS.

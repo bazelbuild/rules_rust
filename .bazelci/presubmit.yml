@@ -1,5 +1,14 @@
 ---
 minimum_bazel_version: &minimum_bazel_version "7.4.1"
+no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -16,12 +25,6 @@ bzlmod_flags: &bzlmod_flags
 bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
   # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
   - "--incompatible_use_plus_in_repo_names"
-no_bzlmod_shell_commands: &no_bzlmod_shell_commands
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
-no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
-  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -116,6 +119,7 @@ tasks:
   ubuntu2004_no_bzlmod:
     name: No Bzlmod
     platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -126,12 +130,14 @@ tasks:
   rbe_ubuntu2004_no_bzlmod:
     name: No Bzlmod
     platform: rbe_ubuntu2004
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_rbe_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
   macos_no_bzlmod:
     name: No Bzlmod
     platform: macos_arm64
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -140,6 +146,7 @@ tasks:
   windows_no_bzlmod:
     name: No Bzlmod
     platform: windows
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
@@ -472,6 +479,22 @@ tasks:
   crate_universe_local_path_in_tree:
     name: Crate Universe Local Path In Tree
     platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree"
+  crate_universe_local_path_external_no_bzlmod:
+    name: Crate Universe Local Path External (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree"
+  crate_universe_local_path_in_tree_no_bzlmod:
+    name: Crate Universe Local Path In Tree (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
     working_directory: examples/crate_universe_local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"

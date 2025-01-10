@@ -7,7 +7,7 @@ crates_vendor(
             gen_build_script = True,
         )],
     },
-    cargo_lockfile = "Cargo.Bazel.lock",
+    cargo_lockfile = "Cargo.lock",
     generate_build_scripts = False,
     mode = "remote",
     packages = {
