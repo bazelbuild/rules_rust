@@ -1,6 +1,8 @@
-use std::collections::{BTreeMap, BTreeSet};
-use std::fs::File;
-use std::process::Command;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs::File,
+    process::Command,
+};
 
 use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};

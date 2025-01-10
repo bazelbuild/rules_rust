@@ -1,10 +1,11 @@
-use std::process::Command;
 use std::{env, io::ErrorKind};
 
 use anyhow::bail;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use gen_rust_project_lib::{generate_crate_info, generate_rust_project, NormalizedProjectString};
+use gen_rust_project_lib::{
+    generate_crate_info, generate_rust_project, get_bazel_info, NormalizedProjectString,
+};
 
 fn write_rust_project(
     bazel: &Utf8Path,
@@ -59,13 +60,7 @@ fn main() -> anyhow::Result<()> {
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
     // Generate the crate specs.
-    generate_crate_info(
-        &bazel,
-        &output_base,
-        &workspace,
-        rules_rust_name,
-        &targets,
-    )?;
+    generate_crate_info(&bazel, &output_base, &workspace, rules_rust_name, &targets)?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
@@ -103,13 +98,16 @@ impl Config {
     // Parse the configuration flags and supplement with bazel info as needed.
     pub fn parse() -> anyhow::Result<Self> {
         let ConfigParser {
-            mut workspace,
-            mut execution_root,
-            mut output_base,
+            workspace,
+            execution_root,
+            output_base,
             bazel,
             targets,
         } = ConfigParser::parse();
 
+        // Implemented this way instead of a classic `if let` to satisfy the
+        // borrow checker.
+        // See: <https://github.com/rust-lang/rust/issues/54663>
         if workspace.is_some() && execution_root.is_some() && output_base.is_some() {
             return Ok(Config {
                 workspace: workspace.unwrap(),
@@ -121,48 +119,21 @@ impl Config {
         }
 
         // We need some info from `bazel info`. Fetch it now.
-        let mut bazel_info_command = Command::new(&bazel);
-
-        // Execute bazel info.
-        let output = bazel_info_command
-            // Switch to the workspace directory if one was provided.
-            .current_dir(workspace.as_deref().unwrap_or(Utf8Path::new(".")))
-            .env_remove("BAZELISK_SKIP_WRAPPER")
-            .env_remove("BUILD_WORKING_DIRECTORY")
-            .env_remove("BUILD_WORKSPACE_DIRECTORY")
-            // Set the output_base if one was provided.
-            .args(output_base.as_ref().map(|s| format!("--output_base={s}")))
-            .arg("info")
-            .output()?;
-
-        if !output.status.success() {
-            let status = output.status;
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            bail!("Failed to run `bazel info` ({status:?}): {stderr}");
-        }
-
-        // Extract the output.
-        let output = String::from_utf8(output.stdout)?;
-
-        let iter = output
-            .trim()
-            .split('\n')
-            .filter_map(|line| line.split_once(':'))
-            .map(|(k, v)| (k, v.trim()));
-
-        for (k, v) in iter {
-            match k {
-                "workspace" => workspace = Some(v.into()),
-                "execution_root" => execution_root = Some(v.into()),
-                "output_base" => output_base = Some(v.into()),
-                _ => continue,
-            }
-        }
+        let mut info_map = get_bazel_info(&bazel, workspace.as_deref(), output_base.as_deref())?;
 
         let config = Config {
-            workspace: workspace.expect("'workspace' must exist in bazel info"),
-            execution_root: execution_root.expect("'execution_root' must exist in bazel info"),
-            output_base: output_base.expect("'output_base' must exist in bazel info"),
+            workspace: info_map
+                .remove("workspace")
+                .expect("'workspace' must exist in bazel info")
+                .into(),
+            execution_root: info_map
+                .remove("execution_root")
+                .expect("'execution_root' must exist in bazel info")
+                .into(),
+            output_base: info_map
+                .remove("output_base")
+                .expect("'output_base' must exist in bazel info")
+                .into(),
             bazel,
             targets,
         };

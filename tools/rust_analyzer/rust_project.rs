@@ -1,18 +1,18 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::convert::TryFrom;
-use std::fmt::Display;
-use std::fs;
-use std::str::FromStr;
+use std::collections::{
+    convert::TryFrom, fmt::Display, fs, str::FromStr, BTreeMap, BTreeSet, HashMap,
+};
 
 use anyhow::{anyhow, bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
-use crate::aquery::{CrateSpec, CrateType};
-use crate::BUILD_FILE_NAMES;
+use crate::{
+    aquery::{CrateSpec, CrateType},
+    BUILD_FILE_NAMES,
+};
 
 /// The argument that `rust-analyzer` can pass to the workspace discovery command.
 #[derive(Clone, Debug, Deserialize, Serialize)]

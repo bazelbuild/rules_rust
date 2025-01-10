@@ -1,8 +1,7 @@
 mod aquery;
 mod rust_project;
 
-use std::collections::HashMap;
-use std::process::Command;
+use std::{collections::HashMap, process::Command};
 
 use anyhow::bail;
 use camino::Utf8Path;
@@ -82,4 +81,38 @@ pub fn generate_rust_project(
     let sysroot = &toolchain_info["sysroot"];
 
     rust_project::assemble_rust_project(bazel, workspace, sysroot, sysroot_src, &crate_specs)
+}
+
+/// Executes `bazel info` to get context information.
+pub fn get_bazel_info(
+    bazel: &Utf8Path,
+    workspace: Option<&Utf8Path>,
+    output_base: Option<&Utf8Path>,
+) -> anyhow::Result<HashMap<String, String>> {
+    let output = Command::new(&bazel)
+        // Switch to the workspace directory if one was provided.
+        .current_dir(workspace.unwrap_or(Utf8Path::new(".")))
+        .env_remove("BAZELISK_SKIP_WRAPPER")
+        .env_remove("BUILD_WORKING_DIRECTORY")
+        .env_remove("BUILD_WORKSPACE_DIRECTORY")
+        // Set the output_base if one was provided.
+        .args(output_base.map(|s| format!("--output_base={s}")))
+        .arg("info")
+        .output()?;
+
+    if !output.status.success() {
+        let status = output.status;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("Failed to run `bazel info` ({status:?}): {stderr}");
+    }
+
+    // Extract and parse the output.
+    let info_map = String::from_utf8(output.stdout)?
+        .trim()
+        .split('\n')
+        .filter_map(|line| line.split_once(':'))
+        .map(|(k, v)| (k.to_owned(), v.trim().to_owned()))
+        .collect();
+
+    Ok(info_map)
 }
