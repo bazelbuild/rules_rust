@@ -9,6 +9,7 @@ pub trait BazelCommand {
         bazel: &Utf8Path,
         workspace: Option<&Utf8Path>,
         output_base: Option<&Utf8Path>,
+        bazelrc: Option<&Utf8Path>,
     ) -> Self;
 }
 
@@ -17,6 +18,7 @@ impl BazelCommand for Command {
         bazel: &Utf8Path,
         workspace: Option<&Utf8Path>,
         output_base: Option<&Utf8Path>,
+        bazelrc: Option<&Utf8Path>,
     ) -> Self {
         let mut cmd = Self::new(bazel);
 
@@ -27,7 +29,9 @@ impl BazelCommand for Command {
             .env_remove("BUILD_WORKING_DIRECTORY")
             .env_remove("BUILD_WORKSPACE_DIRECTORY")
             // Set the output_base if one was provided.
-            .args(output_base.map(|s| format!("--output_base={s}")));
+            .args(output_base.map(|s| format!("--output_base={s}")))
+            // Pass the bazelrc file if any is provided.
+            .args(bazelrc.map(|s| format!("--bazelrc={s}")));
 
         cmd
     }

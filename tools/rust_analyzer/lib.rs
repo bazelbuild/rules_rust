@@ -20,13 +20,14 @@ pub fn generate_crate_info(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
     workspace: &Utf8Path,
+    bazelrc: Option<&Utf8Path>,
     rules_rust: &str,
     targets: &[String],
 ) -> anyhow::Result<()> {
     log::info!("running bazel build...");
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
-    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base))
+    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
         .arg("build")
         .arg("--norun_validations")
         .arg(format!(
@@ -52,6 +53,7 @@ pub fn generate_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    bazelrc: Option<&Utf8Path>,
     rules_rust_name: &str,
     targets: &[String],
 ) -> anyhow::Result<RustProject> {
@@ -60,6 +62,7 @@ pub fn generate_rust_project(
         output_base,
         workspace,
         execution_root,
+        bazelrc,
         targets,
         rules_rust_name,
     )?;
@@ -83,8 +86,9 @@ pub fn get_bazel_info(
     bazel: &Utf8Path,
     workspace: Option<&Utf8Path>,
     output_base: Option<&Utf8Path>,
+    bazelrc: Option<&Utf8Path>,
 ) -> anyhow::Result<HashMap<String, String>> {
-    let output = Command::new_bazel_command(bazel, workspace, output_base)
+    let output = Command::new_bazel_command(bazel, workspace, output_base, bazelrc)
         .arg("info")
         .output()?;
 

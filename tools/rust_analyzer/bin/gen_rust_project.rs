@@ -21,6 +21,7 @@ fn write_rust_project(
         output_base,
         workspace,
         execution_root,
+        None,
         rules_rust_name,
         targets,
     )?;
@@ -60,7 +61,14 @@ fn main() -> anyhow::Result<()> {
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
     // Generate the crate specs.
-    generate_crate_info(&bazel, &output_base, &workspace, rules_rust_name, &targets)?;
+    generate_crate_info(
+        &bazel,
+        &output_base,
+        &workspace,
+        None,
+        rules_rust_name,
+        &targets,
+    )?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(
@@ -87,7 +95,7 @@ pub struct Config {
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
     pub output_base: Utf8PathBuf,
 
-    /// The path to a Bazel binary
+    /// The path to a Bazel binary.
     pub bazel: Utf8PathBuf,
 
     /// Space separated list of target patterns that comes after all other args.
@@ -108,6 +116,7 @@ impl Config {
         // Implemented this way instead of a classic `if let` to satisfy the
         // borrow checker.
         // See: <https://github.com/rust-lang/rust/issues/54663>
+        #[allow(clippy::unnecessary_unwrap)]
         if workspace.is_some() && execution_root.is_some() && output_base.is_some() {
             return Ok(Config {
                 workspace: workspace.unwrap(),
@@ -119,7 +128,8 @@ impl Config {
         }
 
         // We need some info from `bazel info`. Fetch it now.
-        let mut info_map = get_bazel_info(&bazel, workspace.as_deref(), output_base.as_deref())?;
+        let mut info_map =
+            get_bazel_info(&bazel, workspace.as_deref(), output_base.as_deref(), None)?;
 
         let config = Config {
             workspace: info_map
@@ -156,7 +166,7 @@ struct ConfigParser {
     #[clap(long, env = "OUTPUT_BASE")]
     output_base: Option<Utf8PathBuf>,
 
-    /// The path to a Bazel binary
+    /// The path to a Bazel binary.
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
 

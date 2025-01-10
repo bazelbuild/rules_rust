@@ -28,7 +28,7 @@ pub enum RustAnalyzerArg {
 
 impl RustAnalyzerArg {
     /// Consumes itself to return a build file and the targets to build.
-    pub fn query_target_details(
+    pub fn into_target_details(
         self,
         workspace: &Utf8Path,
     ) -> anyhow::Result<(Utf8PathBuf, String)> {

@@ -90,6 +90,7 @@ pub fn get_crate_specs(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    bazelrc: Option<&Utf8Path>,
     targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
@@ -97,7 +98,7 @@ pub fn get_crate_specs(
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
 
-    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base))
+    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
         .arg("aquery")
         .arg("--include_aspects")
         .arg("--include_artifacts")

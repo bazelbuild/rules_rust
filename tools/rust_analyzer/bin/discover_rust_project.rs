@@ -19,6 +19,7 @@ fn discover_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
+    bazelrc: Option<&Utf8Path>,
     rules_rust_name: &str,
     targets: &[String],
     buildfile: Utf8PathBuf,
@@ -28,6 +29,7 @@ fn discover_rust_project(
         output_base,
         workspace,
         execution_root,
+        bazelrc,
         rules_rust_name,
         targets,
     )?;
@@ -69,7 +71,7 @@ fn discovery_failure(error: anyhow::Error) {
 ///
 /// Returns an error if no file from [`WORKSPACE_ROOT_FILE_NAMES`] is found.
 fn find_workspace_root_file(workspace: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
-    for entry in fs::read_dir(&workspace)? {
+    for entry in fs::read_dir(workspace)? {
         // Continue iteration if a path is not UTF8.
         let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
             continue;
@@ -97,6 +99,7 @@ fn project_discovery() -> anyhow::Result<()> {
         execution_root,
         output_base,
         bazel,
+        bazelrc,
         rust_analyzer_argument,
     } = Config::parse()?;
 
@@ -111,14 +114,21 @@ fn project_discovery() -> anyhow::Result<()> {
 
     log::info!("resolved rust-analyzer argument: {ra_arg}");
 
-    let (buildfile, targets) = ra_arg.query_target_details(&workspace)?;
+    let (buildfile, targets) = ra_arg.into_target_details(&workspace)?;
     let targets = &[targets];
 
     log::debug!("got buildfile: {buildfile}");
     log::debug!("got targets: {targets:?}");
 
     // Generate the crate specs.
-    generate_crate_info(&bazel, &output_base, &workspace, rules_rust_name, targets)?;
+    generate_crate_info(
+        &bazel,
+        &output_base,
+        &workspace,
+        bazelrc.as_deref(),
+        rules_rust_name,
+        targets,
+    )?;
 
     // Use the generated files to print the rust-project.json.
     discover_rust_project(
@@ -126,6 +136,7 @@ fn project_discovery() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
+        bazelrc.as_deref(),
         rules_rust_name,
         targets,
         buildfile,
@@ -160,8 +171,11 @@ pub struct Config {
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
     pub output_base: Utf8PathBuf,
 
-    /// The path to a Bazel binary
+    /// The path to a Bazel binary.
     pub bazel: Utf8PathBuf,
+
+    /// The path to a `bazelrc` configuration file.
+    bazelrc: Option<Utf8PathBuf>,
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
@@ -175,24 +189,32 @@ impl Config {
             execution_root,
             output_base,
             bazel,
+            bazelrc,
             rust_analyzer_argument,
         } = ConfigParser::parse();
 
         // Implemented this way instead of a classic `if let` to satisfy the
         // borrow checker.
         // See: <https://github.com/rust-lang/rust/issues/54663>
+        #[allow(clippy::unnecessary_unwrap)]
         if workspace.is_some() && execution_root.is_some() && output_base.is_some() {
             return Ok(Config {
                 workspace: workspace.unwrap(),
                 execution_root: execution_root.unwrap(),
                 output_base: output_base.unwrap(),
                 bazel,
+                bazelrc,
                 rust_analyzer_argument,
             });
         }
 
         // We need some info from `bazel info`. Fetch it now.
-        let mut info_map = get_bazel_info(&bazel, workspace.as_deref(), output_base.as_deref())?;
+        let mut info_map = get_bazel_info(
+            &bazel,
+            workspace.as_deref(),
+            output_base.as_deref(),
+            bazelrc.as_deref(),
+        )?;
 
         let config = Config {
             workspace: info_map
@@ -208,6 +230,7 @@ impl Config {
                 .expect("'output_base' must exist in bazel info")
                 .into(),
             bazel,
+            bazelrc,
             rust_analyzer_argument,
         };
 
@@ -229,9 +252,13 @@ struct ConfigParser {
     #[clap(long, env = "OUTPUT_BASE")]
     output_base: Option<Utf8PathBuf>,
 
-    /// The path to a Bazel binary
+    /// The path to a Bazel binary.
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
+
+    /// The path to a `bazelrc` configuration file.
+    #[clap(long)]
+    bazelrc: Option<Utf8PathBuf>,
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
