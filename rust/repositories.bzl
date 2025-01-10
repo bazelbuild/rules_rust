@@ -269,7 +269,7 @@ def rust_register_toolchains(
             sha256s = sha256s,
             urls = urls,
             versions = versions,
-            aliases = aliases,
+            aliases = dict(aliases),
         )
 
         for toolchain in _get_toolchain_repositories(
