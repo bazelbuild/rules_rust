@@ -24,7 +24,6 @@ fn discover_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
-    config_group: Option<&str>,
     rules_rust_name: &str,
     targets: &[String],
     buildfile: Utf8PathBuf,
@@ -34,7 +33,6 @@ fn discover_rust_project(
         output_base,
         workspace,
         execution_root,
-        config_group,
         rules_rust_name,
         targets,
     )?;
@@ -104,7 +102,6 @@ fn project_discovery() -> anyhow::Result<()> {
         execution_root,
         output_base,
         bazel,
-        config_group,
         rust_analyzer_argument,
     } = Config::parse()?;
 
@@ -130,7 +127,6 @@ fn project_discovery() -> anyhow::Result<()> {
         &bazel,
         &output_base,
         &workspace,
-        config_group.as_deref(),
         rules_rust_name,
         targets,
     )?;
@@ -141,7 +137,6 @@ fn project_discovery() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
-        config_group.as_deref(),
         rules_rust_name,
         targets,
         buildfile,
@@ -179,9 +174,6 @@ pub struct Config {
     /// The path to a Bazel binary
     pub bazel: Utf8PathBuf,
 
-    /// A `--config` directive that gets passed to Bazel to be able to pass custom configurations.
-    pub config_group: Option<String>,
-
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
 }
@@ -194,7 +186,6 @@ impl Config {
             mut execution_root,
             mut output_base,
             bazel,
-            config_group,
             rust_analyzer_argument,
         } = ConfigParser::parse();
 
@@ -204,7 +195,6 @@ impl Config {
                 execution_root: execution_root.unwrap(),
                 output_base: output_base.unwrap(),
                 bazel,
-                config_group,
                 rust_analyzer_argument,
             });
         }
@@ -222,7 +212,6 @@ impl Config {
             // Set the output_base if one was provided.
             .args(output_base.as_ref().map(|s| format!("--output_base={s}")))
             .arg("info")
-            .args(config_group.as_ref().map(|s| format!("--config={s}")))
             .output()?;
 
         if !output.status.success() {
@@ -254,7 +243,6 @@ impl Config {
             execution_root: execution_root.expect("'execution_root' must exist in bazel info"),
             output_base: output_base.expect("'output_base' must exist in bazel info"),
             bazel,
-            config_group,
             rust_analyzer_argument,
         };
 
@@ -279,10 +267,6 @@ struct ConfigParser {
     /// The path to a Bazel binary
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
-
-    /// A `--config` directive that gets passed to Bazel to be able to pass custom configurations.
-    #[clap(long)]
-    config_group: Option<String>,
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,

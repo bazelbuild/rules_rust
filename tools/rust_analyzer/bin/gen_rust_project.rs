@@ -11,7 +11,6 @@ fn write_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
-    config_group: Option<&str>,
     rules_rust_name: &str,
     targets: &[String],
     rust_project_path: &Utf8Path,
@@ -21,7 +20,6 @@ fn write_rust_project(
         output_base,
         workspace,
         execution_root,
-        config_group,
         rules_rust_name,
         targets,
     )?;
@@ -65,7 +63,6 @@ fn main() -> anyhow::Result<()> {
         &bazel,
         &output_base,
         &workspace,
-        None,
         rules_rust_name,
         &targets,
     )?;
@@ -76,7 +73,6 @@ fn main() -> anyhow::Result<()> {
         &output_base,
         &workspace,
         &execution_root,
-        None,
         rules_rust_name,
         &targets,
         &workspace.join("rust-project.json"),
