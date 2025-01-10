@@ -32,6 +32,12 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "cargo_toml-0.20.5",
+    actual = "@rrcti__cargo_toml-0.20.5//:cargo_toml",
+    tags = ["manual"],
+)
+
+alias(
     name = "cargo_toml",
     actual = "@rrcti__cargo_toml-0.20.5//:cargo_toml",
     tags = ["manual"],

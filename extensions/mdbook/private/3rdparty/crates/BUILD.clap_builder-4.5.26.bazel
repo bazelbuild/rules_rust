@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "phf",
+    name = "clap_builder",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,8 +29,14 @@ rust_library(
         ],
     ),
     crate_features = [
-        "default",
+        "cargo",
+        "color",
+        "error-context",
+        "help",
         "std",
+        "suggestions",
+        "usage",
+        "wrap_help",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -39,7 +45,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=phf",
+        "crate-name=clap_builder",
         "manual",
         "noclippy",
         "norustfmt",
@@ -81,8 +87,12 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.2",
+    version = "4.5.26",
     deps = [
-        "@rmdbi__phf_shared-0.11.2//:phf_shared",
+        "@rmdbi__anstream-0.6.18//:anstream",
+        "@rmdbi__anstyle-1.0.10//:anstyle",
+        "@rmdbi__clap_lex-0.7.4//:clap_lex",
+        "@rmdbi__strsim-0.11.1//:strsim",
+        "@rmdbi__terminal_size-0.4.1//:terminal_size",
     ],
 )

@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "phf_shared",
+    name = "clap",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,52 +29,16 @@ rust_library(
         ],
     ),
     crate_features = [
+        "cargo",
+        "color",
+        "default",
+        "error-context",
+        "help",
         "std",
-    ] + select({
-        "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "default",  # aarch64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "default",  # aarch64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "default",  # aarch64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "default",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
-        ],
-        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "default",  # arm-unknown-linux-gnueabi
-        ],
-        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "default",  # i686-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "default",  # i686-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "default",  # powerpc-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "default",  # s390x-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "default",  # x86_64-apple-darwin
-        ],
-        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "default",  # x86_64-pc-windows-msvc
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "default",  # x86_64-unknown-freebsd
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "default",  # x86_64-unknown-linux-gnu
-        ],
-        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "default",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
-        ],
-        "//conditions:default": [],
-    }),
+        "suggestions",
+        "usage",
+        "wrap_help",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -82,7 +46,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=phf_shared",
+        "crate-name=clap",
         "manual",
         "noclippy",
         "norustfmt",
@@ -124,8 +88,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.2",
+    version = "4.5.26",
     deps = [
-        "@rmdbi__siphasher-0.3.11//:siphasher",
+        "@rmdbi__clap_builder-4.5.26//:clap_builder",
     ],
 )

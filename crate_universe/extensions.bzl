@@ -802,7 +802,7 @@ def _crate_impl(module_ctx):
 
     for mod in module_ctx.modules:
         if not mod.tags.from_cargo and not mod.tags.from_specs:
-            fail("`.from_cargo` or `.from_specs` are required. Please update {}", mod.name)
+            fail("`.from_cargo` or `.from_specs` are required. Please update {}".format(mod.name))
 
         local_repos = []
         module_annotations = {}

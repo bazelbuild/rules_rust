@@ -1,13 +1,13 @@
 //! The cli entrypoint for the `vendor` subcommand
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, ExitStatus};
 use std::sync::Arc;
 
-use anyhow::{bail, Context as AnyhowContext, Result};
+use anyhow::{anyhow, bail, Context as AnyhowContext};
 use camino::Utf8PathBuf;
 use clap::Parser;
 
@@ -85,7 +85,7 @@ pub struct VendorOptions {
 }
 
 /// Run buildifier on a given file.
-fn buildifier_format(bin: &Path, file: &Path) -> Result<ExitStatus> {
+fn buildifier_format(bin: &Path, file: &Path) -> anyhow::Result<ExitStatus> {
     let status = process::Command::new(bin)
         .args(["-lint=fix", "-mode=fix", "-warnings=all"])
         .arg(file)
@@ -99,35 +99,106 @@ fn buildifier_format(bin: &Path, file: &Path) -> Result<ExitStatus> {
     Ok(status)
 }
 
-/// Query the Bazel output_base to determine the location of external repositories.
-fn locate_bazel_output_base(bazel: &Path, workspace_dir: &Path) -> Result<PathBuf> {
-    // Allow a predefined environment variable to take precedent. This
-    // solves for the specific needs of Bazel CI on Github.
-    if let Ok(output_base) = env::var("OUTPUT_BASE") {
-        return Ok(PathBuf::from(output_base));
-    }
-
-    let output = process::Command::new(bazel)
+/// Run `bazel mod tidy` in a workspace.
+fn bzlmod_tidy(bin: &Path, workspace_dir: &Path) -> anyhow::Result<ExitStatus> {
+    let status = process::Command::new(bin)
         .current_dir(workspace_dir)
-        .args(["info", "output_base"])
-        .output()
-        .context("Failed to query the Bazel workspace's `output_base`")?;
+        .arg("mod")
+        .arg("tidy")
+        .status()
+        .context("Failed to spawn Bazel process")?;
 
-    if !output.status.success() {
-        bail!(output.status)
+    if !status.success() {
+        bail!(status)
     }
 
-    Ok(PathBuf::from(
-        String::from_utf8_lossy(&output.stdout).trim(),
-    ))
+    Ok(status)
 }
 
-pub fn vendor(opt: VendorOptions) -> Result<()> {
-    let output_base = locate_bazel_output_base(&opt.bazel, &opt.workspace_dir)?;
+/// Info about a Bazel workspace
+struct BazelInfo {
+    /// The version of Bazel being used
+    release: semver::Version,
+
+    /// The location of the output_user_root.
+    output_base: PathBuf,
+}
+
+impl BazelInfo {
+    /// Construct a new struct based on the current binary and workspace paths provided.
+    fn try_new(bazel: &Path, workspace_dir: &Path) -> anyhow::Result<Self> {
+        let output = process::Command::new(bazel)
+            .current_dir(workspace_dir)
+            .arg("info")
+            .arg("release")
+            .arg("output_base")
+            .output()
+            .context("Failed to query the Bazel workspace's `output_base`")?;
+
+        if !output.status.success() {
+            bail!(output.status)
+        }
+
+        let output = String::from_utf8_lossy(output.stdout.as_slice());
+        let mut bazel_info: HashMap<String, String> = output
+            .trim()
+            .split('\n')
+            .map(|line| {
+                let (k, v) = line.split_at(
+                    line.find(':')
+                        .ok_or_else(|| anyhow!("missing `:` in bazel info output: `{}`", line))?,
+                );
+                Ok((k.to_string(), (v[1..]).trim().to_string()))
+            })
+            .collect::<anyhow::Result<HashMap<_, _>>>()?;
+
+        // Allow a predefined environment variable to take precedent. This
+        // solves for the specific needs of Bazel CI on Github.
+        if let Ok(path) = env::var("OUTPUT_BASE") {
+            bazel_info.insert("output_base".to_owned(), format!("output_base: {}", path));
+        };
+
+        BazelInfo::try_from(bazel_info)
+    }
+}
+
+impl TryFrom<HashMap<String, String>> for BazelInfo {
+    type Error = anyhow::Error;
+
+    fn try_from(value: HashMap<String, String>) -> Result<Self, Self::Error> {
+        Ok(BazelInfo {
+            release: value
+                .get("release")
+                .map(|s| {
+                    let mut r = s
+                        .split_whitespace()
+                        .last()
+                        .ok_or_else(|| anyhow!("Unexpected release value: {}", s))?
+                        .to_owned();
+
+                    // Force release candidates to conform to semver.
+                    if r.contains("rc") {
+                        let (v, c) = r.split_once("rc").unwrap();
+                        r = format!("{}-rc{}", v, c);
+                    }
+
+                    semver::Version::parse(&r).context("Failed to parse release version")
+                })
+                .ok_or(anyhow!("Failed to query Bazel release"))??,
+            output_base: value
+                .get("output_base")
+                .map(Into::into)
+                .ok_or(anyhow!("Failed to query Bazel output_base"))?,
+        })
+    }
+}
+
+pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
+    let bazel_info = BazelInfo::try_new(&opt.bazel, &opt.workspace_dir)?;
 
     // Load the all config files required for splicing a workspace
     let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?
-        .resolve(&opt.workspace_dir, &output_base);
+        .resolve(&opt.workspace_dir, &bazel_info.output_base);
 
     let temp_dir = tempfile::tempdir().context("Failed to create temporary directory")?;
     let temp_dir_path = Utf8PathBuf::from_path_buf(temp_dir.as_ref().to_path_buf())
@@ -231,5 +302,60 @@ pub fn vendor(opt: VendorOptions) -> Result<()> {
         }
     }
 
+    // Optionally perform bazel mod tidy to update the MODULE.bazel file
+    if bazel_info.release >= semver::Version::new(7, 0, 0) {
+        let module_bazel = opt.workspace_dir.join("MODULE.bazel");
+        if module_bazel.exists() {
+            bzlmod_tidy(&opt.bazel, &opt.workspace_dir)?;
+        }
+    }
+
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bazel_info() {
+        let raw_info = HashMap::from([
+            ("release".to_owned(), "8.0.0".to_owned()),
+            ("output_base".to_owned(), "/tmp/output_base".to_owned()),
+        ]);
+
+        let info = BazelInfo::try_from(raw_info).unwrap();
+
+        assert_eq!(semver::Version::new(8, 0, 0), info.release);
+        assert_eq!(PathBuf::from("/tmp/output_base"), info.output_base);
+    }
+
+    #[test]
+    fn test_bazel_info_release_candidate() {
+        let raw_info = HashMap::from([
+            ("release".to_owned(), "8.0.0rc1".to_owned()),
+            ("output_base".to_owned(), "/tmp/output_base".to_owned()),
+        ]);
+
+        let info = BazelInfo::try_from(raw_info).unwrap();
+
+        assert_eq!(semver::Version::parse("8.0.0-rc1").unwrap(), info.release);
+        assert_eq!(PathBuf::from("/tmp/output_base"), info.output_base);
+    }
+
+    #[test]
+    fn test_bazel_info_pre_release() {
+        let raw_info = HashMap::from([
+            ("release".to_owned(), "9.0.0-pre.20241208.2".to_owned()),
+            ("output_base".to_owned(), "/tmp/output_base".to_owned()),
+        ]);
+
+        let info = BazelInfo::try_from(raw_info).unwrap();
+
+        assert_eq!(
+            semver::Version::parse("9.0.0-pre.20241208.2").unwrap(),
+            info.release
+        );
+        assert_eq!(PathBuf::from("/tmp/output_base"), info.output_base);
+    }
 }

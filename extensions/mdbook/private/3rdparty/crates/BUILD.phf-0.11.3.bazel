@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "pest_generator",
+    name = "phf",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,6 +29,7 @@ rust_library(
         ],
     ),
     crate_features = [
+        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -38,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=pest_generator",
+        "crate-name=phf",
         "manual",
         "noclippy",
         "norustfmt",
@@ -80,12 +81,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.7.15",
+    version = "0.11.3",
     deps = [
-        "@rmdbi__pest-2.7.15//:pest",
-        "@rmdbi__pest_meta-2.7.15//:pest_meta",
-        "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
-        "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.95//:syn",
+        "@rmdbi__phf_shared-0.11.3//:phf_shared",
     ],
 )

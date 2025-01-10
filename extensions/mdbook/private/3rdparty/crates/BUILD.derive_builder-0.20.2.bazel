@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "pest_generator",
+    name = "derive_builder",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,16 +29,20 @@ rust_library(
         ],
     ),
     crate_features = [
+        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
-    edition = "2021",
+    edition = "2018",
+    proc_macro_deps = [
+        "@rmdbi__derive_builder_macro-0.20.2//:derive_builder_macro",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=pest_generator",
+        "crate-name=derive_builder",
         "manual",
         "noclippy",
         "norustfmt",
@@ -80,12 +84,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.7.15",
-    deps = [
-        "@rmdbi__pest-2.7.15//:pest",
-        "@rmdbi__pest_meta-2.7.15//:pest_meta",
-        "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
-        "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.95//:syn",
-    ],
+    version = "0.20.2",
 )

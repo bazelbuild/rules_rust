@@ -6,12 +6,12 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_proc_macro(
-    name = "tokio_macros",
+rust_library(
+    name = "clap_complete",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,6 +28,9 @@ rust_proc_macro(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -35,7 +38,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=tokio-macros",
+        "crate-name=clap_complete",
         "manual",
         "noclippy",
         "norustfmt",
@@ -77,10 +80,8 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.4.0",
+    version = "4.5.42",
     deps = [
-        "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
-        "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.94//:syn",
+        "@rmdbi__clap-4.5.26//:clap",
     ],
 )
