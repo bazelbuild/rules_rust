@@ -8,6 +8,8 @@ use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 
+use crate::command::BazelCommand;
+
 #[derive(Debug, Deserialize)]
 struct AqueryOutput {
     artifacts: Vec<Artifact>,
@@ -95,12 +97,7 @@ pub fn get_crate_specs(
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
 
-    let output = Command::new(bazel)
-        .current_dir(workspace)
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
-        .arg(format!("--output_base={output_base}"))
+    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base))
         .arg("aquery")
         .arg("--include_aspects")
         .arg("--include_artifacts")

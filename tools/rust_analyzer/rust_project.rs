@@ -1,8 +1,12 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use std::collections::{
-    convert::TryFrom, fmt::Display, fs, str::FromStr, BTreeMap, BTreeSet, HashMap,
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    convert::TryFrom,
+    fmt::Display,
+    fs,
+    str::FromStr,
 };
 
 use anyhow::{anyhow, bail, Context};

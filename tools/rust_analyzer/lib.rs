@@ -1,10 +1,12 @@
 mod aquery;
+mod command;
 mod rust_project;
 
 use std::{collections::HashMap, process::Command};
 
 use anyhow::bail;
 use camino::Utf8Path;
+use command::BazelCommand;
 use runfiles::Runfiles;
 use rust_project::RustProject;
 pub use rust_project::{DiscoverProject, NormalizedProjectString, RustAnalyzerArg};
@@ -24,12 +26,7 @@ pub fn generate_crate_info(
     log::info!("running bazel build...");
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
-    let output = Command::new(bazel)
-        .current_dir(workspace)
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
-        .arg(format!("--output_base={output_base}"))
+    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base))
         .arg("build")
         .arg("--norun_validations")
         .arg(format!(
@@ -40,11 +37,9 @@ pub fn generate_crate_info(
         .output()?;
 
     if !output.status.success() {
-        bail!(
-            "bazel build failed:({})\n{}",
-            output.status,
-            String::from_utf8_lossy(&output.stderr)
-        );
+        let status = output.status;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("bazel build failed: ({status})\n{stderr}");
     }
 
     log::info!("bazel build finished");
@@ -89,21 +84,14 @@ pub fn get_bazel_info(
     workspace: Option<&Utf8Path>,
     output_base: Option<&Utf8Path>,
 ) -> anyhow::Result<HashMap<String, String>> {
-    let output = Command::new(&bazel)
-        // Switch to the workspace directory if one was provided.
-        .current_dir(workspace.unwrap_or(Utf8Path::new(".")))
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
-        // Set the output_base if one was provided.
-        .args(output_base.map(|s| format!("--output_base={s}")))
+    let output = Command::new_bazel_command(bazel, workspace, output_base)
         .arg("info")
         .output()?;
 
     if !output.status.success() {
         let status = output.status;
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to run `bazel info` ({status:?}): {stderr}");
+        bail!("bazel info failed: ({status:?})\n{stderr}");
     }
 
     // Extract and parse the output.
