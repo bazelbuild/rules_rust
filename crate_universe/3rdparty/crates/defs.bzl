@@ -295,48 +295,49 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "anyhow": Label("@cui__anyhow-1.0.89//:anyhow"),
-            "camino": Label("@cui__camino-1.1.9//:camino"),
-            "cargo-lock": Label("@cui__cargo-lock-10.0.1//:cargo_lock"),
-            "cargo-platform": Label("@cui__cargo-platform-0.1.9//:cargo_platform"),
-            "cargo_metadata": Label("@cui__cargo_metadata-0.19.1//:cargo_metadata"),
-            "cargo_toml": Label("@cui__cargo_toml-0.20.5//:cargo_toml"),
-            "cfg-expr": Label("@cui__cfg-expr-0.17.2//:cfg_expr"),
-            "clap": Label("@cui__clap-4.3.11//:clap"),
-            "crates-index": Label("@cui__crates-index-3.3.0//:crates_index"),
-            "hex": Label("@cui__hex-0.4.3//:hex"),
-            "itertools": Label("@cui__itertools-0.13.0//:itertools"),
-            "normpath": Label("@cui__normpath-1.3.0//:normpath"),
-            "once_cell": Label("@cui__once_cell-1.20.2//:once_cell"),
-            "pathdiff": Label("@cui__pathdiff-0.2.3//:pathdiff"),
-            "regex": Label("@cui__regex-1.11.0//:regex"),
-            "semver": Label("@cui__semver-1.0.23//:semver"),
-            "serde": Label("@cui__serde-1.0.210//:serde"),
-            "serde_json": Label("@cui__serde_json-1.0.129//:serde_json"),
-            "serde_starlark": Label("@cui__serde_starlark-0.1.16//:serde_starlark"),
-            "sha2": Label("@cui__sha2-0.10.8//:sha2"),
-            "spdx": Label("@cui__spdx-0.10.7//:spdx"),
-            "tempfile": Label("@cui__tempfile-3.14.0//:tempfile"),
-            "tera": Label("@cui__tera-1.19.1//:tera"),
-            "textwrap": Label("@cui__textwrap-0.16.1//:textwrap"),
-            "toml": Label("@cui__toml-0.8.19//:toml"),
-            "tracing": Label("@cui__tracing-0.1.40//:tracing"),
-            "tracing-subscriber": Label("@cui__tracing-subscriber-0.3.18//:tracing_subscriber"),
-            "url": Label("@cui__url-2.5.2//:url"),
-            "walkdir": Label("@cui__walkdir-2.5.0//:walkdir"),
+            "anyhow": Label("@cui//:anyhow-1.0.89"),
+            "camino": Label("@cui//:camino-1.1.9"),
+            "cargo-lock": Label("@cui//:cargo-lock-10.0.1"),
+            "cargo-platform": Label("@cui//:cargo-platform-0.1.9"),
+            "cargo_metadata": Label("@cui//:cargo_metadata-0.19.1"),
+            "cargo_toml": Label("@cui//:cargo_toml-0.20.5"),
+            "cfg-expr": Label("@cui//:cfg-expr-0.17.2"),
+            "clap": Label("@cui//:clap-4.3.11"),
+            "crates-index": Label("@cui//:crates-index-3.3.0"),
+            "glob": Label("@cui//:glob-0.3.1"),
+            "hex": Label("@cui//:hex-0.4.3"),
+            "itertools": Label("@cui//:itertools-0.13.0"),
+            "normpath": Label("@cui//:normpath-1.3.0"),
+            "once_cell": Label("@cui//:once_cell-1.20.2"),
+            "pathdiff": Label("@cui//:pathdiff-0.2.3"),
+            "regex": Label("@cui//:regex-1.11.0"),
+            "semver": Label("@cui//:semver-1.0.23"),
+            "serde": Label("@cui//:serde-1.0.210"),
+            "serde_json": Label("@cui//:serde_json-1.0.129"),
+            "serde_starlark": Label("@cui//:serde_starlark-0.1.16"),
+            "sha2": Label("@cui//:sha2-0.10.8"),
+            "spdx": Label("@cui//:spdx-0.10.7"),
+            "tempfile": Label("@cui//:tempfile-3.14.0"),
+            "tera": Label("@cui//:tera-1.19.1"),
+            "textwrap": Label("@cui//:textwrap-0.16.1"),
+            "toml": Label("@cui//:toml-0.8.19"),
+            "tracing": Label("@cui//:tracing-0.1.40"),
+            "tracing-subscriber": Label("@cui//:tracing-subscriber-0.3.18"),
+            "url": Label("@cui//:url-2.5.2"),
+            "walkdir": Label("@cui//:walkdir-2.5.0"),
         },
     },
     "crate_universe/tools/cross_installer": {
         _COMMON_CONDITION: {
-            "clap": Label("@cui__clap-4.3.11//:clap"),
+            "clap": Label("@cui//:clap-4.3.11"),
         },
     },
     "crate_universe/tools/urls_generator": {
         _COMMON_CONDITION: {
-            "clap": Label("@cui__clap-4.3.11//:clap"),
-            "hex": Label("@cui__hex-0.4.3//:hex"),
-            "serde_json": Label("@cui__serde_json-1.0.129//:serde_json"),
-            "sha2": Label("@cui__sha2-0.10.8//:sha2"),
+            "clap": Label("@cui//:clap-4.3.11"),
+            "hex": Label("@cui//:hex-0.4.3"),
+            "serde_json": Label("@cui//:serde_json-1.0.129"),
+            "sha2": Label("@cui//:sha2-0.10.8"),
         },
     },
 }
@@ -359,7 +360,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "maplit": Label("@cui__maplit-1.0.2//:maplit"),
+            "maplit": Label("@cui//:maplit-1.0.2"),
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -382,7 +383,7 @@ _NORMAL_DEV_ALIASES = {
 _PROC_MACRO_DEPENDENCIES = {
     "crate_universe": {
         _COMMON_CONDITION: {
-            "indoc": Label("@cui__indoc-2.0.5//:indoc"),
+            "indoc": Label("@cui//:indoc-2.0.5"),
         },
     },
     "crate_universe/tools/cross_installer": {
@@ -1512,6 +1513,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/gix-worktree/0.37.0/download"],
         strip_prefix = "gix-worktree-0.37.0",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-worktree-0.37.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__glob-0.3.1",
+        sha256 = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/glob/0.3.1/download"],
+        strip_prefix = "glob-0.3.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.glob-0.3.1.bazel"),
     )
 
     maybe(
@@ -2944,6 +2955,7 @@ def crate_repositories():
         struct(repo = "cui__cfg-expr-0.17.2", is_dev_dep = False),
         struct(repo = "cui__clap-4.3.11", is_dev_dep = False),
         struct(repo = "cui__crates-index-3.3.0", is_dev_dep = False),
+        struct(repo = "cui__glob-0.3.1", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
         struct(repo = "cui__indoc-2.0.5", is_dev_dep = False),
         struct(repo = "cui__itertools-0.13.0", is_dev_dep = False),

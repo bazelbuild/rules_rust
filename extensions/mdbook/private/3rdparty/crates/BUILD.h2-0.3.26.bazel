@@ -87,7 +87,7 @@ rust_library(
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__indexmap-2.7.0//:indexmap",
         "@rmdbi__slab-0.4.9//:slab",
-        "@rmdbi__tokio-1.42.0//:tokio",
+        "@rmdbi__tokio-1.43.0//:tokio",
         "@rmdbi__tokio-util-0.7.13//:tokio_util",
         "@rmdbi__tracing-0.1.41//:tracing",
     ],

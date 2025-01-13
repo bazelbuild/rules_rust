@@ -18,6 +18,10 @@ load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_i
 
 cross_installer_deps()
 
+load("@rules_rust//cargo:deps.bzl", "cargo_dependencies")
+
+cargo_dependencies()
+
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()

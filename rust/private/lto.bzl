@@ -3,6 +3,8 @@
 load("//rust/private:utils.bzl", "is_exec_configuration")
 
 _LTO_MODES = [
+    # Do nothing, let the user manually handle LTO.
+    "manual",
     # Default. No mode has been explicitly set, rustc will do "thin local" LTO
     # between the codegen units of a single crate.
     "unspecified",
@@ -58,14 +60,12 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
     if is_exec_configuration(ctx):
         return "only_object"
 
-    mode = toolchain._lto.mode
+    mode = toolchain.lto.mode
 
     if mode in ["off", "unspecified"]:
         return "only_object"
 
     perform_linking = crate_info.type in ["bin", "staticlib", "cdylib"]
-
-    # is_linkable = crate_info.type in ["lib", "rlib", "dylib", "proc-macro"]
     is_dynamic = crate_info.type in ["dylib", "cdylib", "proc-macro"]
     needs_object = perform_linking or is_dynamic
 
@@ -75,9 +75,10 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
         # If we're building an 'rlib' and LTO is enabled, then we can skip
         # generating object files entirely.
         return "only_bitcode"
-    elif crate_info.type == "dylib":
+    elif crate_info.type in ["dylib", "proc-macro"]:
         # If we're a dylib and we're running LTO, then only emit object code
         # because 'rustc' doesn't currently support LTO with dylibs.
+        # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
         return "only_object"
     else:
         return "object_and_bitcode"
@@ -93,18 +94,23 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
     Returns:
         list: A list of strings that are valid flags for 'rustc'.
     """
-    mode = toolchain._lto.mode
-    format = _determine_lto_object_format(ctx, toolchain, crate_info)
+    mode = toolchain.lto.mode
 
+    # The user is handling LTO on their own, don't add any arguments.
+    if mode == "manual":
+        return []
+
+    format = _determine_lto_object_format(ctx, toolchain, crate_info)
     args = []
 
-    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx):
+    # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
+    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx) and crate_info.type != "proc-macro":
         args.append("lto={}".format(mode))
 
-    if format in ["unspecified", "object_and_bitcode"]:
+    if format == "object_and_bitcode":
         # Embedding LLVM bitcode in object files is `rustc's` default.
         args.extend([])
-    elif format in ["off", "only_object"]:
+    elif format == "only_object":
         args.extend(["embed-bitcode=no"])
     elif format == "only_bitcode":
         args.extend(["linker-plugin-lto"])

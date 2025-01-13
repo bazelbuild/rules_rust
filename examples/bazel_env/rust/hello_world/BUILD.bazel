@@ -1,4 +1,5 @@
 load("@crates//:defs.bzl", "all_crate_deps")
+load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -8,8 +9,14 @@ exports_files([
     "src/main.rs",
 ])
 
+extract_cargo_lints(
+    name = "cargo_lints",
+    manifest = "Cargo.toml",
+)
+
 rust_binary(
     name = "hello_world",
     srcs = ["src/main.rs"],
+    lint_config = ":cargo_lints",
     deps = all_crate_deps(normal = True),
 )

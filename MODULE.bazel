@@ -19,7 +19,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.10",
+    version = "0.0.11",
 )
 bazel_dep(
     name = "rules_cc",
@@ -42,6 +42,7 @@ bazel_dep(
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
     internal_deps,
+    "rrra",
     "rrra__anyhow-1.0.71",
     "rrra__clap-4.3.11",
     "rrra__env_logger-0.10.0",
@@ -50,6 +51,12 @@ use_repo(
     "rrra__serde-1.0.171",
     "rrra__serde_json-1.0.102",
     "rules_rust_tinyjson",
+)
+
+cargo_internal_deps = use_extension("//cargo/private:internal_extensions.bzl", "i")
+use_repo(
+    cargo_internal_deps,
+    "rrcti__cargo_toml-0.20.5",
 )
 
 rust = use_extension("//rust:extensions.bzl", "rust")
@@ -61,7 +68,18 @@ register_toolchains(
 )
 
 rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
-use_repo(rust_host_tools, "rust_host_tools")
+rust_host_tools.host_tools(
+    name = "rust_host_tools",
+)
+rust_host_tools.host_tools(
+    name = "rust_host_tools_nightly",
+    version = "nightly",
+)
+use_repo(
+    rust_host_tools,
+    "rust_host_tools",
+    "rust_host_tools_nightly",
+)
 
 rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)
 use_repo(
@@ -70,8 +88,8 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.216",
-    "rtra__serde_json-1.0.133",
+    "rtra__serde-1.0.217",
+    "rtra__serde_json-1.0.135",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )
@@ -108,7 +126,6 @@ use_repo(
     "cargo_bazel.buildifier-linux-arm64",
     "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
-    "cargo_bazel_bootstrap",
     "cui",
     "cui__anyhow-1.0.89",
     "cui__camino-1.1.9",
@@ -119,6 +136,7 @@ use_repo(
     "cui__cfg-expr-0.17.2",
     "cui__clap-4.3.11",
     "cui__crates-index-3.3.0",
+    "cui__glob-0.3.1",
     "cui__hex-0.4.3",
     "cui__indoc-2.0.5",
     "cui__itertools-0.13.0",
@@ -141,6 +159,15 @@ use_repo(
     "cui__tracing-subscriber-0.3.18",
     "cui__url-2.5.2",
     "cui__walkdir-2.5.0",
+)
+
+crate_universe_internal_non_repro_deps = use_extension(
+    "//crate_universe/private:internal_extensions.bzl",
+    "cu_nr",
+)
+use_repo(
+    crate_universe_internal_non_repro_deps,
+    "cargo_bazel_bootstrap",
 )
 
 crate_universe_internal_dev_deps = use_extension(

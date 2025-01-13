@@ -21,6 +21,5 @@ build_test(
     name = "build_test",
     targets = [
         "@complicated_dependencies//:boring",
-        "@complicated_dependencies//:libz-ng-sys",
     ],
 )
