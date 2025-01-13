@@ -246,8 +246,8 @@ def _create_single_crate(ctx, attrs, info):
         # 'root' is a transformed source, likely a symlink.
         # 'srcs' are what the user originally specified, likely workspace paths.
         for src in getattr(ctx.rule.files, "srcs", []):
-          if src.is_source and info.crate.root.short_path == src.short_path:
-            crate["root_module"] = _WORKSPACE_TEMPLATE + src.path
+            if src.is_source and info.crate.root.short_path == src.short_path:
+                crate["root_module"] = _WORKSPACE_TEMPLATE + src.path
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
