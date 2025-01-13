@@ -215,14 +215,6 @@ rust_doc_test = rule(
             cfg = "exec",
             providers = [rust_common.crate_info],
         ),
-        "_cc_toolchain": attr.label(
-            doc = (
-                "In order to use find_cc_toolchain, your rule has to depend " +
-                "on C++ toolchain. See @rules_cc//cc:find_cc_toolchain.bzl " +
-                "docs for details."
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",
             cfg = "exec",

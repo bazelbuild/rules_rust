@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 
 use anyhow::{anyhow, bail, Context, Result};
+use camino::Utf8Path;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
@@ -149,6 +150,7 @@ impl TreeResolver {
                     // host triple instead of the host triple detected by rustc.
                     .env("RUSTC_WRAPPER", rustc_wrapper)
                     .env("HOST_TRIPLE", host_triple)
+                    .env("CARGO_CACHE_RUSTC_INFO", "0")
                     .current_dir(manifest_path.parent().expect("All manifests should have a valid parent."))
                     .arg("tree")
                     .arg("--manifest-path")
@@ -303,12 +305,12 @@ impl TreeResolver {
     #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        pristine_manifest_path: &Path,
+        pristine_manifest_path: &Utf8Path,
         target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
             "Generating features for manifest {}",
-            pristine_manifest_path.display()
+            pristine_manifest_path
         );
 
         let tempdir = tempfile::tempdir().context("Failed to make tempdir")?;
@@ -446,7 +448,7 @@ impl TreeResolver {
     // and if we don't have this fake root injection, cross-compiling from Darwin to Linux won't work because features don't get correctly resolved for the exec=darwin case.
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
-        pristine_manifest_path: &Path,
+        pristine_manifest_path: &Utf8Path,
         output_dir: &Path,
     ) -> Result<PathBuf> {
         if !output_dir.exists() {
@@ -480,17 +482,22 @@ impl TreeResolver {
 
         let cargo_metadata = self
             .cargo_bin
-            .metadata_command_with_options(pristine_manifest_path, vec!["--locked".to_owned()])?
-            .manifest_path(pristine_manifest_path)
+            .metadata_command_with_options(
+                pristine_manifest_path.as_std_path(),
+                vec!["--locked".to_owned()],
+            )?
+            .manifest_path(pristine_manifest_path.as_std_path())
             .exec()
             .context("Failed to run cargo metadata to list transitive proc macros")?;
         let proc_macros = cargo_metadata
             .packages
             .iter()
             .filter(|p| {
-                p.targets
-                    .iter()
-                    .any(|t| t.kind.iter().any(|k| k == "proc-macro"))
+                p.targets.iter().any(|t| {
+                    t.kind
+                        .iter()
+                        .any(|k| matches!(k, cargo_metadata::TargetKind::ProcMacro))
+                })
             })
             // Filter out any in-workspace proc macros, populate dependency details for non-in-workspace proc macros.
             .filter_map(|pm| {
@@ -517,10 +524,10 @@ impl TreeResolver {
             })
             .collect::<Result<BTreeSet<_>>>()?;
 
-        let mut manifest =
-            cargo_toml::Manifest::from_path(pristine_manifest_path).with_context(|| {
+        let mut manifest = cargo_toml::Manifest::from_path(pristine_manifest_path.as_std_path())
+            .with_context(|| {
                 format!(
-                    "Failed to parse Cargo.toml file at {:?}",
+                    "Failed to parse Cargo.toml file at {}",
                     pristine_manifest_path
                 )
             })?;
@@ -1017,13 +1024,7 @@ mod test {
         // For testing, the rustc executable is a batch script and not a compiled executable.
         // any strings referring to it as an executable will need to be updated.
         let content = std::fs::read_to_string(&rustc_wrapper).unwrap();
-        std::fs::write(
-            &rustc_wrapper,
-            content
-                .replace("rustc.exe", "rustc.bat")
-                .replace("rustc\\.exe", "rustc\\.bat"),
-        )
-        .unwrap();
+        std::fs::write(&rustc_wrapper, content.replace(".exe", ".bat")).unwrap();
 
         (wrapper, rustc_wrapper)
     }

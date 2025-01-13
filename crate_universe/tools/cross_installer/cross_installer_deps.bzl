@@ -7,17 +7,32 @@ load("//cargo:defs.bzl", "cargo_bootstrap_repository")
 # buildifier: disable=bzl-visibility
 load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")
 
-def cross_installer_deps():
-    """Define cross repositories used for compiling cargo-bazel for various platforms"""
+def cross_installer_deps(**kwargs):
+    """Define cross repositories used for compiling cargo-bazel for various platforms.
+
+    Args:
+        **kwargs: kwargs to pass through to cargo_bootstrap_repository.
+
+    Returns:
+        list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
+        defined by this macro.
+    """
+    direct_deps = []
+
     maybe(
         http_archive,
         name = "cross_rs",
         # v0.2.5+
-        urls = ["https://github.com/cross-rs/cross/archive/764d258e8b88323df7e88b1b6f178d09f951966a.zip"],
-        strip_prefix = "cross-764d258e8b88323df7e88b1b6f178d09f951966a",
-        integrity = "sha256-vC3qT2dzF6yEKCTGK3cHaSMZk/V5/LxZSHvT2Jo5qw8=",
+        urls = ["https://github.com/cross-rs/cross/archive/4090beca3cfffa44371a5bba524de3a578aa46c3.zip"],
+        strip_prefix = "cross-4090beca3cfffa44371a5bba524de3a578aa46c3",
+        integrity = "sha256-9lo/wRsDWdaTzt3kVSBWRfNp+DXeDZqrG3Z+10mE+fo=",
         build_file_content = """exports_files(["Cargo.toml", "Cargo.lock"], visibility = ["//visibility:public"])""",
     )
+
+    direct_deps.append(struct(
+        repo = "cross_rs",
+        is_dev_dep = True,
+    ))
 
     version = DEFAULT_RUST_VERSION
     if "-" in version:
@@ -30,4 +45,12 @@ def cross_installer_deps():
         cargo_toml = "@cross_rs//:Cargo.toml",
         cargo_lockfile = "@cross_rs//:Cargo.lock",
         version = version,
+        **kwargs
     )
+
+    direct_deps.append(struct(
+        repo = "cross_rs_host_bin",
+        is_dev_dep = True,
+    ))
+
+    return direct_deps

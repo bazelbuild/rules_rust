@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Process wrapper test.
+"""Process wrapper test."""
 
-This rule unit tests the different process_wrapper functionality.
-"""
-
-def _impl(ctx):
+def _process_wrapper_tester_impl(ctx):
     args = ctx.actions.args()
     outputs = []
     combined = ctx.attr.test_config == "combined"
@@ -67,6 +64,7 @@ def _impl(ctx):
     env = {"CURRENT_DIR": "${pwd}/test_path"}
 
     ctx.actions.run(
+        mnemonic = "RustcProcessWrapperTester",
         executable = ctx.executable._process_wrapper,
         inputs = ctx.files.env_files + ctx.files.arg_files,
         outputs = outputs,
@@ -78,12 +76,33 @@ def _impl(ctx):
     return [DefaultInfo(files = depset(outputs))]
 
 process_wrapper_tester = rule(
-    implementation = _impl,
+    implementation = _process_wrapper_tester_impl,
+    doc = "This rule unit tests the different process_wrapper functionality.",
     attrs = {
-        "arg_files": attr.label_list(),
-        "env_files": attr.label_list(),
-        "test_config": attr.string(mandatory = True),
-        "use_param_file": attr.bool(default = False),
+        "arg_files": attr.label_list(
+            doc = "Files containing newline delimited arguments.",
+        ),
+        "env_files": attr.label_list(
+            doc = "Files containing newline delimited environment key/value pairs.",
+        ),
+        "test_config": attr.string(
+            doc = "The desired test configuration.",
+            mandatory = True,
+            values = [
+                "arg-files",
+                "basic",
+                "combined",
+                "copy-output",
+                "env-files",
+                "stderr",
+                "stdout",
+                "subst-pwd",
+            ],
+        ),
+        "use_param_file": attr.bool(
+            doc = "Whether or not to use a params file with the process wrapper.",
+            default = False,
+        ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),
             executable = True,

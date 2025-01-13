@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(":zig_utils.bzl", "platform_transition_filegroup")
 
 rust_binary(
     name = "uses_ring",
@@ -33,5 +33,5 @@ platform(
 platform_transition_filegroup(
     name = "uses_ring_arm",
     srcs = [":uses_ring"],
-    target_platform = "aarch64_linux",
+    platform = "aarch64_linux",
 )

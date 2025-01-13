@@ -19,13 +19,13 @@ rust_library(
         ],
     ),
     data = [
-        "//:rustfmt.toml",
+        "//rust/settings:rustfmt.toml",
         "//rust/toolchain:current_rustfmt_toolchain_for_target",
     ],
     edition = "2018",
     rustc_env = {
         "RUSTFMT": "$(rlocationpath //rust/toolchain:current_rustfmt_toolchain_for_target)",
-        "RUSTFMT_CONFIG": "$(rlocationpath //:rustfmt.toml)",
+        "RUSTFMT_CONFIG": "$(rlocationpath //rust/settings:rustfmt.toml)",
     },
     deps = [
         "//tools/runfiles",
@@ -48,7 +48,7 @@ rust_binary(
         "src/main.rs",
     ],
     data = [
-        "//:rustfmt.toml",
+        "//rust/settings:rustfmt.toml",
     ],
     edition = "2018",
     rustc_env = {

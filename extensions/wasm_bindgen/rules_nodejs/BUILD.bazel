@@ -9,8 +9,9 @@ exports_files([
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
+    tags = ["manuel"],
     deps = [
         "//:bzl_lib",
-        "@rules_nodejs//nodejs:bzl",
+        "@rules_nodejs//nodejs:bzl_lib",
     ],
 )

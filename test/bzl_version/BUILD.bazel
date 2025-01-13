@@ -2,6 +2,7 @@ load(":bzl_version_test.bzl", "bzl_version_test")
 
 exports_files([
     "bzl_version_test.rs",
+    "bzl_ext_version_test.rs",
 ])
 
 bzl_version_test(

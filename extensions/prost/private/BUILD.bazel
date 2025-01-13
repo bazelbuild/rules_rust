@@ -15,7 +15,7 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":current_prost_runtime",
-        "@rules_rust_prost_deps__heck//:heck",
+        "@rrprd__heck//:heck",
     ],
 )
 

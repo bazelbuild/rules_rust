@@ -29,7 +29,7 @@ rust_binary(
 )
 
 alias(
-    name = "rules_rust_wasm_bindgen_deps_cli",
+    name = "rules_rust_wasm_bindgen_cli",
     actual = ":wasm-bindgen-cli",
     tags = ["manual"],
 )

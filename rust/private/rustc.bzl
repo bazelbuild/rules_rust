@@ -22,12 +22,14 @@ load(
     "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
-load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
-load("//rust/private:stamp.bzl", "is_stamping_enabled")
+load(":common.bzl", "rust_common")
+load(":compat.bzl", "abs")
+load(":lto.bzl", "construct_lto_arguments")
+load(":providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
+load(":stamp.bzl", "is_stamping_enabled")
 load(
-    "//rust/private:utils.bzl",
-    "abs",
+    ":utils.bzl",
     "expand_dict_value_locations",
     "expand_list_element_locations",
     "find_cc_toolchain",
@@ -35,10 +37,10 @@ load(
     "get_lib_name_for_windows",
     "get_preferred_artifact",
     "is_exec_configuration",
+    "is_std_dylib",
     "make_static_lib_symlink",
     "relativize",
 )
-load(":utils.bzl", "is_std_dylib")
 
 # This feature is disabled unless one of the dependencies is a cc_library.
 # Authors of C++ toolchains can place linker flags that should only be applied
@@ -636,6 +638,7 @@ def collect_inputs(
         crate_info,
         dep_info,
         build_info,
+        lint_files,
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
@@ -653,6 +656,7 @@ def collect_inputs(
         crate_info (CrateInfo): The Crate information of the crate to process build scripts for.
         dep_info (DepInfo): The target Crate's dependency information.
         build_info (BuildInfo): The target Crate's build settings.
+        lint_files (list): List of files with rustc args for the Crate's lint settings.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
         force_depend_on_objects (bool, optional): Forces dependencies of this rule to be objects rather than
@@ -782,15 +786,20 @@ def collect_inputs(
         include_link_flags = include_link_flags,
     )
 
+    # TODO(parkmycar): Cleanup the handling of lint_files here.
+    if lint_files:
+        build_flags_files = depset(lint_files, transitive = [build_flags_files])
+
     # For backwards compatibility, we also check the value of the `rustc_env_files` attribute when
     # `crate_info.rustc_env_files` is not populated.
     build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
     if build_env_file:
         build_env_files = [f for f in build_env_files] + [build_env_file]
-    compile_inputs = depset(build_env_files, transitive = [build_script_compile_inputs, compile_inputs])
+    compile_inputs = depset(build_env_files + lint_files, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def construct_arguments(
+        *,
         ctx,
         attr,
         file,
@@ -998,6 +1007,8 @@ def construct_arguments(
     data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     add_edition_flags(rustc_flags, crate_info)
+    _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
+    _add_codegen_units_flags(toolchain, rustc_flags)
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1122,6 +1133,7 @@ def construct_arguments(
     return args, env
 
 def rustc_compile_action(
+        *,
         ctx,
         attr,
         toolchain,
@@ -1189,6 +1201,15 @@ def rustc_compile_action(
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
+    # Add flags for any 'rustc' lints that are specified.
+    #
+    # Exclude lints if we're building in the exec configuration to prevent crates
+    # used in build scripts from generating warnings.
+    lint_files = []
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
+        rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
         file = ctx.file,
@@ -1200,6 +1221,7 @@ def rustc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        lint_files = lint_files,
         stamp = stamp,
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
@@ -1335,6 +1357,7 @@ def rustc_compile_action(
                 len(crate_info.srcs.to_list()),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            resource_set = get_rustc_resource_set(toolchain),
         )
         if args_metadata:
             ctx.actions.run(
@@ -1370,6 +1393,7 @@ def rustc_compile_action(
                 len(crate_info.srcs.to_list()),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
+            resource_set = get_rustc_resource_set(toolchain),
         )
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
@@ -1545,6 +1569,11 @@ def rustc_compile_action(
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
 
+    # A bit unfortunate, but sidecar the lints info so rustdoc can access the
+    # set of lints from the target it is documenting.
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
+        providers.append(ctx.attr.lint_config[LintsInfo])
+
     return providers
 
 def _is_no_std(ctx, toolchain, crate_info):
@@ -1582,6 +1611,32 @@ def _collect_nonstatic_linker_inputs(cc_info):
                 libraries = depset(dylibs),
             ))
     return shared_linker_inputs
+
+def _add_lto_flags(ctx, toolchain, args, crate):
+    """Adds flags to an Args object to configure LTO for 'rustc'.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        args (Args): A reference to an Args object
+        crate (CrateInfo): A CrateInfo provider
+    """
+    lto_args = construct_lto_arguments(ctx, toolchain, crate)
+    args.add_all(lto_args)
+
+def _add_codegen_units_flags(toolchain, args):
+    """Adds flags to an Args object to configure codgen_units for 'rustc'.
+
+    https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+
+    Args:
+        toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        args (Args): A reference to an Args object
+    """
+    if not is_codegen_units_enabled(toolchain):
+        return
+
+    args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
@@ -2128,7 +2183,12 @@ def _add_per_crate_rustc_flags(ctx, args, crate_info, per_crate_rustc_flags):
             fail("per_crate_rustc_flag '{}' does not follow the expected format: prefix_filter@flag".format(per_crate_rustc_flag))
 
         label_string = str(ctx.label)
-        label = label_string[1:] if label_string.startswith("@//") else label_string
+        if label_string.startswith("@//"):
+            label = label_string[1:]
+        elif label_string.startswith("@@//"):
+            label = label_string[2:]
+        else:
+            label = label_string
         execution_path = crate_info.root.path
 
         if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
@@ -2155,7 +2215,7 @@ def _error_format_impl(ctx):
 error_format = rule(
     doc = (
         "Change the [--error-format](https://doc.rust-lang.org/rustc/command-line-arguments.html#option-error-format) " +
-        "flag from the command line with `--@rules_rust//:error_format`. See rustc documentation for valid values."
+        "flag from the command line with `--@rules_rust//rust/settings:error_format`. See rustc documentation for valid values."
     ),
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
@@ -2176,7 +2236,7 @@ def _rustc_output_diagnostics_impl(ctx):
 
 rustc_output_diagnostics = rule(
     doc = (
-        "Setting this flag from the command line with `--@rules_rust//:rustc_output_diagnostics` " +
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
         "These are accessible via the " +
         "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
@@ -2191,11 +2251,11 @@ def _extra_rustc_flags_impl(ctx):
 
 extra_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags from the command line with `--@rules_rust//:extra_rustc_flags`. " +
+        "Add additional rustc_flags from the command line with `--@rules_rust//rust/settings:extra_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. For options that " +
         "apply to individual crates, use the rustc_flags attribute on the individual crate's rule instead. NOTE: " +
         "These flags not applied to the exec configuration (proc-macros, cargo_build_script, etc); " +
-        "use `--@rules_rust//:extra_exec_rustc_flags` to apply flags to the exec configuration."
+        "use `--@rules_rust//rust/settings:extra_exec_rustc_flags` to apply flags to the exec configuration."
     ),
     implementation = _extra_rustc_flags_impl,
     build_setting = config.string_list(flag = True),
@@ -2206,7 +2266,7 @@ def _extra_rustc_flag_impl(ctx):
 
 extra_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag from the command line with `--@rules_rust//:extra_rustc_flag`. " +
+        "Add additional rustc_flag from the command line with `--@rules_rust//rust/settings:extra_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _extra_rustc_flag_impl,
@@ -2218,7 +2278,7 @@ def _extra_exec_rustc_flags_impl(ctx):
 
 extra_exec_rustc_flags = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flags`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flags`. " +
         "This flag should only be used for flags that need to be applied across the entire build. " +
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
@@ -2231,7 +2291,7 @@ def _extra_exec_rustc_flag_impl(ctx):
 
 extra_exec_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//:extra_exec_rustc_flag`. " +
+        "Add additional rustc_flags in the exec configuration from the command line with `--@rules_rust//rust/settings:extra_exec_rustc_flag`. " +
         "Multiple uses are accumulated and appended after the extra_exec_rustc_flags."
     ),
     implementation = _extra_exec_rustc_flag_impl,
@@ -2243,7 +2303,7 @@ def _per_crate_rustc_flag_impl(ctx):
 
 per_crate_rustc_flag = rule(
     doc = (
-        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//:experimental_per_crate_rustc_flag`. " +
+        "Add additional rustc_flag to matching crates from the command line with `--@rules_rust//rust/settings:experimental_per_crate_rustc_flag`. " +
         "The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting with the prefix filter will be built with the given flag." +
         "The label matching uses the canonical form of the label (i.e //package:label_name)." +
         "The execution path is the relative path to your workspace directory including the base name (including extension) of the crate root." +
@@ -2265,7 +2325,7 @@ no_std = rule(
         "No std; we need this so that we can distinguish between host and exec"
     ),
     attrs = {
-        "_no_std": attr.label(default = "//:no_std"),
+        "_no_std": attr.label(default = "//rust/settings:no_std"),
     },
     implementation = _no_std_impl,
 )

@@ -1,5 +1,5 @@
 {
-  "checksum": "59be2ecd05a76e24ac796ef59c99aa8df9951f6f5a9e7985ae284c673013baa0",
+  "checksum": "e7ea0f70ee6ecbc6ad30f0f80389bee4918d575eb581f5afe0d42281c8dced81",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -529,6 +529,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -585,9 +588,6 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
-    ],
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
@@ -617,10 +617,14 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [
     "nix 0.26.2"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

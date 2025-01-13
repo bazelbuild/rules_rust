@@ -7,7 +7,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 
 @REM When cargo is detecting the host configuration, the host target needs to be
 @REM injected into the command.
-echo %*| FINDSTR /C:"rustc.exe - --crate-name ___ " | FINDSTR /V /C:"--target" >NUL
+echo %*| FINDSTR /R /C:".*rustc[\.exe\"\"]* - --crate-name ___ " | FINDSTR /V /C:"--target" >NUL
 if %errorlevel%==0 (
     %* --target %HOST_TRIPLE%
     exit /b
@@ -15,7 +15,7 @@ if %errorlevel%==0 (
 
 @REM When querying info about the compiler, ensure the triple is mocked out to be
 @REM the desired target triple for the host.
-echo %*| FINDSTR /R /C:".*rustc\.exe -[vV][vV]$" >NUL
+echo %*| FINDSTR /R /C:".*rustc[\.exe\"\"]* -[vV][vV]$" >NUL
 if %errorlevel%==0 (
 
     @REM TODO: The exit code is lost here. It should be captured and explicitly

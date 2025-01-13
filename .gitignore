@@ -15,7 +15,7 @@
 /test/no_std/bazel-*
 /docs/bazel-*
 user.bazelrc
-MODULE.bazel.lock
+/MODULE.bazel.lock
 
 # rustfmt
 *.rs.bk

@@ -16,7 +16,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
-load("//rust/private:providers.bzl", "BuildInfo")
+load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
@@ -529,28 +529,20 @@ def _stamp_attribute(default_value):
 
 # Internal attributes core to Rustc actions.
 RUSTC_ATTRS = {
-    "_cc_toolchain": attr.label(
-        doc = (
-            "In order to use find_cc_toolchain, your rule has to depend " +
-            "on C++ toolchain. See `@rules_cc//cc:find_cc_toolchain.bzl` " +
-            "docs for details."
-        ),
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-    ),
     "_error_format": attr.label(
-        default = Label("//:error_format"),
+        default = Label("//rust/settings:error_format"),
     ),
     "_extra_exec_rustc_flag": attr.label(
-        default = Label("//:extra_exec_rustc_flag"),
+        default = Label("//rust/settings:extra_exec_rustc_flag"),
     ),
     "_extra_exec_rustc_flags": attr.label(
-        default = Label("//:extra_exec_rustc_flags"),
+        default = Label("//rust/settings:extra_exec_rustc_flags"),
     ),
     "_extra_rustc_flag": attr.label(
-        default = Label("//:extra_rustc_flag"),
+        default = Label("//rust/settings:extra_rustc_flag"),
     ),
     "_extra_rustc_flags": attr.label(
-        default = Label("//:extra_rustc_flags"),
+        default = Label("//rust/settings:extra_rustc_flags"),
     ),
     "_is_proc_macro_dep": attr.label(
         default = Label("//rust/private:is_proc_macro_dep"),
@@ -559,7 +551,7 @@ RUSTC_ATTRS = {
         default = Label("//rust/private:is_proc_macro_dep_enabled"),
     ),
     "_per_crate_rustc_flag": attr.label(
-        default = Label("//:experimental_per_crate_rustc_flag"),
+        default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for running rustc on all platforms.",
@@ -569,7 +561,7 @@ RUSTC_ATTRS = {
         cfg = "exec",
     ),
     "_rustc_output_diagnostics": attr.label(
-        default = Label("//:rustc_output_diagnostics"),
+        default = Label("//rust/settings:rustc_output_diagnostics"),
     ),
 }
 
@@ -647,6 +639,10 @@ _common_attrs = {
     ),
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
+    ),
+    "lint_config": attr.label(
+        doc = "Set of lints to apply when building this crate.",
+        providers = [LintsInfo],
     ),
     # Previously `proc_macro_deps` were a part of `deps`, and then proc_macro_host_transition was
     # used into cfg="host" using `@local_config_platform//:host`.

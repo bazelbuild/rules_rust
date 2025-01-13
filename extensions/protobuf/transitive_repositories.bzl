@@ -3,6 +3,7 @@
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 def rust_proto_protobuf_transitive_repositories():
@@ -25,3 +26,5 @@ def rust_proto_protobuf_transitive_repositories():
             "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
         ],
     )
+
+    protobuf_deps()

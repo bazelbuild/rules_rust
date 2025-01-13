@@ -114,9 +114,3 @@ def rustfmt_integration_test_suite(name, **kwargs):
         tests = tests,
         **kwargs
     )
-
-    native.sh_binary(
-        name = "{}.test_runner".format(name),
-        srcs = ["rustfmt_failure_test.sh"],
-        testonly = True,
-    )

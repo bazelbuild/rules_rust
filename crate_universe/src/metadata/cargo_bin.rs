@@ -33,12 +33,6 @@ impl Cargo {
         }
     }
 
-    #[cfg(test)]
-    pub(crate) fn with_cargo_home(mut self, path: PathBuf) -> Cargo {
-        self.cargo_home = Some(path);
-        self
-    }
-
     /// Returns a new `Command` for running this cargo.
     pub(crate) fn command(&self) -> Result<Command> {
         let mut command = Command::new(&self.path);

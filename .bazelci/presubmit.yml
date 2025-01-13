@@ -1,5 +1,14 @@
 ---
-minimum_bazel_version: &minimum_bazel_version "7.3.1"
+minimum_bazel_version: &minimum_bazel_version "7.4.1"
+no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -25,6 +34,21 @@ single_rust_channel_targets: &single_rust_channel_targets
   # These tests are expected to fail as they require both a nightly and stable toolchain.
   - "-//test/unit/channel_transitions/..."
   - "-//test/unpretty/..."
+single_rust_channel_min_version_targets: &single_rust_channel_min_version_targets
+  # START - Copied from 'single_rust_channel_targets'.
+  # TODO: Figure out how to do proper list inheritence.
+  - "--"
+  - "//..."
+  # TODO: Remove this and replace `cargo_bootstrap_repository` with a
+  # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
+  - "-//crate_universe/tools/cross_installer/..."
+  # These tests are expected to fail as they require both a nightly and stable toolchain.
+  - "-//test/unit/channel_transitions/..."
+  - "-//test/unpretty/..."
+  # END - Copied from 'single_rust_channel_targets'.
+  #
+  # These tests exercise behavior only available versions of Rust >1.80
+  - "-//test/unit/lint_flags/..."
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
@@ -57,6 +81,7 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_local_pkgs:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
+  - "@rules_rust//tools/rust_analyzer:gen_rust_project"
 coverage_validation_post_shell_commands: &coverage_validation_post_shell_commands
   - |
     grep -q '^SF:.*\.rs$' bazel-out/_coverage/_coverage_report.dat \
@@ -89,6 +114,40 @@ tasks:
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
+  rbe_ubuntu2004_no_bzlmod:
+    name: No Bzlmod
+    platform: rbe_ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_rbe_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+  macos_no_bzlmod:
+    name: No Bzlmod
+    platform: macos_arm64
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  windows_no_bzlmod:
+    name: No Bzlmod
+    platform: windows
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_no_runfiles:
@@ -290,16 +349,16 @@ tasks:
     name: "Min Rust Version"
     platform: ubuntu2004
     shell_commands: *min_rust_version_shell_commands
-    build_targets: *single_rust_channel_targets
-    test_targets: *single_rust_channel_targets
+    build_targets: *single_rust_channel_min_version_targets
+    test_targets: *single_rust_channel_min_version_targets
   ubuntu2004_min_rust_version_with_aspects:
     name: "Min Rust Version With Aspects"
     platform: ubuntu2004
     shell_commands: *min_rust_version_shell_commands
     build_flags: *aspects_flags
-    build_targets: *single_rust_channel_targets
+    build_targets: *single_rust_channel_min_version_targets
     test_flags: *aspects_flags
-    test_targets: *single_rust_channel_targets
+    test_targets: *single_rust_channel_min_version_targets
   ubuntu2004_stable_toolchain:
     name: "Only Stable Toolchain"
     platform: ubuntu2004
@@ -355,115 +414,23 @@ tasks:
     build_targets:
       - //...
     run_targets:
-      - "//:test_docs"
+      - "//:publish_book"
   clippy_failure:
     name: Negative Clippy Tests
     platform: ubuntu2004
     run_targets:
-      - "//test/clippy:clippy_failure_test"
+      - "//test/clippy:clippy_failure_tester"
   rustfmt_failure:
     name: Negative Rustfmt Tests
     platform: ubuntu2004
     run_targets:
-      - "//test/rustfmt:rustfmt_integration_test_suite.test_runner"
+      - "//test/rustfmt:rustfmt_failure_tester"
   rust_analyzer_tests:
     name: Rust-Analyzer Tests
     platform: ubuntu2004
     run_targets:
       - "//tools/rust_analyzer:gen_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
-  examples_rust_analyzer_integration_test:
-    name: Rust-Analyzer Integration Test
-    platform: ubuntu2004
-    working_directory: examples
-    run_targets:
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
-  ubuntu2004_examples:
-    name: Examples
-    platform: ubuntu2004
-    working_directory: examples
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
-  ubuntu2004_examples_clang:
-    name: Examples with Clang
-    platform: ubuntu2004
-    working_directory: examples
-    build_flags:
-      - "--repo_env=CC=clang"
-      - "--config=rustfmt"
-      - "--config=clippy"
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/2554
-  # ubuntu2004_examples_clang_lld:
-  #   name: Examples with Clang and LLD
-  #   platform: ubuntu2004
-  #   shell_commands:
-  #     - "sudo apt -y update && sudo apt -y install lld"
-  #   working_directory: examples
-  #   build_flags:
-  #     - "--repo_env=CC=clang"
-  #     - "--linkopt=-fuse-ld=lld"
-  #     - "--config=rustfmt"
-  #     - "--config=clippy"
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
-  ubuntu2004_examples_rolling:
-    name: "Examples with Rolling Bazel Version"
-    platform: ubuntu2004
-    working_directory: examples
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-    build_flags: *aspects_flags
-    soft_fail: yes
-  rbe_ubuntu2004_examples:
-    name: Examples
-    platform: rbe_ubuntu2004
-    working_directory: examples
-    rbe_examples_targets: &rbe_examples_targets
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-      # TODO: This requires an updated `rules_foreign_cc`
-      - "-//sys/..."
-      # See https://github.com/bazelbuild/bazel/issues/9987
-      - "-//ffi/rust_calling_c:matrix_dylib_test"
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *rbe_examples_targets
-    test_targets: *rbe_examples_targets
-    build_flags: *aspects_flags
-  macos_examples:
-    name: Examples
-    platform: macos_arm64
-    working_directory: examples
-    build_targets:
-      - "//..."
-    test_targets:
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-    build_flags: *aspects_flags
-  windows_examples:
-    name: Examples
-    platform: windows
-    working_directory: examples
-    build_flags:
-      - "--config=rustfmt"
-      - "--config=clippy"
-    windows_targets: &windows_targets
-      - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-      - "//..."
-    build_targets: *windows_targets
-    test_targets: *windows_targets
   crate_universe_examples_ubuntu2004:
     name: Crate Universe Examples
     platform: ubuntu2004
@@ -483,9 +450,15 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
+      - "--"
       - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
     test_targets:
+      - "--"
       - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
     build_flags: *aspects_flags
   crate_universe_examples_macos:
     name: Crate Universe Examples
@@ -497,6 +470,34 @@ tasks:
     test_targets:
       - "//..."
     build_flags: *aspects_flags
+  crate_universe_local_path_external:
+    name: Crate Universe Local Path External
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree"
+  crate_universe_local_path_in_tree:
+    name: Crate Universe Local Path In Tree
+    platform: ubuntu2004
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree"
+  crate_universe_local_path_external_no_bzlmod:
+    name: Crate Universe Local Path External (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree"
+  crate_universe_local_path_in_tree_no_bzlmod:
+    name: Crate Universe Local Path In Tree (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree"
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
@@ -552,12 +553,12 @@ tasks:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
       - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
       - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
@@ -568,10 +569,10 @@ tasks:
       - "//..."
     build_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
     test_flags:
       - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//:no_std=alloc"
+      - "--@rules_rust//rust/settings:no_std=alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004
@@ -668,13 +669,13 @@ tasks:
   bzlmod_all_crate_deps:
     name: Cargo dependencies with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/all_crate_deps
+    working_directory: examples/all_crate_deps
     build_targets:
       - "//..."
   bzlmod_all_deps_vendor:
     name: Vendored dependencies with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/all_deps_vendor
+    working_directory: examples/all_deps_vendor
     run_targets:
       - "//basic/3rdparty:crates_vendor"
     build_targets:
@@ -682,13 +683,13 @@ tasks:
   bzlmod_compile_opt:
     name: Compiler optimization with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/compile_opt
+    working_directory: examples/compile_opt
     build_targets:
       - "//..."
   bzlmod_cross_compile:
     name: Cross compilation with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/cross_compile
+    working_directory: examples/cross_compile
     build_targets:
       - "//:all"
     test_targets:
@@ -696,21 +697,48 @@ tasks:
   macos_bzlmod_cross_compile:
     name: Cross compilation with bzlmod on macOS
     platform: macos_arm64
-    working_directory: examples/bzlmod/cross_compile
+    working_directory: examples/cross_compile
     build_targets:
       - "//:all"
     test_targets:
       - "//..."
-  bzlmod_ffi:
-    name: FFI with bzlmod
+  example_ffi_linux:
     platform: ubuntu2004
-    working_directory: examples/bzlmod/ffi
+    working_directory: examples/ffi
+    name: FFI Example
     build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # TODO: https://github.com/bazelbuild/bazel/issues/9987
+  # example_ffi_linux_rbe:
+  #   platform: rbe_ubuntu2004
+  #   working_directory: examples/ffi
+  #   name: FFI Example
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
+  example_ffi_macos:
+    platform: macos_arm64
+    working_directory: examples/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_ffi_windows:
+    platform: windows
+    working_directory: examples/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
       - "//..."
   ubuntu2004_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2004
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     test_flags: *bzlmod_flags
     run_targets:
       - "//third-party-in-workspace:vendor"
@@ -721,7 +749,7 @@ tasks:
     name: bzlmod BCR presubmit minimal bazel
     bazel: *minimum_bazel_version
     platform: ubuntu2004
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     shell_commands:
       - "rm MODULE.bazel.lock"
     run_targets:
@@ -732,7 +760,7 @@ tasks:
   macos_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: macos_arm64
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     test_flags: *bzlmod_flags
     run_targets:
       - "//third-party-in-workspace:vendor"
@@ -743,7 +771,7 @@ tasks:
   # windows_bzlmod_bcr:
   #   name: bzlmod BCR presubmit
   #   platform: windows
-  #   working_directory: examples/bzlmod/hello_world
+  #   working_directory: examples/hello_world
   #   test_flags: *bzlmod_flags
   #   run_targets:
   #     - "//third-party-in-workspace:vendor"
@@ -751,13 +779,45 @@ tasks:
   #     - "@rules_rust//tools/rust_analyzer:gen_rust_project"
   #   test_targets:
   #     - "//..."
+  example_sys_linux:
+    platform: ubuntu2004
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_linux_rbe:
+    platform: ubuntu2004
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_macos:
+    platform: macos_arm64
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_windows:
+    platform: windows
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   ubuntu2004_bzlmod_plus_repo_names_bcr:
     name: bzlmod BCR presubmit w/ incompatible flags
     # A newer version than is specified in the .bazel_version file is needed for
     # --incompatible_use_plus_in_repo_names'
     bazel: *minimum_bazel_version
     platform: ubuntu2004
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
       - "//third-party-in-workspace:vendor"
@@ -770,7 +830,7 @@ tasks:
     # --incompatible_use_plus_in_repo_names'
     bazel: *minimum_bazel_version
     platform: macos_arm64
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
       - "//third-party-in-workspace:vendor"
@@ -783,7 +843,7 @@ tasks:
     # --incompatible_use_plus_in_repo_names'
     bazel: *minimum_bazel_version
     platform: windows
-    working_directory: examples/bzlmod/hello_world
+    working_directory: examples/hello_world
     test_flags: *bzlmod_plus_repo_names_flags
     run_targets:
       - "//third-party-in-workspace:vendor"
@@ -794,13 +854,13 @@ tasks:
   bzlmod_no_cargo:
     name: Cargo-less bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/hello_world_no_cargo
+    working_directory: examples/hello_world_no_cargo
     build_targets:
       - "//..."
   bzlmod_override_targets:
     name: Override Targets bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/override_target
+    working_directory: examples/override_target
     build_targets:
       - "//..."
     test_targets:
@@ -808,13 +868,13 @@ tasks:
   bzlmod_proto:
     name: Proto and Prost with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/proto
+    working_directory: examples/proto
     build_targets:
       - "//..."
   bzlmod_protoc:
     name: Proto and Prost with prebuilt protoc with bzlmod
     platform: ubuntu2004
-    working_directory: examples/bzlmod/proto_with_toolchain
+    working_directory: examples/proto_with_toolchain
     build_targets:
       - "//..."
   compile_one_dependency:
@@ -871,6 +931,92 @@ tasks:
   #   test_targets:
   #     - "--"
   #     - "//..."
+  extensions_mdbook_linux:
+    platform: ubuntu2004
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_macos:
+    platform: macos_arm64
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_windows:
+    platform: windows
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_linux:
+    platform: ubuntu2004
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_linux_rbe:
+    platform: rbe_ubuntu2004
+    name: Extensions Prost
+    working_directory: extensions/prost
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_macos:
+    platform: macos_arm64
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_windows:
+    platform: windows
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   extensions_protobuf_linux:
     platform: ubuntu2004
     name: Extensions Protobuf
@@ -936,7 +1082,11 @@ tasks:
     build_targets:
       - "//..."
     test_targets:
+      - "--"
       - "//..."
+      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+      - "-//rules_js/test:hello_world_wasm_lib_test"
+      - "-//rules_js/test:hello_world_wasm_direct_test"
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
@@ -947,19 +1097,16 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  # # TODO: https://github.com/bazelbuild/rules_rust/issues/3021
-  # # The length of the workspace name results in paths that are too long
-  # # on windows for linking.
-  # extensions_wasm_bindgen_windows:
-  #   platform: windows
-  #   name: Extensions wasm-bindgen
-  #   working_directory: extensions/wasm_bindgen
-  #   build_flags: *aspects_flags
-  #   test_flags: *aspects_flags
-  #   build_targets:
-  #     - "//..."
-  #   test_targets:
-  #     - "//..."
+  extensions_wasm_bindgen_windows:
+    platform: windows
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 
 buildifier:
   version: latest

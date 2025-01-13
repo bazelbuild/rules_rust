@@ -47,6 +47,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
@@ -59,13 +60,13 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
-    "wasm32-wasi": _support(std = True, host_tools = False),
     "wasm32-wasip1": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
+    "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }
 
 _T3_PLATFORM_TRIPLES = {
@@ -149,6 +150,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
+    "uefi": "uefi",
     "unknown": None,
     "wasi": None,
     "wasip1": None,
@@ -168,6 +170,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "nixos": "",
     "none": "",
     "nto": "",
+    "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
@@ -190,6 +193,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
+    "uefi": ".lib",
     "unknown": "",
     "wasi": "",
     "wasip1": "",
@@ -209,6 +213,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
+    "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
@@ -255,6 +260,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "nto": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
+    "uefi": [],
     "unknown": [],
     "uwp": ["ws2_32.lib"],
     "wasi": [],
@@ -396,7 +402,7 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple == "wasm32-wasi":
+    if target_triple in "wasm32-wasi":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",

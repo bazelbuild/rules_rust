@@ -33,6 +33,11 @@ load("//:transitive_repositories.bzl", "rust_prost_transitive_repositories")
 
 rust_prost_transitive_repositories()
 
+# Needed by protobuf
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 # buildifier: disable=bzl-visibility
 load("//private/tests:deps.bzl", "prost_test_deps")
 

@@ -2,7 +2,7 @@
 ## Overview
 ]]#
 
-[Rustfmt][rustfmt] is a tool for formatting Rust code according to style guidelines. 
+[Rustfmt][rustfmt] is a tool for formatting Rust code according to style guidelines.
 By default, Rustfmt uses a style which conforms to the [Rust style guide][rsg] that
 has been formalized through the [style RFC process][rfcp]. A complete list of all
 configuration options can be found in the [Rustfmt GitHub Pages][rgp].
@@ -30,13 +30,13 @@ build --output_groups=+rustfmt_checks
 It's recommended to only enable this aspect in your CI environment so formatting issues do not
 impact user's ability to rapidly iterate on changes.
 
-The `rustfmt_aspect` also uses a `--@rules_rust//:rustfmt.toml` setting which determines the
+The `rustfmt_aspect` also uses a `--@rules_rust//rust/settings:rustfmt.toml` setting which determines the
 [configuration file][rgp] used by the formatter (`@rules_rust//tools/rustfmt`) and the aspect
 (`rustfmt_aspect`). This flag can be added to your `.bazelrc` file to ensure a consistent config
 file is used whenever `rustfmt` is run:
 
 ```text
-build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
+build --@rules_rust//rust/settings:rustfmt.toml=//:rustfmt.toml
 ```
 #[[
 ### Tips

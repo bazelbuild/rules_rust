@@ -5,12 +5,14 @@ crates_vendor(
     annotations = {
         "libgit2-sys": [crate.annotation(
             gen_build_script = False,
-            # libgit2 comes from @rules_rust//crate_universe/3rdparty:third_party_deps.bzl
+            # libgit2 comes from `@rules_rust_examples_sys//:extensions.bzl`.
+            # The targets are defined at `@rules_rust_examples_sys//complex/3rdparty:BUILD.libgit2.bazel`.
             deps = ["@libgit2"],
         )],
         "libz-sys": [crate.annotation(
             gen_build_script = False,
-            # zlib comes from @rules_rust//crate_universe/3rdparty:third_party_deps.bzl
+            # zlib comes from `@rules_rust_examples_sys//:extensions.bzl`
+            # The targets are defined at `@rules_rust_examples_sys//complex/3rdparty:BUILD.zlib.bazel`.
             deps = ["@zlib"],
         )],
     },

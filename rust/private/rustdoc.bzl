@@ -15,6 +15,7 @@
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:providers.bzl", "LintsInfo")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
 
@@ -51,6 +52,7 @@ def rustdoc_compile_action(
         ctx,
         toolchain,
         crate_info,
+        lints_info = None,
         output = None,
         rustdoc_flags = [],
         is_test = False):
@@ -60,6 +62,7 @@ def rustdoc_compile_action(
         ctx (ctx): The rule's context object.
         toolchain (rust_toolchain): The currently configured `rust_toolchain`.
         crate_info (CrateInfo): The provider of the crate passed to a rustdoc rule.
+        lints_info (LintsInfo, optional): The LintsInfo provider of the crate passed to the rustdoc rule.
         output (File, optional): An optional output a `rustdoc` action is intended to produce.
         rustdoc_flags (list, optional): A list of `rustdoc` specific flags.
         is_test (bool, optional): If True, the action will be configured for `rust_doc_test` targets
@@ -74,6 +77,12 @@ def rustdoc_compile_action(
             "--output",
             output.path,
         ] + rustdoc_flags
+
+    # Specify rustc flags for lints, if they were provided.
+    lint_files = []
+    if lints_info:
+        rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
+        lint_files = lint_files + lints_info.rustdoc_lint_files
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -94,6 +103,7 @@ def rustdoc_compile_action(
         crate_info = crate_info,
         dep_info = dep_info,
         build_info = build_info,
+        lint_files = lint_files,
         # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
         force_depend_on_objects = is_test,
         include_link_flags = False,
@@ -186,6 +196,7 @@ def _rust_doc_impl(ctx):
 
     crate = ctx.attr.crate
     crate_info = crate[rust_common.crate_info]
+    lints_info = crate[LintsInfo] if LintsInfo in crate else None
 
     output_dir = ctx.actions.declare_directory("{}.rustdoc".format(ctx.label.name))
 
@@ -194,13 +205,13 @@ def _rust_doc_impl(ctx):
         "--extern",
         "{}={}".format(crate_info.name, crate_info.output.path),
     ]
-
     rustdoc_flags.extend(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
         crate_info = crate_info,
+        lints_info = lints_info,
         output = output_dir,
         rustdoc_flags = rustdoc_flags,
     )
@@ -310,10 +321,6 @@ rust_doc = rule(
                 file of arguments to rustc: `@$(location //package:target)`.
             """),
         ),
-        "_cc_toolchain": attr.label(
-            doc = "In order to use find_cpp_toolchain, you must define the '_cc_toolchain' attribute on your rule or aspect.",
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_dir_zipper": attr.label(
             doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",
             default = Label("//util/dir_zipper"),
@@ -321,7 +328,7 @@ rust_doc = rule(
             executable = True,
         ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",

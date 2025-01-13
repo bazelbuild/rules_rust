@@ -56,16 +56,22 @@ build --nolegacy_external_runfiles
 # Required for cargo_build_script support before Bazel 7
 build --incompatible_merge_fixed_and_default_shell_env
 
+# https://github.com/bazelbuild/bazel/issues/23043.
+build --incompatible_autoload_externally=
+
 ###############################################################################
 ## Bzlmod
 ###############################################################################
 
-# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
-# https://github.com/bazelbuild/rules_rust/issues/2181
-common --noenable_bzlmod --enable_workspace
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
 
 # Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
 common --lockfile_mode=off
+
+# Allow bazel configuration flags to locate the core rules to avoid adding local
+# override paths to the `MODULE.bazel` file and breaking downstream consumers.
+common --override_module=rules_rust=../../
 
 ###############################################################################
 ## Custom user flags

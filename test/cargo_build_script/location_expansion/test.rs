@@ -8,9 +8,15 @@ pub fn test_data_rootpath() {
 
 #[test]
 pub fn test_data_rlocation() {
-    assert_eq!(
-        "rules_rust/test/cargo_build_script/location_expansion/target_data.txt",
-        env!("DATA_RLOCATIONPATH")
+    assert!(
+        [
+            // workspace
+            "rules_rust/test/cargo_build_script/location_expansion/target_data.txt",
+            // bzlmod
+            "_main/test/cargo_build_script/location_expansion/target_data.txt",
+        ]
+        .contains(&env!("DATA_RLOCATIONPATH")),
+        concat!("Unexpected rlocationpath: ", env!("DATA_RLOCATIONPATH"))
     );
 }
 
@@ -24,9 +30,15 @@ pub fn test_tool_rootpath() {
 
 #[test]
 pub fn test_tool_rlocationpath() {
-    assert_eq!(
-        "rules_rust/test/cargo_build_script/location_expansion/exec_data.txt",
-        env!("TOOL_RLOCATIONPATH")
+    assert!(
+        [
+            // workspace
+            "rules_rust/test/cargo_build_script/location_expansion/exec_data.txt",
+            // bzlmod
+            "_main/test/cargo_build_script/location_expansion/exec_data.txt",
+        ]
+        .contains(&env!("TOOL_RLOCATIONPATH")),
+        concat!("Unexpected rlocationpath: ", env!("TOOL_RLOCATIONPATH"))
     );
 }
 

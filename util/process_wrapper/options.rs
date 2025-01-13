@@ -172,7 +172,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         })
         .transpose()?;
 
-    let rustc_quit_on_rmeta = rustc_quit_on_rmeta_raw.map_or(false, |s| s == "true");
+    let rustc_quit_on_rmeta = rustc_quit_on_rmeta_raw.is_some_and(|s| s == "true");
     let rustc_output_format = rustc_output_format_raw
         .map(|v| match v.as_str() {
             "json" => Ok(rustc::ErrorFormat::Json),

@@ -6,11 +6,12 @@ mod platforms;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::config::CrateId;
+use crate::config::{CrateId, RenderConfig};
 use crate::context::platforms::resolve_cfg_platforms;
 use crate::lockfile::Digest;
 use crate::metadata::{Annotations, Dependency};
@@ -44,6 +45,14 @@ pub(crate) struct Context {
 
     /// A list of crates visible to this bazel module.
     pub(crate) direct_dev_deps: BTreeSet<CrateId>,
+
+    /// A list of `[patch]` entries from the Cargo.lock file which were not used in the resolve.
+    // TODO: Remove the serde(default) after this has been released for a few versions.
+    // This prevents previous lockfiles (from before this field) from failing to parse with the current version of rules_rust.
+    // After we've supported this (so serialised it in lockfiles) for a few versions,
+    // we can remove the default fallback because existing lockfiles should have the key present.
+    #[serde(default)]
+    pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
 impl Context {
@@ -139,6 +148,8 @@ impl Context {
             add_crate_ids(&mut direct_dev_deps, &deps.proc_macro_dev_deps);
         }
 
+        let unused_patches = annotations.lockfile.unused_patches;
+
         Ok(Self {
             checksum: None,
             crates,
@@ -147,6 +158,7 @@ impl Context {
             conditions,
             direct_dev_deps: direct_dev_deps.difference(&direct_deps).cloned().collect(),
             direct_deps,
+            unused_patches,
         })
     }
 
@@ -225,9 +237,26 @@ impl Context {
     }
 }
 
+/// All information needed to render a BUILD file for a single crate.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SingleBuildFileRenderContext {
+    /// The RenderConfig.
+    pub(crate) config: Arc<RenderConfig>,
+
+    /// See crate::config::Config.supported_platform_triples.
+    pub(crate) supported_platform_triples: Arc<BTreeSet<TargetTriple>>,
+
+    /// See Context::conditions.
+    pub(crate) platform_conditions: Arc<BTreeMap<String, BTreeSet<TargetTriple>>>,
+
+    /// The CrateContext for the crate being rendered.
+    pub(crate) crate_context: Arc<CrateContext>,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use camino::Utf8Path;
     use semver::Version;
 
     use crate::config::Config;
@@ -237,6 +266,7 @@ mod test {
             crate::test::metadata::common(),
             crate::test::lockfile::common(),
             Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 
@@ -248,6 +278,7 @@ mod test {
             crate::test::metadata::alias(),
             crate::test::lockfile::alias(),
             Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 

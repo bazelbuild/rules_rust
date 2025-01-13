@@ -16,7 +16,7 @@ def rust_prost_dependencies(bzlmod = False):
     """
 
     direct_deps = [
-        struct(repo = "rules_rust_prost_deps__heck", is_dev_dep = False),
+        struct(repo = "rrprd__heck", is_dev_dep = False),
     ]
     if bzlmod:
         # Without bzlmod, this function is normally called by the
@@ -36,9 +36,9 @@ def rust_prost_dependencies(bzlmod = False):
         maybe(
             http_archive,
             name = "com_google_protobuf",
-            sha256 = "52b6160ae9266630adb5e96a9fc645215336371a740e87d411bfb63ea2f268a0",
-            strip_prefix = "protobuf-3.18.0",
-            urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.18.0/protobuf-all-3.18.0.tar.gz"],
+            integrity = "sha256-fD69eq7dhvpdxHmg/agD9gLKr3jYr/fOg7ieG4rnRCo=",
+            strip_prefix = "protobuf-28.3",
+            urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protobuf-28.3.tar.gz"],
         )
         maybe(
             http_archive,
@@ -54,7 +54,7 @@ def rust_prost_dependencies(bzlmod = False):
 
     maybe(
         http_archive,
-        name = "rules_rust_prost_deps__heck",
+        name = "rrprd__heck",
         integrity = "sha256-IwTgCYP4f/s4tVtES147YKiEtdMMD8p9gv4zRJu+Veo=",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/heck/heck-0.5.0.crate"],

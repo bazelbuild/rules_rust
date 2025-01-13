@@ -9,7 +9,15 @@ for target in $(bazel query 'kind("crates_vendor", //...)'); do
   bazel run "${target}"
 done
 
-for d in examples/crate_universe/vendor_*; do
+for d in extensions/*; do
+  pushd "${d}"
+  for target in $(bazel query 'kind("crates_vendor", //...)'); do
+    bazel run "${target}"
+  done
+  popd
+done
+
+for d in examples/crate_universe/vendor_*/; do
   (cd "${d}" && CARGO_BAZEL_REPIN=true bazel run :crates_vendor)
 done
 

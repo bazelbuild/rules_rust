@@ -27,20 +27,22 @@ crates_vendor(
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",
-    manifests = ["@rules_rust_wasm_bindgen_deps_cli//:Cargo.toml"],
+    manifests = ["@rules_rust_wasm_bindgen_cli//:Cargo.toml"],
     mode = "remote",
     packages = {
         "wasm-bindgen": crate.spec(
             version = WASM_BINDGEN_VERSION,
         ),
     },
-    repository_name = "rules_rust_wasm_bindgen_deps",
+    # Shorten the repository name to avoid MAX_PATH issues on Windows
+    # `rules_rust_wasm_bindgen_deps` == `rrwbd`
+    repository_name = "rrwbd",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm_bindgen_cli",
-    actual = "@rules_rust_wasm_bindgen_deps_cli",
+    actual = "@rules_rust_wasm_bindgen_cli",
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )

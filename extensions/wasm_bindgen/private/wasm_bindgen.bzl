@@ -1,21 +1,24 @@
 """Bazel rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
-load("@rules_rust//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect", "rust_clippy_aspect", "rust_common", "rustfmt_aspect")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:providers.bzl", "ClippyInfo", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//:providers.bzl", "RustWasmBindgenInfo")
 load(":transitions.bzl", "wasm_bindgen_transition")
 
-def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_flags = []):
+def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags = []):
     """Spawn a `RustWasmBindgen` action.
 
     Args:
-        ctx (ctx): _description_
-        toolchain (ToolchainInfo): _description_
-        wasm_file (Target): _description_
+        ctx (ctx): The rule's context object.
+        toolchain (ToolchainInfo): The current `rust_wasm_bindgen_toolchain`.
+        wasm_file (Target): The target representing the `.wasm` file.
         target_output (str): _description_
-        bindgen_flags (list, optional): _description_. Defaults to [].
+        flags (list, optional): Flags to pass to `wasm-bindgen`.
 
     Returns:
-        RustWasmBindgenInfo: _description_
+        RustWasmBindgenInfo: A provider containing action outputs.
     """
     bindgen_bin = toolchain.bindgen
 
@@ -50,25 +53,34 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
             wasm_file,
         ))
 
-    bindgen_wasm_module = ctx.actions.declare_file(ctx.label.name + "_bg.wasm")
+    out_name = ctx.label.name
+    if ctx.attr.out_name:
+        out_name = ctx.attr.out_name
 
-    js_out = [ctx.actions.declare_file(ctx.label.name + ".js")]
+    bindgen_wasm_module = ctx.actions.declare_file("{}/{}_bg.wasm".format(ctx.label.name, out_name))
+    snippets = ctx.actions.declare_directory("{}/snippets".format(ctx.label.name))
+
+    js_out = [ctx.actions.declare_file("{}/{}.js".format(ctx.label.name, out_name))]
     ts_out = []
-    if not "--no-typescript" in bindgen_flags:
-        ts_out.append(ctx.actions.declare_file(ctx.label.name + ".d.ts"))
+    if not "--no-typescript" in flags:
+        ts_out.append(ctx.actions.declare_file("{}/{}.d.ts".format(ctx.label.name, out_name)))
 
     if target_output == "bundler":
-        js_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.js"))
-        if not "--no-typescript" in bindgen_flags:
-            ts_out.append(ctx.actions.declare_file(ctx.label.name + "_bg.wasm.d.ts"))
+        js_out.append(ctx.actions.declare_file("{}/{}_bg.js".format(ctx.label.name, out_name)))
+        if not "--no-typescript" in flags:
+            ts_out.append(ctx.actions.declare_file("{}/{}_bg.wasm.d.ts".format(ctx.label.name, out_name)))
 
-    outputs = [bindgen_wasm_module] + js_out + ts_out
+    elif target_output == "web":
+        if not "--no-typescript" in flags:
+            ts_out.append(ctx.actions.declare_file("{}/{}_bg.wasm.d.ts".format(ctx.label.name, out_name)))
+
+    outputs = [bindgen_wasm_module, snippets] + js_out + ts_out
 
     args = ctx.actions.args()
     args.add("--target", target_output)
     args.add("--out-dir", bindgen_wasm_module.dirname)
-    args.add("--out-name", ctx.label.name)
-    args.add_all(bindgen_flags)
+    args.add("--out-name", out_name)
+    args.add_all(flags)
     args.add(input_file)
 
     ctx.actions.run(
@@ -76,7 +88,7 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
         inputs = [input_file],
         outputs = outputs,
         mnemonic = "RustWasmBindgen",
-        progress_message = "Generating WebAssembly bindings for {}...".format(progress_message_label),
+        progress_message = "Generating WebAssembly bindings for {}".format(progress_message_label),
         arguments = [args],
         toolchain = str(Label("//:toolchain_type")),
     )
@@ -85,6 +97,8 @@ def rust_wasm_bindgen_action(ctx, toolchain, wasm_file, target_output, bindgen_f
         wasm = bindgen_wasm_module,
         js = depset(js_out),
         ts = depset(ts_out),
+        snippets = snippets,
+        root = bindgen_wasm_module.dirname,
     )
 
 def _rust_wasm_bindgen_impl(ctx):
@@ -95,19 +109,45 @@ def _rust_wasm_bindgen_impl(ctx):
         toolchain = toolchain,
         wasm_file = ctx.attr.wasm_file,
         target_output = ctx.attr.target,
-        bindgen_flags = ctx.attr.bindgen_flags,
+        flags = ctx.attr.bindgen_flags,
     )
 
-    return [
+    providers = [
         DefaultInfo(
-            files = depset([info.wasm], transitive = [info.js, info.ts]),
+            files = depset(
+                [info.wasm, info.snippets],
+                transitive = [info.js, info.ts],
+            ),
         ),
         info,
     ]
 
+    if RustAnalyzerGroupInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[RustAnalyzerGroupInfo])
+
+    if RustAnalyzerInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[RustAnalyzerInfo])
+
+    if ClippyInfo in ctx.attr.wasm_file:
+        providers.append(ctx.attr.wasm_file[ClippyInfo])
+
+    if OutputGroupInfo in ctx.attr.wasm_file:
+        output_info = ctx.attr.wasm_file[OutputGroupInfo]
+        output_groups = {}
+        for group in ["rusfmt_checks", "clippy_checks", "rust_analyzer_crate_spec"]:
+            if hasattr(output_info, group):
+                output_groups[group] = getattr(output_info, group)
+
+        providers.append(OutputGroupInfo(**output_groups))
+
+    return providers
+
 WASM_BINDGEN_ATTR = {
     "bindgen_flags": attr.string_list(
-        doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
+        doc = "Flags to pass directly to the wasm-bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
+    ),
+    "out_name": attr.string(
+        doc = "Set a custom output filename (Without extension. Defaults to target name).",
     ),
     "target": attr.string(
         doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
@@ -122,6 +162,11 @@ WASM_BINDGEN_ATTR = {
     "wasm_file": attr.label(
         doc = "The `.wasm` file or crate to generate bindings for.",
         allow_single_file = True,
+        aspects = [
+            rust_analyzer_aspect,
+            rustfmt_aspect,
+            rust_clippy_aspect,
+        ],
         cfg = wasm_bindgen_transition,
         mandatory = True,
     ),
@@ -139,30 +184,7 @@ Generates javascript and typescript bindings for a webassembly module using [was
 
 An example of this rule in use can be seen at [@rules_rust//examples/wasm](../examples/wasm)
 """,
-    attrs = {
-        "bindgen_flags": attr.string_list(
-            doc = "Flags to pass directly to the bindgen executable. See https://github.com/rustwasm/wasm-bindgen/ for details.",
-        ),
-        "target": attr.string(
-            doc = "The type of output to generate. See https://rustwasm.github.io/wasm-bindgen/reference/deployment.html for details.",
-            default = "bundler",
-            values = ["web", "bundler", "nodejs", "no-modules", "deno"],
-        ),
-        "target_arch": attr.string(
-            doc = "The target architecture to use for the wasm-bindgen command line option.",
-            default = "wasm32",
-            values = ["wasm32", "wasm64"],
-        ),
-        "wasm_file": attr.label(
-            doc = "The `.wasm` file or crate to generate bindings for.",
-            allow_single_file = True,
-            cfg = wasm_bindgen_transition,
-            mandatory = True,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
+    attrs = WASM_BINDGEN_ATTR,
     toolchains = [
         str(Label("//:toolchain_type")),
     ],

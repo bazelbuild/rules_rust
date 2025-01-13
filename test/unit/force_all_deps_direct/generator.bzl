@@ -76,11 +76,8 @@ generator = rule(
             doc = "List of other libraries to be linked to this library target.",
             providers = [CrateInfo],
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),

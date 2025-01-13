@@ -242,6 +242,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) toolchains: BTreeSet<Label>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) use_default_shell_env: Option<i32>,
 }
 
 impl Default for BuildScriptAttributes {
@@ -268,6 +271,7 @@ impl Default for BuildScriptAttributes {
             tools: Default::default(),
             links: Default::default(),
             toolchains: Default::default(),
+            use_default_shell_env: None,
         }
     }
 }
@@ -656,6 +660,11 @@ impl CrateContext {
                         Select::merge(attrs.build_script_env.clone(), extra.clone());
                 }
 
+                // Default Shell Env
+                if let Some(extra) = &crate_extra.build_script_use_default_shell_env {
+                    attrs.use_default_shell_env = Some(*extra);
+                }
+
                 if let Some(rundir) = &crate_extra.build_script_rundir {
                     attrs.rundir = Select::merge(attrs.rundir.clone(), rundir.clone());
                 }
@@ -707,6 +716,9 @@ impl CrateContext {
                         patch_args.clone_from(&crate_extra.patch_args);
                         patch_tool.clone_from(&crate_extra.patch_tool);
                         patches.clone_from(&crate_extra.patches);
+                    }
+                    SourceAnnotation::Path { .. } => {
+                        // We don't support applying patches to local path deps.
                     }
                 }
             }
@@ -796,7 +808,7 @@ impl CrateContext {
                     );
 
                     // Conditionally check to see if the dependencies is a build-script target
-                    if include_build_scripts && kind == "custom-build" {
+                    if include_build_scripts && matches!(kind, cargo_metadata::TargetKind::CustomBuild) {
                         return Some(Ok(Rule::BuildScript(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -805,7 +817,7 @@ impl CrateContext {
                     }
 
                     // Check to see if the dependencies is a proc-macro target
-                    if kind == "proc-macro" {
+                    if matches!(kind, cargo_metadata::TargetKind::ProcMacro) {
                         return Some(Ok(Rule::ProcMacro(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -814,7 +826,7 @@ impl CrateContext {
                     }
 
                     // Check to see if the dependencies is a library target
-                    if ["lib", "rlib"].contains(&kind.as_str()) {
+                    if matches!(kind, cargo_metadata::TargetKind::Lib | cargo_metadata::TargetKind::RLib) {
                         return Some(Ok(Rule::Library(TargetAttributes {
                             crate_name,
                             crate_root,
@@ -823,7 +835,7 @@ impl CrateContext {
                     }
 
                     // Check if the target kind is binary and is one of the ones included in gen_binaries
-                    if kind == "bin"
+                    if matches!(kind, cargo_metadata::TargetKind::Bin)
                         && match gen_binaries {
                             GenBinaries::All => true,
                             GenBinaries::Some(set) => set.contains(&target.name),
@@ -847,6 +859,7 @@ impl CrateContext {
 mod test {
     use super::*;
 
+    use camino::Utf8Path;
     use semver::Version;
 
     use crate::config::CrateAnnotations;
@@ -857,6 +870,7 @@ mod test {
             crate::test::metadata::common(),
             crate::test::lockfile::common(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -960,6 +974,7 @@ mod test {
             crate::test::metadata::build_scripts(),
             crate::test::lockfile::build_scripts(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -969,6 +984,7 @@ mod test {
             crate::test::metadata::crate_types(),
             crate::test::lockfile::crate_types(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap()
     }
@@ -1272,6 +1288,7 @@ mod test {
             crate::test::metadata::abspath(),
             crate::test::lockfile::abspath(),
             crate::config::Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 
