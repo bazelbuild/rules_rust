@@ -70,13 +70,13 @@ _WASM_DATA = [
 js_test(
     name = "hello_world_wasm_direct_test",
     data = _WASM_DATA,
-    entry_point = "hello_world_wasm_test.js",
+    entry_point = "hello_world_wasm_test.mjs",
 )
 
 js_library(
     name = "hello_world_wasm_lib",
     srcs = [
-        "hello_world_wasm_test.js",
+        "hello_world_wasm_test.mjs",
     ],
     data = _WASM_DATA,
     deps = [],
