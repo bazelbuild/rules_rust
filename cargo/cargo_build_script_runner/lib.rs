@@ -17,6 +17,8 @@
 use std::io::{BufRead, BufReader, Read};
 use std::process::{Command, Output};
 
+pub mod cargo_manifest_dir;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct CompileAndLinkFlags {
     pub compile_flags: String,

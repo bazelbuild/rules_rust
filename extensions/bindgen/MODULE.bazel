@@ -10,6 +10,10 @@ bazel_dep(
     version = "0.56.0",
 )
 bazel_dep(
+    name = "bazel_features",
+    version = "1.21.0",
+)
+bazel_dep(
     name = "bazel_skylib",
     version = "1.7.1",
 )
@@ -30,6 +34,7 @@ rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
     "rules_rust_bindgen__bindgen-cli-0.70.1",
+    "rules_rust_bindgen_deps",
     "rules_rust_bindgen_deps__bindgen-0.70.1",
     "rules_rust_bindgen_deps__clang-sys-1.8.1",
     "rules_rust_bindgen_deps__clap-4.5.17",

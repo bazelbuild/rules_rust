@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@rtra//:serde-1.0.217"),
-            "serde_json": Label("@rtra//:serde_json-1.0.134"),
+            "serde_json": Label("@rtra//:serde_json-1.0.135"),
         },
     },
 }
@@ -475,22 +475,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__serde_json-1.0.134",
-        sha256 = "d00f4175c42ee48b15416f6193a959ba3a0d67fc699a0db9ad12df9f83991c7d",
+        name = "rtra__serde_json-1.0.135",
+        sha256 = "2b0d7ba2887406110130a978386c4e1befb98c674b4fba677954e4db976630d9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.134/download"],
-        strip_prefix = "serde_json-1.0.134",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.134.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.135/download"],
+        strip_prefix = "serde_json-1.0.135",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.135.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtra__syn-2.0.94",
-        sha256 = "987bc0be1cdea8b10216bd06e2ca407d40b9543468fafd3ddfb02f36e77f71f3",
+        name = "rtra__syn-2.0.95",
+        sha256 = "46f71c0377baf4ef1cc3e3402ded576dccc315800fbc62dfc7fe04b009773b4a",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.94/download"],
-        strip_prefix = "syn-2.0.94",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.94.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.95/download"],
+        strip_prefix = "syn-2.0.95",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.95.bazel"),
     )
 
     maybe(
@@ -505,5 +505,5 @@ def crate_repositories():
 
     return [
         struct(repo = "rtra__serde-1.0.217", is_dev_dep = False),
-        struct(repo = "rtra__serde_json-1.0.134", is_dev_dep = False),
+        struct(repo = "rtra__serde_json-1.0.135", is_dev_dep = False),
     ]

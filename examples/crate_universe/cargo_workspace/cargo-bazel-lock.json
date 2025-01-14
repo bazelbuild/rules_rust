@@ -1,5 +1,5 @@
 {
-  "checksum": "a2739677edda09980dd2610f3f844ce2cba8acef0f7b0535aebc0f66f063533c",
+  "checksum": "d4053517503f95938e1f67597edb2b10da3a2b972673544199602cb07f4146ca",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -312,6 +312,12 @@
                 "target": "ansi_term"
               }
             ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "ansi_term 0.12.1",
+                "target": "ansi_term"
+              }
+            ],
             "arm-unknown-linux-gnueabi": [
               {
                 "id": "ansi_term 0.12.1",
@@ -445,6 +451,12 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "ansi_term 0.12.1",
+                "target": "ansi_term"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "ansi_term 0.12.1",
                 "target": "ansi_term"
@@ -1883,6 +1895,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -1902,6 +1917,7 @@
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
+      "aarch64-unknown-uefi",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -1926,7 +1942,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(target_os = \"emscripten\")": [],
     "cfg(target_os = \"hermit\")": [],
@@ -2037,6 +2054,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [

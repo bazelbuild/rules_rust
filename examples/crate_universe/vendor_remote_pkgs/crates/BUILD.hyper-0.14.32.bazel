@@ -104,7 +104,7 @@ rust_library(
         "@crates_vendor_pkgs__itoa-1.0.14//:itoa",
         "@crates_vendor_pkgs__pin-project-lite-0.2.16//:pin_project_lite",
         "@crates_vendor_pkgs__socket2-0.5.8//:socket2",
-        "@crates_vendor_pkgs__tokio-1.42.0//:tokio",
+        "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
         "@crates_vendor_pkgs__tower-service-0.3.3//:tower_service",
         "@crates_vendor_pkgs__tracing-0.1.41//:tracing",
         "@crates_vendor_pkgs__want-0.3.1//:want",

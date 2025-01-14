@@ -20,8 +20,8 @@ crate = use_extension(
     "crate",
 )
 crate.from_cargo(
-    name = "bzlmod_crates_from_cargo_workspace",
+    name = "crates_from_cargo_workspace",
     cargo_lockfile = "//crates_from_workspace:Cargo.lock",
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
-use_repo(crate, "bzlmod_crates_from_cargo_workspace")
+use_repo(crate, "crates_from_cargo_workspace")

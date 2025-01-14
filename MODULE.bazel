@@ -19,7 +19,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.10",
+    version = "0.0.11",
 )
 bazel_dep(
     name = "rules_cc",
@@ -53,6 +53,12 @@ use_repo(
     "rules_rust_tinyjson",
 )
 
+cargo_internal_deps = use_extension("//cargo/private:internal_extensions.bzl", "i")
+use_repo(
+    cargo_internal_deps,
+    "rrcti__cargo_toml-0.20.5",
+)
+
 rust = use_extension("//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
 use_repo(rust, "rust_toolchains")
@@ -83,7 +89,7 @@ use_repo(
     "libc",
     "rtra",
     "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.134",
+    "rtra__serde_json-1.0.135",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )
@@ -120,7 +126,6 @@ use_repo(
     "cargo_bazel.buildifier-linux-arm64",
     "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
-    "cargo_bazel_bootstrap",
     "cui",
     "cui__anyhow-1.0.89",
     "cui__camino-1.1.9",
@@ -154,6 +159,15 @@ use_repo(
     "cui__tracing-subscriber-0.3.18",
     "cui__url-2.5.2",
     "cui__walkdir-2.5.0",
+)
+
+crate_universe_internal_non_repro_deps = use_extension(
+    "//crate_universe/private:internal_extensions.bzl",
+    "cu_nr",
+)
+use_repo(
+    crate_universe_internal_non_repro_deps,
+    "cargo_bazel_bootstrap",
 )
 
 crate_universe_internal_dev_deps = use_extension(

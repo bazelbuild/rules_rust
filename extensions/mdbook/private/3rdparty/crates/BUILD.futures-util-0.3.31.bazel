@@ -96,7 +96,7 @@ rust_library(
         "@rmdbi__futures-core-0.3.31//:futures_core",
         "@rmdbi__futures-sink-0.3.31//:futures_sink",
         "@rmdbi__futures-task-0.3.31//:futures_task",
-        "@rmdbi__pin-project-lite-0.2.15//:pin_project_lite",
+        "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
         "@rmdbi__pin-utils-0.1.0//:pin_utils",
         "@rmdbi__slab-0.4.9//:slab",
     ],

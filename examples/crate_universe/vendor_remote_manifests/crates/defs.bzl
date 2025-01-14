@@ -295,7 +295,7 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tokio": Label("@cvm//:tokio-1.42.0"),
+            "tokio": Label("@cvm//:tokio-1.43.0"),
         },
     },
 }
@@ -791,22 +791,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__tokio-1.42.0",
-        sha256 = "5cec9b21b0450273377fc97bd4c33a8acffc8c996c987a7c5b319a0083707551",
+        name = "cvm__tokio-1.43.0",
+        sha256 = "3d61fa4ffa3de412bfea335c6ecff681de2b609ba3c77ef3e00e521813a9ed9e",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio/1.42.0/download"],
-        strip_prefix = "tokio-1.42.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-1.42.0.bazel"),
+        urls = ["https://static.crates.io/crates/tokio/1.43.0/download"],
+        strip_prefix = "tokio-1.43.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-1.43.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__tokio-macros-2.4.0",
-        sha256 = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752",
+        name = "cvm__tokio-macros-2.5.0",
+        sha256 = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tokio-macros/2.4.0/download"],
-        strip_prefix = "tokio-macros-2.4.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-macros-2.4.0.bazel"),
+        urls = ["https://static.crates.io/crates/tokio-macros/2.5.0/download"],
+        strip_prefix = "tokio-macros-2.5.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tokio-macros-2.5.0.bazel"),
     )
 
     maybe(
@@ -960,7 +960,7 @@ def crate_repositories():
     )
 
     return [
-        struct(repo = "cvm__tokio-1.42.0", is_dev_dep = False),
+        struct(repo = "cvm__tokio-1.43.0", is_dev_dep = False),
         struct(repo = "cvm__tempfile-3.15.0", is_dev_dep = True),
         struct(repo = "cvm__tokio-test-0.4.4", is_dev_dep = True),
     ]
