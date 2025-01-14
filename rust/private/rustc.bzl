@@ -25,7 +25,7 @@ load(
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":providers.bzl", "IsProcMacroDepInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -78,11 +78,6 @@ ExtraExecRustcFlagsInfo = provider(
 PerCrateRustcFlagsInfo = provider(
     doc = "Pass each value as an additional flag to non-exec rustc invocations for crates matching the provided filter",
     fields = {"per_crate_rustc_flags": "List[string] Extra flags to pass to rustc in non-exec configuration"},
-)
-
-IsProcMacroDepInfo = provider(
-    doc = "Records if this is a transitive dependency of a proc-macro.",
-    fields = {"is_proc_macro_dep": "Boolean"},
 )
 
 def _is_proc_macro_dep_impl(ctx):

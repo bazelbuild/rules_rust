@@ -186,3 +186,8 @@ LintsInfo = provider(
         "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
     },
 )
+
+IsProcMacroDepInfo = provider(
+    doc = "Records if this is a transitive dependency of a proc-macro.",
+    fields = {"is_proc_macro_dep": "Boolean"},
+)
