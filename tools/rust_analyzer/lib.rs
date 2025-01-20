@@ -9,7 +9,7 @@ use camino::Utf8Path;
 use command::BazelCommand;
 use runfiles::Runfiles;
 use rust_project::RustProject;
-pub use rust_project::{DiscoverProject, NormalizedProjectString, RustAnalyzerArg};
+pub use rust_project::{DiscoverProject, RustAnalyzerArg, SerializeProjectJson};
 
 pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];

@@ -4,7 +4,7 @@ use anyhow::bail;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use gen_rust_project_lib::{
-    generate_crate_info, generate_rust_project, get_bazel_info, NormalizedProjectString,
+    generate_crate_info, generate_rust_project, get_bazel_info, SerializeProjectJson,
 };
 
 fn write_rust_project(
@@ -36,7 +36,7 @@ fn write_rust_project(
     // Render the `rust-project.json` file content and replace the exec root
     // placeholders with the path to the local exec root.
     let rust_project_content =
-        rust_project.as_normalized_project_string(workspace, output_base, execution_root)?;
+        rust_project.serialize_with_absolute_paths(workspace, output_base, execution_root)?;
 
     // Write the new rust-project.json file.
     std::fs::write(rust_project_path, rust_project_content)?;

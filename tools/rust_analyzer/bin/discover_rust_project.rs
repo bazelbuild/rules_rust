@@ -9,8 +9,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{Target, WriteStyle};
 use gen_rust_project_lib::{
-    generate_crate_info, generate_rust_project, get_bazel_info, DiscoverProject,
-    NormalizedProjectString, RustAnalyzerArg, WORKSPACE_ROOT_FILE_NAMES,
+    generate_crate_info, generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg,
+    SerializeProjectJson, WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::LevelFilter;
 
@@ -35,7 +35,7 @@ fn discover_rust_project(
     )?;
 
     let discovery_str = DiscoverProject::Finished { buildfile, project }
-        .as_normalized_project_string(workspace, output_base, execution_root)?;
+        .serialize_with_absolute_paths(workspace, output_base, execution_root)?;
 
     println!("{discovery_str}");
 
@@ -46,7 +46,7 @@ fn discover_rust_project(
 /// message which `rust-analyzer` can display.
 fn discovery_progress(message: String) -> String {
     DiscoverProject::Progress { message }
-        .as_project_string()
+        .serialize_with_placeholders()
         .expect("represent discovery error as string")
 }
 
@@ -59,7 +59,7 @@ fn discovery_failure(error: anyhow::Error) {
     };
 
     let discovery_str = discovery
-        .as_project_string()
+        .serialize_with_placeholders()
         .expect("represent discovery error as string");
 
     println!("{discovery_str}");

@@ -103,22 +103,24 @@ impl FromStr for RustAnalyzerArg {
     }
 }
 
-/// Trait used to convert a type that represents a Rust project into a string,
-/// normalizing it by replacing placeholders with the required counterparts.
-pub trait NormalizedProjectString {
-    /// Method that defines the conversion to a [`String`].
-    fn as_project_string(&self) -> anyhow::Result<String>;
+/// Trait used to serialize a type that represents a Rust project into a [`String`],
+/// providing a common interface for placeholder replacement.
+pub trait SerializeProjectJson {
+    /// Method that defines the serialization to a [`String`].
+    /// Note that this method **DOES NOT** replace placeholders.
+    fn serialize_with_placeholders(&self) -> anyhow::Result<String>;
 
-    /// Method that converts the type to a [`String`] through [`NormalizedProjectString::as_project_string`]
-    /// and then performs the placeholders replacements.
-    fn as_normalized_project_string(
+    /// Method that serializes the type to a [`String`] through
+    /// [`SerializeProjectJson::serialize_with_placeholders`] and then performs placeholder
+    /// substitution.
+    fn serialize_with_absolute_paths(
         &self,
         workspace: &Utf8Path,
         output_base: &Utf8Path,
         execution_root: &Utf8Path,
     ) -> anyhow::Result<String> {
         let normalized = self
-            .as_project_string()?
+            .serialize_with_placeholders()?
             .replace("__WORKSPACE__", workspace.as_str())
             .replace("${pwd}", execution_root.as_str())
             .replace("__EXEC_ROOT__", execution_root.as_str())
@@ -146,8 +148,8 @@ pub enum DiscoverProject {
     },
 }
 
-impl NormalizedProjectString for DiscoverProject {
-    fn as_project_string(&self) -> anyhow::Result<String> {
+impl SerializeProjectJson for DiscoverProject {
+    fn serialize_with_placeholders(&self) -> anyhow::Result<String> {
         serde_json::to_string(&self).map_err(From::from)
     }
 }
@@ -175,8 +177,8 @@ pub struct RustProject {
     runnables: Vec<Runnable>,
 }
 
-impl NormalizedProjectString for RustProject {
-    fn as_project_string(&self) -> anyhow::Result<String> {
+impl SerializeProjectJson for RustProject {
+    fn serialize_with_placeholders(&self) -> anyhow::Result<String> {
         serde_json::to_string_pretty(&self).map_err(From::from)
     }
 }
