@@ -3,7 +3,7 @@ load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test
 load("//tools:tool_utils.bzl", "aspect_repository")
 
 rust_binary(
-    name = "discover_rust_project",
+    name = "discover_bazel_rust_project",
     srcs = ["bin/discover_rust_project.rs"],
     edition = "2018",
     rustc_env = {
