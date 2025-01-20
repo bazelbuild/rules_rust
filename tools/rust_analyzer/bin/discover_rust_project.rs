@@ -2,9 +2,9 @@
 //! See [rust-analyzer documentation][rd] for a thorough description of this interface.
 //! [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
 
-use std::{convert::TryFrom, env, fs, io::Write};
+use std::{env, io::Write};
 
-use anyhow::bail;
+use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{Target, WriteStyle};
@@ -75,7 +75,7 @@ fn find_workspace_root_file(workspace: &Utf8Path) -> anyhow::Result<Utf8PathBuf>
         .iter()
         .chain(WORKSPACE_ROOT_FILE_NAMES)
         .map(|file| workspace.join(file))
-        .find(Utf8Path::exists)
+        .find(|p| p.exists())
         .with_context(|| format!("no root file found for bazel workspace {workspace}"))
 }
 

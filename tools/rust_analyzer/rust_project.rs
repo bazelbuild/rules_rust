@@ -3,13 +3,11 @@
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
-    convert::TryFrom,
     fmt::Display,
-    fs,
     str::FromStr,
 };
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
@@ -46,13 +44,11 @@ impl RustAnalyzerArg {
     /// `rust-analyzer` associates workspaces with buildfiles. Therefore, when it passes in a
     /// source file path, we use this function to identify the buildfile the file belongs to.
     fn source_file_to_buildfile(file: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
-        let flat_map_fn = || |dir| BUILD_FILE_NAMES.iter().map(|build| dir.join(build));
-
         // Skip the first element as it's always the full file path.
         file.ancestors()
             .skip(1)
-            .flat_map(flat_map_fn)
-            .find(Utf8Path::exists)
+            .flat_map(|dir| BUILD_FILE_NAMES.iter().map(move |build| dir.join(build)))
+            .find(|p| p.exists())
             .with_context(|| format!("no buildfile found for {file}"))
     }
 
@@ -254,19 +250,19 @@ pub struct Build {
     ///
     /// Do not attempt to parse the contents of this string; it is a build system-specific
     /// identifier similar to [`Crate::display_name`].
-    pub label: String,
+    label: String,
     /// Path corresponding to the build system-specific file defining the crate.
     ///
     /// It is roughly analogous to [`ManifestPath`], but it should *not* be used with
     /// [`crate::ProjectManifest::from_manifest_file`], as the build file may not be
     /// be in the `rust-project.json`.
-    pub build_file: Utf8PathBuf,
+    build_file: Utf8PathBuf,
     /// The kind of target.
     ///
     /// Examples (non-exhaustively) include [`TargetKind::Bin`], [`TargetKind::Lib`],
     /// and [`TargetKind::Test`]. This information is used to determine what sort
     /// of runnable codelens to provide, if any.
-    pub target_kind: TargetKind,
+    target_kind: TargetKind,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
@@ -306,16 +302,16 @@ pub struct Runnable {
     /// The program invoked by the runnable.
     ///
     /// For example, this might be `cargo`, `bazel`, etc.
-    pub program: String,
+    program: String,
     /// The arguments passed to [`Runnable::program`].
     ///
     /// The args can contain two template strings: `{label}` and `{test_id}`.
     /// rust-analyzer will find and replace `{label}` with [`Build::label`] and
     /// `{test_id}` with the test name.
-    pub args: Vec<String>,
+    args: Vec<String>,
     /// The current working directory of the runnable.
-    pub cwd: Utf8PathBuf,
-    pub kind: RunnableKind,
+    cwd: Utf8PathBuf,
+    kind: RunnableKind,
 }
 
 /// The kind of runnable.
