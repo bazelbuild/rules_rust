@@ -115,7 +115,9 @@ pub trait SerializeProjectJson {
     }
 }
 
-/// The format that rust_analyzer expects as a response when automatically invoked.
+/// The format that `rust_analyzer` expects as a response when automatically invoked.
+/// See [rust-analyzer documentation][rd] for a thorough description of this interface.
+/// [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "snake_case")]
