@@ -1,6 +1,6 @@
 //! Binary used for automatic Rust workspace discovery by `rust-analyzer`.
-//! Check the `rust-analyzer` user manual (<https://rust-analyzer.github.io/manual.html>),
-//! particularly the `rust-analyzer.workspace.discoverConfig` section, for more details.
+//! Check the `rust-analyzer` user manual for more details:
+//! <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
 
 use std::{convert::TryFrom, env, fs, io::Write};
 
