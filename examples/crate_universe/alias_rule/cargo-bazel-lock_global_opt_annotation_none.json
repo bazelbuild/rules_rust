@@ -1,5 +1,5 @@
 {
-  "checksum": "b105763002202c11c744b0baccb9d97829d8b197b43fa8d6fb10c66eae797b6c",
+  "checksum": "c990c6ab0faeda6c4aa712f18cf913c1f764d06d28cc2bdd8af8eeef53d670bd",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -141,6 +141,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -215,6 +218,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [

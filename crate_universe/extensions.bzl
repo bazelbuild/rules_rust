@@ -14,6 +14,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 2. [Dependencies](#dependencies)
     * [Cargo Workspace](#cargo-workspaces)
     * [Direct Packages](#direct-dependencies)
+    * [Binary Dependencies](#binary-dependencies)
     * [Vendored Dependencies](#vendored-dependencies)
 3. [Crate reference](#crate)
    * [from_cargo](#from_cargo)
@@ -45,7 +46,8 @@ There are three different ways to declare dependencies in your MODULE.
 
 1) Cargo workspace
 2) Direct Dependencies
-3) Vendored Dependencies
+3) Binary Dependencies
+4) Vendored Dependencies
 
 ### Cargo Workspaces
 
@@ -136,7 +138,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a “Cargo free” setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -170,6 +172,45 @@ rust_binary(
     ],
     visibility = ["//visibility:public"],
 )
+```
+
+Notice, direct dependencies do not need repining.
+Only a cargo workspace needs updating whenever the underlying Cargo.toml file changed.
+
+### Binary Dependencies
+
+With cargo you `can install` binary dependencies (bindeps) as well with `cargo install` command.
+
+We don't have such easy facilities available in bazel besides specifying it as a dependency.
+To mimic cargo's bindeps feature we use the unstable feature called [artifact-dependencies](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html?highlight=feature#artifact-dependencies)
+which integrates well with bazel concepts.
+
+You could use the syntax specified in the above document to place it in `Cargo.toml`. For that you can consult the following [example](https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/MODULE.bazel#L279-L291).
+
+This method has the following consequences:
+* if you use shared dependency tree with your project these binary dependencies will interfere with yours (may conflict)
+* you have to use  nightly `host_tools_repo` to generate dependencies because
+
+Alternatively you can specify this in a separate `repo` with `cargo.from_specs` syntax:
+
+```python
+bindeps = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+
+bindeps.spec(package = "cargo-machete", version = "=0.7.0", artifact = "bin")
+bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
+
+bindeps.from_specs(
+  name = "bindeps",
+  host_tools_repo = "rust_host_tools_nightly",
+)
+
+use_repo(bindeps, "bindeps")
+```
+
+You can run the specified binary dependency with the following command or create additional more complex rules on top of it.
+
+```bash
+bazel run @bindeps//:cargo-machete__cargo-machete
 ```
 
 Notice, direct dependencies do not need repining.

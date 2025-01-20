@@ -85,7 +85,7 @@ rust_library(
         "@cui__gix-quote-0.4.14//:gix_quote",
         "@cui__gix-trace-0.1.11//:gix_trace",
         "@cui__kstring-2.0.2//:kstring",
-        "@cui__smallvec-1.11.0//:smallvec",
+        "@cui__smallvec-1.13.2//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
         "@cui__unicode-bom-2.0.3//:unicode_bom",
     ],

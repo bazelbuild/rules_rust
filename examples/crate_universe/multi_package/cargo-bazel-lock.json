@@ -1,5 +1,5 @@
 {
-  "checksum": "79a582c76f69239d9a81183db2a58706911159c58c2539d0664a3b8619613ef9",
+  "checksum": "1a2cf69ea9842748c2c0cbe065910668ec295d6d44ffd5b574e7d0aff3e959fb",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -995,6 +995,24 @@
                 "target": "futures_lite"
               }
             ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
             "arm-unknown-linux-gnueabi": [
               {
                 "id": "async-global-executor 2.3.1",
@@ -1436,6 +1454,24 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "async-global-executor 2.3.1",
+                "target": "async_global_executor"
+              },
+              {
+                "id": "async-io 1.12.0",
+                "target": "async_io"
+              },
+              {
+                "id": "async-process 1.6.0",
+                "target": "async_process"
+              },
+              {
+                "id": "futures-lite 1.12.0",
+                "target": "futures_lite"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "async-global-executor 2.3.1",
                 "target": "async_global_executor"
@@ -3101,6 +3137,16 @@
               "std",
               "waker-fn"
             ],
+            "aarch64-unknown-uefi": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
             "arm-unknown-linux-gnueabi": [
               "alloc",
               "default",
@@ -3332,6 +3378,16 @@
               "waker-fn"
             ],
             "x86_64-unknown-none": [
+              "alloc",
+              "default",
+              "fastrand",
+              "futures-io",
+              "memchr",
+              "parking",
+              "std",
+              "waker-fn"
+            ],
+            "x86_64-unknown-uefi": [
               "alloc",
               "default",
               "fastrand",
@@ -3553,6 +3609,28 @@
                 "target": "waker_fn"
               }
             ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
             "arm-unknown-linux-gnueabi": [
               {
                 "id": "fastrand 1.9.0",
@@ -4060,6 +4138,28 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "fastrand 1.9.0",
+                "target": "fastrand"
+              },
+              {
+                "id": "futures-io 0.3.26",
+                "target": "futures_io"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "parking 2.0.0",
+                "target": "parking"
+              },
+              {
+                "id": "waker-fn 1.1.0",
+                "target": "waker_fn"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "fastrand 1.9.0",
                 "target": "fastrand"
@@ -5270,6 +5370,12 @@
               "http2",
               "runtime"
             ],
+            "aarch64-unknown-uefi": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
             "arm-unknown-linux-gnueabi": [
               "client",
               "h2",
@@ -5403,6 +5509,12 @@
               "runtime"
             ],
             "x86_64-unknown-none": [
+              "client",
+              "h2",
+              "http2",
+              "runtime"
+            ],
+            "x86_64-unknown-uefi": [
               "client",
               "h2",
               "http2",
@@ -5528,6 +5640,12 @@
                 "target": "h2"
               }
             ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
             "arm-unknown-linux-gnueabi": [
               {
                 "id": "h2 0.3.16",
@@ -5661,6 +5779,12 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "h2 0.3.16",
+                "target": "h2"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "h2 0.3.16",
                 "target": "h2"
@@ -8414,6 +8538,28 @@
                 "target": "webpki_roots"
               }
             ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
             "arm-unknown-linux-gnueabi": [
               {
                 "id": "hyper-rustls 0.23.2",
@@ -8969,6 +9115,28 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "hyper-rustls 0.23.2",
+                "target": "hyper_rustls"
+              },
+              {
+                "id": "rustls 0.20.8",
+                "target": "rustls"
+              },
+              {
+                "id": "rustls-pemfile 1.0.2",
+                "target": "rustls_pemfile"
+              },
+              {
+                "id": "tokio-rustls 0.23.4",
+                "target": "tokio_rustls"
+              },
+              {
+                "id": "webpki-roots 0.22.6",
+                "target": "webpki_roots"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "hyper-rustls 0.23.2",
                 "target": "hyper_rustls"
@@ -11173,6 +11341,11 @@
               "io-util",
               "memchr"
             ],
+            "aarch64-unknown-uefi": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
             "arm-unknown-linux-gnueabi": [
               "bytes",
               "io-util",
@@ -11286,6 +11459,11 @@
               "memchr"
             ],
             "x86_64-unknown-none": [
+              "bytes",
+              "io-util",
+              "memchr"
+            ],
+            "x86_64-unknown-uefi": [
               "bytes",
               "io-util",
               "memchr"
@@ -11500,6 +11678,20 @@
               {
                 "id": "signal-hook-registry 1.4.1",
                 "target": "signal_hook_registry"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "aarch64-unknown-uefi": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
               },
               {
                 "id": "socket2 0.4.9",
@@ -11957,6 +12149,20 @@
               }
             ],
             "x86_64-unknown-none": [
+              {
+                "id": "bytes 1.4.0",
+                "target": "bytes"
+              },
+              {
+                "id": "memchr 2.5.0",
+                "target": "memchr"
+              },
+              {
+                "id": "socket2 0.4.9",
+                "target": "socket2"
+              }
+            ],
+            "x86_64-unknown-uefi": [
               {
                 "id": "bytes 1.4.0",
                 "target": "bytes"
@@ -15848,6 +16054,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "aarch64-uwp-windows-msvc": [],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -15902,6 +16111,7 @@
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
+      "aarch64-unknown-uefi",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -15920,7 +16130,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(any(target_arch = \"x86\", target_arch = \"x86_64\", all(any(target_arch = \"aarch64\", target_arch = \"arm\"), any(target_os = \"android\", target_os = \"fuchsia\", target_os = \"linux\"))))": [
       "aarch64-linux-android",
@@ -15943,7 +16154,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(any(target_os = \"android\", target_os = \"linux\"))": [
       "aarch64-linux-android",
@@ -16001,6 +16213,7 @@
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
+      "aarch64-unknown-uefi",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -16023,7 +16236,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(not(windows))": [
       "aarch64-apple-darwin",
@@ -16034,6 +16248,7 @@
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
+      "aarch64-unknown-uefi",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -16056,7 +16271,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(not(windows_raw_dylib))": [
       "aarch64-apple-darwin",
@@ -16068,6 +16284,7 @@
       "aarch64-unknown-linux-gnu",
       "aarch64-unknown-nixos-gnu",
       "aarch64-unknown-nto-qnx710",
+      "aarch64-unknown-uefi",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -16092,7 +16309,8 @@
       "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu",
-      "x86_64-unknown-none"
+      "x86_64-unknown-none",
+      "x86_64-unknown-uefi"
     ],
     "cfg(target_arch = \"wasm32\")": [
       "wasm32-unknown-unknown",
@@ -16215,6 +16433,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ],
     "x86_64-uwp-windows-gnu": [],
     "x86_64-uwp-windows-msvc": []

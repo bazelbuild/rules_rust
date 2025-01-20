@@ -34,6 +34,7 @@ rust_library(
         "Win32_Storage",
         "Win32_Storage_FileSystem",
         "Win32_System",
+        "Win32_System_Console",
         "Win32_System_Time",
         "default",
     ],

@@ -1,5 +1,5 @@
 {
-  "checksum": "541c5ef13fb5524405f12d27b5c8b3736e5bb395785e59f47ecff2c687758b3b",
+  "checksum": "8b1c39450b8a8356536be74727d68d0afb78a3541229fdfff57e88e2f94d74f1",
   "crates": {
     "anstyle 1.0.1": {
       "name": "anstyle",
@@ -987,6 +987,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -1068,6 +1071,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [

@@ -85,7 +85,7 @@ rust_library(
     version = "1.1.9",
     deps = [
         "@cui__camino-1.1.9//:build_script_build",
-        "@cui__serde-1.0.210//:serde",
+        "@cui__serde-1.0.217//:serde",
     ],
 )
 

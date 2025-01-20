@@ -85,6 +85,6 @@ rust_library(
     }),
     version = "0.9.0",
     deps = [
-        "@cui__serde-1.0.210//:serde",
+        "@cui__serde-1.0.217//:serde",
     ],
 )
