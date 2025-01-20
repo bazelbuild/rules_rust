@@ -149,7 +149,7 @@ def _rust_library_common(ctx, crate_type):
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     # Determine unique hash for this rlib.
     # Note that we don't include a hash for `cdylib` and `staticlib` since they are meant to be consumed externally
@@ -202,7 +202,7 @@ def _rust_library_common(ctx, crate_type):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             data = depset(ctx.files.data),
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
@@ -233,7 +233,7 @@ def _rust_binary_impl(ctx):
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     providers = rustc_compile_action(
         ctx = ctx,
@@ -254,7 +254,7 @@ def _rust_binary_impl(ctx):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             data = depset(ctx.files.data),
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
@@ -330,13 +330,11 @@ def _rust_test_impl(ctx):
                 ),
             )
 
-        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+        # Need to consider all src files together when transforming
+        srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
+        compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
+        srcs, compile_data, crate_root = transform_sources(ctx, srcs, compile_data, getattr(ctx.file, "crate_root", None))
 
-        # Optionally join compile data
-        if crate.compile_data:
-            compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data])
-        else:
-            compile_data = depset(ctx.files.compile_data)
         if crate.compile_data_targets:
             compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
         else:
@@ -360,7 +358,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate.root,
-            srcs = depset(srcs, transitive = [crate.srcs]),
+            srcs = depset(srcs),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = aliases,
@@ -370,7 +368,7 @@ def _rust_test_impl(ctx):
             rustc_env = rustc_env,
             rustc_env_files = rustc_env_files,
             is_test = True,
-            compile_data = compile_data,
+            compile_data = depset(compile_data),
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
@@ -381,7 +379,7 @@ def _rust_test_impl(ctx):
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
             crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
-        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+        srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
         if toolchain._incompatible_change_rust_test_compilation_output_directory:
             output = ctx.actions.declare_file(
@@ -420,7 +418,7 @@ def _rust_test_impl(ctx):
             rustc_env = rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         )

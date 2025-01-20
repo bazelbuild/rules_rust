@@ -50,6 +50,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -75,6 +76,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.3.74",
@@ -128,6 +130,12 @@ rust_library(
             "@crates_vendor_pkgs__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
+            "@crates_vendor_pkgs__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__miniz_oxide-0.8.2//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [
             "@crates_vendor_pkgs__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__miniz_oxide-0.8.2//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
@@ -272,6 +280,12 @@ rust_library(
             "@crates_vendor_pkgs__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
+            "@crates_vendor_pkgs__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__miniz_oxide-0.8.2//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@crates_vendor_pkgs__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [
             "@crates_vendor_pkgs__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@crates_vendor_pkgs__miniz_oxide-0.8.2//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))

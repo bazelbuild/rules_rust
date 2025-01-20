@@ -17,7 +17,7 @@ jobs:
       - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: '.'
-          extensions: 'h,c,cc,proto'
+          extensions: 'h,c,cc,proto,java,m'
           clangFormatVersion: 14
       - uses: actionsx/prettier@v2
         with:
