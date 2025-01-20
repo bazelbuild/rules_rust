@@ -46,29 +46,14 @@ impl RustAnalyzerArg {
     /// `rust-analyzer` associates workspaces with buildfiles. Therefore, when it passes in a
     /// source file path, we use this function to identify the buildfile the file belongs to.
     fn source_file_to_buildfile(file: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
+        let flat_map_fn = || |dir| BUILD_FILE_NAMES.iter().map(|build| dir.join(build));
+
         // Skip the first element as it's always the full file path.
-        for dir in file.ancestors().skip(1) {
-            for entry in fs::read_dir(dir)? {
-                // Continue iteration if a path is not UTF8.
-                let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
-                    continue;
-                };
-
-                // Guard against directory names that would match items
-                // from [`BUILD_FILE_NAMES`].
-                if !path.is_file() {
-                    continue;
-                }
-
-                if let Some(filename) = path.file_name() {
-                    if BUILD_FILE_NAMES.contains(&filename) {
-                        return Ok(path);
-                    }
-                }
-            }
-        }
-
-        bail!("no buildfile found for {file}");
+        file.ancestors()
+            .skip(1)
+            .flat_map(flat_map_fn)
+            .find(Utf8Path::exists)
+            .with_context(|| format!("no buildfile found for {file}"))
     }
 
     fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::Result<String> {

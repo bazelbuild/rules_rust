@@ -10,7 +10,7 @@ use clap::Parser;
 use env_logger::{Target, WriteStyle};
 use gen_rust_project_lib::{
     generate_crate_info, generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg,
-    SerializeProjectJson, WORKSPACE_ROOT_FILE_NAMES,
+    SerializeProjectJson, BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::LevelFilter;
 
@@ -71,26 +71,12 @@ fn discovery_failure(error: anyhow::Error) {
 ///
 /// Returns an error if no file from [`WORKSPACE_ROOT_FILE_NAMES`] is found.
 fn find_workspace_root_file(workspace: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
-    for entry in fs::read_dir(workspace)? {
-        // Continue iteration if a path is not UTF8.
-        let Ok(path) = Utf8PathBuf::try_from(entry?.path()) else {
-            continue;
-        };
-
-        // Guard against directory names that would match items
-        // from [`WORKSPACE_ROOT_FILE_NAMES`].
-        if !path.is_file() {
-            continue;
-        }
-
-        if let Some(filename) = path.file_name() {
-            if WORKSPACE_ROOT_FILE_NAMES.contains(&filename) {
-                return Ok(path);
-            }
-        }
-    }
-
-    bail!("no root file found for bazel workspace {workspace}")
+    BUILD_FILE_NAMES
+        .iter()
+        .chain(WORKSPACE_ROOT_FILE_NAMES)
+        .map(|file| workspace.join(file))
+        .find(Utf8Path::exists)
+        .with_context(|| format!("no root file found for bazel workspace {workspace}"))
 }
 
 fn project_discovery() -> anyhow::Result<()> {
