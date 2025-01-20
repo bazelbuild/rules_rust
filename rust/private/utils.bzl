@@ -789,7 +789,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
         extension = extension,
     )
 
-def transform_sources(ctx, srcs, crate_root):
+def transform_sources(ctx, srcs, compile_data, crate_root):
     """Creates symlinks of the source files if needed.
 
     Rustc assumes that the source files are located next to the crate root.
@@ -802,25 +802,33 @@ def transform_sources(ctx, srcs, crate_root):
     Args:
         ctx (struct): The current rule's context.
         srcs (List[File]): The sources listed in the `srcs` attribute
+        compile_data (List[File]): The sources listed in the `compile_data`
+                                   attribute
         crate_root (File): The file specified in the `crate_root` attribute,
                            if it exists, otherwise None
 
     Returns:
-        Tuple(List[File], File): The transformed srcs and crate_root
+        Tuple(List[File], List[File], File): The transformed srcs, compile_data
+                                             and crate_root
     """
-    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+    has_generated_sources = (
+        len([src for src in srcs if not src.is_source]) +
+        len([src for src in compile_data if not src.is_source]) >
+        0
+    )
 
     if not has_generated_sources:
-        return srcs, crate_root
+        return srcs, compile_data, crate_root
 
     package_root = paths.join(ctx.label.workspace_root, ctx.label.package)
     generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
+    generated_compile_data = [_symlink_for_non_generated_source(ctx, src, package_root) for src in compile_data]
     generated_root = crate_root
     if crate_root:
         generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
         generated_sources.append(generated_root)
 
-    return generated_sources, generated_root
+    return generated_sources, generated_compile_data, generated_root
 
 def get_edition(attr, toolchain, label):
     """Returns the Rust edition from either the current rule's attributes or the current `rust_toolchain`

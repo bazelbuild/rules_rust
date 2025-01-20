@@ -1,5 +1,5 @@
 {
-  "checksum": "2410572dd6c10f6c9e9ef519e5f9c7b6a2417983584a9448f4e8f21530074918",
+  "checksum": "6827669731d4a7812ead33717527524f9cee9cbdee9d4de11264b7bc738f399a",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -702,6 +702,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -802,6 +805,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [
