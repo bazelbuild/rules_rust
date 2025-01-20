@@ -56,6 +56,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -81,6 +82,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "6.1.1",
@@ -88,11 +90,11 @@ rust_library(
         "@rmdbi__crossbeam-channel-0.5.14//:crossbeam_channel",
         "@rmdbi__filetime-0.2.25//:filetime",
         "@rmdbi__libc-0.2.169//:libc",
-        "@rmdbi__log-0.4.22//:log",
+        "@rmdbi__log-0.4.25//:log",
         "@rmdbi__walkdir-2.5.0//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rmdbi__bitflags-2.6.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
@@ -123,7 +125,7 @@ rust_library(
             "@rmdbi__mio-0.8.11//:mio",  # cfg(any(target_os = "linux", target_os = "android"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rmdbi__bitflags-2.6.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
@@ -150,7 +152,7 @@ rust_library(
             "@rmdbi__mio-0.8.11//:mio",  # cfg(any(target_os = "linux", target_os = "android"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rmdbi__bitflags-2.6.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

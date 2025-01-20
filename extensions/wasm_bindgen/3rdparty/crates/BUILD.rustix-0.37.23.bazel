@@ -39,6 +39,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": {
             "@rrwbd__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": {
+            "@rrwbd__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        },
         "@rules_rust//rust/platform:armv7-linux-androideabi": {
             "@rrwbd__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
@@ -99,6 +102,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": {
             "@rrwbd__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         },
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": {
+            "@rrwbd__errno-0.3.1//:errno": "libc_errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        },
         "//conditions:default": {},
     }),
     compile_data = glob(
@@ -143,6 +149,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -168,6 +175,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.37.23",
@@ -204,6 +212,9 @@ rust_library(
             "@rrwbd__linux-raw-sys-0.3.8//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
+            "@rrwbd__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [
             "@rrwbd__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
@@ -286,6 +297,9 @@ rust_library(
             "@rrwbd__linux-raw-sys-0.3.8//:linux_raw_sys",  # cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64")))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
+            "@rrwbd__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [
             "@rrwbd__errno-0.3.1//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"), all(target_endian = "little", any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "powerpc64", target_arch = "riscv64", target_arch = "mips", target_arch = "mips64"))))))))
         ],
         "//conditions:default": [],
