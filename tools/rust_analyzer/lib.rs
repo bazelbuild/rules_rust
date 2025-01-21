@@ -1,12 +1,10 @@
 mod aquery;
-mod command;
 mod rust_project;
 
 use std::{collections::HashMap, convert::TryInto, fs, process::Command};
 
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
-use command::BazelCommand;
 use runfiles::Runfiles;
 use rust_project::RustProject;
 pub use rust_project::{DiscoverProject, RustAnalyzerArg};
@@ -64,7 +62,7 @@ pub fn get_bazel_info(
     output_base: Option<&Utf8Path>,
     bazelrc: Option<&Utf8Path>,
 ) -> anyhow::Result<HashMap<String, String>> {
-    let output = Command::new_bazel_command(bazel, workspace, output_base, bazelrc)
+    let output = new_bazel_command(bazel, workspace, output_base, bazelrc)
         .arg("info")
         .output()?;
 
@@ -96,7 +94,7 @@ fn generate_crate_info(
     log::info!("running bazel build...");
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
-    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
+    let output = new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
         .arg("build")
         .arg("--norun_validations")
         .arg(format!(
@@ -115,6 +113,28 @@ fn generate_crate_info(
     log::info!("bazel build finished");
 
     Ok(())
+}
+
+fn new_bazel_command(
+    bazel: &Utf8Path,
+    workspace: Option<&Utf8Path>,
+    output_base: Option<&Utf8Path>,
+    bazelrc: Option<&Utf8Path>,
+) -> Command {
+    let mut cmd = Command::new(bazel);
+
+    cmd
+        // Switch to the workspace directory if one was provided.
+        .current_dir(workspace.unwrap_or(Utf8Path::new(".")))
+        .env_remove("BAZELISK_SKIP_WRAPPER")
+        .env_remove("BUILD_WORKING_DIRECTORY")
+        .env_remove("BUILD_WORKSPACE_DIRECTORY")
+        // Set the output_base if one was provided.
+        .args(output_base.map(|s| format!("--output_base={s}")))
+        // Pass the bazelrc file if any is provided.
+        .args(bazelrc.map(|s| format!("--bazelrc={s}")));
+
+    cmd
 }
 
 fn deserialize_file_content<T>(
