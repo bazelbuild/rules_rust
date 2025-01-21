@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     aquery::{CrateSpec, CrateType},
-    ToolchainInfo, BUILD_FILE_NAMES,
+    buildfile_to_targets, source_file_to_buildfile, ToolchainInfo,
 };
 
 /// The argument that `rust-analyzer` can pass to the workspace discovery command.
@@ -32,40 +32,13 @@ impl RustAnalyzerArg {
     ) -> anyhow::Result<(Utf8PathBuf, String)> {
         match self {
             Self::Path(file) => {
-                let buildfile = Self::source_file_to_buildfile(&file)?;
-                Self::buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+                let buildfile = source_file_to_buildfile(&file)?;
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
             }
             Self::Buildfile(buildfile) => {
-                Self::buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
             }
         }
-    }
-
-    /// `rust-analyzer` associates workspaces with buildfiles. Therefore, when it passes in a
-    /// source file path, we use this function to identify the buildfile the file belongs to.
-    fn source_file_to_buildfile(file: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
-        // Skip the first element as it's always the full file path.
-        file.ancestors()
-            .skip(1)
-            .flat_map(|dir| BUILD_FILE_NAMES.iter().map(move |build| dir.join(build)))
-            .find(|p| p.exists())
-            .with_context(|| format!("no buildfile found for {file}"))
-    }
-
-    fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::Result<String> {
-        log::info!("getting targets for buildfile: {buildfile}");
-
-        let parent_dir = buildfile
-            .strip_prefix(workspace)
-            .with_context(|| format!("{buildfile} not part of workspace"))?
-            .parent();
-
-        let targets = match parent_dir {
-            Some(p) if !p.as_str().is_empty() => format!("//{p}:all"),
-            _ => "//...".to_string(),
-        };
-
-        Ok(targets)
     }
 }
 
