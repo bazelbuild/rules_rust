@@ -147,35 +147,13 @@ impl Config {
     pub fn parse() -> anyhow::Result<Self> {
         let ConfigParser {
             workspace,
-            execution_root,
-            output_base,
             bazel,
             bazelrc,
             rust_analyzer_argument,
         } = ConfigParser::parse();
 
-        // Implemented this way instead of a classic `if let` to satisfy the
-        // borrow checker.
-        // See: <https://github.com/rust-lang/rust/issues/54663>
-        #[allow(clippy::unnecessary_unwrap)]
-        if workspace.is_some() && execution_root.is_some() && output_base.is_some() {
-            return Ok(Config {
-                workspace: workspace.unwrap(),
-                execution_root: execution_root.unwrap(),
-                output_base: output_base.unwrap(),
-                bazel,
-                bazelrc,
-                rust_analyzer_argument,
-            });
-        }
-
         // We need some info from `bazel info`. Fetch it now.
-        let mut info_map = get_bazel_info(
-            &bazel,
-            workspace.as_deref(),
-            output_base.as_deref(),
-            bazelrc.as_deref(),
-        )?;
+        let mut info_map = get_bazel_info(&bazel, workspace.as_deref(), None, bazelrc.as_deref())?;
 
         let config = Config {
             workspace: info_map
@@ -204,14 +182,6 @@ struct ConfigParser {
     /// The path to the Bazel workspace directory. If not specified, uses the result of `bazel info workspace`.
     #[clap(long, env = "BUILD_WORKSPACE_DIRECTORY")]
     workspace: Option<Utf8PathBuf>,
-
-    /// The path to the Bazel execution root. If not specified, uses the result of `bazel info execution_root`.
-    #[clap(long)]
-    execution_root: Option<Utf8PathBuf>,
-
-    /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
-    #[clap(long, env = "OUTPUT_BASE")]
-    output_base: Option<Utf8PathBuf>,
 
     /// The path to a Bazel binary.
     #[clap(long, default_value = "bazel")]
