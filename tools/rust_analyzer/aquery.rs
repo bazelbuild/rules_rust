@@ -1,14 +1,12 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs::File,
     process::Command,
 };
 
-use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 
-use crate::command::BazelCommand;
+use crate::{command::BazelCommand, deserialize_file_content};
 
 #[derive(Debug, Deserialize)]
 struct AqueryOutput {
@@ -63,7 +61,7 @@ pub struct CrateSpec {
 #[serde(deny_unknown_fields)]
 pub struct CrateSpecBuild {
     pub label: String,
-    pub build_file: Utf8PathBuf,
+    pub build_file: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
@@ -120,11 +118,7 @@ pub fn get_crate_specs(
 
     let crate_specs = crate_spec_files
         .into_iter()
-        .map(|file| {
-            let f = File::open(&file).with_context(|| format!("Failed to open file: {}", file))?;
-            serde_json::from_reader(f)
-                .with_context(|| format!("Failed to deserialize file: {}", file))
-        })
+        .map(|file| deserialize_file_content(&file, output_base, workspace, execution_root))
         .collect::<anyhow::Result<Vec<CrateSpec>>>()?;
 
     consolidate_crate_specs(crate_specs)
@@ -275,7 +269,7 @@ mod test {
                 is_test: false,
                 build: Some(CrateSpecBuild {
                     label: "//:test".to_owned(),
-                    build_file: "BUILD.bazel".to_owned().into(),
+                    build_file: "BUILD.bazel".to_owned(),
                 }),
             },
             CrateSpec {
@@ -351,7 +345,7 @@ mod test {
                     is_test: false,
                     build: Some(CrateSpecBuild {
                         label: "//:test".to_owned(),
-                        build_file: "BUILD.bazel".to_owned().into(),
+                        build_file: "BUILD.bazel".to_owned(),
                     }),
                 },
                 CrateSpec {

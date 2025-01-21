@@ -2,14 +2,15 @@ mod aquery;
 mod command;
 mod rust_project;
 
-use std::{collections::HashMap, process::Command};
+use std::{collections::HashMap, convert::TryInto, fs, process::Command};
 
-use anyhow::bail;
-use camino::Utf8Path;
+use anyhow::{bail, Context};
+use camino::{Utf8Path, Utf8PathBuf};
 use command::BazelCommand;
 use runfiles::Runfiles;
 use rust_project::RustProject;
-pub use rust_project::{DiscoverProject, RustAnalyzerArg, SerializeProjectJson};
+pub use rust_project::{DiscoverProject, RustAnalyzerArg};
+use serde::{de::DeserializeOwned, Deserialize};
 
 pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
@@ -67,18 +68,16 @@ pub fn generate_rust_project(
         rules_rust_name,
     )?;
 
-    let path = runfiles::rlocation!(
+    let path: Utf8PathBuf = runfiles::rlocation!(
         Runfiles::create()?,
         "rules_rust/rust/private/rust_analyzer_detect_sysroot.rust_analyzer_toolchain.json"
     )
-    .unwrap();
-    let toolchain_info: HashMap<String, String> =
-        serde_json::from_str(&std::fs::read_to_string(path)?)?;
+    .context("toolchain runfile not found")?
+    .try_into()?;
 
-    let sysroot_src = &toolchain_info["sysroot_src"];
-    let sysroot = &toolchain_info["sysroot"];
+    let toolchain_info = deserialize_file_content(&path, output_base, workspace, execution_root)?;
 
-    rust_project::assemble_rust_project(bazel, workspace, sysroot, sysroot_src, &crate_specs)
+    rust_project::assemble_rust_project(bazel, workspace, toolchain_info, &crate_specs)
 }
 
 /// Executes `bazel info` to get context information.
@@ -107,4 +106,29 @@ pub fn get_bazel_info(
         .collect();
 
     Ok(info_map)
+}
+
+#[derive(Debug, Deserialize)]
+struct ToolchainInfo {
+    sysroot: Utf8PathBuf,
+    sysroot_src: Utf8PathBuf,
+}
+
+fn deserialize_file_content<T>(
+    path: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    execution_root: &Utf8Path,
+) -> anyhow::Result<T>
+where
+    T: DeserializeOwned,
+{
+    let buf = fs::read_to_string(path)
+        .with_context(|| format!("failed to open file: {path}"))?
+        .replace("__WORKSPACE__", workspace.as_str())
+        .replace("${pwd}", execution_root.as_str())
+        .replace("__EXEC_ROOT__", execution_root.as_str())
+        .replace("__OUTPUT_BASE__", output_base.as_str());
+
+    serde_json::from_str(&buf).with_context(|| format!("failed to deserialize file: {path}"))
 }

@@ -1,11 +1,13 @@
-use std::{env, io::ErrorKind};
+use std::{
+    env,
+    fs::File,
+    io::{BufWriter, ErrorKind},
+};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use gen_rust_project_lib::{
-    generate_crate_info, generate_rust_project, get_bazel_info, SerializeProjectJson,
-};
+use gen_rust_project_lib::{generate_crate_info, generate_rust_project, get_bazel_info};
 
 fn write_rust_project(
     bazel: &Utf8Path,
@@ -33,13 +35,11 @@ fn write_rust_project(
         Err(err) => bail!("Unexpected error removing old rust-project.json: {}", err),
     }
 
-    // Render the `rust-project.json` file content and replace the exec root
-    // placeholders with the path to the local exec root.
-    let rust_project_content =
-        rust_project.serialize_with_absolute_paths(workspace, output_base, execution_root)?;
-
     // Write the new rust-project.json file.
-    std::fs::write(rust_project_path, rust_project_content)?;
+    let file = File::open(rust_project_path)
+        .with_context(|| "could not open: {rust_project_path}")
+        .map(BufWriter::new)?;
+    serde_json::to_writer(file, &rust_project)?;
 
     Ok(())
 }

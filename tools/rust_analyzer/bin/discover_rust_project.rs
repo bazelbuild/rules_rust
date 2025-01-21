@@ -2,68 +2,20 @@
 //! See [rust-analyzer documentation][rd] for a thorough description of this interface.
 //! [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
 
-use std::{env, io::Write};
+use std::{
+    env,
+    io::{self, Write},
+};
 
 use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use env_logger::{Target, WriteStyle};
+use env_logger::{fmt::Formatter, Target, WriteStyle};
 use gen_rust_project_lib::{
     generate_crate_info, generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg,
-    SerializeProjectJson, BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
+    BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
 };
-use log::LevelFilter;
-
-fn discover_rust_project(
-    bazel: &Utf8Path,
-    output_base: &Utf8Path,
-    workspace: &Utf8Path,
-    execution_root: &Utf8Path,
-    bazelrc: Option<&Utf8Path>,
-    rules_rust_name: &str,
-    targets: &[String],
-    buildfile: Utf8PathBuf,
-) -> anyhow::Result<()> {
-    let project = generate_rust_project(
-        bazel,
-        output_base,
-        workspace,
-        execution_root,
-        bazelrc,
-        rules_rust_name,
-        targets,
-    )?;
-
-    let discovery_str = DiscoverProject::Finished { buildfile, project }
-        .serialize_with_absolute_paths(workspace, output_base, execution_root)?;
-
-    println!("{discovery_str}");
-
-    Ok(())
-}
-
-/// Log formatting function that generates and writes a [`DiscoverProject::Progress`]
-/// message which `rust-analyzer` can display.
-fn discovery_progress(message: String) -> String {
-    DiscoverProject::Progress { message }
-        .serialize_with_placeholders()
-        .expect("represent discovery error as string")
-}
-
-/// Construct and print a [`DiscoverProject::Error`] to transmit a
-/// project discovery failure to `rust-analyzer`.
-fn discovery_failure(error: anyhow::Error) {
-    let discovery = DiscoverProject::Error {
-        error: format!("could not generate rust-project.json: {error}"),
-        source: error.source().as_ref().map(ToString::to_string),
-    };
-
-    let discovery_str = discovery
-        .serialize_with_placeholders()
-        .expect("represent discovery error as string");
-
-    println!("{discovery_str}");
-}
+use log::{LevelFilter, Record};
 
 /// Looks within the current directory for a file that marks a bazel workspace.
 ///
@@ -79,7 +31,7 @@ fn find_workspace_root_file(workspace: &Utf8Path) -> anyhow::Result<Utf8PathBuf>
         .with_context(|| format!("no root file found for bazel workspace {workspace}"))
 }
 
-fn project_discovery() -> anyhow::Result<()> {
+fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
     let Config {
         workspace,
         execution_root,
@@ -98,7 +50,7 @@ fn project_discovery() -> anyhow::Result<()> {
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
 
-    log::info!("resolved rust-analyzer argument: {ra_arg}");
+    log::info!("resolved rust-analyzer argument: {ra_arg:?}");
 
     let (buildfile, targets) = ra_arg.into_target_details(&workspace)?;
     let targets = &[targets];
@@ -117,33 +69,53 @@ fn project_discovery() -> anyhow::Result<()> {
     )?;
 
     // Use the generated files to print the rust-project.json.
-    discover_rust_project(
+    let project = generate_rust_project(
         &bazel,
         &output_base,
         &workspace,
         &execution_root,
         bazelrc.as_deref(),
-        rules_rust_name,
+        &rules_rust_name,
         targets,
-        buildfile,
-    )
+    )?;
+
+    Ok(DiscoverProject::Finished { buildfile, project })
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
+    let log_format_fn = |fmt: &mut Formatter, rec: &Record| {
+        let message = rec.args();
+        let discovery = DiscoverProject::Progress { message };
+        serde_json::to_writer(&mut *fmt, &discovery)?;
+        // `rust-analyzer` reads messages line by line
+        writeln!(fmt, "");
+        Ok(())
+    };
+
     // Treat logs as progress messages.
     env_logger::Builder::from_default_env()
         // Never write color/styling info
         .write_style(WriteStyle::Never)
         // Format logs as progress messages
-        .format(|fmt, rec| writeln!(fmt, "{}", discovery_progress(rec.args().to_string())))
+        .format(log_format_fn)
         // `rust-analyzer` reads the stdout
         .filter_level(LevelFilter::Debug)
         .target(Target::Stdout)
         .init();
 
-    if let Err(e) = project_discovery() {
-        discovery_failure(e);
-    }
+    let discovery = match project_discovery() {
+        Ok(discovery) => discovery,
+        Err(error) => DiscoverProject::Error {
+            error: error.to_string(),
+            source: error.source().as_ref().map(ToString::to_string),
+        },
+    };
+
+    serde_json::to_writer(io::stdout(), &discovery)?;
+    // `rust-analyzer` reads messages line by line
+    println!("");
+
+    Ok(())
 }
 
 #[derive(Debug)]

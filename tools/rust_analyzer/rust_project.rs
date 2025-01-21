@@ -1,9 +1,9 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
+use core::fmt;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
-    fmt::Display,
     str::FromStr,
 };
 
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     aquery::{CrateSpec, CrateType},
-    BUILD_FILE_NAMES,
+    ToolchainInfo, BUILD_FILE_NAMES,
 };
 
 /// The argument that `rust-analyzer` can pass to the workspace discovery command.
@@ -69,45 +69,11 @@ impl RustAnalyzerArg {
     }
 }
 
-impl Display for RustAnalyzerArg {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let arg = serde_json::to_string(self).map_err(|_| std::fmt::Error)?;
-        write!(f, "{arg}")
-    }
-}
-
 impl FromStr for RustAnalyzerArg {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s).map_err(|e| anyhow::anyhow!("rust analyzer argument error: {e}"))
-    }
-}
-
-/// Trait used to serialize a type that represents a Rust project into a [`String`],
-/// providing a common interface for placeholder replacement.
-pub trait SerializeProjectJson {
-    /// Method that defines the serialization to a [`String`].
-    /// Note that this method **DOES NOT** replace placeholders.
-    fn serialize_with_placeholders(&self) -> anyhow::Result<String>;
-
-    /// Method that serializes the type to a [`String`] through
-    /// [`SerializeProjectJson::serialize_with_placeholders`] and then performs placeholder
-    /// substitution.
-    fn serialize_with_absolute_paths(
-        &self,
-        workspace: &Utf8Path,
-        output_base: &Utf8Path,
-        execution_root: &Utf8Path,
-    ) -> anyhow::Result<String> {
-        let normalized = self
-            .serialize_with_placeholders()?
-            .replace("__WORKSPACE__", workspace.as_str())
-            .replace("${pwd}", execution_root.as_str())
-            .replace("__EXEC_ROOT__", execution_root.as_str())
-            .replace("__OUTPUT_BASE__", output_base.as_str());
-
-        Ok(normalized)
+        serde_json::from_str(s).context("rust analyzer argument error")
     }
 }
 
@@ -117,7 +83,7 @@ pub trait SerializeProjectJson {
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "snake_case")]
-pub enum DiscoverProject {
+pub enum DiscoverProject<'a> {
     Finished {
         buildfile: Utf8PathBuf,
         project: RustProject,
@@ -127,14 +93,8 @@ pub enum DiscoverProject {
         source: Option<String>,
     },
     Progress {
-        message: String,
+        message: &'a fmt::Arguments<'a>,
     },
-}
-
-impl SerializeProjectJson for DiscoverProject {
-    fn serialize_with_placeholders(&self) -> anyhow::Result<String> {
-        serde_json::to_string(&self).map_err(From::from)
-    }
 }
 
 /// A `rust-project.json` workspace representation. See
@@ -143,11 +103,11 @@ impl SerializeProjectJson for DiscoverProject {
 #[derive(Debug, Serialize)]
 pub struct RustProject {
     /// The path to a Rust sysroot.
-    sysroot: Option<String>,
+    sysroot: Utf8PathBuf,
 
     /// Path to the directory with *source code* of
     /// sysroot crates.
-    sysroot_src: Option<String>,
+    sysroot_src: Utf8PathBuf,
 
     /// The set of crates comprising the current
     /// project. Must include all transitive
@@ -160,17 +120,10 @@ pub struct RustProject {
     runnables: Vec<Runnable>,
 }
 
-impl SerializeProjectJson for RustProject {
-    fn serialize_with_placeholders(&self) -> anyhow::Result<String> {
-        serde_json::to_string_pretty(&self).map_err(From::from)
-    }
-}
-
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Debug, Serialize)]
-#[serde(default)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -224,7 +177,6 @@ pub struct Source {
 }
 
 impl Source {
-    /// Returns true if no include information has been added.
     fn is_empty(&self) -> bool {
         self.include_dirs.is_empty() && self.exclude_dirs.is_empty()
     }
@@ -330,13 +282,12 @@ pub enum RunnableKind {
 pub fn assemble_rust_project(
     bazel: &Utf8Path,
     workspace: &Utf8Path,
-    sysroot: &str,
-    sysroot_src: &str,
-    crates: &BTreeSet<CrateSpec>,
+    toolchain_info: ToolchainInfo,
+    crate_specs: &BTreeSet<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
     let mut project = RustProject {
-        sysroot: Some(sysroot.into()),
-        sysroot_src: Some(sysroot_src.into()),
+        sysroot: toolchain_info.sysroot,
+        sysroot_src: toolchain_info.sysroot_src,
         crates: Vec::new(),
         runnables: vec![
             Runnable {
@@ -365,7 +316,7 @@ pub fn assemble_rust_project(
         ],
     };
 
-    let mut unmerged_crates: Vec<&CrateSpec> = crates.iter().collect();
+    let mut unmerged_crates: Vec<&CrateSpec> = crate_specs.iter().collect();
     let mut skipped_crates: Vec<&CrateSpec> = Vec::new();
     let mut merged_crates_index: HashMap<String, usize> = HashMap::new();
 
@@ -450,7 +401,7 @@ pub fn assemble_rust_project(
                     proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
                     build: c.build.as_ref().map(|b| Build {
                         label: b.label.clone(),
-                        build_file: b.build_file.clone(),
+                        build_file: b.build_file.clone().into(),
                         target_kind,
                     }),
                 });
@@ -534,8 +485,10 @@ mod tests {
         let project = assemble_rust_project(
             Utf8Path::new("bazel"),
             Utf8Path::new("workspace"),
-            "sysroot",
-            "sysroot_src",
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
             &BTreeSet::from([CrateSpec {
                 aliases: BTreeMap::new(),
                 crate_id: "ID-example".into(),
@@ -569,8 +522,10 @@ mod tests {
         let project = assemble_rust_project(
             Utf8Path::new("bazel"),
             Utf8Path::new("workspace"),
-            "sysroot",
-            "sysroot_src",
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
             &BTreeSet::from([
                 CrateSpec {
                     aliases: BTreeMap::new(),
