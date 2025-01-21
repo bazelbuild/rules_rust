@@ -82,14 +82,20 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
     Ok(DiscoverProject::Finished { buildfile, project })
 }
 
+fn write_discovery<W>(mut writer: W, discovery: DiscoverProject) -> std::io::Result<()>
+where
+    W: Write,
+{
+    serde_json::to_writer(&mut writer, &discovery)?;
+    // `rust-analyzer` reads messages line by line, so we must add a newline after each
+    writeln!(writer, "")
+}
+
 fn main() -> anyhow::Result<()> {
     let log_format_fn = |fmt: &mut Formatter, rec: &Record| {
         let message = rec.args();
         let discovery = DiscoverProject::Progress { message };
-        serde_json::to_writer(&mut *fmt, &discovery)?;
-        // `rust-analyzer` reads messages line by line
-        writeln!(fmt, "");
-        Ok(())
+        write_discovery(fmt, discovery)
     };
 
     // Treat logs as progress messages.
@@ -111,10 +117,7 @@ fn main() -> anyhow::Result<()> {
         },
     };
 
-    serde_json::to_writer(io::stdout(), &discovery)?;
-    // `rust-analyzer` reads messages line by line
-    println!("");
-
+    write_discovery(io::stdout(), discovery)?;
     Ok(())
 }
 
