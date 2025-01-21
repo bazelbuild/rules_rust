@@ -12,8 +12,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{fmt::Formatter, Target, WriteStyle};
 use gen_rust_project_lib::{
-    generate_crate_info, generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg,
-    BUILD_FILE_NAMES, WORKSPACE_ROOT_FILE_NAMES,
+    generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg, BUILD_FILE_NAMES,
+    WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::{LevelFilter, Record};
 
@@ -57,16 +57,6 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
 
     log::debug!("got buildfile: {buildfile}");
     log::debug!("got targets: {targets:?}");
-
-    // Generate the crate specs.
-    generate_crate_info(
-        &bazel,
-        &output_base,
-        &workspace,
-        bazelrc.as_deref(),
-        rules_rust_name,
-        targets,
-    )?;
 
     // Use the generated files to print the rust-project.json.
     let project = generate_rust_project(

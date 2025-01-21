@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use gen_rust_project_lib::{generate_crate_info, generate_rust_project, get_bazel_info};
+use gen_rust_project_lib::{generate_rust_project, get_bazel_info};
 
 fn write_rust_project(
     bazel: &Utf8Path,
@@ -62,16 +62,6 @@ fn main() -> anyhow::Result<()> {
     } = Config::parse()?;
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
-
-    // Generate the crate specs.
-    generate_crate_info(
-        &bazel,
-        &output_base,
-        &workspace,
-        None,
-        rules_rust_name,
-        &targets,
-    )?;
 
     // Use the generated files to write rust-project.json.
     write_rust_project(

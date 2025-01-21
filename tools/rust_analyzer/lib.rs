@@ -17,38 +17,6 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
 
-pub fn generate_crate_info(
-    bazel: &Utf8Path,
-    output_base: &Utf8Path,
-    workspace: &Utf8Path,
-    bazelrc: Option<&Utf8Path>,
-    rules_rust: &str,
-    targets: &[String],
-) -> anyhow::Result<()> {
-    log::info!("running bazel build...");
-    log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
-
-    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
-        .arg("build")
-        .arg("--norun_validations")
-        .arg(format!(
-            "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
-        ))
-        .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src")
-        .args(targets)
-        .output()?;
-
-    if !output.status.success() {
-        let status = output.status;
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("bazel build failed: ({status})\n{stderr}");
-    }
-
-    log::info!("bazel build finished");
-
-    Ok(())
-}
-
 pub fn generate_rust_project(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
@@ -58,6 +26,15 @@ pub fn generate_rust_project(
     rules_rust_name: &str,
     targets: &[String],
 ) -> anyhow::Result<RustProject> {
+    generate_crate_info(
+        bazel,
+        output_base,
+        workspace,
+        bazelrc,
+        rules_rust_name,
+        targets,
+    )?;
+
     let crate_specs = aquery::get_crate_specs(
         bazel,
         output_base,
@@ -108,10 +85,36 @@ pub fn get_bazel_info(
     Ok(info_map)
 }
 
-#[derive(Debug, Deserialize)]
-struct ToolchainInfo {
-    sysroot: Utf8PathBuf,
-    sysroot_src: Utf8PathBuf,
+fn generate_crate_info(
+    bazel: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    bazelrc: Option<&Utf8Path>,
+    rules_rust: &str,
+    targets: &[String],
+) -> anyhow::Result<()> {
+    log::info!("running bazel build...");
+    log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
+
+    let output = Command::new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
+        .arg("build")
+        .arg("--norun_validations")
+        .arg(format!(
+            "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
+        ))
+        .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src")
+        .args(targets)
+        .output()?;
+
+    if !output.status.success() {
+        let status = output.status;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("bazel build failed: ({status})\n{stderr}");
+    }
+
+    log::info!("bazel build finished");
+
+    Ok(())
 }
 
 fn deserialize_file_content<T>(
@@ -131,4 +134,10 @@ where
         .replace("__OUTPUT_BASE__", output_base.as_str());
 
     serde_json::from_str(&buf).with_context(|| format!("failed to deserialize file: {path}"))
+}
+
+#[derive(Debug, Deserialize)]
+struct ToolchainInfo {
+    sysroot: Utf8PathBuf,
+    sysroot_src: Utf8PathBuf,
 }
