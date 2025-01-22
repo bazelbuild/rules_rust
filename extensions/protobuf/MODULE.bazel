@@ -2,12 +2,12 @@
 
 module(
     name = "rules_rust_protobuf",
-    version = "0.57.0",
+    version = "0.57.1",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.57.0",
+    version = "0.57.1",
 )
 bazel_dep(
     name = "bazel_features",
