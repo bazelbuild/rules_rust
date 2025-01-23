@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@rtra//:serde-1.0.217"),
-            "serde_json": Label("@rtra//:serde_json-1.0.135"),
+            "serde_json": Label("@rtra//:serde_json-1.0.137"),
         },
     },
 }
@@ -368,6 +368,7 @@ _CONDITIONS = {
     "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu"],
     "aarch64-unknown-nixos-gnu": ["@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
     "aarch64-unknown-nto-qnx710": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
+    "aarch64-unknown-uefi": ["@rules_rust//rust/platform:aarch64-unknown-uefi"],
     "arm-unknown-linux-gnueabi": ["@rules_rust//rust/platform:arm-unknown-linux-gnueabi"],
     "armv7-linux-androideabi": ["@rules_rust//rust/platform:armv7-linux-androideabi"],
     "armv7-unknown-linux-gnueabi": ["@rules_rust//rust/platform:armv7-unknown-linux-gnueabi"],
@@ -393,6 +394,7 @@ _CONDITIONS = {
     "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu"],
     "x86_64-unknown-nixos-gnu": ["@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "x86_64-unknown-none": ["@rules_rust//rust/platform:x86_64-unknown-none"],
+    "x86_64-unknown-uefi": ["@rules_rust//rust/platform:x86_64-unknown-uefi"],
 }
 
 ###############################################################################
@@ -425,12 +427,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__proc-macro2-1.0.92",
-        sha256 = "37d3544b3f2748c54e147655edb5025752e2303145b5aefb3c3ea2c78b973bb0",
+        name = "rtra__proc-macro2-1.0.93",
+        sha256 = "60946a68e5f9d28b0dc1c21bb8a97ee7d018a8b322fa57838ba31cc878e22d99",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/proc-macro2/1.0.92/download"],
-        strip_prefix = "proc-macro2-1.0.92",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.92.bazel"),
+        urls = ["https://static.crates.io/crates/proc-macro2/1.0.93/download"],
+        strip_prefix = "proc-macro2-1.0.93",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.93.bazel"),
     )
 
     maybe(
@@ -475,22 +477,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__serde_json-1.0.135",
-        sha256 = "2b0d7ba2887406110130a978386c4e1befb98c674b4fba677954e4db976630d9",
+        name = "rtra__serde_json-1.0.137",
+        sha256 = "930cfb6e6abf99298aaad7d29abbef7a9999a9a8806a40088f55f0dcec03146b",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.135/download"],
-        strip_prefix = "serde_json-1.0.135",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.135.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.137/download"],
+        strip_prefix = "serde_json-1.0.137",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.137.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtra__syn-2.0.95",
-        sha256 = "46f71c0377baf4ef1cc3e3402ded576dccc315800fbc62dfc7fe04b009773b4a",
+        name = "rtra__syn-2.0.96",
+        sha256 = "d5d0adab1ae378d7f53bdebc67a39f1f151407ef230f0ce2883572f5d8985c80",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.95/download"],
-        strip_prefix = "syn-2.0.95",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.95.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.96/download"],
+        strip_prefix = "syn-2.0.96",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.96.bazel"),
     )
 
     maybe(
@@ -505,5 +507,5 @@ def crate_repositories():
 
     return [
         struct(repo = "rtra__serde-1.0.217", is_dev_dep = False),
-        struct(repo = "rtra__serde_json-1.0.135", is_dev_dep = False),
+        struct(repo = "rtra__serde_json-1.0.137", is_dev_dep = False),
     ]

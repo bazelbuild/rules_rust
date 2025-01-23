@@ -53,6 +53,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -78,6 +79,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.1.61",
@@ -110,8 +112,8 @@ rust_library(
             "@rmdbi__windows-core-0.52.0//:windows_core",  # cfg(target_os = "windows")
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@rmdbi__js-sys-0.3.76//:js_sys",  # cfg(all(target_arch = "wasm32", target_os = "unknown"))
-            "@rmdbi__wasm-bindgen-0.2.99//:wasm_bindgen",  # cfg(all(target_arch = "wasm32", target_os = "unknown"))
+            "@rmdbi__js-sys-0.3.77//:js_sys",  # cfg(all(target_arch = "wasm32", target_os = "unknown"))
+            "@rmdbi__wasm-bindgen-0.2.100//:wasm_bindgen",  # cfg(all(target_arch = "wasm32", target_os = "unknown"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rmdbi__core-foundation-sys-0.8.7//:core_foundation_sys",  # cfg(any(target_os = "macos", target_os = "ios"))

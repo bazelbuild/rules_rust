@@ -80,6 +80,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -105,6 +106,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "1.43.0",
@@ -148,6 +150,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rmdbi__libc-0.2.169//:libc",  # aarch64-unknown-nto-qnx710
             "@rmdbi__socket2-0.5.8//:socket2",  # aarch64-unknown-nto-qnx710
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [
+            "@rmdbi__socket2-0.5.8//:socket2",  # aarch64-unknown-uefi
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@rmdbi__libc-0.2.169//:libc",  # arm-unknown-linux-gnueabi
@@ -235,6 +240,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
             "@rmdbi__socket2-0.5.8//:socket2",  # x86_64-unknown-none
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [
+            "@rmdbi__socket2-0.5.8//:socket2",  # x86_64-unknown-uefi
         ],
         "//conditions:default": [],
     }),

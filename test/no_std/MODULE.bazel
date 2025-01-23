@@ -3,7 +3,7 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "rules_rust", version = "0.55.6")
+bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../..",

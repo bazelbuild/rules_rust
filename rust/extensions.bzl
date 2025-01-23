@@ -265,18 +265,6 @@ def _rust_host_tools_impl(module_ctx):
                 **attrs
             )
 
-        # If no tags were specified, create a default repository.
-        if not mod.tags.host_tools:
-            attrs = {
-                "name": "rust_host_tools",
-                "version": rust_common.default_version,
-            }
-            rust_toolchain_tools_repository(
-                exec_triple = host_triple.str,
-                target_triple = host_triple.str,
-                **attrs
-            )
-
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
         metadata_kwargs["reproducible"] = True

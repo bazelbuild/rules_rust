@@ -51,6 +51,9 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "extra_traits",  # aarch64-unknown-nto-qnx710
         ],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [
+            "extra_traits",  # aarch64-unknown-uefi
+        ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "extra_traits",  # armv7-linux-androideabi
         ],
@@ -105,6 +108,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-none": [
             "extra_traits",  # x86_64-unknown-none
         ],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [
+            "extra_traits",  # x86_64-unknown-uefi
+        ],
         "//conditions:default": [],
     }),
     crate_root = "src/lib.rs",
@@ -129,6 +135,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -154,6 +161,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.2.161",
@@ -203,6 +211,9 @@ cargo_build_script(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "extra_traits",  # aarch64-unknown-nto-qnx710
         ],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [
+            "extra_traits",  # aarch64-unknown-uefi
+        ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "extra_traits",  # armv7-linux-androideabi
         ],
@@ -256,6 +267,9 @@ cargo_build_script(
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
             "extra_traits",  # x86_64-unknown-none
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [
+            "extra_traits",  # x86_64-unknown-uefi
         ],
         "//conditions:default": [],
     }),

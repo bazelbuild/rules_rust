@@ -865,7 +865,8 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
         File: The created symlink if a non-generated file, or the file itself.
     """
 
-    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
+    src_short_path = paths.relativize(src_file.path, src_file.root.path)
+    if (src_file.is_source or src_file.root.path != ctx.bin_dir.path) and paths.starts_with(src_short_path, package_root):
         src_short_path = paths.relativize(src_file.path, src_file.root.path)
         src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
         ctx.actions.symlink(

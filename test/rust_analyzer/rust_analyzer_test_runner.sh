@@ -46,11 +46,10 @@ register_toolchains("@rust_toolchains//:all")
 rust_analyzer_test = use_extension("//test/rust_analyzer/3rdparty:extensions.bzl", "rust_analyzer_test", dev_dependency = True)
 use_repo(
     rust_analyzer_test,
-    "rtra",
-    "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.135",
-)
 EOF
+
+    grep -hr "rtra" "${BUILD_WORKSPACE_DIRECTORY}/MODULE.bazel" >> "${new_workspace}/MODULE.bazel"
+    echo ")" >> "${new_workspace}/MODULE.bazel"
 
     cat <<EOF >"${new_workspace}/.bazelrc"
 build --keep_going

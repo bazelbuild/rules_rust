@@ -50,6 +50,7 @@ rust_proc_macro(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -75,12 +76,13 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "1.5.0",
     deps = [
-        "@rmdbi__proc-macro2-1.0.92//:proc_macro2",
+        "@rmdbi__proc-macro2-1.0.93//:proc_macro2",
         "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.95//:syn",
+        "@rmdbi__syn-2.0.96//:syn",
     ],
 )

@@ -2,7 +2,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
 
 # This package has a rust_test_suite containing no tests.
-# (This could happen if the srcs were seleceted via a glob).
+# (This could happen if the srcs were selected via a glob).
 #
 # We test that the test suite exists and is empty, bypassing test_suite's
 # special-case behavior for empty suites.
