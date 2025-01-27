@@ -1,5 +1,5 @@
 {
-  "checksum": "ee5b3d4f4e72449e230fa7fac85d82f6e805302520f4eb8b9ae22baa2674f81d",
+  "checksum": "424718f1a554a01964a5879b13a368949e88005c4cc7eb614335029e390e6dd9",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -594,11 +594,7 @@
             "--cfg=libc_underscore_const_names",
             "--cfg=libc_const_extern_fn"
           ],
-          "selects": {
-            "x86_64-unknown-nixos-gnu": [
-              "--cfg=fake_nioxs_feature"
-            ]
-          }
+          "selects": {}
         },
         "version": "0.2.150"
       },
