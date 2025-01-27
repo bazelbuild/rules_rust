@@ -231,31 +231,10 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
-    #[test]
-    fn test_from_read_buffer_to_env_and_flags() {
-        let buff = Cursor::new(
-            "
-cargo::rustc-link-lib=sdfsdf
-cargo::rustc-env=FOO=BAR
-cargo::rustc-link-search=/some/absolute/path/bleh
-cargo::rustc-env=BAR=FOO
-cargo::rustc-flags=-Lblah
-cargo::rerun-if-changed=ignored
-cargo::rustc-cfg=feature=awesome
-cargo::version=123
-cargo::version_number=1010107f
-cargo::include_path=/some/absolute/path/include
-cargo::rustc-env=SOME_PATH=/some/absolute/path/beep
-cargo::rustc-link-arg=-weak_framework
-cargo::rustc-link-arg=Metal
-cargo::rustc-env=no_trailing_newline=true
-non-cargo-prefixes::are-ignored=true
-non-assignment-instructions-are-ignored
-cargo:rustc-env=old_cargo_colon_prefix_works=true",
-        );
+    fn from_read_buffer_to_env_and_flags_test_impl(buff: Cursor<&str>) {
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::outputs_from_reader(reader);
-        assert_eq!(result.len(), 14);
+        assert_eq!(result.len(), 13);
         assert_eq!(result[0], BuildScriptOutput::LinkLib("sdfsdf".to_owned()));
         assert_eq!(result[1], BuildScriptOutput::Env("FOO=BAR".to_owned()));
         assert_eq!(
@@ -290,16 +269,12 @@ cargo:rustc-env=old_cargo_colon_prefix_works=true",
             BuildScriptOutput::Env("no_trailing_newline=true".to_owned())
         );
         assert_eq!(
-            result[13],
-            BuildScriptOutput::Env("old_cargo_colon_prefix_works=true".to_owned())
-        );
-        assert_eq!(
             BuildScriptOutput::outputs_to_dep_env(&result, "ssh2", "/some/absolute/path"),
             "DEP_SSH2_VERSION=123\nDEP_SSH2_VERSION_NUMBER=1010107f\nDEP_SSH2_INCLUDE_PATH=${pwd}/include".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
-            "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true\nold_cargo_colon_prefix_works=true".to_owned()
+            "FOO=BAR\nBAR=FOO\nSOME_PATH=${pwd}/beep\nno_trailing_newline=true".to_owned()
         );
         assert_eq!(
             BuildScriptOutput::outputs_to_flags(&result, "/some/absolute/path"),
@@ -316,12 +291,80 @@ cargo:rustc-env=old_cargo_colon_prefix_works=true",
     }
 
     #[test]
+    fn test_from_read_buffer_to_env_and_flags() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-link-lib=sdfsdf
+cargo::rustc-env=FOO=BAR
+cargo::rustc-link-search=/some/absolute/path/bleh
+cargo::rustc-env=BAR=FOO
+cargo::rustc-flags=-Lblah
+cargo::rerun-if-changed=ignored
+cargo::rustc-cfg=feature=awesome
+cargo::version=123
+cargo::version_number=1010107f
+cargo::include_path=/some/absolute/path/include
+cargo::rustc-env=SOME_PATH=/some/absolute/path/beep
+cargo::rustc-link-arg=-weak_framework
+cargo::rustc-link-arg=Metal
+cargo::rustc-env=no_trailing_newline=true
+non-cargo-prefixes::are-ignored=true
+non-assignment-instructions-are-ignored",
+        );
+        from_read_buffer_to_env_and_flags_test_impl(buff);
+    }
+
+    /// Demonstrate that the old style single colon flags are all parsable
+    #[test]
+    fn test_legacy_from_read_buffer_to_env_and_flags() {
+        let buff = Cursor::new(
+            "
+cargo:rustc-link-lib=sdfsdf
+cargo:rustc-env=FOO=BAR
+cargo:rustc-link-search=/some/absolute/path/bleh
+cargo:rustc-env=BAR=FOO
+cargo:rustc-flags=-Lblah
+cargo:rerun-if-changed=ignored
+cargo:rustc-cfg=feature=awesome
+cargo:version=123
+cargo:version_number=1010107f
+cargo:include_path=/some/absolute/path/include
+cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
+cargo:rustc-link-arg=-weak_framework
+cargo:rustc-link-arg=Metal
+cargo:rustc-env=no_trailing_newline=true
+non-cargo-prefixes:are-ignored=true
+non-assignment-instructions-are-ignored",
+        );
+        from_read_buffer_to_env_and_flags_test_impl(buff);
+    }
+
+    #[test]
     fn invalid_utf8() {
         let buff = Cursor::new(
             b"
 cargo::rustc-env=valid1=1
 cargo::rustc-env=invalid=\xc3\x28
 cargo::rustc-env=valid2=2
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader);
+        assert_eq!(result.len(), 2);
+        assert_eq!(
+            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            "valid1=1\nvalid2=2"
+        );
+    }
+
+    /// Demonstrate that the old style single colon flags are all parsable
+    #[test]
+    fn invalid_utf8_legacy() {
+        let buff = Cursor::new(
+            b"
+cargo:rustc-env=valid1=1
+cargo:rustc-env=invalid=\xc3\x28
+cargo:rustc-env=valid2=2
 ",
         );
         let reader = BufReader::new(buff);
