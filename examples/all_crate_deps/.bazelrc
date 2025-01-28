@@ -12,4 +12,5 @@ build --incompatible_disallow_empty_glob
 build --incompatible_merge_fixed_and_default_shell_env
 
 # https://github.com/bazelbuild/bazel/issues/23043.
-build --incompatible_autoload_externally=
+# TODO: Re-enable after https://github.com/bazelbuild/bazel/issues/24871 is addressed
+# build --incompatible_autoload_externally=
