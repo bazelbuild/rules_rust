@@ -29,19 +29,19 @@ pub struct CompileAndLinkFlags {
 /// Enum containing all the considered return value from the script
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BuildScriptOutput {
-    /// cargo:rustc-link-lib
+    /// cargo::rustc-link-lib
     LinkLib(String),
-    /// cargo:rustc-link-search
+    /// cargo::rustc-link-search
     LinkSearch(String),
-    /// cargo:rustc-cfg
+    /// cargo::rustc-cfg
     Cfg(String),
-    /// cargo:rustc-flags
+    /// cargo::rustc-flags
     Flags(String),
-    /// cargo:rustc-link-arg
+    /// cargo::rustc-link-arg
     LinkArg(String),
-    /// cargo:rustc-env
+    /// cargo::rustc-env
     Env(String),
-    /// cargo:VAR=VALUE
+    /// cargo::VAR=VALUE
     DepEnv(String),
 }
 
@@ -50,7 +50,7 @@ impl BuildScriptOutput {
     ///
     /// Examples
     /// ```rust
-    /// assert_eq!(BuildScriptOutput::new("cargo:rustc-link-lib=lib"), Some(BuildScriptOutput::LinkLib("lib".to_owned())));
+    /// assert_eq!(BuildScriptOutput::new("cargo::rustc-link-lib=lib"), Some(BuildScriptOutput::LinkLib("lib".to_owned())));
     /// ```
     fn new(line: &str) -> Option<BuildScriptOutput> {
         let split = line.splitn(2, '=').collect::<Vec<_>>();
@@ -59,13 +59,18 @@ impl BuildScriptOutput {
             return None;
         }
         let param = split[1].trim().to_owned();
-        let key_split = split[0].splitn(2, ':').collect::<Vec<_>>();
-        if key_split.len() <= 1 || key_split[0] != "cargo" {
-            // Not a cargo directive.
-            return None;
-        }
+        let cargo_instruction_name = {
+            if split[0].starts_with("cargo::") {
+                &split[0][7..]
+            } else if split[0].starts_with("cargo:") {
+                &split[0][6..]
+            } else {
+                // Not a cargo directive.
+                return None;
+            }
+        };
 
-        match key_split[1] {
+        match cargo_instruction_name {
             "rustc-link-lib" => Some(BuildScriptOutput::LinkLib(param)),
             "rustc-link-search" => Some(BuildScriptOutput::LinkSearch(param)),
             "rustc-cfg" => Some(BuildScriptOutput::Cfg(param)),
@@ -82,9 +87,9 @@ impl BuildScriptOutput {
                 None
             }
             "rustc-cdylib-link-arg" | "rustc-link-arg-bin" | "rustc-link-arg-bins" => {
-                // cargo:rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
-                // cargo:rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
-                // cargo:rustc-link-arg-bins=FLAG – Passes custom flags to a linker for binaries.
+                // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
+                // cargo::rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
+                // cargo::rustc-link-arg-bins=FLAG – Passes custom flags to a linker for binaries.
                 eprint!(
                     "Warning: build script returned unsupported directive `{}`",
                     split[0]
@@ -92,10 +97,10 @@ impl BuildScriptOutput {
                 None
             }
             _ => {
-                // cargo:KEY=VALUE — Metadata, used by links scripts.
+                // cargo::KEY=VALUE — Metadata, used by links scripts.
                 Some(BuildScriptOutput::DepEnv(format!(
                     "{}={}",
-                    key_split[1].to_uppercase().replace('-', "_"),
+                    cargo_instruction_name.to_uppercase().replace('-', "_"),
                     param
                 )))
             }
@@ -226,25 +231,7 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
-    #[test]
-    fn test_from_read_buffer_to_env_and_flags() {
-        let buff = Cursor::new(
-            "
-cargo:rustc-link-lib=sdfsdf
-cargo:rustc-env=FOO=BAR
-cargo:rustc-link-search=/some/absolute/path/bleh
-cargo:rustc-env=BAR=FOO
-cargo:rustc-flags=-Lblah
-cargo:rerun-if-changed=ignored
-cargo:rustc-cfg=feature=awesome
-cargo:version=123
-cargo:version_number=1010107f
-cargo:include_path=/some/absolute/path/include
-cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
-cargo:rustc-link-arg=-weak_framework
-cargo:rustc-link-arg=Metal
-cargo:rustc-env=no_trailing_newline=true",
-        );
+    fn from_read_buffer_to_env_and_flags_test_impl(buff: Cursor<&str>) {
         let reader = BufReader::new(buff);
         let result = BuildScriptOutput::outputs_from_reader(reader);
         assert_eq!(result.len(), 13);
@@ -304,7 +291,75 @@ cargo:rustc-env=no_trailing_newline=true",
     }
 
     #[test]
+    fn test_from_read_buffer_to_env_and_flags() {
+        let buff = Cursor::new(
+            "
+cargo::rustc-link-lib=sdfsdf
+cargo::rustc-env=FOO=BAR
+cargo::rustc-link-search=/some/absolute/path/bleh
+cargo::rustc-env=BAR=FOO
+cargo::rustc-flags=-Lblah
+cargo::rerun-if-changed=ignored
+cargo::rustc-cfg=feature=awesome
+cargo::version=123
+cargo::version_number=1010107f
+cargo::include_path=/some/absolute/path/include
+cargo::rustc-env=SOME_PATH=/some/absolute/path/beep
+cargo::rustc-link-arg=-weak_framework
+cargo::rustc-link-arg=Metal
+cargo::rustc-env=no_trailing_newline=true
+non-cargo-prefixes::are-ignored=true
+non-assignment-instructions-are-ignored",
+        );
+        from_read_buffer_to_env_and_flags_test_impl(buff);
+    }
+
+    /// Demonstrate that the old style single colon flags are all parsable
+    #[test]
+    fn test_legacy_from_read_buffer_to_env_and_flags() {
+        let buff = Cursor::new(
+            "
+cargo:rustc-link-lib=sdfsdf
+cargo:rustc-env=FOO=BAR
+cargo:rustc-link-search=/some/absolute/path/bleh
+cargo:rustc-env=BAR=FOO
+cargo:rustc-flags=-Lblah
+cargo:rerun-if-changed=ignored
+cargo:rustc-cfg=feature=awesome
+cargo:version=123
+cargo:version_number=1010107f
+cargo:include_path=/some/absolute/path/include
+cargo:rustc-env=SOME_PATH=/some/absolute/path/beep
+cargo:rustc-link-arg=-weak_framework
+cargo:rustc-link-arg=Metal
+cargo:rustc-env=no_trailing_newline=true
+non-cargo-prefixes:are-ignored=true
+non-assignment-instructions-are-ignored",
+        );
+        from_read_buffer_to_env_and_flags_test_impl(buff);
+    }
+
+    #[test]
     fn invalid_utf8() {
+        let buff = Cursor::new(
+            b"
+cargo::rustc-env=valid1=1
+cargo::rustc-env=invalid=\xc3\x28
+cargo::rustc-env=valid2=2
+",
+        );
+        let reader = BufReader::new(buff);
+        let result = BuildScriptOutput::outputs_from_reader(reader);
+        assert_eq!(result.len(), 2);
+        assert_eq!(
+            &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
+            "valid1=1\nvalid2=2"
+        );
+    }
+
+    /// Demonstrate that the old style single colon flags are all parsable
+    #[test]
+    fn invalid_utf8_legacy() {
         let buff = Cursor::new(
             b"
 cargo:rustc-env=valid1=1

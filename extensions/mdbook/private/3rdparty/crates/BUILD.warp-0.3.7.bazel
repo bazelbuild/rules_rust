@@ -98,7 +98,7 @@ rust_library(
         "@rmdbi__pin-project-1.1.8//:pin_project",
         "@rmdbi__scoped-tls-1.0.1//:scoped_tls",
         "@rmdbi__serde-1.0.217//:serde",
-        "@rmdbi__serde_json-1.0.137//:serde_json",
+        "@rmdbi__serde_json-1.0.138//:serde_json",
         "@rmdbi__serde_urlencoded-0.7.1//:serde_urlencoded",
         "@rmdbi__tokio-1.43.0//:tokio",
         "@rmdbi__tokio-tungstenite-0.21.0//:tokio_tungstenite",

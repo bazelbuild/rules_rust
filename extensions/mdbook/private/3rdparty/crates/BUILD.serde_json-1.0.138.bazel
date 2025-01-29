@@ -6,12 +6,13 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "clap_builder",
+    name = "serde_json",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,14 +30,8 @@ rust_library(
         ],
     ),
     crate_features = [
-        "cargo",
-        "color",
-        "error-context",
-        "help",
+        "default",
         "std",
-        "suggestions",
-        "usage",
-        "wrap_help",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -45,7 +40,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=clap_builder",
+        "crate-name=serde_json",
         "manual",
         "noclippy",
         "norustfmt",
@@ -89,12 +84,71 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "4.5.26",
+    version = "1.0.138",
     deps = [
-        "@rmdbi__anstream-0.6.18//:anstream",
-        "@rmdbi__anstyle-1.0.10//:anstyle",
-        "@rmdbi__clap_lex-0.7.4//:clap_lex",
-        "@rmdbi__strsim-0.11.1//:strsim",
-        "@rmdbi__terminal_size-0.4.1//:terminal_size",
+        "@rmdbi__itoa-1.0.14//:itoa",
+        "@rmdbi__memchr-2.7.4//:memchr",
+        "@rmdbi__ryu-1.0.19//:ryu",
+        "@rmdbi__serde-1.0.217//:serde",
+        "@rmdbi__serde_json-1.0.138//:build_script_build",
     ],
+)
+
+cargo_build_script(
+    name = "_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    crate_features = [
+        "default",
+        "std",
+    ],
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    edition = "2021",
+    pkg_name = "serde_json",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-bazel",
+        "crate-name=serde_json",
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "1.0.138",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "build_script_build",
+    actual = ":_bs",
+    tags = ["manual"],
 )

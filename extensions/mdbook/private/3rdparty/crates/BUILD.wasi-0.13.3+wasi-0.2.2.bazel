@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "crossbeam_channel",
+    name = "wasi",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,10 +28,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "default",
-        "std",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_flags = [
@@ -39,7 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=crossbeam-channel",
+        "crate-name=wasi",
         "manual",
         "noclippy",
         "norustfmt",
@@ -83,8 +79,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.5.14",
+    version = "0.13.3+wasi-0.2.2",
     deps = [
-        "@rmdbi__crossbeam-utils-0.8.21//:crossbeam_utils",
+        "@rmdbi__wit-bindgen-rt-0.33.0//:wit_bindgen_rt",
     ],
 )

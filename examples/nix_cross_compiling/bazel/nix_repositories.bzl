@@ -1,6 +1,6 @@
 """ Nix Repositories """
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_flake_package")
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_flake_package")
 
 _CONFIG_BUILD_FILE_CONTENT = """
 package(default_visibility = ["//visibility:public"])
@@ -217,3 +217,24 @@ def nix_repositories():
         package = "bazel.rust",
         build_file_content = _RUST_BUILD_FILE_CONTENT,
     )
+
+def _internal_ext_impl(module_ctx):
+    nix_repositories()
+
+    deps = [
+        struct(repo = "nix_config"),
+        struct(repo = "nix_rust"),
+    ]
+
+    # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
+    # dependencies are only relevant for module extensions that can be used
+    # by other MODULES.
+    return module_ctx.extension_metadata(
+        root_module_direct_deps = [repo.repo for repo in deps],
+        root_module_direct_dev_deps = [],
+    )
+
+internal_ext = module_extension(
+    doc = "Development dependencies for the rules_rust nix example.",
+    implementation = _internal_ext_impl,
+)

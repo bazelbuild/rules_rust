@@ -30,7 +30,7 @@ rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
     "rmdbi",
-    "rmdbi__mdbook-0.4.42",
+    "rmdbi__mdbook-0.4.44",
     "rules_rust_mdbook_toolchain",
 )
 
