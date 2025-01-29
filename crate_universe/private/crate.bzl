@@ -100,6 +100,7 @@ def _annotation(
         build_script_use_default_shell_env = None,
         compile_data = None,
         compile_data_glob = None,
+        compile_data_glob_excludes = None,
         crate_features = None,
         data = None,
         data_glob = None,
@@ -145,6 +146,8 @@ def _annotation(
             script action.
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
+            attribute.
+        compile_data_glob_excludes (list, optional): A list of glob patterns to be excluded from a crate's `rust_library::compile_data`
             attribute.
         crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
@@ -203,6 +206,7 @@ def _annotation(
             build_script_use_default_shell_env = build_script_use_default_shell_env,
             compile_data = _stringify_list(compile_data),
             compile_data_glob = compile_data_glob,
+            compile_data_glob_excludes = compile_data_glob_excludes,
             crate_features = crate_features,
             data = _stringify_list(data),
             data_glob = data_glob,

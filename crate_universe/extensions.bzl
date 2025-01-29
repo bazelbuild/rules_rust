@@ -1093,6 +1093,9 @@ _annotation = tag_class(
         "compile_data_glob": attr.string_list(
             doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",
         ),
+        "compile_data_glob_excludes": attr.string_list(
+            doc = "A list of glob patterns to be excllued from a crate's `rust_library::compile_data` attribute.",
+        ),
         "crate": attr.string(
             doc = "The name of the crate the annotation is applied to",
             mandatory = True,
