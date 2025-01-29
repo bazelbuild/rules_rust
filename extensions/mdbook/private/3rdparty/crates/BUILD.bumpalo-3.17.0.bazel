@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "clap_complete",
+    name = "bumpalo",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -38,7 +38,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=clap_complete",
+        "crate-name=bumpalo",
         "manual",
         "noclippy",
         "norustfmt",
@@ -82,8 +82,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "4.5.42",
-    deps = [
-        "@rmdbi__clap-4.5.26//:clap",
-    ],
+    version = "3.17.0",
 )

@@ -99,7 +99,7 @@ rust_library(
         "@rmdbi__h2-0.3.26//:h2",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__http-body-0.4.6//:http_body",
-        "@rmdbi__httparse-1.9.5//:httparse",
+        "@rmdbi__httparse-1.10.0//:httparse",
         "@rmdbi__httpdate-1.0.3//:httpdate",
         "@rmdbi__itoa-1.0.14//:itoa",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",

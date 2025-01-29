@@ -86,6 +86,6 @@ rust_library(
     deps = [
         "@rmdbi__regex-1.11.1//:regex",
         "@rmdbi__serde-1.0.217//:serde",
-        "@rmdbi__serde_json-1.0.137//:serde_json",
+        "@rmdbi__serde_json-1.0.138//:serde_json",
     ],
 )
