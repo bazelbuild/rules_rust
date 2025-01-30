@@ -21,6 +21,6 @@ rust_binary(
     srcs = ["src/main.rs"],
     edition = "2018",
     # Note the `crate_universe` dependencies here need to have been loaded
-    # in the WORKSPACE file. See `//sys:sys_deps.bzl` for rmore details.
-    deps = ["//sys/complex/3rdparty/crates:git2"],
+    # in the `MODULE.bazel` file.
+    deps = ["//complex/3rdparty/crates:git2"],
 )

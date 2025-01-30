@@ -36,7 +36,7 @@ rust_test(
     # that target to execute this test.
     tags = ["manual"],
     deps = [
-        "@rules_rust//test/3rdparty/crates:serde",
-        "@rules_rust//test/3rdparty/crates:serde_json",
+        "//test/rust_analyzer/3rdparty/crates:serde",
+        "//test/rust_analyzer/3rdparty/crates:serde_json",
     ],
 )

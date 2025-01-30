@@ -2,21 +2,20 @@
 
 module(
     name = "rules_rust_prost",
-    version = "0.55.0",
+    version = "0.57.1",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.0",
+    version = "0.57.1",
 )
-local_path_override(
-    module_name = "rules_rust",
-    path = "../..",
-)
-
 bazel_dep(
     name = "platforms",
     version = "0.0.10",
+)
+bazel_dep(
+    name = "bazel_features",
+    version = "1.21.0",
 )
 bazel_dep(
     name = "bazel_skylib",

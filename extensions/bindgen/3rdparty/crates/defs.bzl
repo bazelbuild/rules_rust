@@ -295,11 +295,11 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "bindgen": Label("@rules_rust_bindgen_deps__bindgen-0.70.1//:bindgen"),
-            "clang-sys": Label("@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys"),
-            "clap": Label("@rules_rust_bindgen_deps__clap-4.5.17//:clap"),
-            "clap_complete": Label("@rules_rust_bindgen_deps__clap_complete-4.5.26//:clap_complete"),
-            "env_logger": Label("@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger"),
+            "bindgen": Label("@rules_rust_bindgen_deps//:bindgen-0.70.1"),
+            "clang-sys": Label("@rules_rust_bindgen_deps//:clang-sys-1.8.1"),
+            "clap": Label("@rules_rust_bindgen_deps//:clap-4.5.17"),
+            "clap_complete": Label("@rules_rust_bindgen_deps//:clap_complete-4.5.26"),
+            "env_logger": Label("@rules_rust_bindgen_deps//:env_logger-0.10.2"),
         },
     },
 }
@@ -372,6 +372,7 @@ _CONDITIONS = {
     "aarch64-unknown-linux-gnu": ["@rules_rust//rust/platform:aarch64-unknown-linux-gnu"],
     "aarch64-unknown-nixos-gnu": ["@rules_rust//rust/platform:aarch64-unknown-nixos-gnu"],
     "aarch64-unknown-nto-qnx710": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
+    "aarch64-unknown-uefi": ["@rules_rust//rust/platform:aarch64-unknown-uefi"],
     "arm-unknown-linux-gnueabi": ["@rules_rust//rust/platform:arm-unknown-linux-gnueabi"],
     "armv7-linux-androideabi": ["@rules_rust//rust/platform:armv7-linux-androideabi"],
     "armv7-unknown-linux-gnueabi": ["@rules_rust//rust/platform:armv7-unknown-linux-gnueabi"],
@@ -411,6 +412,7 @@ _CONDITIONS = {
     "x86_64-unknown-linux-gnu": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu"],
     "x86_64-unknown-nixos-gnu": ["@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "x86_64-unknown-none": ["@rules_rust//rust/platform:x86_64-unknown-none"],
+    "x86_64-unknown-uefi": ["@rules_rust//rust/platform:x86_64-unknown-uefi"],
 }
 
 ###############################################################################

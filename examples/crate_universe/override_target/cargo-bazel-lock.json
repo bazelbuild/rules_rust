@@ -1,5 +1,5 @@
 {
-  "checksum": "f55213fe60cef9fc6d0d5a28f7f1b87a78392fdf7031acf8c4a87e7a727b49e3",
+  "checksum": "641c5ce7c9e0d73f3d0d050127fdc56cdb7078b2393d705177bd47262df17c08",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -79,7 +79,7 @@
       ],
       "license_file": null,
       "override_targets": {
-        "lib": "@//override_target:foo"
+        "lib": "@@//override_target:foo"
       }
     }
   },
@@ -114,6 +114,9 @@
     ],
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
+    ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
     ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -189,6 +192,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [

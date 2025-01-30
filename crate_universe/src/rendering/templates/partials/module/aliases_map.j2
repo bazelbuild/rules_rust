@@ -30,7 +30,7 @@
             {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
             {%- set crate = context.crates | get(key=dep.id) %}
             {%- if dep | get(key="alias", default=Null) %}
-            "{{ crate_label(name = crate.name, version = crate.version, target = crate.name) }}": "{{ dep.alias }}",
+            Label("{{ crate_alias(name = crate.name, version = crate.version, target = crate.name) }}"): "{{ dep.alias }}",
             {%- endif %}
             {%- endfor %}
         },
@@ -42,7 +42,7 @@
             {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
             {%- if dep | get(key="alias", default=Null) %}
             {%- set crate = context.crates | get(key=dep.id) %}
-            "{{ crate_label(name = crate.name, version = crate.version, target = crate.name) }}": "{{ dep.alias }}",
+            Label("{{ crate_alias(name = crate.name, version = crate.version, target = crate.name) }}"): "{{ dep.alias }}",
             {%- endif %}
             {%- endfor %}
         },

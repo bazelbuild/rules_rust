@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,13 +21,17 @@ rust_binary(
     srcs = ["src/main.rs"],
     edition = "2018",
     # Note the `crate_unvierse` dependencies here need to have been loaded
-    # in the WORKSPACE file. See `//sys:sys_deps.bzl` for rmore details.
-    deps = ["//sys/basic/3rdparty/crates:bzip2"],
+    # in the `MODULE.bazel` file.
+    deps = ["//basic/3rdparty/crates:bzip2"],
 )
 
-sh_test(
-    name = "test",
-    srcs = ["test.sh"],
-    args = ["$(location :hello_sys)"],
+rust_test(
+    name = "basic_test",
+    srcs = ["basic_test.rs"],
     data = [":hello_sys"],
+    edition = "2021",
+    rustc_env = {"HELLO_SYS_RLOCATIONPATH": "$(rlocationpath :hello_sys)"},
+    deps = [
+        "@rules_rust//tools/runfiles",
+    ],
 )

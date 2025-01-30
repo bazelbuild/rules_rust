@@ -3,7 +3,6 @@
 # Bazel
 /bazel-*
 user.bazelrc
-MODULE.bazel.lock
 
 # rust-analyzer
 rust-project.json

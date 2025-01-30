@@ -9,6 +9,7 @@ const main = async function (typ, dir) {
         "..",
         dir,
         "test",
+        "hello_world_" + typ + "_wasm_bindgen",
         "hello_world_" + typ + "_wasm_bindgen_bg.wasm",
     );
     const buf = fs.readFileSync(wasm_file);

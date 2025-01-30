@@ -6,3 +6,6 @@ publish = false
 
 [lib]
 path = "fake.rs"
+
+[lints.rust]
+dead_code = "allow"

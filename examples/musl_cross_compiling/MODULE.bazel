@@ -1,6 +1,141 @@
-###############################################################################
-# Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
-#
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
-###############################################################################
+module(
+    name = "musl_cross_compiling_example",
+    version = "0.0.0",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+
+RUST_EDITION = "2021"
+
+RUST_VERSION = "1.80.0"
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = RUST_EDITION,
+    versions = [RUST_VERSION],
+)
+
+# This overrides a default rust_repository_set created by rust_register_toolchain.
+# It must be named exactly this.
+# Each exec triple needs one of these calls per target triple it supports.
+# The first call needs all of the attrs, the subsequent calls should only set name, target_triple, and target_compatible_with.
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    edition = RUST_EDITION,
+    exec_triple = "x86_64-unknown-linux-gnu",
+    target_compatible_with = [
+        "@//linker_config:unknown",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+    versions = [RUST_VERSION],
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "aarch64-unknown-linux-musl",
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-musl",
+)
+
+# We don't need to register a repository_set for exec_triple == target_triple if we're not customising it in any way:
+# one will get registered by default.
+# But we do for the Linux case above, because we want to add the "@//linker_config:unknown" constraint in that case.
+rust.repository_set(
+    name = "rust_darwin_x86_64",
+    edition = RUST_EDITION,
+    exec_triple = "x86_64-apple-darwin",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-musl",
+    versions = [RUST_VERSION],
+)
+rust.repository_set(
+    name = "rust_darwin_x86_64",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "aarch64-unknown-linux-musl",
+)
+rust.repository_set(
+    name = "rust_darwin_aarch64",
+    edition = RUST_EDITION,
+    exec_triple = "aarch64-apple-darwin",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-musl",
+    versions = [RUST_VERSION],
+)
+rust.repository_set(
+    name = "rust_darwin_aarch64",
+    target_compatible_with = [
+        "@//linker_config:musl",
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "aarch64-unknown-linux-musl",
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "cu",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//:local_proc_macro/Cargo.toml",
+    ],
+)
+use_repo(crate, "cu")
+
+bazel_dep(name = "toolchains_musl", version = "0.1.20", dev_dependency = True)
+
+toolchains_musl = use_extension("@toolchains_musl//:toolchains_musl.bzl", "toolchains_musl", dev_dependency = True)
+toolchains_musl.config(
+    extra_target_compatible_with = ["@//linker_config:musl"],
+)

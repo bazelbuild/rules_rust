@@ -346,9 +346,19 @@ def _cargo_build_script_impl(ctx):
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    # Start with the default shell env, which contains any --action_env
-    # settings passed in on the command line.
-    env = dict(ctx.configuration.default_shell_env)
+    env = dict({})
+
+    if ctx.attr.use_default_shell_env == -1:
+        use_default_shell_env = ctx.attr._default_use_default_shell_env[BuildSettingInfo].value
+    elif ctx.attr.use_default_shell_env == 0:
+        use_default_shell_env = False
+    else:
+        use_default_shell_env = True
+
+    # If enabled, start with the default shell env, which contains any --action_env
+    # settings passed in on the command line and defaults like $PATH.
+    if use_default_shell_env:
+        env.update(ctx.configuration.default_shell_env)
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -534,9 +544,7 @@ def _cargo_build_script_impl(ctx):
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
-        # Set use_default_shell_env so that $PATH is set, as tools like Cmake
-        # may want to probe $PATH for helper tools.
-        use_default_shell_env = True,
+        use_default_shell_env = use_default_shell_env,
     )
 
     return [
@@ -625,23 +633,32 @@ cargo_build_script = rule(
             allow_files = True,
             cfg = "exec",
         ),
+        "use_default_shell_env": attr.int(
+            doc = dedent("""\
+                Whether or not to include the default shell environment for the build
+                script action. By default Bazel's `default_shell_env` is set for build
+                script actions so crates like `cmake` can probe $PATH to find tools.
+            """),
+            default = -1,
+            values = [-1, 0, 1],
+        ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
         ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
-            default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
+            default = Label("//cargo/cargo_build_script_runner:runner"),
             cfg = "exec",
         ),
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
             default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_debug_std_streams_output_group": attr.label(
             default = Label("//cargo/settings:debug_std_streams_output_group"),
+        ),
+        "_default_use_default_shell_env": attr.label(
+            default = Label("//cargo/settings:use_default_shell_env"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),

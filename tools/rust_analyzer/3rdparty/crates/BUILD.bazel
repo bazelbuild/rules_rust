@@ -32,8 +32,20 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "anyhow-1.0.71",
+    actual = "@rrra__anyhow-1.0.71//:anyhow",
+    tags = ["manual"],
+)
+
+alias(
     name = "anyhow",
     actual = "@rrra__anyhow-1.0.71//:anyhow",
+    tags = ["manual"],
+)
+
+alias(
+    name = "clap-4.3.11",
+    actual = "@rrra__clap-4.3.11//:clap",
     tags = ["manual"],
 )
 
@@ -44,8 +56,20 @@ alias(
 )
 
 alias(
+    name = "env_logger-0.10.0",
+    actual = "@rrra__env_logger-0.10.0//:env_logger",
+    tags = ["manual"],
+)
+
+alias(
     name = "env_logger",
     actual = "@rrra__env_logger-0.10.0//:env_logger",
+    tags = ["manual"],
+)
+
+alias(
+    name = "itertools-0.11.0",
+    actual = "@rrra__itertools-0.11.0//:itertools",
     tags = ["manual"],
 )
 
@@ -56,14 +80,32 @@ alias(
 )
 
 alias(
+    name = "log-0.4.19",
+    actual = "@rrra__log-0.4.19//:log",
+    tags = ["manual"],
+)
+
+alias(
     name = "log",
     actual = "@rrra__log-0.4.19//:log",
     tags = ["manual"],
 )
 
 alias(
+    name = "serde-1.0.171",
+    actual = "@rrra__serde-1.0.171//:serde",
+    tags = ["manual"],
+)
+
+alias(
     name = "serde",
     actual = "@rrra__serde-1.0.171//:serde",
+    tags = ["manual"],
+)
+
+alias(
+    name = "serde_json-1.0.102",
+    actual = "@rrra__serde_json-1.0.102//:serde_json",
     tags = ["manual"],
 )
 

@@ -1,4 +1,6 @@
 load("@rules_rust//rust:defs.bzl", "rust_static_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":ios_utils.bzl", "platform_transition_filegroup")
 
 exports_files([
     "Cargo.toml",
@@ -14,17 +16,32 @@ rust_static_library(
     ],
 )
 
-filegroup(
-    name = "lib",
-    srcs = ["ios_build_lib"],
-)
+[
+    platform_transition_filegroup(
+        name = "ios_build_lib.{}".format(plat),
+        srcs = [":ios_build_lib"],
+        platform = plat,
+    )
+    for plat in [
+        "macos_x86_64",
+        "macos_arm64",
+        "ios_x86_64",
+        "ios_arm64",
+    ]
+]
 
-sh_test(
-    name = "check_arch",
-    srcs = ["check_arch.sh"],
-    args = ["$(location :lib)"],
-    data = [":lib"],
-)
+[
+    sh_test(
+        name = "check_arch.{}".format(plat),
+        srcs = ["check_arch.sh"],
+        args = ["$(rootpath :ios_build_lib.{})".format(plat)],
+        data = [":ios_build_lib.{}".format(plat)],
+    )
+    for plat in [
+        "ios_x86_64",
+        "ios_arm64",
+    ]
+]
 
 platform(
     name = "macos_x86_64",

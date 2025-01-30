@@ -1,5 +1,6 @@
 //! The cli entrypoint for the `generate` subcommand
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -119,9 +120,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             // Write the outputs to disk
             write_outputs(normalized_outputs, opt.dry_run)?;
 
+            let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
+
             write_paths_to_track(
                 &opt.paths_to_track,
                 &opt.warnings_output_path,
+                splicing_manifest.manifests.keys().cloned(),
                 context
                     .crates
                     .values()
@@ -164,9 +168,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
+    let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
+
     write_paths_to_track(
         &opt.paths_to_track,
         &opt.warnings_output_path,
+        splicing_manifest.manifests.keys().cloned(),
         annotations.lockfile.crates.values(),
         cargo_lockfile.patch.unused.iter(),
     )?;
@@ -189,8 +196,6 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
 
     // Ensure Bazel lockfiles are written to disk so future generations can be short-circuited.
     if let Some(lockfile) = opt.lockfile {
-        let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
-
         let lock_content =
             lock_context(context, &config, &splicing_manifest, &cargo_bin, rustc_bin)?;
 
@@ -220,14 +225,16 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
 fn write_paths_to_track<
     'a,
     SourceAnnotations: Iterator<Item = &'a SourceAnnotation>,
+    Paths: Iterator<Item = Utf8PathBuf>,
     UnusedPatches: Iterator<Item = &'a cargo_lock::Dependency>,
 >(
     output_file: &Path,
     warnings_output_path: &Path,
+    manifests: Paths,
     source_annotations: SourceAnnotations,
     unused_patches: UnusedPatches,
 ) -> Result<()> {
-    let paths_to_track: std::collections::BTreeSet<_> = source_annotations
+    let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
             if let SourceAnnotation::Path { path } = v {
                 Some(path.join("Cargo.toml"))
@@ -236,6 +243,11 @@ fn write_paths_to_track<
             }
         })
         .collect();
+    let paths_to_track: BTreeSet<_> = source_annotation_manifests
+        .iter()
+        .cloned()
+        .chain(manifests)
+        .collect();
     std::fs::write(
         output_file,
         serde_json::to_string(&paths_to_track).context("Failed to serialize paths to track")?,
@@ -243,8 +255,8 @@ fn write_paths_to_track<
     .context("Failed to write paths to track")?;
 
     let mut warnings = Vec::new();
-    for path_to_track in &paths_to_track {
-        warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {path_to_track} is being used."));
+    for source_annotation_manifest in &source_annotation_manifests {
+        warnings.push(format!("Build is not hermetic - path dependency pulling in crate at {source_annotation_manifest} is being used."));
     }
     for unused_patch in unused_patches {
         warnings.push(format!("You have a [patch] Cargo.toml entry that is being ignored by cargo. Unused patch: {} {}{}", unused_patch.name, unused_patch.version, if let Some(source) = unused_patch.source.as_ref() { format!(" ({})", source) } else { String::new() }));

@@ -311,9 +311,6 @@ rust_proto_library = rule(
                 file of arguments to rustc: `@$(location //package:target)`.
             """,
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_optional_output_wrapper": attr.label(
             executable = True,
             cfg = "exec",

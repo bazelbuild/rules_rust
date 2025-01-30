@@ -8,8 +8,9 @@ load(
     "rust_static_library",
     "rust_test",
 )
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
-package(default_visibility = ["//test:__subpackages__"])
+package(default_visibility = ["//test/unit/clippy:__pkg__"])
 
 # Declaration of passing targets.
 
@@ -166,6 +167,6 @@ rust_clippy(
 )
 
 sh_binary(
-    name = "clippy_failure_test",
-    srcs = ["clippy_failure_test.sh"],
+    name = "clippy_failure_tester",
+    srcs = ["clippy_failure_tester.sh"],
 )

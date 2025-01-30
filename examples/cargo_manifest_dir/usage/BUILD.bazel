@@ -1,8 +1,0 @@
-load("@rules_rust//rust:defs.bzl", "rust_test")
-
-rust_test(
-    name = "cargo_manifest_dir_usage",
-    srcs = ["src/lib.rs"],
-    edition = "2018",
-    deps = ["@rules_rust_example_cargo_manifest_dir//:external_crate"],
-)

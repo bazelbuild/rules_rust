@@ -20,7 +20,7 @@ Note that rules_rust bzlmod support is still a work in progress. Most features s
 To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.48.0")
+bazel_dep(name = "rules_rust", version = "0.57.1")
 ```
 
 Don't forget to substitute in your desired release's version number.
@@ -85,9 +85,13 @@ Failure to do so will result in rules attempting to match a `stable` toolchain w
 
 ## Supported bazel versions
 
-The oldest version of Bazel the `main` branch is tested against is `7.3.1`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
+The oldest version of Bazel the `main` branch is tested against is `7.4.1`. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.
 
 We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.
+
+### WORKSPACE support
+
+WORKSPACE support is officially tested with Bazel 7 for as long as that is the min supported version. While it may work with later versions, compatibility with those versions is not guaranteed or actively verified.
 
 ## Supported platforms
 

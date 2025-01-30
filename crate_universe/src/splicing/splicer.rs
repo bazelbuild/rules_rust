@@ -46,13 +46,8 @@ impl<'a> SplicerKind<'a> {
     pub(crate) fn new(
         manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
-        nonhermetic_root_bazel_workspace_dir: &Path,
     ) -> Result<Self> {
-        let workspaces = discover_workspaces(
-            manifests.keys().cloned().collect(),
-            manifests,
-            nonhermetic_root_bazel_workspace_dir,
-        )?;
+        let workspaces = discover_workspaces(manifests.keys().cloned().collect(), manifests)?;
         let workspace_roots = workspaces.workspaces();
         if workspace_roots.len() > 1 {
             bail!("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces: {}", workspace_roots.iter().map(|wr| wr.to_string()).collect::<Vec<_>>().join(", "));
@@ -500,16 +495,8 @@ impl Splicer {
     }
 
     /// Build a new workspace root
-    pub(crate) fn splice_workspace(
-        &self,
-        nonhermetic_root_bazel_workspace_dir: &Path,
-    ) -> Result<SplicedManifest> {
-        SplicerKind::new(
-            &self.manifests,
-            &self.splicing_manifest,
-            nonhermetic_root_bazel_workspace_dir,
-        )?
-        .splice(&self.workspace_dir)
+    pub(crate) fn splice_workspace(&self) -> Result<SplicedManifest> {
+        SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
     }
 }
 const DEFAULT_SPLICING_PACKAGE_NAME: &str = "direct-cargo-bazel-deps";
@@ -980,7 +967,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Locate cargo
@@ -1023,7 +1010,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Locate cargo
@@ -1074,7 +1061,7 @@ mod test {
             splicing_manifest,
         )
         .unwrap()
-        .splice_workspace(Path::new("/doesnotexist"));
+        .splice_workspace();
 
         assert!(workspace_manifest.is_err());
 
@@ -1104,7 +1091,7 @@ mod test {
             splicing_manifest,
         )
         .unwrap()
-        .splice_workspace(Path::new("/doesnotexist"));
+        .splice_workspace();
 
         assert!(workspace_manifest.is_err());
 
@@ -1172,7 +1159,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"));
+                .splice_workspace();
 
         assert!(workspace_manifest.is_err());
 
@@ -1209,7 +1196,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1234,7 +1221,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Locate cargo
@@ -1271,7 +1258,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Check the default resolver version
@@ -1321,7 +1308,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Check the specified resolver version
@@ -1381,7 +1368,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Check the default resolver version
@@ -1423,7 +1410,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1486,7 +1473,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1537,7 +1524,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace(Path::new("/doesnotexist"))
+                .splice_workspace()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1579,7 +1566,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         let result = Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace(Path::new("/doesnotexist"));
+            .splice_workspace();
 
         // Confirm conflicting patches have been detected
         assert!(result.is_err());
@@ -1601,7 +1588,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace(Path::new("/doesnotexist"))
+            .splice_workspace()
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1634,7 +1621,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace(Path::new("/doesnotexist"))
+            .splice_workspace()
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1661,7 +1648,7 @@ mod test {
         let workspace_root = tempdir_utf8pathbuf(&temp_dir).join("workspace_root");
         let splicing_result = Splicer::new(workspace_root.clone(), splicing_manifest)
             .unwrap()
-            .splice_workspace(Path::new("/doesnotexist"));
+            .splice_workspace();
 
         // Ensure cargo config files in parent directories lead to errors
         assert!(splicing_result.is_err());

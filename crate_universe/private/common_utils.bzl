@@ -28,7 +28,7 @@ STDERR ------------------------------------------------------------------------
 {stderr}
 """
 
-def execute(repository_ctx, args, env = {}, allow_fail = False):
+def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
     """A heler macro for executing some arguments and displaying nicely formatted errors
 
     Args:
@@ -36,12 +36,12 @@ def execute(repository_ctx, args, env = {}, allow_fail = False):
         args (list): A list of strings which act as `argv` for execution.
         env (dict, optional): Environment variables to set in the execution environment.
         allow_fail (bool, optional): Allow the process to fail.
+        quiet (bool): Whether or not to print output from the executable.
 
     Returns:
         struct: The results of `repository_ctx.execute`
     """
 
-    quiet = repository_ctx.attr.quiet
     if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
         quiet = False
 
@@ -60,6 +60,50 @@ def execute(repository_ctx, args, env = {}, allow_fail = False):
         ))
 
     return result
+
+def new_cargo_bazel_fn(
+        repository_ctx,
+        cargo_bazel_path,
+        cargo_path,
+        rustc_path,
+        isolated = True,
+        quiet = False):
+    """A helper function to allow executing cargo_bazel in repository rules module extensions.
+
+    Args:
+        repository_ctx (repository_ctx): The repository rule or module extension's context.
+        cargo_bazel_path (path): Path The path to a `cargo-bazel` binary
+        cargo_path (path): Path to a Cargo binary.
+        rustc_path (path): Path to a rustc binary.
+        isolated (bool): Enable isolation upon request.
+        quiet (bool): Whether or not to print output from the executable.
+    Returns:
+        A function that can be called to execute cargo_bazel.
+    """
+
+    # Placing this as a nested function allows users to call this right at the
+    # start of a module extension, thus triggering any restarts as early as
+    # possible (since module_ctx.path triggers restarts).
+    def _execute(args, env = {}, allow_fail = False):
+        return execute(
+            repository_ctx,
+            args = [
+                cargo_bazel_path,
+            ] + args + [
+                "--cargo",
+                cargo_path,
+                "--rustc",
+                rustc_path,
+            ],
+            env = {
+                "CARGO": str(cargo_path),
+                "RUSTC": str(rustc_path),
+            } | cargo_environ(repository_ctx, isolated = isolated) | env,
+            allow_fail = allow_fail,
+            quiet = quiet,
+        )
+
+    return _execute
 
 def get_rust_tools(repository_ctx, host_triple):
     """Retrieve a cargo and rustc binary based on the host triple.
@@ -108,11 +152,12 @@ def _cargo_home_path(repository_ctx):
     """
     return repository_ctx.path(".cargo_home")
 
-def cargo_environ(repository_ctx):
+def cargo_environ(repository_ctx, isolated = True):
     """Define Cargo environment varables for use with `cargo-bazel`
 
     Args:
         repository_ctx (repository_ctx): The rules context object
+        isolated (bool): Enable isolation upon request.
 
     Returns:
         dict: A set of environment variables for `cargo-bazel` executions
@@ -124,7 +169,7 @@ def cargo_environ(repository_ctx):
             env.update({
                 "CARGO_HOME": str(_cargo_home_path(repository_ctx)),
             })
-    elif repository_ctx.attr.isolated:
+    elif isolated:
         env.update({
             "CARGO_HOME": str(_cargo_home_path(repository_ctx)),
         })

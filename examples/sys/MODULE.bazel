@@ -1,0 +1,56 @@
+module(
+    name = "rules_rust_example_sys",
+    version = "0.0.0",
+)
+
+###############################################################################
+# B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
+###############################################################################
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+
+deps = use_extension("//:extensions.bzl", "rust_example")
+use_repo(
+    deps,
+    "basic_sys",
+    "basic_sys__bzip2-0.3.3",
+    "complex_sys",
+    "complex_sys__git2-0.14.4",
+    "libgit2",
+    "zlib",
+)
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+# Rust toolchain
+RUST_EDITION = "2021"
+
+RUST_VERSION = "1.79.0"
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = RUST_EDITION,
+    versions = [RUST_VERSION],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

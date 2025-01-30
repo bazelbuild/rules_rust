@@ -1,0 +1,70 @@
+module(
+    name = "rules_rust_examples_ios_build",
+    version = "0.0.0",
+)
+
+###############################################################################
+# B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
+###############################################################################
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.46.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(
+    name = "rules_apple",
+    version = "3.16.1",
+    repo_name = "build_bazel_rules_apple",
+)
+bazel_dep(
+    name = "apple_support",
+    version = "1.17.1",
+    repo_name = "build_bazel_apple_support",
+)
+bazel_dep(
+    name = "rules_swift",
+    version = "2.3.1",
+    repo_name = "build_bazel_rules_swift",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.11",
+)
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+# Rust toolchain
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    extra_target_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-apple-ios-sim",
+        "aarch64-apple-ios",
+        "x86_64-apple-darwin",
+        "x86_64-apple-ios",
+    ],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+
+deps = use_extension("//:extensions.bzl", "rust_example")
+use_repo(
+    deps,
+    "ios_build",
+    "ios_build__zstd-0.13.2",
+)

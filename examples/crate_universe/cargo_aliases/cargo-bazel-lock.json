@@ -1,5 +1,5 @@
 {
-  "checksum": "60f5cb68ff1528bc4366735b1b48b6550a70ccd0604bc7cae1479475d4538ed2",
+  "checksum": "8dede12ed1126ae79d1b513849200be41ce0d39f1264b976abba9511e114cde4",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3094,6 +3094,9 @@
     "aarch64-unknown-nto-qnx710": [
       "aarch64-unknown-nto-qnx710"
     ],
+    "aarch64-unknown-uefi": [
+      "aarch64-unknown-uefi"
+    ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
     ],
@@ -3206,6 +3209,9 @@
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
+    ],
+    "x86_64-unknown-uefi": [
+      "x86_64-unknown-uefi"
     ]
   },
   "direct_deps": [

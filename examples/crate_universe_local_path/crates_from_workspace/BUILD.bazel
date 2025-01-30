@@ -1,15 +1,8 @@
-load("@bzlmod_crates_from_cargo_workspace//:defs.bzl", bzlmod_all_crate_deps = "all_crate_deps")
+load("@crates_from_cargo_workspace//:defs.bzl", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("@workspace_crates_from_cargo_workspace//:defs.bzl", workspace_all_crate_deps = "all_crate_deps")
 
 rust_test(
-    name = "bzlmod_test",
+    name = "test",
     srcs = ["test.rs"],
-    deps = bzlmod_all_crate_deps(),
-)
-
-rust_test(
-    name = "workspace_test",
-    srcs = ["test.rs"],
-    deps = workspace_all_crate_deps(),
+    deps = all_crate_deps(),
 )

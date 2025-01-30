@@ -157,14 +157,13 @@ TestCrateInfo = provider(
 RustAnalyzerInfo = provider(
     doc = "RustAnalyzerInfo holds rust crate metadata for targets",
     fields = {
-        "aliases": "Dict[String, String]: Maps crate IDs to Replacement names these targets should be known as in Rust code",
+        "aliases": "Dict[RustAnalyzerInfo, String]: Replacement names these targets should be known as in Rust code",
         "build_info": "BuildInfo: build info for this crate if present",
         "cfgs": "List[String]: features or other compilation `--cfg` settings",
         "crate": "CrateInfo: Crate information.",
         "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
-        "deps": "List[String]: IDs of direct dependency crates",
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict[String: String]: Environment variables, used for the `env!` macro",
-        "id": "String: Arbitrary unique ID for this crate",
         "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
     },
 )
@@ -172,7 +171,18 @@ RustAnalyzerInfo = provider(
 RustAnalyzerGroupInfo = provider(
     doc = "RustAnalyzerGroupInfo holds multiple RustAnalyzerInfos",
     fields = {
-        "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
-        "deps": "List[String]: crate IDs of direct dependencies",
+        "deps": "List[RustAnalyzerInfo]: direct dependencies",
+    },
+)
+
+LintsInfo = provider(
+    doc = "LintsInfo holds the 'allow', 'warn', etc. config for rustc, clippy, and rustdoc lints.",
+    fields = {
+        "clippy_lint_files": "List[File]: files with rustc args for clippy targets.",
+        "clippy_lint_flags": "List[String]: rustc flags to specify when building clippy targets.",
+        "rustc_lint_files": "List[File]: list of files with rustc flags to specify when building rust_* targets.",
+        "rustc_lint_flags": "List[String]: rustc flags to specify when building rust_* targets.",
+        "rustdoc_lint_files": "List[File]: files with rustc args for rustdoc target.",
+        "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
     },
 )

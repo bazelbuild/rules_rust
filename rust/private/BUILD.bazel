@@ -3,6 +3,9 @@ load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
 load("//rust/private:rustc.bzl", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
 load("//rust/private:stamp.bzl", "stamp_build_setting")
 
+# Exported for docs
+exports_files(["providers.bzl"])
+
 bzl_library(
     name = "bazel_tools_bzl_lib",
     srcs = ["@bazel_tools//tools:bzl_srcs"],

@@ -2,18 +2,17 @@
 
 module(
     name = "rules_rust_wasm_bindgen",
-    version = "0.55.0",
+    version = "0.57.1",
 )
 
 bazel_dep(
     name = "rules_rust",
-    version = "0.55.0",
+    version = "0.57.1",
 )
-local_path_override(
-    module_name = "rules_rust",
-    path = "../..",
+bazel_dep(
+    name = "bazel_features",
+    version = "1.21.0",
 )
-
 bazel_dep(
     name = "bazel_skylib",
     version = "1.7.1",
@@ -34,6 +33,7 @@ bazel_dep(
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
+    "rrwbd",
     "rrwbd__anyhow-1.0.71",
     "rrwbd__assert_cmd-1.0.8",
     "rrwbd__diff-0.1.13",
