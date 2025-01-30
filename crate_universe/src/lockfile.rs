@@ -163,6 +163,8 @@ impl Digest {
             OsStr::new("HOME"),
             OsStr::new("HOMEDRIVE"),
             OsStr::new("PATHEXT"),
+            OsStr::new("NIX_LD"),
+            OsStr::new("NIX_LD_LIBRARY_PATH"),
         ];
         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
 
