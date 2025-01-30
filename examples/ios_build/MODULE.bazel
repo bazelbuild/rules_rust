@@ -36,6 +36,10 @@ bazel_dep(
     name = "bazel_skylib",
     version = "1.7.1",
 )
+bazel_dep(
+    name = "platforms",
+    version = "0.0.11",
+)
 
 ###############################################################################
 # T O O L C H A I N S
