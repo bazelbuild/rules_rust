@@ -1,11 +1,13 @@
 //! Command line interface entry points and utilities
 
+mod bzlmod;
 mod generate;
 mod query;
 mod render;
 mod splice;
 mod vendor;
 
+use bzlmod::BzlmodOptions;
 use clap::Parser;
 use tracing::{Level, Subscriber};
 use tracing_subscriber::fmt::format::{Format, Full};
@@ -21,6 +23,7 @@ pub use self::splice::SpliceOptions;
 pub use self::vendor::VendorOptions;
 
 // Entrypoints
+pub use bzlmod::bzlmod;
 pub use generate::generate;
 pub use query::query;
 pub use render::render;
@@ -48,6 +51,9 @@ pub enum Options {
 
     /// Render a BUILD file for a single crate.
     Render(RenderOptions),
+
+    /// Optimize generating crate repositories by parallelizing the efforts of crate_universe in a single call.
+    Bzlmod(BzlmodOptions),
 }
 
 // Convenience wrappers to avoid dependencies in the binary
@@ -57,7 +63,8 @@ pub fn parse_args() -> Options {
     Options::parse()
 }
 
-const EXPECTED_LOGGER_NAMES: [&str; 5] = ["Generate", "Splice", "Query", "Vendor", "Render"];
+const EXPECTED_LOGGER_NAMES: [&str; 6] =
+    ["Generate", "Splice", "Query", "Vendor", "Render", "Bzlmod"];
 
 /// A wrapper for the tracing-subscriber default [FormatEvent]
 /// that prepends the name of the active CLI option.

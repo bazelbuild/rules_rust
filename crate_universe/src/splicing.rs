@@ -53,8 +53,8 @@ impl FromStr for SplicingManifest {
 
 impl SplicingManifest {
     pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
-        let content = fs::read_to_string(path.as_ref())?;
-        Self::from_str(&content).context("Failed to load SplicingManifest")
+        let content = fs::read_to_string(path.as_ref()).with_context(|| anyhow!("Failed to read SplicingManifest: {}", path.as_ref().display()))?;
+        Self::from_str(&content).with_context(|| anyhow!("Failed to load SplicingManifest: {}", path.as_ref().display()))
     }
 
     pub(crate) fn resolve(self, workspace_dir: &Path, output_base: &Path) -> Self {
@@ -228,7 +228,7 @@ impl WorkspaceMetadata {
             })
             .collect();
 
-        // It is invald for toml maps to use empty strings as keys. In the case
+        // It is invalid for toml maps to use empty strings as keys. In the case
         // the empty key is expected to be the root package. If the root package
         // has a prefix, then all other packages will as well (even if no other
         // manifest represents them). The value is then saved as a separate value

@@ -11,11 +11,12 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context};
 use camino::Utf8Path;
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::Metadata as CargoMetadata;
-use tracing::debug;
+use serde::{Deserialize, Deserializer};
+use tracing::{debug, error};
 
 pub(crate) use self::cargo_bin::*;
 pub(crate) use self::cargo_tree_resolver::*;
@@ -26,7 +27,10 @@ pub(crate) use self::workspace_discoverer::*;
 // TODO: This should also return a set of [crate-index::IndexConfig]s for packages in metadata.packages
 /// A Trait for generating metadata (`cargo metadata` output and a lock file) from a Cargo manifest.
 pub(crate) trait MetadataGenerator {
-    fn generate<T: AsRef<Path>>(&self, manifest_path: T) -> Result<(CargoMetadata, CargoLockfile)>;
+    fn generate<T: AsRef<Path>>(
+        &self,
+        manifest_path: T,
+    ) -> anyhow::Result<(CargoMetadata, CargoLockfile)>;
 }
 
 /// Generates Cargo metadata and a lockfile from a provided manifest.
@@ -62,7 +66,10 @@ impl Generator {
 }
 
 impl MetadataGenerator for Generator {
-    fn generate<T: AsRef<Path>>(&self, manifest_path: T) -> Result<(CargoMetadata, CargoLockfile)> {
+    fn generate<T: AsRef<Path>>(
+        &self,
+        manifest_path: T,
+    ) -> anyhow::Result<(CargoMetadata, CargoLockfile)> {
         let manifest_dir = manifest_path
             .as_ref()
             .parent()
@@ -106,7 +113,7 @@ pub enum CargoUpdateRequest {
 impl FromStr for CargoUpdateRequest {
     type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> anyhow::Result<Self, Self::Err> {
         let lower = s.to_lowercase();
 
         if ["eager", "full", "all"].contains(&lower.as_str()) {
@@ -122,6 +129,26 @@ impl FromStr for CargoUpdateRequest {
             name: split.next().map(|s| s.to_owned()).unwrap(),
             version: split.next().map(|s| s.to_owned()),
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for CargoUpdateRequest {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = match serde_json::Value::deserialize(deserializer)? {
+            serde_json::Value::String(s) => s,
+            serde_json::Value::Number(n) => n.to_string(),
+            serde_json::Value::Bool(b) => b.to_string(),
+            _ => {
+                return Err(serde::de::Error::custom(
+                    "expected a boolean, string, or number",
+                ));
+            }
+        };
+
+        CargoUpdateRequest::from_str(&s).map_err(serde::de::Error::custom)
     }
 }
 
@@ -145,7 +172,7 @@ impl CargoUpdateRequest {
     }
 
     /// Calls `cargo update` with arguments specific to the state of the current variant.
-    pub(crate) fn update(&self, manifest: &Path, cargo_bin: &Cargo) -> Result<()> {
+    pub(crate) fn update(&self, manifest: &Path, cargo_bin: &Cargo) -> anyhow::Result<()> {
         let manifest_dir = manifest.parent().unwrap();
 
         // Simply invoke `cargo update`
@@ -193,7 +220,7 @@ impl LockGenerator {
         manifest_path: &Utf8Path,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
-    ) -> Result<cargo_lock::Lockfile> {
+    ) -> anyhow::Result<cargo_lock::Lockfile> {
         debug!("Generating Cargo Lockfile for {}", manifest_path);
 
         let manifest_dir = manifest_path.parent().unwrap();
@@ -245,7 +272,7 @@ impl LockGenerator {
                 ))
             }
         } else {
-            debug!("Generating new lockfile");
+            tracing::debug!("Generating new lockfile");
             // Simply invoke `cargo generate-lockfile`
             let output = self
                 .cargo_bin
@@ -258,15 +285,20 @@ impl LockGenerator {
                 .arg("--manifest-path")
                 .arg(manifest_path.as_std_path())
                 .output()
-                .context(format!(
-                    "Error running cargo to generate lockfile '{}'",
-                    manifest_path
-                ))?;
+                .with_context(|| {
+                    anyhow!(
+                        "Error running cargo to generate lockfile '{}'",
+                        manifest_path
+                    )
+                })?;
 
             if !output.status.success() {
-                eprintln!("{}", String::from_utf8_lossy(&output.stdout));
-                eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-                bail!(format!("Failed to generate lockfile: {}", output.status))
+                error!("{}", String::from_utf8_lossy(&output.stdout));
+                error!("{}", String::from_utf8_lossy(&output.stderr));
+                bail!(format!(
+                    "Failed to generate Cargo lockfile: {}",
+                    output.status
+                ))
             }
         }
 
@@ -294,7 +326,11 @@ impl VendorGenerator {
         }
     }
     #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
-    pub(crate) fn generate(&self, manifest_path: &Utf8Path, output_dir: &Path) -> Result<()> {
+    pub(crate) fn generate(
+        &self,
+        manifest_path: &Utf8Path,
+        output_dir: &Path,
+    ) -> anyhow::Result<()> {
         debug!("Vendoring {} to {}", manifest_path, output_dir.display());
         let manifest_dir = manifest_path.parent().unwrap();
 
@@ -333,7 +369,10 @@ impl VendorGenerator {
 }
 
 /// A helper function for writing Cargo metadata to a file.
-pub(crate) fn write_metadata(path: &Path, metadata: &cargo_metadata::Metadata) -> Result<()> {
+pub(crate) fn write_metadata(
+    path: &Path,
+    metadata: &cargo_metadata::Metadata,
+) -> anyhow::Result<()> {
     let content =
         serde_json::to_string_pretty(metadata).context("Failed to serialize Cargo Metadata")?;
 
@@ -343,7 +382,7 @@ pub(crate) fn write_metadata(path: &Path, metadata: &cargo_metadata::Metadata) -
 /// A helper function for deserializing Cargo metadata and lockfiles
 pub(crate) fn load_metadata(
     metadata_path: &Path,
-) -> Result<(cargo_metadata::Metadata, cargo_lock::Lockfile)> {
+) -> anyhow::Result<(cargo_metadata::Metadata, cargo_lock::Lockfile)> {
     // Locate the Cargo.lock file related to the metadata file.
     let lockfile_path = metadata_path
         .parent()

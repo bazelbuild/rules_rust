@@ -371,7 +371,8 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//crate_universe/private:common_utils.bzl",
-    "new_cargo_bazel_fn",
+    "cargo_environ",
+    "execute",
 )
 load(
     "//crate_universe/private:crates_vendor.bzl",
@@ -542,7 +543,45 @@ def _collect_splicing_config(module, repository):
 
     return config
 
-def _generate_hub_and_spokes(
+def _new_cargo_bzlmod_fn(*, cargo_path, rustc_path):
+    """_summary_
+
+    Args:
+        cargo_path (_type_): _description_
+        rustc_path (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    # buildifier: disable=unused-variable
+    def _execute(args, env = {}, allow_fail = False):
+        full_args = args + [
+            "--cargo",
+            cargo_path,
+            "--rustc",
+            rustc_path,
+        ]
+        key = None
+
+        serializable = {}
+        for arg in full_args[1:]:
+            str_arg = str(arg)
+            if str_arg.startswith("--"):
+                key = str_arg.lstrip("-").replace("-", "_")
+                continue
+
+            if key:
+                serializable[key] = str_arg
+                continue
+
+            fail("Unexpected arg: {}".format(arg))
+
+        return serializable
+
+    return _execute
+
+def _collect_hub_opts(
         *,
         module_ctx,
         cargo_bazel_fn,
@@ -607,54 +646,63 @@ def _generate_hub_and_spokes(
     # TODO: Repins should never be allowed if the lockfile is not within
     # https://github.com/bazelbuild/rules_rust/issues/1738
 
+    # Always repin if no lockfile was provided.
+    repin = lockfile == None
+
     # Determine whether or not to repin dependencies
-    repin = not lockfile or determine_repin(
-        repository_ctx = module_ctx,
-        repository_name = cfg.name,
-        cargo_bazel_fn = cargo_bazel_fn,
-        lockfile_path = lockfile,
-        config = config_file,
-        splicing_manifest = splicing_manifest,
-    )
+    repin_opts = None
+    if not repin:
+        repin_result = determine_repin(
+            repository_ctx = module_ctx,
+            repository_name = cfg.name,
+            cargo_bzlmod_fn = cargo_bazel_fn,
+            lockfile_path = lockfile,
+            config = config_file,
+            splicing_manifest = splicing_manifest,
+        )
+
+        if type(repin_result) == "bool":
+            repin = repin_result
+        else:
+            repin_opts = repin_result
+
+    kwargs = {}
 
     # If re-pinning is enabled, gather additional inputs for the generator
-    kwargs = dict()
+    splicing_opts = None
     if repin:
-        module_ctx.report_progress("Splicing Cargo workspace for `{}`".format(cfg.name))
-
         # Generate a top level Cargo workspace and manifest for use in generation
-        splice_outputs = splice_workspace_manifest(
+        splicing_opts, splicing_outputs = splice_workspace_manifest(
             repository_ctx = module_ctx,
-            cargo_bazel_fn = cargo_bazel_fn,
+            cargo_bzlmod_fn = cargo_bazel_fn,
             cargo_lockfile = cargo_lockfile,
             splicing_manifest = splicing_manifest,
             config_path = config_file,
-            output_dir = module_ctx.path("{}/{}".format(tag_path, "splicing-output")),
+            output_dir = tag_path.get_child("splicing-output"),
+            debug_workspace_dir = tag_path.get_child("splicing-workspace"),
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
         if cargo_lockfile == None:
-            cargo_lockfile = splice_outputs.cargo_lock
+            cargo_lockfile = splicing_outputs.cargo_lock
 
         # Create a fallback lockfile to be parsed downstream.
         if lockfile == None:
-            lockfile = module_ctx.path("cargo-bazel-lock.json")
+            lockfile = tag_path.get_child("cargo-bazel-lock.json")
             module_ctx.file(lockfile, "")
 
         kwargs.update({
-            "metadata": splice_outputs.metadata,
+            "metadata": splicing_outputs.metadata,
         })
 
     # The workspace root when one is explicitly provided.
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
-
-    paths_to_track_file = module_ctx.path("paths_to_track.json")
-    warnings_output_file = module_ctx.path("warnings_output.json")
+    paths_to_track_file = tag_path.get_child("paths_to_track.json")
+    warnings_output_file = tag_path.get_child("warnings_output.json")
 
     # Run the generator
-    module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))
-    execute_generator(
-        cargo_bazel_fn = cargo_bazel_fn,
+    generate_opts = execute_generator(
+        cargo_bzlmod_fn = cargo_bazel_fn,
         config = config_file,
         splicing_manifest = splicing_manifest,
         lockfile_path = lockfile,
@@ -666,100 +714,165 @@ def _generate_hub_and_spokes(
         **kwargs
     )
 
-    module_ctx.report_progress("Generating hub and spokes")
-
-    paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
-    for path in paths_to_track:
-        # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
-        # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
-        module_ctx.read(path)
-
-    warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
-    for warning in warnings_output_file:
-        # buildifier: disable=print
-        print("WARN: {}".format(warning))
-
-    crates_dir = tag_path.get_child(cfg.name)
-    _generate_repo(
-        name = cfg.name,
-        contents = {
-            "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
-            "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
-            "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
-        },
+    return struct(
+        query_opts = repin_opts,
+        splicing_opts = splicing_opts,
+        generate_opts = generate_opts,
     )
 
-    contents = json.decode(module_ctx.read(lockfile))
+def _generate_hubs_and_spokes(
+        *,
+        module_ctx,
+        cargo_bazel_path,
+        hub_opts,
+        render_configs,
+        supported_platform_triples):
+    """_summary_
 
-    for crate in contents["crates"].values():
-        repo = crate["repository"]
-        if repo == None:
-            continue
-        name = crate["name"]
-        version = crate["version"]
+    Args:
+        module_ctx (_type_): _description_
+        cargo_bazel_path (_type_): _description_
+        hub_opts (_type_): _description_
+        render_configs (_type_): _description_
+        supported_platform_triples (_type_): _description_
+    """
+    num_splicing = len([o for o in hub_opts.values() if o.splicing_opts])
+    module_ctx.report_progress("Generating hubs for {} modules {}".format(
+        len(hub_opts),
+        "(splicing {})".format(num_splicing) if num_splicing > 0 else "",
+    ).rstrip())
 
-        # "+" isn't valid in a repo name.
-        crate_repo_name = "{repo_name}__{name}-{version}".format(
-            repo_name = cfg.name,
-            name = name,
-            version = version.replace("+", "-"),
+    # Save manifest.
+    manifest_file = module_ctx.path("crate-universe-bzlmod.json")
+    module_ctx.file(
+        manifest_file,
+        executable = False,
+        content = json.encode_indent(hub_opts, indent = " " * 4),
+    )
+
+    # Generate an output location for where to find lockfiles for each module.
+    lockfiles_file = module_ctx.path("crate-universe-bzlmod-lockfiles.json")
+
+    isolated = True
+    quiet = True
+
+    # Build the generator
+    execute(
+        module_ctx,
+        args = [
+            cargo_bazel_path,
+            "bzlmod",
+            "--module-manifest",
+            manifest_file,
+            "--output-lockfiles-manifest",
+            lockfiles_file,
+        ],
+        env = cargo_environ(module_ctx, isolated = isolated),
+        allow_fail = False,
+        quiet = quiet,
+    )
+
+    lockfiles = json.decode(module_ctx.read(lockfiles_file))
+
+    module_ctx.report_progress("Generating spokes")
+    for repo_name in hub_opts:
+        tag_path = module_ctx.path(repo_name)
+        paths_to_track_file = tag_path.get_child("paths_to_track.json")
+        warnings_output_file = tag_path.get_child("warnings_output.json")
+
+        paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
+        for path in paths_to_track:
+            # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
+            # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
+            module_ctx.read(path)
+
+        warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
+        for warning in warnings_output_file:
+            # buildifier: disable=print
+            print("WARN: {}".format(warning))
+
+        crates_dir = tag_path.get_child(repo_name)
+        _generate_repo(
+            name = repo_name,
+            contents = {
+                "BUILD.bazel": module_ctx.read(crates_dir.get_child("BUILD.bazel")),
+                "alias_rules.bzl": module_ctx.read(crates_dir.get_child("alias_rules.bzl")),
+                "defs.bzl": module_ctx.read(crates_dir.get_child("defs.bzl")),
+            },
         )
 
-        build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
-        if "Http" in repo:
-            # Replicates functionality in repo_http.j2.
-            repo = repo["Http"]
-            http_archive(
-                name = crate_repo_name,
-                patch_args = repo.get("patch_args", None),
-                patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
-                remote_patch_strip = 1,
-                sha256 = repo.get("sha256", None),
-                type = "tar.gz",
-                urls = [repo["url"]],
-                strip_prefix = "%s-%s" % (crate["name"], crate["version"]),
-                build_file_content = build_file_content,
+        lockfile = lockfiles[repo_name]
+        contents = json.decode(module_ctx.read(lockfile))
+
+        for crate in contents["crates"].values():
+            repo = crate["repository"]
+            if repo == None:
+                continue
+            name = crate["name"]
+            version = crate["version"]
+
+            # "+" isn't valid in a repo name.
+            crate_repo_name = "{repo_name}__{name}-{version}".format(
+                repo_name = repo_name,
+                name = name,
+                version = version.replace("+", "-"),
             )
-        elif "Git" in repo:
-            # Replicates functionality in repo_git.j2
-            repo = repo["Git"]
-            kwargs = {}
-            for k, v in repo["commitish"].items():
-                if k == "Rev":
-                    kwargs["commit"] = v
-                else:
-                    kwargs[k.lower()] = v
-            new_git_repository(
-                name = crate_repo_name,
-                init_submodules = True,
-                patch_args = repo.get("patch_args", None),
-                patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
-                shallow_since = repo.get("shallow_since", None),
-                remote = repo["remote"],
-                build_file_content = build_file_content,
-                strip_prefix = repo.get("strip_prefix", None),
-                **kwargs
-            )
-        elif "Path" in repo:
-            options = {
-                "config": render_config,
-                "crate_context": crate,
-                "platform_conditions": contents["conditions"],
-                "supported_platform_triples": cfg.supported_platform_triples,
-            }
-            kwargs = {}
-            if len(CARGO_BAZEL_URLS) == 0:
-                kwargs["generator"] = "@cargo_bazel_bootstrap//:cargo-bazel"
-            local_crate_mirror(
-                name = crate_repo_name,
-                options_json = json.encode(options),
-                path = repo["Path"]["path"],
-                **kwargs
-            )
-        else:
-            fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
+
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
+            if "Http" in repo:
+                # Replicates functionality in repo_http.j2.
+                repo = repo["Http"]
+                http_archive(
+                    name = crate_repo_name,
+                    patch_args = repo.get("patch_args", None),
+                    patch_tool = repo.get("patch_tool", None),
+                    patches = repo.get("patches", None),
+                    remote_patch_strip = 1,
+                    sha256 = repo.get("sha256", None),
+                    type = "tar.gz",
+                    urls = [repo["url"]],
+                    strip_prefix = "%s-%s" % (crate["name"], crate["version"]),
+                    build_file_content = build_file_content,
+                )
+            elif "Git" in repo:
+                # Replicates functionality in repo_git.j2
+                repo = repo["Git"]
+                kwargs = {}
+                for k, v in repo["commitish"].items():
+                    if k == "Rev":
+                        kwargs["commit"] = v
+                    else:
+                        kwargs[k.lower()] = v
+                new_git_repository(
+                    name = crate_repo_name,
+                    init_submodules = True,
+                    patch_args = repo.get("patch_args", None),
+                    patch_tool = repo.get("patch_tool", None),
+                    patches = repo.get("patches", None),
+                    shallow_since = repo.get("shallow_since", None),
+                    remote = repo["remote"],
+                    build_file_content = build_file_content,
+                    strip_prefix = repo.get("strip_prefix", None),
+                    **kwargs
+                )
+            elif "Path" in repo:
+                options = {
+                    "config": render_configs[repo_name],
+                    "crate_context": crate,
+                    "platform_conditions": contents["conditions"],
+                    "supported_platform_triples": supported_platform_triples[repo_name],
+                }
+                kwargs = {}
+                if len(CARGO_BAZEL_URLS) == 0:
+                    kwargs["generator"] = "@cargo_bazel_bootstrap//:cargo-bazel"
+                local_crate_mirror(
+                    name = crate_repo_name,
+                    options_json = json.encode(options),
+                    path = repo["Path"]["path"],
+                    **kwargs
+                )
+            else:
+                fail("Invalid repo: expected Http or Git to exist for crate %s-%s, got %s" % (name, version, repo))
 
 def _package_to_json(p):
     # Avoid adding unspecified properties.
@@ -840,6 +953,9 @@ def _crate_impl(module_ctx):
     host_triple = get_host_triple(module_ctx)
 
     all_repos = []
+    hub_opts = {}
+    render_configs = {}
+    supported_platform_triples = {}
 
     for mod in module_ctx.modules:
         if not mod.tags.from_cargo and not mod.tags.from_specs:
@@ -947,16 +1063,16 @@ def _crate_impl(module_ctx):
                     module_ctx.path(m)
 
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
-            cargo_bazel_fn = new_cargo_bazel_fn(
-                repository_ctx = module_ctx,
-                cargo_bazel_path = generator,
+            cargo_bazel_fn = _new_cargo_bzlmod_fn(
                 cargo_path = cargo_path,
                 rustc_path = rustc_path,
-                isolated = cfg.isolated,
             )
 
             rendering_config = _collect_render_config(mod, cfg.name)
             splicing_config = _collect_splicing_config(mod, cfg.name)
+
+            render_configs[cfg.name] = rendering_config
+            supported_platform_triples[cfg.name] = cfg.supported_platform_triples
 
             annotations = _annotations_for_repo(
                 module_annotations,
@@ -987,7 +1103,7 @@ def _crate_impl(module_ctx):
                 for p in common_specs + repo_specific_specs.get(cfg.name, [])
             }
 
-            _generate_hub_and_spokes(
+            hub_opts[cfg.name] = _collect_hub_opts(
                 module_ctx = module_ctx,
                 cargo_bazel_fn = cargo_bazel_fn,
                 cfg = cfg,
@@ -999,6 +1115,15 @@ def _crate_impl(module_ctx):
                 manifests = manifests,
                 packages = packages,
             )
+
+    # Generate all hubs and spokes
+    _generate_hubs_and_spokes(
+        module_ctx = module_ctx,
+        cargo_bazel_path = generator,
+        hub_opts = hub_opts,
+        render_configs = render_configs,
+        supported_platform_triples = supported_platform_triples,
+    )
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:

@@ -9,6 +9,7 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/api.rs"),
     Label("//crate_universe:src/api/lockfile.rs"),
     Label("//crate_universe:src/cli.rs"),
+    Label("//crate_universe:src/cli/bzlmod.rs"),
     Label("//crate_universe:src/cli/generate.rs"),
     Label("//crate_universe:src/cli/query.rs"),
     Label("//crate_universe:src/cli/render.rs"),

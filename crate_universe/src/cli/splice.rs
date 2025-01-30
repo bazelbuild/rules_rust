@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use camino::Utf8PathBuf;
 use clap::Parser;
+use serde::Deserialize;
 
 use crate::cli::Result;
 use crate::config::Config;
@@ -14,7 +15,7 @@ use crate::metadata::{
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `splice` subcommand
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Deserialize)]
 #[clap(about = "Command line options for the `splice` subcommand", version)]
 pub struct SpliceOptions {
     /// A generated manifest of splicing inputs
@@ -40,6 +41,7 @@ pub struct SpliceOptions {
 
     /// If true, outputs will be printed instead of written to disk.
     #[clap(long)]
+    #[serde(default)]
     pub dry_run: bool,
 
     /// The path to a Cargo configuration file.
