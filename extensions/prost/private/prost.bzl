@@ -76,13 +76,15 @@ def _compile_proto(
     additional_args = ctx.actions.args()
 
     # Prost process wrapper specific args
+    compile_well_known_types = prost_toolchain.compile_well_known_types
     additional_args.add("--protoc={}".format(proto_compiler.executable.path))
     additional_args.add("--label={}".format(ctx.label))
     additional_args.add("--out_librs={}".format(lib_rs.path))
     additional_args.add("--package_info_output={}".format("{}={}".format(crate_name, package_info_file.path)))
     additional_args.add("--deps_info={}".format(deps_info_file.path))
     additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
-    additional_args.add("--prost_opt=compile_well_known_types")
+    if compile_well_known_types:
+        additional_args.add("--compile_well_known_types")
     additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
     additional_args.add("--additional_srcs={}".format(",".join([f.path for f in all_additional_srcs.to_list()])))
     additional_args.add_all(prost_toolchain.prost_opts + prost_opts, format_each = "--prost_opt=%s")
@@ -91,7 +93,6 @@ def _compile_proto(
         tonic_plugin = prost_toolchain.tonic_plugin[DefaultInfo].files_to_run
         additional_args.add(prost_toolchain.tonic_plugin_flag % tonic_plugin.executable.path)
         additional_args.add("--tonic_opt=no_include")
-        additional_args.add("--tonic_opt=compile_well_known_types")
         additional_args.add("--is_tonic")
 
         additional_args.add_all(prost_toolchain.tonic_opts + tonic_opts, format_each = "--tonic_opt=%s")
@@ -233,7 +234,10 @@ def _rust_prost_aspect_impl(target, ctx):
 
     rustfmt_toolchain = ctx.toolchains["@rules_rust//rust/rustfmt:toolchain_type"]
     prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
-    for prost_runtime in [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]:
+    runtimes = [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]
+    if not prost_toolchain.compile_well_known_types:
+        runtimes += [prost_toolchain.prost_types]
+    for prost_runtime in runtimes:
         if not prost_runtime:
             continue
         if rust_common.crate_group_info in prost_runtime:
@@ -446,6 +450,7 @@ def _rust_prost_toolchain_impl(ctx):
         tonic_plugin_flag = ctx.attr.tonic_plugin_flag,
         tonic_runtime = ctx.attr.tonic_runtime,
         include_transitive_deps = ctx.attr.include_transitive_deps,
+        compile_well_known_types = ctx.attr.compile_well_known_types,
     )]
 
 rust_prost_toolchain = rule(
@@ -453,6 +458,10 @@ rust_prost_toolchain = rule(
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
     attrs = dict({
+        "compile_well_known_types": attr.bool(
+            doc = "Corresponds to prost_build's `compile_well_known_types` option. If set to False, well-known-types will not be compiled by prost, and instead rely on the provided Prost types crate.",
+            default = True,
+        ),
         "include_transitive_deps": attr.bool(
             doc = "Whether to include transitive dependencies. If set to True, all transitive dependencies will directly accessible by the dependent crate.",
             default = False,
