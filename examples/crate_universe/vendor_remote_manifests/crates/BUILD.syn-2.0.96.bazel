@@ -93,6 +93,6 @@ rust_library(
     deps = [
         "@cvm__proc-macro2-1.0.93//:proc_macro2",
         "@cvm__quote-1.0.38//:quote",
-        "@cvm__unicode-ident-1.0.14//:unicode_ident",
+        "@cvm__unicode-ident-1.0.16//:unicode_ident",
     ],
 )

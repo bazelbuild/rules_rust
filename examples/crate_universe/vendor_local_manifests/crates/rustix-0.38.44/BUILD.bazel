@@ -178,10 +178,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.38.43",
+    version = "0.38.44",
     deps = [
         "//vendor_local_manifests/crates/bitflags-2.8.0:bitflags",
-        "//vendor_local_manifests/crates/rustix-0.38.43:build_script_build",
+        "//vendor_local_manifests/crates/rustix-0.38.44:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "//vendor_local_manifests/crates/errno-0.3.10:errno",  # aarch64-apple-darwin, cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", target_arch = "s390x"), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))
@@ -383,7 +383,7 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.38.43",
+    version = "0.38.44",
     visibility = ["//visibility:private"],
 )
 
