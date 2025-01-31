@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 
-use crate::{deserialize_file_content, new_bazel_command};
+use crate::{deserialize_file_content, bazel_command};
 
 #[derive(Debug, Deserialize)]
 struct AqueryOutput {
@@ -85,7 +85,8 @@ pub fn get_crate_specs(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
-    bazelrc: Option<&Utf8Path>,
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
     targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
@@ -93,8 +94,10 @@ pub fn get_crate_specs(
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
 
-    let output = new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
+    let output = bazel_command(bazel, Some(workspace), Some(output_base))
+        .args(bazel_startup_options)
         .arg("aquery")
+        .args(bazel_args)
         .arg("--include_aspects")
         .arg("--include_artifacts")
         .arg(format!(

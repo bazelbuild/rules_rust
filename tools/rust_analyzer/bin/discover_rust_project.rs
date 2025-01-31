@@ -12,7 +12,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use env_logger::{fmt::Formatter, Target, WriteStyle};
 use gen_rust_project_lib::{
-    generate_rust_project, get_bazel_info, DiscoverProject, RustAnalyzerArg, BUILD_FILE_NAMES,
+    bazel_info, generate_rust_project, DiscoverProject, RustAnalyzerArg, BUILD_FILE_NAMES,
     WORKSPACE_ROOT_FILE_NAMES,
 };
 use log::{LevelFilter, Record};
@@ -37,7 +37,8 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         execution_root,
         output_base,
         bazel,
-        bazelrc,
+        bazel_startup_options,
+        bazel_args,
         rust_analyzer_argument,
     } = Config::parse()?;
 
@@ -53,10 +54,9 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
     log::info!("resolved rust-analyzer argument: {ra_arg:?}");
 
     let (buildfile, targets) = ra_arg.into_target_details(&workspace)?;
-    let targets = &[targets];
 
     log::debug!("got buildfile: {buildfile}");
-    log::debug!("got targets: {targets:?}");
+    log::debug!("got targets: {targets}");
 
     // Use the generated files to print the rust-project.json.
     let project = generate_rust_project(
@@ -64,9 +64,10 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &output_base,
         &workspace,
         &execution_root,
-        bazelrc.as_deref(),
+        &bazel_startup_options,
+        &bazel_args,
         &rules_rust_name,
-        targets,
+        &[targets],
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })
@@ -114,19 +115,26 @@ fn main() -> anyhow::Result<()> {
 #[derive(Debug)]
 pub struct Config {
     /// The path to the Bazel workspace directory. If not specified, uses the result of `bazel info workspace`.
-    pub workspace: Utf8PathBuf,
+    workspace: Utf8PathBuf,
 
     /// The path to the Bazel execution root. If not specified, uses the result of `bazel info execution_root`.
-    pub execution_root: Utf8PathBuf,
+    execution_root: Utf8PathBuf,
 
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
-    pub output_base: Utf8PathBuf,
+    output_base: Utf8PathBuf,
 
     /// The path to a Bazel binary.
-    pub bazel: Utf8PathBuf,
+    bazel: Utf8PathBuf,
 
-    /// The path to a `bazelrc` configuration file.
-    bazelrc: Option<Utf8PathBuf>,
+    /// Startup options to pass to `bazel` invocations.
+    /// See the [Command-Line Reference](<https://bazel.build/reference/command-line-reference>)
+    /// for more details.
+    bazel_startup_options: Vec<String>,
+
+    /// Arguments to pass to `bazel` invocations.
+    /// See the [Command-Line Reference](<https://bazel.build/reference/command-line-reference>)
+    /// for more details.
+    bazel_args: Vec<String>,
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,
@@ -138,12 +146,19 @@ impl Config {
         let ConfigParser {
             workspace,
             bazel,
-            bazelrc,
+            bazel_startup_options,
+            bazel_args,
             rust_analyzer_argument,
         } = ConfigParser::parse();
 
         // We need some info from `bazel info`. Fetch it now.
-        let mut info_map = get_bazel_info(&bazel, workspace.as_deref(), None, bazelrc.as_deref())?;
+        let mut info_map = bazel_info(
+            &bazel,
+            workspace.as_deref(),
+            None,
+            &bazel_startup_options,
+            &bazel_args,
+        )?;
 
         let config = Config {
             workspace: info_map
@@ -159,7 +174,8 @@ impl Config {
                 .expect("'output_base' must exist in bazel info")
                 .into(),
             bazel,
-            bazelrc,
+            bazel_startup_options,
+            bazel_args,
             rust_analyzer_argument,
         };
 
@@ -177,9 +193,17 @@ struct ConfigParser {
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
 
-    /// The path to a `bazelrc` configuration file.
-    #[clap(long)]
-    bazelrc: Option<Utf8PathBuf>,
+    /// Startup options to pass to `bazel` invocations.
+    /// See the [Command-Line Reference](<https://bazel.build/reference/command-line-reference>)
+    /// for more details.
+    #[clap(long = "bazel_startup_option")]
+    bazel_startup_options: Vec<String>,
+
+    /// Arguments to pass to `bazel` invocations.
+    /// See the [Command-Line Reference](<https://bazel.build/reference/command-line-reference>)
+    /// for more details.
+    #[clap(long = "bazel_arg")]
+    bazel_args: Vec<String>,
 
     /// The argument that `rust-analyzer` can pass to the binary.
     rust_analyzer_argument: Option<RustAnalyzerArg>,

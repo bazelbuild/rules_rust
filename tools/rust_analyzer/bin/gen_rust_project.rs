@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use gen_rust_project_lib::{generate_rust_project, get_bazel_info};
+use gen_rust_project_lib::{generate_rust_project, bazel_info};
 
 fn write_rust_project(
     bazel: &Utf8Path,
@@ -23,7 +23,8 @@ fn write_rust_project(
         output_base,
         workspace,
         execution_root,
-        None,
+        &[],
+        &[],
         rules_rust_name,
         targets,
     )?;
@@ -80,16 +81,16 @@ fn main() -> anyhow::Result<()> {
 #[derive(Debug)]
 pub struct Config {
     /// The path to the Bazel workspace directory. If not specified, uses the result of `bazel info workspace`.
-    pub workspace: Utf8PathBuf,
+    workspace: Utf8PathBuf,
 
     /// The path to the Bazel execution root. If not specified, uses the result of `bazel info execution_root`.
-    pub execution_root: Utf8PathBuf,
+    execution_root: Utf8PathBuf,
 
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
-    pub output_base: Utf8PathBuf,
+    output_base: Utf8PathBuf,
 
     /// The path to a Bazel binary.
-    pub bazel: Utf8PathBuf,
+    bazel: Utf8PathBuf,
 
     /// Space separated list of target patterns that comes after all other args.
     targets: Vec<String>,
@@ -122,7 +123,7 @@ impl Config {
 
         // We need some info from `bazel info`. Fetch it now.
         let mut info_map =
-            get_bazel_info(&bazel, workspace.as_deref(), output_base.as_deref(), None)?;
+            bazel_info(&bazel, workspace.as_deref(), output_base.as_deref(), &[], &[])?;
 
         let config = Config {
             workspace: info_map

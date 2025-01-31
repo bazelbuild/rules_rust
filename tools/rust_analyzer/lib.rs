@@ -1,7 +1,7 @@
 mod aquery;
 mod rust_project;
 
-use std::{collections::HashMap, convert::TryInto, fs, process::Command};
+use std::{collections::BTreeMap, convert::TryInto, fs, process::Command};
 
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -20,7 +20,8 @@ pub fn generate_rust_project(
     output_base: &Utf8Path,
     workspace: &Utf8Path,
     execution_root: &Utf8Path,
-    bazelrc: Option<&Utf8Path>,
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
     rules_rust_name: &str,
     targets: &[String],
 ) -> anyhow::Result<RustProject> {
@@ -28,7 +29,8 @@ pub fn generate_rust_project(
         bazel,
         output_base,
         workspace,
-        bazelrc,
+        bazel_startup_options,
+        bazel_args,
         rules_rust_name,
         targets,
     )?;
@@ -38,7 +40,8 @@ pub fn generate_rust_project(
         output_base,
         workspace,
         execution_root,
-        bazelrc,
+        bazel_startup_options,
+        bazel_args,
         targets,
         rules_rust_name,
     )?;
@@ -55,15 +58,18 @@ pub fn generate_rust_project(
     rust_project::assemble_rust_project(bazel, workspace, toolchain_info, &crate_specs)
 }
 
-/// Executes `bazel info` to get context information.
-pub fn get_bazel_info(
+/// Executes `bazel info` to get a map of context information.
+pub fn bazel_info(
     bazel: &Utf8Path,
     workspace: Option<&Utf8Path>,
     output_base: Option<&Utf8Path>,
-    bazelrc: Option<&Utf8Path>,
-) -> anyhow::Result<HashMap<String, String>> {
-    let output = new_bazel_command(bazel, workspace, output_base, bazelrc)
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
+) -> anyhow::Result<BTreeMap<String, String>> {
+    let output = bazel_command(bazel, workspace, output_base)
+        .args(bazel_startup_options)
         .arg("info")
+        .args(bazel_args)
         .output()?;
 
     if !output.status.success() {
@@ -87,15 +93,18 @@ fn generate_crate_info(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
     workspace: &Utf8Path,
-    bazelrc: Option<&Utf8Path>,
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
     rules_rust: &str,
     targets: &[String],
 ) -> anyhow::Result<()> {
     log::info!("running bazel build...");
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
 
-    let output = new_bazel_command(bazel, Some(workspace), Some(output_base), bazelrc)
+    let output = bazel_command(bazel, Some(workspace), Some(output_base))
+        .args(bazel_startup_options)
         .arg("build")
+        .args(bazel_args)
         .arg("--norun_validations")
         .arg(format!(
             "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
@@ -115,11 +124,10 @@ fn generate_crate_info(
     Ok(())
 }
 
-fn new_bazel_command(
+fn bazel_command(
     bazel: &Utf8Path,
     workspace: Option<&Utf8Path>,
     output_base: Option<&Utf8Path>,
-    bazelrc: Option<&Utf8Path>,
 ) -> Command {
     let mut cmd = Command::new(bazel);
 
@@ -130,9 +138,7 @@ fn new_bazel_command(
         .env_remove("BUILD_WORKING_DIRECTORY")
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         // Set the output_base if one was provided.
-        .args(output_base.map(|s| format!("--output_base={s}")))
-        // Pass the bazelrc file if any is provided.
-        .args(bazelrc.map(|s| format!("--bazelrc={s}")));
+        .args(output_base.map(|s| format!("--output_base={s}")));
 
     cmd
 }
