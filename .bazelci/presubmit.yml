@@ -896,7 +896,7 @@ tasks:
     test_targets:
       - "//..."
   extensions_bindgen_linux_custom-clang:
-    platform: ubuntu2004
+    platform: ubuntu2204
     name: Extensions Bindgen
     working_directory: extensions/bindgen
     build_flags:

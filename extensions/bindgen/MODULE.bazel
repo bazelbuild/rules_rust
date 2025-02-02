@@ -29,6 +29,7 @@ bazel_dep(
     name = "llvm-project",
     version = "17.0.3.bcr.1",
 )
+
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
