@@ -9,9 +9,9 @@ no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
   - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
   - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
   - echo "7.4.1" > .bazelversion
-aspects_flags: &aspects_flags
-  - "--config=rustfmt"
-  - "--config=clippy"
+aspects_flags: &aspects_flags !!set 
+  ? "--config=rustfmt"
+  ? "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
   - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.72.1"],\n|' WORKSPACE.bazel
 nightly_flags: &nightly_flags
@@ -890,6 +890,19 @@ tasks:
     name: Extensions Bindgen
     working_directory: extensions/bindgen
     build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_bindgen_linux_custom-clang:
+    platform: ubuntu2004
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    build_flags:
+      << : *aspects_flags
+      ? --@rules_rust_bindgen//:clang=@//test:clang
+      ? --@rules_rust_bindgen//:libclang=@//test:libclang
     test_flags: *aspects_flags
     build_targets:
       - "//..."

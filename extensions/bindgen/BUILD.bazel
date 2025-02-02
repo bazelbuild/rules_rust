@@ -26,21 +26,31 @@ bzl_library(
     ],
 )
 
-cc_stdcc17_transitioned_binary(
+label_flag(
     name = "clang",
-    target = "@llvm-project//clang:clang",
+    build_setting_default = "@llvm-project//clang",
+)
+
+cc_stdcc17_transitioned_binary(
+    name = "clang_stdcc17",
+    target = ":clang",
+)
+
+label_flag(
+    name = "libclang",
+    build_setting_default = "@llvm-project//clang:libclang",
 )
 
 cc_stdcc17_transitioned_library(
-    name = "libclang",
-    target = "@llvm-project//clang:libclang",
+    name = "libclang_stdcc17",
+    target = ":libclang",
 )
 
 rust_bindgen_toolchain(
     name = "default_bindgen_toolchain_impl",
     bindgen = "//3rdparty:bindgen",
-    clang = ":clang",
-    libclang = ":libclang",
+    clang = ":clang_stdcc17",
+    libclang = ":libclang_stdcc17",
 )
 
 toolchain(
