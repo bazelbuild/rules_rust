@@ -9,7 +9,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use tracing::debug;
+use tracing::{debug, trace};
 use url::Url;
 
 use crate::config::CrateId;
@@ -137,6 +137,12 @@ impl TreeResolver {
             // number of processes (which can be +400 and hit operating system limitations).
             let mut target_triple_to_child = BTreeMap::<String, Child>::new();
 
+            debug!(
+                "Spawning `cargo tree` processes for host `{}`: {}",
+                host_triple,
+                cargo_target_triples.keys().len(),
+            );
+
             for target_triple in cargo_target_triples.keys() {
                 // We use `cargo tree` here because `cargo metadata` doesn't report
                 // back target-specific features (enabled with `resolver = "2"`).
@@ -178,12 +184,6 @@ impl TreeResolver {
                 target_triple_to_child.insert(target_triple.clone(), child);
             }
 
-            debug!(
-                "Spawned `cargo tree` processes for host `{}`: {}",
-                host_triple,
-                target_triple_to_child.len(),
-            );
-
             for (target_triple, child) in target_triple_to_child.into_iter() {
                 let output = child.wait_with_output().with_context(|| {
                     format!(
@@ -194,10 +194,12 @@ impl TreeResolver {
                     )
                 })?;
                 if !output.status.success() {
-                    eprintln!("{}", String::from_utf8_lossy(&output.stdout));
-                    eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                    tracing::error!("{}", String::from_utf8_lossy(&output.stdout));
+                    tracing::error!("{}", String::from_utf8_lossy(&output.stderr));
                     bail!(format!("Failed to run cargo tree: {}", output.status))
                 }
+
+                tracing::trace!("`cargo tree --target={}` completed.", target_triple);
 
                 // Replicate outputs for any de-duplicated platforms
                 for host_plat in cargo_host_triples[host_triple].iter() {
@@ -348,7 +350,7 @@ impl TreeResolver {
 
         for (host_triple, target_streams) in deps_tree_streams.into_iter() {
             for (target_triple, stdout) in target_streams.into_iter() {
-                debug!(
+                trace!(
                     "Parsing (host={}) `cargo tree --target {}` output:\n```\n{}\n```",
                     host_triple,
                     target_triple,
