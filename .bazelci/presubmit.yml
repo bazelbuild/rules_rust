@@ -75,6 +75,12 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//tools/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
+crate_universe_example_shell_commands: &crate_universe_example_shell_commands
+  - rm MODULE.bazel.lock
+crate_universe_example_rbe_shell_commands: &crate_universe_example_rbe_shell_commands
+  - rm MODULE.bazel.lock
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -435,6 +441,7 @@ tasks:
     name: Crate Universe Examples
     platform: ubuntu2004
     working_directory: examples/crate_universe
+    shell_commands: *crate_universe_example_shell_commands
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
       - "//..."
@@ -445,9 +452,7 @@ tasks:
     name: Crate Universe Examples
     platform: rbe_ubuntu2004
     working_directory: examples/crate_universe
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    shell_commands: *crate_universe_example_rbe_shell_commands
     run_targets: *crate_universe_vendor_example_targets
     build_targets:
       - "--"
@@ -464,12 +469,25 @@ tasks:
     name: Crate Universe Examples
     platform: macos_arm64
     working_directory: examples/crate_universe
+    shell_commands: *crate_universe_example_shell_commands
     run_targets: *crate_universe_vendor_example_targets
+    build_flags: *aspects_flags
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags: *aspects_flags
+  # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
+  # crate_universe_examples_windows:
+  #   name: Crate Universe Examples
+  #   platform: windows
+  #   working_directory: examples/crate_universe
+  #   shell_commands: *crate_universe_example_shell_commands
+  #   run_targets: *crate_universe_vendor_example_targets
+  #   build_flags: *aspects_flags
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
   crate_universe_local_path_external:
     name: Crate Universe Local Path External
     platform: ubuntu2004
@@ -498,17 +516,6 @@ tasks:
     working_directory: examples/crate_universe_local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"
-# See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
-#  crate_universe_examples_windows:
-#    name: Crate Universe Examples
-#    platform: windows
-#    working_directory: examples/crate_universe
-#    run_targets: *crate_universe_vendor_example_targets
-#    build_flags: *aspects_flags
-#    build_targets:
-#      - "//..."
-#    test_targets:
-#      - "//..."
   cc_common_link_ubuntu2004:
     name: Build via cc_common.link
     platform: ubuntu2004

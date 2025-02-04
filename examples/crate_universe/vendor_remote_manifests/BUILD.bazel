@@ -4,6 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 crates_vendor(
     name = "crates_vendor",
+    cargo_lockfile = "Cargo.lock",
     manifests = [":Cargo.toml"],
     repository_name = "cvm",
 )

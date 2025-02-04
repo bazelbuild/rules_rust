@@ -616,9 +616,9 @@ use_repo(
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
-    "cvm__tempfile-3.15.0",
-    "cvm__tokio-1.43.0",
-    "cvm__tokio-test-0.4.4",
+    "cvm__tempfile-3.3.0",
+    "cvm__tokio-1.17.0",
+    "cvm__tokio-test-0.4.2",
 )
 
 ###############################################################################
