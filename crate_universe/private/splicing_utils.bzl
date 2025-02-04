@@ -117,20 +117,24 @@ def create_splicing_manifest(repository_ctx):
 def splice_workspace_manifest(
         *,
         repository_ctx,
-        cargo_bazel_fn,
         cargo_lockfile,
         splicing_manifest,
         config_path,
-        output_dir):
+        output_dir,
+        cargo_bazel_fn = None,
+        cargo_bzlmod_fn = None,
+        debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
         repository_ctx (repository_ctx or module_ctx): The repository's context object.
-        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
         cargo_lockfile (path): The path to a "Cargo.lock" file.
         splicing_manifest (path): The path to a splicing manifest.
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
+        cargo_bzlmod_fn (callable): A callback for collecting `cargo-bazel` command line args.
+        debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
         path: The path to a Cargo metadata json file found in the spliced workspace root.
@@ -156,31 +160,52 @@ def splice_workspace_manifest(
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.
     if CARGO_BAZEL_DEBUG in repository_ctx.os.environ:
+        if debug_workspace_dir == None:
+            debug_workspace_dir = repository_ctx.path("splicing-workspace")
         arguments.extend([
             "--workspace-dir",
-            repository_ctx.path("splicing-workspace"),
+            debug_workspace_dir,
         ])
 
-    env = {}
-
     # Ensure the short hand repin variable is set to the full name.
-    if REPIN in repository_ctx.os.environ and CARGO_BAZEL_REPIN not in repository_ctx.os.environ:
-        env["CARGO_BAZEL_REPIN"] = repository_ctx.os.environ[REPIN]
+    repin_flag = None
+    if CARGO_BAZEL_REPIN in repository_ctx.os.environ:
+        repin_flag = repository_ctx.os.environ[CARGO_BAZEL_REPIN]
+    elif REPIN in repository_ctx.os.environ:
+        repin_flag = repository_ctx.os.environ[REPIN]
 
-    cargo_bazel_fn(
-        args = arguments,
-        env = env,
-    )
+    if repin_flag != None:
+        arguments.extend([
+            "--repin",
+            repin_flag,
+        ])
 
-    # This file must have been produced by the execution above.
     spliced_lockfile = repository_ctx.path(output_dir.get_child("Cargo.lock"))
-    if not spliced_lockfile.exists:
-        fail("Lockfile file does not exist: " + str(spliced_lockfile))
     spliced_metadata = repository_ctx.path(output_dir.get_child("metadata.json"))
-    if not spliced_metadata.exists:
-        fail("Metadata file does not exist: " + str(spliced_metadata))
 
-    return struct(
-        metadata = spliced_metadata,
-        cargo_lock = spliced_lockfile,
-    )
+    if cargo_bazel_fn != None:
+        cargo_bazel_fn(
+            args = arguments,
+        )
+
+        # This file must have been produced by the execution above.
+        if not spliced_lockfile.exists:
+            fail("Lockfile file does not exist: " + str(spliced_lockfile))
+        if not spliced_metadata.exists:
+            fail("Metadata file does not exist: " + str(spliced_metadata))
+
+        return struct(
+            metadata = spliced_metadata,
+            cargo_lock = spliced_lockfile,
+        )
+
+    if cargo_bzlmod_fn != None:
+        return (cargo_bzlmod_fn(
+            args = arguments,
+        ), struct(
+            metadata = spliced_metadata,
+            cargo_lock = spliced_lockfile,
+        ))
+
+    else:
+        fail("No callback provided to perform splicing")

@@ -29,5 +29,9 @@ fn main() -> cli::Result<()> {
             cli::init_logging("Render", verbose_logging);
             cli::render(opt)
         }
+        cli::Options::Bzlmod(opt) => {
+            cli::init_logging("Bzlmod", verbose_logging);
+            cli::bzlmod(opt)
+        }
     }
 }

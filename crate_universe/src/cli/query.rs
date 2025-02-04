@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Result};
 use clap::Parser;
+use serde::Deserialize;
 
 use crate::config::Config;
 use crate::context::Context;
@@ -13,7 +14,7 @@ use crate::metadata::Cargo;
 use crate::splicing::SplicingManifest;
 
 /// Command line options for the `query` subcommand
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Deserialize)]
 #[clap(about = "Command line options for the `query` subcommand", version)]
 pub struct QueryOptions {
     /// The lockfile path for reproducible Cargo->Bazel renderings

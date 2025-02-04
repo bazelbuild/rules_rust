@@ -5,10 +5,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context as AnyhowContext, Result};
+use anyhow::{anyhow, bail, Context as AnyhowContext, Result};
 use camino::Utf8PathBuf;
 use cargo_lock::Lockfile;
 use clap::Parser;
+use serde::Deserialize;
 
 use crate::config::Config;
 use crate::context::Context;
@@ -20,7 +21,7 @@ use crate::utils::normalize_cargo_file_paths;
 use crate::utils::starlark::Label;
 
 /// Command line options for the `generate` subcommand
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Deserialize)]
 #[clap(about = "Command line options for the `generate` subcommand", version)]
 pub struct GenerateOptions {
     /// The path to a Cargo binary to use for gathering metadata
@@ -39,7 +40,7 @@ pub struct GenerateOptions {
     #[clap(long)]
     pub splicing_manifest: PathBuf,
 
-    /// The path to either a Cargo or Bazel lockfile
+    /// The path to the cargo-bazel lockfile
     #[clap(long)]
     pub lockfile: Option<PathBuf>,
 
@@ -57,7 +58,8 @@ pub struct GenerateOptions {
     pub cargo_config: Option<PathBuf>,
 
     /// Whether or not to ignore the provided lockfile and re-generate one
-    #[clap(long)]
+    #[arg(long, value_parser, default_value_t = false)]
+    #[serde(deserialize_with = "deserialize_bool_from_str", default)]
     pub repin: bool,
 
     /// The path to a Cargo metadata `json` file. This file must be next to a `Cargo.toml` and `Cargo.lock` file.
@@ -66,6 +68,7 @@ pub struct GenerateOptions {
 
     /// If true, outputs will be printed instead of written to disk.
     #[clap(long)]
+    #[serde(default)]
     pub dry_run: bool,
 
     /// The path to the Bazel root workspace (i.e. the directory containing the WORKSPACE.bazel file or similar).
@@ -98,12 +101,26 @@ pub struct GenerateOptions {
     pub warnings_output_path: PathBuf,
 }
 
+fn deserialize_bool_from_str<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    match s.as_str() {
+        "true" | "1" => Ok(true),
+        "false" | "0" => Ok(false),
+        _ => Err(serde::de::Error::custom("expected 'true', 'false', '1', or '0'")),
+    }
+}
+
 pub fn generate(opt: GenerateOptions) -> Result<()> {
     // Load the config
-    let config = Config::try_from_path(&opt.config)?;
+    let config = Config::try_from_path(&opt.config)
+        .with_context(|| anyhow!("Failed to load generate config: {}", opt.config.display()))?;
 
     // Go straight to rendering if there is no need to repin
     if !opt.repin {
+        tracing::debug!("Not repinning.");
         if let Some(lockfile) = &opt.lockfile {
             let context = Context::try_from_path(lockfile)?;
 
@@ -112,15 +129,22 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
                 Arc::new(config.rendering),
                 Arc::new(config.supported_platform_triples),
             )
-            .render(&context, opt.generator)?;
+            .render(&context, opt.generator)
+            .context("Failed to render outputs")?;
 
             // make file paths compatible with bazel labels
             let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
 
             // Write the outputs to disk
-            write_outputs(normalized_outputs, opt.dry_run)?;
+            write_outputs(normalized_outputs, opt.dry_run).context("Failed to write outputs")?;
 
-            let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)?;
+            let splicing_manifest = SplicingManifest::try_from_path(&opt.splicing_manifest)
+                .with_context(|| {
+                    anyhow!(
+                        "Failed to load splicing manifest: {}",
+                        opt.splicing_manifest.display()
+                    )
+                })?;
 
             write_paths_to_track(
                 &opt.paths_to_track,
@@ -131,7 +155,13 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
                     .values()
                     .filter_map(|crate_context| crate_context.repository.as_ref()),
                 context.unused_patches.iter(),
-            )?;
+            )
+            .with_context(|| {
+                anyhow!(
+                    "Failed to write `paths-to-track` file: {}",
+                    opt.paths_to_track.display()
+                )
+            })?;
 
             return Ok(());
         }

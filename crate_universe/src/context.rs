@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{anyhow, Context as AnyhowContext};
 use serde::{Deserialize, Serialize};
 
 use crate::config::{CrateId, RenderConfig};
@@ -56,9 +56,26 @@ pub(crate) struct Context {
 }
 
 impl Context {
-    pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
-        let data = fs::read_to_string(path.as_ref())?;
-        Ok(serde_json::from_str(&data)?)
+    pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> anyhow::Result<Self> {
+        let content = fs::read_to_string(path.as_ref()).with_context(|| {
+            anyhow!(
+                "Failed to read context from file: {}",
+                path.as_ref().display()
+            )
+        })?;
+        let data = serde_json::from_str(&content).with_context(|| {
+            anyhow!(
+                "Failed to deserialize context from: {}\n```json\n{}\n```",
+                path.as_ref().display(),
+                content
+                    .lines()
+                    .enumerate()
+                    .map(|(i, l)| format!("{} {}", i + 1, l))
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            )
+        })?;
+        Ok(data)
     }
 
     pub(crate) fn new(annotations: Annotations, sources_are_present: bool) -> anyhow::Result<Self> {
@@ -124,7 +141,7 @@ impl Context {
                     None => Some(Ok((crate_id, package_path_id))),
                 }
             })
-            .collect::<Result<BTreeMap<CrateId, String>>>()?;
+            .collect::<anyhow::Result<BTreeMap<CrateId, String>>>()?;
 
         let add_crate_ids = |crates: &mut BTreeSet<CrateId>,
                              deps: &Select<BTreeSet<Dependency>>| {
@@ -168,7 +185,7 @@ impl Context {
         workspace_root: &Path,
         workspace_prefix: &Option<String>,
         package_prefixes: &BTreeMap<String, String>,
-    ) -> Result<String> {
+    ) -> anyhow::Result<String> {
         // Locate the package's manifest directory
         let manifest_dir = package
             .manifest_path

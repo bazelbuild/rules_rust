@@ -350,22 +350,24 @@ def get_lockfiles(repository_ctx):
 def determine_repin(
         *,
         repository_ctx,
-        cargo_bazel_fn,
         repository_name,
         lockfile_path,
         config,
         splicing_manifest,
-        repin_instructions = None):
+        repin_instructions = None,
+        cargo_bazel_fn = None,
+        cargo_bzlmod_fn = None):
     """Use the `cargo-bazel` binary to determine whether or not dpeendencies need to be re-pinned
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
-        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
         repository_name (str): The name of the repository being generated.
         config (path): The path to a `cargo-bazel` config file. See `generate_config`.
         splicing_manifest (path): The path to a `cargo-bazel` splicing manifest. See `create_splicing_manifest`
         lockfile_path (path): The path to a "lock" file for reproducible outputs.
         repin_instructions (optional string): Instructions to re-pin dependencies in your repository. Will be shown when re-pinning is required.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
+        cargo_bzlmod_fn (callable): A callback for collecting `cargo-bazel` command line args.
 
     Returns:
         bool: True if dependencies need to be re-pinned
@@ -386,46 +388,63 @@ def determine_repin(
     if not lockfile_path:
         return True
 
-    # Run the binary to check if a repin is needed
-    result = cargo_bazel_fn(
-        args = [
-            "query",
-            "--lockfile",
-            lockfile_path,
-            "--config",
-            config,
-            "--splicing-manifest",
-            splicing_manifest,
-        ],
-        allow_fail = True,
-    )
+    if cargo_bazel_fn != None:
+        # Run the binary to check if a repin is needed
+        result = cargo_bazel_fn(
+            args = [
+                "query",
+                "--lockfile",
+                lockfile_path,
+                "--config",
+                config,
+                "--splicing-manifest",
+                splicing_manifest,
+            ],
+            allow_fail = True,
+        )
 
-    # If it was determined repinning should occur but there was no
-    # flag indicating repinning was requested, an error is raised
-    # since repinning should be an explicit action
-    if result.return_code:
-        if repin_instructions:
-            msg = ("\n".join([
-                result.stderr,
-                "The current `lockfile` is out of date for '{}'.".format(repository_name),
-                repin_instructions,
-            ]))
-        else:
-            msg = ("\n".join([
-                result.stderr,
-                (
-                    "The current `lockfile` is out of date for '{}'. Please re-run " +
-                    "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
-                    "and the lockfile should be updated."
-                ).format(repository_name),
-            ]))
-        fail(msg)
+        # If it was determined repinning should occur but there was no
+        # flag indicating repinning was requested, an error is raised
+        # since repinning should be an explicit action
+        if result.return_code:
+            if repin_instructions:
+                msg = ("\n".join([
+                    result.stderr,
+                    "The current `lockfile` is out of date for '{}'.".format(repository_name),
+                    repin_instructions,
+                ]))
+            else:
+                msg = ("\n".join([
+                    result.stderr,
+                    (
+                        "The current `lockfile` is out of date for '{}'. Please re-run " +
+                        "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
+                        "and the lockfile should be updated."
+                    ).format(repository_name),
+                ]))
+            fail(msg)
 
-    return False
+        return False
+
+    if cargo_bzlmod_fn != None:
+        return cargo_bzlmod_fn(
+            args = [
+                "query",
+                "--lockfile",
+                lockfile_path,
+                "--config",
+                config,
+                "--splicing-manifest",
+                splicing_manifest,
+            ],
+            allow_fail = True,
+        )
+
+    else:
+        fail("No callback provided to perform repin detection.")
 
 def execute_generator(
         *,
-        cargo_bazel_fn,
         lockfile_path,
         cargo_lockfile_path,
         config,
@@ -435,11 +454,12 @@ def execute_generator(
         paths_to_track_file,
         warnings_output_file,
         metadata = None,
-        generator_label = None):
+        generator_label = None,
+        cargo_bazel_fn = None,
+        cargo_bzlmod_fn = None):
     """Execute the `cargo-bazel` binary to produce `BUILD` and `.bzl` files.
 
     Args:
-        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
         lockfile_path (path): The path to a "lock" file (file used for reproducible renderings).
         cargo_lockfile_path (path): The path to a "Cargo.lock" file within the root workspace.
         config (path): The path to a `cargo-bazel` config file.
@@ -452,6 +472,8 @@ def execute_generator(
         metadata (path, optional): The path to a Cargo metadata json file. If this is set, it indicates to
             the generator that repinning is required. This file must be adjacent to a `Cargo.toml` and
             `Cargo.lock` file.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
+        cargo_bzlmod_fn (callable): A callback for collecting `cargo-bazel` command line args.
 
     Returns:
         struct: The results of `repository_ctx.execute`.
@@ -490,12 +512,22 @@ def execute_generator(
     if metadata:
         args.extend([
             "--repin",
+            "true",
             "--metadata",
             metadata,
         ])
 
-    result = cargo_bazel_fn(
-        args = args,
-    )
+    if cargo_bazel_fn != None:
+        result = cargo_bazel_fn(
+            args = args,
+        )
 
-    return result
+        return result
+
+    if cargo_bzlmod_fn != None:
+        return cargo_bzlmod_fn(
+            args = args,
+        )
+
+    else:
+        fail("No callback provided to perform generation")

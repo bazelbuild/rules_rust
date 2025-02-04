@@ -61,50 +61,6 @@ def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
 
     return result
 
-def new_cargo_bazel_fn(
-        repository_ctx,
-        cargo_bazel_path,
-        cargo_path,
-        rustc_path,
-        isolated = True,
-        quiet = False):
-    """A helper function to allow executing cargo_bazel in repository rules module extensions.
-
-    Args:
-        repository_ctx (repository_ctx): The repository rule or module extension's context.
-        cargo_bazel_path (path): Path The path to a `cargo-bazel` binary
-        cargo_path (path): Path to a Cargo binary.
-        rustc_path (path): Path to a rustc binary.
-        isolated (bool): Enable isolation upon request.
-        quiet (bool): Whether or not to print output from the executable.
-    Returns:
-        A function that can be called to execute cargo_bazel.
-    """
-
-    # Placing this as a nested function allows users to call this right at the
-    # start of a module extension, thus triggering any restarts as early as
-    # possible (since module_ctx.path triggers restarts).
-    def _execute(args, env = {}, allow_fail = False):
-        return execute(
-            repository_ctx,
-            args = [
-                cargo_bazel_path,
-            ] + args + [
-                "--cargo",
-                cargo_path,
-                "--rustc",
-                rustc_path,
-            ],
-            env = {
-                "CARGO": str(cargo_path),
-                "RUSTC": str(rustc_path),
-            } | cargo_environ(repository_ctx, isolated = isolated) | env,
-            allow_fail = allow_fail,
-            quiet = quiet,
-        )
-
-    return _execute
-
 def get_rust_tools(repository_ctx, host_triple):
     """Retrieve a cargo and rustc binary based on the host triple.
 
