@@ -82,7 +82,7 @@ rust_library(
     version = "0.4.4",
     deps = [
         "//vendor_local_manifests/crates/async-stream-0.3.6:async_stream",
-        "//vendor_local_manifests/crates/bytes-1.9.0:bytes",
+        "//vendor_local_manifests/crates/bytes-1.10.0:bytes",
         "//vendor_local_manifests/crates/futures-core-0.3.31:futures_core",
         "//vendor_local_manifests/crates/tokio-1.43.0:tokio",
         "//vendor_local_manifests/crates/tokio-stream-0.1.17:tokio_stream",
