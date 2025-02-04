@@ -1,5 +1,6 @@
 """Bzlmod module extensions that are only used internally"""
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load("//cargo:deps.bzl", "cargo_dependencies")
 
 def _internal_deps_impl(module_ctx):
