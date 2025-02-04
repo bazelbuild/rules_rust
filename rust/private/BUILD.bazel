@@ -14,6 +14,9 @@ bzl_library(
 bzl_library(
     name = "rules_cc_bzl_lib",
     srcs = ["@rules_cc//cc:bzl_srcs"],
+    deps = [
+        "@rules_cc//cc/common",
+    ],
 )
 
 bzl_library(
