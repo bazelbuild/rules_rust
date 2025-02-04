@@ -44,6 +44,7 @@ bzl_library(
     srcs = glob(["*.bzl"]),
     visibility = ["//rust:__pkg__"],
     deps = [
+        "//rust/private:bzl_lib",
         "@bazel_skylib//rules:common_settings",
     ],
 )
