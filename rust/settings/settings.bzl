@@ -10,10 +10,14 @@ load(
     "string_flag",
 )
 load(
-    "//rust:defs.bzl",
+    "//rust/private:clippy.bzl",
     _capture_clippy_output = "capture_clippy_output",
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
+)
+load("//rust/private:lto.bzl", "rust_lto_flag")
+load(
+    "//rust/private:rustc.bzl",
     _error_format = "error_format",
     _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
@@ -23,7 +27,6 @@ load(
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
 )
-load("//rust/private:lto.bzl", "rust_lto_flag")
 load("//rust/private:unpretty.bzl", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 

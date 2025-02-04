@@ -721,12 +721,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__clap_complete-4.5.43",
-        sha256 = "0952013545c9c6dca60f491602655b795c6c062ab180c9cb0bccb83135461861",
+        name = "rmdbi__clap_complete-4.5.44",
+        sha256 = "375f9d8255adeeedd51053574fd8d4ba875ea5fa558e86617b07f09f1680c8b6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/clap_complete/4.5.43/download"],
-        strip_prefix = "clap_complete-4.5.43",
-        build_file = Label("//private/3rdparty/crates:BUILD.clap_complete-4.5.43.bazel"),
+        urls = ["https://static.crates.io/crates/clap_complete/4.5.44/download"],
+        strip_prefix = "clap_complete-4.5.44",
+        build_file = Label("//private/3rdparty/crates:BUILD.clap_complete-4.5.44.bazel"),
     )
 
     maybe(

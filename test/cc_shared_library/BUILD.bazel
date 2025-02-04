@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_static_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")

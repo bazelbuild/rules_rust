@@ -27,7 +27,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_proto",
-    version = "6.0.2",
+    version = "7.1.0",
 )
 bazel_dep(
     name = "protobuf",

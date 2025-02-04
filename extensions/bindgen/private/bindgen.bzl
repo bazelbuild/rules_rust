@@ -19,6 +19,7 @@ load(
     "CPP_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_library")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@rules_rust//rust:rust_common.bzl", "BuildInfo")
 

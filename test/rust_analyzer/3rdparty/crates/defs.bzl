@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@rtra//:serde-1.0.217"),
-            "serde_json": Label("@rtra//:serde_json-1.0.137"),
+            "serde_json": Label("@rtra//:serde_json-1.0.138"),
         },
     },
 }
@@ -447,12 +447,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__ryu-1.0.18",
-        sha256 = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f",
+        name = "rtra__ryu-1.0.19",
+        sha256 = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/ryu/1.0.18/download"],
-        strip_prefix = "ryu-1.0.18",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.ryu-1.0.18.bazel"),
+        urls = ["https://static.crates.io/crates/ryu/1.0.19/download"],
+        strip_prefix = "ryu-1.0.19",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.ryu-1.0.19.bazel"),
     )
 
     maybe(
@@ -477,12 +477,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__serde_json-1.0.137",
-        sha256 = "930cfb6e6abf99298aaad7d29abbef7a9999a9a8806a40088f55f0dcec03146b",
+        name = "rtra__serde_json-1.0.138",
+        sha256 = "d434192e7da787e94a6ea7e9670b26a036d0ca41e0b7efb2676dd32bae872949",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.137/download"],
-        strip_prefix = "serde_json-1.0.137",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.137.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.138/download"],
+        strip_prefix = "serde_json-1.0.138",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.138.bazel"),
     )
 
     maybe(
@@ -497,15 +497,15 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__unicode-ident-1.0.14",
-        sha256 = "adb9e6ca4f869e1180728b7950e35922a7fc6397f7b641499e8f3ef06e50dc83",
+        name = "rtra__unicode-ident-1.0.16",
+        sha256 = "a210d160f08b701c8721ba1c726c11662f877ea6b7094007e1ca9a1041945034",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unicode-ident/1.0.14/download"],
-        strip_prefix = "unicode-ident-1.0.14",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.unicode-ident-1.0.14.bazel"),
+        urls = ["https://static.crates.io/crates/unicode-ident/1.0.16/download"],
+        strip_prefix = "unicode-ident-1.0.16",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.unicode-ident-1.0.16.bazel"),
     )
 
     return [
         struct(repo = "rtra__serde-1.0.217", is_dev_dep = False),
-        struct(repo = "rtra__serde_json-1.0.137", is_dev_dep = False),
+        struct(repo = "rtra__serde_json-1.0.138", is_dev_dep = False),
     ]

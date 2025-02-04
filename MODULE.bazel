@@ -90,7 +90,7 @@ use_repo(
     "libc",
     "rtra",
     "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.137",
+    "rtra__serde_json-1.0.138",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )

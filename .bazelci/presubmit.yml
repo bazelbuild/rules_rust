@@ -1108,7 +1108,3 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-
-buildifier:
-  version: latest
-  warnings: "all"

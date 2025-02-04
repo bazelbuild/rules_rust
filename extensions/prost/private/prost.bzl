@@ -1,5 +1,6 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
 load("@rules_rust//rust:defs.bzl", "rust_common")
