@@ -1031,7 +1031,18 @@ _FROM_COMMON_ATTRS = {
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
     ),
-    "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    "supported_platform_triples": attr.string_list(
+        doc = "A set of all platform triples to consider when generating dependencies.",
+        default = [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "wasm32-unknown-unknown",
+            "wasm32-wasip1",
+            "x86_64-pc-windows-msvc",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-unknown-nixos-gnu",
+        ],
+    ),
 }
 
 _from_cargo = tag_class(
