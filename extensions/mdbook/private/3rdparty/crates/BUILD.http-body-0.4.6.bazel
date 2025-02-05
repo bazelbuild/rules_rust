@@ -81,7 +81,7 @@ rust_library(
     }),
     version = "0.4.6",
     deps = [
-        "@rmdbi__bytes-1.9.0//:bytes",
+        "@rmdbi__bytes-1.10.0//:bytes",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
     ],

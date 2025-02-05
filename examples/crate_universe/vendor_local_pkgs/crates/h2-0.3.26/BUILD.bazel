@@ -81,7 +81,7 @@ rust_library(
     }),
     version = "0.3.26",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.9.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.10.0:bytes",
         "//vendor_local_pkgs/crates/fnv-1.0.7:fnv",
         "//vendor_local_pkgs/crates/futures-core-0.3.31:futures_core",
         "//vendor_local_pkgs/crates/futures-sink-0.3.31:futures_sink",
