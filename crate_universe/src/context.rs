@@ -216,6 +216,11 @@ impl Context {
                     &ctx.common_attrs.proc_macro_deps_dev,
                 ])
                 .flat_map(|deps| deps.values())
+                .chain(
+                    ctx.build_script_attrs
+                        .iter()
+                        .flat_map(|attrs| attrs.deps.values()),
+                )
             })
             .collect()
     }
