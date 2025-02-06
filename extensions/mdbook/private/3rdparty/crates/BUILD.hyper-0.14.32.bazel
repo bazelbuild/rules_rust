@@ -92,7 +92,7 @@ rust_library(
     }),
     version = "0.14.32",
     deps = [
-        "@rmdbi__bytes-1.9.0//:bytes",
+        "@rmdbi__bytes-1.10.0//:bytes",
         "@rmdbi__futures-channel-0.3.31//:futures_channel",
         "@rmdbi__futures-core-0.3.31//:futures_core",
         "@rmdbi__futures-util-0.3.31//:futures_util",

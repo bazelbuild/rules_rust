@@ -513,12 +513,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__bytes-1.9.0",
-        sha256 = "325918d6fe32f23b19878fe4b34794ae41fc19ddbe53b10571a4874d44ffd39b",
+        name = "cvm__bytes-1.10.0",
+        sha256 = "f61dac84819c6588b558454b194026eb1f09c293b9036ae9b159e74e73ab6cf9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/bytes/1.9.0/download"],
-        strip_prefix = "bytes-1.9.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.bytes-1.9.0.bazel"),
+        urls = ["https://static.crates.io/crates/bytes/1.10.0/download"],
+        strip_prefix = "bytes-1.10.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.bytes-1.10.0.bazel"),
     )
 
     maybe(
@@ -783,12 +783,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__syn-2.0.96",
-        sha256 = "d5d0adab1ae378d7f53bdebc67a39f1f151407ef230f0ce2883572f5d8985c80",
+        name = "cvm__syn-2.0.98",
+        sha256 = "36147f1a48ae0ec2b5b3bc5b537d267457555a10dc06f3dbc8cb11ba3006d3b1",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.96/download"],
-        strip_prefix = "syn-2.0.96",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.syn-2.0.96.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.98/download"],
+        strip_prefix = "syn-2.0.98",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.syn-2.0.98.bazel"),
     )
 
     maybe(

@@ -85,7 +85,7 @@ rust_library(
     }),
     version = "0.3.7",
     deps = [
-        "@rmdbi__bytes-1.9.0//:bytes",
+        "@rmdbi__bytes-1.10.0//:bytes",
         "@rmdbi__futures-channel-0.3.31//:futures_channel",
         "@rmdbi__futures-util-0.3.31//:futures_util",
         "@rmdbi__headers-0.3.9//:headers",
@@ -95,7 +95,7 @@ rust_library(
         "@rmdbi__mime-0.3.17//:mime",
         "@rmdbi__mime_guess-2.0.5//:mime_guess",
         "@rmdbi__percent-encoding-2.3.1//:percent_encoding",
-        "@rmdbi__pin-project-1.1.8//:pin_project",
+        "@rmdbi__pin-project-1.1.9//:pin_project",
         "@rmdbi__scoped-tls-1.0.1//:scoped_tls",
         "@rmdbi__serde-1.0.217//:serde",
         "@rmdbi__serde_json-1.0.138//:serde_json",
