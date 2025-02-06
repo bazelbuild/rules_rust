@@ -373,6 +373,7 @@ load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
 )
+load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
     "//crate_universe/private:crates_vendor.bzl",
     "CRATES_VENDOR_ATTRS",
@@ -1033,15 +1034,7 @@ _FROM_COMMON_ATTRS = {
     ),
     "supported_platform_triples": attr.string_list(
         doc = "A set of all platform triples to consider when generating dependencies.",
-        default = [
-            "aarch64-apple-darwin",
-            "aarch64-unknown-linux-gnu",
-            "wasm32-unknown-unknown",
-            "wasm32-wasip1",
-            "x86_64-pc-windows-msvc",
-            "x86_64-unknown-linux-gnu",
-            "x86_64-unknown-nixos-gnu",
-        ],
+        default = SUPPORTED_PLATFORM_TRIPLES,
     ),
 }
 

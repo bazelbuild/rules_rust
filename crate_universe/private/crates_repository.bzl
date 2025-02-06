@@ -22,7 +22,19 @@ load(
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust:defs.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
-load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
+
+# A reduced subset of platform triples that cover a wide range of known users.
+# The reduced set is intended to speed up the splciing step which has `O(N^2)`
+# complexity for each platform triple added.
+SUPPORTED_PLATFORM_TRIPLES = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "wasm32-unknown-unknown",
+    "wasm32-wasip1",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-nixos-gnu",
+]
 
 def _crates_repository_impl(repository_ctx):
     # Determine the current host's platform triple
