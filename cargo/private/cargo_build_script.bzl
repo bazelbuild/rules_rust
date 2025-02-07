@@ -444,11 +444,16 @@ def _cargo_build_script_impl(ctx):
             action_name = ACTION_NAMES.cpp_link_static_library,
         )
 
+        remap_flags = [
+            "-ffile-prefix-map=${pwd}=BAZEL_EXEC_ROOT",
+            "-ffile-prefix-map=${{pwd}}/{}=CARGO_MANIFEST_DIR".format(manifest_dir),
+        ]
+
         # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
         # to determine the deployment target when building for apple platforms (`macosx-version-min`
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
-        env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
-        env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+        env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args + remap_flags))
+        env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args + remap_flags))
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
