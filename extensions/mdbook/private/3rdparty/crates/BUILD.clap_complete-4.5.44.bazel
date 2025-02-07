@@ -84,6 +84,6 @@ rust_library(
     }),
     version = "4.5.44",
     deps = [
-        "@rmdbi__clap-4.5.27//:clap",
+        "@rmdbi__clap-4.5.28//:clap",
     ],
 )
