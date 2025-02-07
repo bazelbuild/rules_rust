@@ -23,6 +23,7 @@ pub fn generate_crate_info(
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("build")
         .arg("--norun_validations")
+        .arg("--remote_download_all")
         .arg(format!(
             "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
             rules_rust.as_ref()
