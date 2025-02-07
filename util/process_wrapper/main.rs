@@ -184,6 +184,24 @@ fn main() -> Result<(), ProcessWrapperError> {
                 ))
             })?;
         }
+        if let Some(dwp_destination) = opts.kludge_move_dwo_to {
+            // find all .dwo files in our out_dir (how do we get that? --out-dir?)
+            // move them all to dwp_destination
+            let dest = std::path::Path::new(&dwp_destination);
+            // Unwrap is okay because we know that --kludge-move-dwo-two will be a child of
+            // rustc's --out-dir.
+            let out_dir = dest.parent().unwrap();
+            let paths = std::fs::read_dir(out_dir).unwrap();
+            for p in paths {
+                let p = p.unwrap();
+                let fn_ = p.file_name();
+                let basename = fn_.to_string_lossy();
+                if basename.ends_with(".dwo") {
+                    let tgt = dest.join(fn_);
+                    std::fs::rename(p.path(), tgt).map_err(|e| ProcessWrapperError(format!("failed to rename dwo output: {}", e)))?;
+                }
+            }
+        }
     }
 
     exit(code)
