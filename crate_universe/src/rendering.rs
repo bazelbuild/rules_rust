@@ -58,7 +58,8 @@ impl Renderer {
         let platforms = self.render_platform_labels(conditions);
         output.extend(self.render_build_files(&engine, context, &platforms)?);
         output.extend(self.render_crates_module(&engine, context, &platforms, generator)?);
-
+        tracing::error!("Output is {:#?}", output);
+        eprintln!("Output is {:#?}", output);
         if let Some(vendor_mode) = &self.config.vendor_mode {
             match vendor_mode {
                 crate::config::VendorMode::Local => {
@@ -866,27 +867,20 @@ impl Renderer {
 
 /// Write a set of [crate::context::crate_context::CrateContext] to disk.
 pub(crate) fn write_outputs(outputs: BTreeMap<PathBuf, String>, dry_run: bool) -> Result<()> {
-    if dry_run {
-        for (path, content) in outputs {
-            println!(
-                "==============================================================================="
-            );
-            println!("{}", path.display());
-            println!(
-                "==============================================================================="
-            );
-            println!("{content}\n");
-        }
-    } else {
-        for (path, content) in outputs {
-            // Ensure the output directory exists
-            fs::create_dir_all(
-                path.parent()
-                    .expect("All file paths should have valid directories"),
-            )?;
-            fs::write(&path, content.as_bytes())
-                .context(format!("Failed to write file to disk: {}", path.display()))?;
-        }
+    for (path, content) in &outputs {
+        println!("===============================================================================");
+        println!("{}", path.display());
+        println!("===============================================================================");
+        println!("{content}\n");
+    }
+    for (path, content) in outputs {
+        // Ensure the output directory exists
+        fs::create_dir_all(
+            path.parent()
+                .expect("All file paths should have valid directories"),
+        )?;
+        fs::write(&path, content.as_bytes())
+            .context(format!("Failed to write file to disk: {}", path.display()))?;
     }
 
     Ok(())

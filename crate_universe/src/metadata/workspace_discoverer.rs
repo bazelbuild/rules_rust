@@ -216,6 +216,8 @@ struct ManifestCache<'a> {
 
 impl ManifestCache<'_> {
     fn get(&mut self, path: &Utf8PathBuf) -> Option<Manifest> {
+        tracing::error!("MANIFEST CACHE BEING HIT {:?}", path);
+        tracing::error!("Cache is {:#?}", self.cache);
         if let Some(manifest) = self.known_manifests.get(path) {
             return Some(manifest.clone());
         }
