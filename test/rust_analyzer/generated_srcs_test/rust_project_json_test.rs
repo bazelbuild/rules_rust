@@ -6,7 +6,6 @@ mod tests {
 
     #[derive(Deserialize)]
     struct Project {
-        sysroot_src: String,
         crates: Vec<Crate>,
     }
 
@@ -14,12 +13,6 @@ mod tests {
     struct Crate {
         display_name: String,
         root_module: String,
-        source: Option<Source>,
-    }
-
-    #[derive(Deserialize)]
-    struct Source {
-        include_dirs: Vec<String>,
     }
 
     #[test]
@@ -31,27 +24,20 @@ mod tests {
         let project: Project =
             serde_json::from_str(&content).expect("Failed to deserialize project JSON");
 
-        // /tmp/_bazel/12345678/external/tools/rustlib/library => /tmp/_bazel
-        let output_base = project
-            .sysroot_src
-            .rsplitn(2, "/external/")
-            .last()
-            .unwrap()
-            .rsplitn(2, '/')
-            .last()
-            .unwrap();
-        println!("output_base: {output_base}");
-
         let gen = project
             .crates
             .iter()
             .find(|c| &c.display_name == "generated_srcs")
             .unwrap();
-        assert!(gen.root_module.starts_with("/"));
-        assert!(gen.root_module.ends_with("/lib.rs"));
 
-        let include_dirs = &gen.source.as_ref().unwrap().include_dirs;
-        assert!(include_dirs.len() == 1);
-        assert!(include_dirs[0].starts_with(output_base));
+        // This target has mixed generated+plain sources, so rules_rust provides a
+        // directory where the root module is a symlink.
+        // However in the crate spec, we want the root_module to be a workspace path
+        // when possible.
+        let workspace_path = PathBuf::from(env::var("WORKSPACE").unwrap());
+        assert_eq!(
+            gen.root_module,
+            workspace_path.join("lib.rs").to_string_lossy()
+        );
     }
 }

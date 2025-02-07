@@ -230,12 +230,24 @@ def _create_single_crate(ctx, attrs, info):
     crate["root_module"] = path_prefix + info.crate.root.path
     crate["source"] = {"exclude_dirs": [], "include_dirs": []}
 
+    # If some sources are generated and others are not, paths are complicated.
+    #
+    # bazel splits the files across bazel-out/package/* and workspace/package/*,
+    # but rustc requires the sources to all be in one directory.
+    # To address this, rules_rust adds symlinks: bazel-out/package/* => workspace/package/*
+    #
+    # If we specify one of the symlinks as our root_module, then rust-analyzer can index the crate,
+    # but won't recognize files in the workspace as being part of it, so features won't work.
+    # If we specify the path within the workspace, it won't manage to resolve the generated modules.
+    #
+    # There's no perfect solution here, for now we choose to try to find a workspace path.
+    # https://github.com/bazelbuild/rules_rust/issues/3126
     if is_generated:
-        srcs = getattr(ctx.rule.files, "srcs", [])
-        src_map = {src.short_path: src for src in srcs if src.is_source}
-        if info.crate.root.short_path in src_map:
-            crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
-            crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
+        # 'root' is a transformed source, likely a symlink.
+        # 'srcs' are what the user originally specified, likely workspace paths.
+        for src in getattr(ctx.rule.files, "srcs", []):
+            if src.is_source and info.crate.root.short_path == src.short_path:
+                crate["root_module"] = _WORKSPACE_TEMPLATE + src.path
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
