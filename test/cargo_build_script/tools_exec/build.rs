@@ -42,10 +42,10 @@ fn main() {
         std::env::var("TOOL").unwrap()
     );
 
-    // Assert that the CC, CXX and LD env vars existed and were executable.
+    // Assert that the cc and rust toolchain env vars existed and were executable.
     // We don't assert what happens when they're executed (in particular, we don't check for a
     // non-zero exit code), but this asserts that it's an existing file which is executable.
-    for env_var in &["CC", "CXX", "LD"] {
+    for env_var in &["CARGO", "CC", "CXX", "LD", "RUSTC"] {
         let path = std::env::var(env_var)
             .unwrap_or_else(|err| panic!("Error getting {}: {}", env_var, err));
         std::process::Command::new(path).status().unwrap();

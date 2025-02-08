@@ -362,6 +362,7 @@ def _cargo_build_script_impl(ctx):
         env.update(ctx.configuration.default_shell_env)
 
     env.update({
+        "CARGO": "${{pwd}}/{}".format(toolchain.cargo.path),
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": pkg_name,
