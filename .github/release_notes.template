@@ -21,6 +21,8 @@ http_archive(
 
 ## Extensions
 
+<details>
+
 ### Bindgen
 
 <details>
@@ -138,5 +140,7 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-{version}.tar.gz"],
 )
 ```
+
+</details>
 
 </details>
