@@ -307,6 +307,12 @@ impl WorkspaceMetadata {
             }
         };
 
+        let crate_index_hash_kind = if cargo.uses_stable_registry_hash()? {
+            crates_index::HashKind::Stable
+        } else {
+            crates_index::HashKind::Legacy
+        };
+
         // Load each index for easy access
         let crate_indexes = index_urls
             .into_iter()
@@ -320,20 +326,27 @@ impl WorkspaceMetadata {
                 let index = if cargo.use_sparse_registries_for_crates_io()?
                     && index_url == utils::CRATES_IO_INDEX_URL
                 {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
+                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url_with_hash_kind(
                         "sparse+https://index.crates.io/",
+                        &crate_index_hash_kind,
                     )?)
                 } else if index_url.starts_with("sparse+") {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url(index_url)?)
+                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url_with_hash_kind(
+                        index_url,
+                        &crate_index_hash_kind,
+                    )?)
                 } else {
                     match source_kind {
                         SourceKind::Registry => {
                             let index = {
                                 // Load the index for the current url
-                                let index = crates_index::GitIndex::from_url(index_url)
-                                    .with_context(|| {
-                                        format!("Failed to load index for url: {index_url}")
-                                    })?;
+                                let index = crates_index::GitIndex::from_url_with_hash_kind(
+                                    index_url,
+                                    &crate_index_hash_kind,
+                                )
+                                .with_context(|| {
+                                    format!("Failed to load index for url: {index_url}")
+                                })?;
 
                                 // Ensure each index has a valid index config
                                 index.index_config().with_context(|| {
@@ -344,11 +357,12 @@ impl WorkspaceMetadata {
                             };
                             CrateIndexLookup::Git(index)
                         }
-                        SourceKind::SparseRegistry => {
-                            CrateIndexLookup::Http(crates_index::SparseIndex::from_url(
+                        SourceKind::SparseRegistry => CrateIndexLookup::Http(
+                            crates_index::SparseIndex::from_url_with_hash_kind(
                                 format!("sparse+{}", index_url).as_str(),
-                            )?)
-                        }
+                                &crate_index_hash_kind,
+                            )?,
+                        ),
                         unknown => {
                             return Err(anyhow!(
                                 "'{:?}' crate index type is not supported (caused by '{}')",

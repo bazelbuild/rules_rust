@@ -16,6 +16,7 @@
 """
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
@@ -864,12 +865,11 @@ def crate_repositories():
     )
 
     maybe(
-        http_archive,
+        new_git_repository,
         name = "cui__crates-index-3.5.0",
-        sha256 = "13058139052295533e5f7b0ed22ecf3eb7d7a5c2cd5657d6a7c8b4d8d8e093e6",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/crates-index/3.5.0/download"],
-        strip_prefix = "crates-index-3.5.0",
+        commit = "a77d2d0981aaef368e10406912febbbdad4b83d7",
+        init_submodules = True,
+        remote = "https://github.com/UebelAndre/rust-crates-index.git",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.5.0.bazel"),
     )
 
@@ -2181,6 +2181,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/rustc-hash/2.0.0/download"],
         strip_prefix = "rustc-hash-2.0.0",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.rustc-hash-2.0.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__rustc-stable-hash-0.1.1",
+        sha256 = "2febf9acc5ee5e99d1ad0afcdbccc02d87aa3f857a1f01f825b80eacf8edfcd1",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/rustc-stable-hash/0.1.1/download"],
+        strip_prefix = "rustc-stable-hash-0.1.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.rustc-stable-hash-0.1.1.bazel"),
     )
 
     maybe(
