@@ -220,6 +220,7 @@ impl LockGenerator {
 
             // Ensure the Cargo cache is up to date to simulate the behavior
             // of having just generated a new one
+            tracing::debug!("Fetching crates for {}", manifest_path);
             let output = self
                 .cargo_bin
                 .command()?
@@ -230,6 +231,7 @@ impl LockGenerator {
                 .arg("fetch")
                 .arg("--manifest-path")
                 .arg(manifest_path.as_std_path())
+                .arg("--verbose")
                 .output()
                 .context(format!(
                     "Error running cargo to fetch crates '{}'",
@@ -244,6 +246,14 @@ impl LockGenerator {
                     output.status
                 ))
             }
+            tracing::trace!(
+                "Cargo fetch stderr:\n{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            tracing::trace!(
+                "Cargo fetch stdout:\n{}",
+                String::from_utf8_lossy(&output.stdout)
+            );
         } else {
             debug!("Generating new lockfile");
             // Simply invoke `cargo generate-lockfile`
