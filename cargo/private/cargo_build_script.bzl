@@ -365,12 +365,15 @@ def _cargo_build_script_impl(ctx):
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": pkg_name,
         "HOST": toolchain.exec_triple.str,
-        "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
+
+    # Allow the user to override the number of jobs for the build script.
+    if "NUM_JOBS" not in env:
+        env["NUM_JOBS"] = 1
 
     # This isn't exactly right, but Bazel doesn't have exact views of "debug" and "release", so...
     env.update({
