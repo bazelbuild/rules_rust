@@ -63,6 +63,7 @@ pub struct CrateSpecSource {
 
 pub fn get_crate_specs(
     bazel: &Path,
+    config: &Option<String>,
     workspace: &Path,
     execution_root: &Path,
     targets: &[String],
@@ -70,6 +71,10 @@ pub fn get_crate_specs(
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
+    let config_args = match config {
+        Some(config) => vec!["--config", config],
+        None => Vec::new(),
+    };
 
     let aquery_output = Command::new(bazel)
         .current_dir(workspace)
@@ -77,6 +82,7 @@ pub fn get_crate_specs(
         .env_remove("BUILD_WORKING_DIRECTORY")
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("aquery")
+        .args(config_args)
         .arg("--include_aspects")
         .arg("--include_artifacts")
         .arg(format!(
