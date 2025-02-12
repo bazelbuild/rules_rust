@@ -31,7 +31,7 @@ use_cc_common_link_transition = transition(
 )
 
 def _use_cc_common_link_on_target_impl(ctx):
-    return [ctx.attr.target[0][DepActionsInfo]]
+    return [ctx.attr.target[0][DepActionsInfo], ctx.attr.target[0][OutputGroupInfo]]
 
 use_cc_common_link_on_target = rule(
     implementation = _use_cc_common_link_on_target_impl,
@@ -62,6 +62,10 @@ def _use_cc_common_link_test(ctx):
 
     has_cpp_link_action = len([action for action in registered_actions if action.mnemonic == "CppLink"]) > 0
     asserts.true(env, has_cpp_link_action, "Expected that the target registers a CppLink action")
+
+    output_groups = tut[OutputGroupInfo]
+    asserts.false(env, hasattr(output_groups, "dsym_folder"), "Expected no dsym_folder output group")
+    asserts.false(env, hasattr(output_groups, "pdb_file"), "Expected no pdb_file output group")
 
     return analysistest.end(env)
 
