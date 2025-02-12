@@ -5,6 +5,9 @@ authors = ["UebelAndre <github@uebelandre.com>"]
 edition = "2018"
 
 [dependencies]
+# If CARGO_PKG_REPOSITORY isn't set, this crate fails to build.
+# This is here as a check that we're properly setting env vars as cargo would.
+autometrics = { version = "=2.0.0", features = ["prometheus-exporter"] }
 tokio = { version = "1.12.0", features = ["full"] }
 
 [dev-dependencies]

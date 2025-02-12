@@ -19,9 +19,9 @@ use crate::rendering::template_engine::TemplateEngine;
 use crate::select::Select;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
-    self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList, SelectScalar,
-    SelectSet, Starlark, TargetCompatibleWith,
+    self, Alias, CargoBuildScript, CargoTomlEnvVars, CommonAttrs, Data, ExportsFiles, Filegroup,
+    Glob, Label, Load, Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList,
+    SelectScalar, SelectSet, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
@@ -360,6 +360,12 @@ impl Renderer {
         platforms: &Platforms,
         krate: &CrateContext,
     ) -> Result<String> {
+        let mut krate = krate.clone();
+        krate
+            .common_attrs
+            .rustc_env_files
+            .insert(":cargo_toml_env_vars".to_owned(), None);
+
         let mut starlark = Vec::new();
 
         // Banner comment for top of the file.
@@ -433,6 +439,12 @@ impl Renderer {
             starlark.push(Starlark::Package(package));
         }
 
+        load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars");
+        starlark.push(Starlark::CargoTomlEnvVars(CargoTomlEnvVars {
+            name: "cargo_toml_env_vars".to_owned(),
+            src: "Cargo.toml".to_owned(),
+        }));
+
         for rule in &krate.targets {
             if let Some(override_target) = krate.override_targets.get(rule.override_target_key()) {
                 starlark.push(Starlark::Alias(Alias {
@@ -446,7 +458,7 @@ impl Renderer {
                     Rule::BuildScript(target) => {
                         load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
                         let cargo_build_script =
-                            self.make_cargo_build_script(platforms, krate, target)?;
+                            self.make_cargo_build_script(platforms, &krate, target)?;
                         starlark.push(Starlark::CargoBuildScript(cargo_build_script));
                         starlark.push(Starlark::Alias(Alias {
                             rule: AliasRule::default().rule(),
@@ -458,17 +470,17 @@ impl Renderer {
                     Rule::ProcMacro(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
                         let rust_proc_macro =
-                            self.make_rust_proc_macro(platforms, krate, target)?;
+                            self.make_rust_proc_macro(platforms, &krate, target)?;
                         starlark.push(Starlark::RustProcMacro(rust_proc_macro));
                     }
                     Rule::Library(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_library");
-                        let rust_library = self.make_rust_library(platforms, krate, target)?;
+                        let rust_library = self.make_rust_library(platforms, &krate, target)?;
                         starlark.push(Starlark::RustLibrary(rust_library));
                     }
                     Rule::Binary(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_binary");
-                        let rust_binary = self.make_rust_binary(platforms, krate, target)?;
+                        let rust_binary = self.make_rust_binary(platforms, &krate, target)?;
                         starlark.push(Starlark::RustBinary(rust_binary));
                     }
                 }
