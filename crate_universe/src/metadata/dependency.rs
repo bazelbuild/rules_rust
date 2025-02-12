@@ -367,7 +367,7 @@ fn get_library_target_name(package: &Package, potential_name: &str) -> Result<St
         )
     }
 
-    let target = lib_targets.into_iter().last().unwrap();
+    let target = lib_targets.into_iter().next_back().unwrap();
     Ok(target.name.clone())
 }
 
