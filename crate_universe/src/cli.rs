@@ -7,12 +7,14 @@ mod splice;
 mod vendor;
 
 use clap::Parser;
-use tracing::{Level, Subscriber};
+use tracing::Subscriber;
 use tracing_subscriber::fmt::format::{Format, Full};
 use tracing_subscriber::fmt::time::SystemTime;
 use tracing_subscriber::fmt::{FormatEvent, FormatFields};
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::FmtSubscriber;
+
+pub use tracing::Level as LogLevel;
 
 pub use self::generate::GenerateOptions;
 pub use self::query::QueryOptions;
@@ -92,7 +94,7 @@ impl LoggingFormatEvent {
 }
 
 /// Initialize logging for one of the cli options.
-pub fn init_logging(name: &str, verbose: bool) {
+pub fn init_logging(name: &str, level: LogLevel) {
     if !EXPECTED_LOGGER_NAMES.contains(&name) {
         panic!(
             "Unexpected logger name {}, use of one of {:?}",
@@ -100,13 +102,9 @@ pub fn init_logging(name: &str, verbose: bool) {
         );
     }
 
-    // a builder for `FmtSubscriber`.
     let subscriber = FmtSubscriber::builder()
-        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-        // will be written to stdout.
-        .with_max_level(if verbose { Level::DEBUG } else { Level::INFO })
+        .with_max_level(level)
         .event_format(LoggingFormatEvent::new(name))
-        // completes the builder.
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
