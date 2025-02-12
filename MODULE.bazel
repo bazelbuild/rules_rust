@@ -9,35 +9,13 @@ module(
 ## Core
 ###############################################################################
 
-bazel_dep(
-    name = "bazel_features",
-    version = "1.21.0",
-)
-bazel_dep(
-    name = "bazel_skylib",
-    version = "1.7.1",
-)
-bazel_dep(
-    name = "platforms",
-    version = "0.0.11",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
-bazel_dep(
-    name = "rules_license",
-    version = "1.0.0",
-)
-bazel_dep(
-    name = "rules_shell",
-    version = "0.3.0",
-)
-bazel_dep(
-    name = "apple_support",
-    version = "1.17.1",
-    repo_name = "build_bazel_apple_support",
-)
+bazel_dep(name = "bazel_features", version = "1.21.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -95,21 +73,9 @@ use_repo(
     "rules_rust_toolchain_test_target_json",
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "0.40.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "rules_testing",
-    version = "0.7.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "bazel_ci_rules",
-    version = "1.0.0",
-    dev_dependency = True,
-)
+bazel_dep(name = "rules_python", version = "0.40.0", dev_dependency = True)
+bazel_dep(name = "rules_testing", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
 ###############################################################################
 ## Crate Universe
