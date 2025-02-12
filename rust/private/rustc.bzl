@@ -1463,6 +1463,11 @@ def rustc_compile_action(
             # Append the name of the library
             output_relative_to_package = output_relative_to_package + output_lib
 
+        additional_linker_outputs = []
+        if crate_info.type in ("cdylib", "bin") and cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "generate_pdb_file"):
+            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
+            additional_linker_outputs.append(pdb_file)
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1472,6 +1477,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
+            additional_outputs = additional_linker_outputs,
         )
 
         outputs = [crate_info.output]
