@@ -1,11 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::File;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
 
-use anyhow::Context;
+use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
+
+use crate::{deserialize_file_content, bazel_command};
 
 #[derive(Debug, Deserialize)]
 struct AqueryOutput {
@@ -51,7 +49,16 @@ pub struct CrateSpec {
     pub cfg: Vec<String>,
     pub env: BTreeMap<String, String>,
     pub target: String,
-    pub crate_type: String,
+    pub crate_type: CrateType,
+    pub is_test: bool,
+    pub build: Option<CrateSpecBuild>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CrateSpecBuild {
+    pub label: String,
+    pub build_file: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
@@ -61,22 +68,36 @@ pub struct CrateSpecSource {
     pub include_dirs: Vec<String>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CrateType {
+    Bin,
+    Rlib,
+    Lib,
+    Dylib,
+    Cdylib,
+    Staticlib,
+    ProcMacro,
+}
+
 pub fn get_crate_specs(
-    bazel: &Path,
-    workspace: &Path,
-    execution_root: &Path,
+    bazel: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    execution_root: &Utf8Path,
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
     targets: &[String],
     rules_rust_name: &str,
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
+    log::info!("running bazel aquery...");
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
 
-    let aquery_output = Command::new(bazel)
-        .current_dir(workspace)
-        .env_remove("BAZELISK_SKIP_WRAPPER")
-        .env_remove("BUILD_WORKING_DIRECTORY")
-        .env_remove("BUILD_WORKSPACE_DIRECTORY")
+    let output = bazel_command(bazel, Some(workspace), Some(output_base))
+        .args(bazel_startup_options)
         .arg("aquery")
+        .args(bazel_args)
         .arg("--include_aspects")
         .arg("--include_artifacts")
         .arg(format!(
@@ -89,26 +110,24 @@ pub fn get_crate_specs(
         .arg("--output=jsonproto")
         .output()?;
 
+    log::debug!("{}", String::from_utf8_lossy(&output.stderr));
+    log::info!("bazel aquery finished; parsing spec files...");
+
     let crate_spec_files =
-        parse_aquery_output_files(execution_root, &String::from_utf8(aquery_output.stdout)?)?;
+        parse_aquery_output_files(execution_root, &String::from_utf8(output.stdout)?)?;
 
     let crate_specs = crate_spec_files
         .into_iter()
-        .map(|file| {
-            let f = File::open(&file)
-                .with_context(|| format!("Failed to open file: {}", file.display()))?;
-            serde_json::from_reader(f)
-                .with_context(|| format!("Failed to deserialize file: {}", file.display()))
-        })
+        .map(|file| deserialize_file_content(&file, output_base, workspace, execution_root))
         .collect::<anyhow::Result<Vec<CrateSpec>>>()?;
 
     consolidate_crate_specs(crate_specs)
 }
 
 fn parse_aquery_output_files(
-    execution_root: &Path,
+    execution_root: &Utf8Path,
     aquery_stdout: &str,
-) -> anyhow::Result<Vec<PathBuf>> {
+) -> anyhow::Result<Vec<Utf8PathBuf>> {
     let out: AqueryOutput = serde_json::from_str(aquery_stdout).map_err(|_| {
         // Parsing to `AqueryOutput` failed, try parsing into a `serde_json::Value`:
         match serde_json::from_str::<serde_json::Value>(aquery_stdout) {
@@ -133,7 +152,7 @@ fn parse_aquery_output_files(
         .map(|pf| (pf.id, pf))
         .collect::<BTreeMap<_, _>>();
 
-    let mut output_files: Vec<PathBuf> = Vec::new();
+    let mut output_files: Vec<Utf8PathBuf> = Vec::new();
     for action in out.actions {
         for output_id in action.output_ids {
             let artifact = artifacts
@@ -155,15 +174,15 @@ fn parse_aquery_output_files(
 fn path_from_fragments(
     id: u32,
     fragments: &BTreeMap<u32, &PathFragment>,
-) -> anyhow::Result<PathBuf> {
+) -> anyhow::Result<Utf8PathBuf> {
     let path_fragment = fragments
         .get(&id)
         .expect("internal consistency error in bazel output");
 
     let buf = match path_fragment.parent_id {
         Some(parent_id) => path_from_fragments(parent_id, fragments)?
-            .join(PathBuf::from(&path_fragment.label.clone())),
-        None => PathBuf::from(&path_fragment.label.clone()),
+            .join(Utf8PathBuf::from(&path_fragment.label.clone())),
+        None => Utf8PathBuf::from(&path_fragment.label.clone()),
     };
 
     Ok(buf)
@@ -177,17 +196,35 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
             existing.deps.extend(spec.deps);
+            existing.env.extend(spec.env);
 
             spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
             existing.cfg.extend(spec.cfg);
+
+            if let Some(source) = spec.source {
+                let existing_source = existing.source.get_or_insert_with(|| CrateSpecSource {
+                    exclude_dirs: Vec::new(),
+                    include_dirs: Vec::new(),
+                });
+
+                existing_source.exclude_dirs.extend(source.exclude_dirs);
+                existing_source.include_dirs.extend(source.include_dirs);
+            }
 
             // display_name should match the library's crate name because Rust Analyzer
             // seems to use display_name for matching crate entries in rust-project.json
             // against symbols in source files. For more details, see
             // https://github.com/bazelbuild/rules_rust/issues/1032
-            if spec.crate_type == "rlib" {
+            if spec.crate_type == CrateType::Rlib {
                 existing.display_name = spec.display_name;
-                existing.crate_type = "rlib".into();
+                existing.crate_type = CrateType::Rlib;
+                existing.is_test = spec.is_test;
+            }
+
+            // We want to use the test target's build label to provide
+            // unit tests codelens actions for library crates in IDEs.
+            if spec.is_test {
+                existing.build = spec.build;
             }
 
             // For proc-macro crates that exist within the workspace, there will be a
@@ -228,7 +265,12 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: Some(CrateSpecBuild {
+                    label: "//:test".to_owned(),
+                    build_file: "BUILD.bazel".to_owned(),
+                }),
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -243,7 +285,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -258,7 +302,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -273,7 +319,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "bin".into(),
+                crate_type: CrateType::Bin,
+                is_test: true,
+                build: None,
             },
         ];
 
@@ -293,7 +341,12 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: Some(CrateSpecBuild {
+                        label: "//:test".to_owned(),
+                        build_file: "BUILD.bazel".to_owned(),
+                    }),
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -308,7 +361,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -323,7 +378,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None
                 },
             ])
         );
@@ -345,7 +402,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "bin".into(),
+                crate_type: CrateType::Bin,
+                is_test: true,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -360,7 +419,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -375,7 +436,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -390,7 +453,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
         ];
 
@@ -410,7 +475,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -425,7 +492,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -440,7 +509,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None
                 },
             ])
         );
@@ -467,7 +538,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -482,7 +555,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "bin".into(),
+                crate_type: CrateType::Bin,
+                is_test: true,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -497,7 +572,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "bin".into(),
+                crate_type: CrateType::Bin,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -512,7 +589,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             },
         ];
 
@@ -533,7 +612,9 @@ mod test {
                         cfg: vec!["test".into(), "debug_assertions".into()],
                         env: BTreeMap::new(),
                         target: "x86_64-unknown-linux-gnu".into(),
-                        crate_type: "rlib".into(),
+                        crate_type: CrateType::Rlib,
+                        is_test: false,
+                        build: None,
                     },
                     CrateSpec {
                         aliases: BTreeMap::new(),
@@ -548,7 +629,9 @@ mod test {
                         cfg: vec!["test".into(), "debug_assertions".into()],
                         env: BTreeMap::new(),
                         target: "x86_64-unknown-linux-gnu".into(),
-                        crate_type: "rlib".into(),
+                        crate_type: CrateType::Rlib,
+                        is_test: false,
+                        build: None
                     },
                 ])
             );
@@ -577,7 +660,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "proc_macro".into(),
+                crate_type: CrateType::ProcMacro,
+                is_test: false,
+                build: None,
             },
             CrateSpec {
                 aliases: BTreeMap::new(),
@@ -594,7 +679,9 @@ mod test {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "proc_macro".into(),
+                crate_type: CrateType::ProcMacro,
+                is_test: false,
+                build: None,
             },
         ];
 
@@ -617,7 +704,9 @@ mod test {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "proc_macro".into(),
+                    crate_type: CrateType::ProcMacro,
+                    is_test: false,
+                    build: None,
                 },])
             );
         }
