@@ -1,0 +1,25 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
+
+native_binary(
+    name = "clang",
+    src = "@llvm_toolchain_llvm//:bin/clang",
+)
+
+cc_library(
+    name = "libclang",
+    srcs = ["@llvm_toolchain_llvm//:libclang"],
+)
+
+rust_bindgen_toolchain(
+    name = "my_bindgen_toolchain",
+    bindgen = "@rules_rust_bindgen//3rdparty:bindgen",
+    clang = ":clang",
+    libclang = ":libclang",
+)
+
+build_test(
+    name = "my_bindgen_toolchain_test",
+    targets = [":my_bindgen_toolchain"],
+)

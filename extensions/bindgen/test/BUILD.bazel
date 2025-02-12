@@ -1,14 +1,3 @@
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load(":bindgen_test.bzl", "bindgen_test_suite")
 
 bindgen_test_suite(name = "cc_bindgen_test_suite")
-
-native_binary(
-    name = "clang",
-    src = "@llvm_toolchain_llvm//:bin/clang",
-)
-
-cc_library(
-    name = "libclang",
-    srcs = ["@llvm_toolchain_llvm//:libclang"],
-)
