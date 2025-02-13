@@ -1,5 +1,6 @@
 """A module defining Rust link time optimization (lto) rules"""
 
+load("//rust/private:providers.bzl", "IsProcMacroDepInfo")
 load("//rust/private:utils.bzl", "is_exec_configuration")
 
 _LTO_MODES = [
@@ -43,6 +44,21 @@ rust_lto_flag = rule(
     build_setting = config.string(flag = True),
 )
 
+def _is_proc_macro_dep(ctx):
+    """Determines if the current crate is a dependency of a proc-macro.
+
+    Relies on a transition being applied to dependencies of `rust_proc_macro` and providing
+    `IsProcMacroDepInfo`.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+
+    Returns:
+        boolean: Whether or not the current crate is a dependency of a proc-macro.
+    """
+    return hasattr(ctx.attr, "_is_proc_macro_dep") and \
+           ctx.attr._is_proc_macro_dep[IsProcMacroDepInfo].is_proc_macro_dep
+
 def _determine_lto_object_format(ctx, toolchain, crate_info):
     """Determines if we should run LTO and what bitcode should get included in a built artifact.
 
@@ -57,7 +73,7 @@ def _determine_lto_object_format(ctx, toolchain, crate_info):
 
     # Even if LTO is enabled don't use it for actions being built in the exec
     # configuration, e.g. build scripts and proc-macros. This mimics Cargo.
-    if is_exec_configuration(ctx):
+    if is_exec_configuration(ctx) or _is_proc_macro_dep(ctx):
         return "only_object"
 
     mode = toolchain.lto.mode
@@ -103,8 +119,14 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
     format = _determine_lto_object_format(ctx, toolchain, crate_info)
     args = []
 
-    # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
-    if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx) and crate_info.type != "proc-macro":
+    # We don't want to set LTO for actions being built in the exec configuration, e.g. build
+    # scripts or proc-macros. But also if we're building a proc-macro directly (or its
+    # dependencies), we want to skip LTO since `rustc` itself doesn't support it.
+    #
+    # See <https://doc.rust-lang.org/beta/unstable-book/compiler-flags/dylib-lto.html>.
+    if is_exec_configuration(ctx) or crate_info.type == "proc-macro" or _is_proc_macro_dep(ctx):
+        pass
+    elif mode in ["thin", "fat", "off"]:
         args.append("lto={}".format(mode))
 
     if format == "object_and_bitcode":
