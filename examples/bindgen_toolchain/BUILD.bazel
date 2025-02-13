@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@rules_cc//cc:defs.bzl", "cc_import")
 load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
 
 native_binary(
@@ -7,9 +8,9 @@ native_binary(
     src = "@llvm_toolchain_llvm//:bin/clang",
 )
 
-cc_library(
+cc_import(
     name = "libclang",
-    srcs = ["@llvm_toolchain_llvm//:libclang"],
+    shared_library = "@llvm_toolchain_llvm//:libclang",
 )
 
 rust_bindgen_toolchain(
