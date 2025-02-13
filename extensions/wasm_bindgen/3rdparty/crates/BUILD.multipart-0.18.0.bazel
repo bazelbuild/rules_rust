@@ -91,7 +91,7 @@ rust_library(
     deps = [
         "@rrwbd__buf_redux-0.8.4//:buf_redux",
         "@rrwbd__httparse-1.8.0//:httparse",
-        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__log-0.4.25//:log",
         "@rrwbd__mime-0.3.17//:mime",
         "@rrwbd__mime_guess-2.0.4//:mime_guess",
         "@rrwbd__quick-error-1.2.3//:quick_error",
