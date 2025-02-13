@@ -71,6 +71,10 @@ js_test(
     name = "hello_world_wasm_direct_test",
     data = _WASM_DATA,
     entry_point = "hello_world_wasm_test.js",
+    tags = [
+        # TODO: https://github.com/bazelbuild/rules_rust/issues/3266
+        "manual",
+    ],
 )
 
 js_library(
@@ -88,6 +92,10 @@ js_test(
         ":hello_world_wasm_lib",
     ],
     entry_point = ":hello_world_wasm_lib",
+    tags = [
+        # TODO: https://github.com/bazelbuild/rules_rust/issues/3266
+        "manual",
+    ],
 )
 
 build_test(
