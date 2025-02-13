@@ -27,6 +27,10 @@ def cross_installer_deps(**kwargs):
         strip_prefix = "cross-4090beca3cfffa44371a5bba524de3a578aa46c3",
         integrity = "sha256-9lo/wRsDWdaTzt3kVSBWRfNp+DXeDZqrG3Z+10mE+fo=",
         build_file_content = """exports_files(["Cargo.toml", "Cargo.lock"], visibility = ["//visibility:public"])""",
+        patch_args = ["-p1"],
+        patches = [
+            Label("//crate_universe/tools/cross_installer/patches:cross_rs.static_mut_refs.patch"),
+        ],
     )
 
     direct_deps.append(struct(
