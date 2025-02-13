@@ -131,7 +131,7 @@ def _get_user_link_flags(cc_lib):
     return linker_flags
 
 def _generate_cc_link_build_info(ctx, cc_lib):
-    """Produce the eqivilant cargo_build_script providers for use in linking the library.
+    """Produce the equivalent cargo_build_script providers for use in linking the library.
 
     Args:
         ctx (ctx): The rule's context object
@@ -392,7 +392,10 @@ rust_bindgen = rule(
             default = True,
         ),
         "wrap_static_fns": attr.bool(
-            doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
+            doc = (
+                "Whether to create a separate .c file for static functions. Requires nightly toolchain, " +
+                "and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains)."
+            ),
             default = False,
         ),
         "_process_wrapper": attr.label(
