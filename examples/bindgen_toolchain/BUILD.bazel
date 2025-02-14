@@ -13,8 +13,14 @@ cc_import(
 )
 
 rust_bindgen_toolchain(
-    name = "my_bindgen_toolchain",
+    name = "rust_bindgen_toolchain",
     bindgen = "@rules_rust_bindgen//3rdparty:bindgen",
     clang = ":clang",
     libclang = ":libclang",
+)
+
+toolchain(
+    name = "my_bindgen_toolchain",
+    toolchain = ":rust_bindgen_toolchain",
+    toolchain_type = "@rules_rust_bindgen//:toolchain_type",
 )
