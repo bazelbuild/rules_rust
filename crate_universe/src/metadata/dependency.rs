@@ -553,7 +553,7 @@ mod test {
 
         let node = find_metadata_node("example-proc-macro-dep", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let normal_deps: Vec<_> = dependencies
             .normal_deps
@@ -578,7 +578,7 @@ mod test {
 
         let node = find_metadata_node("surrealdb-core", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let bindings = dependencies.normal_deps.items();
 
@@ -601,8 +601,12 @@ mod test {
 
         let openssl_node = find_metadata_node("openssl", &metadata);
 
-        let dependencies =
-            DependencySet::new_for_node(openssl_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(
+            openssl_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         let normal_sys_crate =
             dependencies
@@ -635,8 +639,12 @@ mod test {
         let metadata = metadata::build_scripts();
 
         let libssh2 = find_metadata_node("libssh2-sys", &metadata);
-        let libssh2_depset =
-            DependencySet::new_for_node(libssh2, &metadata, &TreeResolverMetadata::default());
+        let libssh2_depset = DependencySet::new_for_node(
+            libssh2,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         // Collect build dependencies into a set
         let build_deps: BTreeSet<String> = libssh2_depset
@@ -685,8 +693,12 @@ mod test {
         let metadata = metadata::alias();
 
         let aliases_node = find_metadata_node("aliases", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(aliases_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(
+            aliases_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         let aliases: Vec<Dependency> = dependencies
             .normal_deps
@@ -713,7 +725,7 @@ mod test {
 
         let node = find_metadata_node("crate-types", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let rlib_deps: Vec<Dependency> = dependencies
             .normal_deps
@@ -744,7 +756,7 @@ mod test {
 
         let node = find_metadata_node("cpufeatures", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let libc_cfgs: BTreeSet<Option<String>> = dependencies
             .normal_deps
@@ -770,7 +782,7 @@ mod test {
 
         let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
@@ -795,7 +807,7 @@ mod test {
 
         let node = find_metadata_node("clap", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         assert!(!dependencies
             .normal_deps
@@ -811,7 +823,7 @@ mod test {
 
         let serde_with = find_metadata_node("serde_with", &metadata);
         let serde_with_depset =
-            DependencySet::new_for_node(serde_with, &metadata, &TreeResolverMetadata::new());
+            DependencySet::new_for_node(serde_with, &metadata, &TreeResolverMetadata::new(), false);
         assert!(!serde_with_depset
             .normal_deps
             .items()
@@ -839,7 +851,7 @@ mod test {
         )]);
 
         let clap = find_metadata_node("clap", &metadata);
-        let clap_depset = DependencySet::new_for_node(clap, &metadata, &resolver_data);
+        let clap_depset = DependencySet::new_for_node(clap, &metadata, &resolver_data, false);
         assert_eq!(
             clap_depset
                 .normal_deps
@@ -853,7 +865,7 @@ mod test {
 
         let notify = find_metadata_node("notify", &metadata);
         let notify_depset =
-            DependencySet::new_for_node(notify, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(notify, &metadata, &TreeResolverMetadata::default(), false);
 
         // mio is not present in the common list of dependencies
         assert!(!notify_depset
@@ -887,7 +899,7 @@ mod test {
 
         let node = find_metadata_node("gherkin", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         assert!(!dependencies
             .normal_deps
@@ -920,7 +932,7 @@ mod test {
         )]);
 
         let p256 = find_metadata_node("p256", &metadata);
-        let p256_depset = DependencySet::new_for_node(p256, &metadata, &resolver_data);
+        let p256_depset = DependencySet::new_for_node(p256, &metadata, &resolver_data, false);
         assert_eq!(
             p256_depset
                 .normal_deps
@@ -978,7 +990,8 @@ mod test {
         )]);
 
         let tokio_node = find_metadata_node("tokio", &metadata);
-        let tokio_depset = DependencySet::new_for_node(tokio_node, &metadata, &tree_metadata);
+        let tokio_depset =
+            DependencySet::new_for_node(tokio_node, &metadata, &tree_metadata, false);
         assert_eq!(
             tokio_depset
                 .normal_deps
