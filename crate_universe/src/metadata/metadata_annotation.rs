@@ -588,7 +588,7 @@ mod test {
 
     #[test]
     fn annotate_metadata_with_aliases() {
-        let annotations = MetadataAnnotation::new(test::metadata::alias());
+        let annotations = MetadataAnnotation::new(test::metadata::alias(), false);
         let log_crates: BTreeMap<&PackageId, &CrateAnnotation> = annotations
             .crates
             .iter()
@@ -614,7 +614,7 @@ mod test {
 
     #[test]
     fn annotate_metadata_with_build_scripts() {
-        MetadataAnnotation::new(test::metadata::build_scripts());
+        MetadataAnnotation::new(test::metadata::build_scripts(), false);
     }
 
     #[test]

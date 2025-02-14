@@ -1453,7 +1453,7 @@ mod test {
             test::metadata::alias(),
             &None,
             test::lockfile::alias(),
-            config,
+            config.clone(),
             Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
@@ -1574,7 +1574,6 @@ mod test {
             mock_supported_platform_triples(),
         );
         let output = renderer.render(&context, None).unwrap();
-
         // Local vendoring does not produce a `crate_repositories` macro
         let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
         assert!(!defs_module.contains("def crate_repositories():"));
