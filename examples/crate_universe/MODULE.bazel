@@ -684,3 +684,30 @@ use_repo(
     override_target,
     "override_target",
 )
+
+###############################################################################
+# I N T R A  W O R K S P A C E  D E P E N D E N C I E S
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_intra_workspace_dependencies = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_intra_workspace_dependencies.from_cargo(
+    name = "crate_index_intra_workspace_dependencies",
+    cargo_config = "//intra_workspace_dependencies:.cargo/config.toml",
+    cargo_lockfile = "//intra_workspace_dependencies:Cargo.Bazel.lock",
+    lockfile = "//intra_workspace_dependencies:cargo-bazel-lock.json",
+    manifests = [
+        "//intra_workspace_dependencies:Cargo.toml",
+        "//intra_workspace_dependencies/num_printer:Cargo.toml",
+        "//intra_workspace_dependencies/printer:Cargo.toml",
+        "//intra_workspace_dependencies/rng:Cargo.toml",
+    ],
+)
+crate_index_intra_workspace_dependencies.render_config(
+    intra_workspace_dependencies_workspace_toml = "@//intra_workspace_dependencies:Cargo.toml",
+    repositories = ["crate_index_intra_workspace_dependencies"],
+)
+use_repo(
+    crate_index_intra_workspace_dependencies,
+    "crate_index_intra_workspace_dependencies",
+)

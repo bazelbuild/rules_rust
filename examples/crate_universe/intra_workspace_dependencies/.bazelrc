@@ -1,0 +1,25 @@
+# A config file containing Bazel settings
+
+# Required on windows
+common --enable_platform_specific_config
+startup --windows_enable_symlinks
+build:windows --enable_runfiles
+
+# Enable rustfmt
+build:strict --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:strict --output_groups=+rustfmt_checks
+
+# Enable clippy
+build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:strict --output_groups=+clippy_checks
+
+# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
+# https://github.com/bazelbuild/rules_rust/issues/2181
+common --noenable_bzlmod
+
+# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
+build --incompatible_disallow_empty_glob
+
+# This import should always be last to allow users to override
+# settings for local development.
+try-import %workspace%/user.bazelrc
