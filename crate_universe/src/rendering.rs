@@ -2120,8 +2120,59 @@ mod test {
                 tags = ["manual"],
             )
         "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
+        assert!(
+            build_file_content
+                .replace(' ', "")
+                .contains(&expected.replace(' ', "")),
+            "{}\n does not match {}",
+            build_file_content,
+            expected
+        );
+    }
+
+    #[test]
+    fn intra_workspace_deps() {
+        let intra_workspace_dependencies_workspace_toml = Label::Absolute {
+            repository: starlark::Repository::Canonical("test_repo".to_owned()),
+            package: "test_package".to_owned(),
+            target: "Cargo.lock".to_owned(),
+        };
+
+        let render_config = RenderConfig {
+            intra_workspace_dependencies_workspace_toml: Some(
+                intra_workspace_dependencies_workspace_toml,
+            ),
+            ..std::sync::Arc::<RenderConfig>::into_inner(mock_render_config(None)).unwrap()
+        };
+
+        let config = Config {
+            rendering: render_config.clone(),
+            ..Default::default()
+        };
+
+        let annotations = Annotations::new(
+            test::metadata::workspace_path(),
+            &None,
+            test::lockfile::workspace_path(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+        let context = Context::new(annotations, false).unwrap();
+
+        let renderer = Renderer::new(Arc::new(render_config), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let expected = indoc! {r#"
+            alias(
+                name = "child_a-0.1.0",
+                actual = "@@test_repo//child_a:child_a",
+                tags = ["manual"],
+            )
+        "#};
+        assert!(output
+            .get(&PathBuf::from("BUILD.bazel"))
+            .unwrap()
+            .contains(expected));
     }
 }
