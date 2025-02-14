@@ -23,28 +23,37 @@ build_file_repository = repository_rule(
 )
 
 _GECKODRIVER_BUILD_CONTENT_UNIX = """\
-exports_files(
-    ["geckodriver"],
-    visibility = ["//visibility:public"],
-)
-
-alias(
+filegroup(
     name = "{}",
-    actual = "geckodriver",
+    srcs = ["geckodriver"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
 
 _GECKODRIVER_BUILD_CONTENT_WINDOWS = """\
-alias(
-    name = "geckodriver",
-    actual = "geckodriver.exe",
-    visibility = ["//visibility:public"],
-)
-
-alias(
+filegroup(
     name = "{}",
-    actual = ":geckodriver",
+    srcs = ["geckodriver.exe"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
@@ -160,55 +169,82 @@ CHROME_DATA = {
 }
 
 _CHROMEDRIVER_BUILD_CONTENT_UNIX = """\
-exports_files(
-    ["chromedriver"],
-    visibility = ["//visibility:public"],
-)
-
-alias(
+filegroup(
     name = "{}",
-    actual = "chromedriver",
+    srcs = ["chromedriver"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
 
 _CHROMEDRIVER_BUILD_CONTENT_WINDOWS = """\
-alias(
-    name = "chromedriver",
-    actual = "chromedriver.exe",
-    visibility = ["//visibility:public"],
-)
-
-alias(
+filegroup(
     name = "{}",
-    actual = ":chromedriver",
+    srcs = ["chromedriver.exe"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
 
 _CHROME_BUILD_CONTENT_UNIX = """\
-exports_files(
-    ["chrome-headless-shell"],
-    visibility = ["//visibility:public"],
-)
-
-alias(
+filegroup(
     name = "{}",
-    actual = "chrome-headless-shell",
+    srcs = ["chrome-headless-shell"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
 
 _CHROME_BUILD_CONTENT_WINDOWS = """\
-alias(
-    name = "chrome-headless-shell",
-    actual = "chrome-headless-shell.exe",
-    visibility = ["//visibility:public"],
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+
+copy_file(
+    name = "bin",
+    src = "chrome-headless-shell.exe",
+    out = "chrome.exe",
+    is_executable = True,
 )
 
-alias(
+filegroup(
     name = "{}",
-    actual = ":chrome-headless-shell",
+    srcs = [":chrome.exe"],
+    data = glob(
+        include = [
+            "**",
+        ],
+        exclude = [
+            "*.bazel",
+            "BUILD",
+            "WORKSPACE",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 """
