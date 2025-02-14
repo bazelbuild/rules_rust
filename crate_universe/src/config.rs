@@ -103,6 +103,10 @@ pub(crate) struct RenderConfig {
     /// Whether to generate package metadata
     #[serde(default = "default_generate_rules_license_metadata")]
     pub(crate) generate_rules_license_metadata: bool,
+
+    /// The label of the cargo lockfile, used to create build aliases for intra-workspace dependencies.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) intra_workspace_dependencies_workspace_toml: Option<Label>,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -124,6 +128,7 @@ impl Default for RenderConfig {
             regen_command: String::default(),
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
+            intra_workspace_dependencies_workspace_toml: Option::default(),
         }
     }
 }

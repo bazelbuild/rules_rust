@@ -45,6 +45,7 @@ impl DependencySet {
         node: &Node,
         metadata: &CargoMetadata,
         resolver_data: &TreeResolverMetadata,
+        track_intra_workspace_dependencies: bool,
     ) -> Self {
         // Build a dep tree mapping that's easily indexable via `cargo_metadata::PackageId`
         let dep_tree: BTreeMap<CrateId, Select<BTreeSet<CrateId>>> = resolver_data
@@ -69,8 +70,9 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -97,8 +99,9 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -128,7 +131,9 @@ impl DependencySet {
                 .deps
                 .iter()
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_build_dependency(dep))
                 .filter(|dep| !is_dev_dependency(dep))
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
@@ -321,6 +326,14 @@ fn is_normal_dependency(node_dep: &NodeDep) -> bool {
         .dep_kinds
         .iter()
         .any(|k| matches!(k.kind, cargo_metadata::DependencyKind::Normal))
+}
+
+fn filter_workspace_members(
+    track_intra_workspace_dependencies: bool,
+    node_dep: &NodeDep,
+    metadata: &CargoMetadata,
+) -> bool {
+    track_intra_workspace_dependencies || !is_workspace_member(node_dep, metadata)
 }
 
 fn is_workspace_member(node_dep: &NodeDep, metadata: &CargoMetadata) -> bool {
