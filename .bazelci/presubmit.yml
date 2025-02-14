@@ -498,6 +498,14 @@ tasks:
     working_directory: examples/crate_universe_local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"
+  example_bindgen_toolchain:
+    name: Example custom bindgen toolchain registration
+    platform: ubuntu2204
+    working_directory: examples/bindgen_toolchain
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
