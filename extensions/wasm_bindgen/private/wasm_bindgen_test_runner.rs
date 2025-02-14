@@ -61,7 +61,7 @@ fn find_browser_path(entrypoint: &Path, browser_type: &str) -> PathBuf {
 fn find_browser_path(entrypoint: &Path, browser_type: &str) -> PathBuf {
     if let Some(file_name) = entrypoint.file_name() {
         let file_name = file_name.to_string_lossy();
-        if file_name == browser_type || file_name == format!("{}.sh", browser_type) {
+        if file_name == browser_type {
             return entrypoint
                 .parent()
                 .expect("The browser file should be a file in a directory")
@@ -71,7 +71,7 @@ fn find_browser_path(entrypoint: &Path, browser_type: &str) -> PathBuf {
 
     let output_dir = new_browser_path();
 
-    let new_entrypoint = output_dir.join(format!("{}.bat", browser_type));
+    let new_entrypoint = output_dir.join(browser_type);
     if let Some(parent) = &new_entrypoint.parent() {
         fs::create_dir_all(parent)
             .unwrap_or_else(|_| panic!("Failed to create parent directory: {}", parent.display()));
