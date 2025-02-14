@@ -1009,4 +1009,46 @@ mod test {
             "`mio` is a platform specific dependency and therefore should not be identified under the common configuration."
         );
     }
+
+    #[test]
+    fn intra_workspace_deps() {
+        let metadata = metadata::workspace_path();
+
+        let child_b_node = find_metadata_node("child_b", &metadata);
+        let child_b_depset_with_intra_workspace = DependencySet::new_for_node(
+            child_b_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            true,
+        );
+        assert_eq!(
+            child_b_depset_with_intra_workspace
+                .normal_deps
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| {
+                    configuration.is_none() && dep.target_name == "child_a"
+                })
+                .count(),
+            1,
+        );
+
+        let child_b_depset_without_intra_workspace = DependencySet::new_for_node(
+            child_b_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
+        assert_eq!(
+            child_b_depset_without_intra_workspace
+                .normal_deps
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| {
+                    configuration.is_none() && dep.target_name == "child_a"
+                })
+                .count(),
+            0,
+        )
+    }
 }
