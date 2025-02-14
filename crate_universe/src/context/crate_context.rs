@@ -25,6 +25,9 @@ pub struct CrateDependency {
     /// Some dependencies are assigned aliases. This is tracked here
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) source_annotation: Option<SourceAnnotation>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -378,6 +381,7 @@ impl CrateContext {
                 id: CrateId::new(pkg.name.clone(), pkg.version.clone()),
                 target,
                 alias: dep.alias,
+                source_annotation: Some(source_annotations[&dep.package_id].clone()),
             }
         };
 
@@ -475,6 +479,10 @@ impl CrateContext {
                     id: current_crate_id,
                     target: target.crate_name.clone(),
                     alias: None,
+                    source_annotation: match source_annotations.get(&annotation.node.id) {
+                        Some(source_annotation) => Some(source_annotation.clone()),
+                        None => None,
+                    },
                 },
                 None,
             );
