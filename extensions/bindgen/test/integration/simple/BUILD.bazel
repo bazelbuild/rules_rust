@@ -11,5 +11,6 @@ cc_library(
     name = "simple",
     srcs = ["simple.cc"],
     hdrs = ["simple.h"],
+    defines = ["SIMPLE_DEFINE=1"],
     visibility = ["//test/integration:__pkg__"],
 )
