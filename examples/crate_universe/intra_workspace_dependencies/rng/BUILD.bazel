@@ -1,0 +1,11 @@
+load("@crate_index_intra_workspace_dependencies//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "rng",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = all_crate_deps(),
+)
