@@ -618,6 +618,12 @@ impl CrateContext {
                     attrs.extra_deps = Select::merge(attrs.extra_deps.clone(), extra.clone());
                 }
 
+                //Link Deps
+                if let Some(extra) = &crate_extra.build_script_link_deps {
+                    attrs.extra_link_deps =
+                        Select::merge(attrs.extra_link_deps.clone(), extra.clone())
+                }
+
                 // Proc macro deps
                 if let Some(extra) = &crate_extra.build_script_proc_macro_deps {
                     attrs.extra_proc_macro_deps =
