@@ -1,0 +1,3 @@
+# Ignore everything but the `BUILD` files within the vendored directories
+vendor/*/*
+!vendor/*/BUILD.bazel
