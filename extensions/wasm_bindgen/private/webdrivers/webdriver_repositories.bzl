@@ -1,6 +1,5 @@
 """Depednencies for `wasm_bindgen_test` rules"""
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 def _build_file_repository_impl(repository_ctx):
@@ -22,10 +21,10 @@ build_file_repository = repository_rule(
     },
 )
 
-_GECKODRIVER_BUILD_CONTENT_UNIX = """\
+_WEBDRIVER_BUILD_CONTENT = """\
 filegroup(
-    name = "{}",
-    srcs = ["geckodriver"],
+    name = "{name}",
+    srcs = ["{tool}"],
     data = glob(
         include = [
             "**",
@@ -40,23 +39,63 @@ filegroup(
 )
 """
 
-_GECKODRIVER_BUILD_CONTENT_WINDOWS = """\
-filegroup(
-    name = "{}",
-    srcs = ["geckodriver.exe"],
-    data = glob(
-        include = [
-            "**",
-        ],
-        exclude = [
-            "*.bazel",
-            "BUILD",
-            "WORKSPACE",
-        ],
-    ),
-    visibility = ["//visibility:public"],
+def _webdriver_repository_impl(repository_ctx):
+    result = repository_ctx.download_and_extract(
+        repository_ctx.attr.urls,
+        stripPrefix = repository_ctx.attr.strip_prefix,
+        integrity = repository_ctx.attr.integrity,
+    )
+
+    for link, target_file in repository_ctx.attr.symlinks.items():
+        link = repository_ctx.path(link)
+        repository_ctx.symlink(target_file, link)
+
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        repository_ctx.attr.original_name,
+    ))
+
+    repository_ctx.file("BUILD.bazel", _WEBDRIVER_BUILD_CONTENT.format(
+        name = repository_ctx.attr.original_name,
+        tool = repository_ctx.attr.tool,
+    ))
+
+    return {
+        "integrity": result.integrity,
+        "name": repository_ctx.name,
+        "original_name": repository_ctx.attr.original_name,
+        "strip_prefix": repository_ctx.attr.strip_prefix,
+        "symlinks": repository_ctx.attr.symlinks,
+        "tool": repository_ctx.attr.tool,
+        "urls": repository_ctx.attr.urls,
+    }
+
+webdriver_repository = repository_rule(
+    doc = "A repository rule for downloading webdriver tools.",
+    implementation = _webdriver_repository_impl,
+    attrs = {
+        "integrity": attr.string(
+            doc = """Expected checksum in Subresource Integrity format of the file downloaded.""",
+        ),
+        # TODO: This can be removed in Bazel 8 and it's use moved to `repository_ctx.original_name`.
+        "original_name": attr.string(
+            doc = "The original name of the repository.",
+        ),
+        "strip_prefix": attr.string(
+            doc = """A directory prefix to strip from the extracted files.""",
+        ),
+        "symlinks": attr.string_dict(
+            doc = "Symlinks to create within the extracted archive",
+        ),
+        "tool": attr.string(
+            doc = "The name of the webdriver tool being downloaded.",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = "A list of URLs to a file that will be made available to Bazel.",
+            mandatory = True,
+        ),
+    },
 )
-"""
 
 def firefox_deps():
     """Download firefix/geckodriver dependencies
@@ -77,23 +116,24 @@ def firefox_deps():
         "win64": "sha256-5t4e5JqtKUMfe4/zZvEEhtAI3VzY3elMsB1+nj0z2Yg=",
     }.items():
         archive = "tar.gz"
-        build_content = _GECKODRIVER_BUILD_CONTENT_UNIX
+        tool = "geckodriver"
         if "win" in platform:
             archive = "zip"
-            build_content = _GECKODRIVER_BUILD_CONTENT_WINDOWS
+            tool = "geckodriver.exe"
 
         name = "geckodriver_{}".format(platform.replace("-", "_"))
         direct_deps.append(struct(repo = name))
         maybe(
-            http_archive,
-            name = "geckodriver_{}".format(platform.replace("-", "_")),
+            webdriver_repository,
+            name = name,
+            original_name = name,
             urls = ["https://github.com/mozilla/geckodriver/releases/download/v{version}/geckodriver-v{version}-{platform}.{archive}".format(
                 version = geckodriver_version,
                 platform = platform,
                 archive = archive,
             )],
             integrity = integrity,
-            build_file_content = build_content.format(name),
+            tool = tool,
         )
 
     direct_deps.append(struct(repo = "geckodriver"))
@@ -168,87 +208,6 @@ CHROME_DATA = {
     "version": "133.0.6943.98",
 }
 
-_CHROMEDRIVER_BUILD_CONTENT_UNIX = """\
-filegroup(
-    name = "{}",
-    srcs = ["chromedriver"],
-    data = glob(
-        include = [
-            "**",
-        ],
-        exclude = [
-            "*.bazel",
-            "BUILD",
-            "WORKSPACE",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-)
-"""
-
-_CHROMEDRIVER_BUILD_CONTENT_WINDOWS = """\
-filegroup(
-    name = "{}",
-    srcs = ["chromedriver.exe"],
-    data = glob(
-        include = [
-            "**",
-        ],
-        exclude = [
-            "*.bazel",
-            "BUILD",
-            "WORKSPACE",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-)
-"""
-
-_CHROME_BUILD_CONTENT_UNIX = """\
-filegroup(
-    name = "{}",
-    srcs = ["chrome-headless-shell"],
-    data = glob(
-        include = [
-            "**",
-        ],
-        exclude = [
-            "*.bazel",
-            "BUILD",
-            "WORKSPACE",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-)
-"""
-
-_CHROME_BUILD_CONTENT_WINDOWS = """\
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-
-copy_file(
-    name = "bin",
-    src = "chrome-headless-shell.exe",
-    out = "chrome.exe",
-    is_executable = True,
-)
-
-filegroup(
-    name = "{}",
-    srcs = [":chrome.exe"],
-    data = glob(
-        include = [
-            "**",
-        ],
-        exclude = [
-            "*.bazel",
-            "BUILD",
-            "WORKSPACE",
-        ],
-    ),
-    visibility = ["//visibility:public"],
-)
-"""
-
 def chrome_deps():
     """Download chromedriver dependencies
 
@@ -261,32 +220,37 @@ def chrome_deps():
         platform = data["platform"]
         name = "chromedriver_{}".format(platform.replace("-", "_"))
         direct_deps.append(struct(repo = name))
-        build_content = _CHROMEDRIVER_BUILD_CONTENT_UNIX
+        tool = "chromedriver"
         if platform.startswith("win"):
-            build_content = _CHROMEDRIVER_BUILD_CONTENT_WINDOWS
+            tool = "chromedriver.exe"
         maybe(
-            http_archive,
+            webdriver_repository,
             name = name,
+            original_name = name,
             urls = [data["url"]],
             strip_prefix = "chromedriver-{}".format(platform),
             integrity = data.get("integrity", ""),
-            build_file_content = build_content.format(name),
+            tool = tool,
         )
 
     for data in CHROME_DATA["downloads"]["chrome-headless-shell"]:
         platform = data["platform"]
         name = "chrome_headless_shell_{}".format(platform.replace("-", "_"))
         direct_deps.append(struct(repo = name))
-        build_content = _CHROME_BUILD_CONTENT_UNIX
+        tool = "chrome"
+        symlinks = {"chrome": "chrome-headless-shell"}
         if platform.startswith("win"):
-            build_content = _CHROME_BUILD_CONTENT_WINDOWS
+            tool = "chrome.exe"
+            symlinks = {"chrome.exe": "chrome-headless-shell.exe"}
         maybe(
-            http_archive,
+            webdriver_repository,
             name = name,
+            original_name = name,
             urls = [data["url"]],
             strip_prefix = "chrome-headless-shell-{}".format(platform),
             integrity = data.get("integrity", ""),
-            build_file_content = build_content.format(name),
+            tool = tool,
+            symlinks = symlinks,
         )
 
     direct_deps.append(struct(repo = "chromedriver"))
