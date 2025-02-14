@@ -127,7 +127,14 @@ impl Renderer {
         let mut map = BTreeMap::new();
         map.insert(
             Renderer::label_to_path(&module_label),
-            engine.render_module_bzl(context, platforms, generator)?,
+            engine.render_module_bzl(
+                context,
+                platforms,
+                generator,
+                self.config
+                    .intra_workspace_dependencies_workspace_toml
+                    .is_some(),
+            )?,
         );
         map.insert(
             Renderer::label_to_path(&module_build_label),
@@ -210,23 +217,78 @@ impl Renderer {
                 .unwrap_or(&self.config.default_alias_rule);
 
             if let Some(library_target_name) = &krate.library_target_name {
-                dependencies.push(Alias {
-                    rule: alias_rule.rule(),
-                    name: format!("{}-{}", krate.name, krate.version),
-                    actual: self.crate_label(
-                        &krate.name,
-                        &krate.version.to_string(),
-                        library_target_name,
-                    ),
-                    tags: BTreeSet::from(["manual".to_owned()]),
-                });
+                if let (Some(workspace_path), Some(intra_workspace_dependencies_workspace_toml)) = (
+                    context.workspace_members.get(&dep.id),
+                    &self.config.intra_workspace_dependencies_workspace_toml,
+                ) {
+                    // Only create intra workspace dependency aliases for library targets.
+                    if library_target_name != &dep.target {
+                        continue;
+                    };
 
-                let shorthand = if let Some(rename) = dep.alias.as_ref() {
-                    // when the alias is the same as the crate name, don't create the alias
-                    if krate.name != *rename {
+                    let repository = match intra_workspace_dependencies_workspace_toml {
+                        Label::Absolute {
+                            repository,
+                            package: _,
+                            target: _,
+                        } => repository.clone(),
+                        Label::Relative {
+                            target: non_relative_label,
+                        } => {
+                            bail!("Invalid intra_workspace_dependency_cargo_toml_label. {:?} Should be absolute", non_relative_label);
+                        }
+                    };
+                    let alias = Alias {
+                        rule: alias_rule.rule(),
+                        name: format!("{}-{}", krate.name, krate.version),
+                        actual: Label::Absolute {
+                            repository,
+                            package: workspace_path.clone(),
+                            target: library_target_name.to_owned(),
+                        },
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    };
+                    dependencies.push(alias);
+
+                    //Dont add shorthand aliases for intra-workspace deps, they can easily be refered to by their full bazel paths.
+                } else {
+                    dependencies.push(Alias {
+                        rule: alias_rule.rule(),
+                        name: format!("{}-{}", krate.name, krate.version),
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version.to_string(),
+                            library_target_name,
+                        ),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+
+                    let shorthand = if let Some(rename) = dep.alias.as_ref() {
+                        // when the alias is the same as the crate name, don't create the alias
+                        if krate.name != *rename {
+                            dependencies.push(Alias {
+                                rule: alias_rule.rule(),
+                                name: format!("{}-{}", rename, krate.version),
+                                actual: self.crate_label(
+                                    &krate.name,
+                                    &krate.version.to_string(),
+                                    library_target_name,
+                                ),
+                                tags: BTreeSet::from(["manual".to_owned()]),
+                            });
+                        }
+                        rename
+                    } else {
+                        &krate.name
+                    };
+
+                    // Add a shorthand for crate names as long as there isn't a duplicate
+                    // entry. Shorthands for duplicate entries would lead to ambiguous
+                    // dependencies.
+                    if !context.has_duplicate_workspace_member_dep(&dep) {
                         dependencies.push(Alias {
                             rule: alias_rule.rule(),
-                            name: format!("{}-{}", rename, krate.version),
+                            name: shorthand.clone(),
                             actual: self.crate_label(
                                 &krate.name,
                                 &krate.version.to_string(),
@@ -235,25 +297,6 @@ impl Renderer {
                             tags: BTreeSet::from(["manual".to_owned()]),
                         });
                     }
-                    rename
-                } else {
-                    &krate.name
-                };
-
-                // Add a shorthand for crate names as long as there isn't a duplicate
-                // entry. Shorthands for duplicate entries would lead to ambiguous
-                // dependencies.
-                if !context.has_duplicate_workspace_member_dep(&dep) {
-                    dependencies.push(Alias {
-                        rule: alias_rule.rule(),
-                        name: shorthand.clone(),
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    });
                 }
             }
 

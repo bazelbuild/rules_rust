@@ -100,7 +100,8 @@ def render_config(
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
         vendor_mode = None,
-        generate_rules_license_metadata = False):
+        generate_rules_license_metadata = False,
+        intra_workspace_dependencies_workspace_toml = None):
     """Various settings used to configure rendered outputs
 
     The template parameters each support a select number of format keys. A description of each key
@@ -143,6 +144,38 @@ def render_config(
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
         generate_rules_license_metadata (bool, optional): Whether to generate rules license metedata
+        intra_workspace_dependencies_workspace_toml (Label, optional):  Whether to generate intra (cargo) workspace dependency aliases.
+            If None (the default), you are responsible for maintaining all of the dependencies
+            between your crates. If Some, the `crates_repository` will generate intra-workspace dependencies. The value
+            should be the label of the workspace `Cargo.toml` file. This relies on you to have created the library targets
+            for each intra-workspace dependency. These targets should have the following properties:
+            - They should be in the same bazel module as the `cargo_lockfile`
+            - They should have the same name as the library name in your cargo toml.
+            - They should have the same relative bazel path as their cargo path. For example
+            if your workspace has the following layout
+            ```text
+            [workspace]/
+                WORKSPACE.bazel
+                BUILD.bazel
+                Cargo.toml
+                Cargo.Bazel.lock
+                foo/
+                    Cargo.toml
+                    BUILD
+                    src/
+                        main.rs
+                bar/
+                    Cargo.toml
+                    BUILD
+                    src/
+                        lib.rs
+            ```
+            Where `foo/Cargo.toml` contains
+            ```toml
+            [dependencies]
+            bar.path = "../bar"
+            ```
+            Then `bar/BUILD` must define a `rust_library` target names `bar`
 
     Returns:
         string: A json encoded struct to match the Rust `config::RenderConfig` struct
@@ -161,6 +194,7 @@ def render_config(
         platforms_template = platforms_template,
         regen_command = regen_command,
         vendor_mode = vendor_mode,
+        intra_workspace_dependencies_workspace_toml = intra_workspace_dependencies_workspace_toml,
     ))
 
 def _crate_id(name, version):

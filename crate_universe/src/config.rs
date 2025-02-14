@@ -107,6 +107,10 @@ pub(crate) struct RenderConfig {
     /// Whether to generate cargo_toml_env_vars targets.
     /// This is expected to always be true except for bootstrapping.
     pub(crate) generate_cargo_toml_env_vars: bool,
+
+    /// The label of the cargo lockfile, used to create build aliases for intra-workspace dependencies.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) intra_workspace_dependencies_workspace_toml: Option<Label>,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -129,6 +133,7 @@ impl Default for RenderConfig {
             regen_command: String::default(),
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
+            intra_workspace_dependencies_workspace_toml: Option::default(),
         }
     }
 }
