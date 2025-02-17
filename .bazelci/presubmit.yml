@@ -1066,7 +1066,7 @@ tasks:
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
     shell_commands:
-      - "sudo apt -y update && sudo apt -y install libxcb1 libatk1.0-0 libatk-bridge2.0-0 libxcomposite1 libxdamage1"
+      - "sudo apt -y update && sudo apt -y install libxcb1 libatk1.0-0 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxfixes3"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
