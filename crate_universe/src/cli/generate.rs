@@ -158,11 +158,22 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     };
 
     // Load Metadata and Lockfile
-    let (cargo_metadata, cargo_lockfile) = load_metadata(metadata_path)?;
+    let lockfile_path = metadata_path
+        .parent()
+        .expect("metadata files should always have parents")
+        .join("Cargo.lock");
+    if !lockfile_path.exists() {
+        bail!(
+            "The metadata file at {} is not next to a `Cargo.lock` file.",
+            metadata_path.display()
+        )
+    }
+    let (cargo_metadata, cargo_lockfile) = load_metadata(metadata_path, &lockfile_path)?;
 
     // Annotate metadata
     let annotations = Annotations::new(
         cargo_metadata,
+        &Some(lockfile_path),
         cargo_lockfile.clone(),
         config.clone(),
         &opt.nonhermetic_root_bazel_workspace_dir,

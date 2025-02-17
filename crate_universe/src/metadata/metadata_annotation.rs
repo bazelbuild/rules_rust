@@ -164,6 +164,7 @@ pub(crate) enum SourceAnnotation {
         patches: Option<BTreeSet<String>>,
     },
     Path {
+        /// Local path to crate's source, relative to Bazel workspace root.
         path: Utf8PathBuf,
     },
 }
@@ -181,6 +182,7 @@ pub(crate) struct LockfileAnnotation {
 
 impl LockfileAnnotation {
     pub(crate) fn new(
+        lockfile_path: &Option<PathBuf>,
         lockfile: CargoLockfile,
         metadata: &CargoMetadata,
         nonhermetic_root_bazel_workspace_dir: &Utf8Path,
@@ -205,6 +207,7 @@ impl LockfileAnnotation {
                     Self::collect_source_annotations(
                         node,
                         metadata,
+                        lockfile_path,
                         &lockfile,
                         &workspace_metadata,
                         nonhermetic_root_bazel_workspace_dir,
@@ -225,6 +228,7 @@ impl LockfileAnnotation {
     fn collect_source_annotations(
         node: &Node,
         metadata: &CargoMetadata,
+        lockfile_path: &Option<PathBuf>,
         lockfile: &CargoLockfile,
         workspace_metadata: &WorkspaceMetadata,
         nonhermetic_root_bazel_workspace_dir: &Utf8Path,
@@ -265,11 +269,26 @@ impl LockfileAnnotation {
                                 .strip_prefix(&metadata.workspace_root)
                             {
                                 Ok(suffix) => {
-                                    // Replace path within our temporary cargo workspace we ran `cargo metadata`` in with path within the actual Bazel workspace.
+                                    // Replace path within our temporary cargo workspace we ran `cargo metadata` in with path within the actual Bazel workspace.
                                     // This replacement allows in-repo patches sections to work as intended using local_crate_mirror.
-                                    let mut new_path =
-                                        nonhermetic_root_bazel_workspace_dir.to_owned();
-                                    if let Some(prefix) =
+                                    let mut new_path = Utf8PathBuf::new();
+                                    if let Some(path) = lockfile_path {
+                                        // If a lockfile path is provided, figure out the path of
+                                        // its parent directory (relative to Bazel workspace root),
+                                        // since `suffix` is relative to it in the actual Bazel
+                                        // workspace.
+                                        let relative_lockfile_path = Utf8Path::from_path(
+                                            path.parent().expect("unexpected empty lockfile path"),
+                                        )
+                                        .expect("unxpected non-Unicode lockfile path")
+                                        .strip_prefix(nonhermetic_root_bazel_workspace_dir)
+                                        .expect(
+                                            "unexpected lockfile path no under root Bazel workspace",
+                                        );
+                                        new_path.push(relative_lockfile_path);
+                                    } else if let Some(prefix) =
+                                        // Lockfile path includes workspace prefix, so avoid
+                                        // duplicating it here.
                                         workspace_metadata.workspace_prefix.as_ref()
                                     {
                                         new_path.push(prefix);
@@ -422,11 +441,13 @@ pub(crate) struct Annotations {
 impl Annotations {
     pub(crate) fn new(
         cargo_metadata: CargoMetadata,
+        cargo_lockfile_path: &Option<PathBuf>,
         cargo_lockfile: CargoLockfile,
         config: Config,
         nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<Self> {
         let lockfile_annotation = LockfileAnnotation::new(
+            cargo_lockfile_path,
             cargo_lockfile,
             &cargo_metadata,
             nonhermetic_root_bazel_workspace_dir,

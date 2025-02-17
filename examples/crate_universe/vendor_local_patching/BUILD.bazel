@@ -1,0 +1,31 @@
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = ":Cargo.lock",
+    manifests = [":Cargo.toml"],
+    mode = "local",
+    # No wasi support
+    supported_platform_triples = [
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-fuchsia",
+        "aarch64-unknown-fuchsia",
+    ],
+    vendor_path = "vendor",
+)
+
+rust_binary(
+    name = "bin",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    deps = ["//vendor_local_patching/vendor:rand"],
+)
+
+rust_test(
+    name = "test",
+    crate = ":bin",
+)
