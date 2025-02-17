@@ -106,6 +106,8 @@ fn main() {
     env.insert("TMP".to_string(), env["TEST_TMPDIR"].clone());
     env.insert("TEMP".to_string(), env["TEST_TMPDIR"].clone());
     env.insert("TMPDIR".to_string(), env["TEST_TMPDIR"].clone());
+    env.insert("HOME".to_string(), env["TEST_TMPDIR"].clone());
+    env.insert("USERPROFILE".to_string(), env["TEST_TMPDIR"].clone());
 
     let webdriver_args: Vec<String> = serde_json::from_str(
         &env::var("WEBDRIVER_ARGS").expect("Failed to find WEBDRIVER_ARGS env var."),
