@@ -131,12 +131,13 @@ fn main() {
                 webdriver.to_string_lossy().to_string(),
             );
 
-            let user_data_dir = undeclared_test_outputs.join("user_data_dir");
+            // let user_data_dir = undeclared_test_outputs.join("user_data_dir");
 
             write_webdriver_for_browser(
                 &webdriver_json,
                 "goog:chromeOptions",
-                &vec![format!("user-data-dir={}", user_data_dir.display())],
+                &Vec::new(),
+                // &vec![format!("user-data-dir={}", user_data_dir.display())],
                 &browser,
                 &updated_webdriver_json,
             );
