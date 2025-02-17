@@ -23,7 +23,7 @@ load(
 #
 #   rustc +nightly -Zunpretty=
 #
-_UNPRETTY_MODES = [
+UNPRETTY_MODES = [
     "ast-tree,expanded",
     "ast-tree",
     "expanded,hygiene",
@@ -42,7 +42,7 @@ _UNPRETTY_MODES = [
 RustUnprettyInfo = provider(
     doc = "A provider describing the Rust unpretty mode.",
     fields = {
-        "modes": "Depset[string]: Can be any of {}".format(["'{}'".format(m) for m in _UNPRETTY_MODES]),
+        "modes": "Depset[string]: Can be any of {}".format(["'{}'".format(m) for m in UNPRETTY_MODES]),
     },
 )
 
@@ -50,19 +50,19 @@ def _rust_unpretty_flag_impl(ctx):
     value = ctx.build_setting_value
     invalid = []
     for mode in value:
-        if mode not in _UNPRETTY_MODES:
+        if mode not in UNPRETTY_MODES:
             invalid.append(mode)
     if invalid:
         fail("{} build setting allowed to take values [{}] but was set to unallowed values: {}".format(
             ctx.label,
-            ", ".join(["'{}'".format(m) for m in _UNPRETTY_MODES]),
+            ", ".join(["'{}'".format(m) for m in UNPRETTY_MODES]),
             invalid,
         ))
 
     return RustUnprettyInfo(modes = depset(value))
 
 rust_unpretty_flag = rule(
-    doc = "A build setting which represents the Rust unpretty mode. The allowed values are {}".format(_UNPRETTY_MODES),
+    doc = "A build setting which represents the Rust unpretty mode. The allowed values are {}".format(UNPRETTY_MODES),
     implementation = _rust_unpretty_flag_impl,
     build_setting = config.string_list(
         flag = True,
@@ -118,16 +118,24 @@ def _get_unpretty_ready_crate_info(target, aspect_ctx):
             if tag in aspect_ctx.rule.attr.tags:
                 return None
 
-    # Obviously ignore any targets that don't contain `CrateInfo`
-    if rust_common.crate_info not in target:
-        return None
+    if rust_common.crate_info in target:
+        return target[rust_common.crate_info]
 
-    return target[rust_common.crate_info]
+    if rust_common.test_crate_info in target:
+        return target[rust_common.test_crate_info].crate
+
+    # Obviously ignore any targets that don't contain `CrateInfo`
+    return None
 
 def _rust_unpretty_aspect_impl(target, ctx):
     crate_info = _get_unpretty_ready_crate_info(target, ctx)
     if not crate_info:
         return []
+
+    # Avoid duplicate actions.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "rust_unpretty"):
+            return []
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
@@ -238,7 +246,10 @@ rust_unpretty_aspect = aspect(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    required_providers = [rust_common.crate_info],
+    required_providers = [
+        [rust_common.crate_info],
+        [rust_common.test_crate_info],
+    ],
     doc = """\
 Executes Rust expand on specified targets.
 
@@ -264,8 +275,9 @@ rust_test(
 Then the targets can be expanded with the following command:
 
 ```output
-$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
-              --output_groups=rust_unpretty_expanded //hello_lib:all
+$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \\
+              --output_groups=rust_unpretty_expanded \\
+              //hello_lib:all
 ```
 """,
 )
@@ -285,12 +297,15 @@ rust_unpretty = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "Rust targets to run unpretty on.",
-            providers = [rust_common.crate_info],
+            providers = [
+                [rust_common.crate_info],
+                [rust_common.test_crate_info],
+            ],
             aspects = [rust_unpretty_aspect],
         ),
         "mode": attr.string(
             doc = "The value to pass to `--unpretty`",
-            values = _UNPRETTY_MODES,
+            values = UNPRETTY_MODES,
             default = "expanded",
         ),
         "_allowlist_function_transition": attr.label(

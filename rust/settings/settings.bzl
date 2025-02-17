@@ -27,33 +27,36 @@ load(
     _per_crate_rustc_flag = "per_crate_rustc_flag",
     _rustc_output_diagnostics = "rustc_output_diagnostics",
 )
-load("//rust/private:unpretty.bzl", "rust_unpretty_flag")
+load("//rust/private:unpretty.bzl", "UNPRETTY_MODES", "rust_unpretty_flag")
 load(":incompatible.bzl", "incompatible_flag")
 
 # buildifier: disable=unnamed-macro
 def unpretty():
+    """A build setting to control the output of `RustUnpretty*` actions
+
+    Supported values are:
+    - `ast-tree,expanded`
+    - `ast-tree`
+    - `expanded,hygiene`
+    - `expanded,identified`
+    - `expanded`
+    - `hir-tree`
+    - `hir,identified`
+    - `hir,typed`
+    - `hir`
+    - `identified`
+    - `mir-cfg`
+    - `mir`
+    - `normal`
+    """
     rust_unpretty_flag(
         name = "unpretty",
-        build_setting_default = [
-            "ast-tree,expanded",
-            "ast-tree",
-            "expanded,hygiene",
-            "expanded,identified",
-            "expanded",
-            "hir-tree",
-            "hir,identified",
-            "hir,typed",
-            "hir",
-            "identified",
-            "mir-cfg",
-            "mir",
-            "normal",
-        ],
+        build_setting_default = UNPRETTY_MODES,
     )
 
 # buildifier: disable=unnamed-macro
 def lto():
-    """A build setting which specifies the link time optimization mode used when building Rust code."""
+    """A build setting which specifies the link time optimization mode used when building Rust code.///////////////"""
     rust_lto_flag(
         name = "lto",
         build_setting_default = "unspecified",
