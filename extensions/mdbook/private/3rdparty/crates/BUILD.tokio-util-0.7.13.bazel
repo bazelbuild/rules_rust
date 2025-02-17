@@ -86,7 +86,7 @@ rust_library(
     }),
     version = "0.7.13",
     deps = [
-        "@rmdbi__bytes-1.9.0//:bytes",
+        "@rmdbi__bytes-1.10.0//:bytes",
         "@rmdbi__futures-core-0.3.31//:futures_core",
         "@rmdbi__futures-sink-0.3.31//:futures_sink",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",

@@ -23,10 +23,12 @@ rust_prost_toolchain(
     prost_types = "@crates//:prost-types",
     tonic_plugin = "@crates//:protoc-gen-tonic__protoc-gen-tonic",
     tonic_runtime = ":tonic_runtime",
+    visibility = ["//visibility:public"],
 )
 
 toolchain(
     name = "prost_toolchain",
     toolchain = "prost_toolchain_impl",
     toolchain_type = "@rules_rust_prost//:toolchain_type",
+    visibility = ["//visibility:public"],
 )
