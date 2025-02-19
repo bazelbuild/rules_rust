@@ -9,6 +9,7 @@ bazel commands:
 ```shell
 bazel run //vendor_external:crates_vendor
 bazel run //vendor_local_manifests:crates_vendor
+bazel run //vendor_local_patching:crates_vendor
 bazel run //vendor_local_pkgs:crates_vendor
 bazel run //vendor_remote_manifests:crates_vendor
 bazel run //vendor_remote_pkgs:crates_vendor
