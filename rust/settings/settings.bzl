@@ -56,7 +56,7 @@ def unpretty():
 
 # buildifier: disable=unnamed-macro
 def lto():
-    """A build setting which specifies the link time optimization mode used when building Rust code.///////////////"""
+    """A build setting which specifies the link time optimization mode used when building Rust code."""
     rust_lto_flag(
         name = "lto",
         build_setting_default = "unspecified",
