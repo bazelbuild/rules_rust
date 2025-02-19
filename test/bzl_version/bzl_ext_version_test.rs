@@ -3,38 +3,12 @@
 use runfiles::Runfiles;
 
 fn parse_rules_rust_version(text: &str) -> String {
-    let mut in_module = false;
-    let mut found_dep = false;
     for line in text.split('\n') {
-        if in_module {
-            if line.ends_with(')') {
-                in_module = false;
-                continue;
-            }
-
-            if found_dep {
-                if let Some((param, value)) = line.rsplit_once(" = ") {
-                    if param.trim() == "version" {
-                        return value.trim().trim_matches(',').trim_matches('"').to_owned();
-                    }
-                }
-            }
-
-            if line.trim().starts_with("name = \"rules_rust\"") {
-                found_dep = true;
-                continue;
-            }
-
-            continue;
-        }
-
-        if line.starts_with("bazel_dep(") {
-            assert!(
-                !found_dep,
-                "Found `rules_rust` dep but couldn't determine version."
-            );
-            in_module = true;
-            continue;
+        if let Some((_, trail)) = line.split_once(r#"bazel_dep(name = "rules_rust", version = ""#) {
+            let (version, _) = trail
+                .split_once("\"")
+                .expect("Version string did not have an expected end");
+            return version.to_string();
         }
     }
     panic!("Failed to find rules_rust version in:\n```\n{}\n```", text);

@@ -2,10 +2,7 @@
 
 module(name = "hello_world_no_cargo")
 
-bazel_dep(
-    name = "rules_rust",
-    version = "0.0.0",
-)
+bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../..",
