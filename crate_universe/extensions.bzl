@@ -630,7 +630,8 @@ def _generate_hub_and_spokes(
             cargo_lockfile = cargo_lockfile,
             splicing_manifest = splicing_manifest,
             config_path = config_file,
-            output_dir = module_ctx.path("{}/{}".format(tag_path, "splicing-output")),
+            output_dir = tag_path.get_child("splicing-output"),
+            debug_workspace_dir = tag_path.get_child("splicing-workspace"),
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
@@ -639,7 +640,7 @@ def _generate_hub_and_spokes(
 
         # Create a fallback lockfile to be parsed downstream.
         if lockfile == None:
-            lockfile = module_ctx.path("cargo-bazel-lock.json")
+            lockfile = tag_path.get_child("cargo-bazel-lock.json")
             module_ctx.file(lockfile, "")
 
         kwargs.update({
@@ -649,8 +650,8 @@ def _generate_hub_and_spokes(
     # The workspace root when one is explicitly provided.
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 
-    paths_to_track_file = module_ctx.path("paths_to_track.json")
-    warnings_output_file = module_ctx.path("warnings_output.json")
+    paths_to_track_file = tag_path.get_child("paths_to_track.json")
+    warnings_output_file = tag_path.get_child("warnings_output.json")
 
     # Run the generator
     module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))

@@ -7,6 +7,7 @@ use std::path::Path;
 use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_toml::Manifest;
+use tracing::debug;
 
 use crate::config::CrateId;
 use crate::metadata::discover_workspaces;
@@ -349,6 +350,7 @@ impl<'a> SplicerKind<'a> {
                 fs::create_dir_all(&dot_cargo_dir)?;
             }
 
+            debug!("Using Cargo config: {}", cargo_config_path);
             fs::copy(cargo_config_path, dot_cargo_dir.join("config.toml"))?;
         }
 
