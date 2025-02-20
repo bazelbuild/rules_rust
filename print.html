@@ -1999,6 +1999,10 @@ crate.from_cargo(
 )
 use_repo(crate, "crates")
 </code></pre>
+<h4 id="note-if-using-private-crate-registries"><a class="header" href="#note-if-using-private-crate-registries">Note if using Private Crate Registries</a></h4>
+<p>If you are using from_cargo and are pulling dependencies from a private crate registry such as Artifactory,
+make sure you set the <code>CARGO_BAZEL_ISOLATED=false bazel build //...</code> environmental.  If not <code>crates_universe</code>
+will not be able to pull from your private registry.</p>
 <p>The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
 Notably, the all_crate_deps and aliases macros (
 see <a href="https://bazelbuild.github.io/rules_rust/crate_universe.html#dependencies-api">Dependencies API</a>) commonly allow the
