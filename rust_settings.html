@@ -346,6 +346,23 @@ it allows library dependencies to be unlocked much sooner, increasing parallelis
 <pre>
 --@rules_rust//rust/settings:unpretty
 </pre>
+<p>A build setting to control the output of <code>RustUnpretty*</code> actions</p>
+<p>Supported values are:</p>
+<ul>
+<li><code>ast-tree,expanded</code></li>
+<li><code>ast-tree</code></li>
+<li><code>expanded,hygiene</code></li>
+<li><code>expanded,identified</code></li>
+<li><code>expanded</code></li>
+<li><code>hir-tree</code></li>
+<li><code>hir,identified</code></li>
+<li><code>hir,typed</code></li>
+<li><code>hir</code></li>
+<li><code>identified</code></li>
+<li><code>mir-cfg</code></li>
+<li><code>mir</code></li>
+<li><code>normal</code></li>
+</ul>
 <p><a id="use_real_import_macro"></a></p>
 <h2 id="use_real_import_macro"><a class="header" href="#use_real_import_macro">use_real_import_macro</a></h2>
 <pre>
