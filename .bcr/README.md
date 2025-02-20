@@ -7,3 +7,5 @@ Bazel Central Registry automatically:
 This folder contains configuration files to automate the publish step.
 See <https://github.com/bazel-contrib/publish-to-bcr/blob/main/templates/README.md>
 for authoritative documentation about these files.
+
+# modifying readme line to practice pull request subject
