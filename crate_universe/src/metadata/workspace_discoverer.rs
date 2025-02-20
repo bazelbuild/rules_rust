@@ -222,11 +222,7 @@ impl ManifestCache<'_> {
         if let Some(maybe_manifest) = self.cache.get(path) {
             return maybe_manifest.clone();
         }
-        let maybe_manifest = if let Ok(manifest) = Manifest::from_path(path) {
-            Some(manifest)
-        } else {
-            None
-        };
+        let maybe_manifest = Manifest::from_path(path).ok();
         self.cache.insert(path.clone(), maybe_manifest.clone());
         maybe_manifest
     }

@@ -33,7 +33,7 @@ load(":providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo
 # you remove it or change its format, you will also need to update that code.
 DEFAULT_RUST_VERSION = "1.84.1"
 
-DEFAULT_NIGHTLY_ISO_DATE = "2024-11-28"
+DEFAULT_NIGHTLY_ISO_DATE = "2025-01-30"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider

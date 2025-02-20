@@ -65,11 +65,11 @@ anyhow = "1.0.95"
 camino = "1.1.9"
 cargo_metadata = "0.19.1"
 cargo_toml = "0.21.0"
-cargo-lock = "10.0.1"
+cargo-lock = "10.1.0"
 cargo-platform = "0.1.9"
 cfg-expr = "0.17.2"
 clap = { version = "4.5.26", features = ["derive", "env"] }
-crates-index = { version = "3.5.0", default-features = false, features = [
+crates-index = { version = "3.6.0", default-features = false, features = [
     "git",
 ] }
 hex = "0.4.3"

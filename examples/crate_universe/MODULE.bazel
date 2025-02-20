@@ -59,7 +59,7 @@ alias_rule_global_alias_annotation_none.spec(
     repositories = ["alias_rule_global_alias_annotation_none"],
     version = "0.1.0",
 )
-alias_rule_global_alias_annotation_none.from_cargo(
+alias_rule_global_alias_annotation_none.from_specs(
     name = "alias_rule_global_alias_annotation_none",
     cargo_lockfile = "//alias_rule:Cargo.lock",
     lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_none.json",

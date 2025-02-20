@@ -35,6 +35,13 @@ register_toolchains(
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", dev_dependency = True, repo_name = "com_google_googleapis")
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
+# TODO: Can be removed when the following is resolved:
+# https://github.com/bazelbuild/bazel/issues/24871
+single_version_override(
+    module_name = "rules_foreign_cc",
+    version = "0.14.0",
+)
+
 rust_ext_dev = use_extension(
     "//private:internal_extensions.bzl",
     "rust_ext_dev",

@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "cargo_lock",
+    name = "rustc_stable_hash",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,7 +35,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=cargo-lock",
+        "crate-name=rustc-stable-hash",
         "manual",
         "noclippy",
         "norustfmt",
@@ -79,11 +79,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "10.0.1",
-    deps = [
-        "@cui__semver-1.0.24//:semver",
-        "@cui__serde-1.0.217//:serde",
-        "@cui__toml-0.8.19//:toml",
-        "@cui__url-2.5.4//:url",
-    ],
+    version = "0.1.1",
 )
