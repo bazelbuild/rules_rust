@@ -4,6 +4,7 @@ exclude = [
     "test_data/metadata/abspath",
     "test_data/metadata/aliases",
     "test_data/metadata/build_scripts",
+    "test_data/metadata/build_scripts_deps",
     "test_data/metadata/common",
     "test_data/metadata/crate_combined_features",
     "test_data/metadata/crate_optional_deps_disabled_build_dep_enabled",
