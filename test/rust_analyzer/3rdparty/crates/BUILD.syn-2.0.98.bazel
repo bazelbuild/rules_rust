@@ -90,6 +90,6 @@ rust_library(
     deps = [
         "@rtra__proc-macro2-1.0.93//:proc_macro2",
         "@rtra__quote-1.0.38//:quote",
-        "@rtra__unicode-ident-1.0.16//:unicode_ident",
+        "@rtra__unicode-ident-1.0.17//:unicode_ident",
     ],
 )
