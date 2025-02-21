@@ -603,7 +603,7 @@ use_repo(
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
-    "cvm__tempfile-3.16.0",
+    "cvm__tempfile-3.17.1",
     "cvm__tokio-1.43.0",
     "cvm__tokio-test-0.4.4",
 )

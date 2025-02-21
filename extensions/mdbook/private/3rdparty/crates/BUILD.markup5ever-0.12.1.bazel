@@ -139,7 +139,7 @@ cargo_build_script(
     visibility = ["//visibility:private"],
     deps = [
         "@rmdbi__phf_codegen-0.11.3//:phf_codegen",
-        "@rmdbi__string_cache_codegen-0.5.3//:string_cache_codegen",
+        "@rmdbi__string_cache_codegen-0.5.4//:string_cache_codegen",
     ],
 )
 
