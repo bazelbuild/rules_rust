@@ -176,19 +176,22 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
     for mut spec in crate_specs.into_iter() {
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
+            // Prefer rlib crates over bin crates (typically tests):
+            // - the display name that matches the crate name (foo vs foo_test)
+            //   Rust Analyzer seems to use display_name for matching crate entries
+            //   in rust-project.json against symbols in source files.
+            //   https://github.com/bazelbuild/rules_rust/issues/1032
+            // - test crates may report a genfiles path as the root_module, rather
+            //   than the original source file in the workspace.
+            //   This causes rust-analyzer to not recognize the workspace file.
+            //   https://github.com/bazelbuild/rules_rust/issues/3126
+            if spec.crate_type == "rlib" {
+                std::mem::swap(&mut spec, existing);
+            }
             existing.deps.extend(spec.deps);
 
             spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
             existing.cfg.extend(spec.cfg);
-
-            // display_name should match the library's crate name because Rust Analyzer
-            // seems to use display_name for matching crate entries in rust-project.json
-            // against symbols in source files. For more details, see
-            // https://github.com/bazelbuild/rules_rust/issues/1032
-            if spec.crate_type == "rlib" {
-                existing.display_name = spec.display_name;
-                existing.crate_type = "rlib".into();
-            }
 
             // For proc-macro crates that exist within the workspace, there will be a
             // generated crate-spec in both the fastbuild and opt-exec configuration.
