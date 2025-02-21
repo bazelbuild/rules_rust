@@ -9,7 +9,11 @@
 
 #include <stdint.h>
 
+#ifdef SIMPLE_DEFINE
+
 static const int64_t SIMPLE_VALUE = 42;
+
+#endif
 
 EXTERN_C const int64_t simple_function();
 
