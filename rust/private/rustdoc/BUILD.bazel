@@ -7,6 +7,6 @@ rust_binary(
     srcs = ["rustdoc_test_writer.rs"],
     edition = "2018",
     deps = [
-        "//tools/runfiles",
+        "//rust/runfiles",
     ],
 )

@@ -110,7 +110,7 @@ rust_test(
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
     deps = [
-        "@rules_rust//tools/runfiles",
+        "@rules_rust//rust/runfiles",
     ] + all_crate_deps(
         normal_dev = True,
     ),
@@ -138,7 +138,7 @@ rust_test(
     tags = ["requires-network"],
     deps = [
         ":cargo_bazel",
-        "@rules_rust//tools/runfiles",
+        "@rules_rust//rust/runfiles",
     ] + all_crate_deps(
         normal = True,
     ),

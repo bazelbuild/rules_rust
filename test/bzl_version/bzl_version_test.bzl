@@ -24,7 +24,7 @@ def bzl_version_test(name, module_bazel, **kwargs):
             "VERSION": VERSION,
         },
         deps = [
-            Label("//tools/runfiles"),
+            Label("//rust/runfiles"),
         ],
         **kwargs
     )

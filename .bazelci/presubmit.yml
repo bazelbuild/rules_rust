@@ -72,7 +72,7 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/test_env:test_run"
   - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
-  - "-//tools/runfiles/..."
+  - "-//rust/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
@@ -293,7 +293,7 @@ tasks:
       - "--enable_bzlmod"
     build_targets:
       - "//crate_universe:cargo_bazel_bin"
-      - "//tools/runfiles"
+      - "//rust/runfiles"
       - "//util/import"
   ubuntu2004_clang:
     name: With Clang

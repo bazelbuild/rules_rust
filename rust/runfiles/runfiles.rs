@@ -8,7 +8,7 @@
 //!       name = "my_binary",
 //!       ...
 //!       data = ["//path/to/my/data.txt"],
-//!       deps = ["@rules_rust//tools/runfiles"],
+//!       deps = ["@rules_rust//rust/runfiles"],
 //!   )
 //! ```
 //!
@@ -351,8 +351,8 @@ mod test {
         let r = Runfiles::create().unwrap();
 
         let d = rlocation!(r, "rules_rust").unwrap();
-        let f = rlocation!(r, "rules_rust/tools/runfiles/data/sample.txt").unwrap();
-        assert_eq!(d.join("tools/runfiles/data/sample.txt"), f);
+        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+        assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
 
         let mut f = File::open(f).unwrap();
 
@@ -373,8 +373,8 @@ mod test {
         env::remove_var(MANIFEST_FILE_ENV_VAR);
         let r = Runfiles::create().unwrap();
 
-        let mut f = File::open(rlocation!(r, "rules_rust/tools/runfiles/data/sample.txt").unwrap())
-            .unwrap();
+        let mut f =
+            File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap()).unwrap();
 
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();
@@ -399,8 +399,8 @@ mod test {
 
         let r = Runfiles::create().unwrap();
 
-        let mut f = File::open(rlocation!(r, "rules_rust/tools/runfiles/data/sample.txt").unwrap())
-            .unwrap();
+        let mut f =
+            File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap()).unwrap();
 
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).unwrap();

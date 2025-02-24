@@ -31,7 +31,7 @@ rust_library(
     ],
     edition = "2018",
     deps = [
-        "//tools/runfiles",
+        "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
         "//tools/rust_analyzer/3rdparty/crates:log",
         "//tools/rust_analyzer/3rdparty/crates:serde",

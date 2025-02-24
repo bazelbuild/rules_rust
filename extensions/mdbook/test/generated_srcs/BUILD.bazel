@@ -31,5 +31,5 @@ rust_test(
     data = [":generated_srcs"],
     edition = "2021",
     rustc_env = {"MDBOOK_OUTPUT_RLOCATIONPATH": "$(rlocationpath :generated_srcs)"},
-    deps = ["@rules_rust//tools/runfiles"],
+    deps = ["@rules_rust//rust/runfiles"],
 )

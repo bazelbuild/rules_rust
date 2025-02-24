@@ -15,8 +15,8 @@ rust_binary(
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [
+        "@rules_rust//rust/runfiles",
         "@rules_rust//util/action_args",
-        "@rules_rust//tools/runfiles",
     ],
 )
 
