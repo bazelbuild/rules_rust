@@ -14,6 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Buildifier
+        run: |
+          wget "https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-amd64" -O buildifier
+          chmod +x ./buildifier
+          ./buildifier -lint=warn -mode=check -warnings=all -r ${{ github.workspace }}
+          rm ./buildifier
+        env:
+          BUILDIFIER_VERSION: 8.0.2
       - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: '.'

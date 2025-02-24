@@ -1,6 +1,7 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//rust:defs.bzl", "rust_common", "rust_library")
 
 def _transitive_crate_outputs_test_impl(ctx):
@@ -32,7 +33,7 @@ def _transitive_crate_outputs_test():
     )
 
     # buildifier: disable=native-cc
-    native.cc_library(
+    cc_library(
         name = "baz",
         srcs = ["baz.cc"],
     )

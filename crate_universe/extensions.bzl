@@ -66,6 +66,12 @@ crate.from_cargo(
 use_repo(crate, "crates")
 ```
 
+#### Note if using Private Crate Registries
+
+If you are using from_cargo and are pulling dependencies from a private crate registry such as Artifactory,
+make sure you set the `CARGO_BAZEL_ISOLATED=false bazel build //...` environmental.  If not `crates_universe`
+will not be able to pull from your private registry.
+
 The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
 Notably, the all_crate_deps and aliases macros (
 see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe.html#dependencies-api)) commonly allow the
@@ -373,6 +379,7 @@ load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
 )
+load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
     "//crate_universe/private:crates_vendor.bzl",
     "CRATES_VENDOR_ATTRS",
@@ -629,7 +636,8 @@ def _generate_hub_and_spokes(
             cargo_lockfile = cargo_lockfile,
             splicing_manifest = splicing_manifest,
             config_path = config_file,
-            output_dir = module_ctx.path("{}/{}".format(tag_path, "splicing-output")),
+            output_dir = tag_path.get_child("splicing-output"),
+            debug_workspace_dir = tag_path.get_child("splicing-workspace"),
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
@@ -638,7 +646,7 @@ def _generate_hub_and_spokes(
 
         # Create a fallback lockfile to be parsed downstream.
         if lockfile == None:
-            lockfile = module_ctx.path("cargo-bazel-lock.json")
+            lockfile = tag_path.get_child("cargo-bazel-lock.json")
             module_ctx.file(lockfile, "")
 
         kwargs.update({
@@ -648,8 +656,8 @@ def _generate_hub_and_spokes(
     # The workspace root when one is explicitly provided.
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 
-    paths_to_track_file = module_ctx.path("paths_to_track.json")
-    warnings_output_file = module_ctx.path("warnings_output.json")
+    paths_to_track_file = tag_path.get_child("paths_to_track.json")
+    warnings_output_file = tag_path.get_child("warnings_output.json")
 
     # Run the generator
     module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))
@@ -1031,7 +1039,10 @@ _FROM_COMMON_ATTRS = {
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
     ),
-    "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    "supported_platform_triples": attr.string_list(
+        doc = "A set of all platform triples to consider when generating dependencies.",
+        default = SUPPORTED_PLATFORM_TRIPLES,
+    ),
 }
 
 _from_cargo = tag_class(

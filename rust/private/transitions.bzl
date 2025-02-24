@@ -45,4 +45,5 @@ alias_with_import_macro_bootstrapping_mode = rule(
             default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
     },
+    provides = [rust_common.crate_info, rust_common.dep_info],
 )

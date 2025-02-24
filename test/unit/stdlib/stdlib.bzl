@@ -1,6 +1,7 @@
 """Unittest to verify contents and ordering of rust stdlib in rust_library() CcInfo"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_library")
 
 def _categorize_library(name):

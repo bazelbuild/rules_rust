@@ -90,6 +90,6 @@ rust_library(
         "@rmdbi__proc-macro2-1.0.93//:proc_macro2",
         "@rmdbi__quote-1.0.38//:quote",
         "@rmdbi__strsim-0.11.1//:strsim",
-        "@rmdbi__syn-2.0.96//:syn",
+        "@rmdbi__syn-2.0.98//:syn",
     ],
 )
