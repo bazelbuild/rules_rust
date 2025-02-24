@@ -236,7 +236,7 @@ def _rust_prost_aspect_impl(target, ctx):
     prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
     runtimes = [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]
     if not prost_toolchain.compile_well_known_types:
-        runtimes += [prost_toolchain.prost_types]
+        runtimes.append(prost_toolchain.prost_types)
     for prost_runtime in runtimes:
         if not prost_runtime:
             continue

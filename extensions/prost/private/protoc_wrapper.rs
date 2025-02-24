@@ -320,7 +320,13 @@ fn get_extern_paths(
     let rust_path = RustModulePath(escape_keyword(crate_name.to_string()));
 
     for file in descriptor_set.file.iter() {
-        if !compile_well_known_types && file.package.as_deref() == Some("google.protobuf") {
+        if !compile_well_known_types
+            && (file.package.as_deref() == Some("google.protobuf")
+                || file
+                    .package
+                    .as_deref()
+                    .is_some_and(|p| p.starts_with("google.protobuf.")))
+        {
             continue;
         }
 
