@@ -1,20 +1,12 @@
 //! Tests the Google well-known types.
 
 use nocompile_well_known_types_proto::wkt::WellKnownTypes;
-use prost_types::compiler::Version;
-use prost_types::field::{Cardinality, Kind};
-use prost_types::value::Kind::{BoolValue, StringValue};
-use prost_types::Any;
-use prost_types::DescriptorProto;
-use prost_types::Duration;
-// use prost_types::Empty;
-use prost_types::FieldMask;
-use prost_types::SourceContext;
-use prost_types::Struct;
-use prost_types::Timestamp;
-use prost_types::Value;
-use prost_types::{Api, Method, Mixin};
-use prost_types::{Field, Option, Syntax, Type};
+use prost_types::{
+    compiler::Version,
+    field::{Cardinality, Kind},
+    Any, Api, DescriptorProto, Duration, Field, FieldMask, Method, Mixin, Option, SourceContext,
+    Struct, Syntax, Timestamp, Type, Value,
+};
 
 #[test]
 fn test_well_known_types() {
