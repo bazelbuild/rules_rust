@@ -1,9 +1,15 @@
 """Module extensions for using rules_rust with bzlmod"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//rust:defs.bzl", "rust_common")
-load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES", "rust_register_toolchains", "rust_repository_set", "rust_toolchain_tools_repository")
+load(
+    "//rust:repositories.bzl",
+    "DEFAULT_TOOLCHAIN_TRIPLES",
+    "rust_register_toolchains",
+    "rust_repository_set",
+    "rust_toolchain_tools_repository",
+)
 load("//rust/platform:triple.bzl", "get_host_triple")
+load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:repository_utils.bzl",
     "DEFAULT_EXTRA_TARGET_TRIPLES",

@@ -405,6 +405,17 @@ load(
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:common.bzl", "rust_common")
+
+# buildifier: disable=bzl-visibility
+load(
+    "//rust/private:repository_utils.bzl",
+    "DEFAULT_NIGHTLY_VERSION",
+    "DEFAULT_STATIC_RUST_URL_TEMPLATES",
+    "rust_toolchain_tools_repository_impl",
+)
 load(":defs.bzl", _crate_universe_crate = "crate")
 
 # A list of labels which may be relative (and if so, is within the repo the rule is generated in).
@@ -826,20 +837,76 @@ def _get_generator(module_ctx):
     module_ctx.download(**download_kwargs)
     return output
 
+def _new_host_tools(module_ctx, host_triple, rust_version):
+    """A helper function to get the path to the host cargo and rustc binaries.
+
+    Args:
+        module_ctx (module_ctx): The module context.
+        host_triple (struct): The platform triple for the machine executing this extension.
+        rust_version (str): The version of Rust to use.
+    Returns:
+        A tuple of path to cargo, path to rustc.
+    """
+
+    # Allow shorthand versions to follow the defaults
+    # defined by rules_rust.
+    version = rust_version
+    if version == "nightly":
+        version = DEFAULT_NIGHTLY_VERSION
+
+    # TODO: A number of these attributes should be configurable but there currently
+    # isn't a clear design for the interface.
+    attrs = struct(
+        name = "cu_{}".format(rust_version),
+        allocator_library = "@rules_rust//ffi/cc/allocator_library",
+        global_allocator_library = "@rules_rust//ffi/cc/global_allocator_library",
+        exec_triple = host_triple.str,
+        target_triple = host_triple.str,
+        version = version,
+        urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
+        sha256s = {},
+        rustfmt_version = None,
+        edition = None,
+        extra_rustc_flags = [],
+        extra_exec_rustc_flags = [],
+        opt_level = None,
+        dev_components = False,
+        auth = {},
+        auth_patterns = [],
+        netrc = None,
+    )
+
+    # `tc == toolchains` but keeping paths short
+    # for windows to avoid MAX_PATH isues.
+    output = "tc/{}".format(str(version))
+
+    rust_toolchain_tools_repository_impl(
+        module_ctx,
+        attrs = attrs,
+        output = output,
+    )
+
+    binary_ext = system_to_binary_ext(host_triple.system)
+
+    cargo_path = module_ctx.path("{}/bin/cargo{}".format(output, binary_ext))
+    rustc_path = module_ctx.path("{}/bin/rustc{}".format(output, binary_ext))
+
+    return cargo_path, rustc_path
+
 def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
     """A helper function to get the path to the host cargo and rustc binaries.
 
     Args:
-        module_ctx: The module extension's context.
-        host_triple: The platform triple for the machine executing this extension.
-        host_tools_repo: The `rust_host_tools` repository to use.
+        module_ctx (module_ctx): The module context.
+        host_triple (struct): The platform triple for the machine executing this extension.
+        host_tools_repo (str): The `rust_host_tools` repository to use. Mutually exclusive with `rust_version`.
     Returns:
         A tuple of path to cargo, path to rustc.
     """
     binary_ext = system_to_binary_ext(host_triple.system)
 
-    cargo_path = str(module_ctx.path(Label("@{}//:bin/cargo{}".format(host_tools_repo, binary_ext))))
-    rustc_path = str(module_ctx.path(Label("@{}//:bin/rustc{}".format(host_tools_repo, binary_ext))))
+    cargo_path = module_ctx.path(Label("@{}//:bin/cargo{}".format(host_tools_repo, binary_ext)))
+    rustc_path = module_ctx.path(Label("@{}//:bin/rustc{}".format(host_tools_repo, binary_ext)))
     return cargo_path, rustc_path
 
 def _crate_impl(module_ctx):
@@ -942,6 +1009,8 @@ def _crate_impl(module_ctx):
             if repo not in local_repos:
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
+        host_tools_cache = {}
+
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
             # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
             # function of the module extension, so we want to trigger all restarts before we start the actual work.
@@ -954,7 +1023,23 @@ def _crate_impl(module_ctx):
                 for m in cfg.manifests:
                     module_ctx.path(m)
 
-            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
+            if cfg.host_tools_repo:
+                host_tools_id = cfg.host_tools_repo
+                host_tools_lookup = _get_host_cargo_rustc
+            elif cfg.rust_version:
+                host_tools_id = cfg.rust_version
+                host_tools_lookup = _new_host_tools
+            else:
+                fail("No means to find host tools for crate_universe moodule `{}`", cfg.name)
+
+            if host_tools_id not in host_tools_cache:
+                host_tools_cache[host_tools_id] = host_tools_lookup(
+                    module_ctx,
+                    host_triple,
+                    host_tools_id,
+                )
+            cargo_path, rustc_path = host_tools_cache[host_tools_id]
+
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
                 cargo_bazel_path = generator,
@@ -1021,7 +1106,6 @@ _FROM_COMMON_ATTRS = {
     "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
     "host_tools_repo": attr.string(
         doc = "The name of the `rust_host_tools` repository to use.",
-        default = "rust_host_tools",
     ),
     "isolated": attr.bool(
         doc = (
@@ -1038,6 +1122,10 @@ _FROM_COMMON_ATTRS = {
             "The path to a file to use for reproducible renderings. " +
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
+    ),
+    "rust_version": attr.string(
+        doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
+        default = rust_common.default_version,
     ),
     "supported_platform_triples": attr.string_list(
         doc = "A set of all platform triples to consider when generating dependencies.",

@@ -11,6 +11,7 @@ def _load_arbitrary_tool_test_impl(repository_ctx):
     # Download cargo
     load_arbitrary_tool(
         ctx = repository_ctx,
+        attrs = repository_ctx.attr,
         tool_name = "cargo",
         tool_subdirectories = ["cargo"],
         version = "1.53.0",
