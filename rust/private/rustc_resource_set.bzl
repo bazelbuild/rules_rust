@@ -259,6 +259,9 @@ _RESOURCE_SETS = {
     64: _resource_set_cpu_64,
 }
 
+# https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+_RUSTC_DEFAULT_CODEGEN_UNITS = 16
+
 def is_codegen_units_enabled(toolchain):
     """Check whether or not codegen-units should be applied by the toolchain.
 
@@ -285,12 +288,13 @@ def get_rustc_resource_set(toolchain):
     Returns:
         Optional[Callable]: A resource set appropriate for the current configuration.
     """
-    if not is_codegen_units_enabled(toolchain):
+    if toolchain._experimental_use_cc_common_link:
         return None
 
     codegen_units = toolchain._codegen_units
-
-    if codegen_units > len(_RESOURCE_SETS):
-        return _RESOURCE_SETS[len(_RESOURCE_SETS)]
+    if codegen_units <= 0:
+        codegen_units = _RUSTC_DEFAULT_CODEGEN_UNITS
+    elif codegen_units > len(_RESOURCE_SETS):
+        codegen_units = len(_RESOURCE_SETS)
 
     return _RESOURCE_SETS[codegen_units]
