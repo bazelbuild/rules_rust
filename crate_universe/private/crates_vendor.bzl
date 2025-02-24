@@ -471,7 +471,7 @@ def _crates_vendor_impl(ctx):
 
     runfiles = ctx.runfiles(files = cargo_bazel_runfiles, transitive_files = toolchain.all_files)
     if runner.basename.endswith(".sh"):
-        runfiles = runfiles.merge(ctx.attr._runfiles_lib[DefaultInfo].default_runfiles)
+        runfiles = runfiles.merge(ctx.attr._bash_runfiles[DefaultInfo].default_runfiles)
 
     return DefaultInfo(
         files = depset([runner]),
