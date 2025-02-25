@@ -300,7 +300,7 @@ mod test {
             },
             Utf8Path::new("/tmp/bazelworkspace"),
         )
-            .unwrap();
+        .unwrap();
 
         Context::new(annotations, false).unwrap()
     }
