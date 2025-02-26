@@ -79,7 +79,7 @@ def _default_crate_name_rust_test_suite_test_impl(ctx):
     tut = analysistest.target_under_test(env)
 
     # Note: Hyphens and Dots in crate name converted to underscores.
-    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_rust_test_suite_foo_bar_main")
+    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_rust_test_suite_foo_bar_main_test")
     return analysistest.end(env)
 
 default_crate_name_library_test = analysistest.make(
@@ -109,6 +109,7 @@ no_extra_filename_test = analysistest.make(
 default_crate_name_rust_test_suite_test = analysistest.make(
     _default_crate_name_rust_test_suite_test_impl,
 )
+
 def _crate_name_test():
     rust_library(
         name = "default/crate-name-library",
@@ -198,8 +199,8 @@ def _crate_name_test():
     )
     
     rust_test_suite(
-        name = "defualt/crate-name-rust-test-suite",
-        srcs = "foo.bar.main.rs",
+        name = "default/crate-name-rust-test-suite",
+        srcs = ["foo.bar.main.rs"],
     )
 
     slib_library_name_test(
@@ -247,8 +248,8 @@ def _crate_name_test():
         target_under_test = ":static_lib",
     )
     default_crate_name_rust_test_suite_test(
-        name = "defualt_crate_name_rust_test_suite_test",
-        target_under_test = ":default/crate-name-rust-test-suite",
+        name = "default_crate_name_rust_test_suite_test",
+        target_under_test = ":default/crate-name-rust-test-suite_foo.bar.main_test",
     )
 
 def crate_name_test_suite(name):
