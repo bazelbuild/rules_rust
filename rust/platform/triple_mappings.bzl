@@ -135,7 +135,6 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "android": "android",
     "bitrig": None,
     "darwin": "osx",
-    "macos": "osx",
     "dragonfly": None,
     "eabi": "none",
     "eabihf": "none",
@@ -144,6 +143,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "fuchsia": "fuchsia",
     "ios": "ios",
     "linux": "linux",
+    "macos": "osx",
     "nacl": None,
     "netbsd": None,
     "nixos": "nixos",
@@ -161,7 +161,6 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
 _SYSTEM_TO_BINARY_EXT = {
     "android": "",
     "darwin": "",
-    "macos": "",
     "eabi": "",
     "eabihf": "",
     "emscripten": ".js",
@@ -169,6 +168,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "fuchsia": "",
     "ios": "",
     "linux": "",
+    "macos": "",
     "nixos": "",
     "none": "",
     "nto": "",
@@ -185,7 +185,6 @@ _SYSTEM_TO_BINARY_EXT = {
 _SYSTEM_TO_STATICLIB_EXT = {
     "android": ".a",
     "darwin": ".a",
-    "macos": ".a",
     "eabi": ".a",
     "eabihf": ".a",
     "emscripten": ".js",
@@ -193,6 +192,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "fuchsia": ".a",
     "ios": ".a",
     "linux": ".a",
+    "macos": ".a",
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
@@ -206,7 +206,6 @@ _SYSTEM_TO_STATICLIB_EXT = {
 _SYSTEM_TO_DYLIB_EXT = {
     "android": ".so",
     "darwin": ".dylib",
-    "macos": ".dylib",
     "eabi": ".so",
     "eabihf": ".so",
     "emscripten": ".js",
@@ -214,6 +213,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "fuchsia": ".so",
     "ios": ".dylib",
     "linux": ".so",
+    "macos": ".dylib",
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
@@ -235,7 +235,6 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     # I am not sure which is the common configuration or how we encode it as a link flag.
     "cloudabi": ["-lunwind", "-lc", "-lcompiler_rt"],
     "darwin": ["-lSystem", "-lresolv"],
-    "macos": ["-lSystem", "-lresolv"],
     "dragonfly": ["-lpthread"],
     "eabi": [],
     "eabihf": [],
@@ -258,6 +257,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
+    "macos": ["-lSystem", "-lresolv"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
     "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.
