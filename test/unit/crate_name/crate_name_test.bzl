@@ -201,6 +201,7 @@ def _crate_name_test():
     rust_test_suite(
         name = "default/crate-name-rust-test-suite",
         srcs = ["foo.bar.main.rs"],
+        edition = "2018",
     )
 
     slib_library_name_test(
