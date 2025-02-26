@@ -1339,7 +1339,7 @@ def rustc_compile_action(
         if toolchain.target_os == "windows" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif toolchain.target_os == "darwin" or toolchain.target_os == "macos":
+        elif toolchain.target_os in ["macos", "darwin"]:
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
