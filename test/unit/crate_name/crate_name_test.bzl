@@ -73,7 +73,7 @@ def _no_extra_filename_test_impl(ctx):
     assert_argv_contains_prefix_not(env, tut.actions[0], "--codegen=metadata=")
     assert_argv_contains_prefix_not(env, tut.actions[0], "--codegen=extra-filename=")
     return analysistest.end(env)
- 
+
 def _default_crate_name_rust_test_suite_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -197,7 +197,7 @@ def _crate_name_test():
         srcs = ["lib.rs"],
         edition = "2018",
     )
-    
+
     rust_test_suite(
         name = "default/crate-name-rust-test-suite",
         srcs = ["foo.bar.main.rs"],
