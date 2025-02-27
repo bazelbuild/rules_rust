@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary")
+load("//rust/private:rust.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,6 +7,6 @@ rust_binary(
     srcs = ["rustdoc_test_writer.rs"],
     edition = "2018",
     deps = [
-        "//tools/runfiles",
+        "//rust/runfiles",
     ],
 )

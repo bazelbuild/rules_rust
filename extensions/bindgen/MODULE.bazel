@@ -26,6 +26,7 @@ use_repo(
 
 register_toolchains(
     "//:default_bindgen_toolchain",
+    dev_dependency = True,
 )
 
 bazel_dep(name = "rules_testing", version = "0.7.0", dev_dependency = True)

@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
-load("//tools:tool_utils.bzl", "aspect_repository")
+load("//tools/private:tool_utils.bzl", "aspect_repository")
 
 rust_binary(
     name = "gen_rust_project",
@@ -31,7 +31,7 @@ rust_library(
     ],
     edition = "2018",
     deps = [
-        "//tools/runfiles",
+        "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
         "//tools/rust_analyzer/3rdparty/crates:log",
         "//tools/rust_analyzer/3rdparty/crates:serde",

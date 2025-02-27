@@ -24,7 +24,7 @@ def bzl_ext_version_test(name, module_bazel, **kwargs):
             "MODULE_BAZEL": "$(rlocationpath {})".format(module_bazel),
         },
         deps = [
-            Label("//tools/runfiles"),
+            Label("//rust/runfiles"),
         ],
         **kwargs
     )
