@@ -40,11 +40,11 @@ load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
 DEFAULT_TOOLCHAIN_TRIPLES = {
-    "aarch64-apple-darwin": "rust_darwin_aarch64",
+    "aarch64-apple-darwin": "rust_macos_aarch64",
     "aarch64-pc-windows-msvc": "rust_windows_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
     "s390x-unknown-linux-gnu": "rust_linux_s390x",
-    "x86_64-apple-darwin": "rust_darwin_x86_64",
+    "x86_64-apple-darwin": "rust_macos_x86_64",
     "x86_64-pc-windows-msvc": "rust_windows_x86_64",
     "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
