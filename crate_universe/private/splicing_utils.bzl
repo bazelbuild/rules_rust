@@ -121,7 +121,8 @@ def splice_workspace_manifest(
         cargo_lockfile,
         splicing_manifest,
         config_path,
-        output_dir):
+        output_dir,
+        debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
     Args:
@@ -131,6 +132,7 @@ def splice_workspace_manifest(
         splicing_manifest (path): The path to a splicing manifest.
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
+        debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
         path: The path to a Cargo metadata json file found in the spliced workspace root.
@@ -156,9 +158,11 @@ def splice_workspace_manifest(
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.
     if CARGO_BAZEL_DEBUG in repository_ctx.os.environ:
+        if debug_workspace_dir == None:
+            debug_workspace_dir = repository_ctx.path("splicing-workspace")
         arguments.extend([
             "--workspace-dir",
-            repository_ctx.path("splicing-workspace"),
+            debug_workspace_dir,
         ])
 
     env = {}
