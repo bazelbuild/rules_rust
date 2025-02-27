@@ -165,7 +165,18 @@
 <li><a href="#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
-<p>To use the Rust bindgen rules, add the following to your <code>WORKSPACE</code> file to add the
+<h3 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h3>
+<p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
+<pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
+</code></pre>
+<p>rules_rust_bindgen does not automatically register a bindgen toolchain.
+You need to register either your own or the default toolchain by adding the following to your <code>MODULE.bazel</code> file:</p>
+<pre><code class="language-python">register_toolchains("@rules_rust_bindgen//:default_bindgen_toolchain")
+</code></pre>
+<p>The default toolchain builds libclang from source via the <a href="https://registry.bazel.build/modules/llvm-project">llvm-project</a> bazel_dep.
+<a href="https://github.com/bazelbuild/rules_rust/blob/main/examples/bindgen_toolchain/Readme.md">examples/bindgen_toolchain/Readme.md</a> shows how to use a prebuilt libclang.</p>
+<h3 id="workspace"><a class="header" href="#workspace">Workspace</a></h3>
+<p>Or add the following if you're still using <code>WORKSPACE</code> to add the
 external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 

@@ -3048,7 +3048,18 @@ allowlist:</p>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
 <h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
-<p>To use the Rust bindgen rules, add the following to your <code>WORKSPACE</code> file to add the
+<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
+<p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
+<pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
+</code></pre>
+<p>rules_rust_bindgen does not automatically register a bindgen toolchain.
+You need to register either your own or the default toolchain by adding the following to your <code>MODULE.bazel</code> file:</p>
+<pre><code class="language-python">register_toolchains("@rules_rust_bindgen//:default_bindgen_toolchain")
+</code></pre>
+<p>The default toolchain builds libclang from source via the <a href="https://registry.bazel.build/modules/llvm-project">llvm-project</a> bazel_dep.
+<a href="https://github.com/bazelbuild/rules_rust/blob/main/examples/bindgen_toolchain/Readme.md">examples/bindgen_toolchain/Readme.md</a> shows how to use a prebuilt libclang.</p>
+<h3 id="workspace-1"><a class="header" href="#workspace-1">Workspace</a></h3>
+<p>Or add the following if you're still using <code>WORKSPACE</code> to add the
 external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
@@ -3156,10 +3167,10 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
 <h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
-<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">bzlmod</a></h3>
+<h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">bzlmod</a></h3>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
-<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
+<h3 id="workspace-2"><a class="header" href="#workspace-2">WORKSPACE</a></h3>
 <pre><code class="language-python">load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()
