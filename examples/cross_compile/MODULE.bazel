@@ -15,7 +15,7 @@ local_path_override(
 )
 
 # https://github.com/bazelbuild/platforms/releases
-bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "platforms", version = "0.0.11")
 
 # https://github.com/bazelbuild/rules_shell/releases
 bazel_dep(name = "rules_shell", version = "0.3.0")

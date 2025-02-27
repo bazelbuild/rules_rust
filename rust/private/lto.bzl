@@ -28,7 +28,7 @@ def _rust_lto_flag_impl(ctx):
     value = ctx.build_setting_value
 
     if value not in _LTO_MODES:
-        msg = "{NAME} build setting allowed to take values [{EXPECTED}], but was set to: {ACTUAL}".format(
+        msg = "{NAME} build setting allowed to take values [{VALUES}], but was set to: {ACTUAL}".format(
             NAME = ctx.label,
             VALUES = ", ".join(["'{}'".format(m) for m in _LTO_MODES]),
             ACTUAL = value,
