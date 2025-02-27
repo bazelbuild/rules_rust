@@ -407,6 +407,9 @@ rust_prost_library = rule(
             cfg = "exec",
         ),
     },
+    provides = [
+        rust_common.crate_group_info,
+    ],
     toolchains = [
         TOOLCHAIN_TYPE,
     ],

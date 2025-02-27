@@ -9,13 +9,11 @@
 //! data files to compute the coverage report.
 //!
 //! This script assumes the following environment variables are set:
-//! - COVERAGE_DIR            Directory containing metadata files needed for
-//!                           coverage collection (e.g. gcda files, profraw).
-//! - COVERAGE_OUTPUT_FILE    The coverage action output path.
-//! - ROOT                    Location from where the code coverage collection
-//!                           was invoked.
-//! - RUNFILES_DIR            Location of the test's runfiles.
-//! - VERBOSE_COVERAGE        Print debug info from the coverage scripts
+//! - `COVERAGE_DIR``: Directory containing metadata files needed for coverage collection (e.g. gcda files, profraw).
+//! - `COVERAGE_OUTPUT_FILE`: The coverage action output path.
+//! - `ROOT`: Location from where the code coverage collection was invoked.
+//! - `RUNFILES_DIR`: Location of the test's runfiles.
+//! - `VERBOSE_COVERAGE`: Print debug info from the coverage scripts
 //!
 //! The script looks in $COVERAGE_DIR for the Rust metadata coverage files
 //! (profraw) and uses lcov to get the coverage data. The coverage data
