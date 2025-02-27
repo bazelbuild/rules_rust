@@ -314,11 +314,22 @@ impl From<&str> for RustModulePath {
 fn get_extern_paths(
     descriptor_set: &FileDescriptorSet,
     crate_name: &str,
+    compile_well_known_types: bool,
 ) -> Result<BTreeMap<ProtoPath, RustModulePath>, String> {
     let mut extern_paths = BTreeMap::new();
     let rust_path = RustModulePath(escape_keyword(crate_name.to_string()));
 
     for file in descriptor_set.file.iter() {
+        if !compile_well_known_types
+            && (file.package.as_deref() == Some("google.protobuf")
+                || file
+                    .package
+                    .as_deref()
+                    .is_some_and(|p| p.starts_with("google.protobuf.")))
+        {
+            continue;
+        }
+
         descriptor_set_file_to_extern_paths(&mut extern_paths, &rust_path, file);
     }
 
@@ -451,6 +462,9 @@ struct Args {
     /// Direct dependency crate names.
     direct_dep_crate_names: Vec<String>,
 
+    /// Whether to compile well known types.
+    compile_well_known_types: bool,
+
     /// The path to the rustfmt binary.
     rustfmt: Option<PathBuf>,
 
@@ -479,6 +493,7 @@ impl Args {
         let mut tonic_or_prost_opts = Vec::new();
         let mut direct_dep_crate_names = Vec::new();
         let mut is_tonic = false;
+        let mut compile_well_known_types = false;
 
         let mut extra_args = Vec::new();
 
@@ -499,6 +514,11 @@ impl Args {
 
             if arg == "--is_tonic" {
                 is_tonic = true;
+                return;
+            }
+
+            if arg == "--compile_well_known_types" {
+                compile_well_known_types = true;
                 return;
             }
 
@@ -646,6 +666,7 @@ impl Args {
             is_tonic,
             label: label.unwrap(),
             extra_args,
+            compile_well_known_types,
         })
     }
 }
@@ -749,6 +770,7 @@ fn main() {
         direct_dep_crate_names,
         is_tonic,
         extra_args,
+        compile_well_known_types,
     } = Args::parse().expect("Failed to parse args");
 
     let out_dir = get_and_create_output_dir(&out_dir, &label);
@@ -794,6 +816,14 @@ fn main() {
     if is_tonic {
         args.push(format!("--tonic_out={}", out_dir.display()));
     }
+
+    if compile_well_known_types {
+        args.push("--prost_opt=compile_well_known_types".to_owned());
+        if is_tonic {
+            args.push("--tonic_opt=compile_well_known_types".to_owned());
+        }
+    }
+
     args.extend(extra_args);
     args.extend(
         proto_paths
@@ -906,7 +936,7 @@ fn main() {
         }
     }
 
-    let extern_paths = get_extern_paths(&descriptor_set, &crate_name)
+    let extern_paths = get_extern_paths(&descriptor_set, &crate_name, compile_well_known_types)
         .expect("Failed to compute proto package info");
 
     // Write outputs

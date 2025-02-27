@@ -22,6 +22,7 @@ load(
     "//rust/private:providers.bzl",
     _BuildInfo = "BuildInfo",
     _ClippyInfo = "ClippyInfo",
+    _CrateGroupInfo = "CrateGroupInfo",
     _CrateInfo = "CrateInfo",
     _DepInfo = "DepInfo",
     _DepVariantInfo = "DepVariantInfo",
@@ -30,6 +31,7 @@ load(
 
 BuildInfo = _BuildInfo
 ClippyInfo = _ClippyInfo
+CrateGroupInfo = _CrateGroupInfo
 CrateInfo = _CrateInfo
 DepInfo = _DepInfo
 DepVariantInfo = _DepVariantInfo
