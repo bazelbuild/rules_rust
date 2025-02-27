@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary")
+load("//rust/private:rust.bzl", "rust_binary")
 
 package(default_visibility = ["//visibility:public"])
 

@@ -1,5 +1,5 @@
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library")
-load("//tools:tool_utils.bzl", "aspect_repository")
+load("//tools/private:tool_utils.bzl", "aspect_repository")
 
 exports_files(
     [
