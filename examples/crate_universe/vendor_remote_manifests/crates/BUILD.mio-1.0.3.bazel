@@ -87,89 +87,89 @@ rust_library(
     version = "1.0.3",
     deps = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cvm__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cvm__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(target_os = "wasi")
+            "@cvm__libc-0.2.170//:libc",  # cfg(target_os = "wasi")
             "@cvm__wasi-0.11.0-wasi-snapshot-preview1//:wasi",  # cfg(target_os = "wasi")
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cvm__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@cvm__libc-0.2.169//:libc",  # cfg(unix)
+            "@cvm__libc-0.2.170//:libc",  # cfg(unix)
         ],
         "//conditions:default": [],
     }),

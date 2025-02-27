@@ -85,7 +85,7 @@ rust_library(
     version = "1.5.0",
     deps = [
         "@rmdbi__yoke-0.7.5//:yoke",
-        "@rmdbi__zerofrom-0.1.5//:zerofrom",
+        "@rmdbi__zerofrom-0.1.6//:zerofrom",
         "@rmdbi__zerovec-0.10.4//:zerovec",
     ],
 )

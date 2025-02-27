@@ -85,7 +85,7 @@ rust_library(
     }),
     version = "2.7.1",
     deps = [
-        "@rmdbi__equivalent-1.0.1//:equivalent",
+        "@rmdbi__equivalent-1.0.2//:equivalent",
         "@rmdbi__hashbrown-0.15.2//:hashbrown",
     ],
 )

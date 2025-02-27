@@ -85,6 +85,6 @@ rust_library(
     version = "0.1.6",
     deps = [
         "@rmdbi__generic-array-0.14.7//:generic_array",
-        "@rmdbi__typenum-1.17.0//:typenum",
+        "@rmdbi__typenum-1.18.0//:typenum",
     ],
 )

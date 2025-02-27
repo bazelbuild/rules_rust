@@ -24,7 +24,10 @@ use_repo(
     "rules_rust_bindgen_deps__env_logger-0.10.2",
 )
 
-register_toolchains("//:default_bindgen_toolchain", dev_dependency = True)
+register_toolchains(
+    "//:default_bindgen_toolchain",
+    dev_dependency = True,
+)
 
 bazel_dep(name = "rules_testing", version = "0.7.0", dev_dependency = True)
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
