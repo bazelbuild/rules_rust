@@ -3,7 +3,7 @@
 load("@aspect_rules_js//js:providers.bzl", "js_info")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
+load("@rules_rust//rust/private:providers.bzl", "ClippyInfo", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 load("//private:wasm_bindgen.bzl", "WASM_BINDGEN_ATTR", "rust_wasm_bindgen_action")
 
 def _js_rust_wasm_bindgen_impl(ctx):
@@ -32,11 +32,15 @@ def _js_rust_wasm_bindgen_impl(ctx):
         ),
     ]
 
-    if RustAnalyzerGroupInfo in ctx.attr.wasm_file:
-        providers.append(ctx.attr.wasm_file[RustAnalyzerGroupInfo])
+    crate = ctx.attr.wasm_file[0]
+    if RustAnalyzerGroupInfo in crate:
+        providers.append(crate[RustAnalyzerGroupInfo])
 
-    if RustAnalyzerInfo in ctx.attr.wasm_file:
-        providers.append(ctx.attr.wasm_file[RustAnalyzerInfo])
+    if RustAnalyzerInfo in crate:
+        providers.append(crate[RustAnalyzerInfo])
+
+    if ClippyInfo in crate:
+        providers.append(crate[ClippyInfo])
 
     return providers
 
