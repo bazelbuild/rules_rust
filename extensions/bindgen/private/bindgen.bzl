@@ -307,6 +307,10 @@ def _rust_bindgen_impl(ctx):
             open_arg = True
             continue
 
+    # Propagated defines should be made visible to clang
+    for define in ctx.attr.cc_lib[CcInfo].compilation_context.defines.to_list():
+        args.add("-D" + define)
+
     _, _, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 

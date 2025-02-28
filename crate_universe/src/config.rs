@@ -281,6 +281,10 @@ pub(crate) struct CrateAnnotations {
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
     pub(crate) build_script_deps: Option<Select<BTreeSet<Label>>>,
 
+    /// Additional dependencies to pass to a build script's
+    /// [link_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-link_deps) attribute.
+    pub(crate) build_script_link_deps: Option<Select<BTreeSet<Label>>>,
+
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
     pub(crate) build_script_proc_macro_deps: Option<Select<BTreeSet<Label>>>,
@@ -404,6 +408,7 @@ impl Add for CrateAnnotations {
             rustc_env_files: select_merge(self.rustc_env_files, rhs.rustc_env_files),
             rustc_flags: select_merge(self.rustc_flags, rhs.rustc_flags),
             build_script_deps: select_merge(self.build_script_deps, rhs.build_script_deps),
+            build_script_link_deps: select_merge(self.build_script_link_deps, rhs.build_script_link_deps),
             build_script_proc_macro_deps: select_merge(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps),
             build_script_compile_data: select_merge(self.build_script_compile_data, rhs.build_script_compile_data),
             build_script_data: select_merge(self.build_script_data, rhs.build_script_data),

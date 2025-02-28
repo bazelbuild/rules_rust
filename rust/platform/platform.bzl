@@ -23,7 +23,7 @@ _SUPPORTED_CPU_ARCH = [
 
 _SUPPORTED_SYSTEMS = [
     "android",
-    "darwin",
+    "macos",
     "freebsd",
     "ios",
     "linux",
@@ -46,17 +46,17 @@ def declare_config_settings():
             constraint_values = system_to_constraints(system),
         )
 
-    # Add alias for OSX to "darwin" to match what users will be expecting.
+    # Add alias for OSX to "macos" to match what users will be expecting.
     native.alias(
         name = "osx",
-        actual = ":darwin",
+        actual = ":macos",
     )
 
-    # Add alias for OSX to "macos" to be consistent with the long-term
-    # direction of `@platforms` in using the OS's modern name.
+    # Add alias for darwin to maintain backwards compatibility.
     native.alias(
-        name = "macos",
-        actual = ":darwin",
+        name = "darwin",
+        actual = ":macos",
+        deprecation = "Use `@rules_rust//rust/platform:macos` instead.",
     )
 
     all_supported_triples = ALL_PLATFORM_TRIPLES
@@ -115,7 +115,7 @@ def declare_config_settings():
         name = "unix",
         match_any = [
             ":android",
-            ":darwin",
+            ":macos",
             ":freebsd",
             ":linux",
             ":nto",

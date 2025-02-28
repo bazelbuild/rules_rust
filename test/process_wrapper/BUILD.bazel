@@ -168,5 +168,5 @@ rust_test(
         "FAKE_RUSTC_RLOCATIONPATH": "$(rlocationpath :fake_rustc)",
         "PROCESS_WRAPPER_RLOCATIONPATH": "$(rlocationpath //util/process_wrapper)",
     },
-    deps = ["//tools/runfiles"],
+    deps = ["//rust/runfiles"],
 )

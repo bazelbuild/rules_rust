@@ -92,7 +92,7 @@ rust_library(
         "@rmdbi__icu_normalizer_data-1.5.0//:icu_normalizer_data",
         "@rmdbi__icu_properties-1.5.1//:icu_properties",
         "@rmdbi__icu_provider-1.5.0//:icu_provider",
-        "@rmdbi__smallvec-1.13.2//:smallvec",
+        "@rmdbi__smallvec-1.14.0//:smallvec",
         "@rmdbi__utf16_iter-1.0.5//:utf16_iter",
         "@rmdbi__utf8_iter-1.0.4//:utf8_iter",
         "@rmdbi__write16-1.0.0//:write16",

@@ -83,7 +83,7 @@ rust_library(
     deps = [
         "@rmdbi__html5ever-0.27.0//:html5ever",
         "@rmdbi__maplit-1.0.2//:maplit",
-        "@rmdbi__once_cell-1.20.2//:once_cell",
+        "@rmdbi__once_cell-1.20.3//:once_cell",
         "@rmdbi__tendril-0.4.3//:tendril",
         "@rmdbi__url-2.5.4//:url",
     ],

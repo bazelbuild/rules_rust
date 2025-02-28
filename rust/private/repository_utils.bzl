@@ -46,6 +46,7 @@ filegroup(
             "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
             "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
+            "lib/rustlib/{target_triple}/lib/*.rmeta",
         ],
         allow_empty = True,
     ),

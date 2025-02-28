@@ -87,7 +87,7 @@ rust_library(
     }),
     version = "1.5.0",
     deps = [
-        "@rmdbi__litemap-0.7.4//:litemap",
+        "@rmdbi__litemap-0.7.5//:litemap",
         "@rmdbi__tinystr-0.7.6//:tinystr",
         "@rmdbi__writeable-0.5.5//:writeable",
         "@rmdbi__zerovec-0.10.4//:zerovec",

@@ -59,6 +59,9 @@ def triple(triple):
         system = "android"
         abi = "eabi"
 
+    if system == "darwin":
+        system = "macos"
+
     if len(component_parts) == 4:
         abi = component_parts[3]
 

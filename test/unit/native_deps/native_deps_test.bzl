@@ -141,7 +141,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = _get_workspace_prefix(ctx)
     link_args = _extract_linker_args(action.argv)
-    if toolchain.target_os == "darwin":
+    if toolchain.target_os in ["macos", "darwin"]:
         darwin_component = _get_darwin_component(link_args[-1])
         want = [
             "-lstatic=native_dep",
@@ -195,7 +195,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     compilation_mode = ctx.var["COMPILATION_MODE"]
     workspace_prefix = _get_workspace_prefix(ctx)
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
-    if toolchain.target_os == "darwin":
+    if toolchain.target_os in ["macos", "darwin"]:
         darwin_component = _get_darwin_component(linker_args[-1])
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
@@ -237,7 +237,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
 
 def _get_pic_suffix(ctx, compilation_mode):
     toolchain = _get_toolchain(ctx)
-    if toolchain.target_os == "darwin" or toolchain.target_os == "windows":
+    if toolchain.target_os in ["darwin", "macos", "windows"]:
         return ""
     return ".pic" if compilation_mode == "opt" else ""
 

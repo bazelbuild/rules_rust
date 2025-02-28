@@ -85,7 +85,7 @@ rust_library(
     }),
     version = "0.1.41",
     deps = [
-        "@rmdbi__log-0.4.25//:log",
+        "@rmdbi__log-0.4.26//:log",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
         "@rmdbi__tracing-core-0.1.33//:tracing_core",
     ],

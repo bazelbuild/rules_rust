@@ -14,22 +14,10 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(
-    name = "rules_nixpkgs_core",
-    version = "0.13.0",
-)
-bazel_dep(
-    name = "bazel_skylib",
-    version = "1.7.1",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
-bazel_dep(
-    name = "platforms",
-    version = "0.0.11",
-)
+bazel_dep(name = "rules_nixpkgs_core", version = "0.13.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "0.0.11")
 
 internal = use_extension("//bazel:nix_repositories.bzl", "internal_ext")
 use_repo(

@@ -82,8 +82,8 @@ rust_library(
     version = "0.4.23",
     deps = [
         "@rmdbi__crossbeam-deque-0.8.6//:crossbeam_deque",
-        "@rmdbi__globset-0.4.15//:globset",
-        "@rmdbi__log-0.4.25//:log",
+        "@rmdbi__globset-0.4.16//:globset",
+        "@rmdbi__log-0.4.26//:log",
         "@rmdbi__memchr-2.7.4//:memchr",
         "@rmdbi__regex-automata-0.4.9//:regex_automata",
         "@rmdbi__same-file-1.0.6//:same_file",

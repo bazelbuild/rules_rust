@@ -1,7 +1,7 @@
 """Unit tests for crate names."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library", "rust_static_library", "rust_test", "rust_test_suite")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_not")
 
 def _default_crate_name_library_test_impl(ctx):
@@ -74,6 +74,14 @@ def _no_extra_filename_test_impl(ctx):
     assert_argv_contains_prefix_not(env, tut.actions[0], "--codegen=extra-filename=")
     return analysistest.end(env)
 
+def _default_crate_name_rust_test_suite_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    # Note: Hyphens and Dots in crate name converted to underscores.
+    assert_argv_contains(env, tut.actions[0], "--crate-name=default_crate_name_rust_test_suite_foo_bar_main_test")
+    return analysistest.end(env)
+
 default_crate_name_library_test = analysistest.make(
     _default_crate_name_library_test_impl,
 )
@@ -97,6 +105,9 @@ slib_library_name_test = analysistest.make(
 )
 no_extra_filename_test = analysistest.make(
     _no_extra_filename_test_impl,
+)
+default_crate_name_rust_test_suite_test = analysistest.make(
+    _default_crate_name_rust_test_suite_test_impl,
 )
 
 def _crate_name_test():
@@ -187,6 +198,12 @@ def _crate_name_test():
         edition = "2018",
     )
 
+    rust_test_suite(
+        name = "default/crate-name-rust-test-suite",
+        srcs = ["foo.bar.main.rs"],
+        edition = "2018",
+    )
+
     slib_library_name_test(
         name = "slib_library_name_test",
         target_under_test = ":slib",
@@ -231,6 +248,10 @@ def _crate_name_test():
         name = "no_extra_filename_for_static_library_test",
         target_under_test = ":static_lib",
     )
+    default_crate_name_rust_test_suite_test(
+        name = "default_crate_name_rust_test_suite_test",
+        target_under_test = ":default/crate-name-rust-test-suite_foo.bar.main_test",
+    )
 
 def crate_name_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -250,5 +271,6 @@ def crate_name_test_suite(name):
             ":custom_crate_name_binary_test",
             ":default_crate_name_test_test",
             ":custom_crate_name_test_test",
+            ":default_crate_name_rust_test_suite_test",
         ],
     )

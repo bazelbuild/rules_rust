@@ -83,7 +83,7 @@ rust_library(
     version = "0.27.0",
     deps = [
         "@rmdbi__html5ever-0.27.0//:build_script_build",
-        "@rmdbi__log-0.4.25//:log",
+        "@rmdbi__log-0.4.26//:log",
         "@rmdbi__mac-0.1.1//:mac",
         "@rmdbi__markup5ever-0.12.1//:markup5ever",
     ],
