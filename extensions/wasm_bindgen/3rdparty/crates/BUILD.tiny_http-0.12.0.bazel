@@ -84,6 +84,6 @@ rust_library(
         "@rrwbd__ascii-1.1.0//:ascii",
         "@rrwbd__chunked_transfer-1.4.1//:chunked_transfer",
         "@rrwbd__httpdate-1.0.2//:httpdate",
-        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__log-0.4.25//:log",
     ],
 )

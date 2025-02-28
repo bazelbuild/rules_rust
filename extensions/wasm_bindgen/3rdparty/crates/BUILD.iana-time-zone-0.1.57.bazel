@@ -113,11 +113,11 @@ rust_library(
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
             "@rrwbd__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
-            "@rrwbd__wasm-bindgen-0.2.92//:wasm_bindgen",  # cfg(target_arch = "wasm32")
+            "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",  # cfg(target_arch = "wasm32")
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "@rrwbd__js-sys-0.3.64//:js_sys",  # cfg(target_arch = "wasm32")
-            "@rrwbd__wasm-bindgen-0.2.92//:wasm_bindgen",  # cfg(target_arch = "wasm32")
+            "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",  # cfg(target_arch = "wasm32")
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rrwbd__core-foundation-sys-0.8.4//:core_foundation_sys",  # cfg(any(target_os = "macos", target_os = "ios"))
