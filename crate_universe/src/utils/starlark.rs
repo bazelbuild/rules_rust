@@ -35,6 +35,7 @@ pub(crate) enum Starlark {
     Filegroup(Filegroup),
     Alias(Alias),
     CargoBuildScript(CargoBuildScript),
+    CargoTomlEnvVars(CargoTomlEnvVars),
     #[serde(serialize_with = "serialize::rust_proc_macro")]
     RustProcMacro(RustProcMacro),
     #[serde(serialize_with = "serialize::rust_library")]
@@ -138,6 +139,13 @@ pub(crate) struct CargoBuildScript {
     pub(crate) use_default_shell_env: Option<i32>,
     pub(crate) version: String,
     pub(crate) visibility: Set<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename = "cargo_toml_env_vars")]
+pub(crate) struct CargoTomlEnvVars {
+    pub(crate) name: String,
+    pub(crate) src: String,
 }
 
 #[derive(Serialize)]
