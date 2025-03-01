@@ -28,7 +28,11 @@
         {%- if deps_set.common | length %}
         _COMMON_CONDITION: {
             {%- for dep in deps_set.common %}
-            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- if generate_intra_workspace_dependencies %}
+                {%- if dep.id == id %}{% continue %}}{% endif %}
+            {%- else %}
+                {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}
+            {%- endif %}
             {%- set crate = context.crates | get(key=dep.id) %}
             "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ crate_alias(name = crate.name, version = crate.version, target = dep.target) }}"),
             {%- endfor %}
@@ -38,7 +42,11 @@
         {%- for condition, deps in deps_set.selects %}
         "{{ condition | addslashes }}": {
             {%- for dep in deps %}
-            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- if generate_intra_workspace_dependencies %}
+                {%- if dep.id == id %}{% continue %}}{% endif %}
+            {%- else %}
+                {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}
+            {%- endif %}
             {%- set crate = context.crates | get(key=dep.id) %}
             "{{ dep | get(key="alias", default=crate.name) }}": Label("{{ crate_alias(name = crate.name, version = crate.version, target = dep.target) }}"),
             {%- endfor %}
