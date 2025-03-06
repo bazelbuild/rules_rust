@@ -10,7 +10,7 @@ bazel_dep(name = "bazel_features", version = "1.21.0")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "llvm-project", version = "17.0.3.bcr.1")
+bazel_dep(name = "llvm-project", version = "17.0.3.bcr.2")
 
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
