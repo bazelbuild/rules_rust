@@ -943,16 +943,17 @@ def _crate_impl(module_ctx):
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
-            # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
-            # function of the module extension, so we want to trigger all restarts before we start the actual work.
-            # Once https://github.com/bazelbuild/bazel/issues/22729 has been fixed, this code can be removed.
+            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
+            # function of the module extension when the file has changed.
             if cfg.cargo_lockfile:
-                module_ctx.path(cfg.cargo_lockfile)
+                module_ctx.watch(cfg.cargo_lockfile)
             if cfg.lockfile:
-                module_ctx.path(cfg.lockfile)
+                module_ctx.watch(cfg.lockfile)
+            if cfg.cargo_config:
+                module_ctx.watch(cfg.cargo_config)
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
-                    module_ctx.path(m)
+                    module_ctx.watch(m)
 
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
             cargo_bazel_fn = new_cargo_bazel_fn(
