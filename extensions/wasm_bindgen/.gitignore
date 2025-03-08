@@ -4,6 +4,9 @@
 /bazel-*
 user.bazelrc
 
+# Test Browsers
+browsers/
+
 # rust-analyzer
 rust-project.json
 

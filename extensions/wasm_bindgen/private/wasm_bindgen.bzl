@@ -122,17 +122,18 @@ def _rust_wasm_bindgen_impl(ctx):
         info,
     ]
 
-    if RustAnalyzerGroupInfo in ctx.attr.wasm_file:
-        providers.append(ctx.attr.wasm_file[RustAnalyzerGroupInfo])
+    crate = ctx.attr.wasm_file[0]
+    if RustAnalyzerGroupInfo in crate:
+        providers.append(crate[RustAnalyzerGroupInfo])
 
-    if RustAnalyzerInfo in ctx.attr.wasm_file:
-        providers.append(ctx.attr.wasm_file[RustAnalyzerInfo])
+    if RustAnalyzerInfo in crate:
+        providers.append(crate[RustAnalyzerInfo])
 
-    if ClippyInfo in ctx.attr.wasm_file:
-        providers.append(ctx.attr.wasm_file[ClippyInfo])
+    if ClippyInfo in crate:
+        providers.append(crate[ClippyInfo])
 
-    if OutputGroupInfo in ctx.attr.wasm_file:
-        output_info = ctx.attr.wasm_file[OutputGroupInfo]
+    if OutputGroupInfo in crate:
+        output_info = crate[OutputGroupInfo]
         output_groups = {}
         for group in ["rusfmt_checks", "clippy_checks", "rust_analyzer_crate_spec"]:
             if hasattr(output_info, group):
@@ -160,8 +161,12 @@ WASM_BINDGEN_ATTR = {
         values = ["wasm32", "wasm64"],
     ),
     "wasm_file": attr.label(
-        doc = "The `.wasm` file or crate to generate bindings for.",
+        doc = "The `.wasm` crate to generate bindings for.",
         allow_single_file = True,
+        providers = [
+            [rust_common.test_crate_info],
+            [rust_common.crate_info],
+        ],
         aspects = [
             rust_analyzer_aspect,
             rustfmt_aspect,
@@ -191,8 +196,45 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 )
 
 def _rust_wasm_bindgen_toolchain_impl(ctx):
+    all_test_files = depset()
+    if ctx.attr.wasm_bindgen_test or ctx.attr.webdriver or ctx.attr.browser_type:
+        if not ctx.attr.wasm_bindgen_test:
+            fail("Not all webdriver attributes provided. Missing `wasm_bindgen_test` on `{}`".format(ctx.label))
+        if not ctx.attr.webdriver:
+            fail("Not all webdriver attributes provided. Missing `webdriver` on `{}`".format(ctx.label))
+        if not ctx.attr.browser_type:
+            fail("Not all webdriver attributes provided. Missing `browser_type` on `{}`".format(ctx.label))
+
+        all_depsets = [
+            ctx.attr.webdriver[DefaultInfo].files,
+            ctx.attr.webdriver[DefaultInfo].default_runfiles.files,
+            ctx.attr.wasm_bindgen_test_runner[DefaultInfo].files,
+            ctx.attr.wasm_bindgen_test_runner[DefaultInfo].default_runfiles.files,
+            ctx.attr.webdriver_json[DefaultInfo].files,
+            ctx.attr.webdriver_json[DefaultInfo].default_runfiles.files,
+        ]
+
+        if ctx.attr.browser:
+            all_depsets.extend([
+                ctx.attr.browser[DefaultInfo].files,
+                ctx.attr.browser[DefaultInfo].default_runfiles.files,
+            ])
+
+        all_test_files = depset(transitive = all_depsets)
+
     return platform_common.ToolchainInfo(
-        bindgen = ctx.executable.bindgen,
+        wasm_bindgen_cli = ctx.executable.wasm_bindgen_cli,
+        wasm_bindgen_test = ctx.attr.wasm_bindgen_test,
+        wasm_bindgen_test_runner = ctx.executable.wasm_bindgen_test_runner,
+        webdriver = ctx.executable.webdriver,
+        webdriver_args = ctx.attr.webdriver_args,
+        webdriver_json = ctx.file.webdriver_json,
+        browser_type = ctx.attr.browser_type,
+        browser = ctx.executable.browser,
+        all_test_files = all_test_files,
+
+        # Deprecated
+        bindgen = ctx.executable.wasm_bindgen_cli,
     )
 
 rust_wasm_bindgen_toolchain = rule(
@@ -204,10 +246,10 @@ In cases where users want to control or change the version of `wasm-bindgen` use
 a unique toolchain can be created as in the example below:
 
 ```python
-load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_toolchain")
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen_toolchain")
 
-rust_bindgen_toolchain(
-    bindgen = "//3rdparty/crates:wasm_bindgen_cli__bin",
+rust_wasm_bindgen_toolchain(
+    wasm_bindgen_cli = "//3rdparty/crates:wasm_bindgen_cli__bin",
 )
 
 toolchain(
@@ -229,9 +271,45 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
 [toolchains]: https://docs.bazel.build/versions/master/toolchains.html
 """,
     attrs = {
-        "bindgen": attr.label(
+        "browser": attr.label(
+            doc = "The browser entrypoint.",
+            cfg = "exec",
+            executable = True,
+            allow_files = True,
+        ),
+        "browser_type": attr.string(
+            doc = "The type of browser provided.",
+            values = [
+                "firefox",
+                "chrome",
+            ],
+        ),
+        "wasm_bindgen_cli": attr.label(
             doc = "The label of a `wasm-bindgen-cli` executable.",
             executable = True,
+            cfg = "exec",
+        ),
+        "wasm_bindgen_test": attr.label(
+            doc = "The label of a `wasm-bindgen-test` crate.",
+            cfg = "target",
+        ),
+        "wasm_bindgen_test_runner": attr.label(
+            doc = "The label of a `wasm-bindgen-test-runner` binary.",
+            executable = True,
+            cfg = "exec",
+        ),
+        "webdriver": attr.label(
+            doc = "The webdriver to use.",
+            executable = True,
+            allow_files = True,
+            cfg = "exec",
+        ),
+        "webdriver_args": attr.string_list(
+            doc = "Arguments to pass to the `webdriver` binary.",
+        ),
+        "webdriver_json": attr.label(
+            doc = "The [`webdriver.json` config file](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/browsers.html#configuring-headless-browser-capabilities) for wasm-bindgen-test.",
+            allow_single_file = [".json"],
             cfg = "exec",
         ),
     },
