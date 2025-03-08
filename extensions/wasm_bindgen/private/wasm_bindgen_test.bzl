@@ -169,7 +169,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
 
     env["BROWSER_TYPE"] = wb_toolchain.browser_type
     env["WEBDRIVER"] = _rlocationpath(wb_toolchain.webdriver, ctx.workspace_name)
-    env["WEBDRIVER_ARGS"] = json.encode(wb_toolchain.webdriver_args)
+    env["WEBDRIVER_ARGS"] = " ".join(wb_toolchain.webdriver_args)
     env["WEBDRIVER_JSON"] = _rlocationpath(wb_toolchain.webdriver_json, ctx.workspace_name)
     env["WASM_BINDGEN_TEST_RUNNER"] = _rlocationpath(wb_toolchain.wasm_bindgen_test_runner, ctx.workspace_name)
 

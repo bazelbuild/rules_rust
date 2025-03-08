@@ -21,6 +21,6 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         "@rrwbd//:serde_json",
-        "@rules_rust//tools/runfiles",
+        "@rules_rust//rust/runfiles",
     ],
 )

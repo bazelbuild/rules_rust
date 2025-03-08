@@ -109,10 +109,8 @@ fn main() {
     env.insert("HOME".to_string(), env["TEST_TMPDIR"].clone());
     env.insert("USERPROFILE".to_string(), env["TEST_TMPDIR"].clone());
 
-    let webdriver_args: Vec<String> = serde_json::from_str(
-        &env::var("WEBDRIVER_ARGS").expect("Failed to find WEBDRIVER_ARGS env var."),
-    )
-    .expect("Failed to parse json encoded webdriver args.");
+    let webdriver_args =
+        env::var("WEBDRIVER_ARGS").expect("Failed to find WEBDRIVER_ARGS env var.");
 
     let undeclared_test_outputs = PathBuf::from(
         env::var("TEST_UNDECLARED_OUTPUTS_DIR")
@@ -143,7 +141,7 @@ fn main() {
                 &updated_webdriver_json,
             );
 
-            env.insert("CHROMEDRIVER_ARGS".to_string(), webdriver_args.join(" "));
+            env.insert("CHROMEDRIVER_ARGS".to_string(), webdriver_args);
         }
         "firefox" => {
             env.insert(
@@ -163,7 +161,7 @@ fn main() {
             // and creating an additional one would result in errors.
             env.insert("MOZ_DISABLE_CONTENT_SANDBOX".to_string(), "1".to_string());
 
-            env.insert("GECKODRIVER_ARGS".to_string(), webdriver_args.join(" "));
+            env.insert("GECKODRIVER_ARGS".to_string(), webdriver_args);
         }
         _ => {
             panic!("Unexpected browser type: {}", browser_type)
