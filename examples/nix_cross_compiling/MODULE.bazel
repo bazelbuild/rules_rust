@@ -1,6 +1,165 @@
+module(
+    name = "rules_rust_examples_nix",
+    version = "0.0.0",
+)
+
 ###############################################################################
-# Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
-#
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
+# B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
+
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(name = "rules_nixpkgs_core", version = "0.13.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+
+internal = use_extension("//bazel:nix_repositories.bzl", "internal_ext")
+use_repo(
+    internal,
+    "nix_config",
+    "nix_rust",
+)
+
+nix_repo = use_extension("//extensions:repository.bzl", "nix_repo")
+nix_repo.default(name = "nixpkgs")
+use_repo(nix_repo, "nixpkgs")
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+# Rust toolchain
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    extra_target_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-apple-ios",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+        "wasm32-wasip1",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-nixos-gnu",
+    ],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains(
+    "@rust_toolchains//:all",
+    "//bazel/toolchains/cc/aarch64-apple-darwin:toolchain",
+    "//bazel/toolchains/cc/aarch64-apple-ios:toolchain",
+    "//bazel/toolchains/cc/aarch64-linux-android:toolchain",
+    "//bazel/toolchains/cc/aarch64-unknown-linux-gnu:toolchain",
+    "//bazel/toolchains/cc/wasm32-unknown-unknown:toolchain",
+    "//bazel/toolchains/cc/wasm32-wasip1:toolchain",
+    "//bazel/toolchains/cc/x86_64-apple-darwin:toolchain",
+    "//bazel/toolchains/cc/x86_64-pc-windows-msvc:toolchain",
+    "//bazel/toolchains/cc/x86_64-unknown-linux-gnu:toolchain",
+    "//bazel/toolchains/cc/x86_64-unknown-nixos-gnu:toolchain",
+    "//bazel/toolchains/rust/aarch64-apple-darwin:toolchain",
+    "//bazel/toolchains/rust/aarch64-apple-ios:toolchain",
+    "//bazel/toolchains/rust/aarch64-linux-android:toolchain",
+    "//bazel/toolchains/rust/aarch64-unknown-linux-gnu:toolchain",
+    "//bazel/toolchains/rust/wasm32-unknown-unknown:toolchain",
+    "//bazel/toolchains/rust/wasm32-wasip1:toolchain",
+    "//bazel/toolchains/rust/x86_64-apple-darwin:toolchain",
+    "//bazel/toolchains/rust/x86_64-pc-windows-msvc:toolchain",
+    "//bazel/toolchains/rust/x86_64-unknown-linux-gnu:toolchain",
+    "//bazel/toolchains/rust/x86_64-unknown-nixos-gnu:toolchain",
+)
+
+###############################################################################
+# C R A T E S
+###############################################################################
+
+crates = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crates.spec(
+    package = "anyhow",
+    version = "1.0.75",
+)
+crates.spec(
+    features = [
+        "full",
+    ],
+    package = "tokio",
+    version = "1.34.0",
+)
+crates.annotation(
+    crate = "libc",
+    rustc_flags = [
+        "--cfg=freebsd11",
+        "--cfg=libc_priv_mod_use",
+        "--cfg=libc_union",
+        "--cfg=libc_const_size_of",
+        "--cfg=libc_align",
+        "--cfg=libc_int128",
+        "--cfg=libc_core_cvoid",
+        "--cfg=libc_packedN",
+        "--cfg=libc_cfg_target_vendor",
+        "--cfg=libc_non_exhaustive",
+        "--cfg=libc_long_array",
+        "--cfg=libc_ptr_addr_of",
+        "--cfg=libc_underscore_const_names",
+        "--cfg=libc_const_extern_fn",
+    ],
+)
+crates.annotation(
+    crate = "proc-macro2",
+    rustc_flags = [
+        "--cfg=proc_macro_span",
+        "--cfg=span_locations",
+        "--cfg=use_proc_macro",
+        "--cfg=wrap_proc_macro",
+    ],
+)
+crates.annotation(
+    crate = "syn",
+    crate_features = [
+        "clone-impls",
+        "derive",
+        "extra-traits",
+        "fold",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "visit-mut",
+        "visit",
+    ],
+)
+crates.render_config(
+    default_alias_rule_name = "opt",
+)
+crates.splicing_config(
+    resolver_version = "2",
+)
+crates.from_specs(
+    name = "crate_index",
+    cargo_lockfile = "//bazel/cargo:Cargo.lock",
+    generate_build_scripts = False,
+    lockfile = "//bazel/cargo:cargo-bazel-lock.json",
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-apple-ios",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+        "wasm32-wasip1",
+        "x86_64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-nixos-gnu",
+    ],
+)
+use_repo(
+    crates,
+    "crate_index",
+)

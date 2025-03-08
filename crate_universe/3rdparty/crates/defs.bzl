@@ -297,13 +297,13 @@ _NORMAL_DEPENDENCIES = {
         _COMMON_CONDITION: {
             "anyhow": Label("@cui//:anyhow-1.0.95"),
             "camino": Label("@cui//:camino-1.1.9"),
-            "cargo-lock": Label("@cui//:cargo-lock-10.0.1"),
+            "cargo-lock": Label("@cui//:cargo-lock-10.1.0"),
             "cargo-platform": Label("@cui//:cargo-platform-0.1.9"),
             "cargo_metadata": Label("@cui//:cargo_metadata-0.19.1"),
             "cargo_toml": Label("@cui//:cargo_toml-0.21.0"),
             "cfg-expr": Label("@cui//:cfg-expr-0.17.2"),
             "clap": Label("@cui//:clap-4.5.26"),
-            "crates-index": Label("@cui//:crates-index-3.5.0"),
+            "crates-index": Label("@cui//:crates-index-3.6.0"),
             "glob": Label("@cui//:glob-0.3.2"),
             "hex": Label("@cui//:hex-0.4.3"),
             "itertools": Label("@cui//:itertools-0.14.0"),
@@ -725,12 +725,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__cargo-lock-10.0.1",
-        sha256 = "6469776d007022d505bbcc2be726f5f096174ae76d710ebc609eb3029a45b551",
+        name = "cui__cargo-lock-10.1.0",
+        sha256 = "c06acb4f71407ba205a07cb453211e0e6a67b21904e47f6ba1f9589e38f2e454",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/cargo-lock/10.0.1/download"],
-        strip_prefix = "cargo-lock-10.0.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-lock-10.0.1.bazel"),
+        urls = ["https://static.crates.io/crates/cargo-lock/10.1.0/download"],
+        strip_prefix = "cargo-lock-10.1.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.cargo-lock-10.1.0.bazel"),
     )
 
     maybe(
@@ -865,12 +865,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__crates-index-3.5.0",
-        sha256 = "13058139052295533e5f7b0ed22ecf3eb7d7a5c2cd5657d6a7c8b4d8d8e093e6",
+        name = "cui__crates-index-3.6.0",
+        sha256 = "b4460df75a81c9714b02c6ff4d1f2645e457d80eab69f528ce2cce980acf0b18",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/crates-index/3.5.0/download"],
-        strip_prefix = "crates-index-3.5.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.5.0.bazel"),
+        urls = ["https://static.crates.io/crates/crates-index/3.6.0/download"],
+        strip_prefix = "crates-index-3.6.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.6.0.bazel"),
     )
 
     maybe(
@@ -2185,6 +2185,16 @@ def crate_repositories():
 
     maybe(
         http_archive,
+        name = "cui__rustc-stable-hash-0.1.1",
+        sha256 = "2febf9acc5ee5e99d1ad0afcdbccc02d87aa3f857a1f01f825b80eacf8edfcd1",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/rustc-stable-hash/0.1.1/download"],
+        strip_prefix = "rustc-stable-hash-0.1.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.rustc-stable-hash-0.1.1.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "cui__rustix-0.38.41",
         sha256 = "d7f649912bc1495e167a6edee79151c84b1bad49748cb4f1f1167f459f6224f6",
         type = "tar.gz",
@@ -3186,13 +3196,13 @@ def crate_repositories():
     return [
         struct(repo = "cui__anyhow-1.0.95", is_dev_dep = False),
         struct(repo = "cui__camino-1.1.9", is_dev_dep = False),
-        struct(repo = "cui__cargo-lock-10.0.1", is_dev_dep = False),
+        struct(repo = "cui__cargo-lock-10.1.0", is_dev_dep = False),
         struct(repo = "cui__cargo-platform-0.1.9", is_dev_dep = False),
         struct(repo = "cui__cargo_metadata-0.19.1", is_dev_dep = False),
         struct(repo = "cui__cargo_toml-0.21.0", is_dev_dep = False),
         struct(repo = "cui__cfg-expr-0.17.2", is_dev_dep = False),
         struct(repo = "cui__clap-4.5.26", is_dev_dep = False),
-        struct(repo = "cui__crates-index-3.5.0", is_dev_dep = False),
+        struct(repo = "cui__crates-index-3.6.0", is_dev_dep = False),
         struct(repo = "cui__glob-0.3.2", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
         struct(repo = "cui__indoc-2.0.5", is_dev_dep = False),

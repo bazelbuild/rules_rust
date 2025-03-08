@@ -91,7 +91,7 @@ rust_library(
     }),
     version = "0.1.41",
     deps = [
-        "//vendor_local_pkgs/crates/log-0.4.25:log",
+        "//vendor_local_pkgs/crates/log-0.4.26:log",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.16:pin_project_lite",
         "//vendor_local_pkgs/crates/tracing-core-0.1.33:tracing_core",
     ],

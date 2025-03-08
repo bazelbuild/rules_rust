@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_shared_library")
 
 def _win_interface_library_test_impl(ctx):

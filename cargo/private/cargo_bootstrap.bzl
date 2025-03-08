@@ -173,13 +173,13 @@ def _detect_changes(repository_ctx):
     # 'consumed' which means changes to it will trigger rebuilds
 
     for src in repository_ctx.attr.srcs:
-        repository_ctx.path(src)
+        repository_ctx.watch(src)
 
-    repository_ctx.path(repository_ctx.attr.cargo_lockfile)
-    repository_ctx.path(repository_ctx.attr.cargo_toml)
+    repository_ctx.watch(repository_ctx.attr.cargo_lockfile)
+    repository_ctx.watch(repository_ctx.attr.cargo_toml)
 
     if repository_ctx.attr.cargo_config:
-        repository_ctx.path(repository_ctx.attr.cargo_config)
+        repository_ctx.watch(repository_ctx.attr.cargo_config)
 
 def _cargo_bootstrap_repository_impl(repository_ctx):
     # Pretend to Bazel that this rule's input files have been used, so that it will re-run the rule if they change.

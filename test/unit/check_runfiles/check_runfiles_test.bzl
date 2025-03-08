@@ -1,6 +1,7 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load(
     "//rust:defs.bzl",
     "rust_binary",
@@ -56,7 +57,7 @@ def _check_runfiles_test():
     )
 
     # buildifier: disable=native-cc
-    native.cc_binary(
+    cc_binary(
         name = "libbar.so",
         srcs = ["bar.cc"],
         linkshared = True,

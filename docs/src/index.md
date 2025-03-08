@@ -20,7 +20,7 @@ Note that rules_rust bzlmod support is still a work in progress. Most features s
 To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.57.1")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 ```
 
 Don't forget to substitute in your desired release's version number.

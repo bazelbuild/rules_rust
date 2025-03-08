@@ -1,5 +1,7 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 

@@ -5,5 +5,5 @@ rust_library(
     srcs = ["lib.rs"],
     data = ["@aliased_c//:MODULE.bazel"],
     visibility = ["//visibility:public"],
-    deps = ["@rules_rust//tools/runfiles"],
+    deps = ["@rules_rust//rust/runfiles"],
 )

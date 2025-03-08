@@ -1,5 +1,6 @@
 """Prost rules."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_rust//rust:defs.bzl", "rust_common")
 
 ProstTransformInfo = provider(

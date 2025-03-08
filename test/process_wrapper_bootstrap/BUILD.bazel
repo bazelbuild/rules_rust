@@ -6,7 +6,7 @@ rust_test(
     srcs = ["bootstrap_process_wrapper_test.rs"],
     data = ["//util/process_wrapper/private:process_wrapper.sh"],
     edition = "2021",
-    deps = ["//tools/runfiles"],
+    deps = ["//rust/runfiles"],
 )
 
 process_wrapper_bootstrap_test_suite(name = "process_wrapper_bootstrap_test_suite")

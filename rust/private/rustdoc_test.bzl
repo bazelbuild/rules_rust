@@ -14,6 +14,7 @@
 
 """Rules for performing `rustdoc --test` on Bazel built crates"""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
@@ -224,7 +225,7 @@ rust_doc_test = rule(
         "_test_writer": attr.label(
             doc = "A binary used for writing script for use as the test executable.",
             cfg = "exec",
-            default = Label("//tools/rustdoc:rustdoc_test_writer"),
+            default = Label("//rust/private/rustdoc:rustdoc_test_writer"),
             executable = True,
         ),
     },

@@ -134,7 +134,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__cc-1.2.10//:cc",
+        "@rmdbi__cc-1.2.15//:cc",
     ],
 )
 

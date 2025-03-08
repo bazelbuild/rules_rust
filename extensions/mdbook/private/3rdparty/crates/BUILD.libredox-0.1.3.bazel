@@ -82,7 +82,7 @@ rust_library(
     version = "0.1.3",
     deps = [
         "@rmdbi__bitflags-2.8.0//:bitflags",
-        "@rmdbi__libc-0.2.169//:libc",
-        "@rmdbi__redox_syscall-0.5.8//:syscall",
+        "@rmdbi__libc-0.2.170//:libc",
+        "@rmdbi__redox_syscall-0.5.9//:syscall",
     ],
 )

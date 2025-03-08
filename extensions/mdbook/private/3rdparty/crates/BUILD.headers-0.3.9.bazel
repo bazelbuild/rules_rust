@@ -82,7 +82,7 @@ rust_library(
     version = "0.3.9",
     deps = [
         "@rmdbi__base64-0.21.7//:base64",
-        "@rmdbi__bytes-1.9.0//:bytes",
+        "@rmdbi__bytes-1.10.0//:bytes",
         "@rmdbi__headers-core-0.2.0//:headers_core",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__httpdate-1.0.3//:httpdate",

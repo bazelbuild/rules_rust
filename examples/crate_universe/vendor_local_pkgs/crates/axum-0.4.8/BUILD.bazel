@@ -41,7 +41,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "//vendor_local_pkgs/crates/async-trait-0.1.85:async_trait",
+        "//vendor_local_pkgs/crates/async-trait-0.1.86:async_trait",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -96,7 +96,7 @@ rust_library(
     deps = [
         "//vendor_local_pkgs/crates/axum-core-0.1.2:axum_core",
         "//vendor_local_pkgs/crates/bitflags-1.3.2:bitflags",
-        "//vendor_local_pkgs/crates/bytes-1.9.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.10.0:bytes",
         "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",
@@ -106,8 +106,8 @@ rust_library(
         "//vendor_local_pkgs/crates/mime-0.3.17:mime",
         "//vendor_local_pkgs/crates/percent-encoding-2.3.1:percent_encoding",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.16:pin_project_lite",
-        "//vendor_local_pkgs/crates/serde-1.0.217:serde",
-        "//vendor_local_pkgs/crates/serde_json-1.0.137:serde_json",
+        "//vendor_local_pkgs/crates/serde-1.0.218:serde",
+        "//vendor_local_pkgs/crates/serde_json-1.0.139:serde_json",
         "//vendor_local_pkgs/crates/serde_urlencoded-0.7.1:serde_urlencoded",
         "//vendor_local_pkgs/crates/sync_wrapper-0.1.2:sync_wrapper",
         "//vendor_local_pkgs/crates/tokio-1.43.0:tokio",

@@ -83,7 +83,7 @@ rust_library(
     deps = [
         "//vendor_local_pkgs/crates/form_urlencoded-1.2.1:form_urlencoded",
         "//vendor_local_pkgs/crates/itoa-1.0.14:itoa",
-        "//vendor_local_pkgs/crates/ryu-1.0.18:ryu",
-        "//vendor_local_pkgs/crates/serde-1.0.217:serde",
+        "//vendor_local_pkgs/crates/ryu-1.0.19:ryu",
+        "//vendor_local_pkgs/crates/serde-1.0.218:serde",
     ],
 )

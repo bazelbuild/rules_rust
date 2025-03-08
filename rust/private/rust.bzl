@@ -15,6 +15,7 @@
 """Rust rule implementations"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
@@ -929,7 +930,10 @@ rust_static_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    provides = [CcInfo],
+    provides = [
+        CcInfo,
+        rust_common.test_crate_info,
+    ],
     doc = dedent("""\
         Builds a Rust static library.
 
@@ -976,7 +980,10 @@ rust_shared_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    provides = [CcInfo],
+    provides = [
+        CcInfo,
+        rust_common.test_crate_info,
+    ],
     doc = dedent("""\
         Builds a Rust shared library.
 
@@ -1499,12 +1506,18 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
 
         # Prefixed with `name` to allow parameterization with macros
         # The test name should not end with `.rs`
-        test_name = name + "_" + src[:-3]
+        # Suffixed with `_test` to allow for consistent naming of tests
+        test_name = name + "_" + src[:-3] + "_test"
+
+        # Convert `test_name` to its associated crate name by replacing
+        # all the illegal characters with underscores.
+        crate_name = _replace_illlegal_chars(test_name)
         rust_test(
             name = test_name,
             crate_root = src,
             srcs = [src] + shared_srcs,
             tags = tags,
+            crate_name = crate_name,
             **kwargs
         )
         tests.append(test_name)
@@ -1559,3 +1572,21 @@ rust_library_group = rule(
         ```
     """),
 )
+
+def _replace_illlegal_chars(name):
+    """Replaces illegal characters in a name with underscores.
+
+    This is used to convert a target name to its associated crate name for individual tests in a
+    test suite.
+
+    This is similar to conversion in `name_to_crate_name` but local to rest_test_suite since we
+    don't want to add more illegal characters in global conversion logic.
+
+    Args:
+        name (str): The name of the test.
+    Returns:
+        str: The name of the crate for this test.
+    """
+    for illegal_char in ["-", "/", "."]:
+        name = name.replace(illegal_char, "_")
+    return name

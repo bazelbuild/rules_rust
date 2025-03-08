@@ -31,9 +31,9 @@ load(":providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.84.0"
+DEFAULT_RUST_VERSION = "1.85.0"
 
-DEFAULT_NIGHTLY_ISO_DATE = "2024-11-28"
+DEFAULT_NIGHTLY_ISO_DATE = "2025-02-20"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider

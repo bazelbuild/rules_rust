@@ -19,6 +19,7 @@ load(
     "CPP_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_library")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@rules_rust//rust:rust_common.bzl", "BuildInfo")
 
@@ -305,6 +306,10 @@ def _rust_bindgen_impl(ctx):
         if arg in flags_known_to_clang:
             open_arg = True
             continue
+
+    # Propagated defines should be made visible to clang
+    for define in ctx.attr.cc_lib[CcInfo].compilation_context.defines.to_list():
+        args.add("-D" + define)
 
     _, _, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)

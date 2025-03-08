@@ -22,6 +22,8 @@ load(
     "CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME",
     "CPP_LINK_STATIC_LIBRARY_ACTION_NAME",
 )
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
@@ -1333,11 +1335,11 @@ def rustc_compile_action(
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
-    if crate_info.type in ("cdylib", "bin"):
+    if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
         if toolchain.target_os == "windows" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif toolchain.target_os == "darwin":
+        elif toolchain.target_os in ["macos", "darwin"]:
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
@@ -1461,6 +1463,11 @@ def rustc_compile_action(
             # Append the name of the library
             output_relative_to_package = output_relative_to_package + output_lib
 
+        additional_linker_outputs = []
+        if crate_info.type in ("cdylib", "bin") and cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "generate_pdb_file"):
+            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
+            additional_linker_outputs.append(pdb_file)
+
         cc_common.link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
@@ -1470,6 +1477,7 @@ def rustc_compile_action(
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
+            additional_outputs = additional_linker_outputs,
         )
 
         outputs = [crate_info.output]
@@ -1842,7 +1850,7 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
     # without a version of Bazel that includes
     # https://github.com/bazelbuild/bazel/pull/13427. This is known to not be
     # included in Bazel 4.1 and below.
-    if toolchain.target_os not in ["linux", "darwin", "android"]:
+    if toolchain.target_os not in ["linux", "darwin", "macos", "android"]:
         fail("Runtime linking is not supported on {}, but found {}".format(
             toolchain.target_os,
             dep_info.transitive_noncrates,

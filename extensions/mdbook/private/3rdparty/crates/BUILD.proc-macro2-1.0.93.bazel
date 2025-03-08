@@ -87,7 +87,7 @@ rust_library(
     version = "1.0.93",
     deps = [
         "@rmdbi__proc-macro2-1.0.93//:build_script_build",
-        "@rmdbi__unicode-ident-1.0.14//:unicode_ident",
+        "@rmdbi__unicode-ident-1.0.17//:unicode_ident",
     ],
 )
 

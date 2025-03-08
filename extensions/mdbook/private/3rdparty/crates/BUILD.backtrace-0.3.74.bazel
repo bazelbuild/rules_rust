@@ -86,26 +86,26 @@ rust_library(
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
@@ -113,62 +113,62 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
@@ -176,80 +176,80 @@ rust_library(
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
@@ -257,38 +257,38 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [
             "@rmdbi__addr2line-0.24.2//:addr2line",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__libc-0.2.169//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
-            "@rmdbi__miniz_oxide-0.8.3//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__libc-0.2.170//:libc",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
+            "@rmdbi__miniz_oxide-0.8.5//:miniz_oxide",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
             "@rmdbi__object-0.36.7//:object",  # cfg(not(all(windows, target_env = "msvc", not(target_vendor = "uwp"))))
         ],
         "//conditions:default": [],

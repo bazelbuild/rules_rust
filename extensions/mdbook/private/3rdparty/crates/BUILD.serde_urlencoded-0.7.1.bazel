@@ -83,7 +83,7 @@ rust_library(
     deps = [
         "@rmdbi__form_urlencoded-1.2.1//:form_urlencoded",
         "@rmdbi__itoa-1.0.14//:itoa",
-        "@rmdbi__ryu-1.0.18//:ryu",
-        "@rmdbi__serde-1.0.217//:serde",
+        "@rmdbi__ryu-1.0.19//:ryu",
+        "@rmdbi__serde-1.0.218//:serde",
     ],
 )

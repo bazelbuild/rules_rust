@@ -2,42 +2,20 @@
 
 module(
     name = "rules_rust",
-    version = "0.57.1",
+    version = "0.58.0",
 )
 
 ###############################################################################
 ## Core
 ###############################################################################
 
-bazel_dep(
-    name = "bazel_features",
-    version = "1.21.0",
-)
-bazel_dep(
-    name = "bazel_skylib",
-    version = "1.7.1",
-)
-bazel_dep(
-    name = "platforms",
-    version = "0.0.11",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
-bazel_dep(
-    name = "rules_license",
-    version = "1.0.0",
-)
-bazel_dep(
-    name = "rules_shell",
-    version = "0.3.0",
-)
-bazel_dep(
-    name = "apple_support",
-    version = "1.17.1",
-    repo_name = "build_bazel_apple_support",
-)
+bazel_dep(name = "bazel_features", version = "1.21.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -89,27 +67,15 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.137",
+    "rtra__serde-1.0.218",
+    "rtra__serde_json-1.0.139",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "0.40.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "rules_testing",
-    version = "0.7.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "bazel_ci_rules",
-    version = "1.0.0",
-    dev_dependency = True,
-)
+bazel_dep(name = "rules_python", version = "0.40.0", dev_dependency = True)
+bazel_dep(name = "rules_testing", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
 ###############################################################################
 ## Crate Universe
@@ -130,13 +96,13 @@ use_repo(
     "cui",
     "cui__anyhow-1.0.95",
     "cui__camino-1.1.9",
-    "cui__cargo-lock-10.0.1",
+    "cui__cargo-lock-10.1.0",
     "cui__cargo-platform-0.1.9",
     "cui__cargo_metadata-0.19.1",
     "cui__cargo_toml-0.21.0",
     "cui__cfg-expr-0.17.2",
     "cui__clap-4.5.26",
-    "cui__crates-index-3.5.0",
+    "cui__crates-index-3.6.0",
     "cui__glob-0.3.2",
     "cui__hex-0.4.3",
     "cui__indoc-2.0.5",

@@ -33,6 +33,7 @@ While the Tonic toolchain works out of the box when its dependencies are matched
 Prost requires a custom toolchain that you have to define.
 
 The setup requires three steps to complete:
+
 1. Configure rules and dependencies in MODULE.bazel
 2. Configure a custom Prost toolchain
 3. Register custom Prost toolchain.
@@ -47,11 +48,9 @@ In your MODULE.bazel, you add the following:
 # rules for proto
 ###############################################################################
 # https://github.com/bazelbuild/rules_proto/releases
-bazel_dep(name = "rules_proto", version = "6.0.2")
-# https://github.com/aspect-build/toolchains_protoc/releases
-bazel_dep(name = "toolchains_protoc", version = "0.3.1")
+bazel_dep(name = "rules_proto", version = "7.1.0")
 # https://registry.bazel.build/modules/protobuf
-bazel_dep(name = "protobuf", version = "27.1")
+bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
 # rules for LLVM
 # https://github.com/bazel-contrib/toolchains_llvm
 bazel_dep(name = "toolchains_llvm", version = "1.2.0")

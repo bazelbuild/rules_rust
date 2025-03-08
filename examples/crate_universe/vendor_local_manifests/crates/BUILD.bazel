@@ -31,14 +31,14 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "tempfile-3.15.0",
-    actual = "//vendor_local_manifests/crates/tempfile-3.15.0:tempfile",
+    name = "tempfile-3.17.1",
+    actual = "//vendor_local_manifests/crates/tempfile-3.17.1:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile",
-    actual = "//vendor_local_manifests/crates/tempfile-3.15.0:tempfile",
+    actual = "//vendor_local_manifests/crates/tempfile-3.17.1:tempfile",
     tags = ["manual"],
 )
 

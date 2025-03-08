@@ -85,6 +85,6 @@ rust_proc_macro(
     version = "0.20.2",
     deps = [
         "@rmdbi__derive_builder_core-0.20.2//:derive_builder_core",
-        "@rmdbi__syn-2.0.96//:syn",
+        "@rmdbi__syn-2.0.98//:syn",
     ],
 )

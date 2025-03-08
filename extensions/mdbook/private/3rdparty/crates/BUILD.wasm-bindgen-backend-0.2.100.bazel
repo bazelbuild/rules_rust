@@ -81,11 +81,11 @@ rust_library(
     }),
     version = "0.2.100",
     deps = [
-        "@rmdbi__bumpalo-3.16.0//:bumpalo",
-        "@rmdbi__log-0.4.25//:log",
+        "@rmdbi__bumpalo-3.17.0//:bumpalo",
+        "@rmdbi__log-0.4.26//:log",
         "@rmdbi__proc-macro2-1.0.93//:proc_macro2",
         "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.96//:syn",
+        "@rmdbi__syn-2.0.98//:syn",
         "@rmdbi__wasm-bindgen-shared-0.2.100//:wasm_bindgen_shared",
     ],
 )

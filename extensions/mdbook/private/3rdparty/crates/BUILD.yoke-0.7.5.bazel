@@ -91,6 +91,6 @@ rust_library(
     version = "0.7.5",
     deps = [
         "@rmdbi__stable_deref_trait-1.2.0//:stable_deref_trait",
-        "@rmdbi__zerofrom-0.1.5//:zerofrom",
+        "@rmdbi__zerofrom-0.1.6//:zerofrom",
     ],
 )

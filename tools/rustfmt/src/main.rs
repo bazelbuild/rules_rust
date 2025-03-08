@@ -33,7 +33,12 @@ fn get_default_edition() -> &'static str {
 
 /// Get a list of all editions to run formatting for
 fn get_editions() -> Vec<String> {
-    vec!["2015".to_owned(), "2018".to_owned(), "2021".to_owned()]
+    vec![
+        "2015".to_owned(),
+        "2018".to_owned(),
+        "2021".to_owned(),
+        "2024".to_owned(),
+    ]
 }
 
 /// Run a bazel command, capturing stdout while streaming stderr to surface errors

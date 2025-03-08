@@ -32,14 +32,14 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "tempfile-3.15.0",
-    actual = "@cvm__tempfile-3.15.0//:tempfile",
+    name = "tempfile-3.17.1",
+    actual = "@cvm__tempfile-3.17.1//:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile",
-    actual = "@cvm__tempfile-3.15.0//:tempfile",
+    actual = "@cvm__tempfile-3.17.1//:tempfile",
     tags = ["manual"],
 )
 
