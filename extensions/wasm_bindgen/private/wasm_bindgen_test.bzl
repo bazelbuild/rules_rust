@@ -154,16 +154,13 @@ def _rust_wasm_bindgen_test_impl(ctx):
         {},
     )
 
-    # if ctx.configuration.coverage_enabled:
-    #     env.update(get_coverage_env(toolchain))
-
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
-    runner = ctx.actions.declare_file(ctx.label.name)
+    wrapper = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.symlink(
-        output = runner,
-        target_file = ctx.executable._runner,
+        output = wrapper,
+        target_file = ctx.executable._wrapper,
         is_executable = True,
     )
 
@@ -191,7 +188,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
             providers.append(DefaultInfo(
                 files = prov.files,
                 runfiles = prov.default_runfiles.merge(ctx.runfiles(files = [wasm_file], transitive_files = wb_toolchain.all_test_files)),
-                executable = runner,
+                executable = wrapper,
             ))
         else:
             providers.append(prov)
@@ -326,11 +323,11 @@ rust_wasm_bindgen_test = rule(
             providers = [RustWasmBindgenInfo],
             mandatory = True,
         ),
-        "_runner": attr.label(
-            doc = "TODO",
+        "_wrapper": attr.label(
+            doc = "The process wrapper for wasm-bindgen-test-runner.",
             cfg = "exec",
             executable = True,
-            default = Label("//private:wasm_bindgen_test_runner"),
+            default = Label("//private:wasm_bindgen_test_wrapper"),
         ),
     } | RUSTC_ATTRS,
     fragments = ["cpp"],

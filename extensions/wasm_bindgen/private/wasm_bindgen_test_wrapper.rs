@@ -1,4 +1,4 @@
-//! wasm-bindgen test runner
+//! A Bazel wrapper for the wasm-bindgen-test-runner binary.
 
 use std::collections::BTreeMap;
 use std::env;

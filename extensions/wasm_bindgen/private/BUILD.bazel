@@ -15,8 +15,8 @@ bzl_library(
 )
 
 rust_binary(
-    name = "wasm_bindgen_test_runner",
-    srcs = ["wasm_bindgen_test_runner.rs"],
+    name = "wasm_bindgen_test_wrapper",
+    srcs = ["wasm_bindgen_test_wrapper.rs"],
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [
