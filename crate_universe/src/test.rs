@@ -109,6 +109,14 @@ pub(crate) mod metadata {
         .unwrap()
     }
 
+    pub(crate) fn path_patching() -> cargo_metadata::Metadata {
+        serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/path_patching/metadata.json"
+        )))
+        .unwrap()
+    }
+
     pub(crate) fn optional_deps_disabled() -> cargo_metadata::Metadata {
         serde_json::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -245,6 +253,14 @@ pub(crate) mod lockfile {
         cargo_lock::Lockfile::from_str(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/metadata/no_deps/Cargo.lock"
+        )))
+        .unwrap()
+    }
+
+    pub(crate) fn path_patching() -> cargo_lock::Lockfile {
+        cargo_lock::Lockfile::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/metadata/path_patching/Cargo.lock"
         )))
         .unwrap()
     }

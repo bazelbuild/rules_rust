@@ -79,6 +79,7 @@ crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
+  - "//vendor_local_patching:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
   - "@rules_rust//tools/rust_analyzer:gen_rust_project"

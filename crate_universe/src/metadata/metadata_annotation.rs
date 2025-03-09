@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_metadata::{Node, Package, PackageId};
 use hex::ToHex;
@@ -277,21 +277,28 @@ impl LockfileAnnotation {
                                         // its parent directory (relative to Bazel workspace root),
                                         // since `suffix` is relative to it in the actual Bazel
                                         // workspace.
-                                        let relative_lockfile_path = Utf8Path::from_path(
-                                            path.parent().expect("unexpected empty lockfile path"),
+                                        let p = Utf8Path::from_path(
+                                            path.parent()
+                                                .context("unexpected empty lockfile path")?,
                                         )
-                                        .expect("unxpected non-Unicode lockfile path")
-                                        .strip_prefix(nonhermetic_root_bazel_workspace_dir)
-                                        .expect(
-                                            "unexpected lockfile path no under root Bazel workspace",
-                                        );
-                                        new_path.push(relative_lockfile_path);
-                                    } else if let Some(prefix) =
-                                        // Lockfile path includes workspace prefix, so avoid
-                                        // duplicating it here.
-                                        workspace_metadata.workspace_prefix.as_ref()
-                                    {
-                                        new_path.push(prefix);
+                                        .context("unxpected non-Unicode lockfile path")?;
+                                        if p.starts_with(nonhermetic_root_bazel_workspace_dir) {
+                                            // If path in lockfile is under Bazel root, strip Bazel
+                                            // root to get the actual path.
+                                            let relative_lockfile_path = p.strip_prefix(nonhermetic_root_bazel_workspace_dir)
+                                                .context("unexpected lockfile path not under root Bazel workspace")?;
+                                            new_path.push(relative_lockfile_path);
+                                        } else {
+                                            // If path in lockfile is not under Bazel root, we are
+                                            // likely in a temporary directory, so rebase to Bazel
+                                            // root.
+                                            new_path.push(nonhermetic_root_bazel_workspace_dir);
+                                            if let Some(prefix) =
+                                                workspace_metadata.workspace_prefix.as_ref()
+                                            {
+                                                new_path.push(prefix);
+                                            }
+                                        }
                                     }
                                     new_path.push(suffix);
                                     new_path
@@ -581,6 +588,7 @@ mod test {
     #[test]
     fn annotate_lockfile_with_aliases() {
         LockfileAnnotation::new(
+            &None,
             test::lockfile::alias(),
             &test::metadata::alias(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -596,6 +604,7 @@ mod test {
     #[test]
     fn annotate_lockfile_with_build_scripts() {
         LockfileAnnotation::new(
+            &None,
             test::lockfile::build_scripts(),
             &test::metadata::build_scripts(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -606,6 +615,7 @@ mod test {
     #[test]
     fn annotate_lockfile_with_no_deps() {
         LockfileAnnotation::new(
+            &None,
             test::lockfile::no_deps(),
             &test::metadata::no_deps(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -616,6 +626,7 @@ mod test {
     #[test]
     fn detects_strip_prefix_for_git_repo() {
         let crates = LockfileAnnotation::new(
+            &None,
             test::lockfile::git_repos(),
             &test::metadata::git_repos(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -643,6 +654,7 @@ mod test {
     #[test]
     fn resolves_commit_from_branches_and_tags() {
         let crates = LockfileAnnotation::new(
+            &None,
             test::lockfile::git_repos(),
             &test::metadata::git_repos(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -667,6 +679,27 @@ mod test {
     }
 
     #[test]
+    fn detects_local_path_patching() {
+        let crates = LockfileAnnotation::new(
+            &None,
+            test::lockfile::path_patching(),
+            &test::metadata::path_patching(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap()
+        .crates;
+
+        // We can't reliably construct the PackageId because it'll contain local absolute paths,
+        // so compare the entire container, which should only have one element anyways.
+        assert_eq!(
+            crates.into_values().collect::<Vec<_>>(),
+            [SourceAnnotation::Path {
+                path: "child_a".into()
+            }]
+        );
+    }
+
+    #[test]
     fn detect_unused_annotation() {
         // Create a config with some random annotation
         let mut config = Config::default();
@@ -677,6 +710,7 @@ mod test {
 
         let result = Annotations::new(
             test::metadata::no_deps(),
+            &None,
             test::lockfile::no_deps(),
             config,
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -715,6 +749,7 @@ mod test {
         // crate author in package metadata.
         let combined_annotations = Annotations::new(
             test::metadata::has_package_metadata(),
+            &None,
             test::lockfile::has_package_metadata(),
             config,
             Utf8Path::new("/tmp/bazelworkspace"),

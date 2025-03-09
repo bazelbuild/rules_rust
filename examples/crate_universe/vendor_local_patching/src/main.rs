@@ -9,4 +9,3 @@ mod tests {
         assert_eq!(rand::random::<u32>(), 34253218);
     }
 }
-

@@ -26,6 +26,7 @@ pub struct CrateDependency {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
 
+    /// Where to acquire the source of this dependency.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) source_annotation: Option<SourceAnnotation>,
 }
@@ -479,10 +480,7 @@ impl CrateContext {
                     id: current_crate_id,
                     target: target.crate_name.clone(),
                     alias: None,
-                    source_annotation: match source_annotations.get(&annotation.node.id) {
-                        Some(source_annotation) => Some(source_annotation.clone()),
-                        None => None,
-                    },
+                    source_annotation: source_annotations.get(&annotation.node.id).cloned(),
                 },
                 None,
             );
@@ -882,6 +880,7 @@ mod test {
     fn common_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::common(),
+            &None,
             crate::test::lockfile::common(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -986,6 +985,7 @@ mod test {
     fn build_script_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::build_scripts(),
+            &None,
             crate::test::lockfile::build_scripts(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -996,6 +996,7 @@ mod test {
     fn crate_type_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::crate_types(),
+            &None,
             crate::test::lockfile::crate_types(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1300,6 +1301,7 @@ mod test {
     fn absolute_paths_for_srcs_are_errors() {
         let annotations = Annotations::new(
             crate::test::metadata::abspath(),
+            &None,
             crate::test::lockfile::abspath(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),

@@ -1387,6 +1387,7 @@ mod test {
         };
         let annotations = Annotations::new(
             test::metadata::alias(),
+            &None,
             test::lockfile::alias(),
             config,
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1599,6 +1600,7 @@ mod test {
 
         let annotations = Annotations::new(
             metadata,
+            &None,
             lockfile,
             config.clone(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1987,6 +1989,7 @@ mod test {
                         // this is identical to what we have in the `name` attribute
                         // which creates conflict in `render_module_build_file`
                         alias: Some("mock_crate".into()),
+                        source_annotation: None,
                     }])),
                     ..Default::default()
                 },
