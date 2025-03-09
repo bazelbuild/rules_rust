@@ -84,29 +84,55 @@ impl LintGroup {
     }
 }
 
+/// Returns the lints priority. It is needed in order to sort the lints according to their importance.
+fn lint_priority(lint: &cargo_toml::Lint) -> i32 {
+    match lint {
+        cargo_toml::Lint::Detailed { level: _, priority } => priority.unwrap_or(0),
+        cargo_toml::Lint::Simple(_) => 0,
+    }
+}
+
+/// Formats the given lint set for the given group into CLI format.
+///
+/// This functions sorts the lints based on priority if given.
+///
+/// # Args
+/// - `lints`: The lint to format, the value should come from the `lints.groups` field of the manifest.
+/// - `group`: The lint group which needs formatting.
+///
+/// # Returns
+///
+/// An iterator of strings which can be passed to the linter as a CLI flag.
+///
+fn format_lint_set<'a>(
+    lints: Option<&'a BTreeMap<String, BTreeMap<String, Lint>>>,
+    group: &'a LintGroup,
+) -> Option<impl Iterator<Item = String> + use<'a>> {
+    let lints = lints?.get(group.key())?;
+    let mut lints = Vec::from_iter(lints);
+    lints.sort_by(|(_, a), (_, b)| {
+        let a_priority = lint_priority(a);
+        let b_priority = lint_priority(b);
+        a_priority.cmp(&b_priority)
+    });
+
+    let formatted = lints.into_iter().map(|(name, lint)| {
+        let level = match lint {
+            cargo_toml::Lint::Detailed { level, priority: _ } => level,
+            cargo_toml::Lint::Simple(level) => level,
+        };
+        group.format_cli_arg(name, *level)
+    });
+
+    Some(formatted)
+}
+
 /// Generates space seperated <lint name> <lint level> files that get read back in by Bazel.
 fn generate_lints_info(
     crate_manifest: &Manifest,
     workspace_manifest: Option<&Manifest>,
     args: LintsArgs,
 ) -> Result<(), Box<dyn Error>> {
-    fn format_lint_set<'g, 'l: 'g>(
-        lints: &'l BTreeMap<String, BTreeMap<String, Lint>>,
-        group: &'g LintGroup,
-    ) -> Option<impl Iterator<Item = String> + 'g> {
-        let lints = lints.get(group.key())?;
-
-        let formatted = lints.iter().map(|(name, lint)| {
-            let level = match lint {
-                cargo_toml::Lint::Detailed { level, priority: _ } => level,
-                cargo_toml::Lint::Simple(level) => level,
-            };
-            group.format_cli_arg(name, *level)
-        });
-
-        Some(formatted)
-    }
-
     let LintsArgs {
         output_rustc_lints,
         output_clippy_lints,
@@ -131,9 +157,6 @@ fn generate_lints_info(
         }
         Some(lints) => Some(&lints.groups),
         None => None,
-    };
-    let Some(lints) = lints else {
-        return Ok(());
     };
 
     for (group, path) in groups {
@@ -255,5 +278,120 @@ impl TryFrom<RemainingArgs> for Command {
             }
             other => Err(format!("unknown action: {other}").into()),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use cargo_toml::{Lint, LintLevel};
+    use std::collections::BTreeMap;
+
+    /// Tests priority handling of different lints
+    #[test]
+    fn format_lint_set() {
+        assert!(super::format_lint_set(None, &super::LintGroup::Rustc).is_none());
+
+        let lints_map: BTreeMap<String, BTreeMap<String, Lint>> = BTreeMap::from_iter([(
+            "clippy".into(),
+            BTreeMap::from_iter([
+                ("rustc_allow".into(), Lint::Simple(LintLevel::Allow)),
+                ("rustc_forbid".into(), Lint::Simple(LintLevel::Forbid)),
+                ("clippy_warn".into(), Lint::Simple(LintLevel::Warn)),
+                (
+                    "rustdoc_forbid".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Forbid,
+                        priority: Some(20),
+                    },
+                ),
+                ("rustc_warn".into(), Lint::Simple(LintLevel::Warn)),
+                (
+                    "rustc_deny".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Deny,
+                        priority: Some(-2),
+                    },
+                ),
+                ("rustdoc_deny".into(), Lint::Simple(LintLevel::Deny)),
+                ("rustdoc_allow".into(), Lint::Simple(LintLevel::Allow)),
+                (
+                    "clippy_forbid".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Forbid,
+                        priority: Some(-1),
+                    },
+                ),
+                (
+                    "clippy_deny".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Deny,
+                        priority: Some(-1),
+                    },
+                ),
+                (
+                    "rustc_deny_without_priority".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Deny,
+                        priority: None,
+                    },
+                ),
+                (
+                    "rustc_deny_without_priority2".into(),
+                    Lint::Detailed {
+                        level: LintLevel::Deny,
+                        priority: Some(0),
+                    },
+                ),
+            ]),
+        )]);
+
+        assert!(super::format_lint_set(Some(&lints_map), &super::LintGroup::Rustc).is_none());
+
+        let lints: Vec<String> =
+            super::format_lint_set(Some(&lints_map), &super::LintGroup::Clippy)
+                .unwrap()
+                .collect();
+        assert_eq!(
+            lints,
+            [
+                "--deny=clippy::rustc_deny",
+                "--deny=clippy::clippy_deny",
+                "--forbid=clippy::clippy_forbid",
+                "--warn=clippy::clippy_warn",
+                "--allow=clippy::rustc_allow",
+                "--deny=clippy::rustc_deny_without_priority",
+                "--deny=clippy::rustc_deny_without_priority2",
+                "--forbid=clippy::rustc_forbid",
+                "--warn=clippy::rustc_warn",
+                "--allow=clippy::rustdoc_allow",
+                "--deny=clippy::rustdoc_deny",
+                "--forbid=clippy::rustdoc_forbid"
+            ]
+        );
+    }
+
+    #[test]
+    fn lint_priority() {
+        // Test different lint priority scenarios
+        let simple_lint = Lint::Simple(LintLevel::Allow);
+        assert_eq!(super::lint_priority(&simple_lint), 0);
+
+        let detailed_no_priority = Lint::Detailed {
+            level: LintLevel::Allow,
+            priority: None,
+        };
+        assert_eq!(super::lint_priority(&detailed_no_priority), 0);
+
+        let detailed_with_priority = Lint::Detailed {
+            level: LintLevel::Allow,
+            priority: Some(5),
+        };
+        assert_eq!(super::lint_priority(&detailed_with_priority), 5);
+
+        let detailed_negative_priority = Lint::Detailed {
+            level: LintLevel::Allow,
+            priority: Some(-3),
+        };
+        assert_eq!(super::lint_priority(&detailed_negative_priority), -3);
     }
 }
