@@ -4,7 +4,4 @@ crate_universe/private/bootstrap
 docs
 examples
 extensions
-test/aliased_toolchains
-test/bzlmod_repo_mapping
-test/cc_common_link
-test/no_std
+test/integration

@@ -88,7 +88,7 @@ def _custom_malloc_test(ctx):
 custom_malloc_test = analysistest.make(
     _custom_malloc_test,
     config_settings = {
-        "//command_line_option:custom_malloc": "@//unit:this_library_is_not_really_an_allocator",
+        "//command_line_option:custom_malloc": str(Label("@//unit:this_library_is_not_really_an_allocator")),
     },
 )
 
@@ -192,11 +192,12 @@ def _cc_common_link_test_targets():
         target_under_test = ":bin_with_cc_common_link",
     )
 
-def cc_common_link_test_suite(name):
+def cc_common_link_test_suite(name, **kwargs):
     """Entry-point macro called from the BUILD file.
 
     Args:
         name: Name of the macro.
+        **kwargs: Additional keyword arguments,
     """
     _cc_common_link_test_targets()
 
@@ -210,4 +211,5 @@ def cc_common_link_test_suite(name):
             "use_cc_common_link_on_cdylib",
             "custom_malloc_on_binary_test",
         ],
+        **kwargs
     )
