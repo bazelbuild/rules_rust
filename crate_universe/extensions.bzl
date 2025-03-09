@@ -713,9 +713,9 @@ def _generate_hub_and_spokes(
             version = version.replace("+", "-"),
         )
 
-        build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
         if "Http" in repo:
             # Replicates functionality in repo_http.j2.
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Http"]
             http_archive(
                 name = crate_repo_name,
@@ -731,6 +731,7 @@ def _generate_hub_and_spokes(
             )
         elif "Git" in repo:
             # Replicates functionality in repo_git.j2
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Git"]
             kwargs = {}
             for k, v in repo["commitish"].items():

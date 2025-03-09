@@ -176,6 +176,7 @@ mod test {
                     },
                     target: String::from("anyhow"),
                     alias: None,
+                    source_annotation: None,
                 },
                 CrateDependency {
                     id: CrateId {
@@ -184,6 +185,7 @@ mod test {
                     },
                     target: String::from("reqwest"),
                     alias: None,
+                    source_annotation: None,
                 },
             ],
         );

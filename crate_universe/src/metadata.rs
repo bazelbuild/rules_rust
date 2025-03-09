@@ -361,7 +361,7 @@ pub(crate) fn load_metadata(
     let metadata =
         serde_json::from_str(&content).context("Unable to deserialize Cargo metadata")?;
 
-    let lockfile = cargo_lock::Lockfile::load(&lockfile_path)
+    let lockfile = cargo_lock::Lockfile::load(lockfile_path)
         .with_context(|| format!("Failed to load lockfile: {}", lockfile_path.display()))?;
 
     Ok((metadata, lockfile))

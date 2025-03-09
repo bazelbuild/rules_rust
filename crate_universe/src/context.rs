@@ -269,6 +269,7 @@ mod test {
     fn mock_context_common() -> Context {
         let annotations = Annotations::new(
             crate::test::metadata::common(),
+            &None,
             crate::test::lockfile::common(),
             Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -281,6 +282,7 @@ mod test {
     fn mock_context_aliases() -> Context {
         let annotations = Annotations::new(
             crate::test::metadata::alias(),
+            &None,
             crate::test::lockfile::alias(),
             Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -293,6 +295,7 @@ mod test {
     fn mock_context_workspace_build_scripts_deps() -> Context {
         let annotations = Annotations::new(
             crate::test::metadata::workspace_build_scripts_deps(),
+            &None,
             crate::test::lockfile::workspace_build_scripts_deps(),
             Config {
                 generate_build_scripts: true,
