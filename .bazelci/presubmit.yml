@@ -520,77 +520,69 @@ tasks:
   cc_common_link_ubuntu2004:
     name: Build via cc_common.link
     platform: ubuntu2004
-    working_directory: test/cc_common_link
+    working_directory: test/integration/cc_common_link
     build_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
     test_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+  cc_common_link_macos:
+    name: Build via cc_common.link
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_with_global_alloc_ubuntu2004:
     name: Build via cc_common.link using a global allocator
     platform: ubuntu2004
-    working_directory: test/cc_common_link/with_global_alloc
+    working_directory: test/integration/cc_common_link_with_global_alloc
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_with_global_alloc_macos:
+    name: Build via cc_common.link using a global allocator
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_no_std_ubuntu2004:
     name: Build with no_std + alloc using cc_common.link infrastructure for linking
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004
-    working_directory: test/bzlmod_repo_mapping/module_a
+    working_directory: test/integration/bzlmod_repo_mapping/module_a
     test_targets:
       - "//..."
   aliased_toolchains:
     name: aliased toolchains test
     platform: ubuntu2004
-    working_directory: test/aliased_toolchains
+    working_directory: test/integration/aliased_toolchains
     build_targets:
       - "@rust_toolchains//:all"
       - "//..."

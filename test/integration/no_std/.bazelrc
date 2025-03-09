@@ -5,6 +5,18 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
+# Build with no_std + alloc using cc_common.link infrastructure for linking
+build:no_std_alloc_using_cc_common_link --@rules_rust//rust/toolchain/channel=nightly
+build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:experimental_use_cc_common_link=True
+build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:experimental_use_global_allocator=True
+build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:no_std=alloc
+
+# Build with no_std + alloc
+build:no_std_alloc --@rules_rust//rust/toolchain/channel=nightly
+build:no_std_alloc --@rules_rust//rust/settings:no_std=alloc
+
+###############################################################################
+
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
 
@@ -68,10 +80,6 @@ common:no-bzlmod --noenable_bzlmod --enable_workspace
 
 # Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
 common --lockfile_mode=off
-
-# Allow bazel configuration flags to locate the core rules to avoid adding local
-# override paths to the `MODULE.bazel` file and breaking downstream consumers.
-common --override_module=rules_rust=../../
 
 ###############################################################################
 ## Custom user flags
