@@ -269,8 +269,8 @@ crate_index_cargo_bindeps.from_cargo(
     name = "crate_index_cargo_bindeps",
     cargo_lockfile = "//cargo_bindeps:Cargo.lock",
     generate_binaries = True,
-    host_tools_repo = "rust_host_tools_nightly",
     manifests = ["//cargo_bindeps:Cargo.toml"],
+    rust_version = "nightly",
 )
 use_repo(
     crate_index_cargo_bindeps,
