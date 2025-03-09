@@ -1,0 +1,16 @@
+load("@crate_index_intra_workspace_dependencies//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "printer",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = all_crate_deps(),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":printer",
+)

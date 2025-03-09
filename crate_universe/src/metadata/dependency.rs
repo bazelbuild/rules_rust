@@ -45,6 +45,7 @@ impl DependencySet {
         node: &Node,
         metadata: &CargoMetadata,
         resolver_data: &TreeResolverMetadata,
+        track_intra_workspace_dependencies: bool,
     ) -> Self {
         // Build a dep tree mapping that's easily indexable via `cargo_metadata::PackageId`
         let dep_tree: BTreeMap<CrateId, Select<BTreeSet<CrateId>>> = resolver_data
@@ -69,8 +70,9 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_lib_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -97,8 +99,9 @@ impl DependencySet {
             let (dev, normal) = node
                 .deps
                 .iter()
-                // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_proc_macro_package(&metadata[&dep.pkg]))
                 .filter(|dep| is_normal_dependency(dep) || is_dev_dependency(dep))
                 .partition(|dep| is_dev_dependency(dep));
@@ -128,7 +131,9 @@ impl DependencySet {
                 .deps
                 .iter()
                 // Do not track workspace members as dependencies. Users are expected to maintain those connections
-                .filter(|dep| !is_workspace_member(dep, metadata))
+                .filter(|dep| {
+                    filter_workspace_members(track_intra_workspace_dependencies, dep, metadata)
+                })
                 .filter(|dep| is_build_dependency(dep))
                 .filter(|dep| !is_dev_dependency(dep))
                 .partition(|dep| is_proc_macro_package(&metadata[&dep.pkg]));
@@ -321,6 +326,14 @@ fn is_normal_dependency(node_dep: &NodeDep) -> bool {
         .dep_kinds
         .iter()
         .any(|k| matches!(k.kind, cargo_metadata::DependencyKind::Normal))
+}
+
+fn filter_workspace_members(
+    track_intra_workspace_dependencies: bool,
+    node_dep: &NodeDep,
+    metadata: &CargoMetadata,
+) -> bool {
+    track_intra_workspace_dependencies || !is_workspace_member(node_dep, metadata)
 }
 
 fn is_workspace_member(node_dep: &NodeDep, metadata: &CargoMetadata) -> bool {
@@ -540,7 +553,7 @@ mod test {
 
         let node = find_metadata_node("example-proc-macro-dep", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let normal_deps: Vec<_> = dependencies
             .normal_deps
@@ -565,7 +578,7 @@ mod test {
 
         let node = find_metadata_node("surrealdb-core", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let bindings = dependencies.normal_deps.items();
 
@@ -588,8 +601,12 @@ mod test {
 
         let openssl_node = find_metadata_node("openssl", &metadata);
 
-        let dependencies =
-            DependencySet::new_for_node(openssl_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(
+            openssl_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         let normal_sys_crate =
             dependencies
@@ -622,8 +639,12 @@ mod test {
         let metadata = metadata::build_scripts();
 
         let libssh2 = find_metadata_node("libssh2-sys", &metadata);
-        let libssh2_depset =
-            DependencySet::new_for_node(libssh2, &metadata, &TreeResolverMetadata::default());
+        let libssh2_depset = DependencySet::new_for_node(
+            libssh2,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         // Collect build dependencies into a set
         let build_deps: BTreeSet<String> = libssh2_depset
@@ -672,8 +693,12 @@ mod test {
         let metadata = metadata::alias();
 
         let aliases_node = find_metadata_node("aliases", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(aliases_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(
+            aliases_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
 
         let aliases: Vec<Dependency> = dependencies
             .normal_deps
@@ -700,7 +725,7 @@ mod test {
 
         let node = find_metadata_node("crate-types", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let rlib_deps: Vec<Dependency> = dependencies
             .normal_deps
@@ -731,7 +756,7 @@ mod test {
 
         let node = find_metadata_node("cpufeatures", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let libc_cfgs: BTreeSet<Option<String>> = dependencies
             .normal_deps
@@ -757,7 +782,7 @@ mod test {
 
         let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
@@ -782,7 +807,7 @@ mod test {
 
         let node = find_metadata_node("clap", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         assert!(!dependencies
             .normal_deps
@@ -798,7 +823,7 @@ mod test {
 
         let serde_with = find_metadata_node("serde_with", &metadata);
         let serde_with_depset =
-            DependencySet::new_for_node(serde_with, &metadata, &TreeResolverMetadata::new());
+            DependencySet::new_for_node(serde_with, &metadata, &TreeResolverMetadata::new(), false);
         assert!(!serde_with_depset
             .normal_deps
             .items()
@@ -826,7 +851,7 @@ mod test {
         )]);
 
         let clap = find_metadata_node("clap", &metadata);
-        let clap_depset = DependencySet::new_for_node(clap, &metadata, &resolver_data);
+        let clap_depset = DependencySet::new_for_node(clap, &metadata, &resolver_data, false);
         assert_eq!(
             clap_depset
                 .normal_deps
@@ -840,7 +865,7 @@ mod test {
 
         let notify = find_metadata_node("notify", &metadata);
         let notify_depset =
-            DependencySet::new_for_node(notify, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(notify, &metadata, &TreeResolverMetadata::default(), false);
 
         // mio is not present in the common list of dependencies
         assert!(!notify_depset
@@ -874,7 +899,7 @@ mod test {
 
         let node = find_metadata_node("gherkin", &metadata);
         let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default(), false);
 
         assert!(!dependencies
             .normal_deps
@@ -907,7 +932,7 @@ mod test {
         )]);
 
         let p256 = find_metadata_node("p256", &metadata);
-        let p256_depset = DependencySet::new_for_node(p256, &metadata, &resolver_data);
+        let p256_depset = DependencySet::new_for_node(p256, &metadata, &resolver_data, false);
         assert_eq!(
             p256_depset
                 .normal_deps
@@ -965,7 +990,8 @@ mod test {
         )]);
 
         let tokio_node = find_metadata_node("tokio", &metadata);
-        let tokio_depset = DependencySet::new_for_node(tokio_node, &metadata, &tree_metadata);
+        let tokio_depset =
+            DependencySet::new_for_node(tokio_node, &metadata, &tree_metadata, false);
         assert_eq!(
             tokio_depset
                 .normal_deps
@@ -982,5 +1008,47 @@ mod test {
             0,
             "`mio` is a platform specific dependency and therefore should not be identified under the common configuration."
         );
+    }
+
+    #[test]
+    fn intra_workspace_deps() {
+        let metadata = metadata::workspace_path();
+
+        let child_b_node = find_metadata_node("child_b", &metadata);
+        let child_b_depset_with_intra_workspace = DependencySet::new_for_node(
+            child_b_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            true,
+        );
+        assert_eq!(
+            child_b_depset_with_intra_workspace
+                .normal_deps
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| {
+                    configuration.is_none() && dep.target_name == "child_a"
+                })
+                .count(),
+            1,
+        );
+
+        let child_b_depset_without_intra_workspace = DependencySet::new_for_node(
+            child_b_node,
+            &metadata,
+            &TreeResolverMetadata::default(),
+            false,
+        );
+        assert_eq!(
+            child_b_depset_without_intra_workspace
+                .normal_deps
+                .items()
+                .iter()
+                .filter(|(configuration, dep)| {
+                    configuration.is_none() && dep.target_name == "child_a"
+                })
+                .count(),
+            0,
+        )
     }
 }
