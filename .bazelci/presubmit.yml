@@ -107,6 +107,8 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
   macos:
     platform: macos_arm64
     build_targets: *default_macos_targets
@@ -215,6 +217,8 @@ tasks:
     build_flags: *aspects_flags
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
   rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
@@ -223,6 +227,8 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
