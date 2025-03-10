@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "crates_index",
+    name = "gix_discover",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,20 +28,14 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "git",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    proc_macro_deps = [
-        "@cui__serde_derive-1.0.217//:serde_derive",
-    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=crates-index",
+        "crate-name=gix-discover",
         "manual",
         "noclippy",
         "norustfmt",
@@ -85,19 +79,25 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "3.6.0",
+    version = "0.38.0",
     deps = [
-        "@cui__gix-0.70.0//:gix",
-        "@cui__hex-0.4.3//:hex",
-        "@cui__home-0.5.5//:home",
-        "@cui__memchr-2.6.4//:memchr",
-        "@cui__rustc-hash-2.0.0//:rustc_hash",
-        "@cui__rustc-stable-hash-0.1.1//:rustc_stable_hash",
-        "@cui__semver-1.0.24//:semver",
-        "@cui__serde-1.0.217//:serde",
-        "@cui__serde_json-1.0.135//:serde_json",
-        "@cui__smol_str-0.3.2//:smol_str",
+        "@cui__bstr-1.6.0//:bstr",
+        "@cui__gix-fs-0.13.0//:gix_fs",
+        "@cui__gix-hash-0.16.0//:gix_hash",
+        "@cui__gix-path-0.10.14//:gix_path",
+        "@cui__gix-ref-0.50.0//:gix_ref",
+        "@cui__gix-sec-0.10.11//:gix_sec",
         "@cui__thiserror-2.0.4//:thiserror",
-        "@cui__toml-0.8.19//:toml",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@cui__dunce-1.0.4//:dunce",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@cui__dunce-1.0.4//:dunce",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@cui__dunce-1.0.4//:dunce",  # cfg(windows)
+        ],
+        "//conditions:default": [],
+    }),
 )
