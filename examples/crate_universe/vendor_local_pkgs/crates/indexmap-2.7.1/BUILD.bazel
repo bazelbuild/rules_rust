@@ -85,7 +85,7 @@ rust_library(
     }),
     version = "2.7.1",
     deps = [
-        "//vendor_local_pkgs/crates/equivalent-1.0.1:equivalent",
+        "//vendor_local_pkgs/crates/equivalent-1.0.2:equivalent",
         "//vendor_local_pkgs/crates/hashbrown-0.15.2:hashbrown",
     ],
 )

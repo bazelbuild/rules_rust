@@ -5,6 +5,11 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
+# TODO: https://github.com/bazelbuild/rules_rust/issues/3319
+common --deleted_packages=rules_js,rules_js/test
+
+###############################################################################
+
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
 
@@ -23,6 +28,15 @@ common --experimental_cc_shared_library
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################
+
+# Explicitly use firefox for browser tests.
+build:firefox --//settings:test_browser=firefox
+
+# Explicitly use chrome for browser tests
+build:chrome --//settings:test_browser=chrome
+
+# Default linux to run firefox
+build:linux --config=firefox
 
 # Enable use of the nightly toolchains.
 build:nightly --@rules_rust//rust/toolchain/channel=nightly

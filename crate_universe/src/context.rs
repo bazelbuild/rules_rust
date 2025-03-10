@@ -216,6 +216,11 @@ impl Context {
                     &ctx.common_attrs.proc_macro_deps_dev,
                 ])
                 .flat_map(|deps| deps.values())
+                .chain(
+                    ctx.build_script_attrs
+                        .iter()
+                        .flat_map(|attrs| attrs.deps.values()),
+                )
             })
             .collect()
     }
@@ -264,6 +269,7 @@ mod test {
     fn mock_context_common() -> Context {
         let annotations = Annotations::new(
             crate::test::metadata::common(),
+            &None,
             crate::test::lockfile::common(),
             Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -276,8 +282,25 @@ mod test {
     fn mock_context_aliases() -> Context {
         let annotations = Annotations::new(
             crate::test::metadata::alias(),
+            &None,
             crate::test::lockfile::alias(),
             Config::default(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
+
+        Context::new(annotations, false).unwrap()
+    }
+
+    fn mock_context_workspace_build_scripts_deps() -> Context {
+        let annotations = Annotations::new(
+            crate::test::metadata::workspace_build_scripts_deps(),
+            &None,
+            crate::test::lockfile::workspace_build_scripts_deps(),
+            Config {
+                generate_build_scripts: true,
+                ..Config::default()
+            },
             Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
@@ -319,6 +342,24 @@ mod test {
                 (&CrateId::new("names".to_owned(), Version::new(0, 13, 0)), false),
                 (&CrateId::new("surrealdb".to_owned(), Version::new(1, 3, 1)), false),
                 (&CrateId::new("value-bag".to_owned(), Version::parse("1.0.0-alpha.7").unwrap()), false),
+            ],
+        }
+    }
+
+    #[test]
+    fn workspace_member_deps_contains_build_script_deps() {
+        let context = mock_context_workspace_build_scripts_deps();
+        let workspace_member_deps = context.workspace_member_deps();
+
+        assert_eq! {
+            workspace_member_deps
+                .iter()
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .collect::<Vec<_>>(),
+            [
+                (&CrateId::new("child".to_owned(), Version::new(0, 1, 0)), false),
+                (&CrateId::new("tonic".to_owned(), Version::new(0, 4, 3)), false),
+                (&CrateId::new("tonic-build".to_owned(), Version::new(0, 4, 2)), false),
             ],
         }
     }

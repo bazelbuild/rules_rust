@@ -81,7 +81,7 @@ rust_library(
     }),
     version = "0.8.4",
     deps = [
-        "@rrwbd__memchr-2.5.0//:memchr",
+        "@rrwbd__memchr-2.7.4//:memchr",
         "@rrwbd__safemem-0.3.3//:safemem",
     ],
 )

@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::File;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -63,6 +62,7 @@ pub struct CrateSpecSource {
 
 pub fn get_crate_specs(
     bazel: &Path,
+    config: &Option<String>,
     workspace: &Path,
     execution_root: &Path,
     targets: &[String],
@@ -70,13 +70,19 @@ pub fn get_crate_specs(
 ) -> anyhow::Result<BTreeSet<CrateSpec>> {
     log::debug!("Get crate specs with targets: {:?}", targets);
     let target_pattern = format!("deps({})", targets.join("+"));
+    let config_args = match config {
+        Some(config) => vec!["--config", config],
+        None => Vec::new(),
+    };
 
-    let aquery_output = Command::new(bazel)
+    let mut aquery_command = Command::new(bazel);
+    aquery_command
         .current_dir(workspace)
         .env_remove("BAZELISK_SKIP_WRAPPER")
         .env_remove("BUILD_WORKING_DIRECTORY")
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("aquery")
+        .args(config_args)
         .arg("--include_aspects")
         .arg("--include_artifacts")
         .arg(format!(
@@ -86,18 +92,26 @@ pub fn get_crate_specs(
         .arg(format!(
             r#"outputs(".*\.rust_analyzer_crate_spec\.json",{target_pattern})"#
         ))
-        .arg("--output=jsonproto")
-        .output()?;
+        .arg("--output=jsonproto");
+    log::trace!("Running aquery: {:#?}", aquery_command);
+    let aquery_output = aquery_command
+        .output()
+        .context("Failed to spawn aquery command")?;
 
-    let crate_spec_files =
-        parse_aquery_output_files(execution_root, &String::from_utf8(aquery_output.stdout)?)?;
+    let aquery_results = String::from_utf8(aquery_output.stdout)
+        .context("Failed to decode aquery results as utf-8.")?;
+
+    log::trace!("Aquery results: {}", &aquery_results);
+
+    let crate_spec_files = parse_aquery_output_files(execution_root, &aquery_results)?;
 
     let crate_specs = crate_spec_files
         .into_iter()
         .map(|file| {
-            let f = File::open(&file)
-                .with_context(|| format!("Failed to open file: {}", file.display()))?;
-            serde_json::from_reader(f)
+            let content = std::fs::read_to_string(&file)
+                .with_context(|| format!("Failed to read file: {}", file.display()))?;
+            log::trace!("{}\n{}", file.display(), content);
+            serde_json::from_str(&content)
                 .with_context(|| format!("Failed to deserialize file: {}", file.display()))
         })
         .collect::<anyhow::Result<Vec<CrateSpec>>>()?;
@@ -177,6 +191,22 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
         log::debug!("{:?}", spec);
         if let Some(existing) = consolidated_specs.get_mut(&spec.crate_id) {
             existing.deps.extend(spec.deps);
+            existing.aliases.extend(spec.aliases);
+
+            if let Some(source) = &mut existing.source {
+                if let Some(mut new_source) = spec.source {
+                    new_source
+                        .exclude_dirs
+                        .retain(|src| !source.exclude_dirs.contains(src));
+                    new_source
+                        .include_dirs
+                        .retain(|src| !source.include_dirs.contains(src));
+                    source.exclude_dirs.extend(new_source.exclude_dirs);
+                    source.include_dirs.extend(new_source.include_dirs);
+                }
+            } else {
+                existing.source = spec.source;
+            }
 
             spec.cfg.retain(|cfg| !existing.cfg.contains(cfg));
             existing.cfg.extend(spec.cfg);
@@ -619,6 +649,192 @@ mod test {
                     target: "x86_64-unknown-linux-gnu".into(),
                     crate_type: "proc_macro".into(),
                 },])
+            );
+        }
+    }
+
+    #[test]
+    fn consolidate_spec_with_aliases() {
+        let crate_specs = vec![
+            CrateSpec {
+                aliases: BTreeMap::new(),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "rlib".into(),
+            },
+            CrateSpec {
+                aliases: BTreeMap::from([("ID-mylib_dep.rs".into(), "aliased_name".into())]),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib_test".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "bin".into(),
+            },
+        ];
+
+        for perm in crate_specs.into_iter().permutations(2) {
+            assert_eq!(
+                consolidate_crate_specs(perm).unwrap(),
+                BTreeSet::from([CrateSpec {
+                    aliases: BTreeMap::from([("ID-mylib_dep.rs".into(), "aliased_name".into())]),
+                    crate_id: "ID-mylib.rs".into(),
+                    display_name: "mylib".into(),
+                    edition: "2018".into(),
+                    root_module: "mylib.rs".into(),
+                    is_workspace_member: true,
+                    deps: BTreeSet::from([]),
+                    proc_macro_dylib_path: None,
+                    source: None,
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: BTreeMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
+                }])
+            );
+        }
+    }
+
+    #[test]
+    fn consolidate_spec_with_sources() {
+        let crate_specs = vec![
+            CrateSpec {
+                aliases: BTreeMap::new(),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: None,
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "rlib".into(),
+            },
+            CrateSpec {
+                aliases: BTreeMap::new(),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib_test".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: Some(CrateSpecSource {
+                    exclude_dirs: vec!["exclude".into()],
+                    include_dirs: vec!["include".into()],
+                }),
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "bin".into(),
+            },
+        ];
+
+        for perm in crate_specs.into_iter().permutations(2) {
+            assert_eq!(
+                consolidate_crate_specs(perm).unwrap(),
+                BTreeSet::from([CrateSpec {
+                    aliases: BTreeMap::new(),
+                    crate_id: "ID-mylib.rs".into(),
+                    display_name: "mylib".into(),
+                    edition: "2018".into(),
+                    root_module: "mylib.rs".into(),
+                    is_workspace_member: true,
+                    deps: BTreeSet::from([]),
+                    proc_macro_dylib_path: None,
+                    source: Some(CrateSpecSource {
+                        exclude_dirs: vec!["exclude".into()],
+                        include_dirs: vec!["include".into()],
+                    }),
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: BTreeMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
+                }])
+            );
+        }
+    }
+
+    #[test]
+    fn consolidate_spec_with_duplicate_sources() {
+        let crate_specs = vec![
+            CrateSpec {
+                aliases: BTreeMap::new(),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: Some(CrateSpecSource {
+                    exclude_dirs: vec!["exclude".into()],
+                    include_dirs: vec!["include".into()],
+                }),
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "rlib".into(),
+            },
+            CrateSpec {
+                aliases: BTreeMap::new(),
+                crate_id: "ID-mylib.rs".into(),
+                display_name: "mylib_test".into(),
+                edition: "2018".into(),
+                root_module: "mylib.rs".into(),
+                is_workspace_member: true,
+                deps: BTreeSet::new(),
+                proc_macro_dylib_path: None,
+                source: Some(CrateSpecSource {
+                    exclude_dirs: vec!["exclude".into()],
+                    include_dirs: vec!["include".into()],
+                }),
+                cfg: vec!["test".into(), "debug_assertions".into()],
+                env: BTreeMap::new(),
+                target: "x86_64-unknown-linux-gnu".into(),
+                crate_type: "bin".into(),
+            },
+        ];
+
+        for perm in crate_specs.into_iter().permutations(2) {
+            assert_eq!(
+                consolidate_crate_specs(perm).unwrap(),
+                BTreeSet::from([CrateSpec {
+                    aliases: BTreeMap::new(),
+                    crate_id: "ID-mylib.rs".into(),
+                    display_name: "mylib".into(),
+                    edition: "2018".into(),
+                    root_module: "mylib.rs".into(),
+                    is_workspace_member: true,
+                    deps: BTreeSet::from([]),
+                    proc_macro_dylib_path: None,
+                    source: Some(CrateSpecSource {
+                        exclude_dirs: vec!["exclude".into()],
+                        include_dirs: vec!["include".into()],
+                    }),
+                    cfg: vec!["test".into(), "debug_assertions".into()],
+                    env: BTreeMap::new(),
+                    target: "x86_64-unknown-linux-gnu".into(),
+                    crate_type: "rlib".into(),
+                }])
             );
         }
     }

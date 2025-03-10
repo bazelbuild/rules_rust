@@ -72,13 +72,14 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/test_env:test_run"
   - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
-  - "-//tools/runfiles/..."
+  - "-//rust/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
+  - "//vendor_local_patching:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
   - "@rules_rust//tools/rust_analyzer:gen_rust_project"
@@ -293,7 +294,7 @@ tasks:
       - "--enable_bzlmod"
     build_targets:
       - "//crate_universe:cargo_bazel_bin"
-      - "//tools/runfiles"
+      - "//rust/runfiles"
       - "//util/import"
   ubuntu2004_clang:
     name: With Clang
@@ -498,6 +499,14 @@ tasks:
     working_directory: examples/crate_universe_local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"
+  example_bindgen_toolchain:
+    name: Example custom bindgen toolchain registration
+    platform: ubuntu2204
+    working_directory: examples/bindgen_toolchain
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
@@ -512,77 +521,69 @@ tasks:
   cc_common_link_ubuntu2004:
     name: Build via cc_common.link
     platform: ubuntu2004
-    working_directory: test/cc_common_link
+    working_directory: test/integration/cc_common_link
     build_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
     test_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+  cc_common_link_macos:
+    name: Build via cc_common.link
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_with_global_alloc_ubuntu2004:
     name: Build via cc_common.link using a global allocator
     platform: ubuntu2004
-    working_directory: test/cc_common_link/with_global_alloc
+    working_directory: test/integration/cc_common_link_with_global_alloc
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_with_global_alloc_macos:
+    name: Build via cc_common.link using a global allocator
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_no_std_ubuntu2004:
     name: Build with no_std + alloc using cc_common.link infrastructure for linking
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004
-    working_directory: test/bzlmod_repo_mapping/module_a
+    working_directory: test/integration/bzlmod_repo_mapping/module_a
     test_targets:
       - "//..."
   aliased_toolchains:
     name: aliased toolchains test
     platform: ubuntu2004
-    working_directory: test/aliased_toolchains
+    working_directory: test/integration/aliased_toolchains
     build_targets:
       - "@rust_toolchains//:all"
       - "//..."
@@ -1065,6 +1066,8 @@ tasks:
     platform: ubuntu2004
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - "bash ./test/bazelci_linux_setup.sh"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
@@ -1082,12 +1085,9 @@ tasks:
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    test_targets:
-      - "--"
-      - "//..."
-      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-      - "-//rules_js/test:hello_world_wasm_lib_test"
-      - "-//rules_js/test:hello_world_wasm_direct_test"
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+    # test_targets:
+    #   - "//..."
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen

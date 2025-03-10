@@ -323,7 +323,7 @@ rust_doc = rule(
         ),
         "_dir_zipper": attr.label(
             doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",
-            default = Label("//util/dir_zipper"),
+            default = Label("//rust/private/rustdoc/dir_zipper"),
             cfg = "exec",
             executable = True,
         ),

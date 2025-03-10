@@ -93,7 +93,7 @@ rust_library(
         "@rmdbi__tinystr-0.7.6//:tinystr",
         "@rmdbi__writeable-0.5.5//:writeable",
         "@rmdbi__yoke-0.7.5//:yoke",
-        "@rmdbi__zerofrom-0.1.5//:zerofrom",
+        "@rmdbi__zerofrom-0.1.6//:zerofrom",
         "@rmdbi__zerovec-0.10.4//:zerovec",
     ],
 )

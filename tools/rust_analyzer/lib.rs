@@ -10,11 +10,16 @@ mod rust_project;
 
 pub fn generate_crate_info(
     bazel: impl AsRef<Path>,
+    config: &Option<String>,
     workspace: impl AsRef<Path>,
     rules_rust: impl AsRef<str>,
     targets: &[String],
 ) -> anyhow::Result<()> {
     log::debug!("Building rust_analyzer_crate_spec files for {:?}", targets);
+    let config_args = match config {
+        Some(config) => vec!["--config", config],
+        None => Vec::new(),
+    };
 
     let output = Command::new(bazel.as_ref())
         .current_dir(workspace.as_ref())
@@ -22,7 +27,9 @@ pub fn generate_crate_info(
         .env_remove("BUILD_WORKING_DIRECTORY")
         .env_remove("BUILD_WORKSPACE_DIRECTORY")
         .arg("build")
+        .args(config_args)
         .arg("--norun_validations")
+        .arg("--remote_download_all")
         .arg(format!(
             "--aspects={}//rust:defs.bzl%rust_analyzer_aspect",
             rules_rust.as_ref()
@@ -42,8 +49,10 @@ pub fn generate_crate_info(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn write_rust_project(
     bazel: impl AsRef<Path>,
+    config: &Option<String>,
     workspace: impl AsRef<Path>,
     rules_rust_name: &impl AsRef<str>,
     targets: &[String],
@@ -53,6 +62,7 @@ pub fn write_rust_project(
 ) -> anyhow::Result<()> {
     let crate_specs = aquery::get_crate_specs(
         bazel.as_ref(),
+        config,
         workspace.as_ref(),
         execution_root.as_ref(),
         targets,

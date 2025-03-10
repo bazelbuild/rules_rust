@@ -111,7 +111,7 @@ jobs:
             bazel ${BAZEL_STARTUP_FLAGS[@]} run //crate_universe/tools/cross_installer -- --target=${TARGET} --output="${OUTPUT_PATH}"
         env:
           TARGET: "${{ matrix.env.TARGET }}"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "${{ matrix.env.TARGET }}"
           path: ${{ github.workspace }}/crate_universe/target/artifacts/${{ matrix.env.TARGET }}
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/crate_universe/target/artifacts
       - name: Detect the current version
@@ -156,7 +156,7 @@ jobs:
           URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
 
       # Upload the artifact in case creating a release fails so all artifacts can then be manually recovered.
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "rules_rust.tar.gz"
           path: ${{ github.workspace }}/.github/rules_rust.tar.gz

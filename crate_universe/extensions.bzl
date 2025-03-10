@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.57.1")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.57.1")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -713,9 +713,9 @@ def _generate_hub_and_spokes(
             version = version.replace("+", "-"),
         )
 
-        build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
         if "Http" in repo:
             # Replicates functionality in repo_http.j2.
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Http"]
             http_archive(
                 name = crate_repo_name,
@@ -731,6 +731,7 @@ def _generate_hub_and_spokes(
             )
         elif "Git" in repo:
             # Replicates functionality in repo_git.j2
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Git"]
             kwargs = {}
             for k, v in repo["commitish"].items():
@@ -943,16 +944,17 @@ def _crate_impl(module_ctx):
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
-            # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
-            # function of the module extension, so we want to trigger all restarts before we start the actual work.
-            # Once https://github.com/bazelbuild/bazel/issues/22729 has been fixed, this code can be removed.
+            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
+            # function of the module extension when the file has changed.
             if cfg.cargo_lockfile:
-                module_ctx.path(cfg.cargo_lockfile)
+                module_ctx.watch(cfg.cargo_lockfile)
             if cfg.lockfile:
-                module_ctx.path(cfg.lockfile)
+                module_ctx.watch(cfg.lockfile)
+            if cfg.cargo_config:
+                module_ctx.watch(cfg.cargo_config)
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
-                    module_ctx.path(m)
+                    module_ctx.watch(m)
 
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
             cargo_bazel_fn = new_cargo_bazel_fn(
@@ -1082,6 +1084,9 @@ _annotation = tag_class(
         ),
         "build_script_env": attr.string_dict(
             doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+        ),
+        "build_script_link_deps": _relative_label_list(
+            doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
         ),
         "build_script_proc_macro_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::proc_macro_deps` attribute.",

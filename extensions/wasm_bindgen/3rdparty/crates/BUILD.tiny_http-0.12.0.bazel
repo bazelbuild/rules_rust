@@ -82,8 +82,8 @@ rust_library(
     version = "0.12.0",
     deps = [
         "@rrwbd__ascii-1.1.0//:ascii",
-        "@rrwbd__chunked_transfer-1.4.1//:chunked_transfer",
-        "@rrwbd__httpdate-1.0.2//:httpdate",
-        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__chunked_transfer-1.5.0//:chunked_transfer",
+        "@rrwbd__httpdate-1.0.3//:httpdate",
+        "@rrwbd__log-0.4.22//:log",
     ],
 )

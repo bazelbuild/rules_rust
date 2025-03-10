@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
-load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen")
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen", "rust_wasm_bindgen_test")
 
 package(default_visibility = ["//:__subpackages__"])
 
@@ -47,10 +47,20 @@ rust_wasm_bindgen(
     wasm_file = ":hello_world_bin_wasm",
 )
 
+rust_wasm_bindgen_test(
+    name = "hello_world_bundler_wasm_bindgen_test",
+    wasm = ":hello_world_bundler_wasm_bindgen",
+)
+
 rust_wasm_bindgen(
     name = "hello_world_web_wasm_bindgen",
     target = "web",
     wasm_file = ":hello_world_lib_wasm",
+)
+
+rust_wasm_bindgen_test(
+    name = "hello_world_web_wasm_bindgen_test",
+    wasm = "hello_world_web_wasm_bindgen",
 )
 
 rust_wasm_bindgen(
@@ -59,14 +69,29 @@ rust_wasm_bindgen(
     wasm_file = ":hello_world_lib_wasm",
 )
 
+rust_wasm_bindgen_test(
+    name = "hello_world_deno_wasm_bindgen_test",
+    wasm = "hello_world_deno_wasm_bindgen",
+)
+
 rust_wasm_bindgen(
     name = "hello_world_nomodules_wasm_bindgen",
     target = "no-modules",
     wasm_file = ":hello_world_lib_wasm",
 )
 
+rust_wasm_bindgen_test(
+    name = "hello_world_nomodules_wasm_bindgen_test",
+    wasm = "hello_world_nomodules_wasm_bindgen",
+)
+
 rust_wasm_bindgen(
     name = "hello_world_nodejs_wasm_bindgen",
     target = "nodejs",
     wasm_file = ":hello_world_lib_wasm",
+)
+
+rust_wasm_bindgen_test(
+    name = "hello_world_nodejs_wasm_bindgen_test",
+    wasm = "hello_world_nodejs_wasm_bindgen",
 )
