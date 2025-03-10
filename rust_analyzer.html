@@ -230,7 +230,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
 <pre>
 load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect")
 
-rust_analyzer_aspect(<a href="#rust_analyzer_aspect-name">name</a>)
+rust_analyzer_aspect()
 </pre>
 <p>Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json</p>
 <p><strong>ASPECT ATTRIBUTES</strong></p>
@@ -243,10 +243,7 @@ rust_analyzer_aspect(<a href="#rust_analyzer_aspect-name">name</a>)
 </tbody></table>
 </div>
 <p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_analyzer_aspect-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-</tbody></table>
-</div>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

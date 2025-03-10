@@ -259,7 +259,7 @@ For additional information, see the <a href="https://docs.bazel.build/versions/m
 load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
 
 rust_bindgen_library(<a href="#rust_bindgen_library-name">name</a>, <a href="#rust_bindgen_library-header">header</a>, <a href="#rust_bindgen_library-cc_lib">cc_lib</a>, <a href="#rust_bindgen_library-bindgen_flags">bindgen_flags</a>, <a href="#rust_bindgen_library-bindgen_features">bindgen_features</a>, <a href="#rust_bindgen_library-clang_flags">clang_flags</a>,
-                     <a href="#rust_bindgen_library-wrap_static_fns">wrap_static_fns</a>, <a href="#rust_bindgen_library-kwargs">kwargs</a>)
+                     <a href="#rust_bindgen_library-wrap_static_fns">wrap_static_fns</a>, <a href="#rust_bindgen_library-kwargs">**kwargs</a>)
 </pre>
 <p>Generates a rust source file for <code>header</code>, and builds a rust_library.</p>
 <p>Arguments are the same as <code>rust_bindgen</code>, and <code>kwargs</code> are passed directly to rust_library.</p>

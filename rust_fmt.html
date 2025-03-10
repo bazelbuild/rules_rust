@@ -210,7 +210,7 @@ rustfmt_test(<a href="#rustfmt_test-name">name</a>, <a href="#rustfmt_test-targe
 <pre>
 load("@rules_rust//rust:defs.bzl", "rustfmt_aspect")
 
-rustfmt_aspect(<a href="#rustfmt_aspect-name">name</a>)
+rustfmt_aspect()
 </pre>
 <p>This aspect is used to gather information about a crate for use in rustfmt and perform rustfmt checks</p>
 <p>Output Groups:</p>
@@ -224,10 +224,7 @@ users may tag a target with <code>no-rustfmt</code> or <code>no-format</code> to
 generated source files are also ignored by this aspect.</p>
 <p><strong>ASPECT ATTRIBUTES</strong></p>
 <p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rustfmt_aspect-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-</tbody></table>
-</div>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

@@ -224,7 +224,7 @@ rust_clippy(
 <pre>
 load("@rules_rust//rust:defs.bzl", "rust_clippy_aspect")
 
-rust_clippy_aspect(<a href="#rust_clippy_aspect-name">name</a>)
+rust_clippy_aspect()
 </pre>
 <p>Executes the clippy checker on specified targets.</p>
 <p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
@@ -247,10 +247,7 @@ rust_test(
 </code></pre>
 <p><strong>ASPECT ATTRIBUTES</strong></p>
 <p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_clippy_aspect-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-</tbody></table>
-</div>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

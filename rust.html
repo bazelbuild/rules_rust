@@ -702,7 +702,7 @@ rust_test(
 <pre>
 load("@rules_rust//rust:defs.bzl", "rust_test_suite")
 
-rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-shared_srcs">shared_srcs</a>, <a href="#rust_test_suite-kwargs">kwargs</a>)
+rust_test_suite(<a href="#rust_test_suite-name">name</a>, <a href="#rust_test_suite-srcs">srcs</a>, <a href="#rust_test_suite-shared_srcs">shared_srcs</a>, <a href="#rust_test_suite-kwargs">**kwargs</a>)
 </pre>
 <p>A rule for creating a test suite for a set of <code>rust_test</code> targets.</p>
 <p>This rule can be used for setting up typical rust <a href="https://doc.rust-lang.org/rust-by-example/testing/integration_testing.html">integration tests</a>. Given the following
