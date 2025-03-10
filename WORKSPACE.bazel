@@ -14,6 +14,10 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
+load("//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
+
+ctve_crate_repositories()
+
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
 
 cross_installer_deps()
