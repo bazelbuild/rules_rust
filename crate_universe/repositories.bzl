@@ -1,7 +1,6 @@
 """A module defining dependencies of the `cargo-bazel` Rust target"""
 
 load("@rules_rust//rust:defs.bzl", "rust_common")
-load("//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
 load("//crate_universe:deps_bootstrap.bzl", "cargo_bazel_bootstrap")
 load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
 load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
@@ -26,5 +25,4 @@ def crate_universe_dependencies(rust_version = rust_common.default_version, boot
 
     direct_deps = _vendor_crate_repositories()
     direct_deps.extend(crates_vendor_deps())
-    direct_deps.extend(ctve_crate_repositories())
     return direct_deps
