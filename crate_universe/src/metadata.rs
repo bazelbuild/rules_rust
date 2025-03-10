@@ -353,26 +353,15 @@ pub(crate) fn write_metadata(path: &Path, metadata: &cargo_metadata::Metadata) -
 /// A helper function for deserializing Cargo metadata and lockfiles
 pub(crate) fn load_metadata(
     metadata_path: &Path,
+    lockfile_path: &Path,
 ) -> Result<(cargo_metadata::Metadata, cargo_lock::Lockfile)> {
-    // Locate the Cargo.lock file related to the metadata file.
-    let lockfile_path = metadata_path
-        .parent()
-        .expect("metadata files should always have parents")
-        .join("Cargo.lock");
-    if !lockfile_path.exists() {
-        bail!(
-            "The metadata file at {} is not next to a `Cargo.lock` file.",
-            metadata_path.display()
-        )
-    }
-
     let content = fs::read_to_string(metadata_path)
         .with_context(|| format!("Failed to load Cargo Metadata: {}", metadata_path.display()))?;
 
     let metadata =
         serde_json::from_str(&content).context("Unable to deserialize Cargo metadata")?;
 
-    let lockfile = cargo_lock::Lockfile::load(&lockfile_path)
+    let lockfile = cargo_lock::Lockfile::load(lockfile_path)
         .with_context(|| format!("Failed to load lockfile: {}", lockfile_path.display()))?;
 
     Ok((metadata, lockfile))

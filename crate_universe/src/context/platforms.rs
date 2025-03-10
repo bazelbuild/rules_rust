@@ -135,6 +135,7 @@ mod test {
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
+                source_annotation: None,
             },
             None,
         );
@@ -193,6 +194,7 @@ mod test {
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
+                source_annotation: None,
             },
             Some(configuration),
         );
@@ -279,6 +281,7 @@ mod test {
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
+                source_annotation: None,
             },
             Some(configuration.clone()),
         );
@@ -345,6 +348,7 @@ mod test {
                 id: CrateId::new("mock_crate_b".to_owned(), VERSION_ZERO_ONE_ZERO),
                 target: "mock_crate_b".to_owned(),
                 alias: None,
+                source_annotation: None,
             },
             Some(configuration.clone()),
         );

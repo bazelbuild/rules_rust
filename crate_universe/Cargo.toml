@@ -21,6 +21,7 @@ exclude = [
     "test_data/metadata/multi_kind_proc_macro_dep",
     "test_data/metadata/nested_build_dependencies",
     "test_data/metadata/no_deps",
+    "test_data/metadata/path_patching",
     "test_data/metadata/resolver_2_deps",
     "test_data/metadata/target_cfg_features",
     "test_data/metadata/target_features",
