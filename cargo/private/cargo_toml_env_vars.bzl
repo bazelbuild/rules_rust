@@ -17,6 +17,7 @@ def _cargo_toml_env_vars_impl(ctx):
         executable = ctx.file._cargo_toml_variable_extractor,
         inputs = inputs,
         arguments = [args],
+        mnemonic = "ExtractCargoTomlEnvVars",
     )
 
     return [
@@ -26,8 +27,15 @@ def _cargo_toml_env_vars_impl(ctx):
 cargo_toml_env_vars = rule(
     implementation = _cargo_toml_env_vars_impl,
     attrs = {
-        "src": attr.label(allow_single_file = True, mandatory = True, doc = "Cargo.toml file to derive env vars from"),
-        "workspace": attr.label(allow_single_file = True, doc = "Workspace Cargo.toml file from which values may be inherited"),
+        "src": attr.label(
+            allow_single_file = True,
+            mandatory = True,
+            doc = "Cargo.toml file to derive env vars from",
+        ),
+        "workspace": attr.label(
+            allow_single_file = True,
+            doc = "Workspace Cargo.toml file from which values may be inherited",
+        ),
         "_cargo_toml_variable_extractor": attr.label(
             allow_single_file = True,
             executable = True,
@@ -35,4 +43,5 @@ cargo_toml_env_vars = rule(
             cfg = "exec",
         ),
     },
+    doc = "A rule for extracting environment variables which Cargo would set for a crate, making it easy to have Bazel set them too.",
 )
