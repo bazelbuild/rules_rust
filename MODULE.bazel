@@ -22,6 +22,7 @@ use_repo(
     internal_deps,
     "rrra",
     "rrra__anyhow-1.0.71",
+    "rrra__camino-1.1.9",
     "rrra__clap-4.3.11",
     "rrra__env_logger-0.10.0",
     "rrra__itertools-0.11.0",

@@ -296,6 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "anyhow": Label("@rrra//:anyhow-1.0.71"),
+            "camino": Label("@rrra//:camino-1.1.9"),
             "clap": Label("@rrra//:clap-4.3.11"),
             "env_logger": Label("@rrra//:env_logger-0.10.0"),
             "itertools": Label("@rrra//:itertools-0.11.0"),
@@ -488,6 +489,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/bitflags/1.3.2/download"],
         strip_prefix = "bitflags-1.3.2",
         build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.bitflags-1.3.2.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "rrra__camino-1.1.9",
+        sha256 = "8b96ec4966b5813e2c0507c1f86115c8c5abaadc3980879c3424042a02fd1ad3",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/camino/1.1.9/download"],
+        strip_prefix = "camino-1.1.9",
+        build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.camino-1.1.9.bazel"),
     )
 
     maybe(
@@ -992,6 +1003,7 @@ def crate_repositories():
 
     return [
         struct(repo = "rrra__anyhow-1.0.71", is_dev_dep = False),
+        struct(repo = "rrra__camino-1.1.9", is_dev_dep = False),
         struct(repo = "rrra__clap-4.3.11", is_dev_dep = False),
         struct(repo = "rrra__env_logger-0.10.0", is_dev_dep = False),
         struct(repo = "rrra__itertools-0.11.0", is_dev_dep = False),
