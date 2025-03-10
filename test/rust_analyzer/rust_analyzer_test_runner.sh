@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script creates temporary workspaces and generates `rust-project.json`
 # files unique to the set of targets defined in the generated workspace.
@@ -77,6 +77,10 @@ function rust_analyzer_test() {
     local source_dir="$1"
     local workspace="$2"
     local generator_arg="$3"
+    local rust_log="info"
+    if [[ -n "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
+        rust_log="debug"
+    fi
 
     echo "Testing '$(basename "${source_dir}")'"
     rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}"/*.bzl "${workspace}/BUILD.bazel" "${workspace}/BUILD.bazel-e"
@@ -92,10 +96,11 @@ function rust_analyzer_test() {
 
     pushd "${workspace}" &>/dev/null
     echo "Generating rust-project.json..."
+
     if [[ -n "${generator_arg}" ]]; then
-        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
     else
-        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
     fi
     echo "Building..."
     bazel build //...
@@ -109,9 +114,11 @@ function rust_analyzer_test() {
 function cleanup() {
     local workspace="$1"
     pushd "${workspace}" &>/dev/null
-    bazel clean --async
+    bazel clean --expunge --async
     popd &>/dev/null
-    rm -rf "${workspace}"
+    if [[ -z "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
+        rm -rf "${workspace}"
+    fi
 }
 
 function run_test_suite() {

@@ -249,6 +249,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // Annotate metadata
     let annotations = Annotations::new(
         cargo_metadata,
+        &opt.cargo_lockfile,
         cargo_lockfile.clone(),
         config.clone(),
         &opt.nonhermetic_root_bazel_workspace_dir,
