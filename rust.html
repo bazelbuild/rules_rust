@@ -162,6 +162,7 @@
 <li><a href="#rust_binary">rust_binary</a></li>
 <li><a href="#rust_library">rust_library</a></li>
 <li><a href="#rust_library_group">rust_library_group</a></li>
+<li><a href="#rust_lint_config">rust_lint_config</a></li>
 <li><a href="#rust_proc_macro">rust_proc_macro</a></li>
 <li><a href="#rust_shared_library">rust_shared_library</a></li>
 <li><a href="#rust_static_library">rust_static_library</a></li>
@@ -405,6 +406,47 @@ rust_library(
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="rust_library_group-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_library_group-deps"></a>deps</td><td style="text-align: left">Other dependencies to forward through this crate group.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_lint_config"></a></p>
+<h2 id="rust_lint_config"><a class="header" href="#rust_lint_config">rust_lint_config</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_lint_config")
+
+rust_lint_config(<a href="#rust_lint_config-name">name</a>, <a href="#rust_lint_config-clippy">clippy</a>, <a href="#rust_lint_config-rustc">rustc</a>, <a href="#rust_lint_config-rustc_check_cfg">rustc_check_cfg</a>, <a href="#rust_lint_config-rustdoc">rustdoc</a>)
+</pre>
+<p>Defines a group of lints that can be applied when building Rust targets.</p>
+<p>For example, you can define a single group of lints:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_lint_config")
+
+rust_lint_config(
+    name = "workspace_lints",
+    rustc = {
+        "unknown_lints": "allow",
+        "unexpected_cfgs": "warn",
+    },
+    rustc_check_cfg = {
+        "bazel": [],
+        "fuzzing": [],
+        "mz_featutres": ["laser", "rocket"],
+    },
+    clippy = {
+        "box_default": "allow",
+        "todo": "warn",
+        "unused_async": "warn",
+    },
+    rustdoc = {
+        "unportable_markdown": "allow",
+    },
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_lint_config-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-clippy"></a>clippy</td><td style="text-align: left">Set of 'clippy' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustc"></a>rustc</td><td style="text-align: left">Set of 'rustc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustc_check_cfg"></a>rustc_check_cfg</td><td style="text-align: left">Set of 'cfg' names and list of values to expect.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; List of strings</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustdoc"></a>rustdoc</td><td style="text-align: left">Set of 'rustdoc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rust_proc_macro"></a></p>

@@ -161,6 +161,7 @@
 <h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
 <ul>
 <li><a href="#cargo_dep_env">cargo_dep_env</a></li>
+<li><a href="#extract_cargo_lints">extract_cargo_lints</a></li>
 </ul>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
 <ul>
@@ -184,6 +185,20 @@ cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-sr
 <tr><td style="text-align: left"><a id="cargo_dep_env-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="cargo_dep_env-src"></a>src</td><td style="text-align: left">File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints <code>cargo:VAR=VALUE</code> lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="cargo_dep_env-out_dir"></a>out_dir</td><td style="text-align: left">Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints puts files into <code>$OUT_DIR</code>, but without requiring a build script.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="extract_cargo_lints"></a></p>
+<h2 id="extract_cargo_lints"><a class="header" href="#extract_cargo_lints">extract_cargo_lints</a></h2>
+<pre>
+load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
+
+extract_cargo_lints(<a href="#extract_cargo_lints-name">name</a>, <a href="#extract_cargo_lints-manifest">manifest</a>, <a href="#extract_cargo_lints-workspace">workspace</a>)
+</pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-manifest"></a>manifest</td><td style="text-align: left">Cargo.toml to read lints from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-workspace"></a>workspace</td><td style="text-align: left">Workspace Cargo.toml that the manifest Cargo.toml inherits from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="cargo_build_script"></a></p>

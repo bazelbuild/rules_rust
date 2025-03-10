@@ -248,6 +248,7 @@ also be set in the project's <code>.bazelrc</code> file.</p>
 <li><a href="rust.html#rust_binary">rust_binary</a></li>
 <li><a href="rust.html#rust_library">rust_library</a></li>
 <li><a href="rust.html#rust_library_group">rust_library_group</a></li>
+<li><a href="rust.html#rust_lint_config">rust_lint_config</a></li>
 <li><a href="rust.html#rust_proc_macro">rust_proc_macro</a></li>
 <li><a href="rust.html#rust_shared_library">rust_shared_library</a></li>
 <li><a href="rust.html#rust_static_library">rust_static_library</a></li>
@@ -491,6 +492,47 @@ rust_library(
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="rust_library_group-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_library_group-deps"></a>deps</td><td style="text-align: left">Other dependencies to forward through this crate group.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_lint_config"></a></p>
+<h2 id="rust_lint_config"><a class="header" href="#rust_lint_config">rust_lint_config</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_lint_config")
+
+rust_lint_config(<a href="rust.html#rust_lint_config-name">name</a>, <a href="rust.html#rust_lint_config-clippy">clippy</a>, <a href="rust.html#rust_lint_config-rustc">rustc</a>, <a href="rust.html#rust_lint_config-rustc_check_cfg">rustc_check_cfg</a>, <a href="rust.html#rust_lint_config-rustdoc">rustdoc</a>)
+</pre>
+<p>Defines a group of lints that can be applied when building Rust targets.</p>
+<p>For example, you can define a single group of lints:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_lint_config")
+
+rust_lint_config(
+    name = "workspace_lints",
+    rustc = {
+        "unknown_lints": "allow",
+        "unexpected_cfgs": "warn",
+    },
+    rustc_check_cfg = {
+        "bazel": [],
+        "fuzzing": [],
+        "mz_featutres": ["laser", "rocket"],
+    },
+    clippy = {
+        "box_default": "allow",
+        "todo": "warn",
+        "unused_async": "warn",
+    },
+    rustdoc = {
+        "unportable_markdown": "allow",
+    },
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_lint_config-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-clippy"></a>clippy</td><td style="text-align: left">Set of 'clippy' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustc"></a>rustc</td><td style="text-align: left">Set of 'rustc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustc_check_cfg"></a>rustc_check_cfg</td><td style="text-align: left">Set of 'cfg' names and list of values to expect.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; List of strings</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_lint_config-rustdoc"></a>rustdoc</td><td style="text-align: left">Set of 'rustdoc' lints to 'allow', 'expect', 'warn', 'force-warn', 'deny', or 'forbid'.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rust_proc_macro"></a></p>
@@ -1059,6 +1101,7 @@ rust_doc_test(
 <h2 id="rules-5"><a class="header" href="#rules-5">Rules</a></h2>
 <ul>
 <li><a href="cargo.html#cargo_dep_env">cargo_dep_env</a></li>
+<li><a href="cargo.html#extract_cargo_lints">extract_cargo_lints</a></li>
 </ul>
 <h2 id="functions-1"><a class="header" href="#functions-1">Functions</a></h2>
 <ul>
@@ -1082,6 +1125,20 @@ cargo_dep_env(<a href="cargo.html#cargo_dep_env-name">name</a>, <a href="cargo.h
 <tr><td style="text-align: left"><a id="cargo_dep_env-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="cargo_dep_env-src"></a>src</td><td style="text-align: left">File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints <code>cargo:VAR=VALUE</code> lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format <code>NAME=value</code>, and newlines may be included in a value by ending a line with a trailing back-slash (<code>\\</code>).</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="cargo_dep_env-out_dir"></a>out_dir</td><td style="text-align: left">Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a <code>cargo_build_script</code> which prints puts files into <code>$OUT_DIR</code>, but without requiring a build script.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="extract_cargo_lints"></a></p>
+<h2 id="extract_cargo_lints"><a class="header" href="#extract_cargo_lints">extract_cargo_lints</a></h2>
+<pre>
+load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
+
+extract_cargo_lints(<a href="cargo.html#extract_cargo_lints-name">name</a>, <a href="cargo.html#extract_cargo_lints-manifest">manifest</a>, <a href="cargo.html#extract_cargo_lints-workspace">workspace</a>)
+</pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-manifest"></a>manifest</td><td style="text-align: left">Cargo.toml to read lints from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="extract_cargo_lints-workspace"></a>workspace</td><td style="text-align: left">Workspace Cargo.toml that the manifest Cargo.toml inherits from.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="cargo_build_script"></a></p>
