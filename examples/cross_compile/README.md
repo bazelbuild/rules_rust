@@ -43,7 +43,7 @@ You add the required rules for cross compilation to your MODULE.bazel as shown b
 ```Starlark
 # Get latest release from:
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.57.1")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 
 # https://github.com/bazelbuild/platforms/releases
 bazel_dep(name = "platforms", version = "0.0.10")

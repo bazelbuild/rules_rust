@@ -81,7 +81,7 @@ rust_library(
     }),
     version = "0.9.7",
     deps = [
-        "@rmdbi__libc-0.2.169//:libc",
+        "@rmdbi__libc-0.2.170//:libc",
         "@rmdbi__libdbus-sys-0.2.5//:libdbus_sys",
     ] + select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [

@@ -87,7 +87,7 @@ rust_library(
     version = "1.0.3",
     deps = [
         "@rmdbi__idna_adapter-1.2.0//:idna_adapter",
-        "@rmdbi__smallvec-1.13.2//:smallvec",
+        "@rmdbi__smallvec-1.14.0//:smallvec",
         "@rmdbi__utf8_iter-1.0.4//:utf8_iter",
     ],
 )

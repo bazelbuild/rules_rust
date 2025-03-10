@@ -13,14 +13,8 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(
-    name = "platforms",
-    version = "0.0.10",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.1")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -44,14 +38,8 @@ register_toolchains("@rust_toolchains//:all")
 # F F I   T A R G E T   D E P S
 ###############################################################################
 
-bazel_dep(
-    name = "rules_java",
-    version = "8.6.3",
-)
-bazel_dep(
-    name = "rules_jvm_external",
-    version = "6.6",
-)
+bazel_dep(name = "rules_java", version = "8.6.3")
+bazel_dep(name = "rules_jvm_external", version = "6.6")
 
 java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
 use_repo(java_toolchains, "remote_java_tools")

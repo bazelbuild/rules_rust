@@ -90,14 +90,14 @@ rust_library(
     version = "0.18.0",
     deps = [
         "@rrwbd__buf_redux-0.8.4//:buf_redux",
-        "@rrwbd__httparse-1.8.0//:httparse",
-        "@rrwbd__log-0.4.19//:log",
+        "@rrwbd__httparse-1.9.5//:httparse",
+        "@rrwbd__log-0.4.22//:log",
         "@rrwbd__mime-0.3.17//:mime",
-        "@rrwbd__mime_guess-2.0.4//:mime_guess",
+        "@rrwbd__mime_guess-2.0.5//:mime_guess",
         "@rrwbd__quick-error-1.2.3//:quick_error",
         "@rrwbd__rand-0.8.5//:rand",
         "@rrwbd__safemem-0.3.3//:safemem",
-        "@rrwbd__tempfile-3.6.0//:tempfile",
+        "@rrwbd__tempfile-3.15.0//:tempfile",
         "@rrwbd__twoway-0.1.8//:twoway",
     ],
 )

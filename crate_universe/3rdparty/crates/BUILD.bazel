@@ -56,14 +56,14 @@ alias(
 )
 
 alias(
-    name = "cargo-lock-10.0.1",
-    actual = "@cui__cargo-lock-10.0.1//:cargo_lock",
+    name = "cargo-lock-10.1.0",
+    actual = "@cui__cargo-lock-10.1.0//:cargo_lock",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo-lock",
-    actual = "@cui__cargo-lock-10.0.1//:cargo_lock",
+    actual = "@cui__cargo-lock-10.1.0//:cargo_lock",
     tags = ["manual"],
 )
 
@@ -128,14 +128,14 @@ alias(
 )
 
 alias(
-    name = "crates-index-3.5.0",
-    actual = "@cui__crates-index-3.5.0//:crates_index",
+    name = "crates-index-3.6.0",
+    actual = "@cui__crates-index-3.6.0//:crates_index",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index",
-    actual = "@cui__crates-index-3.5.0//:crates_index",
+    actual = "@cui__crates-index-3.6.0//:crates_index",
     tags = ["manual"],
 )
 

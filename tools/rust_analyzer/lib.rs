@@ -106,6 +106,7 @@ fn generate_crate_info(
         .arg("build")
         .args(bazel_args)
         .arg("--norun_validations")
+        .arg("--remote_download_all")
         .arg(format!(
             "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
         ))

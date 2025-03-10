@@ -32,6 +32,6 @@ rust_test(
     edition = "2021",
     rustc_env = {"HELLO_SYS_RLOCATIONPATH": "$(rlocationpath :hello_sys)"},
     deps = [
-        "@rules_rust//tools/runfiles",
+        "@rules_rust//rust/runfiles",
     ],
 )

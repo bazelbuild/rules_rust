@@ -31,7 +31,7 @@ use_cc_common_link_transition = transition(
 )
 
 def _use_cc_common_link_on_target_impl(ctx):
-    return [ctx.attr.target[0][DepActionsInfo]]
+    return [ctx.attr.target[0][DepActionsInfo], ctx.attr.target[0][OutputGroupInfo]]
 
 use_cc_common_link_on_target = rule(
     implementation = _use_cc_common_link_on_target_impl,
@@ -63,9 +63,18 @@ def _use_cc_common_link_test(ctx):
     has_cpp_link_action = len([action for action in registered_actions if action.mnemonic == "CppLink"]) > 0
     asserts.true(env, has_cpp_link_action, "Expected that the target registers a CppLink action")
 
+    output_groups = tut[OutputGroupInfo]
+    asserts.false(env, hasattr(output_groups, "dsym_folder"), "Expected no dsym_folder output group")
+    asserts.equals(
+        env,
+        ctx.attr.expect_pdb,
+        hasattr(output_groups, "pdb_file"),
+        "Expected " + ("" if ctx.attr.expect_pdb else "no ") + "pdb_file output group",
+    )
+
     return analysistest.end(env)
 
-use_cc_common_link_test = analysistest.make(_use_cc_common_link_test)
+use_cc_common_link_test = analysistest.make(_use_cc_common_link_test, attrs = {"expect_pdb": attr.bool()})
 
 def _custom_malloc_test(ctx):
     env = analysistest.begin(ctx)
@@ -100,6 +109,18 @@ def _cc_common_link_test_targets():
     use_cc_common_link_on_target(
         name = "bin_with_cc_common_link",
         target = ":bin",
+    )
+
+    rust_binary(
+        name = "bin_with_pdb",
+        srcs = ["bin.rs"],
+        edition = "2018",
+        features = ["generate_pdb_file"],
+    )
+
+    use_cc_common_link_on_target(
+        name = "bin_with_cc_common_link_with_pdb",
+        target = ":bin_with_pdb",
     )
 
     rust_shared_library(
@@ -143,6 +164,15 @@ def _cc_common_link_test_targets():
     )
 
     use_cc_common_link_test(
+        name = "use_cc_common_link_on_binary_with_pdb",
+        target_under_test = ":bin_with_cc_common_link_with_pdb",
+        expect_pdb = select({
+            "@platforms//os:windows": True,
+            "//conditions:default": False,
+        }),
+    )
+
+    use_cc_common_link_test(
         name = "use_cc_common_link_on_test",
         target_under_test = ":test_with_cc_common_link",
     )
@@ -174,6 +204,7 @@ def cc_common_link_test_suite(name):
         name = name,
         tests = [
             "use_cc_common_link_on_binary",
+            "use_cc_common_link_on_binary_with_pdb",
             "use_cc_common_link_on_test",
             "use_cc_common_link_on_crate_test",
             "use_cc_common_link_on_cdylib",

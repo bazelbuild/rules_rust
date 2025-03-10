@@ -86,6 +86,6 @@ rust_library(
     }),
     version = "2.2.1",
     deps = [
-        "@rrwbd__rayon-1.7.0//:rayon",
+        "@rrwbd__rayon-1.10.0//:rayon",
     ],
 )

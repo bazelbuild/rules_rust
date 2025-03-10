@@ -93,6 +93,7 @@ def _annotation(
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
+        build_script_link_deps = None,
         build_script_proc_macro_deps = None,
         build_script_rundir = None,
         build_script_rustc_env = None,
@@ -135,6 +136,7 @@ def _annotation(
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
         build_script_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
+        build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rundir (str, optional): An override for the build script's rundir attribute.
@@ -196,6 +198,7 @@ def _annotation(
             build_script_data_glob = build_script_data_glob,
             build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
+            build_script_link_deps = build_script_link_deps,
             build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
             build_script_rundir = build_script_rundir,
             build_script_rustc_env = build_script_rustc_env,

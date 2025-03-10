@@ -18,13 +18,17 @@ mod output;
 mod rustc;
 mod util;
 
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::{copy, OpenOptions};
 use std::io;
 use std::process::{exit, Command, ExitStatus, Stdio};
 
+use tinyjson::JsonValue;
+
 use crate::options::options;
 use crate::output::{process_output, LineOutput};
+use crate::rustc::ErrorFormat;
 
 #[cfg(windows)]
 fn status_code(status: ExitStatus, was_killed: bool) -> i32 {
@@ -67,6 +71,48 @@ macro_rules! log {
             eprintln!($($arg)*);
         }
     };
+}
+
+fn json_warning(line: &str) -> JsonValue {
+    JsonValue::Object(HashMap::from([
+        (
+            "$message_type".to_string(),
+            JsonValue::String("diagnostic".to_string()),
+        ),
+        ("message".to_string(), JsonValue::String(line.to_string())),
+        ("code".to_string(), JsonValue::Null),
+        (
+            "level".to_string(),
+            JsonValue::String("warning".to_string()),
+        ),
+        ("spans".to_string(), JsonValue::Array(Vec::new())),
+        ("children".to_string(), JsonValue::Array(Vec::new())),
+        ("rendered".to_string(), JsonValue::String(line.to_string())),
+    ]))
+}
+
+fn process_line(
+    mut line: String,
+    quit_on_rmeta: bool,
+    format: ErrorFormat,
+    metadata_emitted: &mut bool,
+) -> Result<LineOutput, String> {
+    // LLVM can emit lines that look like the following, and these will be interspersed
+    // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
+    // like these (or to convert them to JSON), but for now we convert them to JSON
+    // ourselves.
+    if line.contains("is not a recognized feature for this target (ignoring feature)") {
+        if let Ok(json_str) = json_warning(&line).stringify() {
+            line = json_str;
+        } else {
+            return Ok(LineOutput::Skip);
+        }
+    }
+    if quit_on_rmeta {
+        rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
+    } else {
+        rustc::process_json(line, format)
+    }
 }
 
 fn main() -> Result<(), ProcessWrapperError> {
@@ -135,13 +181,7 @@ fn main() -> Result<(), ProcessWrapperError> {
             &mut child_stderr,
             stderr.as_mut(),
             output_file.as_mut(),
-            move |line| {
-                if quit_on_rmeta {
-                    rustc::stop_on_rmeta_completion(line, format, metadata_emitted)
-                } else {
-                    rustc::process_json(line, format)
-                }
-            },
+            move |line| process_line(line, quit_on_rmeta, format, metadata_emitted),
         );
         if me {
             // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
@@ -187,4 +227,142 @@ fn main() -> Result<(), ProcessWrapperError> {
     }
 
     exit(code)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn parse_json(json_str: &str) -> Result<JsonValue, String> {
+        json_str.parse::<JsonValue>().map_err(|e| e.to_string())
+    }
+
+    #[test]
+    fn test_process_line_diagnostic_json() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        let LineOutput::Message(msg) = process_line(
+            r#"
+                {
+                    "$message_type": "diagnostic",
+                    "rendered": "Diagnostic message"
+                }
+            "#
+            .to_string(),
+            false,
+            ErrorFormat::Json,
+            &mut metadata_emitted,
+        )?
+        else {
+            return Err("Expected a LineOutput::Message".to_string());
+        };
+        assert_eq!(
+            parse_json(&msg)?,
+            parse_json(
+                r#"
+                {
+                    "$message_type": "diagnostic",
+                    "rendered": "Diagnostic message"
+                }
+            "#
+            )?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_diagnostic_rendered() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        let LineOutput::Message(msg) = process_line(
+            r#"
+                {
+                    "$message_type": "diagnostic",
+                    "rendered": "Diagnostic message"
+                }
+            "#
+            .to_string(),
+            /*quit_on_rmeta=*/ false,
+            ErrorFormat::Rendered,
+            &mut metadata_emitted,
+        )?
+        else {
+            return Err("Expected a LineOutput::Message".to_string());
+        };
+        assert_eq!(msg, "Diagnostic message");
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_llvm_feature_warning() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        let LineOutput::Message(msg) = process_line(
+            "'+zaamo' is not a recognized feature for this target (ignoring feature)".to_string(),
+            /*quit_on_rmeta=*/ false,
+            ErrorFormat::Json,
+            &mut metadata_emitted,
+        )?
+        else {
+            return Err("Expected a LineOutput::Message".to_string());
+        };
+        assert_eq!(
+            parse_json(&msg)?,
+            parse_json(
+                r#"
+                {
+                    "$message_type": "diagnostic",
+                    "message": "'+zaamo' is not a recognized feature for this target (ignoring feature)",
+                    "code": null,
+                    "level": "warning",
+                    "spans": [],
+                    "children": [],
+                    "rendered": "'+zaamo' is not a recognized feature for this target (ignoring feature)"
+                }
+            "#
+            )?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_emit_link() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        assert!(matches!(
+            process_line(
+                r#"
+                {
+                    "$message_type": "artifact",
+                    "emit": "link"
+                }
+            "#
+                .to_string(),
+                /*quit_on_rmeta=*/ true,
+                ErrorFormat::Rendered,
+                &mut metadata_emitted,
+            )?,
+            LineOutput::Skip
+        ));
+        assert!(!metadata_emitted);
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_emit_metadata() -> Result<(), String> {
+        let mut metadata_emitted = false;
+        assert!(matches!(
+            process_line(
+                r#"
+                {
+                    "$message_type": "artifact",
+                    "emit": "metadata"
+                }
+            "#
+                .to_string(),
+                /*quit_on_rmeta=*/ true,
+                ErrorFormat::Rendered,
+                &mut metadata_emitted,
+            )?,
+            LineOutput::Terminate
+        ));
+        assert!(metadata_emitted);
+        Ok(())
+    }
 }
