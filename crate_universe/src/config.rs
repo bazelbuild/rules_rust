@@ -262,6 +262,10 @@ pub(crate) struct CrateAnnotations {
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
     pub(crate) compile_data_glob: Option<BTreeSet<String>>,
 
+    /// An optional glob pattern to set on the
+    /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) excludes attribute.
+    pub(crate) compile_data_glob_excludes: Option<BTreeSet<String>>,
+
     /// If true, disables pipelining for library targets generated for this crate.
     pub(crate) disable_pipelining: bool,
 
@@ -404,6 +408,7 @@ impl Add for CrateAnnotations {
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
             compile_data: select_merge(self.compile_data, rhs.compile_data),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
+            compile_data_glob_excludes: joined_extra_member!(self.compile_data_glob_excludes, rhs.compile_data_glob_excludes, BTreeSet::new, BTreeSet::extend),
             rustc_env: select_merge(self.rustc_env, rhs.rustc_env),
             rustc_env_files: select_merge(self.rustc_env_files, rhs.rustc_env_files),
             rustc_flags: select_merge(self.rustc_flags, rhs.rustc_flags),
@@ -463,6 +468,7 @@ pub(crate) struct AnnotationsProvidedByPackage {
     pub(crate) deps: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data_glob: Option<BTreeSet<String>>,
+    pub(crate) compile_data_glob_excludes: Option<BTreeSet<String>>,
     pub(crate) rustc_env: Option<Select<BTreeMap<String, String>>>,
     pub(crate) rustc_env_files: Option<Select<BTreeSet<String>>>,
     pub(crate) rustc_flags: Option<Select<Vec<String>>>,
@@ -486,6 +492,7 @@ impl CrateAnnotations {
             deps,
             compile_data,
             compile_data_glob,
+            compile_data_glob_excludes,
             rustc_env,
             rustc_env_files,
             rustc_flags,
@@ -517,6 +524,10 @@ impl CrateAnnotations {
         default(&mut self.deps, deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
+        default(
+            &mut self.compile_data_glob_excludes,
+            compile_data_glob_excludes,
+        );
         default(&mut self.rustc_env, rustc_env);
         default(&mut self.rustc_env_files, rustc_env_files);
         default(&mut self.rustc_flags, rustc_flags);

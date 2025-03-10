@@ -98,6 +98,9 @@ pub(crate) struct CommonAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) compile_data_glob: BTreeSet<String>,
 
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub(crate) compile_data_glob_excludes: BTreeSet<String>,
+
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) crate_features: Select<BTreeSet<String>>,
 
@@ -151,6 +154,7 @@ impl Default for CommonAttributes {
             compile_data: Default::default(),
             // Generated targets include all files in their package by default
             compile_data_glob: BTreeSet::from(["**".to_owned()]),
+            compile_data_glob_excludes: Default::default(),
             crate_features: Default::default(),
             data: Default::default(),
             data_glob: Default::default(),
@@ -181,6 +185,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) compile_data_glob: BTreeSet<String>,
+
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub(crate) compile_data_glob_excludes: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) data: Select<BTreeSet<Label>>,
@@ -258,6 +265,7 @@ impl Default for BuildScriptAttributes {
             // The build script itself also has access to all
             // source files by default.
             compile_data_glob: BTreeSet::from(["**".to_owned()]),
+            compile_data_glob_excludes: BTreeSet::from(["**/*.rs".to_owned()]),
             data: Default::default(),
             // Build scripts include all sources by default
             data_glob: BTreeSet::from(["**".to_owned()]),
@@ -576,6 +584,13 @@ impl CrateContext {
             // Compile data glob
             if let Some(extra) = &crate_extra.compile_data_glob {
                 self.common_attrs.compile_data_glob.extend(extra.clone());
+            }
+
+            // Compile data glob excludes
+            if let Some(extra) = &crate_extra.compile_data_glob_excludes {
+                self.common_attrs
+                    .compile_data_glob_excludes
+                    .extend(extra.clone());
             }
 
             // Crate features

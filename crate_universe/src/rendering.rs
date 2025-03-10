@@ -499,8 +499,6 @@ impl Renderer {
     ) -> Result<CargoBuildScript> {
         let attrs = krate.build_script_attrs.as_ref();
 
-        const COMPILE_DATA_GLOB_EXCLUDES: &[&str] = &["**/*.rs"];
-
         Ok(CargoBuildScript {
             // Because `cargo_build_script` does some invisible target name
             // mutating to determine the package and crate name for a build
@@ -528,10 +526,9 @@ impl Renderer {
                 attrs
                     .map(|attrs| attrs.compile_data_glob.clone())
                     .unwrap_or_default(),
-                COMPILE_DATA_GLOB_EXCLUDES
-                    .iter()
-                    .map(|&pattern| pattern.to_owned())
-                    .collect(),
+                attrs
+                    .map(|attrs| attrs.compile_data_glob_excludes.clone())
+                    .unwrap_or_default(),
                 attrs
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
@@ -544,6 +541,7 @@ impl Renderer {
                 attrs
                     .map(|attrs| attrs.data_glob.clone())
                     .unwrap_or_default(),
+                Default::default(),
                 attrs.map(|attrs| attrs.data.clone()).unwrap_or_default(),
             ),
             deps: SelectSet::new(
@@ -728,6 +726,7 @@ impl Renderer {
             compile_data: make_data(
                 platforms,
                 krate.common_attrs.compile_data_glob.clone(),
+                krate.common_attrs.compile_data_glob_excludes.clone(),
                 krate.common_attrs.compile_data.clone(),
             ),
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
@@ -735,6 +734,7 @@ impl Renderer {
             data: make_data(
                 platforms,
                 krate.common_attrs.data_glob.clone(),
+                Default::default(),
                 krate.common_attrs.data.clone(),
             ),
             edition: krate.common_attrs.edition.clone(),
@@ -984,9 +984,10 @@ fn make_data_with_exclude(
 fn make_data(
     platforms: &Platforms,
     glob: BTreeSet<String>,
+    excludes: BTreeSet<String>,
     select: Select<BTreeSet<Label>>,
 ) -> Data {
-    make_data_with_exclude(platforms, glob, BTreeSet::new(), select)
+    make_data_with_exclude(platforms, glob, excludes, select)
 }
 
 #[cfg(test)]
