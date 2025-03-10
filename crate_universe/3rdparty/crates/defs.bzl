@@ -16,6 +16,7 @@
 """
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
@@ -864,12 +865,11 @@ def crate_repositories():
     )
 
     maybe(
-        http_archive,
+        new_git_repository,
         name = "cui__crates-index-3.6.0",
-        sha256 = "b4460df75a81c9714b02c6ff4d1f2645e457d80eab69f528ce2cce980acf0b18",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/crates-index/3.6.0/download"],
-        strip_prefix = "crates-index-3.6.0",
+        commit = "ccaed89e15a2dfc469f06ee4ce858f5a65b66d66",
+        init_submodules = True,
+        remote = "https://github.com/frewsxcv/rust-crates-index.git",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.6.0.bazel"),
     )
 
@@ -1065,102 +1065,102 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__gix-0.69.1",
-        sha256 = "8d0eebdaecdcf405d5433a36f85e4f058cf4de48ee2604388be0dbccbaad353e",
+        name = "cui__gix-0.70.0",
+        sha256 = "736f14636705f3a56ea52b553e67282519418d9a35bb1e90b3a9637a00296b68",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix/0.69.1/download"],
-        strip_prefix = "gix-0.69.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-0.69.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix/0.70.0/download"],
+        strip_prefix = "gix-0.70.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-0.70.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-actor-0.33.1",
-        sha256 = "32b24171f514cef7bb4dfb72a0b06dacf609b33ba8ad2489d4c4559a03b7afb3",
+        name = "cui__gix-actor-0.33.2",
+        sha256 = "20018a1a6332e065f1fcc8305c1c932c6b8c9985edea2284b3c79dc6fa3ee4b2",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-actor/0.33.1/download"],
-        strip_prefix = "gix-actor-0.33.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-actor-0.33.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-actor/0.33.2/download"],
+        strip_prefix = "gix-actor-0.33.2",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-actor-0.33.2.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-attributes-0.23.1",
-        sha256 = "ddf9bf852194c0edfe699a2d36422d2c1f28f73b7c6d446c3f0ccd3ba232cadc",
+        name = "cui__gix-attributes-0.24.0",
+        sha256 = "f151000bf662ef5f641eca6102d942ee31ace80f271a3ef642e99776ce6ddb38",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-attributes/0.23.1/download"],
-        strip_prefix = "gix-attributes-0.23.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-attributes-0.23.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-attributes/0.24.0/download"],
+        strip_prefix = "gix-attributes-0.24.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-attributes-0.24.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-bitmap-0.2.13",
-        sha256 = "d48b897b4bbc881aea994b4a5bbb340a04979d7be9089791304e04a9fbc66b53",
+        name = "cui__gix-bitmap-0.2.14",
+        sha256 = "b1db9765c69502650da68f0804e3dc2b5f8ccc6a2d104ca6c85bc40700d37540",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-bitmap/0.2.13/download"],
-        strip_prefix = "gix-bitmap-0.2.13",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-bitmap-0.2.13.bazel"),
+        urls = ["https://static.crates.io/crates/gix-bitmap/0.2.14/download"],
+        strip_prefix = "gix-bitmap-0.2.14",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-bitmap-0.2.14.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-chunk-0.4.10",
-        sha256 = "c6ffbeb3a5c0b8b84c3fe4133a6f8c82fa962f4caefe8d0762eced025d3eb4f7",
+        name = "cui__gix-chunk-0.4.11",
+        sha256 = "0b1f1d8764958699dc764e3f727cef280ff4d1bd92c107bbf8acd85b30c1bd6f",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-chunk/0.4.10/download"],
-        strip_prefix = "gix-chunk-0.4.10",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-chunk-0.4.10.bazel"),
+        urls = ["https://static.crates.io/crates/gix-chunk/0.4.11/download"],
+        strip_prefix = "gix-chunk-0.4.11",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-chunk-0.4.11.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-command-0.4.0",
-        sha256 = "9405c0a56e17f8365a46870cd2c7db71323ecc8bda04b50cb746ea37bd091e90",
+        name = "cui__gix-command-0.4.1",
+        sha256 = "cb410b84d6575db45e62025a9118bdbf4d4b099ce7575a76161e898d9ca98df1",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-command/0.4.0/download"],
-        strip_prefix = "gix-command-0.4.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-command-0.4.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-command/0.4.1/download"],
+        strip_prefix = "gix-command-0.4.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-command-0.4.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-commitgraph-0.25.1",
-        sha256 = "a8da6591a7868fb2b6dabddea6b09988b0b05e0213f938dbaa11a03dd7a48d85",
+        name = "cui__gix-commitgraph-0.26.0",
+        sha256 = "e23a8ec2d8a16026a10dafdb6ed51bcfd08f5d97f20fa52e200bc50cb72e4877",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-commitgraph/0.25.1/download"],
-        strip_prefix = "gix-commitgraph-0.25.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-commitgraph-0.25.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-commitgraph/0.26.0/download"],
+        strip_prefix = "gix-commitgraph-0.26.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-commitgraph-0.26.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-config-0.42.0",
-        sha256 = "6649b406ca1f99cb148959cf00468b231f07950f8ec438cc0903cda563606f19",
+        name = "cui__gix-config-0.43.0",
+        sha256 = "377c1efd2014d5d469e0b3cd2952c8097bce9828f634e04d5665383249f1d9e9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-config/0.42.0/download"],
-        strip_prefix = "gix-config-0.42.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-config-0.42.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-config/0.43.0/download"],
+        strip_prefix = "gix-config-0.43.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-config-0.43.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-config-value-0.14.10",
-        sha256 = "49aaeef5d98390a3bcf9dbc6440b520b793d1bf3ed99317dc407b02be995b28e",
+        name = "cui__gix-config-value-0.14.11",
+        sha256 = "11365144ef93082f3403471dbaa94cfe4b5e72743bdb9560719a251d439f4cee",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-config-value/0.14.10/download"],
-        strip_prefix = "gix-config-value-0.14.10",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-config-value-0.14.10.bazel"),
+        urls = ["https://static.crates.io/crates/gix-config-value/0.14.11/download"],
+        strip_prefix = "gix-config-value-0.14.11",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-config-value-0.14.11.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-credentials-0.26.0",
-        sha256 = "82a50c56b785c29a151ab4ccf74a83fe4e21d2feda0d30549504b4baed353e0a",
+        name = "cui__gix-credentials-0.27.0",
+        sha256 = "cf950f9ee1690bb9c4388b5152baa8a9f41ad61e5cf1ba0ec8c207b08dab9e45",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-credentials/0.26.0/download"],
-        strip_prefix = "gix-credentials-0.26.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-credentials-0.26.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-credentials/0.27.0/download"],
+        strip_prefix = "gix-credentials-0.27.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-credentials-0.27.0.bazel"),
     )
 
     maybe(
@@ -1175,372 +1175,372 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cui__gix-diff-0.49.0",
-        sha256 = "a8e92566eccbca205a0a0f96ffb0327c061e85bc5c95abbcddfe177498aa04f6",
+        name = "cui__gix-diff-0.50.0",
+        sha256 = "62afb7f4ca0acdf4e9dad92065b2eb1bf2993bcc5014b57bc796e3a365b17c4d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-diff/0.49.0/download"],
-        strip_prefix = "gix-diff-0.49.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-diff-0.49.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-diff/0.50.0/download"],
+        strip_prefix = "gix-diff-0.50.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-diff-0.50.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-discover-0.37.0",
-        sha256 = "83bf6dfa4e266a4a9becb4d18fc801f92c3f7cc6c433dd86fdadbcf315ffb6ef",
+        name = "cui__gix-discover-0.38.0",
+        sha256 = "d0c2414bdf04064e0f5a5aa029dfda1e663cf9a6c4bfc8759f2d369299bb65d8",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-discover/0.37.0/download"],
-        strip_prefix = "gix-discover-0.37.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-discover-0.37.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-discover/0.38.0/download"],
+        strip_prefix = "gix-discover-0.38.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-discover-0.38.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-features-0.39.1",
-        sha256 = "7d85d673f2e022a340dba4713bed77ef2cf4cd737d2f3e0f159d45e0935fd81f",
+        name = "cui__gix-features-0.40.0",
+        sha256 = "8bfdd4838a8d42bd482c9f0cb526411d003ee94cc7c7b08afe5007329c71d554",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-features/0.39.1/download"],
-        strip_prefix = "gix-features-0.39.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-features-0.39.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-features/0.40.0/download"],
+        strip_prefix = "gix-features-0.40.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-features-0.40.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-filter-0.16.0",
-        sha256 = "3d0ecdee5667f840ba20c7fe56d63f8e1dc1e6b3bfd296151fe5ef07c874790a",
+        name = "cui__gix-filter-0.17.0",
+        sha256 = "bdcc36cd7dbc63ed0ec3558645886553d1afd3cd09daa5efb9cba9cceb942bbb",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-filter/0.16.0/download"],
-        strip_prefix = "gix-filter-0.16.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-filter-0.16.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-filter/0.17.0/download"],
+        strip_prefix = "gix-filter-0.17.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-filter-0.17.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-fs-0.12.1",
-        sha256 = "3b3d4fac505a621f97e5ce2c69fdc425742af00c0920363ca4074f0eb48b1db9",
+        name = "cui__gix-fs-0.13.0",
+        sha256 = "182e7fa7bfdf44ffb7cfe7451b373cdf1e00870ac9a488a49587a110c562063d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-fs/0.12.1/download"],
-        strip_prefix = "gix-fs-0.12.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-fs-0.12.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-fs/0.13.0/download"],
+        strip_prefix = "gix-fs-0.13.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-fs-0.13.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-glob-0.17.1",
-        sha256 = "aaf69a6bec0a3581567484bf99a4003afcaf6c469fd4214352517ea355cf3435",
+        name = "cui__gix-glob-0.18.0",
+        sha256 = "4e9c7249fa0a78f9b363aa58323db71e0a6161fd69860ed6f48dedf0ef3a314e",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-glob/0.17.1/download"],
-        strip_prefix = "gix-glob-0.17.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-glob-0.17.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-glob/0.18.0/download"],
+        strip_prefix = "gix-glob-0.18.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-glob-0.18.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-hash-0.15.1",
-        sha256 = "0b5eccc17194ed0e67d49285e4853307e4147e95407f91c1c3e4a13ba9f4e4ce",
+        name = "cui__gix-hash-0.16.0",
+        sha256 = "e81c5ec48649b1821b3ed066a44efb95f1a268b35c1d91295e61252539fbe9f8",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-hash/0.15.1/download"],
-        strip_prefix = "gix-hash-0.15.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-hash-0.15.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-hash/0.16.0/download"],
+        strip_prefix = "gix-hash-0.16.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-hash-0.16.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-hashtable-0.6.0",
-        sha256 = "0ef65b256631078ef733bc5530c4e6b1c2e7d5c2830b75d4e9034ab3997d18fe",
+        name = "cui__gix-hashtable-0.7.0",
+        sha256 = "189130bc372accd02e0520dc5ab1cef318dcc2bc829b76ab8d84bbe90ac212d1",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-hashtable/0.6.0/download"],
-        strip_prefix = "gix-hashtable-0.6.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-hashtable-0.6.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-hashtable/0.7.0/download"],
+        strip_prefix = "gix-hashtable-0.7.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-hashtable-0.7.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-ignore-0.12.1",
-        sha256 = "b6b1fb24d2a4af0aa7438e2771d60c14a80cf2c9bd55c29cf1712b841f05bb8a",
+        name = "cui__gix-ignore-0.13.0",
+        sha256 = "4f529dcb80bf9855c0a7c49f0ac588df6d6952d63a63fefc254b9c869d2cdf6f",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-ignore/0.12.1/download"],
-        strip_prefix = "gix-ignore-0.12.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-ignore-0.12.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-ignore/0.13.0/download"],
+        strip_prefix = "gix-ignore-0.13.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-ignore-0.13.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-index-0.37.0",
-        sha256 = "270645fd20556b64c8ffa1540d921b281e6994413a0ca068596f97e9367a257a",
+        name = "cui__gix-index-0.38.0",
+        sha256 = "acd12e3626879369310fffe2ac61acc828613ef656b50c4ea984dd59d7dc85d8",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-index/0.37.0/download"],
-        strip_prefix = "gix-index-0.37.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-index-0.37.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-index/0.38.0/download"],
+        strip_prefix = "gix-index-0.38.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-index-0.38.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-lock-15.0.1",
-        sha256 = "1cd3ab68a452db63d9f3ebdacb10f30dba1fa0d31ac64f4203d395ed1102d940",
+        name = "cui__gix-lock-16.0.0",
+        sha256 = "9739815270ff6940968441824d162df9433db19211ca9ba8c3fc1b50b849c642",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-lock/15.0.1/download"],
-        strip_prefix = "gix-lock-15.0.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-lock-15.0.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-lock/16.0.0/download"],
+        strip_prefix = "gix-lock-16.0.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-lock-16.0.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-negotiate-0.17.0",
-        sha256 = "d27f830a16405386e9c83b9d5be8261fe32bbd6b3caf15bd1b284c6b2b7ef1a8",
+        name = "cui__gix-negotiate-0.18.0",
+        sha256 = "a6a8af1ef7bbe303d30b55312b7f4d33e955de43a3642ae9b7347c623d80ef80",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-negotiate/0.17.0/download"],
-        strip_prefix = "gix-negotiate-0.17.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-negotiate-0.17.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-negotiate/0.18.0/download"],
+        strip_prefix = "gix-negotiate-0.18.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-negotiate-0.18.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-object-0.46.1",
-        sha256 = "e42d58010183ef033f31088479b4eb92b44fe341b35b62d39eb8b185573d77ea",
+        name = "cui__gix-object-0.47.0",
+        sha256 = "ddc4b3a0044244f0fe22347fb7a79cca165e37829d668b41b85ff46a43e5fd68",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-object/0.46.1/download"],
-        strip_prefix = "gix-object-0.46.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-object-0.46.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-object/0.47.0/download"],
+        strip_prefix = "gix-object-0.47.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-object-0.47.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-odb-0.66.0",
-        sha256 = "cb780eceb3372ee204469478de02eaa34f6ba98247df0186337e0333de97d0ae",
+        name = "cui__gix-odb-0.67.0",
+        sha256 = "3e93457df69cd09573608ce9fa4f443fbd84bc8d15d8d83adecd471058459c1b",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-odb/0.66.0/download"],
-        strip_prefix = "gix-odb-0.66.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-odb-0.66.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-odb/0.67.0/download"],
+        strip_prefix = "gix-odb-0.67.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-odb-0.67.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-pack-0.56.0",
-        sha256 = "4158928929be29cae7ab97afc8e820a932071a7f39d8ba388eed2380c12c566c",
+        name = "cui__gix-pack-0.57.0",
+        sha256 = "fc13a475b3db735617017fb35f816079bf503765312d4b1913b18cf96f3fa515",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-pack/0.56.0/download"],
-        strip_prefix = "gix-pack-0.56.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-pack-0.56.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-pack/0.57.0/download"],
+        strip_prefix = "gix-pack-0.57.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-pack-0.57.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-packetline-0.18.2",
-        sha256 = "911aeea8b2dabeed2f775af9906152a1f0109787074daf9e64224e3892dde453",
+        name = "cui__gix-packetline-0.18.3",
+        sha256 = "c7e5ae6bc3ac160a6bf44a55f5537813ca3ddb08549c0fd3e7ef699c73c439cd",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-packetline/0.18.2/download"],
-        strip_prefix = "gix-packetline-0.18.2",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-packetline-0.18.2.bazel"),
+        urls = ["https://static.crates.io/crates/gix-packetline/0.18.3/download"],
+        strip_prefix = "gix-packetline-0.18.3",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-packetline-0.18.3.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-packetline-blocking-0.18.1",
-        sha256 = "ce9004ce1bc00fd538b11c1ec8141a1558fb3af3d2b7ac1ac5c41881f9e42d2a",
+        name = "cui__gix-packetline-blocking-0.18.2",
+        sha256 = "c1cbf8767c6abd5a6779f586702b5bcd8702380f4208219449cf1c9d0cd1e17c",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-packetline-blocking/0.18.1/download"],
-        strip_prefix = "gix-packetline-blocking-0.18.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-packetline-blocking-0.18.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-packetline-blocking/0.18.2/download"],
+        strip_prefix = "gix-packetline-blocking-0.18.2",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-packetline-blocking-0.18.2.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-path-0.10.13",
-        sha256 = "afc292ef1a51e340aeb0e720800338c805975724c1dfbd243185452efd8645b7",
+        name = "cui__gix-path-0.10.14",
+        sha256 = "c40f12bb65a8299be0cfb90fe718e3be236b7a94b434877012980863a883a99f",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-path/0.10.13/download"],
-        strip_prefix = "gix-path-0.10.13",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-path-0.10.13.bazel"),
+        urls = ["https://static.crates.io/crates/gix-path/0.10.14/download"],
+        strip_prefix = "gix-path-0.10.14",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-path-0.10.14.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-pathspec-0.8.1",
-        sha256 = "4c472dfbe4a4e96fcf7efddcd4771c9037bb4fdea2faaabf2f4888210c75b81e",
+        name = "cui__gix-pathspec-0.9.0",
+        sha256 = "6430d3a686c08e9d59019806faa78c17315fe22ae73151a452195857ca02f86c",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-pathspec/0.8.1/download"],
-        strip_prefix = "gix-pathspec-0.8.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-pathspec-0.8.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-pathspec/0.9.0/download"],
+        strip_prefix = "gix-pathspec-0.9.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-pathspec-0.9.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-prompt-0.9.0",
-        sha256 = "82433a19aa44688e3bde05c692870eda50b5db053df53ed5ae6d8ea594a6babd",
+        name = "cui__gix-prompt-0.9.1",
+        sha256 = "79f2185958e1512b989a007509df8d61dca014aa759a22bee80cfa6c594c3b6d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-prompt/0.9.0/download"],
-        strip_prefix = "gix-prompt-0.9.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-prompt-0.9.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-prompt/0.9.1/download"],
+        strip_prefix = "gix-prompt-0.9.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-prompt-0.9.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-protocol-0.47.0",
-        sha256 = "c84642e8b6fed7035ce9cc449593019c55b0ec1af7a5dce1ab8a0636eaaeb067",
+        name = "cui__gix-protocol-0.48.0",
+        sha256 = "6c61bd61afc6b67d213241e2100394c164be421e3f7228d3521b04f48ca5ba90",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-protocol/0.47.0/download"],
-        strip_prefix = "gix-protocol-0.47.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-protocol-0.47.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-protocol/0.48.0/download"],
+        strip_prefix = "gix-protocol-0.48.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-protocol-0.48.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-quote-0.4.14",
-        sha256 = "64a1e282216ec2ab2816cd57e6ed88f8009e634aec47562883c05ac8a7009a63",
+        name = "cui__gix-quote-0.4.15",
+        sha256 = "e49357fccdb0c85c0d3a3292a9f6db32d9b3535959b5471bb9624908f4a066c6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-quote/0.4.14/download"],
-        strip_prefix = "gix-quote-0.4.14",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-quote-0.4.14.bazel"),
+        urls = ["https://static.crates.io/crates/gix-quote/0.4.15/download"],
+        strip_prefix = "gix-quote-0.4.15",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-quote-0.4.15.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-ref-0.49.1",
-        sha256 = "a91b61776c839d0f1b7114901179afb0947aa7f4d30793ca1c56d335dfef485f",
+        name = "cui__gix-ref-0.50.0",
+        sha256 = "47adf4c5f933429f8554e95d0d92eee583cfe4b95d2bf665cd6fd4a1531ee20c",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-ref/0.49.1/download"],
-        strip_prefix = "gix-ref-0.49.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-ref-0.49.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-ref/0.50.0/download"],
+        strip_prefix = "gix-ref-0.50.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-ref-0.50.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-refspec-0.27.0",
-        sha256 = "00c056bb747868c7eb0aeb352c9f9181ab8ca3d0a2550f16470803500c6c413d",
+        name = "cui__gix-refspec-0.28.0",
+        sha256 = "59650228d8f612f68e7f7a25f517fcf386c5d0d39826085492e94766858b0a90",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-refspec/0.27.0/download"],
-        strip_prefix = "gix-refspec-0.27.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-refspec-0.27.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-refspec/0.28.0/download"],
+        strip_prefix = "gix-refspec-0.28.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-refspec-0.28.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-revision-0.31.1",
-        sha256 = "61e1ddc474405a68d2ce8485705dd72fe6ce959f2f5fe718601ead5da2c8f9e7",
+        name = "cui__gix-revision-0.32.0",
+        sha256 = "3fe28bbccca55da6d66e6c6efc6bb4003c29d407afd8178380293729733e6b53",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-revision/0.31.1/download"],
-        strip_prefix = "gix-revision-0.31.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-revision-0.31.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-revision/0.32.0/download"],
+        strip_prefix = "gix-revision-0.32.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-revision-0.32.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-revwalk-0.17.0",
-        sha256 = "510026fc32f456f8f067d8f37c34088b97a36b2229d88a6a5023ef179fcb109d",
+        name = "cui__gix-revwalk-0.18.0",
+        sha256 = "d4ecb80c235b1e9ef2b99b23a81ea50dd569a88a9eb767179793269e0e616247",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-revwalk/0.17.0/download"],
-        strip_prefix = "gix-revwalk-0.17.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-revwalk-0.17.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-revwalk/0.18.0/download"],
+        strip_prefix = "gix-revwalk-0.18.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-revwalk-0.18.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-sec-0.10.10",
-        sha256 = "a8b876ef997a955397809a2ec398d6a45b7a55b4918f2446344330f778d14fd6",
+        name = "cui__gix-sec-0.10.11",
+        sha256 = "d84dae13271f4313f8d60a166bf27e54c968c7c33e2ffd31c48cafe5da649875",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-sec/0.10.10/download"],
-        strip_prefix = "gix-sec-0.10.10",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-sec-0.10.10.bazel"),
+        urls = ["https://static.crates.io/crates/gix-sec/0.10.11/download"],
+        strip_prefix = "gix-sec-0.10.11",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-sec-0.10.11.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-shallow-0.1.0",
-        sha256 = "88d2673242e87492cb6ff671f0c01f689061ca306c4020f137197f3abc84ce01",
+        name = "cui__gix-shallow-0.2.0",
+        sha256 = "ab72543011e303e52733c85bef784603ef39632ddf47f69723def52825e35066",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-shallow/0.1.0/download"],
-        strip_prefix = "gix-shallow-0.1.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-shallow-0.1.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-shallow/0.2.0/download"],
+        strip_prefix = "gix-shallow-0.2.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-shallow-0.2.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-submodule-0.16.0",
-        sha256 = "a2455f8c0fcb6ebe2a6e83c8f522d30615d763eb2ef7a23c7d929f9476e89f5c",
+        name = "cui__gix-submodule-0.17.0",
+        sha256 = "74972fe8d46ac8a09490ae1e843b4caf221c5b157c5ac17057e8e1c38417a3ac",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-submodule/0.16.0/download"],
-        strip_prefix = "gix-submodule-0.16.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-submodule-0.16.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-submodule/0.17.0/download"],
+        strip_prefix = "gix-submodule-0.17.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-submodule-0.17.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-tempfile-15.0.0",
-        sha256 = "2feb86ef094cc77a4a9a5afbfe5de626897351bbbd0de3cb9314baf3049adb82",
+        name = "cui__gix-tempfile-16.0.0",
+        sha256 = "2558f423945ef24a8328c55d1fd6db06b8376b0e7013b1bb476cc4ffdf678501",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-tempfile/15.0.0/download"],
-        strip_prefix = "gix-tempfile-15.0.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-tempfile-15.0.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-tempfile/16.0.0/download"],
+        strip_prefix = "gix-tempfile-16.0.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-tempfile-16.0.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-trace-0.1.11",
-        sha256 = "04bdde120c29f1fc23a24d3e115aeeea3d60d8e65bab92cc5f9d90d9302eb952",
+        name = "cui__gix-trace-0.1.12",
+        sha256 = "7c396a2036920c69695f760a65e7f2677267ccf483f25046977d87e4cb2665f7",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-trace/0.1.11/download"],
-        strip_prefix = "gix-trace-0.1.11",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-trace-0.1.11.bazel"),
+        urls = ["https://static.crates.io/crates/gix-trace/0.1.12/download"],
+        strip_prefix = "gix-trace-0.1.12",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-trace-0.1.12.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-transport-0.44.0",
-        sha256 = "dd04d91e507a8713cfa2318d5a85d75b36e53a40379cc7eb7634ce400ecacbaf",
+        name = "cui__gix-transport-0.45.0",
+        sha256 = "11187418489477b1b5b862ae1aedbbac77e582f2c4b0ef54280f20cfe5b964d9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-transport/0.44.0/download"],
-        strip_prefix = "gix-transport-0.44.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-transport-0.44.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-transport/0.45.0/download"],
+        strip_prefix = "gix-transport-0.45.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-transport-0.45.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-traverse-0.43.1",
-        sha256 = "6ed47d648619e23e93f971d2bba0d10c1100e54ef95d2981d609907a8cabac89",
+        name = "cui__gix-traverse-0.44.0",
+        sha256 = "2bec70e53896586ef32a3efa7e4427b67308531ed186bb6120fb3eca0f0d61b4",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-traverse/0.43.1/download"],
-        strip_prefix = "gix-traverse-0.43.1",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-traverse-0.43.1.bazel"),
+        urls = ["https://static.crates.io/crates/gix-traverse/0.44.0/download"],
+        strip_prefix = "gix-traverse-0.44.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-traverse-0.44.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-url-0.28.2",
-        sha256 = "d096fb733ba6bd3f5403dba8bd72bdd8809fe2b347b57844040b8f49c93492d9",
+        name = "cui__gix-url-0.29.0",
+        sha256 = "29218c768b53dd8f116045d87fec05b294c731a4b2bdd257eeca2084cc150b13",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-url/0.28.2/download"],
-        strip_prefix = "gix-url-0.28.2",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-url-0.28.2.bazel"),
+        urls = ["https://static.crates.io/crates/gix-url/0.29.0/download"],
+        strip_prefix = "gix-url-0.29.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-url-0.29.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-utils-0.1.13",
-        sha256 = "ba427e3e9599508ed98a6ddf8ed05493db114564e338e41f6a996d2e4790335f",
+        name = "cui__gix-utils-0.1.14",
+        sha256 = "ff08f24e03ac8916c478c8419d7d3c33393da9bb41fa4c24455d5406aeefd35f",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-utils/0.1.13/download"],
-        strip_prefix = "gix-utils-0.1.13",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-utils-0.1.13.bazel"),
+        urls = ["https://static.crates.io/crates/gix-utils/0.1.14/download"],
+        strip_prefix = "gix-utils-0.1.14",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-utils-0.1.14.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-validate-0.9.2",
-        sha256 = "cd520d09f9f585b34b32aba1d0b36ada89ab7fefb54a8ca3fe37fc482a750937",
+        name = "cui__gix-validate-0.9.3",
+        sha256 = "9eaa01c3337d885617c0a42e92823922a2aea71f4caeace6fe87002bdcadbd90",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-validate/0.9.2/download"],
-        strip_prefix = "gix-validate-0.9.2",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-validate-0.9.2.bazel"),
+        urls = ["https://static.crates.io/crates/gix-validate/0.9.3/download"],
+        strip_prefix = "gix-validate-0.9.3",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-validate-0.9.3.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cui__gix-worktree-0.38.0",
-        sha256 = "756dbbe15188fa22540d5eab941f8f9cf511a5364d5aec34c88083c09f4bea13",
+        name = "cui__gix-worktree-0.39.0",
+        sha256 = "6673512f7eaa57a6876adceca6978a501d6c6569a4f177767dc405f8b9778958",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/gix-worktree/0.38.0/download"],
-        strip_prefix = "gix-worktree-0.38.0",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-worktree-0.38.0.bazel"),
+        urls = ["https://static.crates.io/crates/gix-worktree/0.39.0/download"],
+        strip_prefix = "gix-worktree-0.39.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.gix-worktree-0.39.0.bazel"),
     )
 
     maybe(

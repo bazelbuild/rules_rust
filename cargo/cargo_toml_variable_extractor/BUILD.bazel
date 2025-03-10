@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "cargo_toml_variable_extractor",
+    srcs = ["main.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:cargo-util-schemas",
+        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:pathdiff",
+        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:semver",
+        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:toml",
+    ],
+)

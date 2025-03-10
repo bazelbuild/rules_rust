@@ -139,7 +139,7 @@ alias(
 )
 """
 
-def _local_firefox_repository_impl(repository_ctx):
+def _firefox_local_repository_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
     ))
@@ -168,7 +168,7 @@ def _local_firefox_repository_impl(repository_ctx):
 
     repository_ctx.file("BUILD.bazel", _FIREFOX_BUILD_CONTENT_WINDOWS if is_windows else _FIREFOX_BUILD_CONTENT_UNIX)
 
-local_firefox_repository = repository_rule(
+firefox_local_repository = repository_rule(
     doc = """\
 A repository rule for wrapping the path to a host installed firefox binary
 
@@ -177,7 +177,7 @@ Note that firefox binaries can be found here: https://ftp.mozilla.org/pub/firefo
 However, for platforms like MacOS and Windows, the storage formats are not something that can be extracted
 in a repository rule.
 """,
-    implementation = _local_firefox_repository_impl,
+    implementation = _firefox_local_repository_impl,
     environ = ["FIREFOX_BINARY"],
 )
 
@@ -226,10 +226,41 @@ def firefox_deps():
         build_file = Label("//private/webdrivers:BUILD.geckodriver.bazel"),
     )
 
+    firefox_version = "136.0"
+
+    for platform, integrity in {
+        "linux-aarch64": "sha256-vveh8MLGr9pl8cHtvj4T/dk1wzaxYkMMfTUTkidAgAo=",
+        "linux-x86_64": "sha256-UiL1HKrPzK8PDPeVEX8K03Qi/p1BPvGPLBceFiK5RVo=",
+    }.items():
+        archive = "tar.xz"
+        tool = "firefox"
+        name = "firefox_{}".format(platform.replace("-", "_"))
+        direct_deps.append(struct(repo = name))
+        maybe(
+            webdriver_repository,
+            name = name,
+            original_name = name,
+            urls = ["https://ftp.mozilla.org/pub/firefox/releases/{version}/{platform}/en-US/firefox-{version}.{archive}".format(
+                version = firefox_version,
+                platform = platform,
+                archive = archive,
+            )],
+            strip_prefix = "firefox",
+            integrity = integrity,
+            tool = tool,
+        )
+
+    direct_deps.append(struct(repo = "firefox_local"))
+    maybe(
+        firefox_local_repository,
+        name = "firefox_local",
+    )
+
     direct_deps.append(struct(repo = "firefox"))
     maybe(
-        local_firefox_repository,
+        build_file_repository,
         name = "firefox",
+        build_file = Label("//private/webdrivers:BUILD.firefox.bazel"),
     )
 
     return direct_deps

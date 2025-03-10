@@ -1,5 +1,4 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load(":defs.bzl", "rust_wasm_bindgen_toolchain")
 
 exports_files([
@@ -10,32 +9,6 @@ exports_files([
 
 toolchain_type(
     name = "toolchain_type",
-    visibility = ["//visibility:public"],
-)
-
-string_flag(
-    name = "test_browser",
-    build_setting_default = "chrome",
-    values = [
-        "chrome",
-        "firefox",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "test_browser_chrome",
-    flag_values = {
-        ":test_browser": "chrome",
-    },
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "test_browser_firefox",
-    flag_values = {
-        ":test_browser": "firefox",
-    },
     visibility = ["//visibility:public"],
 )
 
@@ -52,24 +25,24 @@ bzl_library(
 rust_wasm_bindgen_toolchain(
     name = "default_wasm_bindgen_toolchain_impl",
     browser = select({
-        ":test_browser_chrome": "@chrome",
-        ":test_browser_firefox": "@firefox",
+        "//settings:test_browser_chrome": "@chrome",
+        "//settings:test_browser_firefox": "@firefox",
     }),
     browser_type = select({
-        ":test_browser_chrome": "chrome",
-        ":test_browser_firefox": "firefox",
+        "//settings:test_browser_chrome": "chrome",
+        "//settings:test_browser_firefox": "firefox",
     }),
     visibility = ["//visibility:public"],
     wasm_bindgen_cli = "//3rdparty:wasm_bindgen_cli",
     wasm_bindgen_test = "//3rdparty:wasm_bindgen_test",
     wasm_bindgen_test_runner = "//3rdparty:wasm_bindgen_test_runner",
     webdriver = select({
-        ":test_browser_chrome": "@chromedriver",
-        ":test_browser_firefox": "@geckodriver",
+        "//settings:test_browser_chrome": "@chromedriver",
+        "//settings:test_browser_firefox": "@geckodriver",
     }),
     webdriver_args = select({
-        ":test_browser_chrome": ["--verbose"],
-        ":test_browser_firefox": [],
+        "//settings:test_browser_chrome": ["--verbose"],
+        "//settings:test_browser_firefox": [],
     }),
     webdriver_json = "webdriver.json",
 )

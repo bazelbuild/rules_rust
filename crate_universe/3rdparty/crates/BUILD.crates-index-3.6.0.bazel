@@ -87,7 +87,7 @@ rust_library(
     }),
     version = "3.6.0",
     deps = [
-        "@cui__gix-0.69.1//:gix",
+        "@cui__gix-0.70.0//:gix",
         "@cui__hex-0.4.3//:hex",
         "@cui__home-0.5.5//:home",
         "@cui__memchr-2.6.4//:memchr",
