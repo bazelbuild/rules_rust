@@ -9,10 +9,7 @@ alias(
 
 alias(
     name = "chrome_headless_shell_linux",
-    actual = select({
-        "@platforms//cpu:aarch64": "@chrome_headless_shell_linux_aarch64",
-        "//conditions:default": "@chrome_headless_shell_linux64",
-    }),
+    actual = "@chrome_headless_shell_linux64",
     target_compatible_with = ["@platforms//os:linux"],
 )
 
@@ -28,7 +25,7 @@ alias(
 alias(
     name = "chrome_headless_shell",
     actual = select({
-        "@platforms//os:linux": "@chrome_headless_shell_linux64",
+        "@platforms//os:linux": ":chrome_headless_shell_linux",
         "@platforms//os:macos": ":chrome_headless_shell_macos",
         "@platforms//os:windows": ":chrome_headless_shell_windows",
     }),

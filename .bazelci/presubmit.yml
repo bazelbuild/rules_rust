@@ -1067,14 +1067,13 @@ tasks:
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
     shell_commands:
-      - "sudo apt -y update && sudo apt -y install libxcb1 libatk1.0-0 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libxkbcommon-x11-0 libcairo2"
+      - "bash ./test/bazelci_linux_setup.sh"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    # TODO: Chromedriver cannot launch chrome on linux
-    # test_targets:
-    #   - "//..."
+    test_targets:
+      - "//..."
   extensions_wasm_bindgen_linux_rbe:
     platform: rbe_ubuntu2004
     name: Extensions wasm-bindgen
@@ -1086,13 +1085,9 @@ tasks:
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    # TODO: Chromedriver cannot launch chrome on linux
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
     # test_targets:
-    #   - "--"
     #   - "//..."
-    #   # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-    #   - "-//rules_js/test:hello_world_wasm_lib_test"
-    #   - "-//rules_js/test:hello_world_wasm_direct_test"
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
