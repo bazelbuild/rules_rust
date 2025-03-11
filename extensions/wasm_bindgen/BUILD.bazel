@@ -27,10 +27,12 @@ rust_wasm_bindgen_toolchain(
     browser = select({
         "//settings:test_browser_chrome": "@chrome",
         "//settings:test_browser_firefox": "@firefox",
+        "//settings:test_browser_safari": None,
     }),
     browser_type = select({
         "//settings:test_browser_chrome": "chrome",
         "//settings:test_browser_firefox": "firefox",
+        "//settings:test_browser_safari": "safari",
     }),
     visibility = ["//visibility:public"],
     wasm_bindgen_cli = "//3rdparty:wasm_bindgen_cli",
@@ -39,10 +41,12 @@ rust_wasm_bindgen_toolchain(
     webdriver = select({
         "//settings:test_browser_chrome": "@chromedriver",
         "//settings:test_browser_firefox": "@geckodriver",
+        "//settings:test_browser_safari": "@safaridriver",
     }),
     webdriver_args = select({
         "//settings:test_browser_chrome": ["--verbose"],
         "//settings:test_browser_firefox": [],
+        "//settings:test_browser_safari": [],
     }),
     webdriver_json = "webdriver.json",
 )

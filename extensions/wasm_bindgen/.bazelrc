@@ -8,6 +8,9 @@
 # TODO: https://github.com/bazelbuild/rules_rust/issues/3319
 common --deleted_packages=rules_js,rules_js/test
 
+# An alias for the test browser setting.
+common --flag_alias=test_browser=//settings:test_browser
+
 ###############################################################################
 
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
@@ -29,14 +32,8 @@ common --experimental_cc_shared_library
 ## Unique configuration groups
 ###############################################################################
 
-# Explicitly use firefox for browser tests.
-build:firefox --//settings:test_browser=firefox
-
-# Explicitly use chrome for browser tests
-build:chrome --//settings:test_browser=chrome
-
 # Default linux to run firefox
-build:linux --config=firefox
+build:linux --test_browser=firefox
 
 # Enable use of the nightly toolchains.
 build:nightly --@rules_rust//rust/toolchain/channel=nightly

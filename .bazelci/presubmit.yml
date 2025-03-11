@@ -1080,7 +1080,7 @@ tasks:
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
     shell_commands:
-      - "bash ./test/bazelci_linux_setup.sh"
+      - "bash ./test/bazelci_unix_setup.sh"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
@@ -1105,6 +1105,8 @@ tasks:
     platform: macos_arm64
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - "bash ./test/bazelci_unix_setup.sh"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:

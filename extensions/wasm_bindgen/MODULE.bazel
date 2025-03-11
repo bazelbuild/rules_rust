@@ -66,6 +66,7 @@ use_repo(
     "rrwbd__wasmparser-0.214.0",
     "rrwbd__wasmprinter-0.214.0",
     "rules_rust_wasm_bindgen_cli",
+    "safaridriver",
 )
 
 register_toolchains(

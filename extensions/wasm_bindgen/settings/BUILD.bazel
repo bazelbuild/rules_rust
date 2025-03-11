@@ -6,6 +6,7 @@ string_flag(
     values = [
         "chrome",
         "firefox",
+        "safari",
     ],
     visibility = ["//visibility:public"],
 )
@@ -22,6 +23,14 @@ config_setting(
     name = "test_browser_firefox",
     flag_values = {
         ":test_browser": "firefox",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_safari",
+    flag_values = {
+        ":test_browser": "safari",
     },
     visibility = ["//visibility:public"],
 )

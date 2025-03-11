@@ -282,6 +282,7 @@ For additional information, see the [Bazel toolchains documentation][toolchains]
             values = [
                 "firefox",
                 "chrome",
+                "safari",
             ],
         ),
         "wasm_bindgen_cli": attr.label(

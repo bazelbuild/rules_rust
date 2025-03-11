@@ -10,11 +10,27 @@ use runfiles::{rlocation, Runfiles};
 
 fn write_webdriver_for_browser(
     original: &Path,
-    section: &str,
+    section: Option<&str>,
     args: &Vec<String>,
     browser: &Option<PathBuf>,
     output: &Path,
 ) {
+    // If no section is provided, simply copy the file and early return.
+    let section = match section {
+        Some(s) => s,
+        None => {
+            fs::copy(original, output).unwrap_or_else(|e| {
+                panic!(
+                    "Failed to copy webdriver config: {} -> {}\n{:?}",
+                    original.display(),
+                    output.display(),
+                    e
+                );
+            });
+            return;
+        }
+    };
+
     let content = fs::read_to_string(original).unwrap_or_else(|e| {
         panic!(
             "Failed to read webdriver.json at: {}\n{:?}",
@@ -135,7 +151,7 @@ fn main() {
 
             write_webdriver_for_browser(
                 &webdriver_json,
-                "goog:chromeOptions",
+                Some("goog:chromeOptions"),
                 &vec![format!("user-data-dir={}", user_data_dir.display())],
                 &browser,
                 &updated_webdriver_json,
@@ -151,7 +167,7 @@ fn main() {
 
             write_webdriver_for_browser(
                 &webdriver_json,
-                "moz:firefoxOptions",
+                Some("moz:firefoxOptions"),
                 &Vec::new(),
                 &browser,
                 &updated_webdriver_json,
@@ -161,12 +177,55 @@ fn main() {
             // and creating an additional one would result in errors.
             env.insert("MOZ_DISABLE_CONTENT_SANDBOX".to_string(), "1".to_string());
 
-            env.insert("GECKODRIVER_ARGS".to_string(), webdriver_args);
+            let mut args = Vec::new();
+
+            // Define a clean profile root that can be checked at the end of tests.
+            let profile_root = undeclared_test_outputs.join("profile_root");
+            fs::create_dir_all(&profile_root).unwrap_or_else(|e| {
+                panic!(
+                    "Failed to create directory: {}\n{:?}",
+                    profile_root.display(),
+                    e
+                )
+            });
+
+            // geckodriver directly accepts the profile root arg so it's tracked here
+            // as there's no way to write this info in a usable way to the `webdriver.json`.
+            args.push(format!("--profile-root={}", profile_root.display()));
+
+            // geckodriver explicitly accepts a browser flag so we pass that in addition
+            // to setting it in the webdriver.json config.
+            if let Some(browser) = browser {
+                args.push(format!("--binary={}", browser.display()));
+            }
+
+            // Ensure logs are always complete.
+            args.push("--log-no-truncate".to_string());
+
+            // Some arguments must be passed to geckodriver directly to ensure it's
+            // launched in an expected manner
+            env.insert(
+                "GECKODRIVER_ARGS".to_string(),
+                args.join(" ").trim().to_string(),
+            );
+        }
+        "safari" => {
+            write_webdriver_for_browser(
+                &webdriver_json,
+                None,
+                &Vec::new(),
+                &browser,
+                &updated_webdriver_json,
+            );
+
+            env.insert("SAFARIDRIVER_ARGS".to_string(), webdriver_args);
         }
         _ => {
             panic!("Unexpected browser type: {}", browser_type)
         }
     }
+
+    env.insert("RUST_LOG".to_string(), "debug".to_string());
 
     // Run the test
     let mut command = Command::new(test_runner);
