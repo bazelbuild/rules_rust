@@ -1602,6 +1602,7 @@ mod test {
             "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
+                "generate_cargo_toml_env_vars": true,
                 "repository_name": "multi_cfg_dep",
                 "regen_command": "bazel test //crate_universe:unit_test",
             },
