@@ -14,6 +14,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 2. [Dependencies](#dependencies)
     * [Cargo Workspace](#cargo-workspaces)
     * [Direct Packages](#direct-dependencies)
+    * [Binary Dependencies](#binary-dependencies)
     * [Vendored Dependencies](#vendored-dependencies)
 3. [Crate reference](#crate)
    * [from_cargo](#from_cargo)
@@ -25,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.49.3")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -45,7 +46,8 @@ There are three different ways to declare dependencies in your MODULE.
 
 1) Cargo workspace
 2) Direct Dependencies
-3) Vendored Dependencies
+3) Binary Dependencies
+4) Vendored Dependencies
 
 ### Cargo Workspaces
 
@@ -63,6 +65,12 @@ crate.from_cargo(
 )
 use_repo(crate, "crates")
 ```
+
+#### Note if using Private Crate Registries
+
+If you are using from_cargo and are pulling dependencies from a private crate registry such as Artifactory,
+make sure you set the `CARGO_BAZEL_ISOLATED=false bazel build //...` environmental.  If not `crates_universe`
+will not be able to pull from your private registry.
 
 The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
 Notably, the all_crate_deps and aliases macros (
@@ -136,7 +144,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a “Cargo free” setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -175,6 +183,45 @@ rust_binary(
 Notice, direct dependencies do not need repining.
 Only a cargo workspace needs updating whenever the underlying Cargo.toml file changed.
 
+### Binary Dependencies
+
+With cargo you `can install` binary dependencies (bindeps) as well with `cargo install` command.
+
+We don't have such easy facilities available in bazel besides specifying it as a dependency.
+To mimic cargo's bindeps feature we use the unstable feature called [artifact-dependencies](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html?highlight=feature#artifact-dependencies)
+which integrates well with bazel concepts.
+
+You could use the syntax specified in the above document to place it in `Cargo.toml`. For that you can consult the following [example](https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/MODULE.bazel#L279-L291).
+
+This method has the following consequences:
+* if you use shared dependency tree with your project these binary dependencies will interfere with yours (may conflict)
+* you have to use  nightly `host_tools_repo` to generate dependencies because
+
+Alternatively you can specify this in a separate `repo` with `cargo.from_specs` syntax:
+
+```python
+bindeps = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+
+bindeps.spec(package = "cargo-machete", version = "=0.7.0", artifact = "bin")
+bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
+
+bindeps.from_specs(
+  name = "bindeps",
+  host_tools_repo = "rust_host_tools_nightly",
+)
+
+use_repo(bindeps, "bindeps")
+```
+
+You can run the specified binary dependency with the following command or create additional more complex rules on top of it.
+
+```bash
+bazel run @bindeps//:cargo-machete__cargo-machete
+```
+
+Notice, direct dependencies do not need repining.
+Only a cargo workspace needs updating whenever the underlying Cargo.toml file changed.
+
 ### Vendored Dependencies
 
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
@@ -196,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.49.3")
+bazel_dep(name = "rules_rust", version = "0.58.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -332,6 +379,7 @@ load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
 )
+load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
     "//crate_universe/private:crates_vendor.bzl",
     "CRATES_VENDOR_ATTRS",
@@ -588,7 +636,8 @@ def _generate_hub_and_spokes(
             cargo_lockfile = cargo_lockfile,
             splicing_manifest = splicing_manifest,
             config_path = config_file,
-            output_dir = module_ctx.path("{}/{}".format(tag_path, "splicing-output")),
+            output_dir = tag_path.get_child("splicing-output"),
+            debug_workspace_dir = tag_path.get_child("splicing-workspace"),
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
@@ -597,7 +646,7 @@ def _generate_hub_and_spokes(
 
         # Create a fallback lockfile to be parsed downstream.
         if lockfile == None:
-            lockfile = module_ctx.path("cargo-bazel-lock.json")
+            lockfile = tag_path.get_child("cargo-bazel-lock.json")
             module_ctx.file(lockfile, "")
 
         kwargs.update({
@@ -607,8 +656,8 @@ def _generate_hub_and_spokes(
     # The workspace root when one is explicitly provided.
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 
-    paths_to_track_file = module_ctx.path("paths_to_track.json")
-    warnings_output_file = module_ctx.path("warnings_output.json")
+    paths_to_track_file = tag_path.get_child("paths_to_track.json")
+    warnings_output_file = tag_path.get_child("warnings_output.json")
 
     # Run the generator
     module_ctx.report_progress("Generating crate BUILD files for `{}`".format(cfg.name))
@@ -664,9 +713,9 @@ def _generate_hub_and_spokes(
             version = version.replace("+", "-"),
         )
 
-        build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
         if "Http" in repo:
             # Replicates functionality in repo_http.j2.
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Http"]
             http_archive(
                 name = crate_repo_name,
@@ -682,6 +731,7 @@ def _generate_hub_and_spokes(
             )
         elif "Git" in repo:
             # Replicates functionality in repo_git.j2
+            build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Git"]
             kwargs = {}
             for k, v in repo["commitish"].items():
@@ -802,7 +852,7 @@ def _crate_impl(module_ctx):
 
     for mod in module_ctx.modules:
         if not mod.tags.from_cargo and not mod.tags.from_specs:
-            fail("`.from_cargo` or `.from_specs` are required. Please update {}", mod.name)
+            fail("`.from_cargo` or `.from_specs` are required. Please update {}".format(mod.name))
 
         local_repos = []
         module_annotations = {}
@@ -894,16 +944,17 @@ def _crate_impl(module_ctx):
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
-            # Preload all external repositories. Calling `module_ctx.path` will cause restarts of the implementation
-            # function of the module extension, so we want to trigger all restarts before we start the actual work.
-            # Once https://github.com/bazelbuild/bazel/issues/22729 has been fixed, this code can be removed.
+            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
+            # function of the module extension when the file has changed.
             if cfg.cargo_lockfile:
-                module_ctx.path(cfg.cargo_lockfile)
+                module_ctx.watch(cfg.cargo_lockfile)
             if cfg.lockfile:
-                module_ctx.path(cfg.lockfile)
+                module_ctx.watch(cfg.lockfile)
+            if cfg.cargo_config:
+                module_ctx.watch(cfg.cargo_config)
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
-                    module_ctx.path(m)
+                    module_ctx.watch(m)
 
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
             cargo_bazel_fn = new_cargo_bazel_fn(
@@ -990,7 +1041,10 @@ _FROM_COMMON_ATTRS = {
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
     ),
-    "supported_platform_triples": CRATES_VENDOR_ATTRS["supported_platform_triples"],
+    "supported_platform_triples": attr.string_list(
+        doc = "A set of all platform triples to consider when generating dependencies.",
+        default = SUPPORTED_PLATFORM_TRIPLES,
+    ),
 }
 
 _from_cargo = tag_class(
@@ -1031,6 +1085,9 @@ _annotation = tag_class(
         "build_script_env": attr.string_dict(
             doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
         ),
+        "build_script_link_deps": _relative_label_list(
+            doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
+        ),
         "build_script_proc_macro_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::proc_macro_deps` attribute.",
         ),
@@ -1051,6 +1108,9 @@ _annotation = tag_class(
         ),
         "compile_data_glob": attr.string_list(
             doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",
+        ),
+        "compile_data_glob_excludes": attr.string_list(
+            doc = "A list of glob patterns to be excllued from a crate's `rust_library::compile_data` attribute.",
         ),
         "crate": attr.string(
             doc = "The name of the crate the annotation is applied to",

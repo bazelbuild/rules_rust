@@ -2,7 +2,7 @@ bcr_test_module:
   module_path: ""
   matrix:
     platform: ["macos_arm64", "ubuntu2004"]
-    bazel: ["7.x"]
+    bazel: ["7.x", "8.x"]
   tasks:
     run_tests:
       working_directory: examples/hello_world
@@ -21,7 +21,7 @@ bcr_test_module:
 bcr_test_module_windows:
   module_path: ""
   matrix:
-    bazel: ["7.x"]
+    bazel: ["7.x", "8.x"]
   tasks:
     run_tests:
       working_directory: examples/hello_world

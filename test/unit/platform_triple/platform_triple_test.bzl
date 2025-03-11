@@ -119,7 +119,7 @@ def _assert_parts(env, triple, arch, vendor, system, abi):
 def _construct_known_triples_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    _assert_parts(env, triple("aarch64-apple-darwin"), "aarch64", "apple", "darwin", None)
+    _assert_parts(env, triple("aarch64-apple-darwin"), "aarch64", "apple", "macos", None)
     _assert_parts(env, triple("aarch64-fuchsia"), "aarch64", "unknown", "fuchsia", None)
     _assert_parts(env, triple("aarch64-unknown-linux-musl"), "aarch64", "unknown", "linux", "musl")
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")

@@ -15,7 +15,9 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compat.bzl", "abs")
 load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
 
@@ -789,7 +791,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
         extension = extension,
     )
 
-def transform_sources(ctx, srcs, crate_root):
+def transform_sources(ctx, srcs, compile_data, crate_root):
     """Creates symlinks of the source files if needed.
 
     Rustc assumes that the source files are located next to the crate root.
@@ -802,25 +804,33 @@ def transform_sources(ctx, srcs, crate_root):
     Args:
         ctx (struct): The current rule's context.
         srcs (List[File]): The sources listed in the `srcs` attribute
+        compile_data (List[File]): The sources listed in the `compile_data`
+                                   attribute
         crate_root (File): The file specified in the `crate_root` attribute,
                            if it exists, otherwise None
 
     Returns:
-        Tuple(List[File], File): The transformed srcs and crate_root
+        Tuple(List[File], List[File], File): The transformed srcs, compile_data
+                                             and crate_root
     """
-    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+    has_generated_sources = (
+        len([src for src in srcs if not src.is_source]) +
+        len([src for src in compile_data if not src.is_source]) >
+        0
+    )
 
     if not has_generated_sources:
-        return srcs, crate_root
+        return srcs, compile_data, crate_root
 
     package_root = paths.join(ctx.label.workspace_root, ctx.label.package)
     generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
+    generated_compile_data = [_symlink_for_non_generated_source(ctx, src, package_root) for src in compile_data]
     generated_root = crate_root
     if crate_root:
         generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
         generated_sources.append(generated_root)
 
-    return generated_sources, generated_root
+    return generated_sources, generated_compile_data, generated_root
 
 def get_edition(attr, toolchain, label):
     """Returns the Rust edition from either the current rule's attributes or the current `rust_toolchain`
@@ -857,7 +867,8 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
         File: The created symlink if a non-generated file, or the file itself.
     """
 
-    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
+    src_short_path = paths.relativize(src_file.path, src_file.root.path)
+    if (src_file.is_source or src_file.root.path != ctx.bin_dir.path) and paths.starts_with(src_short_path, package_root):
         src_short_path = paths.relativize(src_file.path, src_file.root.path)
         src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
         ctx.actions.symlink(

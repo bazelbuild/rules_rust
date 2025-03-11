@@ -1,5 +1,5 @@
 {
-  "checksum": "2410572dd6c10f6c9e9ef519e5f9c7b6a2417983584a9448f4e8f21530074918",
+  "checksum": "b089224c6dd517eb0db40d9d557bc42f38cfbfad64cdd6902660a4b3c498ab6b",
   "crates": {
     "cc 1.0.82": {
       "name": "cc",
@@ -36,7 +36,13 @@
             "cfg(unix)": [
               {
                 "id": "libc 0.2.147",
-                "target": "libc"
+                "target": "libc",
+                "source_annotation": {
+                  "Http": {
+                    "url": "https://static.crates.io/crates/libc/0.2.147/download",
+                    "sha256": "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
+                  }
+                }
               }
             ]
           }
@@ -92,7 +98,13 @@
           "common": [
             {
               "id": "link-cplusplus 1.0.9",
-              "target": "link_cplusplus"
+              "target": "link_cplusplus",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/link-cplusplus/1.0.9/download",
+                  "sha256": "9d240c6f7e1ba3a28b0249f774e6a9dd0175054b52dfbb61b16eb8505c3785c9"
+                }
+              }
             }
           ],
           "selects": {}
@@ -108,7 +120,13 @@
           "common": [
             {
               "id": "cxxbridge-macro 1.0.109",
-              "target": "cxxbridge_macro"
+              "target": "cxxbridge_macro",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/cxxbridge-macro/1.0.109/download",
+                  "sha256": "e33dbbe9f5621c9247f97ec14213b04f350bff4b6cebefe834c60055db266ecf"
+                }
+              }
             }
           ],
           "selects": {}
@@ -204,15 +222,33 @@
           "common": [
             {
               "id": "proc-macro2 1.0.66",
-              "target": "proc_macro2"
+              "target": "proc_macro2",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/proc-macro2/1.0.66/download",
+                  "sha256": "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+                }
+              }
             },
             {
               "id": "quote 1.0.32",
-              "target": "quote"
+              "target": "quote",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/quote/1.0.32/download",
+                  "sha256": "50f3b39ccfb720540debaa0164757101c08ecb8d326b15358ce76a62c7e85965"
+                }
+              }
             },
             {
               "id": "syn 2.0.28",
-              "target": "syn"
+              "target": "syn",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/syn/2.0.28/download",
+                  "sha256": "04361975b3f5e348b2189d8dc55bc942f278b2d482a6a0365de5bdd62d351567"
+                }
+              }
             }
           ],
           "selects": {}
@@ -255,7 +291,13 @@
           "common": [
             {
               "id": "cxx 1.0.109",
-              "target": "cxx"
+              "target": "cxx",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/cxx/1.0.109/download",
+                  "sha256": "c390c123d671cc547244943ecad81bdaab756c6ea332d9ca9c1f48d952a24895"
+                }
+              }
             }
           ],
           "selects": {}
@@ -319,7 +361,13 @@
           "common": [
             {
               "id": "libc 0.2.147",
-              "target": "build_script_build"
+              "target": "build_script_build",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/libc/0.2.147/download",
+                  "sha256": "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
+                }
+              }
             }
           ],
           "selects": {}
@@ -330,6 +378,9 @@
       "build_script_attrs": {
         "compile_data_glob": [
           "**"
+        ],
+        "compile_data_glob_excludes": [
+          "**/*.rs"
         ],
         "data_glob": [
           "**"
@@ -393,7 +444,13 @@
           "common": [
             {
               "id": "link-cplusplus 1.0.9",
-              "target": "build_script_build"
+              "target": "build_script_build",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/link-cplusplus/1.0.9/download",
+                  "sha256": "9d240c6f7e1ba3a28b0249f774e6a9dd0175054b52dfbb61b16eb8505c3785c9"
+                }
+              }
             }
           ],
           "selects": {}
@@ -405,6 +462,9 @@
         "compile_data_glob": [
           "**"
         ],
+        "compile_data_glob_excludes": [
+          "**/*.rs"
+        ],
         "data_glob": [
           "**"
         ],
@@ -412,7 +472,13 @@
           "common": [
             {
               "id": "cc 1.0.82",
-              "target": "cc"
+              "target": "cc",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/cc/1.0.82/download",
+                  "sha256": "305fe645edc1442a0fa8b6726ba61d422798d37a52e12eaecf4b022ebbb88f01"
+                }
+              }
             }
           ],
           "selects": {}
@@ -478,11 +544,23 @@
           "common": [
             {
               "id": "proc-macro2 1.0.66",
-              "target": "build_script_build"
+              "target": "build_script_build",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/proc-macro2/1.0.66/download",
+                  "sha256": "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+                }
+              }
             },
             {
               "id": "unicode-ident 1.0.11",
-              "target": "unicode_ident"
+              "target": "unicode_ident",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/unicode-ident/1.0.11/download",
+                  "sha256": "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
+                }
+              }
             }
           ],
           "selects": {}
@@ -493,6 +571,9 @@
       "build_script_attrs": {
         "compile_data_glob": [
           "**"
+        ],
+        "compile_data_glob_excludes": [
+          "**/*.rs"
         ],
         "data_glob": [
           "**"
@@ -545,7 +626,13 @@
           "common": [
             {
               "id": "proc-macro2 1.0.66",
-              "target": "proc_macro2"
+              "target": "proc_macro2",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/proc-macro2/1.0.66/download",
+                  "sha256": "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+                }
+              }
             }
           ],
           "selects": {}
@@ -606,15 +693,33 @@
           "common": [
             {
               "id": "proc-macro2 1.0.66",
-              "target": "proc_macro2"
+              "target": "proc_macro2",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/proc-macro2/1.0.66/download",
+                  "sha256": "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+                }
+              }
             },
             {
               "id": "quote 1.0.32",
-              "target": "quote"
+              "target": "quote",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/quote/1.0.32/download",
+                  "sha256": "50f3b39ccfb720540debaa0164757101c08ecb8d326b15358ce76a62c7e85965"
+                }
+              }
             },
             {
               "id": "unicode-ident 1.0.11",
-              "target": "unicode_ident"
+              "target": "unicode_ident",
+              "source_annotation": {
+                "Http": {
+                  "url": "https://static.crates.io/crates/unicode-ident/1.0.11/download",
+                  "sha256": "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
+                }
+              }
             }
           ],
           "selects": {}
@@ -678,97 +783,14 @@
     "aarch64-apple-darwin": [
       "aarch64-apple-darwin"
     ],
-    "aarch64-apple-ios": [
-      "aarch64-apple-ios"
-    ],
-    "aarch64-apple-ios-sim": [
-      "aarch64-apple-ios-sim"
-    ],
-    "aarch64-linux-android": [
-      "aarch64-linux-android"
-    ],
-    "aarch64-pc-windows-msvc": [
-      "aarch64-pc-windows-msvc"
-    ],
-    "aarch64-unknown-fuchsia": [
-      "aarch64-unknown-fuchsia"
-    ],
     "aarch64-unknown-linux-gnu": [
       "aarch64-unknown-linux-gnu"
     ],
-    "aarch64-unknown-nixos-gnu": [
-      "aarch64-unknown-nixos-gnu"
-    ],
-    "aarch64-unknown-nto-qnx710": [
-      "aarch64-unknown-nto-qnx710"
-    ],
-    "arm-unknown-linux-gnueabi": [
-      "arm-unknown-linux-gnueabi"
-    ],
-    "armv7-linux-androideabi": [
-      "armv7-linux-androideabi"
-    ],
-    "armv7-unknown-linux-gnueabi": [
-      "armv7-unknown-linux-gnueabi"
-    ],
     "cfg(unix)": [
       "aarch64-apple-darwin",
-      "aarch64-apple-ios",
-      "aarch64-apple-ios-sim",
-      "aarch64-linux-android",
-      "aarch64-unknown-fuchsia",
       "aarch64-unknown-linux-gnu",
-      "aarch64-unknown-nixos-gnu",
-      "aarch64-unknown-nto-qnx710",
-      "arm-unknown-linux-gnueabi",
-      "armv7-linux-androideabi",
-      "armv7-unknown-linux-gnueabi",
-      "i686-apple-darwin",
-      "i686-linux-android",
-      "i686-unknown-freebsd",
-      "i686-unknown-linux-gnu",
-      "powerpc-unknown-linux-gnu",
-      "s390x-unknown-linux-gnu",
-      "x86_64-apple-darwin",
-      "x86_64-apple-ios",
-      "x86_64-linux-android",
-      "x86_64-unknown-freebsd",
-      "x86_64-unknown-fuchsia",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
-    ],
-    "i686-apple-darwin": [
-      "i686-apple-darwin"
-    ],
-    "i686-linux-android": [
-      "i686-linux-android"
-    ],
-    "i686-pc-windows-msvc": [
-      "i686-pc-windows-msvc"
-    ],
-    "i686-unknown-freebsd": [
-      "i686-unknown-freebsd"
-    ],
-    "i686-unknown-linux-gnu": [
-      "i686-unknown-linux-gnu"
-    ],
-    "powerpc-unknown-linux-gnu": [
-      "powerpc-unknown-linux-gnu"
-    ],
-    "riscv32imc-unknown-none-elf": [
-      "riscv32imc-unknown-none-elf"
-    ],
-    "riscv64gc-unknown-none-elf": [
-      "riscv64gc-unknown-none-elf"
-    ],
-    "s390x-unknown-linux-gnu": [
-      "s390x-unknown-linux-gnu"
-    ],
-    "thumbv7em-none-eabi": [
-      "thumbv7em-none-eabi"
-    ],
-    "thumbv8m.main-none-eabi": [
-      "thumbv8m.main-none-eabi"
     ],
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
@@ -776,32 +798,14 @@
     "wasm32-wasip1": [
       "wasm32-wasip1"
     ],
-    "x86_64-apple-darwin": [
-      "x86_64-apple-darwin"
-    ],
-    "x86_64-apple-ios": [
-      "x86_64-apple-ios"
-    ],
-    "x86_64-linux-android": [
-      "x86_64-linux-android"
-    ],
     "x86_64-pc-windows-msvc": [
       "x86_64-pc-windows-msvc"
-    ],
-    "x86_64-unknown-freebsd": [
-      "x86_64-unknown-freebsd"
-    ],
-    "x86_64-unknown-fuchsia": [
-      "x86_64-unknown-fuchsia"
     ],
     "x86_64-unknown-linux-gnu": [
       "x86_64-unknown-linux-gnu"
     ],
     "x86_64-unknown-nixos-gnu": [
       "x86_64-unknown-nixos-gnu"
-    ],
-    "x86_64-unknown-none": [
-      "x86_64-unknown-none"
     ]
   },
   "direct_deps": [

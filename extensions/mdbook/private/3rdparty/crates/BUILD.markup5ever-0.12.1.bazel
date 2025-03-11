@@ -51,6 +51,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
+        "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
@@ -76,14 +77,15 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [],
         "@rules_rust//rust/platform:x86_64-unknown-none": [],
+        "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     version = "0.12.1",
     deps = [
-        "@rmdbi__log-0.4.22//:log",
+        "@rmdbi__log-0.4.26//:log",
         "@rmdbi__markup5ever-0.12.1//:build_script_build",
-        "@rmdbi__phf-0.11.2//:phf",
-        "@rmdbi__string_cache-0.8.7//:string_cache",
+        "@rmdbi__phf-0.11.3//:phf",
+        "@rmdbi__string_cache-0.8.8//:string_cache",
         "@rmdbi__tendril-0.4.3//:tendril",
     ],
 )
@@ -136,8 +138,8 @@ cargo_build_script(
     version = "0.12.1",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__phf_codegen-0.11.2//:phf_codegen",
-        "@rmdbi__string_cache_codegen-0.5.2//:string_cache_codegen",
+        "@rmdbi__phf_codegen-0.11.3//:phf_codegen",
+        "@rmdbi__string_cache_codegen-0.5.4//:string_cache_codegen",
     ],
 )
 

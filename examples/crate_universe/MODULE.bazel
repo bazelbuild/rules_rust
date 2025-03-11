@@ -15,24 +15,11 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(
-    name = "platforms",
-    version = "0.0.10",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
-bazel_dep(
-    name = "bazel_skylib",
-    version = "1.7.1",
-)
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
-bazel_dep(
-    name = "bazel_ci_rules",
-    version = "1.0.0",
-    dev_dependency = True,
-)
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
 dev = use_extension("//:vendor_extensions.bzl", "dev", dev_dependency = True)
 use_repo(
@@ -72,7 +59,7 @@ alias_rule_global_alias_annotation_none.spec(
     repositories = ["alias_rule_global_alias_annotation_none"],
     version = "0.1.0",
 )
-alias_rule_global_alias_annotation_none.from_cargo(
+alias_rule_global_alias_annotation_none.from_specs(
     name = "alias_rule_global_alias_annotation_none",
     cargo_lockfile = "//alias_rule:Cargo.lock",
     lockfile = "//alias_rule:cargo-bazel-lock_global_alias_annotation_none.json",
@@ -616,7 +603,7 @@ use_repo(
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
-    "cvm__tempfile-3.15.0",
+    "cvm__tempfile-3.17.1",
     "cvm__tokio-1.43.0",
     "cvm__tokio-test-0.4.4",
 )
@@ -625,10 +612,7 @@ use_repo(
 # C O M P L I C A T E D   D E P E N D E N C I E S
 ###############################################################################
 
-bazel_dep(
-    name = "boringssl",
-    version = "0.20241209.0",
-)
+bazel_dep(name = "boringssl", version = "0.20241209.0")
 
 # https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
 complicated_dependencies = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")

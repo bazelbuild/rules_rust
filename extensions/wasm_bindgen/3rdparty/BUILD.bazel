@@ -33,6 +33,9 @@ crates_vendor(
         "wasm-bindgen": crate.spec(
             version = WASM_BINDGEN_VERSION,
         ),
+        "wasm-bindgen-test": crate.spec(
+            version = "0.3.37",
+        ),
     },
     # Shorten the repository name to avoid MAX_PATH issues on Windows
     # `rules_rust_wasm_bindgen_deps` == `rrwbd`
@@ -48,8 +51,21 @@ alias(
 )
 
 alias(
+    name = "wasm_bindgen_test_runner",
+    actual = "@rules_rust_wasm_bindgen_cli//:test_runner",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "wasm_bindgen",
     actual = "//3rdparty/crates:wasm-bindgen",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "wasm_bindgen_test",
+    actual = "//3rdparty/crates:wasm-bindgen-test",
     visibility = ["//visibility:public"],
 )
 

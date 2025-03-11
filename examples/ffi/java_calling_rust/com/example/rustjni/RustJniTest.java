@@ -1,9 +1,9 @@
 package com.example.rustjni;
 
-import org.junit.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+
+import org.junit.Test;
 
 public class RustJniTest {
     @Test

@@ -93,6 +93,7 @@ def _annotation(
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
+        build_script_link_deps = None,
         build_script_proc_macro_deps = None,
         build_script_rundir = None,
         build_script_rustc_env = None,
@@ -100,6 +101,7 @@ def _annotation(
         build_script_use_default_shell_env = None,
         compile_data = None,
         compile_data_glob = None,
+        compile_data_glob_excludes = None,
         crate_features = None,
         data = None,
         data_glob = None,
@@ -135,6 +137,7 @@ def _annotation(
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
         build_script_env (dict, optional): Additional environment variables to set on a crate's
             `cargo_build_script::env` attribute.
+        build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rundir (str, optional): An override for the build script's rundir attribute.
@@ -145,6 +148,8 @@ def _annotation(
             script action.
         compile_data (list, optional): A list of labels to add to a crate's `rust_library::compile_data` attribute.
         compile_data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::compile_data`
+            attribute.
+        compile_data_glob_excludes (list, optional): A list of glob patterns to be excluded from a crate's `rust_library::compile_data`
             attribute.
         crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
@@ -196,6 +201,7 @@ def _annotation(
             build_script_data_glob = build_script_data_glob,
             build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
+            build_script_link_deps = build_script_link_deps,
             build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
             build_script_rundir = build_script_rundir,
             build_script_rustc_env = build_script_rustc_env,
@@ -203,6 +209,7 @@ def _annotation(
             build_script_use_default_shell_env = build_script_use_default_shell_env,
             compile_data = _stringify_list(compile_data),
             compile_data_glob = compile_data_glob,
+            compile_data_glob_excludes = compile_data_glob_excludes,
             crate_features = crate_features,
             data = _stringify_list(data),
             data_glob = data_glob,

@@ -1,8 +1,9 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
-load("@rules_rust//rust:defs.bzl", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect", "rust_common")
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
@@ -232,6 +233,7 @@ def _rust_prost_aspect_impl(target, ctx):
 
     rustfmt_toolchain = ctx.toolchains["@rules_rust//rust/rustfmt:toolchain_type"]
     prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
+    rust_analyzer_deps = []
     for prost_runtime in [prost_toolchain.prost_runtime, prost_toolchain.tonic_runtime]:
         if not prost_runtime:
             continue
@@ -245,12 +247,15 @@ def _rust_prost_aspect_impl(target, ctx):
                 cc_info = prost_runtime[CcInfo] if CcInfo in prost_runtime else None,
                 build_info = None,
             ))
+        if RustAnalyzerInfo in prost_runtime:
+            rust_analyzer_deps.append(prost_runtime[RustAnalyzerInfo].deps)
+        if RustAnalyzerGroupInfo in prost_runtime:
+            rust_analyzer_deps.extend(prost_runtime[RustAnalyzerGroupInfo].deps)
 
     proto_deps = getattr(ctx.rule.attr, "deps", [])
 
     direct_deps = []
     transitive_deps = [depset(runtime_deps)]
-    rust_analyzer_deps = []
     for proto_dep in proto_deps:
         proto_info = proto_dep[ProstProtoInfo]
 
@@ -406,6 +411,9 @@ rust_prost_library = rule(
             cfg = "exec",
         ),
     },
+    provides = [
+        rust_common.crate_group_info,
+    ],
     toolchains = [
         TOOLCHAIN_TYPE,
     ],
@@ -470,6 +478,7 @@ rust_prost_toolchain = rule(
             doc = "The Prost runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
             mandatory = True,
+            aspects = [rust_analyzer_aspect],
         ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
@@ -496,6 +505,7 @@ rust_prost_toolchain = rule(
         "tonic_runtime": attr.label(
             doc = "The Tonic runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
+            aspects = [rust_analyzer_aspect],
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(

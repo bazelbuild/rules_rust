@@ -1,5 +1,14 @@
 ---
 minimum_bazel_version: &minimum_bazel_version "7.4.1"
+no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -16,12 +25,6 @@ bzlmod_flags: &bzlmod_flags
 bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
   # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
   - "--incompatible_use_plus_in_repo_names"
-no_bzlmod_shell_commands: &no_bzlmod_shell_commands
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
-no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
-  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -49,6 +52,12 @@ single_rust_channel_min_version_targets: &single_rust_channel_min_version_target
 default_linux_targets: &default_linux_targets
   - "--"
   - "//..."
+default_rbe_targets: &default_rbe_targets
+  - "--"
+  - "//..."
+  # These require the upstream tools wrapper to include a stdlib, which doesn't currently work on RBE.
+  # We should fix this. See https://github.com/bazelbuild/rules_rust/issues/3252
+  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
@@ -69,13 +78,15 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/test_env:test_run"
   - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
-  - "-//tools/runfiles/..."
+  - "-//rust/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
+  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
   - "//vendor_local_pkgs:crates_vendor"
+  - "//vendor_local_patching:crates_vendor"
   - "//vendor_remote_manifests:crates_vendor"
   - "//vendor_remote_pkgs:crates_vendor"
   - "@rules_rust//tools/rust_analyzer:gen_rust_project"
@@ -102,8 +113,8 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   macos:
     platform: macos_arm64
     build_targets: *default_macos_targets
@@ -116,6 +127,7 @@ tasks:
   ubuntu2004_no_bzlmod:
     name: No Bzlmod
     platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
@@ -126,12 +138,14 @@ tasks:
   rbe_ubuntu2004_no_bzlmod:
     name: No Bzlmod
     platform: rbe_ubuntu2004
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_rbe_shell_commands
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   macos_no_bzlmod:
     name: No Bzlmod
     platform: macos_arm64
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
@@ -140,6 +154,7 @@ tasks:
   windows_no_bzlmod:
     name: No Bzlmod
     platform: windows
+    bazel: *no_bzlmod_bazel_version
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
@@ -206,16 +221,16 @@ tasks:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_flags: *aspects_flags
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
   rbe_ubuntu2004_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2004
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
@@ -286,7 +301,7 @@ tasks:
       - "--enable_bzlmod"
     build_targets:
       - "//crate_universe:cargo_bazel_bin"
-      - "//tools/runfiles"
+      - "//rust/runfiles"
       - "//util/import"
   ubuntu2004_clang:
     name: With Clang
@@ -475,6 +490,30 @@ tasks:
     working_directory: examples/crate_universe_local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"
+  crate_universe_local_path_external_no_bzlmod:
+    name: Crate Universe Local Path External (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree"
+  crate_universe_local_path_in_tree_no_bzlmod:
+    name: Crate Universe Local Path In Tree (No Bzlmod)
+    platform: ubuntu2004
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree"
+  example_bindgen_toolchain:
+    name: Example custom bindgen toolchain registration
+    platform: ubuntu2204
+    working_directory: examples/bindgen_toolchain
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 # See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
 #  crate_universe_examples_windows:
 #    name: Crate Universe Examples
@@ -489,79 +528,72 @@ tasks:
   cc_common_link_ubuntu2004:
     name: Build via cc_common.link
     platform: ubuntu2004
-    working_directory: test/cc_common_link
+    working_directory: test/integration/cc_common_link
     build_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
     test_targets:
-      - "--"
       - "//..."
-      # The with_global_alloc directory is a repository on its own tested in the 'Build via cc_common.link using a global allocator' task.
-      - "-//with_global_alloc/..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
+  cc_common_link_macos:
+    name: Build via cc_common.link
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_with_global_alloc_ubuntu2004:
     name: Build via cc_common.link using a global allocator
     platform: ubuntu2004
-    working_directory: test/cc_common_link/with_global_alloc
+    working_directory: test/integration/cc_common_link_with_global_alloc
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-    test_flags:
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
+  cc_common_link_with_global_alloc_macos:
+    name: Build via cc_common.link using a global allocator
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   cc_common_link_no_std_ubuntu2004:
     name: Build with no_std + alloc using cc_common.link infrastructure for linking
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:experimental_use_cc_common_link=True"
-      - "--@rules_rust//rust/settings:experimental_use_global_allocator=True"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc_using_cc_common_link"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004
-    working_directory: test/no_std
+    working_directory: test/integration/no_std
     build_targets:
       - "//..."
     test_targets:
       - "//..."
     build_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
     test_flags:
-      - "--@rules_rust//rust/toolchain/channel=nightly"
-      - "--@rules_rust//rust/settings:no_std=alloc"
+      - "--config=no_std_alloc"
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2004
-    working_directory: test/bzlmod_repo_mapping/module_a
+    working_directory: test/integration/bzlmod_repo_mapping/module_a
     test_targets:
       - "//..."
   aliased_toolchains:
     name: aliased toolchains test
     platform: ubuntu2004
-    working_directory: test/aliased_toolchains
+    working_directory: test/integration/aliased_toolchains
     build_targets:
       - "@rust_toolchains//:all"
+      - "//..."
   android_examples_ubuntu2004:
     name: Android Examples
     platform: ubuntu2004
@@ -1041,6 +1073,8 @@ tasks:
     platform: ubuntu2004
     name: Extensions wasm-bindgen
     working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - "bash ./test/bazelci_linux_setup.sh"
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
@@ -1058,12 +1092,9 @@ tasks:
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    test_targets:
-      - "--"
-      - "//..."
-      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-      - "-//rules_js/test:hello_world_wasm_lib_test"
-      - "-//rules_js/test:hello_world_wasm_direct_test"
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+    # test_targets:
+    #   - "//..."
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
@@ -1084,7 +1115,3 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-
-buildifier:
-  version: latest
-  warnings: "all"

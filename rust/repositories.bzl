@@ -40,11 +40,11 @@ load_arbitrary_tool = _load_arbitrary_tool
 
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
 DEFAULT_TOOLCHAIN_TRIPLES = {
-    "aarch64-apple-darwin": "rust_darwin_aarch64",
+    "aarch64-apple-darwin": "rust_macos_aarch64",
     "aarch64-pc-windows-msvc": "rust_windows_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
     "s390x-unknown-linux-gnu": "rust_linux_s390x",
-    "x86_64-apple-darwin": "rust_darwin_x86_64",
+    "x86_64-apple-darwin": "rust_macos_x86_64",
     "x86_64-pc-windows-msvc": "rust_windows_x86_64",
     "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
@@ -59,10 +59,10 @@ def rules_rust_dependencies():
         http_archive,
         name = "platforms",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
-            "https://github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.11/platforms-0.0.11.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.11/platforms-0.0.11.tar.gz",
         ],
-        sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
+        sha256 = "29742e87275809b5e598dc2f04d86960cc7a55b3067d97221c9abbc9926bff0f",
     )
 
     # Avoid the following issue https://github.com/bazelbuild/rules_cc/issues/274
@@ -269,7 +269,7 @@ def rust_register_toolchains(
             sha256s = sha256s,
             urls = urls,
             versions = versions,
-            aliases = aliases,
+            aliases = dict(aliases),
         )
 
         for toolchain in _get_toolchain_repositories(

@@ -1,10 +1,24 @@
 bcr_test_module:
   module_path: ""
   matrix:
-    platform: ["macos_arm64", "ubuntu2004", "windows"]
-    bazel: ["7.x"]
+    platform: ["macos_arm64", "windows"]
+    bazel: ["7.x", "8.x"]
   tasks:
     run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      test_targets:
+        - "//..."
+bcr_test_module_linux:
+  module_path: ""
+  matrix:
+    platform: ["ubuntu2004"]
+    bazel: ["7.x", "8.x"]
+  tasks:
+    run_tests:
+      shell_commands:
+        - "bash ./test/bazelci_linux_setup.sh"
       name: "Run test module"
       platform: ${{ platform }}
       bazel: ${{ bazel }}

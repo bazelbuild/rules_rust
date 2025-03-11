@@ -1,6 +1,7 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(
     "//rust:defs.bzl",
     "rust_binary",
@@ -124,7 +125,7 @@ def _native_action_inputs_test():
     )
 
     # buildifier: disable=native-cc
-    native.cc_library(
+    cc_library(
         name = "bar",
         srcs = ["bar.cc"],
     )

@@ -6,7 +6,7 @@ rust_binary(
     srcs = ["process_wrapper.rs"],
     edition = "2021",
     visibility = ["//visibility:public"],
-    deps = ["@rules_rust//tools/action_args"],
+    deps = ["@rules_rust//util/action_args"],
 )
 
 rust_binary(
@@ -15,8 +15,8 @@ rust_binary(
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [
-        "@rules_rust//tools/action_args",
-        "@rules_rust//tools/runfiles",
+        "@rules_rust//rust/runfiles",
+        "@rules_rust//util/action_args",
     ],
 )
 

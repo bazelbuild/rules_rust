@@ -25,6 +25,10 @@ pub struct CrateDependency {
     /// Some dependencies are assigned aliases. This is tracked here
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+
+    /// Where to acquire the source of this dependency.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) source_annotation: Option<SourceAnnotation>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -94,6 +98,9 @@ pub(crate) struct CommonAttributes {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) compile_data_glob: BTreeSet<String>,
 
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub(crate) compile_data_glob_excludes: BTreeSet<String>,
+
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) crate_features: Select<BTreeSet<String>>,
 
@@ -147,6 +154,7 @@ impl Default for CommonAttributes {
             compile_data: Default::default(),
             // Generated targets include all files in their package by default
             compile_data_glob: BTreeSet::from(["**".to_owned()]),
+            compile_data_glob_excludes: Default::default(),
             crate_features: Default::default(),
             data: Default::default(),
             data_glob: Default::default(),
@@ -177,6 +185,9 @@ pub(crate) struct BuildScriptAttributes {
 
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) compile_data_glob: BTreeSet<String>,
+
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub(crate) compile_data_glob_excludes: BTreeSet<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) data: Select<BTreeSet<Label>>,
@@ -254,6 +265,7 @@ impl Default for BuildScriptAttributes {
             // The build script itself also has access to all
             // source files by default.
             compile_data_glob: BTreeSet::from(["**".to_owned()]),
+            compile_data_glob_excludes: BTreeSet::from(["**/*.rs".to_owned()]),
             data: Default::default(),
             // Build scripts include all sources by default
             data_glob: BTreeSet::from(["**".to_owned()]),
@@ -378,6 +390,7 @@ impl CrateContext {
                 id: CrateId::new(pkg.name.clone(), pkg.version.clone()),
                 target,
                 alias: dep.alias,
+                source_annotation: Some(source_annotations[&dep.package_id].clone()),
             }
         };
 
@@ -475,6 +488,7 @@ impl CrateContext {
                     id: current_crate_id,
                     target: target.crate_name.clone(),
                     alias: None,
+                    source_annotation: source_annotations.get(&annotation.node.id).cloned(),
                 },
                 None,
             );
@@ -572,6 +586,13 @@ impl CrateContext {
                 self.common_attrs.compile_data_glob.extend(extra.clone());
             }
 
+            // Compile data glob excludes
+            if let Some(extra) = &crate_extra.compile_data_glob_excludes {
+                self.common_attrs
+                    .compile_data_glob_excludes
+                    .extend(extra.clone());
+            }
+
             // Crate features
             if let Some(extra) = &crate_extra.crate_features {
                 self.common_attrs.crate_features =
@@ -616,6 +637,12 @@ impl CrateContext {
                 // Deps
                 if let Some(extra) = &crate_extra.build_script_deps {
                     attrs.extra_deps = Select::merge(attrs.extra_deps.clone(), extra.clone());
+                }
+
+                //Link Deps
+                if let Some(extra) = &crate_extra.build_script_link_deps {
+                    attrs.extra_link_deps =
+                        Select::merge(attrs.extra_link_deps.clone(), extra.clone())
                 }
 
                 // Proc macro deps
@@ -868,6 +895,7 @@ mod test {
     fn common_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::common(),
+            &None,
             crate::test::lockfile::common(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -972,6 +1000,7 @@ mod test {
     fn build_script_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::build_scripts(),
+            &None,
             crate::test::lockfile::build_scripts(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -982,6 +1011,7 @@ mod test {
     fn crate_type_annotations() -> Annotations {
         Annotations::new(
             crate::test::metadata::crate_types(),
+            &None,
             crate::test::lockfile::crate_types(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1286,6 +1316,7 @@ mod test {
     fn absolute_paths_for_srcs_are_errors() {
         let annotations = Annotations::new(
             crate::test::metadata::abspath(),
+            &None,
             crate::test::lockfile::abspath(),
             crate::config::Config::default(),
             Utf8Path::new("/tmp/bazelworkspace"),

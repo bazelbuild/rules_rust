@@ -15,6 +15,7 @@
 """Rust rule implementations"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
 load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
@@ -149,7 +150,7 @@ def _rust_library_common(ctx, crate_type):
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     # Determine unique hash for this rlib.
     # Note that we don't include a hash for `cdylib` and `staticlib` since they are meant to be consumed externally
@@ -202,7 +203,7 @@ def _rust_library_common(ctx, crate_type):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             data = depset(ctx.files.data),
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
@@ -233,7 +234,7 @@ def _rust_binary_impl(ctx):
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
-    srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+    srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     providers = rustc_compile_action(
         ctx = ctx,
@@ -254,7 +255,7 @@ def _rust_binary_impl(ctx):
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = False,
             data = depset(ctx.files.data),
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         ),
@@ -330,13 +331,11 @@ def _rust_test_impl(ctx):
                 ),
             )
 
-        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, getattr(ctx.file, "crate_root", None))
+        # Need to consider all src files together when transforming
+        srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
+        compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
+        srcs, compile_data, crate_root = transform_sources(ctx, srcs, compile_data, getattr(ctx.file, "crate_root", None))
 
-        # Optionally join compile data
-        if crate.compile_data:
-            compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data])
-        else:
-            compile_data = depset(ctx.files.compile_data)
         if crate.compile_data_targets:
             compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
         else:
@@ -360,7 +359,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate.root,
-            srcs = depset(srcs, transitive = [crate.srcs]),
+            srcs = depset(srcs),
             deps = depset(deps, transitive = [crate.deps]),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
             aliases = aliases,
@@ -370,7 +369,7 @@ def _rust_test_impl(ctx):
             rustc_env = rustc_env,
             rustc_env_files = rustc_env_files,
             is_test = True,
-            compile_data = compile_data,
+            compile_data = depset(compile_data),
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
@@ -381,7 +380,7 @@ def _rust_test_impl(ctx):
         if not crate_root:
             crate_root_type = "lib" if ctx.attr.use_libtest_harness else "bin"
             crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
-        srcs, crate_root = transform_sources(ctx, ctx.files.srcs, crate_root)
+        srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
         if toolchain._incompatible_change_rust_test_compilation_output_directory:
             output = ctx.actions.declare_file(
@@ -420,7 +419,7 @@ def _rust_test_impl(ctx):
             rustc_env = rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
             is_test = True,
-            compile_data = depset(ctx.files.compile_data),
+            compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
         )
@@ -931,7 +930,10 @@ rust_static_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    provides = [CcInfo],
+    provides = [
+        CcInfo,
+        rust_common.test_crate_info,
+    ],
     doc = dedent("""\
         Builds a Rust static library.
 
@@ -978,7 +980,10 @@ rust_shared_library = rule(
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
     ],
-    provides = [CcInfo],
+    provides = [
+        CcInfo,
+        rust_common.test_crate_info,
+    ],
     doc = dedent("""\
         Builds a Rust shared library.
 
@@ -1501,12 +1506,18 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
 
         # Prefixed with `name` to allow parameterization with macros
         # The test name should not end with `.rs`
-        test_name = name + "_" + src[:-3]
+        # Suffixed with `_test` to allow for consistent naming of tests
+        test_name = name + "_" + src[:-3] + "_test"
+
+        # Convert `test_name` to its associated crate name by replacing
+        # all the illegal characters with underscores.
+        crate_name = _replace_illlegal_chars(test_name)
         rust_test(
             name = test_name,
             crate_root = src,
             srcs = [src] + shared_srcs,
             tags = tags,
+            crate_name = crate_name,
             **kwargs
         )
         tests.append(test_name)
@@ -1561,3 +1572,21 @@ rust_library_group = rule(
         ```
     """),
 )
+
+def _replace_illlegal_chars(name):
+    """Replaces illegal characters in a name with underscores.
+
+    This is used to convert a target name to its associated crate name for individual tests in a
+    test suite.
+
+    This is similar to conversion in `name_to_crate_name` but local to rest_test_suite since we
+    don't want to add more illegal characters in global conversion logic.
+
+    Args:
+        name (str): The name of the test.
+    Returns:
+        str: The name of the crate for this test.
+    """
+    for illegal_char in ["-", "/", "."]:
+        name = name.replace(illegal_char, "_")
+    return name

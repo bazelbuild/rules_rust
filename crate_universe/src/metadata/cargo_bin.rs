@@ -117,6 +117,18 @@ impl Cargo {
         bail!("Couldn't parse cargo version");
     }
 
+    /// Determine if Cargo is on a version which uses new hashing behavior
+    /// introduced in Rust 1.86.0. For details see <https://github.com/frewsxcv/rust-crates-index/issues/182>
+    pub(crate) fn uses_stable_registry_hash(&self) -> Result<bool> {
+        let full_version = self.full_version()?;
+        let version_str = full_version.split(' ').nth(1);
+        if let Some(version_str) = version_str {
+            let version = Version::parse(version_str).context("Failed to parse cargo version")?;
+            return Ok(version.major >= 1 && version.minor >= 85);
+        }
+        bail!("Couldn't parse cargo version");
+    }
+
     fn env(&self) -> Result<BTreeMap<String, OsString>> {
         let mut map = BTreeMap::new();
 

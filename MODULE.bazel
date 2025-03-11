@@ -2,42 +2,20 @@
 
 module(
     name = "rules_rust",
-    version = "0.56.0",
+    version = "0.58.0",
 )
 
 ###############################################################################
 ## Core
 ###############################################################################
 
-bazel_dep(
-    name = "bazel_features",
-    version = "1.21.0",
-)
-bazel_dep(
-    name = "bazel_skylib",
-    version = "1.7.1",
-)
-bazel_dep(
-    name = "platforms",
-    version = "0.0.10",
-)
-bazel_dep(
-    name = "rules_cc",
-    version = "0.0.17",
-)
-bazel_dep(
-    name = "rules_license",
-    version = "1.0.0",
-)
-bazel_dep(
-    name = "rules_shell",
-    version = "0.3.0",
-)
-bazel_dep(
-    name = "apple_support",
-    version = "1.17.1",
-    repo_name = "build_bazel_apple_support",
-)
+bazel_dep(name = "bazel_features", version = "1.21.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -50,12 +28,17 @@ use_repo(
     "rrra__log-0.4.19",
     "rrra__serde-1.0.171",
     "rrra__serde_json-1.0.102",
+    "rules_rust_ctve__cargo-util-schemas-0.3.1",
+    "rules_rust_ctve__pathdiff-0.1.0",
+    "rules_rust_ctve__semver-1.0.25",
+    "rules_rust_ctve__toml-0.8.20",
     "rules_rust_tinyjson",
 )
 
 cargo_internal_deps = use_extension("//cargo/private:internal_extensions.bzl", "i")
 use_repo(
     cargo_internal_deps,
+    "rrcti",
     "rrcti__cargo_toml-0.20.5",
 )
 
@@ -88,27 +71,15 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.217",
-    "rtra__serde_json-1.0.134",
+    "rtra__serde-1.0.218",
+    "rtra__serde_json-1.0.139",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "0.40.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "rules_testing",
-    version = "0.7.0",
-    dev_dependency = True,
-)
-bazel_dep(
-    name = "bazel_ci_rules",
-    version = "1.0.0",
-    dev_dependency = True,
-)
+bazel_dep(name = "rules_python", version = "0.40.0", dev_dependency = True)
+bazel_dep(name = "rules_testing", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
 ###############################################################################
 ## Crate Universe
@@ -127,37 +98,37 @@ use_repo(
     "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
     "cui",
-    "cui__anyhow-1.0.89",
+    "cui__anyhow-1.0.95",
     "cui__camino-1.1.9",
-    "cui__cargo-lock-10.0.1",
+    "cui__cargo-lock-10.1.0",
     "cui__cargo-platform-0.1.9",
     "cui__cargo_metadata-0.19.1",
-    "cui__cargo_toml-0.20.5",
+    "cui__cargo_toml-0.21.0",
     "cui__cfg-expr-0.17.2",
-    "cui__clap-4.3.11",
-    "cui__crates-index-3.3.0",
-    "cui__glob-0.3.1",
+    "cui__clap-4.5.26",
+    "cui__crates-index-3.6.0",
+    "cui__glob-0.3.2",
     "cui__hex-0.4.3",
     "cui__indoc-2.0.5",
-    "cui__itertools-0.13.0",
+    "cui__itertools-0.14.0",
     "cui__maplit-1.0.2",
     "cui__normpath-1.3.0",
     "cui__once_cell-1.20.2",
     "cui__pathdiff-0.2.3",
-    "cui__regex-1.11.0",
-    "cui__semver-1.0.23",
-    "cui__serde-1.0.210",
-    "cui__serde_json-1.0.129",
+    "cui__regex-1.11.1",
+    "cui__semver-1.0.24",
+    "cui__serde-1.0.217",
+    "cui__serde_json-1.0.135",
     "cui__serde_starlark-0.1.16",
     "cui__sha2-0.10.8",
-    "cui__spdx-0.10.7",
-    "cui__tempfile-3.14.0",
-    "cui__tera-1.19.1",
+    "cui__spdx-0.10.8",
+    "cui__tempfile-3.15.0",
+    "cui__tera-1.20.0",
     "cui__textwrap-0.16.1",
     "cui__toml-0.8.19",
-    "cui__tracing-0.1.40",
-    "cui__tracing-subscriber-0.3.18",
-    "cui__url-2.5.2",
+    "cui__tracing-0.1.41",
+    "cui__tracing-subscriber-0.3.19",
+    "cui__url-2.5.4",
     "cui__walkdir-2.5.0",
 )
 

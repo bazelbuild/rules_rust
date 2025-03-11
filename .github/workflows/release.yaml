@@ -90,8 +90,11 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_15.2.0.app/Contents/Developer/
           # Set SDK environment variables
-          echo "SDKROOT=$(xcrun -sdk macosx13.0 --show-sdk-path)" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx13.0 --show-sdk-platform-version)" >> $GITHUB_ENV
+          echo "SDKROOT=$(xcrun -sdk macosx14.2 --show-sdk-path)" >> $GITHUB_ENV
+          MACOSX_DEPLOYMENT_TARGET="$(xcrun -sdk macosx14.2 --show-sdk-platform-version)"
+          if [[ -n "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+            echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
+          fi
         if: startswith(matrix.os, 'macos')
       - name: Setup Windows Bazelrc
         run: |
@@ -108,7 +111,7 @@ jobs:
             bazel ${BAZEL_STARTUP_FLAGS[@]} run //crate_universe/tools/cross_installer -- --target=${TARGET} --output="${OUTPUT_PATH}"
         env:
           TARGET: "${{ matrix.env.TARGET }}"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "${{ matrix.env.TARGET }}"
           path: ${{ github.workspace }}/crate_universe/target/artifacts/${{ matrix.env.TARGET }}
@@ -118,7 +121,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/crate_universe/target/artifacts
       - name: Detect the current version
@@ -153,7 +156,7 @@ jobs:
           URL_PREFIX: https://github.com/${{ github.repository_owner }}/rules_rust/releases/download/${{ env.RELEASE_VERSION }}
 
       # Upload the artifact in case creating a release fails so all artifacts can then be manually recovered.
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: "rules_rust.tar.gz"
           path: ${{ github.workspace }}/.github/rules_rust.tar.gz
