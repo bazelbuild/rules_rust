@@ -1313,6 +1313,10 @@ can be found below where the supported keys for each template can be found in th
             doc = "The default package name to use in the rendered macros. This affects the auto package detection of things like `all_crate_deps`.",
             default = "",
         ),
+        "generate_cargo_toml_env_vars": attr.bool(
+            doc = "Whether to generate cargo_toml_env_vars targets.",
+            default = True,
+        ),
         "generate_rules_license_metadata": attr.bool(
             doc = "Whether to generate rules license metedata.",
             default = False,
