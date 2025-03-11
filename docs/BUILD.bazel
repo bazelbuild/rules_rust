@@ -61,6 +61,20 @@ stardoc(
         "rust_proc_macro",
         "rust_test",
         "rust_test_suite",
+        "rust_unpretty_aspect",
+        "rust_unpretty",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_unpretty",
+    out = "src/rust_unpretty.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_unpretty_aspect",
+        "rust_unpretty",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
@@ -270,6 +284,7 @@ mdbook(
         ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",
+        ":rust_unpretty",
         ":rust_wasm_bindgen",
         ":rust_wasm_bindgen_rules_js",
     ],

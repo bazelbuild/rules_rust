@@ -11,6 +11,7 @@
     - [rustdoc](./rust_doc.md)
     - [cargo](./cargo.md)
     - [rust_analyzer](./rust_analyzer.md)
+    - [unpretty](./rust_unpretty.md)
 - [Settings](./settings.md)
     - [Rust Settings](./rust_settings.md)
     - [Cargo Settings](./cargo_settings.md)

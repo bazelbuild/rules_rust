@@ -56,7 +56,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
             "command": "bazel",
             "args": [
                 "run",
-                "//tools/rust_analyzer:gen_rust_project"
+                "@rules_rust//tools/rust_analyzer:gen_rust_project"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -65,7 +65,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
             "problemMatcher": [],
             "presentation": {
                 "reveal": "never",
-                "panel": "dedicated",
+                "panel": "dedicated"
             },
             "runOptions": {
                 "runOn": "folderOpen"
