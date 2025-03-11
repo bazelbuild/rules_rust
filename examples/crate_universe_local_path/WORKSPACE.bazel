@@ -31,6 +31,6 @@ load("@crates_from_cargo_workspace//:defs.bzl", "crate_repositories")
 crate_repositories()
 
 # TODO: All users of rules_rust shouldn't need to depend on this, but I'm not sure how to add it to rules_rust_dependencies because it depends on being able to import things that are registered there.
-load("//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
+load("@rules_rust//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
 
 ctve_crate_repositories()
