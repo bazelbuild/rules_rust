@@ -103,6 +103,10 @@ pub(crate) struct RenderConfig {
     /// Whether to generate package metadata
     #[serde(default = "default_generate_rules_license_metadata")]
     pub(crate) generate_rules_license_metadata: bool,
+
+    /// Whether to generate cargo_toml_env_vars targets.
+    /// This is expected to always be true except for bootstrapping.
+    pub(crate) generate_cargo_toml_env_vars: bool,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -119,6 +123,7 @@ impl Default for RenderConfig {
             crate_repository_template: default_crate_repository_template(),
             default_alias_rule: AliasRule::default(),
             default_package_name: Option::default(),
+            generate_cargo_toml_env_vars: default_generate_cargo_toml_env_vars(),
             generate_target_compatible_with: default_generate_target_compatible_with(),
             platforms_template: default_platforms_template(),
             regen_command: String::default(),
@@ -156,6 +161,10 @@ fn default_crate_repository_template() -> String {
 
 fn default_platforms_template() -> String {
     "@rules_rust//rust/platform:{triple}".to_owned()
+}
+
+fn default_generate_cargo_toml_env_vars() -> bool {
+    true
 }
 
 fn default_generate_target_compatible_with() -> bool {

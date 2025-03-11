@@ -361,10 +361,13 @@ impl Renderer {
         krate: &CrateContext,
     ) -> Result<String> {
         let mut krate = krate.clone();
-        krate
-            .common_attrs
-            .rustc_env_files
-            .insert(":cargo_toml_env_vars".to_owned(), None);
+
+        if self.config.generate_cargo_toml_env_vars {
+            krate
+                .common_attrs
+                .rustc_env_files
+                .insert(":cargo_toml_env_vars".to_owned(), None);
+        }
 
         let mut starlark = Vec::new();
 
@@ -439,11 +442,13 @@ impl Renderer {
             starlark.push(Starlark::Package(package));
         }
 
-        load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars");
-        starlark.push(Starlark::CargoTomlEnvVars(CargoTomlEnvVars {
-            name: "cargo_toml_env_vars".to_owned(),
-            src: "Cargo.toml".to_owned(),
-        }));
+        if self.config.generate_cargo_toml_env_vars {
+            load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars");
+            starlark.push(Starlark::CargoTomlEnvVars(CargoTomlEnvVars {
+                name: "cargo_toml_env_vars".to_owned(),
+                src: "Cargo.toml".to_owned(),
+            }));
+        }
 
         for rule in &krate.targets {
             if let Some(override_target) = krate.override_targets.get(rule.override_target_key()) {

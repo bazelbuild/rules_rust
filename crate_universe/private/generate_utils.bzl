@@ -95,6 +95,7 @@ def render_config(
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
         default_package_name = None,
+        generate_cargo_toml_env_vars = True,
         generate_target_compatible_with = True,
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
@@ -131,6 +132,8 @@ def render_config(
             See '@crate_index//:alias_rules.bzl' for an example.
         default_package_name (str, optional): The default package name to use in the rendered macros. This affects the
             auto package detection of things like `all_crate_deps`.
+        generate_cargo_toml_env_vars (bool, optional): Whether to generate cargo_toml_env_vars targets. This is expected
+            to be true except when bootstrapping.
         generate_target_compatible_with (bool, optional):  Whether to generate `target_compatible_with` annotations on
             the generated BUILD files.  This catches a `target_triple`being targeted that isn't declared in
             `supported_platform_triples`.
@@ -152,6 +155,7 @@ def render_config(
         crates_module_template = crates_module_template,
         default_alias_rule = parse_alias_rule(default_alias_rule),
         default_package_name = default_package_name,
+        generate_cargo_toml_env_vars = generate_cargo_toml_env_vars,
         generate_rules_license_metadata = generate_rules_license_metadata,
         generate_target_compatible_with = generate_target_compatible_with,
         platforms_template = platforms_template,

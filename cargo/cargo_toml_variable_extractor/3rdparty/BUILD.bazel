@@ -1,4 +1,4 @@
-load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//crate_universe:defs.bzl", "crate", "crates_vendor", "render_config")
 
 crates_vendor(
     name = "crates_vendor",
@@ -10,6 +10,7 @@ crates_vendor(
         "semver": crate.spec(version = "1"),
         "toml": crate.spec(version = "0.8.14"),
     },
+    render_config = render_config(generate_cargo_toml_env_vars = False),
     repository_name = "rules_rust_ctve",
     tags = ["manual"],
 )
