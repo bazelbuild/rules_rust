@@ -393,7 +393,7 @@ fn enum_type_to_extern_paths(
         .expect("Failed to get enum type name");
     extern_paths.insert(
         proto_path.join(enum_type_name),
-        rust_path.join(enum_type_name),
+        rust_path.join(&enum_type_name.to_upper_camel_case()),
     );
 }
 
@@ -1013,6 +1013,30 @@ mod test {
             assert_eq!(
                 extern_paths.get(&ProtoPath::from("bar.baz.Foo")),
                 Some(&RustModulePath::from("bar::baz::Foo"))
+            );
+        }
+    }
+
+    #[test]
+    fn enum_type_to_extern_paths_upper_camel_case_test() {
+        let enum_descriptor = EnumDescriptorProto {
+            name: Some("SomethingID".to_string()),
+            ..EnumDescriptorProto::default()
+        };
+
+        {
+            let mut extern_paths = BTreeMap::new();
+            enum_type_to_extern_paths(
+                &mut extern_paths,
+                &ProtoPath::from("bar"),
+                &RustModulePath::from("bar"),
+                &enum_descriptor,
+            );
+
+            assert_eq!(extern_paths.len(), 1);
+            assert_eq!(
+                extern_paths.get(&ProtoPath::from("bar.SomethingID")),
+                Some(&RustModulePath::from("bar::SomethingId"))
             );
         }
     }
