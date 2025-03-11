@@ -1104,7 +1104,7 @@ tasks:
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
-    working_directory: extensions
+    working_directory: extensions/wasm_bindgen
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:
