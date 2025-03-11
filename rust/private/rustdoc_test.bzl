@@ -14,6 +14,7 @@
 
 """Rules for performing `rustdoc --test` on Bazel built crates"""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
@@ -110,6 +111,7 @@ def _rust_doc_test_impl(ctx):
 
     crate = ctx.attr.crate[rust_common.crate_info]
     deps = transform_deps(ctx.attr.deps)
+    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
 
     crate_info = rust_common.create_crate_info(
         name = crate.name,
@@ -117,7 +119,7 @@ def _rust_doc_test_impl(ctx):
         root = crate.root,
         srcs = crate.srcs,
         deps = depset(deps, transitive = [crate.deps]),
-        proc_macro_deps = crate.proc_macro_deps,
+        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
         aliases = crate.aliases,
         output = crate.output,
         edition = crate.edition,
@@ -207,13 +209,12 @@ rust_doc_test = rule(
             """),
             providers = [[CrateInfo], [CcInfo]],
         ),
-        "_cc_toolchain": attr.label(
-            doc = (
-                "In order to use find_cc_toolchain, your rule has to depend " +
-                "on C++ toolchain. See @rules_cc//cc:find_cc_toolchain.bzl " +
-                "docs for details."
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "proc_macro_deps": attr.label_list(
+            doc = dedent("""\
+                List of `rust_proc_macro` targets used to help build this library target.
+            """),
+            cfg = "exec",
+            providers = [rust_common.crate_info],
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",
@@ -224,7 +225,7 @@ rust_doc_test = rule(
         "_test_writer": attr.label(
             doc = "A binary used for writing script for use as the test executable.",
             cfg = "exec",
-            default = Label("//tools/rustdoc:rustdoc_test_writer"),
+            default = Label("//rust/private/rustdoc:rustdoc_test_writer"),
             executable = True,
         ),
     },

@@ -1,0 +1,8 @@
+load("@crates_from_cargo_workspace//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    deps = all_crate_deps(),
+)

@@ -1,5 +1,7 @@
 """A custom rule that wraps a crate called to_wrap."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
@@ -84,11 +86,8 @@ wrap = rule(
         "crate_name": attr.string(),
         "generate_metadata": attr.bool(default = False),
         "target": attr.label(),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),

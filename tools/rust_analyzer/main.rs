@@ -36,6 +36,7 @@ fn main() -> anyhow::Result<()> {
     // Generate the crate specs.
     generate_crate_info(
         &config.bazel,
+        &config.config,
         workspace_root,
         rules_rust_name,
         &config.targets,
@@ -44,6 +45,7 @@ fn main() -> anyhow::Result<()> {
     // Use the generated files to write rust-project.json.
     write_rust_project(
         &config.bazel,
+        &config.config,
         workspace_root,
         &rules_rust_name,
         &config.targets,
@@ -119,6 +121,10 @@ struct Config {
     /// The path to the Bazel output user root. If not specified, uses the result of `bazel info output_base`.
     #[clap(long, env = "OUTPUT_BASE")]
     output_base: Option<PathBuf>,
+
+    /// A config to pass to Bazel invocations with `--config=<config>`.
+    #[clap(long)]
+    config: Option<String>,
 
     /// The path to a Bazel binary
     #[clap(long, default_value = "bazel")]

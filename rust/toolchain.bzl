@@ -1,8 +1,14 @@
-"""The rust_toolchain rule definition and implementation."""
+"""# Rust Toolchains
+
+Toolchain rules for Rust.
+"""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
+load("//rust/private:lto.bzl", "RustLtoInfo")
 load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
 load(
     "//rust/private:rustfmt.bzl",
@@ -517,6 +523,7 @@ def _rust_toolchain_impl(ctx):
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
     no_std = ctx.attr._no_std[BuildSettingInfo].value
+    lto = ctx.attr.lto[RustLtoInfo]
 
     experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
     if _experimental_use_cc_common_link(ctx):
@@ -658,7 +665,6 @@ def _rust_toolchain_impl(ctx):
         clippy_driver = sysroot.clippy,
         cargo_clippy = sysroot.cargo_clippy,
         compilation_mode_opts = compilation_mode_opts,
-        crosstool_files = ctx.files._cc_toolchain,
         default_edition = ctx.attr.default_edition,
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
@@ -668,6 +674,7 @@ def _rust_toolchain_impl(ctx):
         nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
+        lto = lto,
         make_variables = make_variable_info,
         rust_doc = sysroot.rustdoc,
         rust_std = sysroot.rust_std,
@@ -699,7 +706,9 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _incompatible_change_rust_test_compilation_output_directory = ctx.attr._incompatible_change_rust_test_compilation_output_directory[IncompatibleFlagInfo].enabled,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
+        _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
+        _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
     )
     return [
         toolchain,
@@ -801,6 +810,11 @@ rust_toolchain = rule(
             doc = "LLVM tools that are shipped with the Rust toolchain.",
             allow_files = True,
         ),
+        "lto": attr.label(
+            providers = [RustLtoInfo],
+            default = Label("//rust/settings:lto"),
+            doc = "Label to an LTO setting whether which can enable custom LTO settings",
+        ),
         "opt_level": attr.string_dict(
             doc = "Rustc optimization levels.",
             default = {
@@ -870,8 +884,8 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_codegen_units": attr.label(
+            default = Label("//rust/settings:codegen_units"),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),
@@ -886,8 +900,12 @@ rust_toolchain = rule(
         "_incompatible_change_rust_test_compilation_output_directory": attr.label(
             default = Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory"),
         ),
+        "_incompatible_do_not_include_data_in_compile_data": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
+            doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
+        ),
         "_no_std": attr.label(
-            default = Label("//:no_std"),
+            default = Label("//rust/settings:no_std"),
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),

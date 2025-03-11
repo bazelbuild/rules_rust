@@ -44,9 +44,10 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
-    "aarch64-fuchsia": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
+    "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
@@ -59,12 +60,13 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
-    "wasm32-wasi": _support(std = True, host_tools = False),
+    "wasm32-wasip1": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
-    "x86_64-fuchsia": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
+    "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
+    "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }
 
 _T3_PLATFORM_TRIPLES = {
@@ -82,13 +84,19 @@ SUPPORTED_T3_PLATFORM_TRIPLES = {
 }
 
 SUPPORTED_PLATFORM_TRIPLES = sorted(
-    SUPPORTED_T1_PLATFORM_TRIPLES.keys() + SUPPORTED_T2_PLATFORM_TRIPLES.keys() + SUPPORTED_T3_PLATFORM_TRIPLES.keys(),
+    list(SUPPORTED_T1_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T2_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T3_PLATFORM_TRIPLES.keys()),
 )
 
 # Represents all platform triples `rules_rust` is configured to handle in some way.
 # Note that with T3 platforms some artifacts may not be available which can lead to
 # failures in the analysis phase. This list should be used sparingly.
-ALL_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES.keys() + SUPPORTED_T2_PLATFORM_TRIPLES.keys() + _T3_PLATFORM_TRIPLES.keys()
+ALL_PLATFORM_TRIPLES = (
+    list(SUPPORTED_T1_PLATFORM_TRIPLES.keys()) +
+    list(SUPPORTED_T2_PLATFORM_TRIPLES.keys()) +
+    list(_T3_PLATFORM_TRIPLES.keys())
+)
 
 # CPUs that map to a `@platforms//cpu` entry
 _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
@@ -135,6 +143,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "fuchsia": "fuchsia",
     "ios": "ios",
     "linux": "linux",
+    "macos": "osx",
     "nacl": None,
     "netbsd": None,
     "nixos": "nixos",
@@ -142,8 +151,10 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "nto": "qnx",
     "openbsd": "openbsd",
     "solaris": None,
+    "uefi": "uefi",
     "unknown": None,
     "wasi": None,
+    "wasip1": None,
     "windows": "windows",
 }
 
@@ -157,14 +168,17 @@ _SYSTEM_TO_BINARY_EXT = {
     "fuchsia": "",
     "ios": "",
     "linux": "",
+    "macos": "",
     "nixos": "",
     "none": "",
     "nto": "",
+    "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "wasip1": ".wasm",
     "windows": ".exe",
 }
 
@@ -178,11 +192,14 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "fuchsia": ".a",
     "ios": ".a",
     "linux": ".a",
+    "macos": ".a",
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
+    "uefi": ".lib",
     "unknown": "",
     "wasi": "",
+    "wasip1": "",
     "windows": ".lib",
 }
 
@@ -196,11 +213,14 @@ _SYSTEM_TO_DYLIB_EXT = {
     "fuchsia": ".so",
     "ios": ".dylib",
     "linux": ".so",
+    "macos": ".dylib",
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
+    "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
     "wasi": ".wasm",
+    "wasip1": ".wasm",
     "windows": ".dll",
 }
 
@@ -237,6 +257,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
     # TODO: This ignores musl. Longer term what does Bazel think about musl?
     "linux": ["-ldl", "-lpthread"],
+    "macos": ["-lSystem", "-lresolv"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
     "nixos": ["-ldl", "-lpthread"],  # Same as `linux`.
@@ -244,9 +265,11 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "nto": [],
     "openbsd": ["-lpthread"],
     "solaris": ["-lsocket", "-lposix4", "-lpthread", "-lresolv"],
+    "uefi": [],
     "unknown": [],
     "uwp": ["ws2_32.lib"],
     "wasi": [],
+    "wasip1": [],
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
@@ -384,7 +407,12 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple == "wasm32-wasi":
+    if target_triple in "wasm32-wasi":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+        ]
+    if target_triple == "wasm32-wasip1":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",

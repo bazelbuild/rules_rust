@@ -2,8 +2,9 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo")
 
@@ -192,8 +193,26 @@ def _pwd_flags_isystem(args):
 
     return res
 
+def _pwd_flags_fsanitize_ignorelist(args):
+    """Prefix execroot-relative paths of known arguments with ${pwd}.
+
+    Args:
+        args (list): List of tool arguments.
+
+    Returns:
+        list: The modified argument list.
+    """
+    res = []
+    for arg in args:
+        s, opt, path = arg.partition("-fsanitize-ignorelist=")
+        if s == "" and not paths.is_absolute(path):
+            res.append("{}${{pwd}}/{}".format(opt, path))
+        else:
+            res.append(arg)
+    return res
+
 def _pwd_flags(args):
-    return _pwd_flags_isystem(_pwd_flags_sysroot(args))
+    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_sysroot(args)))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
@@ -320,11 +339,6 @@ def _cargo_build_script_impl(ctx):
         extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
-    streams = struct(
-        stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log"),
-        stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log"),
-    )
-
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
@@ -333,9 +347,24 @@ def _cargo_build_script_impl(ctx):
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    # Start with the default shell env, which contains any --action_env
-    # settings passed in on the command line.
-    env = dict(ctx.configuration.default_shell_env)
+    env = dict({})
+
+    if ctx.attr.use_default_shell_env == -1:
+        use_default_shell_env = ctx.attr._default_use_default_shell_env[BuildSettingInfo].value
+    elif ctx.attr.use_default_shell_env == 0:
+        use_default_shell_env = False
+    else:
+        use_default_shell_env = True
+
+    # If enabled, start with the default shell env, which contains any --action_env
+    # settings passed in on the command line and defaults like $PATH.
+    if use_default_shell_env:
+        env.update(ctx.configuration.default_shell_env)
+
+    if toolchain.cargo:
+        env.update({
+            "CARGO": "${{pwd}}/{}".format(toolchain.cargo.path),
+        })
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -367,7 +396,7 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, link_args, linker_env = get_linker_and_args(ctx, ctx.attr, "bin", cc_toolchain, feature_configuration, None)
+    linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
@@ -417,6 +446,8 @@ def _cargo_build_script_impl(ctx):
     # Add environment variables from the Rust toolchain.
     env.update(toolchain.env)
 
+    known_variables = {}
+
     # Gather data from the `toolchains` attribute.
     for target in ctx.attr.toolchains:
         if DefaultInfo in target:
@@ -431,7 +462,7 @@ def _cargo_build_script_impl(ctx):
             toolchain_tools.append(all_files)
         if platform_common.TemplateVariableInfo in target:
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
-            env.update(variables)
+            known_variables.update(variables)
 
     _merge_env_dict(env, expand_dict_value_locations(
         ctx,
@@ -441,6 +472,7 @@ def _cargo_build_script_impl(ctx):
         getattr(ctx.attr, "tools", []) +
         script_info.data +
         script_info.tools,
+        known_variables,
     ))
 
     tools = depset(
@@ -465,9 +497,21 @@ def _cargo_build_script_impl(ctx):
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
-    args.add(streams.stdout, format = "--stdout=%s")
-    args.add(streams.stderr, format = "--stderr=%s")
     args.add(ctx.attr.rundir, format = "--rundir=%s")
+
+    output_groups = {
+        "out_dir": depset([out_dir]),
+    }
+
+    debug_std_streams_output_group = ctx.attr._debug_std_streams_output_group[BuildSettingInfo].value
+    if debug_std_streams_output_group:
+        debug_stdout = ctx.actions.declare_file(ctx.label.name + ".stdout.log")
+        debug_stderr = ctx.actions.declare_file(ctx.label.name + ".stderr.log")
+        args.add(debug_stdout, format = "--stdout=%s")
+        args.add(debug_stderr, format = "--stderr=%s")
+        extra_output.append(debug_stdout)
+        extra_output.append(debug_stderr)
+        output_groups["streams"] = depset([debug_stdout, debug_stderr])
 
     build_script_inputs = []
 
@@ -499,8 +543,6 @@ def _cargo_build_script_impl(ctx):
             link_flags,
             link_search_paths,
             dep_env_out,
-            streams.stdout,
-            streams.stderr,
         ] + extra_output,
         tools = tools,
         inputs = depset(build_script_inputs, transitive = extra_inputs),
@@ -508,9 +550,7 @@ def _cargo_build_script_impl(ctx):
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
         toolchain = None,
-        # Set use_default_shell_env so that $PATH is set, as tools like Cmake
-        # may want to probe $PATH for helper tools.
-        use_default_shell_env = True,
+        use_default_shell_env = use_default_shell_env,
     )
 
     return [
@@ -528,8 +568,7 @@ def _cargo_build_script_impl(ctx):
             compile_data = depset(extra_output, transitive = script_data),
         ),
         OutputGroupInfo(
-            streams = depset([streams.stdout, streams.stderr]),
-            out_dir = depset([out_dir]),
+            **output_groups
         ),
     ]
 
@@ -600,20 +639,32 @@ cargo_build_script = rule(
             allow_files = True,
             cfg = "exec",
         ),
+        "use_default_shell_env": attr.int(
+            doc = dedent("""\
+                Whether or not to include the default shell environment for the build
+                script action. By default Bazel's `default_shell_env` is set for build
+                script actions so crates like `cmake` can probe $PATH to find tools.
+            """),
+            default = -1,
+            values = [-1, 0, 1],
+        ),
         "version": attr.string(
             doc = "The semantic version (semver) of the crate",
         ),
         "_cargo_build_script_runner": attr.label(
             executable = True,
             allow_files = True,
-            default = Label("//cargo/cargo_build_script_runner:cargo_build_script_runner"),
+            default = Label("//cargo/cargo_build_script_runner:runner"),
             cfg = "exec",
         ),
         "_cargo_manifest_dir_filename_suffixes_to_retain": attr.label(
             default = Label("//cargo/settings:cargo_manifest_dir_filename_suffixes_to_retain"),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        "_debug_std_streams_output_group": attr.label(
+            default = Label("//cargo/settings:debug_std_streams_output_group"),
+        ),
+        "_default_use_default_shell_env": attr.label(
+            default = Label("//cargo/settings:use_default_shell_env"),
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),

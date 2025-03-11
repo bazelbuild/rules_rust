@@ -1,0 +1,26 @@
+load("@rules_rust//cargo:defs.bzl", "extract_cargo_lints")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+extract_cargo_lints(
+    name = "hello_world_lints",
+    manifest = "Cargo.toml",
+)
+
+rust_library(
+    name = "hello_world",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+    lint_config = ":hello_world_lints",
+)
+
+rust_clippy(
+    name = "hello_world_clippy",
+    deps = [":hello_world"],
+)
+
+rust_doc(
+    name = "hello_world_doc",
+    crate = ":hello_world",
+)

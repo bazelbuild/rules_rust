@@ -32,14 +32,32 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "axum-0.4.8",
+    actual = "@crates_vendor_pkgs__axum-0.4.8//:axum",
+    tags = ["manual"],
+)
+
+alias(
     name = "axum",
     actual = "@crates_vendor_pkgs__axum-0.4.8//:axum",
     tags = ["manual"],
 )
 
 alias(
+    name = "hyper-0.14.32",
+    actual = "@crates_vendor_pkgs__hyper-0.14.32//:hyper",
+    tags = ["manual"],
+)
+
+alias(
     name = "hyper",
-    actual = "@crates_vendor_pkgs__hyper-0.14.30//:hyper",
+    actual = "@crates_vendor_pkgs__hyper-0.14.32//:hyper",
+    tags = ["manual"],
+)
+
+alias(
+    name = "mime-0.3.17",
+    actual = "@crates_vendor_pkgs__mime-0.3.17//:mime",
     tags = ["manual"],
 )
 
@@ -50,8 +68,20 @@ alias(
 )
 
 alias(
+    name = "serde_json-1.0.135",
+    actual = "@crates_vendor_pkgs__serde_json-1.0.135//:serde_json",
+    tags = ["manual"],
+)
+
+alias(
     name = "serde_json",
-    actual = "@crates_vendor_pkgs__serde_json-1.0.128//:serde_json",
+    actual = "@crates_vendor_pkgs__serde_json-1.0.135//:serde_json",
+    tags = ["manual"],
+)
+
+alias(
+    name = "socket2-0.4.10",
+    actual = "@crates_vendor_pkgs__socket2-0.4.10//:socket2",
     tags = ["manual"],
 )
 
@@ -62,8 +92,20 @@ alias(
 )
 
 alias(
+    name = "tokio-1.43.0",
+    actual = "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
+    tags = ["manual"],
+)
+
+alias(
     name = "tokio",
-    actual = "@crates_vendor_pkgs__tokio-1.40.0//:tokio",
+    actual = "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
+    tags = ["manual"],
+)
+
+alias(
+    name = "tower-0.4.13",
+    actual = "@crates_vendor_pkgs__tower-0.4.13//:tower",
     tags = ["manual"],
 )
 
@@ -74,19 +116,37 @@ alias(
 )
 
 alias(
+    name = "tower-http-0.2.5",
+    actual = "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
+    tags = ["manual"],
+)
+
+alias(
     name = "tower-http",
     actual = "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
     tags = ["manual"],
 )
 
 alias(
+    name = "tracing-0.1.41",
+    actual = "@crates_vendor_pkgs__tracing-0.1.41//:tracing",
+    tags = ["manual"],
+)
+
+alias(
     name = "tracing",
-    actual = "@crates_vendor_pkgs__tracing-0.1.40//:tracing",
+    actual = "@crates_vendor_pkgs__tracing-0.1.41//:tracing",
+    tags = ["manual"],
+)
+
+alias(
+    name = "tracing-subscriber-0.3.19",
+    actual = "@crates_vendor_pkgs__tracing-subscriber-0.3.19//:tracing_subscriber",
     tags = ["manual"],
 )
 
 alias(
     name = "tracing-subscriber",
-    actual = "@crates_vendor_pkgs__tracing-subscriber-0.3.18//:tracing_subscriber",
+    actual = "@crates_vendor_pkgs__tracing-subscriber-0.3.19//:tracing_subscriber",
     tags = ["manual"],
 )

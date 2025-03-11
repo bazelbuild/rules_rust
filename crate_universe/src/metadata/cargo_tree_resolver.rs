@@ -6,9 +6,10 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 
 use anyhow::{anyhow, bail, Context, Result};
+use camino::Utf8Path;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use tracing::debug;
+use tracing::{debug, trace};
 use url::Url;
 
 use crate::config::CrateId;
@@ -136,6 +137,12 @@ impl TreeResolver {
             // number of processes (which can be +400 and hit operating system limitations).
             let mut target_triple_to_child = BTreeMap::<String, Child>::new();
 
+            debug!(
+                "Spawning `cargo tree` processes for host `{}`: {}",
+                host_triple,
+                cargo_target_triples.keys().len(),
+            );
+
             for target_triple in cargo_target_triples.keys() {
                 // We use `cargo tree` here because `cargo metadata` doesn't report
                 // back target-specific features (enabled with `resolver = "2"`).
@@ -149,6 +156,7 @@ impl TreeResolver {
                     // host triple instead of the host triple detected by rustc.
                     .env("RUSTC_WRAPPER", rustc_wrapper)
                     .env("HOST_TRIPLE", host_triple)
+                    .env("CARGO_CACHE_RUSTC_INFO", "0")
                     .current_dir(manifest_path.parent().expect("All manifests should have a valid parent."))
                     .arg("tree")
                     .arg("--manifest-path")
@@ -176,12 +184,6 @@ impl TreeResolver {
                 target_triple_to_child.insert(target_triple.clone(), child);
             }
 
-            debug!(
-                "Spawned `cargo tree` processes for host `{}`: {}",
-                host_triple,
-                target_triple_to_child.len(),
-            );
-
             for (target_triple, child) in target_triple_to_child.into_iter() {
                 let output = child.wait_with_output().with_context(|| {
                     format!(
@@ -192,10 +194,12 @@ impl TreeResolver {
                     )
                 })?;
                 if !output.status.success() {
-                    eprintln!("{}", String::from_utf8_lossy(&output.stdout));
-                    eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                    tracing::error!("{}", String::from_utf8_lossy(&output.stdout));
+                    tracing::error!("{}", String::from_utf8_lossy(&output.stderr));
                     bail!(format!("Failed to run cargo tree: {}", output.status))
                 }
+
+                tracing::trace!("`cargo tree --target={}` completed.", target_triple);
 
                 // Replicate outputs for any de-duplicated platforms
                 for host_plat in cargo_host_triples[host_triple].iter() {
@@ -303,12 +307,12 @@ impl TreeResolver {
     #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        pristine_manifest_path: &Path,
+        pristine_manifest_path: &Utf8Path,
         target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
             "Generating features for manifest {}",
-            pristine_manifest_path.display()
+            pristine_manifest_path
         );
 
         let tempdir = tempfile::tempdir().context("Failed to make tempdir")?;
@@ -346,7 +350,7 @@ impl TreeResolver {
 
         for (host_triple, target_streams) in deps_tree_streams.into_iter() {
             for (target_triple, stdout) in target_streams.into_iter() {
-                debug!(
+                trace!(
                     "Parsing (host={}) `cargo tree --target {}` output:\n```\n{}\n```",
                     host_triple,
                     target_triple,
@@ -446,7 +450,7 @@ impl TreeResolver {
     // and if we don't have this fake root injection, cross-compiling from Darwin to Linux won't work because features don't get correctly resolved for the exec=darwin case.
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
-        pristine_manifest_path: &Path,
+        pristine_manifest_path: &Utf8Path,
         output_dir: &Path,
     ) -> Result<PathBuf> {
         if !output_dir.exists() {
@@ -480,17 +484,22 @@ impl TreeResolver {
 
         let cargo_metadata = self
             .cargo_bin
-            .metadata_command_with_options(pristine_manifest_path, vec!["--locked".to_owned()])?
-            .manifest_path(pristine_manifest_path)
+            .metadata_command_with_options(
+                pristine_manifest_path.as_std_path(),
+                vec!["--locked".to_owned()],
+            )?
+            .manifest_path(pristine_manifest_path.as_std_path())
             .exec()
             .context("Failed to run cargo metadata to list transitive proc macros")?;
         let proc_macros = cargo_metadata
             .packages
             .iter()
             .filter(|p| {
-                p.targets
-                    .iter()
-                    .any(|t| t.kind.iter().any(|k| k == "proc-macro"))
+                p.targets.iter().any(|t| {
+                    t.kind
+                        .iter()
+                        .any(|k| matches!(k, cargo_metadata::TargetKind::ProcMacro))
+                })
             })
             // Filter out any in-workspace proc macros, populate dependency details for non-in-workspace proc macros.
             .filter_map(|pm| {
@@ -517,10 +526,10 @@ impl TreeResolver {
             })
             .collect::<Result<BTreeSet<_>>>()?;
 
-        let mut manifest =
-            cargo_toml::Manifest::from_path(pristine_manifest_path).with_context(|| {
+        let mut manifest = cargo_toml::Manifest::from_path(pristine_manifest_path.as_std_path())
+            .with_context(|| {
                 format!(
-                    "Failed to parse Cargo.toml file at {:?}",
+                    "Failed to parse Cargo.toml file at {}",
                     pristine_manifest_path
                 )
             })?;
@@ -581,6 +590,11 @@ impl Source {
         let original_scheme = url.scheme().to_owned();
         let scheme_parts: Vec<_> = original_scheme.split('+').collect();
         match &scheme_parts[..] {
+            // e.g. sparse+https://github.com/rust-lang/crates.io-index
+            ["sparse", _] => Ok(Self::Registry {
+                registry: url.to_string(),
+                version,
+            }),
             // e.g. registry+https://github.com/rust-lang/crates.io-index
             ["registry", scheme] => {
                 let new_url = set_url_scheme_despite_the_url_crate_not_wanting_us_to(&url, scheme)?;
@@ -937,6 +951,25 @@ mod test {
     use super::*;
 
     #[test]
+    fn parse_sparse_source() {
+        let source = Source::parse(
+            "sparse+https://github.com/rust-lang/crates.io-index",
+            "1.0.1".to_owned(),
+        )
+        .unwrap();
+        // sparse we want to leave the augmented scheme in there.
+        // cargo_toml::DependencyDetail::registry_index explicitly supports
+        // sparse+https:
+        assert_eq!(
+            source,
+            Source::Registry {
+                registry: "sparse+https://github.com/rust-lang/crates.io-index".to_owned(),
+                version: "1.0.1".to_owned()
+            }
+        );
+    }
+
+    #[test]
     fn parse_registry_source() {
         let source = Source::parse(
             "registry+https://github.com/rust-lang/crates.io-index",
@@ -993,13 +1026,7 @@ mod test {
         // For testing, the rustc executable is a batch script and not a compiled executable.
         // any strings referring to it as an executable will need to be updated.
         let content = std::fs::read_to_string(&rustc_wrapper).unwrap();
-        std::fs::write(
-            &rustc_wrapper,
-            content
-                .replace("rustc.exe", "rustc.bat")
-                .replace("rustc\\.exe", "rustc\\.bat"),
-        )
-        .unwrap();
+        std::fs::write(&rustc_wrapper, content.replace(".exe", ".bat")).unwrap();
 
         (wrapper, rustc_wrapper)
     }

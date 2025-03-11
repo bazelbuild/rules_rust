@@ -2,25 +2,30 @@
 
 mod generate;
 mod query;
+mod render;
 mod splice;
 mod vendor;
 
 use clap::Parser;
-use tracing::{Level, Subscriber};
+use tracing::Subscriber;
 use tracing_subscriber::fmt::format::{Format, Full};
 use tracing_subscriber::fmt::time::SystemTime;
 use tracing_subscriber::fmt::{FormatEvent, FormatFields};
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::FmtSubscriber;
 
+pub use tracing::Level as LogLevel;
+
 pub use self::generate::GenerateOptions;
 pub use self::query::QueryOptions;
+pub use self::render::RenderOptions;
 pub use self::splice::SpliceOptions;
 pub use self::vendor::VendorOptions;
 
 // Entrypoints
 pub use generate::generate;
 pub use query::query;
+pub use render::render;
 pub use splice::splice;
 pub use vendor::vendor;
 
@@ -42,6 +47,9 @@ pub enum Options {
 
     /// Vendor BUILD files to the workspace with either repository definitions or `cargo vendor` generated sources.
     Vendor(VendorOptions),
+
+    /// Render a BUILD file for a single crate.
+    Render(RenderOptions),
 }
 
 // Convenience wrappers to avoid dependencies in the binary
@@ -51,7 +59,7 @@ pub fn parse_args() -> Options {
     Options::parse()
 }
 
-const EXPECTED_LOGGER_NAMES: [&str; 4] = ["Generate", "Splice", "Query", "Vendor"];
+const EXPECTED_LOGGER_NAMES: [&str; 5] = ["Generate", "Splice", "Query", "Vendor", "Render"];
 
 /// A wrapper for the tracing-subscriber default [FormatEvent]
 /// that prepends the name of the active CLI option.
@@ -86,7 +94,7 @@ impl LoggingFormatEvent {
 }
 
 /// Initialize logging for one of the cli options.
-pub fn init_logging(name: &str, verbose: bool) {
+pub fn init_logging(name: &str, level: LogLevel) {
     if !EXPECTED_LOGGER_NAMES.contains(&name) {
         panic!(
             "Unexpected logger name {}, use of one of {:?}",
@@ -94,13 +102,9 @@ pub fn init_logging(name: &str, verbose: bool) {
         );
     }
 
-    // a builder for `FmtSubscriber`.
     let subscriber = FmtSubscriber::builder()
-        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-        // will be written to stdout.
-        .with_max_level(if verbose { Level::DEBUG } else { Level::INFO })
+        .with_max_level(level)
         .event_format(LoggingFormatEvent::new(name))
-        // completes the builder.
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");

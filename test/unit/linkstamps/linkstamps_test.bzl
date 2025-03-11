@@ -2,11 +2,15 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_test")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 def _is_running_on_linux(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._linux[platform_common.ConstraintValueInfo])
+
+def _get_workspace_prefix(ctx):
+    return "" if ctx.workspace_name in ["rules_rust", "_main"] else "/external/rules_rust"
 
 def _supports_linkstamps_test(ctx):
     env = analysistest.begin(ctx)
@@ -21,7 +25,7 @@ def _supports_linkstamps_test(ctx):
     asserts.equals(env, linkstamp_out.basename, "linkstamp.o")
     tut_out = tut.files.to_list()[0]
     is_test = tut[rust_common.crate_info].is_test
-    workspace_prefix = "" if ctx.workspace_name == "rules_rust" else "/external/rules_rust"
+    workspace_prefix = _get_workspace_prefix(ctx)
 
     # Rust compilation outputs coming from a test are put in test-{hash} directory
     # which we need to remove in order to obtain the linkstamp file path.
@@ -53,7 +57,9 @@ def _supports_linkstamps_test(ctx):
 supports_linkstamps_test = analysistest.make(
     _supports_linkstamps_test,
     attrs = {
-        "_linux": attr.label(default = Label("@platforms//os:linux")),
+        "_linux": attr.label(
+            default = Label("@platforms//os:linux"),
+        ),
     },
 )
 

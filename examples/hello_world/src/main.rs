@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate hello_lib;
-
-use hello_lib::greeter;
-
-fn main() {
-    let hello = greeter::Greeter::new("Hello");
-    hello.greet("world");
+fn main() -> anyhow::Result<()> {
+    println!("Hello, world!");
+    Ok(())
 }

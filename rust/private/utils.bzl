@@ -15,7 +15,10 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", find_rules_cc_toolchain = "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load(":compat.bzl", "abs")
 load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
 
 UNSUPPORTED_FEATURES = [
@@ -175,19 +178,6 @@ def get_lib_name_for_windows(lib):
 
     return libname
 
-def abs(value):
-    """Returns the absolute value of a number.
-
-    Args:
-      value (int): A number.
-
-    Returns:
-      int: The absolute value of the number.
-    """
-    if value < 0:
-        return -value
-    return value
-
 def determine_output_hash(crate_root, label):
     """Generates a hash of the crate root file's path.
 
@@ -242,13 +232,14 @@ def _deduplicate(xs):
 def concat(xss):
     return [x for xs in xss for x in xs]
 
-def _expand_location_for_build_script_runner(ctx, env, data):
+def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
     """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
         ctx (ctx): The rule's context object
         env (str): The value possibly containing location macros to expand.
         data (sequence of Targets): See one of the parent functions.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         string: The location-macro expanded version of the string.
@@ -260,10 +251,10 @@ def _expand_location_for_build_script_runner(ctx, env, data):
     return ctx.expand_make_variables(
         env,
         dedup_expand_location(ctx, env, data),
-        {},
+        known_variables,
     )
 
-def expand_dict_value_locations(ctx, env, data):
+def expand_dict_value_locations(ctx, env, data, known_variables):
     """Performs location-macro expansion on string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -288,13 +279,14 @@ def expand_dict_value_locations(ctx, env, data):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         dict: A dict of environment variables with expanded location macros
     """
-    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data)) for (k, v) in env.items()])
+    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data, known_variables)) for (k, v) in env.items()])
 
-def expand_list_element_locations(ctx, args, data):
+def expand_list_element_locations(ctx, args, data, known_variables):
     """Performs location-macro expansion on a list of string values.
 
     $(execroot ...) and $(location ...) are prefixed with ${pwd},
@@ -311,11 +303,12 @@ def expand_list_element_locations(ctx, args, data):
         data (sequence of Targets): The targets which may be referenced by
             location macros. This is expected to be the `data` attribute of
             the target, though may have other targets or attributes mixed in.
+        known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         list: A list of arguments with expanded location macros
     """
-    return [_expand_location_for_build_script_runner(ctx, arg, data) for arg in args]
+    return [_expand_location_for_build_script_runner(ctx, arg, data, known_variables) for arg in args]
 
 def name_to_crate_name(name):
     """Converts a build target's name into the name of its associated crate.
@@ -798,7 +791,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
         extension = extension,
     )
 
-def transform_sources(ctx, srcs, crate_root):
+def transform_sources(ctx, srcs, compile_data, crate_root):
     """Creates symlinks of the source files if needed.
 
     Rustc assumes that the source files are located next to the crate root.
@@ -811,25 +804,33 @@ def transform_sources(ctx, srcs, crate_root):
     Args:
         ctx (struct): The current rule's context.
         srcs (List[File]): The sources listed in the `srcs` attribute
+        compile_data (List[File]): The sources listed in the `compile_data`
+                                   attribute
         crate_root (File): The file specified in the `crate_root` attribute,
                            if it exists, otherwise None
 
     Returns:
-        Tuple(List[File], File): The transformed srcs and crate_root
+        Tuple(List[File], List[File], File): The transformed srcs, compile_data
+                                             and crate_root
     """
-    has_generated_sources = len([src for src in srcs if not src.is_source]) > 0
+    has_generated_sources = (
+        len([src for src in srcs if not src.is_source]) +
+        len([src for src in compile_data if not src.is_source]) >
+        0
+    )
 
     if not has_generated_sources:
-        return srcs, crate_root
+        return srcs, compile_data, crate_root
 
     package_root = paths.join(ctx.label.workspace_root, ctx.label.package)
     generated_sources = [_symlink_for_non_generated_source(ctx, src, package_root) for src in srcs if src != crate_root]
+    generated_compile_data = [_symlink_for_non_generated_source(ctx, src, package_root) for src in compile_data]
     generated_root = crate_root
     if crate_root:
         generated_root = _symlink_for_non_generated_source(ctx, crate_root, package_root)
         generated_sources.append(generated_root)
 
-    return generated_sources, generated_root
+    return generated_sources, generated_compile_data, generated_root
 
 def get_edition(attr, toolchain, label):
     """Returns the Rust edition from either the current rule's attributes or the current `rust_toolchain`
@@ -866,7 +867,8 @@ def _symlink_for_non_generated_source(ctx, src_file, package_root):
         File: The created symlink if a non-generated file, or the file itself.
     """
 
-    if src_file.is_source or src_file.root.path != ctx.bin_dir.path:
+    src_short_path = paths.relativize(src_file.path, src_file.root.path)
+    if (src_file.is_source or src_file.root.path != ctx.bin_dir.path) and paths.starts_with(src_short_path, package_root):
         src_short_path = paths.relativize(src_file.path, src_file.root.path)
         src_symlink = ctx.actions.declare_file(paths.relativize(src_short_path, package_root))
         ctx.actions.symlink(

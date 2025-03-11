@@ -15,7 +15,7 @@
 """A module defining clippy rules"""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo")
+load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo", "LintsInfo")
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -39,11 +39,11 @@ def _clippy_flag_impl(ctx):
 
 clippy_flag = rule(
     doc = (
-        "Add a custom clippy flag from the command line with `--@rules_rust//:clippy_flag`." +
+        "Add a custom clippy flag from the command line with `--@rules_rust//rust/settings:clippy_flag`." +
         "Multiple uses are accumulated and appended after the extra_rustc_flags."
     ),
     implementation = _clippy_flag_impl,
-    build_setting = config.string(flag = True, allow_multiple = True),
+    build_setting = config.string_list(flag = True, repeatable = True),
 )
 
 def _clippy_flags_impl(ctx):
@@ -51,7 +51,7 @@ def _clippy_flags_impl(ctx):
 
 clippy_flags = rule(
     doc = (
-        "Add custom clippy flags from the command line with `--@rules_rust//:clippy_flags`."
+        "Add custom clippy flags from the command line with `--@rules_rust//rust/settings:clippy_flags`."
     ),
     implementation = _clippy_flags_impl,
     build_setting = config.string_list(flag = True),
@@ -77,6 +77,7 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
         ignore_tags = [
             "no_clippy",
             "no_lint",
+            "nolint",
             "noclippy",
         ]
         for tag in aspect_ctx.rule.attr.tags:
@@ -92,6 +93,12 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
         return None
 
 def _clippy_aspect_impl(target, ctx):
+    # Exit early if a target already has a clippy output group. This
+    # can be useful for rules which always want to inhibit clippy.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "clippy_checks"):
+            return []
+
     crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
         return [ClippyInfo(output = depset([]))]
@@ -105,6 +112,17 @@ def _clippy_aspect_impl(target, ctx):
         aliases = crate_info.aliases,
     )
 
+    # Gather the necessary rust flags to apply lints, if they were provided.
+    clippy_flags = []
+    lint_files = []
+    if hasattr(ctx.rule.attr, "lint_config") and ctx.rule.attr.lint_config:
+        clippy_flags = clippy_flags + \
+                       ctx.rule.attr.lint_config[LintsInfo].clippy_lint_flags + \
+                       ctx.rule.attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + \
+                     ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files + \
+                     ctx.rule.attr.lint_config[LintsInfo].rustc_lint_files
+
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx,
         ctx.rule.file,
@@ -117,6 +135,7 @@ def _clippy_aspect_impl(target, ctx):
         crate_info,
         dep_info,
         build_info,
+        lint_files,
     )
 
     args, env = construct_arguments(
@@ -143,7 +162,9 @@ def _clippy_aspect_impl(target, ctx):
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
-    clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+    # Then append the clippy flags specified from the command line, so they override what is
+    # specified on the library.
+    clippy_flags = clippy_flags + ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
 
     if hasattr(ctx.attr, "_clippy_flag"):
         clippy_flags = clippy_flags + ctx.attr._clippy_flag[ClippyFlagsInfo].clippy_flags
@@ -154,7 +175,7 @@ def _clippy_aspect_impl(target, ctx):
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
         args.process_wrapper_flags.add("--stderr-file", clippy_out)
 
-        if clippy_flags:
+        if clippy_flags or lint_files:
             args.rustc_flags.add_all(clippy_flags)
 
         # If we are capturing the output, we want the build system to be able to keep going
@@ -166,7 +187,7 @@ def _clippy_aspect_impl(target, ctx):
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
         args.process_wrapper_flags.add("--touch-file", clippy_out)
 
-        if clippy_flags:
+        if clippy_flags or lint_files:
             args.rustc_flags.add_all(clippy_flags)
         else:
             # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
@@ -210,38 +231,31 @@ rust_clippy_aspect = aspect(
     attrs = {
         "_capture_output": attr.label(
             doc = "Value of the `capture_clippy_output` build setting",
-            default = Label("//:capture_clippy_output"),
-        ),
-        "_cc_toolchain": attr.label(
-            doc = (
-                "Required attribute to access the cc_toolchain. See [Accessing the C++ toolchain]" +
-                "(https://docs.bazel.build/versions/master/integrating-with-rules-cc.html#accessing-the-c-toolchain)"
-            ),
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("//rust/settings:capture_clippy_output"),
         ),
         "_clippy_flag": attr.label(
             doc = "Arguments to pass to clippy." +
                   "Multiple uses are accumulated and appended after the extra_rustc_flags.",
-            default = Label("//:clippy_flag"),
+            default = Label("//rust/settings:clippy_flag"),
         ),
         "_clippy_flags": attr.label(
             doc = "Arguments to pass to clippy",
-            default = Label("//:clippy_flags"),
+            default = Label("//rust/settings:clippy_flags"),
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
             allow_single_file = True,
-            default = Label("//:clippy.toml"),
+            default = Label("//rust/settings:clippy.toml"),
         ),
         "_error_format": attr.label(
             doc = "The desired `--error-format` flags for clippy",
-            default = "//:error_format",
+            default = "//rust/settings:error_format",
         ),
         "_extra_rustc_flag": attr.label(
-            default = Label("//:extra_rustc_flag"),
+            default = Label("//rust/settings:extra_rustc_flag"),
         ),
         "_per_crate_rustc_flag": attr.label(
-            default = Label("//:experimental_per_crate_rustc_flag"),
+            default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running clippy on all platforms",

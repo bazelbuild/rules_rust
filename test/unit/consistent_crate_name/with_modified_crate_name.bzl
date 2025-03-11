@@ -1,5 +1,7 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVariantInfo")
 
@@ -59,11 +61,8 @@ with_modified_crate_name = rule(
         "src": attr.label(
             allow_single_file = [".rs"],
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
         "_error_format": attr.label(
-            default = Label("//:error_format"),
+            default = Label("//rust/settings:error_format"),
         ),
         "_process_wrapper": attr.label(
             default = Label("//util/process_wrapper"),

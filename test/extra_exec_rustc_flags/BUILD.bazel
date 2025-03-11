@@ -7,7 +7,7 @@ package(default_visibility = ["//test:__subpackages__"])
 # Checks that extra_exec_rustc_flags are passed in exec configuration.
 # lib.rs is a sample source file that requires a `--cfg=bazel_exec` flag to build.
 # These targets set up transitions so that building :lib triggers building
-# lib.rs in exec configuration with //:extra_exec_rustc_flags=[--cfg=bazel_exec].
+# lib.rs in exec configuration with //rust/settings:extra_exec_rustc_flags=[--cfg=bazel_exec].
 # The intermediate targets are tagged "manual" as they are not meant to be built
 # on their own.
 
@@ -47,7 +47,7 @@ with_exec_cfg(
 # Checks that extra_exec_rustc_flags are not passed in non-exec configurations.
 # lib_no_exec.rs is a sample source file that fails to build if
 # `--cfg=bazel_exec` is present. The targets below are built in non-exec configurations,
-# so they should build just fine with //:extra_exec_rustc_flags=[--cfg=bazel_exec].
+# so they should build just fine with //rust/settings:extra_exec_rustc_flags=[--cfg=bazel_exec].
 rust_library(
     name = "lib_no_exec",
     srcs = ["lib_no_exec.rs"],

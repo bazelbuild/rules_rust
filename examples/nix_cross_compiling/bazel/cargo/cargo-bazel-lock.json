@@ -1,5 +1,5 @@
 {
-  "checksum": "aa861fdedf05e5c4edf7d057bb92235c026e9c60b54e3883f4beb0d0e1c0805d",
+  "checksum": "289f7ed772b994d632a3f1a417987ce87df34a9c6db8c4be65f7dadfed95a2df",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -594,11 +594,7 @@
             "--cfg=libc_underscore_const_names",
             "--cfg=libc_const_extern_fn"
           ],
-          "selects": {
-            "x86_64-unknown-nixos-gnu": [
-              "--cfg=fake_nioxs_feature"
-            ]
-          }
+          "selects": {}
         },
         "version": "0.2.150"
       },
@@ -2383,7 +2379,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "wasm32-unknown-unknown",
-      "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
@@ -2394,7 +2390,7 @@
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "wasm32-unknown-unknown",
-      "wasm32-wasi",
+      "wasm32-wasip1",
       "x86_64-apple-darwin",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-nixos-gnu"
@@ -2402,7 +2398,7 @@
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"redox\")": [],
     "cfg(target_os = \"wasi\")": [
-      "wasm32-wasi"
+      "wasm32-wasip1"
     ],
     "cfg(tokio_taskdump)": [],
     "cfg(unix)": [
@@ -2420,8 +2416,8 @@
     "wasm32-unknown-unknown": [
       "wasm32-unknown-unknown"
     ],
-    "wasm32-wasi": [
-      "wasm32-wasi"
+    "wasm32-wasip1": [
+      "wasm32-wasip1"
     ],
     "x86_64-apple-darwin": [
       "x86_64-apple-darwin"
@@ -2442,5 +2438,6 @@
     "anyhow 1.0.75",
     "tokio 1.34.0"
   ],
-  "direct_dev_deps": []
+  "direct_dev_deps": [],
+  "unused_patches": []
 }

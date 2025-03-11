@@ -41,10 +41,6 @@ rust_test(
 
 rust_test(
     name = "mod3_test",
-    aliases = {
-        ":mod1": "alias_a",
-        ":mod2": "alias_b",
-    },
     crate = ":mod3",
     edition = "2018",
 )

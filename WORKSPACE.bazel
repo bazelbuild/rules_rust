@@ -6,52 +6,29 @@ rules_rust_dependencies()
 
 rust_register_toolchains()
 
+load("@rules_rust//rust:repositories_transitive.bzl", "rules_rust_transitive_dependencies")
+
+rules_rust_transitive_dependencies()
+
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
 crate_universe_dependencies(bootstrap = True)
+
+load("//cargo/cargo_toml_variable_extractor/3rdparty/crates:defs.bzl", ctve_crate_repositories = "crate_repositories")
+
+ctve_crate_repositories()
 
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
 
 cross_installer_deps()
 
-# buildifier: disable=bzl-visibility
-load("@rules_rust//proto/prost/private:repositories.bzl", "rust_prost_dependencies", "rust_prost_register_toolchains")
+load("@rules_rust//cargo:deps.bzl", "cargo_dependencies")
 
-rust_prost_dependencies()
-
-rust_prost_register_toolchains()
-
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
-
-load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
-
-rust_proto_protobuf_dependencies()
-
-rust_proto_protobuf_register_toolchains()
-
-load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
-
-rust_proto_protobuf_transitive_repositories()
-
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
-
-rust_bindgen_dependencies()
-
-rust_bindgen_register_toolchains()
-
-load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
-
-rust_bindgen_transitive_dependencies()
+cargo_dependencies()
 
 load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
-
-load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
-
-rust_wasm_bindgen_repositories()
 
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
@@ -80,14 +57,3 @@ http_archive(
 #
 # load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 # rbe_preconfig(name = "buildkite_config", toolchain = "ubuntu2004-bazel-java11")
-
-http_archive(
-    name = "rules_testing",
-    sha256 = "02c62574631876a4e3b02a1820cb51167bb9cdcdea2381b2fa9d9b8b11c407c4",
-    strip_prefix = "rules_testing-0.6.0",
-    url = "https://github.com/bazelbuild/rules_testing/releases/download/v0.6.0/rules_testing-v0.6.0.tar.gz",
-)
-
-load("//test/3rdparty/crates:crates.bzl", test_crate_repositories = "crate_repositories")
-
-test_crate_repositories()

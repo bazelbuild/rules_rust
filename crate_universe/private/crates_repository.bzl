@@ -1,6 +1,10 @@
 """`crates_repository` rule implementation"""
 
-load("//crate_universe/private:common_utils.bzl", "get_rust_tools")
+load(
+    "//crate_universe/private:common_utils.bzl",
+    "get_rust_tools",
+    "new_cargo_bazel_fn",
+)
 load(
     "//crate_universe/private:generate_utils.bzl",
     "CRATES_REPOSITORY_ENVIRON",
@@ -18,7 +22,19 @@ load(
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust:defs.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
-load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
+
+# A reduced subset of platform triples that cover a wide range of known users.
+# The reduced set is intended to speed up the splciing step which has `O(N^2)`
+# complexity for each platform triple added.
+SUPPORTED_PLATFORM_TRIPLES = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "wasm32-unknown-unknown",
+    "wasm32-wasip1",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-nixos-gnu",
+]
 
 def _crates_repository_impl(repository_ctx):
     # Determine the current host's platform triple
@@ -37,6 +53,14 @@ def _crates_repository_impl(repository_ctx):
     tools = get_rust_tools(repository_ctx, host_triple)
     cargo_path = repository_ctx.path(tools.cargo)
     rustc_path = repository_ctx.path(tools.rustc)
+    cargo_bazel_fn = new_cargo_bazel_fn(
+        repository_ctx = repository_ctx,
+        cargo_bazel_path = generator,
+        cargo_path = cargo_path,
+        rustc_path = rustc_path,
+        isolated = repository_ctx.attr.isolated,
+        quiet = repository_ctx.attr.quiet,
+    )
 
     # Create a manifest of all dependency inputs
     splicing_manifest = create_splicing_manifest(repository_ctx)
@@ -44,47 +68,63 @@ def _crates_repository_impl(repository_ctx):
     # Determine whether or not to repin depednencies
     repin = determine_repin(
         repository_ctx = repository_ctx,
-        generator = generator,
+        repository_name = repository_ctx.name,
+        cargo_bazel_fn = cargo_bazel_fn,
         lockfile_path = lockfiles.bazel,
         config = config_path,
         splicing_manifest = splicing_manifest,
-        cargo = cargo_path,
-        rustc = rustc_path,
         repin_instructions = repository_ctx.attr.repin_instructions,
     )
 
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
     if repin:
+        repository_ctx.report_progress("Splicing Cargo workspace.")
+
         # Generate a top level Cargo workspace and manifest for use in generation
-        metadata_path = splice_workspace_manifest(
+        splice_outputs = splice_workspace_manifest(
             repository_ctx = repository_ctx,
-            generator = generator,
+            cargo_bazel_fn = cargo_bazel_fn,
             cargo_lockfile = lockfiles.cargo,
             splicing_manifest = splicing_manifest,
             config_path = config_path,
-            cargo = cargo_path,
-            rustc = rustc_path,
+            output_dir = repository_ctx.path("splicing-output"),
         )
 
         kwargs.update({
-            "metadata": metadata_path,
+            "metadata": splice_outputs.metadata,
         })
 
+    paths_to_track_file = repository_ctx.path("paths-to-track")
+    warnings_output_file = repository_ctx.path("warnings-output-file")
+
     # Run the generator
+    repository_ctx.report_progress("Generating crate BUILD files.")
     execute_generator(
-        repository_ctx = repository_ctx,
-        generator = generator,
+        cargo_bazel_fn = cargo_bazel_fn,
+        generator_label = repository_ctx.attr.generator,
         config = config_path,
         splicing_manifest = splicing_manifest,
         lockfile_path = lockfiles.bazel,
         cargo_lockfile_path = lockfiles.cargo,
         repository_dir = repository_ctx.path("."),
-        cargo = cargo_path,
-        rustc = rustc_path,
+        nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root,
+        paths_to_track_file = paths_to_track_file,
+        warnings_output_file = warnings_output_file,
         # sysroot = tools.sysroot,
         **kwargs
     )
+
+    paths_to_track = json.decode(repository_ctx.read(paths_to_track_file))
+    for path in paths_to_track:
+        # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
+        # Ideally we'd use repository_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
+        repository_ctx.read(path)
+
+    warnings_output_file = json.decode(repository_ctx.read(warnings_output_file))
+    for warning in warnings_output_file:
+        # buildifier: disable=print
+        print("WARN: {}".format(warning))
 
     # Determine the set of reproducible values
     attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}
@@ -116,7 +156,7 @@ Environment Variables:
 | --- | --- |
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
-| `CARGO_BAZEL_ISOLATED` | An authorative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
+| `CARGO_BAZEL_ISOLATED` | An authoritative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 
@@ -214,6 +254,10 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "should be used here, which will keep the versions used by cargo and bazel in sync."
             ),
             mandatory = True,
+        ),
+        "compressed_windows_toolchain_names": attr.bool(
+            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            default = True,
         ),
         "generate_binaries": attr.bool(
             doc = (

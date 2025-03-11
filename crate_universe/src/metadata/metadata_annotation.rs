@@ -3,7 +3,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
+use camino::{Utf8Path, Utf8PathBuf};
 use cargo_metadata::{Node, Package, PackageId};
 use hex::ToHex;
 use serde::{Deserialize, Serialize};
@@ -162,6 +163,10 @@ pub(crate) enum SourceAnnotation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         patches: Option<BTreeSet<String>>,
     },
+    Path {
+        /// Local path to crate's source, relative to Bazel workspace root.
+        path: Utf8PathBuf,
+    },
 }
 
 /// Additional information related to [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
@@ -170,10 +175,18 @@ pub(crate) enum SourceAnnotation {
 pub(crate) struct LockfileAnnotation {
     /// A mapping of crates/packages to additional source (network location) information.
     pub(crate) crates: BTreeMap<PackageId, SourceAnnotation>,
+
+    /// A list of `[patch]` entries from the Cargo.lock file which were not used in the resolve.
+    pub(crate) unused_patches: BTreeSet<cargo_lock::Dependency>,
 }
 
 impl LockfileAnnotation {
-    pub(crate) fn new(lockfile: CargoLockfile, metadata: &CargoMetadata) -> Result<Self> {
+    pub(crate) fn new(
+        lockfile_path: &Option<PathBuf>,
+        lockfile: CargoLockfile,
+        metadata: &CargoMetadata,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
+    ) -> Result<Self> {
         let workspace_metadata = find_workspace_metadata(metadata).unwrap_or_default();
 
         let nodes: Vec<&Node> = metadata
@@ -194,22 +207,31 @@ impl LockfileAnnotation {
                     Self::collect_source_annotations(
                         node,
                         metadata,
+                        lockfile_path,
                         &lockfile,
                         &workspace_metadata,
+                        nonhermetic_root_bazel_workspace_dir,
                     )?,
                 ))
             })
             .collect::<Result<BTreeMap<PackageId, SourceAnnotation>>>()?;
 
-        Ok(Self { crates })
+        let unused_patches = lockfile.patch.unused.into_iter().collect();
+
+        Ok(Self {
+            crates,
+            unused_patches,
+        })
     }
 
     /// Resolve all URLs and checksum-like data for each package
     fn collect_source_annotations(
         node: &Node,
         metadata: &CargoMetadata,
+        lockfile_path: &Option<PathBuf>,
         lockfile: &CargoLockfile,
         workspace_metadata: &WorkspaceMetadata,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<SourceAnnotation> {
         let pkg = &metadata[&node.id];
 
@@ -225,7 +247,7 @@ impl LockfileAnnotation {
         // Check for spliced information about a crate's network source.
         let spliced_source_info = Self::find_source_annotation(lock_pkg, workspace_metadata);
 
-        // Parse it's source info. The check above should prevent a panic
+        // Parse its source info. The check above should prevent a panic
         let source = match lock_pkg.source.as_ref() {
             Some(source) => source,
             None => match spliced_source_info {
@@ -238,11 +260,61 @@ impl LockfileAnnotation {
                         patches: None,
                     })
                 }
-                None => bail!(
-                    "The package '{:?} {:?}' has no source info so no annotation can be made",
-                    lock_pkg.name,
-                    lock_pkg.version
-                ),
+                None => {
+                    // Test for path deps that may look something like path+file:///var/folders/xs/1d3z0l8977v1_kk4r3_py4l80000gn/T/tmp.AIICMiDy#lazy_static@1.5.0
+                    if let Some(path_with_suffix) = node.id.repr.strip_prefix("path+file://") {
+                        if let Some((path_in_lockfile, _suffix)) = path_with_suffix.rsplit_once('#')
+                        {
+                            let path = match Utf8Path::new(path_in_lockfile)
+                                .strip_prefix(&metadata.workspace_root)
+                            {
+                                Ok(suffix) => {
+                                    // Replace path within our temporary cargo workspace we ran `cargo metadata` in with path within the actual Bazel workspace.
+                                    // This replacement allows in-repo patches sections to work as intended using local_crate_mirror.
+                                    let mut new_path = Utf8PathBuf::new();
+                                    if let Some(path) = lockfile_path {
+                                        // If a lockfile path is provided, figure out the path of
+                                        // its parent directory (relative to Bazel workspace root),
+                                        // since `suffix` is relative to it in the actual Bazel
+                                        // workspace.
+                                        let p = Utf8Path::from_path(
+                                            path.parent()
+                                                .context("unexpected empty lockfile path")?,
+                                        )
+                                        .context("unxpected non-Unicode lockfile path")?;
+                                        if p.starts_with(nonhermetic_root_bazel_workspace_dir) {
+                                            // If path in lockfile is under Bazel root, strip Bazel
+                                            // root to get the actual path.
+                                            let relative_lockfile_path = p.strip_prefix(nonhermetic_root_bazel_workspace_dir)
+                                                .context("unexpected lockfile path not under root Bazel workspace")?;
+                                            new_path.push(relative_lockfile_path);
+                                        } else {
+                                            // If path in lockfile is not under Bazel root, we are
+                                            // likely in a temporary directory, so rebase to Bazel
+                                            // root.
+                                            new_path.push(nonhermetic_root_bazel_workspace_dir);
+                                            if let Some(prefix) =
+                                                workspace_metadata.workspace_prefix.as_ref()
+                                            {
+                                                new_path.push(prefix);
+                                            }
+                                        }
+                                    }
+                                    new_path.push(suffix);
+                                    new_path
+                                }
+                                Err(_) => Utf8PathBuf::from(path_in_lockfile),
+                            };
+                            return Ok(SourceAnnotation::Path { path });
+                        }
+                    }
+                    bail!(
+                        "The package '{:?} {:?}: {:?}' has no source info so no annotation can be made",
+                        lock_pkg.name,
+                        lock_pkg.version,
+                        node.id.repr
+                    );
+                }
             },
         };
 
@@ -376,10 +448,17 @@ pub(crate) struct Annotations {
 impl Annotations {
     pub(crate) fn new(
         cargo_metadata: CargoMetadata,
+        cargo_lockfile_path: &Option<PathBuf>,
         cargo_lockfile: CargoLockfile,
         config: Config,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<Self> {
-        let lockfile_annotation = LockfileAnnotation::new(cargo_lockfile, &cargo_metadata)?;
+        let lockfile_annotation = LockfileAnnotation::new(
+            cargo_lockfile_path,
+            cargo_lockfile,
+            &cargo_metadata,
+            nonhermetic_root_bazel_workspace_dir,
+        )?;
 
         // Annotate the cargo metadata
         let metadata_annotation = MetadataAnnotation::new(cargo_metadata);
@@ -508,7 +587,13 @@ mod test {
 
     #[test]
     fn annotate_lockfile_with_aliases() {
-        LockfileAnnotation::new(test::lockfile::alias(), &test::metadata::alias()).unwrap();
+        LockfileAnnotation::new(
+            &None,
+            test::lockfile::alias(),
+            &test::metadata::alias(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
     }
 
     #[test]
@@ -519,23 +604,35 @@ mod test {
     #[test]
     fn annotate_lockfile_with_build_scripts() {
         LockfileAnnotation::new(
+            &None,
             test::lockfile::build_scripts(),
             &test::metadata::build_scripts(),
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
     }
 
     #[test]
     fn annotate_lockfile_with_no_deps() {
-        LockfileAnnotation::new(test::lockfile::no_deps(), &test::metadata::no_deps()).unwrap();
+        LockfileAnnotation::new(
+            &None,
+            test::lockfile::no_deps(),
+            &test::metadata::no_deps(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap();
     }
 
     #[test]
     fn detects_strip_prefix_for_git_repo() {
-        let crates =
-            LockfileAnnotation::new(test::lockfile::git_repos(), &test::metadata::git_repos())
-                .unwrap()
-                .crates;
+        let crates = LockfileAnnotation::new(
+            &None,
+            test::lockfile::git_repos(),
+            &test::metadata::git_repos(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap()
+        .crates;
         let tracing_core = crates
             .iter()
             .find(|(k, _)| k.repr.contains("#tracing-core@"))
@@ -556,10 +653,14 @@ mod test {
 
     #[test]
     fn resolves_commit_from_branches_and_tags() {
-        let crates =
-            LockfileAnnotation::new(test::lockfile::git_repos(), &test::metadata::git_repos())
-                .unwrap()
-                .crates;
+        let crates = LockfileAnnotation::new(
+            &None,
+            test::lockfile::git_repos(),
+            &test::metadata::git_repos(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap()
+        .crates;
 
         let package_id = PackageId {
             repr: "git+https://github.com/tokio-rs/tracing.git?branch=master#tracing@0.2.0".into(),
@@ -578,6 +679,27 @@ mod test {
     }
 
     #[test]
+    fn detects_local_path_patching() {
+        let crates = LockfileAnnotation::new(
+            &None,
+            test::lockfile::path_patching(),
+            &test::metadata::path_patching(),
+            Utf8Path::new("/tmp/bazelworkspace"),
+        )
+        .unwrap()
+        .crates;
+
+        // We can't reliably construct the PackageId because it'll contain local absolute paths,
+        // so compare the entire container, which should only have one element anyways.
+        assert_eq!(
+            crates.into_values().collect::<Vec<_>>(),
+            [SourceAnnotation::Path {
+                path: "child_a".into()
+            }]
+        );
+    }
+
+    #[test]
     fn detect_unused_annotation() {
         // Create a config with some random annotation
         let mut config = Config::default();
@@ -586,7 +708,13 @@ mod test {
             CrateAnnotations::default(),
         );
 
-        let result = Annotations::new(test::metadata::no_deps(), test::lockfile::no_deps(), config);
+        let result = Annotations::new(
+            test::metadata::no_deps(),
+            &None,
+            test::lockfile::no_deps(),
+            config,
+            Utf8Path::new("/tmp/bazelworkspace"),
+        );
         assert!(result.is_err());
 
         let result_str = format!("{result:?}");
@@ -621,8 +749,10 @@ mod test {
         // crate author in package metadata.
         let combined_annotations = Annotations::new(
             test::metadata::has_package_metadata(),
+            &None,
             test::lockfile::has_package_metadata(),
             config,
+            Utf8Path::new("/tmp/bazelworkspace"),
         )
         .unwrap();
 

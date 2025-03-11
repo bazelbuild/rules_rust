@@ -4,6 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//test/generated_inputs:external_repo.bzl", "generated_inputs_in_external_repo")
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
+load("//test/rust_analyzer/3rdparty/crates:crates.bzl", rust_analyzer_test_crate_repositories = "crate_repositories")
 load("//test/unit/toolchain:toolchain_test_utils.bzl", "rules_rust_toolchain_test_target_json_repository")
 
 _LIBC_BUILD_FILE_CONTENT = """\
@@ -24,8 +25,12 @@ rust_library(
 )
 """
 
-def rules_rust_test_deps():
+def rules_rust_test_deps(is_bzlmod = False):
     """Load dependencies for rules_rust tests
+
+    Args:
+        is_bzlmod (bool): Whether or not the context from which this macro
+            is called is bzlmod.
 
     Returns:
         list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
@@ -34,6 +39,7 @@ def rules_rust_test_deps():
 
     direct_deps = load_arbitrary_tool_test()
     direct_deps.extend(generated_inputs_in_external_repo())
+    direct_deps.extend(rust_analyzer_test_crate_repositories())
 
     maybe(
         http_archive,
@@ -53,29 +59,26 @@ def rules_rust_test_deps():
         target_json = Label("//test/unit/toolchain:toolchain-test-triple.json"),
     )
 
-    maybe(
-        http_archive,
-        name = "com_google_googleapis",
-        urls = [
-            "https://github.com/googleapis/googleapis/archive/18becb1d1426feb7399db144d7beeb3284f1ccb0.zip",
-        ],
-        strip_prefix = "googleapis-18becb1d1426feb7399db144d7beeb3284f1ccb0",
-        sha256 = "b8c487191eb942361af905e40172644eab490190e717c3d09bf83e87f3994fff",
-    )
+    if not is_bzlmod:
+        maybe(
+            http_archive,
+            name = "rules_python",
+            sha256 = "690e0141724abb568267e003c7b6d9a54925df40c275a870a4d934161dc9dd53",
+            strip_prefix = "rules_python-0.40.0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.40.0/rules_python-0.40.0.tar.gz",
+        )
 
-    maybe(
-        http_archive,
-        name = "rules_python",
-        sha256 = "778aaeab3e6cfd56d681c89f5c10d7ad6bf8d2f1a72de9de55b23081b2d31618",
-        strip_prefix = "rules_python-0.34.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.34.0/rules_python-0.34.0.tar.gz",
-    )
+        maybe(
+            http_archive,
+            name = "rules_testing",
+            sha256 = "28c2d174471b587bf0df1fd3a10313f22c8906caf4050f8b46ec4648a79f90c3",
+            strip_prefix = "rules_testing-0.7.0",
+            url = "https://github.com/bazelbuild/rules_testing/releases/download/v0.7.0/rules_testing-v0.7.0.tar.gz",
+        )
 
     direct_deps.extend([
         struct(repo = "libc", is_dev_dep = True),
         struct(repo = "rules_rust_toolchain_test_target_json", is_dev_dep = True),
-        struct(repo = "com_google_googleapis", is_dev_dep = True),
-        struct(repo = "rules_python", is_dev_dep = True),
     ])
 
     return direct_deps

@@ -1,6 +1,7 @@
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":musl_utils.bzl", "platform_transition_binary")
 
 rust_binary(
     name = "hello",
@@ -11,7 +12,7 @@ rust_binary(
 platform_transition_binary(
     name = "hello_linux_x86_64_musl",
     binary = ":hello",
-    target_platform = "//platforms:linux_x86_64_musl",
+    platform = "//platforms:linux_x86_64_musl",
 )
 
 sh_test(
@@ -27,7 +28,7 @@ sh_test(
 platform_transition_binary(
     name = "hello_linux_arm64_musl",
     binary = ":hello",
-    target_platform = "//platforms:linux_arm64_musl",
+    platform = "//platforms:linux_arm64_musl",
 )
 
 sh_test(
@@ -50,7 +51,7 @@ rust_binary(
 platform_transition_binary(
     name = "keyring_linux_x86_64_musl",
     binary = ":keyring",
-    target_platform = "//platforms:linux_x86_64_musl",
+    platform = "//platforms:linux_x86_64_musl",
 )
 
 build_test(

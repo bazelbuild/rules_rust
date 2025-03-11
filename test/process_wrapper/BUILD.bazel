@@ -164,5 +164,9 @@ rust_test(
         "//util/process_wrapper",
     ],
     edition = "2018",
-    deps = ["//tools/runfiles"],
+    rustc_env = {
+        "FAKE_RUSTC_RLOCATIONPATH": "$(rlocationpath :fake_rustc)",
+        "PROCESS_WRAPPER_RLOCATIONPATH": "$(rlocationpath //util/process_wrapper)",
+    },
+    deps = ["//rust/runfiles"],
 )

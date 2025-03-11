@@ -3,11 +3,33 @@ load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
 load("//rust/private:rustc.bzl", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
 load("//rust/private:stamp.bzl", "stamp_build_setting")
 
+# Exported for docs
+exports_files(["providers.bzl"])
+
+bzl_library(
+    name = "bazel_tools_bzl_lib",
+    srcs = ["@bazel_tools//tools:bzl_srcs"],
+)
+
+bzl_library(
+    name = "rules_cc_bzl_lib",
+    srcs = ["@rules_cc//cc:bzl_srcs"],
+    deps = [
+        "@rules_cc//cc/common",
+    ],
+)
+
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
     visibility = ["//rust:__subpackages__"],
-    deps = ["//rust/platform:bzl_lib"],
+    deps = [
+        ":bazel_tools_bzl_lib",
+        ":rules_cc_bzl_lib",
+        "//rust/platform:bzl_lib",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
+    ],
 )
 
 stamp_build_setting(name = "stamp")

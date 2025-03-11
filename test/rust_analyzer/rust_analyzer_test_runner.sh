@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script creates temporary workspaces and generates `rust-project.json`
 # files unique to the set of targets defined in the generated workspace.
@@ -17,25 +17,39 @@ if [[ -z "${PACKAGE_NAME:-}" ]]; then
 fi
 
 function generate_workspace() {
+    local workspace_root="$1"
+    local package_dir="$2"
     local temp_dir="$(mktemp -d -t rules_rust_test_rust_analyzer-XXXXXXXXXX)"
     local new_workspace="${temp_dir}/rules_rust_test_rust_analyzer"
 
     mkdir -p "${new_workspace}"
-    cat <<EOF >"${new_workspace}/WORKSPACE.bazel"
-workspace(name = "rules_rust_test_rust_analyzer")
-local_repository(
-    name = "rules_rust",
+    cat <<EOF >"${new_workspace}/MODULE.bazel"
+module(
+    name = "rules_rust_test_rust_analyzer",
+    version = "0.0.0",
+)
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-rust_repositories()
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-rust_analyzer_dependencies()
 
-load("@rules_rust//test/3rdparty/crates:crates.bzl", test_crate_repositories = "crate_repositories")
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
 
-test_crate_repositories()
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+rust_analyzer_test = use_extension("//test/rust_analyzer/3rdparty:extensions.bzl", "rust_analyzer_test", dev_dependency = True)
+use_repo(
+    rust_analyzer_test,
 EOF
+
+    grep -hr "rtra" "${BUILD_WORKSPACE_DIRECTORY}/MODULE.bazel" >> "${new_workspace}/MODULE.bazel"
+    echo ")" >> "${new_workspace}/MODULE.bazel"
 
     cat <<EOF >"${new_workspace}/.bazelrc"
 build --keep_going
@@ -49,6 +63,13 @@ build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:strict --output_groups=+clippy_checks
 EOF
 
+    if [[ -f "${workspace_root}/.bazelversion" ]]; then
+        cp "${workspace_root}/.bazelversion" "${new_workspace}/.bazelversion"
+    fi
+
+    mkdir -p "${new_workspace}/${package_dir}"
+    cp -r "${workspace_root}/${package_dir}/3rdparty" "${new_workspace}/${package_dir}/"
+
     echo "${new_workspace}"
 }
 
@@ -56,6 +77,10 @@ function rust_analyzer_test() {
     local source_dir="$1"
     local workspace="$2"
     local generator_arg="$3"
+    local rust_log="info"
+    if [[ -n "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
+        rust_log="debug"
+    fi
 
     echo "Testing '$(basename "${source_dir}")'"
     rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}"/*.bzl "${workspace}/BUILD.bazel" "${workspace}/BUILD.bazel-e"
@@ -71,10 +96,11 @@ function rust_analyzer_test() {
 
     pushd "${workspace}" &>/dev/null
     echo "Generating rust-project.json..."
+
     if [[ -n "${generator_arg}" ]]; then
-        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project" -- "${generator_arg}"
     else
-        bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
     fi
     echo "Building..."
     bazel build //...
@@ -88,18 +114,25 @@ function rust_analyzer_test() {
 function cleanup() {
     local workspace="$1"
     pushd "${workspace}" &>/dev/null
-    bazel clean --async
+    bazel clean --expunge --async
     popd &>/dev/null
-    rm -rf "${workspace}"
+    if [[ -z "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
+        rm -rf "${workspace}"
+    fi
 }
 
 function run_test_suite() {
-    local temp_workspace="$(generate_workspace)"
+    local temp_workspace="$(generate_workspace "${BUILD_WORKSPACE_DIRECTORY}" "${PACKAGE_NAME}")"
     echo "Generated workspace: ${temp_workspace}"
 
     for test_dir in "${BUILD_WORKSPACE_DIRECTORY}/${PACKAGE_NAME}"/*; do
         # Skip everything but directories
         if [[ ! -d "${test_dir}" ]]; then
+            continue
+        fi
+
+        # Skip the 3rdparty directory
+        if [[ "${test_dir}" == *"3rdparty"* ]]; then
             continue
         fi
 

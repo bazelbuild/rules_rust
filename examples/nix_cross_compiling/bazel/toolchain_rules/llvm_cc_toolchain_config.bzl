@@ -5,6 +5,7 @@ load(
     "artifact_name_pattern",
     "feature",
 )
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//bazel/toolchain_rules/cc_tools:clang.bzl", clang_compile_action_configs = "compile_action_configs")
 load("//bazel/toolchain_rules/cc_tools:ld.lld.bzl", ld_lld_link_action_configs = "link_action_configs")
 load("//bazel/toolchain_rules/cc_tools:ld64.lld.bzl", ld64_lld_link_action_configs = "link_action_configs")
@@ -104,7 +105,7 @@ TARGET_CONFIG = {
         link_action_configs = wasm_ld_link_action_configs,
         strip_action_configs = llvm_strip_strip_action_configs,
     ),
-    "wasm32-wasi": struct(
+    "wasm32-wasip1": struct(
         artifact_name_patterns = WASM_ARTIFACT_NAME_PATTERNS,
         compile_action_configs = clang_compile_action_configs,
         archive_action_configs = llvm_ar_archive_action_configs,

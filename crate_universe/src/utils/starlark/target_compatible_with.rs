@@ -31,7 +31,7 @@ impl Serialize for TargetCompatibleWith {
 
         struct SelectInner<'a>(&'a BTreeSet<String>);
 
-        impl<'a> Serialize for SelectInner<'a> {
+        impl Serialize for SelectInner<'_> {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: Serializer,
@@ -67,7 +67,7 @@ mod test {
     fn target_compatible_with() {
         let target_compatible_with = TargetCompatibleWith::new(BTreeSet::from([
             "@rules_rust//rust/platform:wasm32-unknown-unknown".to_owned(),
-            "@rules_rust//rust/platform:wasm32-wasi".to_owned(),
+            "@rules_rust//rust/platform:wasm32-wasip1".to_owned(),
             "@rules_rust//rust/platform:x86_64-apple-darwin".to_owned(),
             "@rules_rust//rust/platform:x86_64-pc-windows-msvc".to_owned(),
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu".to_owned(),
@@ -76,7 +76,7 @@ mod test {
         let expected_starlark = indoc! {r#"
             select({
                 "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
-                "@rules_rust//rust/platform:wasm32-wasi": [],
+                "@rules_rust//rust/platform:wasm32-wasip1": [],
                 "@rules_rust//rust/platform:x86_64-apple-darwin": [],
                 "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
                 "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [],

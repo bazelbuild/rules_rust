@@ -1,6 +1,13 @@
 """Utilities directly related to the `generate` step of `cargo-bazel`."""
 
-load(":common_utils.bzl", "CARGO_BAZEL_DEBUG", "CARGO_BAZEL_ISOLATED", "REPIN_ALLOWLIST_ENV_VAR", "REPIN_ENV_VARS", "cargo_environ", "execute", "parse_alias_rule")
+load(
+    ":common_utils.bzl",
+    "CARGO_BAZEL_DEBUG",
+    "CARGO_BAZEL_ISOLATED",
+    "REPIN_ALLOWLIST_ENV_VAR",
+    "REPIN_ENV_VARS",
+    "parse_alias_rule",
+)
 
 CARGO_BAZEL_GENERATOR_SHA256 = "CARGO_BAZEL_GENERATOR_SHA256"
 CARGO_BAZEL_GENERATOR_URL = "CARGO_BAZEL_GENERATOR_URL"
@@ -83,6 +90,7 @@ def get_generator(repository_ctx, host_triple):
 def render_config(
         build_file_template = "//:BUILD.{name}-{version}.bazel",
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
+        crate_alias_template = "//:{name}-{version}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
@@ -113,6 +121,8 @@ def render_config(
             are [`{repository}`, `{name}`, `{version}`, `{target}`].
         crate_repository_template (str, optional): The base template to use for Crate label repository names. The
             available format keys are [`{repository}`, `{name}`, `{version}`].
+        crate_alias_template (str, optional): The template to use when referring to generated aliases within the external
+            repository. The available format keys are [`{repository}`, `{name}`, `{version}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
         default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
@@ -136,16 +146,17 @@ def render_config(
     """
     return json.encode(struct(
         build_file_template = build_file_template,
+        crate_alias_template = crate_alias_template,
         crate_label_template = crate_label_template,
         crate_repository_template = crate_repository_template,
         crates_module_template = crates_module_template,
         default_alias_rule = parse_alias_rule(default_alias_rule),
         default_package_name = default_package_name,
+        generate_rules_license_metadata = generate_rules_license_metadata,
         generate_target_compatible_with = generate_target_compatible_with,
         platforms_template = platforms_template,
         regen_command = regen_command,
         vendor_mode = vendor_mode,
-        generate_rules_license_metadata = generate_rules_license_metadata,
     ))
 
 def _crate_id(name, version):
@@ -336,17 +347,24 @@ def get_lockfiles(repository_ctx):
         bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
     )
 
-def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_manifest, cargo, rustc, repin_instructions = None):
+def determine_repin(
+        *,
+        repository_ctx,
+        cargo_bazel_fn,
+        repository_name,
+        lockfile_path,
+        config,
+        splicing_manifest,
+        repin_instructions = None):
     """Use the `cargo-bazel` binary to determine whether or not dpeendencies need to be re-pinned
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
-        generator (path): The path to a `cargo-bazel` binary.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
+        repository_name (str): The name of the repository being generated.
         config (path): The path to a `cargo-bazel` config file. See `generate_config`.
         splicing_manifest (path): The path to a `cargo-bazel` splicing manifest. See `create_splicing_manifest`
         lockfile_path (path): The path to a "lock" file for reproducible outputs.
-        cargo (path): The path to a Cargo binary.
-        rustc (path): The path to a Rustc binary.
         repin_instructions (optional string): Instructions to re-pin dependencies in your repository. Will be shown when re-pinning is required.
 
     Returns:
@@ -359,7 +377,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
             # If a repin allowlist is present only force repin if name is in list
             if REPIN_ALLOWLIST_ENV_VAR in repository_ctx.os.environ:
                 indices_to_repin = repository_ctx.os.environ[REPIN_ALLOWLIST_ENV_VAR].split(",")
-                if repository_ctx.name in indices_to_repin:
+                if repository_name in indices_to_repin:
                     return True
             else:
                 return True
@@ -369,34 +387,16 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
         return True
 
     # Run the binary to check if a repin is needed
-    args = [
-        generator,
-        "query",
-        "--lockfile",
-        lockfile_path,
-        "--config",
-        config,
-        "--splicing-manifest",
-        splicing_manifest,
-        "--cargo",
-        cargo,
-        "--rustc",
-        rustc,
-    ]
-
-    env = {
-        "CARGO": str(cargo),
-        "RUSTC": str(rustc),
-        "RUST_BACKTRACE": "full",
-    }
-
-    # Add any Cargo environment variables to the `cargo-bazel` execution
-    env.update(cargo_environ(repository_ctx))
-
-    result = execute(
-        repository_ctx = repository_ctx,
-        args = args,
-        env = env,
+    result = cargo_bazel_fn(
+        args = [
+            "query",
+            "--lockfile",
+            lockfile_path,
+            "--config",
+            config,
+            "--splicing-manifest",
+            splicing_manifest,
+        ],
         allow_fail = True,
     )
 
@@ -407,7 +407,7 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
         if repin_instructions:
             msg = ("\n".join([
                 result.stderr,
-                "The current `lockfile` is out of date for '{}'.".format(repository_ctx.name),
+                "The current `lockfile` is out of date for '{}'.".format(repository_name),
                 repin_instructions,
             ]))
         else:
@@ -417,35 +417,38 @@ def determine_repin(repository_ctx, generator, lockfile_path, config, splicing_m
                     "The current `lockfile` is out of date for '{}'. Please re-run " +
                     "bazel using `CARGO_BAZEL_REPIN=true` if this is expected " +
                     "and the lockfile should be updated."
-                ).format(repository_ctx.name),
+                ).format(repository_name),
             ]))
         fail(msg)
 
     return False
 
 def execute_generator(
-        repository_ctx,
+        *,
+        cargo_bazel_fn,
         lockfile_path,
         cargo_lockfile_path,
-        generator,
         config,
         splicing_manifest,
         repository_dir,
-        cargo,
-        rustc,
-        metadata = None):
+        nonhermetic_root_bazel_workspace_dir,
+        paths_to_track_file,
+        warnings_output_file,
+        metadata = None,
+        generator_label = None):
     """Execute the `cargo-bazel` binary to produce `BUILD` and `.bzl` files.
 
     Args:
-        repository_ctx (repository_ctx): The rule's context object.
+        cargo_bazel_fn (callable): A callback for invoking the `cargo-bazel` binary.
         lockfile_path (path): The path to a "lock" file (file used for reproducible renderings).
         cargo_lockfile_path (path): The path to a "Cargo.lock" file within the root workspace.
-        generator (path): The path to a `cargo-bazel` binary.
         config (path): The path to a `cargo-bazel` config file.
         splicing_manifest (path): The path to a `cargo-bazel` splicing manifest. See `create_splicing_manifest`
         repository_dir (path): The output path for the Bazel module and BUILD files.
-        cargo (path): The path of a Cargo binary.
-        rustc (path): The path of a Rustc binary.
+        nonhermetic_root_bazel_workspace_dir (path): The path to the current workspace root
+        paths_to_track_file (path): Path to file where generator should write which files should trigger re-generating as a JSON list.
+        warnings_output_file (path): Path to file where generator should write warnings to print.
+        generator_label (Label): The label of the `generator` parameter.
         metadata (path, optional): The path to a Cargo metadata json file. If this is set, it indicates to
             the generator that repinning is required. This file must be adjacent to a `Cargo.toml` and
             `Cargo.lock` file.
@@ -453,10 +456,7 @@ def execute_generator(
     Returns:
         struct: The results of `repository_ctx.execute`.
     """
-    repository_ctx.report_progress("Generating crate BUILD files.")
-
     args = [
-        generator,
         "generate",
         "--cargo-lockfile",
         cargo_lockfile_path,
@@ -466,21 +466,25 @@ def execute_generator(
         splicing_manifest,
         "--repository-dir",
         repository_dir,
-        "--cargo",
-        cargo,
-        "--rustc",
-        rustc,
+        "--nonhermetic-root-bazel-workspace-dir",
+        nonhermetic_root_bazel_workspace_dir,
+        "--paths-to-track",
+        paths_to_track_file,
+        "--warnings-output-path",
+        warnings_output_file,
     ]
+
+    if generator_label:
+        args.extend([
+            "--generator",
+            generator_label,
+        ])
 
     if lockfile_path:
         args.extend([
             "--lockfile",
             lockfile_path,
         ])
-
-    env = {
-        "RUST_BACKTRACE": "full",
-    }
 
     # Some components are not required unless re-pinning is enabled
     if metadata:
@@ -489,18 +493,9 @@ def execute_generator(
             "--metadata",
             metadata,
         ])
-        env.update({
-            "CARGO": str(cargo),
-            "RUSTC": str(rustc),
-        })
 
-    # Add any Cargo environment variables to the `cargo-bazel` execution
-    env.update(cargo_environ(repository_ctx))
-
-    result = execute(
-        repository_ctx = repository_ctx,
+    result = cargo_bazel_fn(
         args = args,
-        env = env,
     )
 
     return result

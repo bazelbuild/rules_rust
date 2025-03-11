@@ -1,18 +1,11 @@
-load("//:version.bzl", "VERSION")
-load("//rust:defs.bzl", "rust_test")
+load(":bzl_version_test.bzl", "bzl_version_test")
 
-rust_test(
+exports_files([
+    "bzl_version_test.rs",
+    "bzl_ext_version_test.rs",
+])
+
+bzl_version_test(
     name = "bzl_version_test",
-    srcs = ["bzl_version_test.rs"],
-    data = [
-        "//:MODULE.bazel",
-    ],
-    edition = "2021",
-    env = {
-        "MODULE_BAZEL": "$(rlocationpath //:MODULE.bazel)",
-        "VERSION": VERSION,
-    },
-    deps = [
-        "//tools/runfiles",
-    ],
+    module_bazel = "//:MODULE.bazel",
 )

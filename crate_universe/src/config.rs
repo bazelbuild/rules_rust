@@ -60,6 +60,11 @@ pub(crate) struct RenderConfig {
     #[serde(default = "default_crate_label_template")]
     pub(crate) crate_label_template: String,
 
+    /// The pattern to use for a crate alias.
+    /// Eg. `@{repository}//:{name}-{version}-{target}`
+    #[serde(default = "default_crate_alias_template")]
+    pub(crate) crate_alias_template: String,
+
     /// The pattern to use for the `defs.bzl` and `BUILD.bazel`
     /// file names used for the crates module.
     /// Eg. `//:{file}`
@@ -109,6 +114,7 @@ impl Default for RenderConfig {
             repository_name: String::default(),
             build_file_template: default_build_file_template(),
             crate_label_template: default_crate_label_template(),
+            crate_alias_template: default_crate_alias_template(),
             crates_module_template: default_crates_module_template(),
             crate_repository_template: default_crate_repository_template(),
             default_alias_rule: AliasRule::default(),
@@ -138,6 +144,10 @@ fn default_crates_module_template() -> String {
 
 fn default_crate_label_template() -> String {
     "@{repository}__{name}-{version}//:{target}".to_owned()
+}
+
+fn default_crate_alias_template() -> String {
+    "//:{name}-{version}".to_owned()
 }
 
 fn default_crate_repository_template() -> String {
@@ -252,6 +262,10 @@ pub(crate) struct CrateAnnotations {
     /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) attribute.
     pub(crate) compile_data_glob: Option<BTreeSet<String>>,
 
+    /// An optional glob pattern to set on the
+    /// [compile_data](https://bazelbuild.github.io/rules_rust/defs.html#rust_library-compile_data) excludes attribute.
+    pub(crate) compile_data_glob_excludes: Option<BTreeSet<String>>,
+
     /// If true, disables pipelining for library targets generated for this crate.
     pub(crate) disable_pipelining: bool,
 
@@ -270,6 +284,10 @@ pub(crate) struct CrateAnnotations {
     /// Additional dependencies to pass to a build script's
     /// [deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-deps) attribute.
     pub(crate) build_script_deps: Option<Select<BTreeSet<Label>>>,
+
+    /// Additional dependencies to pass to a build script's
+    /// [link_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-link_deps) attribute.
+    pub(crate) build_script_link_deps: Option<Select<BTreeSet<Label>>>,
 
     /// Additional data to pass to a build script's
     /// [proc_macro_deps](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-proc_macro_deps) attribute.
@@ -302,6 +320,10 @@ pub(crate) struct CrateAnnotations {
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
     pub(crate) build_script_toolchains: Option<BTreeSet<Label>>,
+
+    /// Additional rustc_env flags to pass to a build script's
+    /// [use_default_shell_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-use_default_shell_env) attribute.
+    pub(crate) build_script_use_default_shell_env: Option<i32>,
 
     /// Directory to run the crate's build script in. If not set, will run in the manifest directory, otherwise a directory relative to the exec root.
     pub(crate) build_script_rundir: Option<Select<String>>,
@@ -386,10 +408,12 @@ impl Add for CrateAnnotations {
             disable_pipelining: self.disable_pipelining || rhs.disable_pipelining,
             compile_data: select_merge(self.compile_data, rhs.compile_data),
             compile_data_glob: joined_extra_member!(self.compile_data_glob, rhs.compile_data_glob, BTreeSet::new, BTreeSet::extend),
+            compile_data_glob_excludes: joined_extra_member!(self.compile_data_glob_excludes, rhs.compile_data_glob_excludes, BTreeSet::new, BTreeSet::extend),
             rustc_env: select_merge(self.rustc_env, rhs.rustc_env),
             rustc_env_files: select_merge(self.rustc_env_files, rhs.rustc_env_files),
             rustc_flags: select_merge(self.rustc_flags, rhs.rustc_flags),
             build_script_deps: select_merge(self.build_script_deps, rhs.build_script_deps),
+            build_script_link_deps: select_merge(self.build_script_link_deps, rhs.build_script_link_deps),
             build_script_proc_macro_deps: select_merge(self.build_script_proc_macro_deps, rhs.build_script_proc_macro_deps),
             build_script_compile_data: select_merge(self.build_script_compile_data, rhs.build_script_compile_data),
             build_script_data: select_merge(self.build_script_data, rhs.build_script_data),
@@ -398,6 +422,7 @@ impl Add for CrateAnnotations {
             build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
             build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
+            build_script_use_default_shell_env: self.build_script_use_default_shell_env.or(rhs.build_script_use_default_shell_env),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
             additive_build_file_content: joined_extra_member!(self.additive_build_file_content, rhs.additive_build_file_content, String::new, concat_string),
             shallow_since: self.shallow_since.or(rhs.shallow_since),
@@ -443,6 +468,7 @@ pub(crate) struct AnnotationsProvidedByPackage {
     pub(crate) deps: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data: Option<Select<BTreeSet<Label>>>,
     pub(crate) compile_data_glob: Option<BTreeSet<String>>,
+    pub(crate) compile_data_glob_excludes: Option<BTreeSet<String>>,
     pub(crate) rustc_env: Option<Select<BTreeMap<String, String>>>,
     pub(crate) rustc_env_files: Option<Select<BTreeSet<String>>>,
     pub(crate) rustc_flags: Option<Select<Vec<String>>>,
@@ -466,6 +492,7 @@ impl CrateAnnotations {
             deps,
             compile_data,
             compile_data_glob,
+            compile_data_glob_excludes,
             rustc_env,
             rustc_env_files,
             rustc_flags,
@@ -497,6 +524,10 @@ impl CrateAnnotations {
         default(&mut self.deps, deps);
         default(&mut self.compile_data, compile_data);
         default(&mut self.compile_data_glob, compile_data_glob);
+        default(
+            &mut self.compile_data_glob_excludes,
+            compile_data_glob_excludes,
+        );
         default(&mut self.rustc_env, rustc_env);
         default(&mut self.rustc_env_files, rustc_env_files);
         default(&mut self.rustc_flags, rustc_flags);
@@ -547,7 +578,7 @@ impl Serialize for CrateId {
 }
 
 struct CrateIdVisitor;
-impl<'de> Visitor<'de> for CrateIdVisitor {
+impl Visitor<'_> for CrateIdVisitor {
     type Value = CrateId;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -701,7 +732,7 @@ impl Serialize for CrateNameAndVersionReq {
 }
 
 struct CrateNameAndVersionReqVisitor;
-impl<'de> Visitor<'de> for CrateNameAndVersionReqVisitor {
+impl Visitor<'_> for CrateNameAndVersionReqVisitor {
     type Value = CrateNameAndVersionReq;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -795,7 +826,7 @@ impl<'de> Deserialize<'de> for VersionReqString {
     {
         struct StringVisitor;
 
-        impl<'de> Visitor<'de> for StringVisitor {
+        impl Visitor<'_> for StringVisitor {
             type Value = String;
 
             fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {

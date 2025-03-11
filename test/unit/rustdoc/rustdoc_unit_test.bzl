@@ -159,10 +159,10 @@ rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_li
 rustdoc_with_args_test = analysistest.make(_rustdoc_with_args_test_impl)
 rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
-    str(Label("//:error_format")): "json",
+    str(Label("//rust/settings:error_format")): "json",
 })
 
-def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
+def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
     rule_fn(
         name = name,
         edition = "2018",
@@ -184,6 +184,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], **kwargs):
         name = "{}_doctest".format(name),
         crate = ":{}".format(name),
         deps = rustdoc_deps,
+        proc_macro_deps = rustdoc_proc_macro_deps,
     )
 
 def _define_targets():
@@ -248,6 +249,13 @@ def _define_targets():
         name = "lib_with_proc_macro_in_docs",
         srcs = ["procmacro_in_rustdoc.rs"],
         proc_macro_deps = [":rustdoc_proc_macro"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_proc_macro_only_in_docs",
+        srcs = ["procmacro_in_rustdoc.rs"],
+        rustdoc_proc_macro_deps = [":rustdoc_proc_macro"],
     )
 
     _target_maker(

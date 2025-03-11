@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-from typing import List
 import json
 import os
-import shutil
 import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
+from typing import List
 
 
 def run_subprocess(command: List[str]) -> subprocess.CompletedProcess[str]:
