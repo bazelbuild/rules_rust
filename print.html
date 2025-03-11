@@ -253,10 +253,15 @@ also be set in the project's <code>.bazelrc</code> file.</p>
 <li><a href="rust.html#rust_shared_library">rust_shared_library</a></li>
 <li><a href="rust.html#rust_static_library">rust_static_library</a></li>
 <li><a href="rust.html#rust_test">rust_test</a></li>
+<li><a href="rust.html#rust_unpretty">rust_unpretty</a></li>
 </ul>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
 <ul>
 <li><a href="rust.html#rust_test_suite">rust_test_suite</a></li>
+</ul>
+<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
+<ul>
+<li><a href="rust.html#rust_unpretty_aspect">rust_unpretty_aspect</a></li>
 </ul>
 <p><a id="rust_binary"></a></p>
 <h2 id="rust_binary"><a class="header" href="#rust_binary">rust_binary</a></h2>
@@ -783,6 +788,49 @@ rust_test(
 <tr><td style="text-align: left"><a id="rust_test-version"></a>version</td><td style="text-align: left">A version to inject in the cargo environment variable.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"0.0.0"</code></td></tr>
 </tbody></table>
 </div>
+<p><a id="rust_unpretty"></a></p>
+<h2 id="rust_unpretty"><a class="header" href="#rust_unpretty">rust_unpretty</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(<a href="rust.html#rust_unpretty-name">name</a>, <a href="rust.html#rust_unpretty-deps">deps</a>, <a href="rust.html#rust_unpretty-mode">mode</a>)
+</pre>
+<p>Executes rust unpretty on a specific target.</p>
+<p>Similar to <code>rust_unpretty_aspect</code>, but allows specifying a list of dependencies within the build system.</p>
+<p>For example, given the following example targets:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Rust expand can be set as a build target with the following:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(
+    name = "hello_library_expand",
+    testonly = True,
+    deps = [
+        ":hello_lib",
+        ":greeting_test",
+    ],
+    mode = "expand",
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_unpretty-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-deps"></a>deps</td><td style="text-align: left">Rust targets to run unpretty on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-mode"></a>mode</td><td style="text-align: left">The value to pass to <code>--unpretty</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"expanded"</code></td></tr>
+</tbody></table>
+</div>
 <p><a id="rust_test_suite"></a></p>
 <h2 id="rust_test_suite"><a class="header" href="#rust_test_suite">rust_test_suite</a></h2>
 <pre>
@@ -835,7 +883,38 @@ rust_test_suite(
 <tr><td style="text-align: left"><a id="rust_test_suite-shared_srcs"></a>shared_srcs</td><td style="text-align: left">Optional argument for sources shared among tests, typically helper functions.</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_test_suite-kwargs"></a>kwargs</td><td style="text-align: left">Additional keyword arguments for the underyling <a href="rust.html#rust_test">rust_test</a> targets. The <code>tags</code> argument is also passed to the generated <code>test_suite</code> target.</td><td style="text-align: left">none</td></tr>
 </tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+</div>
+<p><a id="rust_unpretty_aspect"></a></p>
+<h2 id="rust_unpretty_aspect"><a class="header" href="#rust_unpretty_aspect">rust_unpretty_aspect</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty_aspect")
+
+rust_unpretty_aspect()
+</pre>
+<p>Executes Rust expand on specified targets.</p>
+<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
+<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Then the targets can be expanded with the following command:</p>
+<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
+              --output_groups=rust_unpretty_expanded \
+              //hello_lib:all
+</code></pre>
+<p><strong>ASPECT ATTRIBUTES</strong></p>
+<p><strong>ATTRIBUTES</strong></p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p><a href="https://github.com/rust-lang/rust-clippy#readme">Clippy</a> is a tool for catching common mistakes in Rust code and improving it. An
 expansive list of lints and the justification can be found in their <a href="https://rust-lang.github.io/rust-clippy/">documentation</a>.</p>
 <h3 id="setup-1"><a class="header" href="#setup-1">Setup</a></h3>
@@ -854,7 +933,7 @@ the upstream implementation of clippy, this file must be named either <code>.cli
 <ul>
 <li><a href="rust_clippy.html#rust_clippy">rust_clippy</a></li>
 </ul>
-<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
+<h2 id="aspects-1"><a class="header" href="#aspects-1">Aspects</a></h2>
 <ul>
 <li><a href="rust_clippy.html#rust_clippy_aspect">rust_clippy_aspect</a></li>
 </ul>
@@ -959,7 +1038,7 @@ without failing.</p>
 <ul>
 <li><a href="rust_fmt.html#rustfmt_test">rustfmt_test</a></li>
 </ul>
-<h2 id="aspects-1"><a class="header" href="#aspects-1">Aspects</a></h2>
+<h2 id="aspects-2"><a class="header" href="#aspects-2">Aspects</a></h2>
 <ul>
 <li><a href="rust_fmt.html#rustfmt_aspect">rustfmt_aspect</a></li>
 </ul>
@@ -1330,7 +1409,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
             "command": "bazel",
             "args": [
                 "run",
-                "//tools/rust_analyzer:gen_rust_project"
+                "@rules_rust//tools/rust_analyzer:gen_rust_project"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -1339,7 +1418,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
             "problemMatcher": [],
             "presentation": {
                 "reveal": "never",
-                "panel": "dedicated",
+                "panel": "dedicated"
             },
             "runOptions": {
                 "runOn": "folderOpen"
@@ -1353,7 +1432,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
 <pre><code>build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 </code></pre>
 <p>Then you can use a prototype <a href="https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer">rust-analyzer plugin</a> that automatically collects the outputs whenever you recompile.</p>
-<h2 id="aspects-2"><a class="header" href="#aspects-2">Aspects</a></h2>
+<h2 id="aspects-3"><a class="header" href="#aspects-3">Aspects</a></h2>
 <ul>
 <li><a href="rust_analyzer.html#rust_analyzer_aspect">rust_analyzer_aspect</a></li>
 </ul>
@@ -1374,6 +1453,89 @@ rust_analyzer_aspect()
 <tr><td style="text-align: left">proto</td><td style="text-align: left">String</td></tr>
 </tbody></table>
 </div>
+<p><strong>ATTRIBUTES</strong></p>
+<div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<p>Public entry point to all Rust rules and supported APIs.</p>
+<h2 id="rules-6"><a class="header" href="#rules-6">Rules</a></h2>
+<ul>
+<li><a href="rust_unpretty.html#rust_unpretty">rust_unpretty</a></li>
+</ul>
+<h2 id="aspects-4"><a class="header" href="#aspects-4">Aspects</a></h2>
+<ul>
+<li><a href="rust_unpretty.html#rust_unpretty_aspect">rust_unpretty_aspect</a></li>
+</ul>
+<p><a id="rust_unpretty"></a></p>
+<h2 id="rust_unpretty-1"><a class="header" href="#rust_unpretty-1">rust_unpretty</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(<a href="rust_unpretty.html#rust_unpretty-name">name</a>, <a href="rust_unpretty.html#rust_unpretty-deps">deps</a>, <a href="rust_unpretty.html#rust_unpretty-mode">mode</a>)
+</pre>
+<p>Executes rust unpretty on a specific target.</p>
+<p>Similar to <code>rust_unpretty_aspect</code>, but allows specifying a list of dependencies within the build system.</p>
+<p>For example, given the following example targets:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Rust expand can be set as a build target with the following:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(
+    name = "hello_library_expand",
+    testonly = True,
+    deps = [
+        ":hello_lib",
+        ":greeting_test",
+    ],
+    mode = "expand",
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_unpretty-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-deps"></a>deps</td><td style="text-align: left">Rust targets to run unpretty on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-mode"></a>mode</td><td style="text-align: left">The value to pass to <code>--unpretty</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"expanded"</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_unpretty_aspect"></a></p>
+<h2 id="rust_unpretty_aspect-1"><a class="header" href="#rust_unpretty_aspect-1">rust_unpretty_aspect</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty_aspect")
+
+rust_unpretty_aspect()
+</pre>
+<p>Executes Rust expand on specified targets.</p>
+<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
+<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Then the targets can be expanded with the following command:</p>
+<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
+              --output_groups=rust_unpretty_expanded \
+              //hello_lib:all
+</code></pre>
+<p><strong>ASPECT ATTRIBUTES</strong></p>
 <p><strong>ATTRIBUTES</strong></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
 <p>Flags which control granular behavior of various Rust rules.</p>
@@ -1628,7 +1790,7 @@ it allows library dependencies to be unlocked much sooner, increasing parallelis
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rust-toolchains"><a class="header" href="#rust-toolchains">Rust Toolchains</a></h1>
 <p>Toolchain rules for Rust.</p>
-<h2 id="rules-6"><a class="header" href="#rules-6">Rules</a></h2>
+<h2 id="rules-7"><a class="header" href="#rules-7">Rules</a></h2>
 <ul>
 <li><a href="rust_toolchains.html#rust_analyzer_toolchain">rust_analyzer_toolchain</a></li>
 <li><a href="rust_toolchains.html#rust_toolchain">rust_toolchain</a></li>
@@ -2480,7 +2642,7 @@ crate_universe_dependencies()
 <p>Note that if the current version of <code>rules_rust</code> is not a release artifact, you may need to set additional
 flags such as <a href="crate_universe.html#crate_universe_dependencies-bootstrap"><code>bootstrap = True</code></a> on the <code>crate_universe_dependencies</code>
 call above or <a href="crate_universe.html#crates_repository-generator_urls">crates_repository::generator_urls</a> in uses of <code>crates_repository</code>.</p>
-<h2 id="rules-7"><a class="header" href="#rules-7">Rules</a></h2>
+<h2 id="rules-8"><a class="header" href="#rules-8">Rules</a></h2>
 <ul>
 <li><a href="crate_universe.html#crates_repository">crates_repository</a></li>
 <li><a href="crate_universe.html#crates_vendor">crates_vendor</a></li>
@@ -3097,7 +3259,7 @@ allowlist:</p>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_bindgen"><a class="header" href="#rules_rust_bindgen">rules_rust_bindgen</a></h1>
 <p>These rules are for using <a href="https://github.com/rust-lang/rust-bindgen">Bindgen</a> to generate <a href="http://www.rust-lang.org/">Rust</a> bindings to C (and some C++) libraries.</p>
-<h2 id="rules-8"><a class="header" href="#rules-8">Rules</a></h2>
+<h2 id="rules-9"><a class="header" href="#rules-9">Rules</a></h2>
 <ul>
 <li><a href="rust_bindgen.html#rust_bindgen">rust_bindgen</a></li>
 <li><a href="rust_bindgen.html#rust_bindgen_library">rust_bindgen_library</a></li>
@@ -3216,7 +3378,7 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_mdbook"><a class="header" href="#rules_rust_mdbook">rules_rust_mdbook</a></h1>
 <p>Bazel rules for <a href="https://github.com/rust-lang/mdBook">mdBook</a>.</p>
-<h2 id="rules-9"><a class="header" href="#rules-9">Rules</a></h2>
+<h2 id="rules-10"><a class="header" href="#rules-10">Rules</a></h2>
 <ul>
 <li><a href="rust_mdbook.html#mdbook">mdbook</a></li>
 <li><a href="rust_mdbook.html#mdbook_server">mdbook_server</a></li>
@@ -3289,7 +3451,7 @@ mdbook_toolchain(<a href="rust_mdbook.html#mdbook_toolchain-name">name</a>, <a h
 <h1 id="rules_rust_prost"><a class="header" href="#rules_rust_prost">rules_rust_prost</a></h1>
 <p>These build rules are used for building <a href="https://developers.google.com/protocol-buffers/">protobufs</a>/<a href="https://grpc.io">gRPC</a> in <a href="http://www.rust-lang.org/">Rust</a> with Bazel
 using <a href="https://github.com/tokio-rs/prost">Prost</a> and <a href="https://github.com/tokio-rs/tonic">Tonic</a></p>
-<h2 id="rules-10"><a class="header" href="#rules-10">Rules</a></h2>
+<h2 id="rules-11"><a class="header" href="#rules-11">Rules</a></h2>
 <ul>
 <li><a href="rust_prost.html#rust_prost_library">rust_prost_library</a></li>
 <li><a href="rust_prost.html#rust_prost_toolchain">rust_prost_toolchain</a></li>
@@ -3639,7 +3801,7 @@ rust_binary(
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_wasm_bindgen"><a class="header" href="#rules_rust_wasm_bindgen">rules_rust_wasm_bindgen</a></h1>
 <p>Bazel rules for generating wasm modules for Javascript using <a href="https://github.com/rustwasm/wasm-bindgen">wasm-bindgen</a>.</p>
-<h2 id="rules-11"><a class="header" href="#rules-11">Rules</a></h2>
+<h2 id="rules-12"><a class="header" href="#rules-12">Rules</a></h2>
 <ul>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a></li>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a></li>

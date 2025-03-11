@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Settings - rules_rust</title>
+        <title>unpretty - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,18 +155,99 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
-<p>Flags which control granular behavior of various Rust rules.</p>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<p>Public entry point to all Rust rules and supported APIs.</p>
+<h2 id="rules"><a class="header" href="#rules">Rules</a></h2>
+<ul>
+<li><a href="#rust_unpretty">rust_unpretty</a></li>
+</ul>
+<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
+<ul>
+<li><a href="#rust_unpretty_aspect">rust_unpretty_aspect</a></li>
+</ul>
+<p><a id="rust_unpretty"></a></p>
+<h2 id="rust_unpretty"><a class="header" href="#rust_unpretty">rust_unpretty</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(<a href="#rust_unpretty-name">name</a>, <a href="#rust_unpretty-deps">deps</a>, <a href="#rust_unpretty-mode">mode</a>)
+</pre>
+<p>Executes rust unpretty on a specific target.</p>
+<p>Similar to <code>rust_unpretty_aspect</code>, but allows specifying a list of dependencies within the build system.</p>
+<p>For example, given the following example targets:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Rust expand can be set as a build target with the following:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(
+    name = "hello_library_expand",
+    testonly = True,
+    deps = [
+        ":hello_lib",
+        ":greeting_test",
+    ],
+    mode = "expand",
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_unpretty-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-deps"></a>deps</td><td style="text-align: left">Rust targets to run unpretty on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-mode"></a>mode</td><td style="text-align: left">The value to pass to <code>--unpretty</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"expanded"</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_unpretty_aspect"></a></p>
+<h2 id="rust_unpretty_aspect"><a class="header" href="#rust_unpretty_aspect">rust_unpretty_aspect</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty_aspect")
+
+rust_unpretty_aspect()
+</pre>
+<p>Executes Rust expand on specified targets.</p>
+<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
+<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Then the targets can be expanded with the following command:</p>
+<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
+              --output_groups=rust_unpretty_expanded \
+              //hello_lib:all
+</code></pre>
+<p><strong>ASPECT ATTRIBUTES</strong></p>
+<p><strong>ATTRIBUTES</strong></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="rust_unpretty.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="rust_analyzer.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_settings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="settings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -176,11 +257,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="rust_unpretty.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="rust_analyzer.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_settings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="settings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

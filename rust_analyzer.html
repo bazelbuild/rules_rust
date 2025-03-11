@@ -198,7 +198,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
             "command": "bazel",
             "args": [
                 "run",
-                "//tools/rust_analyzer:gen_rust_project"
+                "@rules_rust//tools/rust_analyzer:gen_rust_project"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -207,7 +207,7 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
             "problemMatcher": [],
             "presentation": {
                 "reveal": "never",
-                "panel": "dedicated",
+                "panel": "dedicated"
             },
             "runOptions": {
                 "runOn": "folderOpen"
@@ -252,7 +252,7 @@ rust_analyzer_aspect()
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="settings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rust_unpretty.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -266,7 +266,7 @@ rust_analyzer_aspect()
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="settings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rust_unpretty.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -167,10 +167,15 @@
 <li><a href="#rust_shared_library">rust_shared_library</a></li>
 <li><a href="#rust_static_library">rust_static_library</a></li>
 <li><a href="#rust_test">rust_test</a></li>
+<li><a href="#rust_unpretty">rust_unpretty</a></li>
 </ul>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
 <ul>
 <li><a href="#rust_test_suite">rust_test_suite</a></li>
+</ul>
+<h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
+<ul>
+<li><a href="#rust_unpretty_aspect">rust_unpretty_aspect</a></li>
 </ul>
 <p><a id="rust_binary"></a></p>
 <h2 id="rust_binary"><a class="header" href="#rust_binary">rust_binary</a></h2>
@@ -697,6 +702,49 @@ rust_test(
 <tr><td style="text-align: left"><a id="rust_test-version"></a>version</td><td style="text-align: left">A version to inject in the cargo environment variable.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"0.0.0"</code></td></tr>
 </tbody></table>
 </div>
+<p><a id="rust_unpretty"></a></p>
+<h2 id="rust_unpretty"><a class="header" href="#rust_unpretty">rust_unpretty</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(<a href="#rust_unpretty-name">name</a>, <a href="#rust_unpretty-deps">deps</a>, <a href="#rust_unpretty-mode">mode</a>)
+</pre>
+<p>Executes rust unpretty on a specific target.</p>
+<p>Similar to <code>rust_unpretty_aspect</code>, but allows specifying a list of dependencies within the build system.</p>
+<p>For example, given the following example targets:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Rust expand can be set as a build target with the following:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_unpretty")
+
+rust_unpretty(
+    name = "hello_library_expand",
+    testonly = True,
+    deps = [
+        ":hello_lib",
+        ":greeting_test",
+    ],
+    mode = "expand",
+)
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_unpretty-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-deps"></a>deps</td><td style="text-align: left">Rust targets to run unpretty on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_unpretty-mode"></a>mode</td><td style="text-align: left">The value to pass to <code>--unpretty</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"expanded"</code></td></tr>
+</tbody></table>
+</div>
 <p><a id="rust_test_suite"></a></p>
 <h2 id="rust_test_suite"><a class="header" href="#rust_test_suite">rust_test_suite</a></h2>
 <pre>
@@ -750,6 +798,37 @@ rust_test_suite(
 <tr><td style="text-align: left"><a id="rust_test_suite-kwargs"></a>kwargs</td><td style="text-align: left">Additional keyword arguments for the underyling <a href="#rust_test">rust_test</a> targets. The <code>tags</code> argument is also passed to the generated <code>test_suite</code> target.</td><td style="text-align: left">none</td></tr>
 </tbody></table>
 </div>
+<p><a id="rust_unpretty_aspect"></a></p>
+<h2 id="rust_unpretty_aspect"><a class="header" href="#rust_unpretty_aspect">rust_unpretty_aspect</a></h2>
+<pre>
+load("@rules_rust//rust:defs.bzl", "rust_unpretty_aspect")
+
+rust_unpretty_aspect()
+</pre>
+<p>Executes Rust expand on specified targets.</p>
+<p>This aspect applies to existing rust_library, rust_test, and rust_binary rules.</p>
+<p>As an example, if the following is defined in <code>examples/hello_lib/BUILD.bazel</code>:</p>
+<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["src/lib.rs"],
+)
+
+rust_test(
+    name = "greeting_test",
+    srcs = ["tests/greeting.rs"],
+    deps = [":hello_lib"],
+)
+</code></pre>
+<p>Then the targets can be expanded with the following command:</p>
+<pre><code class="language-output">$ bazel build --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect \
+              --output_groups=rust_unpretty_expanded \
+              //hello_lib:all
+</code></pre>
+<p><strong>ASPECT ATTRIBUTES</strong></p>
+<p><strong>ATTRIBUTES</strong></p>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
