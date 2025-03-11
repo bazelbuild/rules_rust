@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "elasticlunr",
@@ -31,7 +37,10 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2018",
     proc_macro_deps = [
-        "@rmdbi__serde_derive-1.0.218//:serde_derive",
+        "@rmdbi__serde_derive-1.0.219//:serde_derive",
+    ],
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -85,7 +94,7 @@ rust_library(
     version = "3.0.2",
     deps = [
         "@rmdbi__regex-1.11.1//:regex",
-        "@rmdbi__serde-1.0.218//:serde",
-        "@rmdbi__serde_json-1.0.139//:serde_json",
+        "@rmdbi__serde-1.0.219//:serde",
+        "@rmdbi__serde_json-1.0.140//:serde_json",
     ],
 )

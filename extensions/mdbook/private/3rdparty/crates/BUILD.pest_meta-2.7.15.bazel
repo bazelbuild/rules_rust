@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "pest_meta",
@@ -33,6 +39,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -84,7 +93,7 @@ rust_library(
     }),
     version = "2.7.15",
     deps = [
-        "@rmdbi__once_cell-1.20.3//:once_cell",
+        "@rmdbi__once_cell-1.21.0//:once_cell",
         "@rmdbi__pest-2.7.15//:pest",
     ],
 )

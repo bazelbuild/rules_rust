@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "notify_debouncer_mini",
@@ -34,6 +40,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -88,6 +97,6 @@ rust_library(
         "@rmdbi__log-0.4.26//:log",
         "@rmdbi__notify-8.0.0//:notify",
         "@rmdbi__notify-types-2.0.0//:notify_types",
-        "@rmdbi__tempfile-3.17.1//:tempfile",
+        "@rmdbi__tempfile-3.18.0//:tempfile",
     ],
 )

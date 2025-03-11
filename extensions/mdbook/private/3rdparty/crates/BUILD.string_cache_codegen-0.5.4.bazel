@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "string_cache_codegen",
@@ -30,6 +36,9 @@ rust_library(
     ),
     crate_root = "lib.rs",
     edition = "2018",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -83,7 +92,7 @@ rust_library(
     deps = [
         "@rmdbi__phf_generator-0.11.3//:phf_generator",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
-        "@rmdbi__proc-macro2-1.0.93//:proc_macro2",
-        "@rmdbi__quote-1.0.38//:quote",
+        "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
+        "@rmdbi__quote-1.0.39//:quote",
     ],
 )

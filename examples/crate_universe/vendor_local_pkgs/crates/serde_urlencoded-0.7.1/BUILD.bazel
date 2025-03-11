@@ -6,9 +6,15 @@
 #     bazel run @@//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "serde_urlencoded",
@@ -30,6 +36,9 @@ rust_library(
     ),
     crate_root = "src/lib.rs",
     edition = "2018",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -82,8 +91,8 @@ rust_library(
     version = "0.7.1",
     deps = [
         "//vendor_local_pkgs/crates/form_urlencoded-1.2.1:form_urlencoded",
-        "//vendor_local_pkgs/crates/itoa-1.0.14:itoa",
-        "//vendor_local_pkgs/crates/ryu-1.0.19:ryu",
-        "//vendor_local_pkgs/crates/serde-1.0.218:serde",
+        "//vendor_local_pkgs/crates/itoa-1.0.15:itoa",
+        "//vendor_local_pkgs/crates/ryu-1.0.20:ryu",
+        "//vendor_local_pkgs/crates/serde-1.0.219:serde",
     ],
 )

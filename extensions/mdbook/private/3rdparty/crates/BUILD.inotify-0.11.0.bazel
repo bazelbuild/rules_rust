@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "inotify",
@@ -30,6 +36,9 @@ rust_library(
     ),
     crate_root = "src/lib.rs",
     edition = "2018",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -81,7 +90,7 @@ rust_library(
     }),
     version = "0.11.0",
     deps = [
-        "@rmdbi__bitflags-2.8.0//:bitflags",
+        "@rmdbi__bitflags-2.9.0//:bitflags",
         "@rmdbi__inotify-sys-0.1.5//:inotify_sys",
         "@rmdbi__libc-0.2.170//:libc",
     ],

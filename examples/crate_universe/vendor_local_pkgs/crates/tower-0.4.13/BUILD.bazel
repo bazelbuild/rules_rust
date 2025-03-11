@@ -6,9 +6,15 @@
 #     bazel run @@//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "tower",
@@ -45,6 +51,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2018",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -98,9 +107,9 @@ rust_library(
     deps = [
         "//vendor_local_pkgs/crates/futures-core-0.3.31:futures_core",
         "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
-        "//vendor_local_pkgs/crates/pin-project-1.1.9:pin_project",
+        "//vendor_local_pkgs/crates/pin-project-1.1.10:pin_project",
         "//vendor_local_pkgs/crates/pin-project-lite-0.2.16:pin_project_lite",
-        "//vendor_local_pkgs/crates/tokio-1.43.0:tokio",
+        "//vendor_local_pkgs/crates/tokio-1.44.0:tokio",
         "//vendor_local_pkgs/crates/tokio-util-0.7.13:tokio_util",
         "//vendor_local_pkgs/crates/tower-layer-0.3.3:tower_layer",
         "//vendor_local_pkgs/crates/tower-service-0.3.3:tower_service",

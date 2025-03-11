@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "notify",
@@ -35,6 +41,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -93,7 +102,7 @@ rust_library(
         "@rmdbi__walkdir-2.5.0//:walkdir",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.9.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # aarch64-apple-darwin
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
@@ -132,7 +141,7 @@ rust_library(
             "@rmdbi__mio-1.0.3//:mio",  # cfg(any(target_os = "linux", target_os = "android"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.9.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # i686-apple-darwin
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
@@ -159,7 +168,7 @@ rust_library(
             "@rmdbi__mio-1.0.3//:mio",  # cfg(any(target_os = "linux", target_os = "android"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@rmdbi__bitflags-2.8.0//:bitflags",  # cfg(target_os = "macos")
+            "@rmdbi__bitflags-2.9.0//:bitflags",  # cfg(target_os = "macos")
             "@rmdbi__fsevent-sys-4.1.0//:fsevent_sys",  # x86_64-apple-darwin
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [

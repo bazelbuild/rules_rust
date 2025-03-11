@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_proc_macro(
     name = "icu_provider_macros",
@@ -30,6 +36,9 @@ rust_proc_macro(
     ),
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -81,8 +90,8 @@ rust_proc_macro(
     }),
     version = "1.5.0",
     deps = [
-        "@rmdbi__proc-macro2-1.0.93//:proc_macro2",
-        "@rmdbi__quote-1.0.38//:quote",
-        "@rmdbi__syn-2.0.98//:syn",
+        "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
+        "@rmdbi__quote-1.0.39//:quote",
+        "@rmdbi__syn-2.0.100//:syn",
     ],
 )
