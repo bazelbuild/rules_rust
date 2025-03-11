@@ -51,6 +51,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
+    "armv7-unknown-linux-musleabihf": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
