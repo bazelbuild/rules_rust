@@ -1,5 +1,5 @@
 {
-  "checksum": "adf4d45c4e662c5154997a321b1c7513284df3b5abdc8d7bd67ead93ecc97d4e",
+  "checksum": "8045b8b12708b1b29d21041a34f39eb426f0c4408cacab2ba60c6066abf9dc3a",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -36,13 +36,7 @@
             "cfg(target_os = \"windows\")": [
               {
                 "id": "winapi 0.3.9",
-                "target": "winapi",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/winapi/0.3.9/download",
-                    "sha256": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
-                  }
-                }
+                "target": "winapi"
               }
             ]
           }
@@ -91,37 +85,19 @@
             "cfg(target_os = \"hermit\")": [
               {
                 "id": "hermit-abi 0.1.19",
-                "target": "hermit_abi",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/hermit-abi/0.1.19/download",
-                    "sha256": "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-                  }
-                }
+                "target": "hermit_abi"
               }
             ],
             "cfg(unix)": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ],
             "cfg(windows)": [
               {
                 "id": "winapi 0.3.9",
-                "target": "winapi",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/winapi/0.3.9/download",
-                    "sha256": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
-                  }
-                }
+                "target": "winapi"
               }
             ]
           }
@@ -264,136 +240,64 @@
           "common": [
             {
               "id": "atty 0.2.14",
-              "target": "atty",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/atty/0.2.14/download",
-                  "sha256": "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-                }
-              }
+              "target": "atty"
             },
             {
               "id": "bitflags 1.3.2",
-              "target": "bitflags",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/bitflags/1.3.2/download",
-                  "sha256": "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
-                }
-              }
+              "target": "bitflags"
             },
             {
               "id": "strsim 0.8.0",
-              "target": "strsim",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/strsim/0.8.0/download",
-                  "sha256": "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-                }
-              }
+              "target": "strsim"
             },
             {
               "id": "textwrap 0.11.0",
-              "target": "textwrap",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/textwrap/0.11.0/download",
-                  "sha256": "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
-                }
-              }
+              "target": "textwrap"
             },
             {
               "id": "unicode-width 0.1.10",
-              "target": "unicode_width",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/unicode-width/0.1.10/download",
-                  "sha256": "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
-                }
-              }
+              "target": "unicode_width"
             },
             {
               "id": "vec_map 0.8.2",
-              "target": "vec_map",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/vec_map/0.8.2/download",
-                  "sha256": "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
-                }
-              }
+              "target": "vec_map"
             }
           ],
           "selects": {
             "aarch64-apple-darwin": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ],
             "aarch64-unknown-linux-gnu": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ],
             "wasm32-unknown-unknown": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ],
             "wasm32-wasip1": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ],
             "x86_64-unknown-linux-gnu": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ],
             "x86_64-unknown-nixos-gnu": [
               {
                 "id": "ansi_term 0.12.1",
-                "target": "ansi_term",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/ansi_term/0.12.1/download",
-                    "sha256": "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-                  }
-                }
+                "target": "ansi_term"
               }
             ]
           }
@@ -440,33 +344,15 @@
           "common": [
             {
               "id": "smallvec 0.4.5",
-              "target": "smallvec",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/smallvec/0.4.5/download",
-                  "sha256": "f90c5e5fe535e48807ab94fc611d323935f39d4660c52b26b96446a7b33aef10"
-                }
-              }
+              "target": "smallvec"
             },
             {
               "id": "textwrap 0.13.4",
-              "target": "textwrap",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/textwrap/0.13.4/download",
-                  "sha256": "cd05616119e612a8041ef58f2b578906cc2531a6069047ae092cfb86a325d835"
-                }
-              }
+              "target": "textwrap"
             },
             {
               "id": "unicode-width 0.1.10",
-              "target": "unicode_width",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/unicode-width/0.1.10/download",
-                  "sha256": "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
-                }
-              }
+              "target": "unicode_width"
             }
           ],
           "selects": {}
@@ -532,48 +418,24 @@
           "common": [
             {
               "id": "cfg-if 1.0.0",
-              "target": "cfg_if",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/cfg-if/1.0.0/download",
-                  "sha256": "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-                }
-              }
+              "target": "cfg_if"
             },
             {
               "id": "getrandom 0.1.16",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/getrandom/0.1.16/download",
-                  "sha256": "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {
             "cfg(target_os = \"wasi\")": [
               {
                 "id": "wasi 0.9.0+wasi-snapshot-preview1",
-                "target": "wasi",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/wasi/0.9.0+wasi-snapshot-preview1/download",
-                    "sha256": "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
-                  }
-                }
+                "target": "wasi"
               }
             ],
             "cfg(unix)": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ]
           }
@@ -632,13 +494,7 @@
           "common": [
             {
               "id": "libc 0.2.139",
-              "target": "libc",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                  "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                }
-              }
+              "target": "libc"
             }
           ],
           "selects": {}
@@ -698,13 +554,7 @@
           "common": [
             {
               "id": "libc 0.2.139",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                  "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}
@@ -745,13 +595,7 @@
           "common": [
             {
               "id": "clap 2.34.0",
-              "target": "clap",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/clap/2.34.0/download",
-                  "sha256": "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
-                }
-              }
+              "target": "clap"
             }
           ],
           "selects": {}
@@ -837,13 +681,7 @@
           "common": [
             {
               "id": "ferris-says 0.2.1",
-              "target": "ferris_says",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/ferris-says/0.2.1/download",
-                  "sha256": "9515ec2dd9606ec230f6b2d1f25fd9e808a2f2af600143f7efe7e5865505b7aa"
-                }
-              }
+              "target": "ferris_says"
             }
           ],
           "selects": {}
@@ -900,96 +738,48 @@
             {
               "id": "getrandom 0.1.16",
               "target": "getrandom",
-              "alias": "getrandom_package",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/getrandom/0.1.16/download",
-                  "sha256": "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
-                }
-              }
+              "alias": "getrandom_package"
             },
             {
               "id": "rand_core 0.5.1",
-              "target": "rand_core",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/rand_core/0.5.1/download",
-                  "sha256": "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
-                }
-              }
+              "target": "rand_core"
             }
           ],
           "selects": {
             "aarch64-apple-darwin": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ],
             "aarch64-unknown-linux-gnu": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ],
             "cfg(not(target_os = \"emscripten\"))": [
               {
                 "id": "rand_chacha 0.2.2",
-                "target": "rand_chacha",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/rand_chacha/0.2.2/download",
-                    "sha256": "f4c8ed856279c9737206bf725bf36935d8666ead7aa69b52be55af369d193402"
-                  }
-                }
+                "target": "rand_chacha"
               }
             ],
             "cfg(target_os = \"emscripten\")": [
               {
                 "id": "rand_hc 0.2.0",
-                "target": "rand_hc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/rand_hc/0.2.0/download",
-                    "sha256": "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
-                  }
-                }
+                "target": "rand_hc"
               }
             ],
             "x86_64-unknown-linux-gnu": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ],
             "x86_64-unknown-nixos-gnu": [
               {
                 "id": "libc 0.2.139",
-                "target": "libc",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/libc/0.2.139/download",
-                    "sha256": "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
-                  }
-                }
+                "target": "libc"
               }
             ]
           }
@@ -1043,23 +833,11 @@
           "common": [
             {
               "id": "ppv-lite86 0.2.17",
-              "target": "ppv_lite86",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/ppv-lite86/0.2.17/download",
-                  "sha256": "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
-                }
-              }
+              "target": "ppv_lite86"
             },
             {
               "id": "rand_core 0.5.1",
-              "target": "rand_core",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/rand_core/0.5.1/download",
-                  "sha256": "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
-                }
-              }
+              "target": "rand_core"
             }
           ],
           "selects": {}
@@ -1115,13 +893,7 @@
           "common": [
             {
               "id": "getrandom 0.1.16",
-              "target": "getrandom",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/getrandom/0.1.16/download",
-                  "sha256": "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
-                }
-              }
+              "target": "getrandom"
             }
           ],
           "selects": {}
@@ -1169,13 +941,7 @@
           "common": [
             {
               "id": "rand_core 0.5.1",
-              "target": "rand_core",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/rand_core/0.5.1/download",
-                  "sha256": "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
-                }
-              }
+              "target": "rand_core"
             }
           ],
           "selects": {}
@@ -1218,13 +984,7 @@
           "common": [
             {
               "id": "rand 0.7.3",
-              "target": "rand",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/rand/0.7.3/download",
-                  "sha256": "6a6b1679d49b24bbfe0c803429aa1874472f50d9b363131f0e89fc356b544d03"
-                }
-              }
+              "target": "rand"
             }
           ],
           "selects": {}
@@ -1390,13 +1150,7 @@
           "common": [
             {
               "id": "unicode-width 0.1.10",
-              "target": "unicode_width",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/unicode-width/0.1.10/download",
-                  "sha256": "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
-                }
-              }
+              "target": "unicode_width"
             }
           ],
           "selects": {}
@@ -1451,23 +1205,11 @@
           "common": [
             {
               "id": "smawk 0.3.1",
-              "target": "smawk",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/smawk/0.3.1/download",
-                  "sha256": "f67ad224767faa3c7d8b6d91985b78e70a1324408abcb1cfcc2be4c06bc06043"
-                }
-              }
+              "target": "smawk"
             },
             {
               "id": "unicode-width 0.1.10",
-              "target": "unicode_width",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/unicode-width/0.1.10/download",
-                  "sha256": "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
-                }
-              }
+              "target": "unicode_width"
             }
           ],
           "selects": {}
@@ -1669,38 +1411,20 @@
           "common": [
             {
               "id": "winapi 0.3.9",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/winapi/0.3.9/download",
-                  "sha256": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {
             "i686-pc-windows-gnu": [
               {
                 "id": "winapi-i686-pc-windows-gnu 0.4.0",
-                "target": "winapi_i686_pc_windows_gnu",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/winapi-i686-pc-windows-gnu/0.4.0/download",
-                    "sha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
-                  }
-                }
+                "target": "winapi_i686_pc_windows_gnu"
               }
             ],
             "x86_64-pc-windows-gnu": [
               {
                 "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-                "target": "winapi_x86_64_pc_windows_gnu",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/winapi-x86_64-pc-windows-gnu/0.4.0/download",
-                    "sha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-                  }
-                }
+                "target": "winapi_x86_64_pc_windows_gnu"
               }
             ]
           }
@@ -1771,13 +1495,7 @@
           "common": [
             {
               "id": "winapi-i686-pc-windows-gnu 0.4.0",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/winapi-i686-pc-windows-gnu/0.4.0/download",
-                  "sha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}
@@ -1848,13 +1566,7 @@
           "common": [
             {
               "id": "winapi-x86_64-pc-windows-gnu 0.4.0",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/winapi-x86_64-pc-windows-gnu/0.4.0/download",
-                  "sha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}

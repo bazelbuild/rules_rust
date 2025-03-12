@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use camino::Utf8PathBuf;
 use cargo_metadata::{Node, Package, PackageId};
 use serde::{Deserialize, Serialize};
 
@@ -26,9 +27,9 @@ pub struct CrateDependency {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
 
-    /// Where to acquire the source of this dependency.
+    /// Local path of this dependency if provided.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) source_annotation: Option<SourceAnnotation>,
+    pub(crate) local_path: Option<Utf8PathBuf>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Clone)]
@@ -390,7 +391,10 @@ impl CrateContext {
                 id: CrateId::new(pkg.name.clone(), pkg.version.clone()),
                 target,
                 alias: dep.alias,
-                source_annotation: Some(source_annotations[&dep.package_id].clone()),
+                local_path: match source_annotations.get(&dep.package_id) {
+                    Some(SourceAnnotation::Path { path }) => Some(path.clone()),
+                    _ => None,
+                },
             }
         };
 
@@ -488,7 +492,10 @@ impl CrateContext {
                     id: current_crate_id,
                     target: target.crate_name.clone(),
                     alias: None,
-                    source_annotation: source_annotations.get(&annotation.node.id).cloned(),
+                    local_path: match source_annotations.get(&annotation.node.id) {
+                        Some(SourceAnnotation::Path { path }) => Some(path.clone()),
+                        _ => None,
+                    },
                 },
                 None,
             );

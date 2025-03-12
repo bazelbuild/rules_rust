@@ -1,5 +1,5 @@
 {
-  "checksum": "9c9f5b08c5b53471e832ea3980c57f0ebcc42f9d5ac887e4f8983b05116c2328",
+  "checksum": "8a2e7c659fdc8db88d3fddd699b0043c1f45e04b9135b8dbc981952a7d050adb",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -29,13 +29,7 @@
           "common": [
             {
               "id": "test_data_passing_crate 0.1.0",
-              "target": "test_data_passing_crate",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download",
-                  "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286"
-                }
-              }
+              "target": "test_data_passing_crate"
             }
           ],
           "selects": {}
@@ -92,13 +86,7 @@
           "common": [
             {
               "id": "test_data_passing_crate 0.1.0",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/test_data_passing_crate/0.1.0/download",
-                  "sha256": "08c67aba3a29c3dc187eaf8080107404abfaee1ae893a02c43a362343ca73286"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}

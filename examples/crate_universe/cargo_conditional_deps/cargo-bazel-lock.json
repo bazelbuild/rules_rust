@@ -1,5 +1,5 @@
 {
-  "checksum": "57c33f79ef187073fb7bcb0953c1a40ce06c1790ecf0e63a4028522a8a8cdd9e",
+  "checksum": "83dc8365f881e50114ac8bd22e63192d96b2e1212a17ef565b4428df7d003f5b",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -141,13 +141,7 @@
             "cfg(target_os = \"linux\")": [
               {
                 "id": "nix 0.26.2",
-                "target": "nix",
-                "source_annotation": {
-                  "Http": {
-                    "url": "https://static.crates.io/crates/nix/0.26.2/download",
-                    "sha256": "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
-                  }
-                }
+                "target": "nix"
               }
             ]
           }
@@ -212,13 +206,7 @@
           "common": [
             {
               "id": "libc 0.2.146",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/libc/0.2.146/download",
-                  "sha256": "f92be4933c13fd498862a9e02a3055f8a8d9c039ce33db97306fd5a6caa7f29b"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}
@@ -295,13 +283,7 @@
           "common": [
             {
               "id": "memoffset 0.7.1",
-              "target": "build_script_build",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/memoffset/0.7.1/download",
-                  "sha256": "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
-                }
-              }
+              "target": "build_script_build"
             }
           ],
           "selects": {}
@@ -323,13 +305,7 @@
           "common": [
             {
               "id": "autocfg 1.1.0",
-              "target": "autocfg",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/autocfg/1.1.0/download",
-                  "sha256": "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
-                }
-              }
+              "target": "autocfg"
             }
           ],
           "selects": {}
@@ -414,63 +390,27 @@
           "common": [
             {
               "id": "bitflags 1.3.2",
-              "target": "bitflags",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/bitflags/1.3.2/download",
-                  "sha256": "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
-                }
-              }
+              "target": "bitflags"
             },
             {
               "id": "cfg-if 1.0.0",
-              "target": "cfg_if",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/cfg-if/1.0.0/download",
-                  "sha256": "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-                }
-              }
+              "target": "cfg_if"
             },
             {
               "id": "libc 0.2.146",
-              "target": "libc",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/libc/0.2.146/download",
-                  "sha256": "f92be4933c13fd498862a9e02a3055f8a8d9c039ce33db97306fd5a6caa7f29b"
-                }
-              }
+              "target": "libc"
             },
             {
               "id": "memoffset 0.7.1",
-              "target": "memoffset",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/memoffset/0.7.1/download",
-                  "sha256": "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
-                }
-              }
+              "target": "memoffset"
             },
             {
               "id": "pin-utils 0.1.0",
-              "target": "pin_utils",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/pin-utils/0.1.0/download",
-                  "sha256": "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
-                }
-              }
+              "target": "pin_utils"
             },
             {
               "id": "static_assertions 1.1.0",
-              "target": "static_assertions",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/static_assertions/1.1.0/download",
-                  "sha256": "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-                }
-              }
+              "target": "static_assertions"
             }
           ],
           "selects": {}

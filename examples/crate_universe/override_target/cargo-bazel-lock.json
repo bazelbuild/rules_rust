@@ -1,5 +1,5 @@
 {
-  "checksum": "dc382ca884eb2768320a8298c28c6c8e4e14b21a0a1bb39b62d4bd164fe3171b",
+  "checksum": "11945ff02784fc56c71043a5ccfd96217f3d4c8cc6ed41fd91b32718ff409ee8",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
@@ -29,13 +29,7 @@
           "common": [
             {
               "id": "foo 0.0.0",
-              "target": "foo",
-              "source_annotation": {
-                "Http": {
-                  "url": "https://static.crates.io/crates/foo/0.0.0/download",
-                  "sha256": "f7dbb6acfeff1d490fba693a402456f76b344fea77a5e7cae43b5970c3332b8f"
-                }
-              }
+              "target": "foo"
             }
           ],
           "selects": {}
