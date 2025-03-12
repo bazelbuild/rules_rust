@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.59.0")
+bazel_dep(name = "rules_rust", version = "0.59.1")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.59.0")
+bazel_dep(name = "rules_rust", version = "0.59.1")
 
 ###############################################################################
 # T O O L C H A I N S
