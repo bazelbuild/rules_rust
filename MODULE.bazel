@@ -28,10 +28,6 @@ use_repo(
     "rrra__log-0.4.19",
     "rrra__serde-1.0.171",
     "rrra__serde_json-1.0.102",
-    "rules_rust_ctve__cargo-util-schemas-0.3.1",
-    "rules_rust_ctve__pathdiff-0.1.0",
-    "rules_rust_ctve__semver-1.0.25",
-    "rules_rust_ctve__toml-0.8.20",
     "rules_rust_tinyjson",
 )
 
@@ -40,6 +36,11 @@ use_repo(
     cargo_internal_deps,
     "rrcti",
     "rrcti__cargo_toml-0.20.5",
+    "rules_rust_ctve",
+    "rules_rust_ctve__cargo-util-schemas-0.3.1",
+    "rules_rust_ctve__pathdiff-0.1.0",
+    "rules_rust_ctve__semver-1.0.25",
+    "rules_rust_ctve__toml-0.8.20",
 )
 
 rust = use_extension("//rust:extensions.bzl", "rust")
