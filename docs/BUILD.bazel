@@ -69,6 +69,14 @@ stardoc(
 )
 
 stardoc(
+    name = "rust_bzlmod",
+    out = "src/rust_bzlmod.md",
+    input = "@rules_rust//rust:extensions.bzl",
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
     name = "rust_unpretty",
     out = "src/rust_unpretty.md",
     input = "@rules_rust//rust:defs.bzl",
@@ -178,7 +186,7 @@ stardoc(
 
 stardoc(
     name = "crate_universe_workspace",
-    out = "src/crate_universe.md",
+    out = "src/crate_universe_workspace.md",
     input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
@@ -275,6 +283,7 @@ mdbook(
         ":rust",
         ":rust_analyzer",
         ":rust_bindgen",
+        ":rust_bzlmod",
         ":rust_clippy",
         ":rust_doc",
         ":rust_fmt",
