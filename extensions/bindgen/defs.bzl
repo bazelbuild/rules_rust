@@ -29,7 +29,7 @@ register_toolchains("@rules_rust_bindgen//:default_bindgen_toolchain")
 ```
 
 The default toolchain builds libclang from source via the [llvm-project](https://registry.bazel.build/modules/llvm-project) bazel_dep.
-[examples/bindgen_toolchain/Readme.md](https://github.com/bazelbuild/rules_rust/blob/main/examples/bindgen_toolchain/Readme.md) shows how to use a prebuilt libclang.
+[examples/bindgen_toolchain](https://github.com/bazelbuild/rules_rust/tree/main/examples/bindgen_toolchain) shows how to use a prebuilt libclang.
 
 ### Workspace
 
