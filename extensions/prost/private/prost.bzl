@@ -87,6 +87,9 @@ def _compile_proto(
     additional_args.add("--additional_srcs={}".format(",".join([f.path for f in all_additional_srcs.to_list()])))
     additional_args.add_all(prost_toolchain.prost_opts + prost_opts, format_each = "--prost_opt=%s")
 
+    if prost_toolchain.is_no_std:
+        additional_args.add("--is_no_std")
+
     if prost_toolchain.tonic_plugin:
         tonic_plugin = prost_toolchain.tonic_plugin[DefaultInfo].files_to_run
         additional_args.add(prost_toolchain.tonic_plugin_flag % tonic_plugin.executable.path)
@@ -450,6 +453,7 @@ def _rust_prost_toolchain_impl(ctx):
         tonic_plugin_flag = ctx.attr.tonic_plugin_flag,
         tonic_runtime = ctx.attr.tonic_runtime,
         include_transitive_deps = ctx.attr.include_transitive_deps,
+        is_no_std = ctx.attr.is_no_std,
     )]
 
 rust_prost_toolchain = rule(
@@ -459,6 +463,10 @@ rust_prost_toolchain = rule(
     attrs = dict({
         "include_transitive_deps": attr.bool(
             doc = "Whether to include transitive dependencies. If set to True, all transitive dependencies will directly accessible by the dependent crate.",
+            default = False,
+        ),
+        "is_no_std": attr.bool(
+            doc = "If a no_std tag should be put into the generated code.",
             default = False,
         ),
         "prost_opts": attr.string_list(
