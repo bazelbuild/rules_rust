@@ -96,7 +96,6 @@ use_repo(
     "cargo_bazel.buildifier-darwin-arm64",
     "cargo_bazel.buildifier-linux-amd64",
     "cargo_bazel.buildifier-linux-arm64",
-    "cargo_bazel.buildifier-linux-s390x",
     "cargo_bazel.buildifier-windows-amd64.exe",
     "cui",
     "cui__anyhow-1.0.95",
