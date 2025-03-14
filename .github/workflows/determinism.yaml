@@ -1,0 +1,99 @@
+name: Determinism
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Create a job for each target triple
+        include:
+          - os: macos-latest
+            work_dir: "${{ runner.temp }}/r"
+          - os: ubuntu-latest
+            work_dir: "${{ runner.temp }}/r"
+          - os: windows-latest
+            work_dir: "C:/r"
+    runs-on: ${{ matrix.os }}
+    name: Check (${{ matrix.os }})
+    steps:
+      - uses: actions/checkout@master
+        with:
+          clean: true
+
+      - name: Run tests
+        continue-on-error: true
+        run:
+          bazel run
+          --compilation_mode=opt
+          '//test/determinism:tester'
+          '--'
+          test
+          --output=${{ github.workspace }}/results.json
+          --work-dir=${{ matrix.work_dir }}
+
+      - name: Summarize (unix)
+        if: runner.os != 'Windows'
+        run: |
+          if [[ ! -f results.json ]]; then
+            exit 1
+          fi
+
+          echo '<details>' >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '```json' >> ${GITHUB_STEP_SUMMARY}
+          cat results.json >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '```' >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '</details>' >> ${GITHUB_STEP_SUMMARY}
+
+          if [[ "$(cat results.json)" != "[]"* ]]; then
+            exit 1
+          fi
+      - name: Summarize (windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (-not (Test-Path results.json)) {
+              exit 1
+          }
+
+          echo '<details>' >> $env:GITHUB_STEP_SUMMARY
+          echo '' >> $env:GITHUB_STEP_SUMMARY
+          echo '```json' >> $env:GITHUB_STEP_SUMMARY
+          Get-Content -Path results.json >> $env:GITHUB_STEP_SUMMARY
+          echo '' >> $env:GITHUB_STEP_SUMMARY
+          echo '```' >> $env:GITHUB_STEP_SUMMARY
+          echo '' >> $env:GITHUB_STEP_SUMMARY
+          echo '</details>' >> $env:GITHUB_STEP_SUMMARY
+
+          $content = Get-Content -Path results.json -Raw
+          if (-not $content.StartsWith('[]')) {
+              exit 1
+          }
+
+      - name: Archive output base (unix)
+        if: runner.os != 'Windows' && always()
+        run: |
+          if [[ -d "${{ matrix.work_dir }}/o" ]]; then
+            tar -czf output-base.tar.gz -C "${{ matrix.work_dir }}" o
+          fi
+
+      - name: Archive output base (windows)
+        if: runner.os == 'Windows' && always()
+        run: |
+          if (Test-Path "${{ matrix.work_dir }}\o") {
+            Compress-Archive -Path "${{ matrix.work_dir }}\o" -DestinationPath output-base.zip
+          }
+
+      - name: Upload output base artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-base-${{ matrix.os }}
+          path: |
+            output-base.tar.gz
+            output-base.zip
+          if-no-files-found: ignore
