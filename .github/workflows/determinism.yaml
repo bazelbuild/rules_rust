@@ -1,0 +1,70 @@
+name: Determinism
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Create a job for each target triple
+        include:
+          - os: macos-latest
+            test_args: ""
+          - os: ubuntu-latest
+            test_args: ""
+          - os: windows-latest
+            test_args: "--work-dir=D:/dtm"
+    runs-on: ${{ matrix.os }}
+    name: Check (${{ matrix.os }})
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Run tests
+        continue-on-error: true
+        run: bazel run --compilation_mode=opt '//test/determinism:tester' '--' test --output=${{ github.workspace }}/results.json ${{ matrix.test_args }}
+
+      - name: Summarize (unix)
+        if: runner.os != 'Windows'
+        run: |
+          if [[ ! -f results.json ]]; then
+            exit 1
+          fi
+
+          echo '<details>' >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '```json' >> ${GITHUB_STEP_SUMMARY}
+          cat results.json >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '```' >> ${GITHUB_STEP_SUMMARY}
+          echo '' >> ${GITHUB_STEP_SUMMARY}
+          echo '</details>' >> ${GITHUB_STEP_SUMMARY}
+
+          if [[ "$(cat results.json)" != "[]"* ]]; then
+            exit 1
+          fi
+      - name: Summarize (windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (-not (Test-Path results.json)) {
+              exit 1
+          }
+
+          echo "<details>" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "```json" >> $env:GITHUB_STEP_SUMMARY
+          echo Get-Content -Path results.json >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "```" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "</details>" >> $env:GITHUB_STEP_SUMMARY
+
+          $content = Get-Content -Path results.json -Raw
+          if (-not $content.StartsWith("[]")) {
+              exit 1
+          }
