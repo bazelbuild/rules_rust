@@ -1,0 +1,288 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Bzlmod - rules_rust</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">rules_rust</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/bazelbuild/rules_rust" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<p>Module extensions for using rules_rust with bzlmod</p>
+<h2 id="module-extensions"><a class="header" href="#module-extensions">Module Extensions</a></h2>
+<ul>
+<li><a href="#rust">rust</a></li>
+<li><a href="#rust_host_tools">rust_host_tools</a></li>
+</ul>
+<p><a id="rust"></a></p>
+<h2 id="rust"><a class="header" href="#rust">rust</a></h2>
+<pre>
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.repository_set(<a href="#rust.repository_set-name">name</a>, <a href="#rust.repository_set-allocator_library">allocator_library</a>, <a href="#rust.repository_set-dev_components">dev_components</a>, <a href="#rust.repository_set-edition">edition</a>, <a href="#rust.repository_set-exec_triple">exec_triple</a>, <a href="#rust.repository_set-rustfmt_version">rustfmt_version</a>,
+                    <a href="#rust.repository_set-sha256s">sha256s</a>, <a href="#rust.repository_set-target_compatible_with">target_compatible_with</a>, <a href="#rust.repository_set-target_triple">target_triple</a>, <a href="#rust.repository_set-urls">urls</a>, <a href="#rust.repository_set-versions">versions</a>)
+rust.toolchain(<a href="#rust.toolchain-aliases">aliases</a>, <a href="#rust.toolchain-allocator_library">allocator_library</a>, <a href="#rust.toolchain-dev_components">dev_components</a>, <a href="#rust.toolchain-edition">edition</a>, <a href="#rust.toolchain-extra_exec_rustc_flags">extra_exec_rustc_flags</a>,
+               <a href="#rust.toolchain-extra_rustc_flags">extra_rustc_flags</a>, <a href="#rust.toolchain-extra_rustc_flags_triples">extra_rustc_flags_triples</a>, <a href="#rust.toolchain-extra_target_triples">extra_target_triples</a>,
+               <a href="#rust.toolchain-rust_analyzer_version">rust_analyzer_version</a>, <a href="#rust.toolchain-rustfmt_version">rustfmt_version</a>, <a href="#rust.toolchain-sha256s">sha256s</a>, <a href="#rust.toolchain-urls">urls</a>, <a href="#rust.toolchain-versions">versions</a>)
+</pre>
+<p>Rust toolchain extension.</p>
+<p><strong>TAG CLASSES</strong></p>
+<p><a id="rust.repository_set"></a></p>
+<h3 id="repository_set"><a class="header" href="#repository_set">repository_set</a></h3>
+<p>Tags for defining rust repository sets (where toolchains are defined).</p>
+<p><strong>Attributes</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust.repository_set-name"></a>name</td><td style="text-align: left">Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//ffi/cc/allocator_library"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-exec_triple"></a>exec_triple</td><td style="text-align: left">Exec triple for this repository_set.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2025-02-20"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-target_compatible_with"></a>target_compatible_with</td><td style="text-align: left">List of platform constraints this toolchain produces, for the particular target_triple this call is for.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-target_triple"></a>target_triple</td><td style="text-align: left">target_triple to configure.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-versions"></a>versions</td><td style="text-align: left">A list of toolchain versions to download. This parameter only accepts one version per channel. E.g. <code>["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]</code>. May be set to an empty list (<code>[]</code>) to inhibit <code>rules_rust</code> from registering toolchains.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust.toolchain"></a></p>
+<h3 id="toolchain"><a class="header" href="#toolchain">toolchain</a></h3>
+<p>Tags for defining rust toolchains (where toolchain tools are fetched).</p>
+<p><strong>Attributes</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust.toolchain-aliases"></a>aliases</td><td style="text-align: left">Map of full toolchain repository name to an alias. If any repository is created by this extension matches a key in this dictionary, the name of the created repository will be remapped to the value instead. This may be required to work around path length limits on Windows.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//ffi/cc/allocator_library"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-extra_exec_rustc_flags"></a>extra_exec_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in exec configuration</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-extra_rustc_flags"></a>extra_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in non-exec configuration</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-extra_rustc_flags_triples"></a>extra_rustc_flags_triples</td><td style="text-align: left">Extra flags to pass to rustc in non-exec configuration. Key is the triple, value is the flag.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; List of strings</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-extra_target_triples"></a>extra_target_triples</td><td style="text-align: left">-</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["wasm32-unknown-unknown", "wasm32-wasip1"]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-rust_analyzer_version"></a>rust_analyzer_version</td><td style="text-align: left">The version of Rustc to pair with rust-analyzer.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2025-02-20"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-versions"></a>versions</td><td style="text-align: left">A list of toolchain versions to download. This parameter only accepts one version per channel. E.g. <code>["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]</code>. May be set to an empty list (<code>[]</code>) to inhibit <code>rules_rust</code> from registering toolchains.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["1.85.0", "nightly/2025-02-20"]</code></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_host_tools"></a></p>
+<h2 id="rust_host_tools"><a class="header" href="#rust_host_tools">rust_host_tools</a></h2>
+<pre>
+rust_host_tools = use_extension("@rules_rust//rust:extensions.bzl", "rust_host_tools")
+rust_host_tools.host_tools(<a href="#rust_host_tools.host_tools-name">name</a>, <a href="#rust_host_tools.host_tools-allocator_library">allocator_library</a>, <a href="#rust_host_tools.host_tools-dev_components">dev_components</a>, <a href="#rust_host_tools.host_tools-edition">edition</a>, <a href="#rust_host_tools.host_tools-rustfmt_version">rustfmt_version</a>,
+                           <a href="#rust_host_tools.host_tools-sha256s">sha256s</a>, <a href="#rust_host_tools.host_tools-urls">urls</a>, <a href="#rust_host_tools.host_tools-version">version</a>)
+</pre>
+<p>An extension which exposes Rust tools compatible with the current host platform.</p>
+<p><strong>TAG CLASSES</strong></p>
+<p><a id="rust_host_tools.host_tools"></a></p>
+<h3 id="host_tools"><a class="header" href="#host_tools">host_tools</a></h3>
+<p><strong>Attributes</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-name"></a>name</td><td style="text-align: left">The name of the module to create</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"rust_host_tools"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//ffi/cc/allocator_library"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2025-02-20"</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-version"></a>version</td><td style="text-align: left">The version of Rust to use for tools executed on the Bazel host.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"1.85.0"</code></td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="rust_toolchains.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="rust_repositories.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="rust_toolchains.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="rust_repositories.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
