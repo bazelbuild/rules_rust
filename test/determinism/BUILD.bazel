@@ -1,0 +1,24 @@
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "determinism_tester",
+    srcs = ["determinism_tester.rs"],
+    edition = "2021",
+    deps = [
+        "//test/determinism/3rdparty/crates:anyhow",
+        "//test/determinism/3rdparty/crates:blake3",
+        "//test/determinism/3rdparty/crates:clap",
+        "//test/determinism/3rdparty/crates:serde",
+        "//test/determinism/3rdparty/crates:serde_json",
+        "//test/determinism/3rdparty/crates:tempfile",
+        "//test/determinism/3rdparty/crates:tokio",
+        "//test/determinism/3rdparty/crates:tracing",
+        "//test/determinism/3rdparty/crates:tracing-subscriber",
+        "//test/determinism/3rdparty/crates:walkdir",
+    ],
+)
+
+alias(
+    name = "tester",
+    actual = ":determinism_tester",
+)
