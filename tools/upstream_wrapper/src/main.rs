@@ -4,6 +4,7 @@ use std::process::{exit, Command};
 
 const WRAPPED_TOOL_NAME: &str = env!("WRAPPED_TOOL_NAME");
 const WRAPPED_TOOL_TARGET: &str = env!("WRAPPED_TOOL_TARGET");
+const WRAPPED_TOOL_EXECPATH: &str = env!("WRAPPED_TOOL_EXECPATH");
 
 #[cfg(not(target_os = "windows"))]
 const PATH_SEPARATOR: &str = ":";
@@ -11,9 +12,16 @@ const PATH_SEPARATOR: &str = ":";
 const PATH_SEPARATOR: &str = ";";
 
 fn main() {
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let wrapped_tool_path: PathBuf = runfiles::Runfiles::create()
+        .and_then(|runfiles| {
+            let path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET).unwrap();
+            if !path.exists() {
+                return Err(runfiles::RunfilesError::RunfileNotFound(path));
+            }
+            Ok(path)
+        })
+        .unwrap_or(PathBuf::from(WRAPPED_TOOL_EXECPATH));
 
-    let wrapped_tool_path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET).unwrap();
     if !wrapped_tool_path.exists() {
         panic!(
             "{WRAPPED_TOOL_NAME} does not exist at: {}",

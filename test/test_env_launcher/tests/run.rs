@@ -15,19 +15,26 @@ fn run() {
     // Test the behavior of `rootpath` and that a binary can be found relative to current_dir
     let hello_world_bin = std::path::PathBuf::from(std::env::var_os("HELLO_WORLD_BIN").unwrap());
 
+    let is_windows = std::env::consts::OS == "windows";
+
     assert_eq!(
         hello_world_bin.as_path(),
-        std::path::Path::new(if std::env::consts::OS == "windows" {
+        std::path::Path::new(if is_windows {
             "test/test_env_launcher/hello-world.exe"
         } else {
             "test/test_env_launcher/hello-world"
         })
     );
     assert!(!hello_world_bin.is_absolute());
-    assert!(hello_world_bin.exists());
 
     // Ensure `execpath` expanded variables map to real files and have absolute paths
     let hello_world_src = std::path::PathBuf::from(std::env::var("HELLO_WORLD_SRC").unwrap());
     assert!(!hello_world_src.is_absolute());
-    assert!(hello_world_src.exists());
+
+    // For windows, these are not guaranteed to exist as runfile links may not
+    // be enabled. In this case `@rules_rust//rust/runfiles` lookups will be required.
+    if !is_windows {
+        assert!(hello_world_bin.exists());
+        assert!(hello_world_src.exists());
+    }
 }
