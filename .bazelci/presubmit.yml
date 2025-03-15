@@ -68,7 +68,6 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//test/unit/pipelined_compilation/..."
 default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
@@ -80,7 +79,6 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/test_env_launcher:test"
   - "-//test/test_env:test_manifest_dir"
   - "-//test/test_env:test_run"
-  - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
   - "-//rust/runfiles/..."
   # Runfiles used by the test only.
