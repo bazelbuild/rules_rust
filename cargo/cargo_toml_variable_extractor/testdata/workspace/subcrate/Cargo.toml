@@ -4,7 +4,6 @@ authors = { workspace = true }
 description = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
-license-file = { workspace = true }
 readme = { workspace = true }
 repository = { workspace = true }
 rust-version = { workspace = true }

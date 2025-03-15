@@ -82,7 +82,7 @@ genrule(
         exclude = ["workspace/target/**"],
     ),
     outs = ["workspace_subcrate_cargo_output"],
-    cmd = "RUSTC=$(location //tools/upstream_wrapper:rustc) $(location //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
+    cmd = "RUSTC=$(location //tools/upstream_wrapper:rustc) $(location //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
     tools = [
         "//rust/toolchain:current_rust_stdlib_files",
         "//tools/upstream_wrapper:cargo",

@@ -28,7 +28,7 @@ pub struct CrateDependency {
     pub alias: Option<String>,
 
     /// Local path of this dependency if provided. This captures local paths from both the
-    /// [dependencies] table and the [patches] table so they can be used in rendering.
+    /// `[dependencies]` table and the `[patches]` table so they can be used in rendering.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) local_path: Option<Utf8PathBuf>,
 }
