@@ -77,15 +77,10 @@ default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "-//test/chained_direct_deps:mod3_doc_test"
   - "-//test/out_dir_in_tests:demo_lib_doc_test"
   - "-//test/rustc_env_files:output_test"
-  - "-//test/test_env_launcher:test"
-  - "-//test/test_env:test_manifest_dir"
-  - "-//test/test_env:test_run"
   - "-//test/unit/pipelined_compilation/..."
   - "-//test/unit/rustdoc/..."
-  - "-//rust/runfiles/..."
   # Runfiles used by the test only.
   - "-//test/empty_suite:deps_test"
-  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
