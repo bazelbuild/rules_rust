@@ -338,96 +338,145 @@ mod test {
     use super::*;
 
     use std::ffi::OsStr;
+    use std::ffi::OsString;
     use std::fs::File;
+    use std::hash::Hash;
     use std::io::prelude::*;
+    use std::sync::{Mutex, OnceLock};
 
-    /// Only `RUNFILES_DIR`` is set.
-    ///
-    /// This test is a part of `test_manifest_based_can_read_data_from_runfiles` as
-    /// it modifies environment variables.
-    fn test_env_only_runfiles_dir(test_srcdir: &OsStr, runfiles_manifest_file: &OsStr) {
-        env::remove_var(TEST_SRCDIR_ENV_VAR);
-        env::remove_var(MANIFEST_FILE_ENV_VAR);
-        let r = Runfiles::create().unwrap();
+    /// A mutex used to guard
+    static GLOBAL_MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
-        let d = rlocation!(r, "rules_rust").unwrap();
-        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
-        assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
+    /// Mock out environment variables for a given body fo work. Very similar to
+    /// [temp-env](https://crates.io/crates/temp-env).
+    fn with_mock_env<K, V, F, R>(kvs: impl AsRef<[(K, Option<V>)]>, closure: F) -> R
+    where
+        K: AsRef<OsStr> + Clone + Eq + Hash,
+        V: AsRef<OsStr> + Clone,
+        F: FnOnce() -> R,
+    {
+        let mtx = GLOBAL_MUTEX.get_or_init(|| Mutex::new(0));
 
-        let mut f = File::open(f).unwrap();
+        // Ignore poisoning as it's expected to be another test failing an assertion.
+        let _guard = mtx.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+        // track the original state of the environment.
+        let mut old_env = HashMap::new();
 
-        assert_eq!("Example Text!", buffer);
-        env::set_var(TEST_SRCDIR_ENV_VAR, test_srcdir);
-        env::set_var(MANIFEST_FILE_ENV_VAR, runfiles_manifest_file);
-    }
+        // Replace or remove requested environment variables.
+        for (env, val) in kvs.as_ref() {
+            // Track the original state of the variable.
+            match std::env::var_os(env) {
+                Some(v) => old_env.insert(env, Some(v)),
+                None => old_env.insert(env, None::<OsString>),
+            };
 
-    /// Only `TEST_SRCDIR` is set.
-    ///
-    /// This test is a part of `test_manifest_based_can_read_data_from_runfiles` as
-    /// it modifies environment variables.
-    fn test_env_only_test_srcdir(runfiles_dir: &OsStr, runfiles_manifest_file: &OsStr) {
-        env::remove_var(RUNFILES_DIR_ENV_VAR);
-        env::remove_var(MANIFEST_FILE_ENV_VAR);
-        let r = Runfiles::create().unwrap();
+            match val {
+                Some(v) => std::env::set_var(env, v),
+                None => std::env::remove_var(env),
+            }
+        }
 
-        let mut f =
-            File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap()).unwrap();
+        // Run requested work.
+        let result = closure();
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+        // Restore original environment
+        for (env, val) in old_env {
+            match val {
+                Some(v) => std::env::set_var(env, v),
+                None => std::env::remove_var(env),
+            }
+        }
 
-        assert_eq!("Example Text!", buffer);
-        env::set_var(RUNFILES_DIR_ENV_VAR, runfiles_dir);
-        env::set_var(MANIFEST_FILE_ENV_VAR, runfiles_manifest_file);
-    }
-
-    /// Neither `RUNFILES_DIR` or `TEST_SRCDIR` are set
-    ///
-    /// This test is a part of `test_manifest_based_can_read_data_from_runfiles` as
-    /// it modifies environment variables.
-    fn test_env_nothing_set(
-        test_srcdir: &OsStr,
-        runfiles_dir: &OsStr,
-        runfiles_manifest_file: &OsStr,
-    ) {
-        env::remove_var(RUNFILES_DIR_ENV_VAR);
-        env::remove_var(TEST_SRCDIR_ENV_VAR);
-        env::remove_var(MANIFEST_FILE_ENV_VAR);
-
-        let r = Runfiles::create().unwrap();
-
-        let mut f =
-            File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap()).unwrap();
-
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
-
-        assert_eq!("Example Text!", buffer);
-
-        env::set_var(TEST_SRCDIR_ENV_VAR, test_srcdir);
-        env::set_var(RUNFILES_DIR_ENV_VAR, runfiles_dir);
-        env::set_var(MANIFEST_FILE_ENV_VAR, runfiles_manifest_file);
+        result
     }
 
     #[test]
-    fn test_can_read_data_from_runfiles() {
-        // We want to run multiple test cases with different environment variables set. Since
-        // environment variables are global state, we need to ensure the test cases do not run
-        // concurrently. Rust runs tests in parallel and does not provide an easy way to synchronise
-        // them, so we run all test cases in the same #[test] function.
+    fn test_mock_env() {
+        let original_name = std::env::var("TEST_WORKSPACE").unwrap();
+        assert!(
+            !original_name.is_empty(),
+            "In Bazel tests, `TEST_WORKSPACE` is expected to be populated."
+        );
 
-        let test_srcdir =
-            env::var_os(TEST_SRCDIR_ENV_VAR).expect("bazel did not provide TEST_SRCDIR");
-        let runfiles_dir =
-            env::var_os(RUNFILES_DIR_ENV_VAR).expect("bazel did not provide RUNFILES_DIR");
-        let runfiles_manifest_file = env::var_os(MANIFEST_FILE_ENV_VAR).unwrap_or("".into());
+        let mocked_name = with_mock_env([("TEST_WORKSPACE", Some("foobar"))], || {
+            std::env::var("TEST_WORKSPACE").unwrap()
+        });
 
-        test_env_only_runfiles_dir(&test_srcdir, &runfiles_manifest_file);
-        test_env_only_test_srcdir(&runfiles_dir, &runfiles_manifest_file);
-        test_env_nothing_set(&test_srcdir, &runfiles_dir, &runfiles_manifest_file);
+        assert_eq!(mocked_name, "foobar");
+        assert_eq!(original_name, std::env::var("TEST_WORKSPACE").unwrap());
+    }
+
+    /// Only `RUNFILES_DIR` is set.
+    #[test]
+    fn test_env_only_runfiles_dir() {
+        with_mock_env(
+            [
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+                (MANIFEST_FILE_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+
+                let d = rlocation!(r, "rules_rust").unwrap();
+                let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+                assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
+
+                let mut f = File::open(f).unwrap();
+
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer).unwrap();
+
+                assert_eq!("Example Text!", buffer);
+            },
+        );
+    }
+
+    /// Only `TEST_SRCDIR` is set.
+    #[test]
+    fn test_env_only_test_srcdir() {
+        with_mock_env(
+            [
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (MANIFEST_FILE_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+
+                let mut f =
+                    File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap())
+                        .unwrap();
+
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer).unwrap();
+
+                assert_eq!("Example Text!", buffer);
+            },
+        );
+    }
+
+    /// Neither `RUNFILES_DIR` or `TEST_SRCDIR` are set
+    #[test]
+    fn test_env_nothing_set() {
+        with_mock_env(
+            [
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+                (MANIFEST_FILE_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+
+                let mut f =
+                    File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap())
+                        .unwrap();
+
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer).unwrap();
+
+                assert_eq!("Example Text!", buffer);
+            },
+        );
     }
 
     #[test]
