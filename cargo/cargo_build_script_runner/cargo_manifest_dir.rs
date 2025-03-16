@@ -382,7 +382,7 @@ mod tests {
         let out_dir = test_tmp.join("out_dir");
         fs::create_dir(&out_dir).unwrap();
         let nested_dir = out_dir.join("nested");
-        fs::create_dir(&nested_dir).unwrap();
+        fs::create_dir(nested_dir).unwrap();
 
         let temp_dir_file = test_tmp.join("outside.txt");
         let mut file = fs::File::create(&temp_dir_file).unwrap();
