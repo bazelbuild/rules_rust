@@ -106,7 +106,7 @@ use_repo(
     "cui__cargo_toml-0.21.0",
     "cui__cfg-expr-0.17.2",
     "cui__clap-4.5.26",
-    "cui__crates-index-3.6.0",
+    "cui__crates-index-3.7.0",
     "cui__glob-0.3.2",
     "cui__hex-0.4.3",
     "cui__indoc-2.0.5",

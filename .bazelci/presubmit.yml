@@ -17,7 +17,8 @@ aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
-  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.72.1"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.74.0"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.74.0"],\n|' MODULE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
 nightly_aspects_flags: &nightly_aspects_flags
@@ -377,6 +378,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
     build_targets: *single_rust_channel_targets
     test_targets: *single_rust_channel_targets
   ubuntu2004_stable_with_aspects:
@@ -385,6 +387,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
     build_flags: *aspects_flags
     build_targets: *single_rust_channel_targets
     test_flags: *aspects_flags
@@ -395,6 +398,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
     build_flags: *nightly_flags
     build_targets: *single_rust_channel_targets
     test_flags: *nightly_flags
@@ -405,6 +409,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
     build_flags: *nightly_aspects_flags
     build_targets: *single_rust_channel_targets
     test_flags: *nightly_aspects_flags

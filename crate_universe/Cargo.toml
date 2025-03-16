@@ -71,7 +71,7 @@ cargo-lock = "10.1.0"
 cargo-platform = "0.1.9"
 cfg-expr = "0.17.2"
 clap = { version = "4.5.26", features = ["derive", "env"] }
-crates-index = { git = "https://github.com/frewsxcv/rust-crates-index.git", rev = "ccaed89e15a2dfc469f06ee4ce858f5a65b66d66", default-features = false, features = [
+crates-index = { version = "3.7.0", default-features = false, features = [
     "git",
 ] }
 hex = "0.4.3"

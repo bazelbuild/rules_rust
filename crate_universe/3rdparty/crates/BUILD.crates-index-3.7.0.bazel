@@ -94,7 +94,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "3.6.0",
+    version = "3.7.0",
     deps = [
         "@cui__gix-0.70.0//:gix",
         "@cui__hex-0.4.3//:hex",

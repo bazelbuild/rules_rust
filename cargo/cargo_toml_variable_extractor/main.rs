@@ -80,13 +80,15 @@ fn print_manifest_env_vars(
     workspace: Option<&Workspace>,
 ) {
     let workspace_manifest = &workspace.as_ref().map(|w| &w.manifest);
+    let default_version =
+        semver::Version::parse("0.0.0").expect("Known-good version 0.0.0 couldn't be parsed");
 
     let version = if let Some(version) =
         get_inheritable_value!(manifest, workspace_manifest, |p| p.version.as_ref())
     {
         version
     } else {
-        &semver::Version::parse("0.0.0").expect("Known-good version 0.0.0 couldn't be parsed")
+        &default_version
     };
     print_env_str(out, "CARGO_PKG_VERSION", &version.to_string());
     print_env(out, "CARGO_PKG_VERSION_MAJOR", version.major);

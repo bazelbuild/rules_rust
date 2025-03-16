@@ -16,7 +16,6 @@
 """
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
@@ -304,7 +303,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo_toml": Label("@cui//:cargo_toml-0.21.0"),
             "cfg-expr": Label("@cui//:cfg-expr-0.17.2"),
             "clap": Label("@cui//:clap-4.5.26"),
-            "crates-index": Label("@cui//:crates-index-3.6.0"),
+            "crates-index": Label("@cui//:crates-index-3.7.0"),
             "glob": Label("@cui//:glob-0.3.2"),
             "hex": Label("@cui//:hex-0.4.3"),
             "itertools": Label("@cui//:itertools-0.14.0"),
@@ -865,12 +864,13 @@ def crate_repositories():
     )
 
     maybe(
-        new_git_repository,
-        name = "cui__crates-index-3.6.0",
-        commit = "ccaed89e15a2dfc469f06ee4ce858f5a65b66d66",
-        init_submodules = True,
-        remote = "https://github.com/frewsxcv/rust-crates-index.git",
-        build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.6.0.bazel"),
+        http_archive,
+        name = "cui__crates-index-3.7.0",
+        sha256 = "7c5dc2f0ba9eaac8a56b9544e7ec604ac259dd5d7f8d1d10db81448dbbbc4d43",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/crates-index/3.7.0/download"],
+        strip_prefix = "crates-index-3.7.0",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.crates-index-3.7.0.bazel"),
     )
 
     maybe(
@@ -3202,7 +3202,7 @@ def crate_repositories():
         struct(repo = "cui__cargo_toml-0.21.0", is_dev_dep = False),
         struct(repo = "cui__cfg-expr-0.17.2", is_dev_dep = False),
         struct(repo = "cui__clap-4.5.26", is_dev_dep = False),
-        struct(repo = "cui__crates-index-3.6.0", is_dev_dep = False),
+        struct(repo = "cui__crates-index-3.7.0", is_dev_dep = False),
         struct(repo = "cui__glob-0.3.2", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),
         struct(repo = "cui__indoc-2.0.5", is_dev_dep = False),
