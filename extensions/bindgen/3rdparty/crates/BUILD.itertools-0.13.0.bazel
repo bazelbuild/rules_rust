@@ -90,6 +90,6 @@ rust_library(
     }),
     version = "0.13.0",
     deps = [
-        "@rules_rust_bindgen_deps__either-1.13.0//:either",
+        "@rules_rust_bindgen_deps__either-1.15.0//:either",
     ],
 )

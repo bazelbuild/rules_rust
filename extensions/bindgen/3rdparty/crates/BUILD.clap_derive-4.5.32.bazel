@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_library(
-    name = "env_logger",
+rust_proc_macro(
+    name = "clap_derive",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,11 +35,7 @@ rust_library(
         ],
     ),
     crate_features = [
-        "auto-color",
-        "color",
         "default",
-        "humantime",
-        "regex",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -51,7 +47,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=env_logger",
+        "crate-name=clap_derive",
         "manual",
         "noclippy",
         "norustfmt",
@@ -95,12 +91,11 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.10.2",
+    version = "4.5.32",
     deps = [
-        "@rules_rust_bindgen_deps__humantime-2.2.0//:humantime",
-        "@rules_rust_bindgen_deps__is-terminal-0.4.16//:is_terminal",
-        "@rules_rust_bindgen_deps__log-0.4.26//:log",
-        "@rules_rust_bindgen_deps__regex-1.11.1//:regex",
-        "@rules_rust_bindgen_deps__termcolor-1.4.1//:termcolor",
+        "@rules_rust_bindgen_deps__heck-0.5.0//:heck",
+        "@rules_rust_bindgen_deps__proc-macro2-1.0.94//:proc_macro2",
+        "@rules_rust_bindgen_deps__quote-1.0.40//:quote",
+        "@rules_rust_bindgen_deps__syn-2.0.100//:syn",
     ],
 )
