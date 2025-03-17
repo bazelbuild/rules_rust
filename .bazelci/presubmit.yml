@@ -72,19 +72,6 @@ default_windows_targets: &default_windows_targets
 default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/1156
-  - "-//crate_universe/..."
-  - "-//test/chained_direct_deps:mod3_doc_test"
-  - "-//test/out_dir_in_tests:demo_lib_doc_test"
-  - "-//test/rustc_env_files:output_test"
-  - "-//test/test_env_launcher:test"
-  - "-//test/test_env:test_manifest_dir"
-  - "-//test/test_env:test_run"
-  - "-//test/unit/rustdoc/..."
-  - "-//rust/runfiles/..."
-  # Runfiles used by the test only.
-  - "-//test/empty_suite:deps_test"
-  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"

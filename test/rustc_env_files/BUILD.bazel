@@ -23,10 +23,10 @@ write_file(
 rust_test(
     name = "output_test",
     srcs = ["output_test.rs"],
-    args = ["$(rootpath :hello_env)"],
     data = [":hello_env"],
     edition = "2018",
-    use_libtest_harness = False,
+    rustc_env = {"HELLO_ENV": "$(rlocationpath :hello_env)"},
+    deps = ["//rust/runfiles"],
 )
 
 rust_library(

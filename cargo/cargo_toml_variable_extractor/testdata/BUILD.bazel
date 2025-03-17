@@ -1,12 +1,22 @@
-load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("//cargo:defs.bzl", "cargo_toml_env_vars")
-load("//rust:defs.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+# TODO: This target currently fails on windows.
+NOT_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
 
 genrule(
     name = "gen_empty_cargo_output",
-    srcs = glob(["empty/**"]),
+    srcs = glob([
+        "empty/**/*.toml",
+        "empty/**/*.rs",
+    ]),
     outs = ["empty_cargo_output"],
-    cmd = "RUSTC=$(location //tools/upstream_wrapper:rustc) $(location //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/empty/Cargo.toml > $@",
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/empty/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\empty\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//tools/upstream_wrapper:cargo",
         "//tools/upstream_wrapper:rustc",
@@ -28,21 +38,38 @@ rust_binary(
 genrule(
     name = "gen_empty_bazel_output",
     outs = ["empty_bazel_output"],
-    cmd = "$(location :empty_bin) > $@",
+    cmd = "$(execpath :empty_bin) > $@",
+    cmd_bat = "$(execpath :empty_bin) > $@",
     tools = [":empty_bin"],
 )
 
-diff_test(
+rust_test(
     name = "empty_diff_test",
-    file1 = ":empty_cargo_output",
-    file2 = ":empty_bazel_output",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":empty_bazel_output",
+        ":empty_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :empty_cargo_output)",
+        "FILE_2": "$(rlocationpath :empty_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
 )
 
 genrule(
     name = "gen_standalone_cargo_output",
-    srcs = glob(["standalone/**"]),
+    srcs = glob([
+        "standalone/**/*.toml",
+        "standalone/**/*.rs",
+    ]),
     outs = ["standalone_cargo_output"],
-    cmd = "RUSTC=$(location //tools/upstream_wrapper:rustc) $(location //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/standalone/Cargo.toml > $@",
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/standalone/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\standalone\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//rust/toolchain:current_rust_stdlib_files",
         "//tools/upstream_wrapper:cargo",
@@ -65,24 +92,42 @@ rust_binary(
 genrule(
     name = "gen_standalone_bazel_output",
     outs = ["standalone_bazel_output"],
-    cmd = "$(location :standalone_bin) > $@",
+    cmd = "$(execpath :standalone_bin) > $@",
+    cmd_bat = "$(execpath :standalone_bin) > $@",
     tools = [":standalone_bin"],
 )
 
-diff_test(
+rust_test(
     name = "standalone_diff_test",
-    file1 = ":standalone_cargo_output",
-    file2 = ":standalone_bazel_output",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":standalone_bazel_output",
+        ":standalone_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :standalone_cargo_output)",
+        "FILE_2": "$(rlocationpath :standalone_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
 )
 
 genrule(
     name = "gen_workspace_subcrate_cargo_output",
     srcs = glob(
-        ["workspace/**"],
+        include = [
+            "workspace/**/*.toml",
+            "workspace/**/*.rs",
+            "workspace/**/.gitignore",
+        ],
         exclude = ["workspace/target/**"],
     ),
     outs = ["workspace_subcrate_cargo_output"],
-    cmd = "RUSTC=$(location //tools/upstream_wrapper:rustc) $(location //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\workspace\\subcrate\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//rust/toolchain:current_rust_stdlib_files",
         "//tools/upstream_wrapper:cargo",
@@ -106,12 +151,24 @@ rust_binary(
 genrule(
     name = "gen_workspace_subcrate_bazel_output",
     outs = ["workspace_subcrate_bazel_output"],
-    cmd = "$(location :workspace_subcrate_bin) > $@",
+    cmd = "$(execpath :workspace_subcrate_bin) > $@",
+    cmd_bat = "$(execpath :workspace_subcrate_bin) > $@",
     tools = [":workspace_subcrate_bin"],
 )
 
-diff_test(
+rust_test(
     name = "workspace_subcrate_diff_test",
-    file1 = ":workspace_subcrate_cargo_output",
-    file2 = ":workspace_subcrate_bazel_output",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":workspace_subcrate_bazel_output",
+        ":workspace_subcrate_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :workspace_subcrate_cargo_output)",
+        "FILE_2": "$(rlocationpath :workspace_subcrate_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
 )

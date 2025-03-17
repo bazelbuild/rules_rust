@@ -4,6 +4,7 @@ use std::process::{exit, Command};
 
 const WRAPPED_TOOL_NAME: &str = env!("WRAPPED_TOOL_NAME");
 const WRAPPED_TOOL_TARGET: &str = env!("WRAPPED_TOOL_TARGET");
+const WRAPPED_TOOL_EXECPATH: &str = env!("WRAPPED_TOOL_EXECPATH");
 
 #[cfg(not(target_os = "windows"))]
 const PATH_SEPARATOR: &str = ":";
@@ -11,9 +12,16 @@ const PATH_SEPARATOR: &str = ":";
 const PATH_SEPARATOR: &str = ";";
 
 fn main() {
-    let runfiles = runfiles::Runfiles::create().unwrap();
+    let wrapped_tool_path: PathBuf = runfiles::Runfiles::create()
+        .and_then(|runfiles| {
+            let path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET).unwrap();
+            if !path.exists() {
+                return Err(runfiles::RunfilesError::RunfileNotFound(path));
+            }
+            Ok(path)
+        })
+        .unwrap_or(PathBuf::from(WRAPPED_TOOL_EXECPATH));
 
-    let wrapped_tool_path = runfiles::rlocation!(runfiles, WRAPPED_TOOL_TARGET).unwrap();
     if !wrapped_tool_path.exists() {
         panic!(
             "{WRAPPED_TOOL_NAME} does not exist at: {}",
@@ -33,12 +41,14 @@ fn main() {
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::current_dir().expect("Failed to get working directory"));
 
-    let status = Command::new(wrapped_tool_path)
+    let mut command = Command::new(wrapped_tool_path);
+    command
         .current_dir(&working_directory)
         .args(std::env::args_os().skip(1))
-        .env("PATH", new_path)
+        .env("PATH", new_path);
+    let status = command
         .status()
-        .unwrap_or_else(|e| panic!("Failed to run {WRAPPED_TOOL_NAME} {:#}", e));
+        .unwrap_or_else(|e| panic!("Failed to run spawn command: {:#?}\n{:#}", command, e));
     if let Some(exit_code) = status.code() {
         exit(exit_code);
     }
