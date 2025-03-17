@@ -24,6 +24,5 @@ bcr_test_module_macos:
       bazel: ${{ bazel }}
       shell_commands:
         - "bash ./test/bazelci_unix_setup.sh"
-      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-      # test_targets:
-      #   - "//..."
+      test_targets:
+        - "//..."

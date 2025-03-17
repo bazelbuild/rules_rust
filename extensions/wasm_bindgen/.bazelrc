@@ -34,6 +34,7 @@ common --experimental_cc_shared_library
 
 # Default linux to run firefox
 build:linux --test_browser=firefox
+build:macos --test_browser=safari
 
 # Enable use of the nightly toolchains.
 build:nightly --@rules_rust//rust/toolchain/channel=nightly

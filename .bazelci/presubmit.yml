@@ -1101,9 +1101,8 @@ tasks:
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-    # test_targets:
-    #   - "//..."
+    test_targets:
+      - "//..."
   extensions_wasm_bindgen_macos:
     platform: macos_arm64
     name: Extensions wasm-bindgen
@@ -1114,9 +1113,8 @@ tasks:
     test_flags: *aspects_flags
     build_targets:
       - "//..."
-    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
-    # test_targets:
-    #   - "//..."
+    test_targets:
+      - "//..."
   extensions_wasm_bindgen_windows:
     platform: windows
     name: Extensions wasm-bindgen
