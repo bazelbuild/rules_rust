@@ -92,122 +92,121 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "3.18.0",
+    version = "3.19.0",
     deps = [
-        "@cvm__cfg-if-1.0.0//:cfg_if",
         "@cvm__fastrand-2.3.0//:fastrand",
-        "@cvm__once_cell-1.21.0//:once_cell",
+        "@cvm__once_cell-1.21.1//:once_cell",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-apple-darwin
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-apple-darwin
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-apple-ios
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-apple-ios
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-apple-ios-sim
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-apple-ios-sim
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-linux-android
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-linux-android
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-pc-windows-msvc
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-pc-windows-msvc
             "@cvm__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-unknown-fuchsia
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-unknown-fuchsia
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-unknown-linux-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-unknown-linux-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # aarch64-unknown-nto-qnx710
+            "@cvm__getrandom-0.3.2//:getrandom",  # aarch64-unknown-nto-qnx710
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # arm-unknown-linux-gnueabi
+            "@cvm__getrandom-0.3.2//:getrandom",  # arm-unknown-linux-gnueabi
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # armv7-linux-androideabi
+            "@cvm__getrandom-0.3.2//:getrandom",  # armv7-linux-androideabi
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # armv7-unknown-linux-gnueabi
+            "@cvm__getrandom-0.3.2//:getrandom",  # armv7-unknown-linux-gnueabi
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # i686-apple-darwin
+            "@cvm__getrandom-0.3.2//:getrandom",  # i686-apple-darwin
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # i686-linux-android
+            "@cvm__getrandom-0.3.2//:getrandom",  # i686-linux-android
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # i686-pc-windows-msvc
+            "@cvm__getrandom-0.3.2//:getrandom",  # i686-pc-windows-msvc
             "@cvm__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # i686-unknown-freebsd
+            "@cvm__getrandom-0.3.2//:getrandom",  # i686-unknown-freebsd
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # i686-unknown-linux-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # i686-unknown-linux-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # powerpc-unknown-linux-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # powerpc-unknown-linux-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # s390x-unknown-linux-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # s390x-unknown-linux-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # wasm32-wasip1
+            "@cvm__getrandom-0.3.2//:getrandom",  # wasm32-wasip1
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-apple-darwin
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-apple-darwin
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-apple-ios
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-apple-ios
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-linux-android
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-linux-android
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-pc-windows-msvc
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-pc-windows-msvc
             "@cvm__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-unknown-freebsd
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-unknown-freebsd
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-unknown-fuchsia
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-unknown-fuchsia
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-unknown-linux-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-unknown-linux-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@cvm__getrandom-0.3.1//:getrandom",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@cvm__getrandom-0.3.2//:getrandom",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
             "@cvm__rustix-1.0.2//:rustix",  # cfg(any(unix, target_os = "wasi"))
         ],
         "//conditions:default": [],

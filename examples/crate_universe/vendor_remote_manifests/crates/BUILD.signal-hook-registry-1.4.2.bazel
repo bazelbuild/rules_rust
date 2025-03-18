@@ -90,6 +90,6 @@ rust_library(
     }),
     version = "1.4.2",
     deps = [
-        "@cvm__libc-0.2.170//:libc",
+        "@cvm__libc-0.2.171//:libc",
     ],
 )
