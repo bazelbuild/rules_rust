@@ -1,4 +1,3 @@
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
 
 # This package has a rust_test_suite containing no tests.
@@ -40,9 +39,11 @@ genquery(
 )
 
 # Test that the suite is empty.
-sh_test(
+rust_test(
     name = "deps_test",
-    srcs = ["verify_empty.sh"],
-    args = ["$(location :deps)"],
+    srcs = ["verify_empty.rs"],
     data = [":deps"],
+    edition = "2021",
+    env = {"GENQUERY_OUTPUT": "$(rlocationpath :deps)"},
+    deps = ["//rust/runfiles"],
 )

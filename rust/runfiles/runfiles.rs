@@ -407,13 +407,55 @@ mod test {
         assert_eq!(original_name, std::env::var("TEST_WORKSPACE").unwrap());
     }
 
+    /// Create a temp directory to act as a runfiles directory for testing
+    /// [super::Mode::DirectoryBased] style runfiles.
+    fn make_runfiles_like_dir(name: &str) -> String {
+        with_mock_env([("FAKE", None::<&str>)], || {
+            let r = Runfiles::create().unwrap();
+
+            let path = "rules_rust/rust/runfiles/data/sample.txt";
+            let f = rlocation!(r, path).unwrap();
+
+            let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+            let runfiles_dir = temp_dir.join(name);
+            let test_path = runfiles_dir.join(path);
+            if let Some(parent) = test_path.parent() {
+                std::fs::create_dir_all(parent).expect("Failed to create test path parents.");
+            }
+
+            std::fs::copy(f, test_path).expect("Failed to copy test file");
+
+            runfiles_dir.to_str().unwrap().to_string()
+        })
+    }
+
+    /// Test the general behavior of runfiles. The behavior of runfiles will change
+    /// depending on the system but each mode is explicitly covered in other tests.
+    #[test]
+    fn test_standard_lookup() {
+        let r = Runfiles::create().unwrap();
+
+        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+
+        let mut f = File::open(&f)
+            .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer).unwrap();
+
+        assert_eq!("Example Text!", buffer);
+    }
+
     /// Only `RUNFILES_DIR` is set.
     #[test]
     fn test_env_only_runfiles_dir() {
+        let runfiles_dir = make_runfiles_like_dir("test_env_only_runfiles_dir");
+
         with_mock_env(
             [
-                (TEST_SRCDIR_ENV_VAR, None::<&str>),
                 (MANIFEST_FILE_ENV_VAR, None::<&str>),
+                (RUNFILES_DIR_ENV_VAR, Some(runfiles_dir.as_str())),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
             ],
             || {
                 let r = Runfiles::create().unwrap();
@@ -422,7 +464,8 @@ mod test {
                 let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
                 assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
 
-                let mut f = File::open(f).unwrap();
+                let mut f = File::open(&f)
+                    .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
 
                 let mut buffer = String::new();
                 f.read_to_string(&mut buffer).unwrap();
@@ -435,17 +478,21 @@ mod test {
     /// Only `TEST_SRCDIR` is set.
     #[test]
     fn test_env_only_test_srcdir() {
+        let runfiles_dir = make_runfiles_like_dir("test_env_only_test_srcdir");
+
         with_mock_env(
             [
-                (RUNFILES_DIR_ENV_VAR, None::<&str>),
                 (MANIFEST_FILE_ENV_VAR, None::<&str>),
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (TEST_SRCDIR_ENV_VAR, Some(runfiles_dir.as_str())),
             ],
             || {
                 let r = Runfiles::create().unwrap();
 
-                let mut f =
-                    File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap())
-                        .unwrap();
+                let runfile = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+
+                let mut f = File::open(&runfile)
+                    .unwrap_or_else(|e| panic!("Failed to open: {}\n{:?}", runfile.display(), e));
 
                 let mut buffer = String::new();
                 f.read_to_string(&mut buffer).unwrap();
@@ -455,7 +502,12 @@ mod test {
         );
     }
 
-    /// Neither `RUNFILES_DIR` or `TEST_SRCDIR` are set
+    /// `RUNFILES_DIR`, `TEST_SRCDIR`, and `MANIFEST_FILE_ENV_VAR` are not set. This
+    /// will test the `.runfiles` directory lookup.
+    ///
+    /// This test is skipped on windows as these directories are not guaranteed
+    /// to have been created.
+    #[cfg(not(target_family = "windows"))]
     #[test]
     fn test_env_nothing_set() {
         with_mock_env(
