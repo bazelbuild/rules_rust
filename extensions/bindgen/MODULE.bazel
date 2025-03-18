@@ -15,12 +15,12 @@ bazel_dep(name = "llvm-project", version = "17.0.3.bcr.2")
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(
     rust_ext,
-    "rules_rust_bindgen__bindgen-cli-0.70.1",
+    "rules_rust_bindgen__bindgen-cli-0.71.1",
     "rules_rust_bindgen_deps",
-    "rules_rust_bindgen_deps__bindgen-0.70.1",
+    "rules_rust_bindgen_deps__bindgen-0.71.1",
     "rules_rust_bindgen_deps__clang-sys-1.8.1",
-    "rules_rust_bindgen_deps__clap-4.5.17",
-    "rules_rust_bindgen_deps__clap_complete-4.5.26",
+    "rules_rust_bindgen_deps__clap-4.5.32",
+    "rules_rust_bindgen_deps__clap_complete-4.5.46",
     "rules_rust_bindgen_deps__env_logger-0.10.2",
 )
 

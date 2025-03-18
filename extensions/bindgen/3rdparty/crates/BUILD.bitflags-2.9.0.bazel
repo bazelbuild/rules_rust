@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "env_logger",
+    name = "bitflags",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,13 +34,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "auto-color",
-        "color",
-        "default",
-        "humantime",
-        "regex",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -51,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=env_logger",
+        "crate-name=bitflags",
         "manual",
         "noclippy",
         "norustfmt",
@@ -95,12 +88,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.10.2",
-    deps = [
-        "@rules_rust_bindgen_deps__humantime-2.2.0//:humantime",
-        "@rules_rust_bindgen_deps__is-terminal-0.4.16//:is_terminal",
-        "@rules_rust_bindgen_deps__log-0.4.26//:log",
-        "@rules_rust_bindgen_deps__regex-1.11.1//:regex",
-        "@rules_rust_bindgen_deps__termcolor-1.4.1//:termcolor",
-    ],
+    version = "2.9.0",
 )

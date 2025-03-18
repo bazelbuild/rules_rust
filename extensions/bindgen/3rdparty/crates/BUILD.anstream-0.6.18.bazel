@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "env_logger",
+    name = "anstream",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,11 +35,9 @@ rust_library(
         ],
     ),
     crate_features = [
-        "auto-color",
-        "color",
+        "auto",
         "default",
-        "humantime",
-        "regex",
+        "wincon",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -51,7 +49,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=env_logger",
+        "crate-name=anstream",
         "manual",
         "noclippy",
         "norustfmt",
@@ -95,12 +93,24 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.10.2",
+    version = "0.6.18",
     deps = [
-        "@rules_rust_bindgen_deps__humantime-2.2.0//:humantime",
-        "@rules_rust_bindgen_deps__is-terminal-0.4.16//:is_terminal",
-        "@rules_rust_bindgen_deps__log-0.4.26//:log",
-        "@rules_rust_bindgen_deps__regex-1.11.1//:regex",
-        "@rules_rust_bindgen_deps__termcolor-1.4.1//:termcolor",
-    ],
+        "@rules_rust_bindgen_deps__anstyle-1.0.10//:anstyle",
+        "@rules_rust_bindgen_deps__anstyle-parse-0.2.6//:anstyle_parse",
+        "@rules_rust_bindgen_deps__anstyle-query-1.1.2//:anstyle_query",
+        "@rules_rust_bindgen_deps__colorchoice-1.0.3//:colorchoice",
+        "@rules_rust_bindgen_deps__is_terminal_polyfill-1.70.1//:is_terminal_polyfill",
+        "@rules_rust_bindgen_deps__utf8parse-0.2.2//:utf8parse",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rules_rust_bindgen_deps__anstyle-wincon-3.0.7//:anstyle_wincon",  # aarch64-pc-windows-msvc
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rules_rust_bindgen_deps__anstyle-wincon-3.0.7//:anstyle_wincon",  # i686-pc-windows-msvc
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rules_rust_bindgen_deps__anstyle-wincon-3.0.7//:anstyle_wincon",  # x86_64-pc-windows-msvc
+        ],
+        "//conditions:default": [],
+    }),
 )
