@@ -285,6 +285,7 @@ def _rust_bindgen_impl(ctx):
         "-Xclang",
         "-D",
     )
+
     # Flags in this tuple do not accept a parameter.
     paramless_flags_known_to_clang = (
         "-no-canonical-prefixes",
