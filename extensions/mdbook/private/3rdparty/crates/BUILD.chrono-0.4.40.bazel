@@ -116,7 +116,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # aarch64-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # aarch64-unknown-fuchsia
@@ -148,7 +148,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # i686-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # i686-unknown-freebsd
@@ -173,7 +173,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # x86_64-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # x86_64-unknown-freebsd

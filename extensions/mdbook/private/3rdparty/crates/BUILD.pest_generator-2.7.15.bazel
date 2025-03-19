@@ -96,7 +96,7 @@ rust_library(
         "@rmdbi__pest-2.7.15//:pest",
         "@rmdbi__pest_meta-2.7.15//:pest_meta",
         "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
-        "@rmdbi__quote-1.0.39//:quote",
+        "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.100//:syn",
     ],
 )
