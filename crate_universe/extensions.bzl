@@ -801,7 +801,11 @@ def _get_generator(module_ctx):
         generator_sha256 = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_SHA256)
         generator_url = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_URL)
     elif len(CARGO_BAZEL_URLS) == 0:
-        return module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
+        # For Bazel 7 and below, `module_ctx.path` will also watch files so to avoid
+        # volatility in lock files caused by referencing host specific files, direct
+        # references are avoided.
+        return module_ctx.path(Label("@cargo_bazel_bootstrap//:BUILD.bazel")).dirname.get_child("cargo-bazel")
+
     else:
         generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple.str)
         generator_url = CARGO_BAZEL_URLS.get(host_triple.str)
@@ -839,8 +843,17 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
     """
     binary_ext = system_to_binary_ext(host_triple.system)
 
-    cargo_path = str(module_ctx.path(Label("@{}//:bin/cargo{}".format(host_tools_repo, binary_ext))))
-    rustc_path = str(module_ctx.path(Label("@{}//:bin/rustc{}".format(host_tools_repo, binary_ext))))
+    # For Bazel 7 and below, `module_ctx.path` will also watch files so to avoid
+    # volatility in lock files caused by referencing host specific files, direct
+    # references are avoided. Note that `BUILD.bazel` is not used as it also
+    # contains host specific data.
+    root = module_ctx.path(Label("@{rust_host_tools}//:WORKSPACE.bazel".format(
+        rust_host_tools = host_tools_repo,
+    )))
+
+    cargo_path = root.dirname.get_child("bin/cargo{}".format(binary_ext))
+    rustc_path = root.dirname.get_child("bin/rustc{}".format(binary_ext))
+
     return cargo_path, rustc_path
 
 def _crate_impl(module_ctx):

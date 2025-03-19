@@ -225,8 +225,6 @@ fn main() {
         }
     }
 
-    env.insert("RUST_LOG".to_string(), "debug".to_string());
-
     // Run the test
     let mut command = Command::new(test_runner);
     command.envs(env).arg(test_bin).args(env::args().skip(1));

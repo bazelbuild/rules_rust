@@ -96,7 +96,7 @@ rust_library(
     version = "8.0.0",
     deps = [
         "@rmdbi__filetime-0.2.25//:filetime",
-        "@rmdbi__libc-0.2.170//:libc",
+        "@rmdbi__libc-0.2.171//:libc",
         "@rmdbi__log-0.4.26//:log",
         "@rmdbi__notify-types-2.0.0//:notify_types",
         "@rmdbi__walkdir-2.5.0//:walkdir",

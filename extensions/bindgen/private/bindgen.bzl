@@ -271,7 +271,8 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    flags_known_to_clang = (
+    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`).
+    param_flags_known_to_clang = (
         "-I",
         "-iquote",
         "-isystem",
@@ -283,8 +284,16 @@ def _rust_bindgen_impl(ctx):
         "--no-system-header-prefix",
         "-Xclang",
         "-D",
+    )
+
+    # Flags in this tuple do not accept a parameter.
+    paramless_flags_known_to_clang = (
         "-no-canonical-prefixes",
-        "-nostd",
+        "-nostdinc",
+        "--no-standard-includes",
+        "-nostdinc++",
+        "-nostdlib++",
+        "-nostdlibinc",
     )
     open_arg = False
     for arg in compile_flags:
@@ -298,12 +307,12 @@ def _rust_bindgen_impl(ctx):
             args.add(arg)
             continue
 
-        if not arg.startswith(flags_known_to_clang):
+        if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
             continue
 
         args.add(arg)
 
-        if arg in flags_known_to_clang:
+        if arg in param_flags_known_to_clang:
             open_arg = True
             continue
 
