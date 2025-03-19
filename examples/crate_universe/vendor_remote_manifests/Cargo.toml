@@ -6,6 +6,9 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1.17.0", features = ["full"] }
+# the full version is "0.9.34+deprecated
+# to prevent regressions of the - and + replacements
+serde_yaml = "=0.9.34"
 
 [dev-dependencies]
 tempfile = "3.2.0"
