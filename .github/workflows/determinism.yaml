@@ -24,6 +24,8 @@ jobs:
     name: Check (${{ matrix.os }})
     steps:
       - uses: actions/checkout@master
+        with:
+          clean: true
 
       - name: Run tests
         continue-on-error: true
