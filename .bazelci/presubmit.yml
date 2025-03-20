@@ -69,9 +69,6 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
-  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-  - "//..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -148,15 +145,14 @@ tasks:
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
-  windows_no_runfiles:
-    name: No Runfiles
+  windows_with_runfiles:
+    name: With Runfiles
     platform: windows
-    build_flags:
-      - "--noenable_runfiles"
-    test_flags:
-      - "--noenable_runfiles"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
   ubuntu2004_split_coverage_postprocessing:
     name: Split Coverage Postprocessing
     platform: ubuntu2004
@@ -251,18 +247,19 @@ tasks:
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_no_runfiles_with_aspects:
-    name: No Runfiles With Aspects
+    name: With Runfiles With Aspects
     platform: windows
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
     build_flags:
-      - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
     test_flags:
-      - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows
