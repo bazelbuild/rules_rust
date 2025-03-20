@@ -1,3 +1,4 @@
+* text eol=lf
 **/*Cargo.Bazel.lock linguist-generated
 **/cargo-bazel-lock.json linguist-generated
 crate_universe/3rdparty/crates/** linguist-generated
