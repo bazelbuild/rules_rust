@@ -9,6 +9,11 @@ cargo_build_script(
     srcs = ["build.rs"],
     data = ["data.txt"],
     edition = "2018",
+    # TODO: Fix flake on windows.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 rust_test(
@@ -16,10 +21,5 @@ rust_test(
     srcs = ["test.rs"],
     data = [":symlink_build_rs"],
     edition = "2018",
-    # TODO: Fix flake on windows.
-    target_compatible_with = select({
-        "@platforms//os:windows": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     deps = [":symlink_build_rs"],
 )
