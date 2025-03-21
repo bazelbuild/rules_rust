@@ -334,7 +334,6 @@ def _rust_prost_aspect_impl(target, ctx):
         ),
         rust_analyzer_info,
         OutputGroupInfo(
-            rust_generated_srcs = [lib_rs],
             proto_descriptor_set = [proto_info.direct_descriptor_set],
             **inhibit_output_groups
         ),
