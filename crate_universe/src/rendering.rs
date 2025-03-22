@@ -367,6 +367,11 @@ impl Renderer {
                 .common_attrs
                 .rustc_env_files
                 .insert(":cargo_toml_env_vars".to_owned(), None);
+            if let Some(ref mut build_script_attrs) = &mut krate.build_script_attrs {
+                build_script_attrs
+                    .rustc_env_files
+                    .insert(":cargo_toml_env_vars".to_owned(), None);
+            }
         }
 
         let mut starlark = Vec::new();
