@@ -98,5 +98,3 @@ WORKSPACE support is officially tested with Bazel 7 for as long as that is the m
 We aim to support Linux and macOS.
 
 We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.
-
-Windows support for some features requires `--enable_runfiles` to be passed to Bazel, we recommend putting it in your bazelrc. See [Using Bazel on Windows](https://bazel.build/configure/windows) for more Windows-specific recommendations.

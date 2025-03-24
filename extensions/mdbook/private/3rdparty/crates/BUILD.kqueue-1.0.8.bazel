@@ -91,6 +91,6 @@ rust_library(
     version = "1.0.8",
     deps = [
         "@rmdbi__kqueue-sys-1.0.4//:kqueue_sys",
-        "@rmdbi__libc-0.2.170//:libc",
+        "@rmdbi__libc-0.2.171//:libc",
     ],
 )

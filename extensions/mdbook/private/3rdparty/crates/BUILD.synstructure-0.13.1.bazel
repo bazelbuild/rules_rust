@@ -95,7 +95,7 @@ rust_library(
     version = "0.13.1",
     deps = [
         "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
-        "@rmdbi__quote-1.0.39//:quote",
+        "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.100//:syn",
     ],
 )

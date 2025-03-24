@@ -295,7 +295,6 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "serde_yaml": Label("@cvm//:serde_yaml-0.9.34+deprecated"),
             "tokio": Label("@cvm//:tokio-1.44.1"),
         },
     },
@@ -392,7 +391,6 @@ _CONDITIONS = {
     "cfg(all(target_arch = \"x86\", target_env = \"msvc\", not(windows_raw_dylib)))": ["@rules_rust//rust/platform:i686-pc-windows-msvc"],
     "cfg(all(target_arch = \"x86_64\", target_env = \"gnu\", not(target_abi = \"llvm\"), not(windows_raw_dylib)))": ["@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "cfg(all(target_os = \"uefi\", getrandom_backend = \"efi_rng\"))": [],
-    "cfg(any())": [],
     "cfg(any(target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"hurd\", target_os = \"illumos\", target_os = \"cygwin\", all(target_os = \"horizon\", target_arch = \"arm\")))": ["@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-freebsd"],
     "cfg(any(target_os = \"haiku\", target_os = \"redox\", target_os = \"nto\", target_os = \"aix\"))": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
     "cfg(any(target_os = \"ios\", target_os = \"visionos\", target_os = \"watchos\", target_os = \"tvos\"))": ["@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:x86_64-apple-ios"],
@@ -535,16 +533,6 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__equivalent-1.0.2",
-        sha256 = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/equivalent/1.0.2/download"],
-        strip_prefix = "equivalent-1.0.2",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.equivalent-1.0.2.bazel"),
-    )
-
-    maybe(
-        http_archive,
         name = "cvm__errno-0.3.10",
         sha256 = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d",
         type = "tar.gz",
@@ -591,36 +579,6 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/gimli/0.31.1/download"],
         strip_prefix = "gimli-0.31.1",
         build_file = Label("//vendor_remote_manifests/crates:BUILD.gimli-0.31.1.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__hashbrown-0.15.2",
-        sha256 = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/hashbrown/0.15.2/download"],
-        strip_prefix = "hashbrown-0.15.2",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.hashbrown-0.15.2.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__indexmap-2.8.0",
-        sha256 = "3954d50fe15b02142bf25d3b8bdadb634ec3948f103d04ffe3031bc8fe9d7058",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/indexmap/2.8.0/download"],
-        strip_prefix = "indexmap-2.8.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.indexmap-2.8.0.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__itoa-1.0.15",
-        sha256 = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/itoa/1.0.15/download"],
-        strip_prefix = "itoa-1.0.15",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.itoa-1.0.15.bazel"),
     )
 
     maybe(
@@ -785,22 +743,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__rustix-1.0.2",
-        sha256 = "f7178faa4b75a30e269c71e61c353ce2748cf3d76f0c44c393f4e60abf49b825",
+        name = "cvm__rustix-1.0.3",
+        sha256 = "e56a18552996ac8d29ecc3b190b4fdbb2d91ca4ec396de7bbffaf43f3d637e96",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/rustix/1.0.2/download"],
-        strip_prefix = "rustix-1.0.2",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.rustix-1.0.2.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__ryu-1.0.20",
-        sha256 = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/ryu/1.0.20/download"],
-        strip_prefix = "ryu-1.0.20",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.ryu-1.0.20.bazel"),
+        urls = ["https://static.crates.io/crates/rustix/1.0.3/download"],
+        strip_prefix = "rustix-1.0.3",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.rustix-1.0.3.bazel"),
     )
 
     maybe(
@@ -811,36 +759,6 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/scopeguard/1.2.0/download"],
         strip_prefix = "scopeguard-1.2.0",
         build_file = Label("//vendor_remote_manifests/crates:BUILD.scopeguard-1.2.0.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__serde-1.0.219",
-        sha256 = "5f0e2c6ed6606019b4e29e69dbaba95b11854410e5347d525002456dbbb786b6",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde/1.0.219/download"],
-        strip_prefix = "serde-1.0.219",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.serde-1.0.219.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__serde_derive-1.0.219",
-        sha256 = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_derive/1.0.219/download"],
-        strip_prefix = "serde_derive-1.0.219",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.serde_derive-1.0.219.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__serde_yaml-0.9.34-deprecated",
-        sha256 = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_yaml/0.9.34+deprecated/download"],
-        strip_prefix = "serde_yaml-0.9.34+deprecated",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.serde_yaml-0.9.34+deprecated.bazel"),
     )
 
     maybe(
@@ -941,16 +859,6 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/unicode-ident/1.0.18/download"],
         strip_prefix = "unicode-ident-1.0.18",
         build_file = Label("//vendor_remote_manifests/crates:BUILD.unicode-ident-1.0.18.bazel"),
-    )
-
-    maybe(
-        http_archive,
-        name = "cvm__unsafe-libyaml-0.2.11",
-        sha256 = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861",
-        type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unsafe-libyaml/0.2.11/download"],
-        strip_prefix = "unsafe-libyaml-0.2.11",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.unsafe-libyaml-0.2.11.bazel"),
     )
 
     maybe(
@@ -1094,7 +1002,6 @@ def crate_repositories():
     )
 
     return [
-        struct(repo = "cvm__serde_yaml-0.9.34-deprecated", is_dev_dep = False),
         struct(repo = "cvm__tokio-1.44.1", is_dev_dep = False),
         struct(repo = "cvm__tempfile-3.19.0", is_dev_dep = True),
         struct(repo = "cvm__tokio-test-0.4.4", is_dev_dep = True),
