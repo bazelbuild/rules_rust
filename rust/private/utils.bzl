@@ -693,11 +693,9 @@ def can_build_metadata(toolchain, ctx, crate_type):
 
     # In order to enable pipelined compilation we require that:
     # 1) The _pipelined_compilation flag is enabled,
-    # 2) the OS running the rule is something other than windows as we require sandboxing (for now),
-    # 3) process_wrapper is enabled (this is disabled when compiling process_wrapper itself),
-    # 4) the crate_type is rlib or lib.
+    # 2) process_wrapper is enabled (this is disabled when compiling process_wrapper itself),
+    # 3) the crate_type is rlib or lib.
     return toolchain._pipelined_compilation and \
-           toolchain.exec_triple.system != "windows" and \
            ctx.attr._process_wrapper and \
            crate_type in ("rlib", "lib")
 

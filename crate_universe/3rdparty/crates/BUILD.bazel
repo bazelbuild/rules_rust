@@ -128,14 +128,14 @@ alias(
 )
 
 alias(
-    name = "crates-index-3.6.0",
-    actual = "@cui__crates-index-3.6.0//:crates_index",
+    name = "crates-index-3.7.0",
+    actual = "@cui__crates-index-3.7.0//:crates_index",
     tags = ["manual"],
 )
 
 alias(
     name = "crates-index",
-    actual = "@cui__crates-index-3.6.0//:crates_index",
+    actual = "@cui__crates-index-3.7.0//:crates_index",
     tags = ["manual"],
 )
 

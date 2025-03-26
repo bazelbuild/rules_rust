@@ -183,10 +183,12 @@ _RUST_REPOSITORY_SET_TAG_ATTRS = {
 } | _COMMON_TAG_KWARGS
 
 _RUST_REPOSITORY_SET_TAG = tag_class(
+    doc = "Tags for defining rust repository sets (where toolchains are defined).",
     attrs = _RUST_REPOSITORY_SET_TAG_ATTRS,
 )
 
 _RUST_TOOLCHAIN_TAG = tag_class(
+    doc = "Tags for defining rust toolchains (where toolchain tools are fetched).",
     attrs = {
         "aliases": attr.string_dict(
             doc = (
@@ -223,6 +225,15 @@ _RUST_TOOLCHAIN_TAG = tag_class(
     } | _COMMON_TAG_KWARGS,
 )
 
+rust = module_extension(
+    doc = "Rust toolchain extension.",
+    implementation = _rust_impl,
+    tag_classes = {
+        "repository_set": _RUST_REPOSITORY_SET_TAG,
+        "toolchain": _RUST_TOOLCHAIN_TAG,
+    },
+)
+
 _RUST_HOST_TOOLS_TAG = tag_class(
     attrs = {
         "name": attr.string(
@@ -234,15 +245,6 @@ _RUST_HOST_TOOLS_TAG = tag_class(
             default = rust_common.default_version,
         ),
     } | _COMMON_TAG_KWARGS,
-)
-
-rust = module_extension(
-    doc = "Rust toolchain extension.",
-    implementation = _rust_impl,
-    tag_classes = {
-        "repository_set": _RUST_REPOSITORY_SET_TAG,
-        "toolchain": _RUST_TOOLCHAIN_TAG,
-    },
 )
 
 # This is a separate module extension so that only the host tools are

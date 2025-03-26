@@ -5,12 +5,6 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
 load(":wrap.bzl", "wrap")
 
-NOT_WINDOWS = select({
-    "@platforms//os:linux": [],
-    "@platforms//os:macos": [],
-    "//conditions:default": ["@platforms//:incompatible"],
-})
-
 ENABLE_PIPELINING = {
     str(Label("//rust/settings:pipelined_compilation")): True,
 }
@@ -109,8 +103,8 @@ def _pipelined_compilation_test():
         deps = [":second"],
     )
 
-    second_lib_test(name = "second_lib_test", target_under_test = ":second", target_compatible_with = NOT_WINDOWS)
-    bin_test(name = "bin_test", target_under_test = ":bin", target_compatible_with = NOT_WINDOWS)
+    second_lib_test(name = "second_lib_test", target_under_test = ":second")
+    bin_test(name = "bin_test", target_under_test = ":bin")
 
 def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -195,7 +189,6 @@ def _disable_pipelining_test():
     )
     rmeta_not_produced_if_pipelining_disabled_test(
         name = "rmeta_not_produced_if_pipelining_disabled_test",
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":lib",
     )
 
@@ -222,13 +215,11 @@ def _custom_rule_test(generate_metadata, suffix):
     rmeta_is_propagated_through_custom_rule_test(
         name = "rmeta_is_propagated_through_custom_rule_test" + suffix,
         generate_metadata = generate_metadata,
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":uses_wrapper" + suffix,
     )
 
     rmeta_is_used_when_building_custom_rule_test(
         name = "rmeta_is_used_when_building_custom_rule_test" + suffix,
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":wrapper" + suffix,
     )
 

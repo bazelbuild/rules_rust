@@ -279,7 +279,7 @@ impl RunfilesMaker {
     /// Delete runfiles from the runfiles directory that do not match user defined suffixes
     ///
     /// The Windows implementation assumes symlinks are not supported and real files will have
-    /// been copied into the runfiles directoriy.
+    /// been copied into the runfiles directory.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
         for dest in self.runfiles.values() {
             if !self
@@ -382,7 +382,7 @@ mod tests {
         let out_dir = test_tmp.join("out_dir");
         fs::create_dir(&out_dir).unwrap();
         let nested_dir = out_dir.join("nested");
-        fs::create_dir(&nested_dir).unwrap();
+        fs::create_dir(nested_dir).unwrap();
 
         let temp_dir_file = test_tmp.join("outside.txt");
         let mut file = fs::File::create(&temp_dir_file).unwrap();

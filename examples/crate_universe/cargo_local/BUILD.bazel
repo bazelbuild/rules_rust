@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@crate_index_cargo_local//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
@@ -15,4 +16,12 @@ rust_test(
     crate = ":cargo_local",
     proc_macro_deps = all_crate_deps(proc_macro_dev = True),
     deps = all_crate_deps(normal_dev = True),
+)
+
+build_test(
+    name = "cargo_toml_env_var_test",
+    targets = [
+        # This target would fail to build if cargo_toml_env_vars didn't properly populate $CARGO_PKG_REPOSITORY.
+        "@crate_index_cargo_local//:autometrics",
+    ],
 )

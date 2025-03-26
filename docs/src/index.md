@@ -20,7 +20,7 @@ Note that rules_rust bzlmod support is still a work in progress. Most features s
 To use `rules_rust` in a project using bzlmod, add the following to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.58.0")
+bazel_dep(name = "rules_rust", version = "0.59.0")
 ```
 
 Don't forget to substitute in your desired release's version number.
@@ -98,5 +98,3 @@ WORKSPACE support is officially tested with Bazel 7 for as long as that is the m
 We aim to support Linux and macOS.
 
 We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.
-
-Windows support for some features requires `--enable_runfiles` to be passed to Bazel, we recommend putting it in your bazelrc. See [Using Bazel on Windows](https://bazel.build/configure/windows) for more Windows-specific recommendations.

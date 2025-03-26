@@ -41,6 +41,7 @@ stardoc(
         "cargo_build_script",
         "cargo_dep_env",
         "cargo_env",
+        "extract_cargo_lints",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
@@ -54,11 +55,34 @@ stardoc(
         "rust_binary",
         "rust_library",
         "rust_library_group",
+        "rust_lint_config",
         "rust_static_library",
         "rust_shared_library",
         "rust_proc_macro",
         "rust_test",
         "rust_test_suite",
+        "rust_unpretty_aspect",
+        "rust_unpretty",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_bzlmod",
+    out = "src/rust_bzlmod.md",
+    input = "@rules_rust//rust:extensions.bzl",
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_unpretty",
+    out = "src/rust_unpretty.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_unpretty_aspect",
+        "rust_unpretty",
     ],
     table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
     deps = [":all_docs"],
@@ -162,7 +186,7 @@ stardoc(
 
 stardoc(
     name = "crate_universe_workspace",
-    out = "src/crate_universe.md",
+    out = "src/crate_universe_workspace.md",
     input = "@rules_rust//crate_universe:defs.bzl",
     deps = [":all_docs"],
 )
@@ -259,6 +283,7 @@ mdbook(
         ":rust",
         ":rust_analyzer",
         ":rust_bindgen",
+        ":rust_bzlmod",
         ":rust_clippy",
         ":rust_doc",
         ":rust_fmt",
@@ -268,6 +293,7 @@ mdbook(
         ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",
+        ":rust_unpretty",
         ":rust_wasm_bindgen",
         ":rust_wasm_bindgen_rules_js",
     ],

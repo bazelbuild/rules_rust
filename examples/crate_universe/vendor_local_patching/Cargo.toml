@@ -1,0 +1,15 @@
+[package]
+name = "my_third_party"
+version = "0.1.0"
+
+[dependencies]
+rand = "0.8.5"
+
+[patch.crates-io]
+# We need to make sure that forked_getrandom/BUILD.bazel exposes the correct
+# filegroups so that the generated BUILD file in the vendor dir can point to them.
+getrandom = { path = "forked/getrandom" }
+
+# Since we know this crate is never used, we don't have to bother creating a BUILD
+# file for our empty stub crate we're using to patch it out
+wasi = { path = "empty/wasi" }

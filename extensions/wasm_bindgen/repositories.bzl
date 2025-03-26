@@ -17,6 +17,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//3rdparty/crates:crates.bzl", "crate_repositories")
+load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
 
 WASM_BINDGEN_VERSION = "0.2.100"
 
@@ -42,9 +43,14 @@ def rust_wasm_bindgen_dependencies():
         type = "tar.gz",
         strip_prefix = "wasm-bindgen-cli-{}".format(WASM_BINDGEN_VERSION),
         build_file = Label("//3rdparty:BUILD.wasm-bindgen-cli.bazel"),
+        patch_args = ["-p1"],
+        patches = [
+            Label("//3rdparty/patches:wasm-bindgen-cli.webdriver_json.patch"),
+        ],
     )
 
     direct_deps.extend(crate_repositories())
+    direct_deps.extend(webdriver_repositories())
     return direct_deps
 
 # buildifier: disable=unnamed-macro

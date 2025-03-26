@@ -14,13 +14,14 @@ use itertools::Itertools;
 use crate::config::{AliasRule, RenderConfig, VendorMode};
 use crate::context::crate_context::{CrateContext, CrateDependency, Rule};
 use crate::context::{Context, TargetAttributes};
+use crate::metadata::SourceAnnotation;
 use crate::rendering::template_engine::TemplateEngine;
 use crate::select::Select;
 use crate::splicing::default_splicing_package_crate_id;
 use crate::utils::starlark::{
-    self, Alias, CargoBuildScript, CommonAttrs, Data, ExportsFiles, Filegroup, Glob, Label, Load,
-    Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList, SelectScalar,
-    SelectSet, Starlark, TargetCompatibleWith,
+    self, Alias, CargoBuildScript, CargoTomlEnvVars, CommonAttrs, Data, ExportsFiles, Filegroup,
+    Glob, Label, Load, Package, RustBinary, RustLibrary, RustProcMacro, SelectDict, SelectList,
+    SelectScalar, SelectSet, Starlark, TargetCompatibleWith,
 };
 use crate::utils::target_triple::TargetTriple;
 use crate::utils::{self, sanitize_repository_name};
@@ -343,7 +344,10 @@ impl Renderer {
                     Err(e) => bail!(e),
                 };
 
-                let filename = Renderer::label_to_path(&label);
+                let filename = match &context.crates[id].repository {
+                    Some(SourceAnnotation::Path { path }) => path.join("BUILD.bazel").into(),
+                    _ => Renderer::label_to_path(&label),
+                };
                 let content = self.render_one_build_file(engine, platforms, &context.crates[id])?;
                 Ok((filename, content))
             })
@@ -356,6 +360,15 @@ impl Renderer {
         platforms: &Platforms,
         krate: &CrateContext,
     ) -> Result<String> {
+        let mut krate = krate.clone();
+
+        if self.config.generate_cargo_toml_env_vars {
+            krate
+                .common_attrs
+                .rustc_env_files
+                .insert(":cargo_toml_env_vars".to_owned(), None);
+        }
+
         let mut starlark = Vec::new();
 
         // Banner comment for top of the file.
@@ -429,6 +442,14 @@ impl Renderer {
             starlark.push(Starlark::Package(package));
         }
 
+        if self.config.generate_cargo_toml_env_vars {
+            load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars");
+            starlark.push(Starlark::CargoTomlEnvVars(CargoTomlEnvVars {
+                name: "cargo_toml_env_vars".to_owned(),
+                src: "Cargo.toml".to_owned(),
+            }));
+        }
+
         for rule in &krate.targets {
             if let Some(override_target) = krate.override_targets.get(rule.override_target_key()) {
                 starlark.push(Starlark::Alias(Alias {
@@ -442,7 +463,7 @@ impl Renderer {
                     Rule::BuildScript(target) => {
                         load("@rules_rust//cargo:defs.bzl", "cargo_build_script");
                         let cargo_build_script =
-                            self.make_cargo_build_script(platforms, krate, target)?;
+                            self.make_cargo_build_script(platforms, &krate, target)?;
                         starlark.push(Starlark::CargoBuildScript(cargo_build_script));
                         starlark.push(Starlark::Alias(Alias {
                             rule: AliasRule::default().rule(),
@@ -454,17 +475,17 @@ impl Renderer {
                     Rule::ProcMacro(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_proc_macro");
                         let rust_proc_macro =
-                            self.make_rust_proc_macro(platforms, krate, target)?;
+                            self.make_rust_proc_macro(platforms, &krate, target)?;
                         starlark.push(Starlark::RustProcMacro(rust_proc_macro));
                     }
                     Rule::Library(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_library");
-                        let rust_library = self.make_rust_library(platforms, krate, target)?;
+                        let rust_library = self.make_rust_library(platforms, &krate, target)?;
                         starlark.push(Starlark::RustLibrary(rust_library));
                     }
                     Rule::Binary(target) => {
                         load("@rules_rust//rust:defs.bzl", "rust_binary");
-                        let rust_binary = self.make_rust_binary(platforms, krate, target)?;
+                        let rust_binary = self.make_rust_binary(platforms, &krate, target)?;
                         starlark.push(Starlark::RustBinary(rust_binary));
                     }
                 }
@@ -495,8 +516,6 @@ impl Renderer {
     ) -> Result<CargoBuildScript> {
         let attrs = krate.build_script_attrs.as_ref();
 
-        const COMPILE_DATA_GLOB_EXCLUDES: &[&str] = &["**/*.rs"];
-
         Ok(CargoBuildScript {
             // Because `cargo_build_script` does some invisible target name
             // mutating to determine the package and crate name for a build
@@ -524,10 +543,9 @@ impl Renderer {
                 attrs
                     .map(|attrs| attrs.compile_data_glob.clone())
                     .unwrap_or_default(),
-                COMPILE_DATA_GLOB_EXCLUDES
-                    .iter()
-                    .map(|&pattern| pattern.to_owned())
-                    .collect(),
+                attrs
+                    .map(|attrs| attrs.compile_data_glob_excludes.clone())
+                    .unwrap_or_default(),
                 attrs
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
@@ -540,6 +558,7 @@ impl Renderer {
                 attrs
                     .map(|attrs| attrs.data_glob.clone())
                     .unwrap_or_default(),
+                Default::default(),
                 attrs.map(|attrs| attrs.data.clone()).unwrap_or_default(),
             ),
             deps: SelectSet::new(
@@ -724,6 +743,7 @@ impl Renderer {
             compile_data: make_data(
                 platforms,
                 krate.common_attrs.compile_data_glob.clone(),
+                krate.common_attrs.compile_data_glob_excludes.clone(),
                 krate.common_attrs.compile_data.clone(),
             ),
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
@@ -731,6 +751,7 @@ impl Renderer {
             data: make_data(
                 platforms,
                 krate.common_attrs.data_glob.clone(),
+                Default::default(),
                 krate.common_attrs.data.clone(),
             ),
             edition: krate.common_attrs.edition.clone(),
@@ -819,8 +840,9 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| {
-                self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target)
+            deps.map(|dep| match dep.local_path {
+                Some(path) => Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap(),
+                _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
             }),
             extra_deps,
         )
@@ -977,9 +999,10 @@ fn make_data_with_exclude(
 fn make_data(
     platforms: &Platforms,
     glob: BTreeSet<String>,
+    excludes: BTreeSet<String>,
     select: Select<BTreeSet<Label>>,
 ) -> Data {
-    make_data_with_exclude(platforms, glob, BTreeSet::new(), select)
+    make_data_with_exclude(platforms, glob, excludes, select)
 }
 
 #[cfg(test)]
@@ -1380,6 +1403,7 @@ mod test {
         };
         let annotations = Annotations::new(
             test::metadata::alias(),
+            &None,
             test::lockfile::alias(),
             config,
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1576,6 +1600,7 @@ mod test {
             "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
+                "generate_cargo_toml_env_vars": true,
                 "repository_name": "multi_cfg_dep",
                 "regen_command": "bazel test //crate_universe:unit_test",
             },
@@ -1592,6 +1617,7 @@ mod test {
 
         let annotations = Annotations::new(
             metadata,
+            &None,
             lockfile,
             config.clone(),
             Utf8Path::new("/tmp/bazelworkspace"),
@@ -1980,6 +2006,7 @@ mod test {
                         // this is identical to what we have in the `name` attribute
                         // which creates conflict in `render_module_build_file`
                         alias: Some("mock_crate".into()),
+                        local_path: None,
                     }])),
                     ..Default::default()
                 },

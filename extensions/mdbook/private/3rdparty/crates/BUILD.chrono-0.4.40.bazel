@@ -6,9 +6,15 @@
 #     bazel run @@//private/3rdparty:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "chrono",
@@ -40,6 +46,9 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -107,7 +116,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # aarch64-linux-android
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # aarch64-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # aarch64-unknown-fuchsia
@@ -139,7 +148,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # i686-linux-android
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # i686-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # i686-unknown-freebsd
@@ -164,7 +173,7 @@ rust_library(
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # x86_64-linux-android
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@rmdbi__windows-link-0.1.0//:windows_link",  # x86_64-pc-windows-msvc
+            "@rmdbi__windows-link-0.1.1//:windows_link",  # x86_64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@rmdbi__iana-time-zone-0.1.61//:iana_time_zone",  # x86_64-unknown-freebsd

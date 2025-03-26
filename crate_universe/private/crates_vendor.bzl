@@ -528,6 +528,10 @@ CRATES_VENDOR_ATTRS = {
         ),
         default = True,
     ),
+    "generate_cargo_toml_env_vars": attr.bool(
+        doc = "Whether to generate cargo_toml_env_vars targets.",
+        default = True,
+    ),
     "generate_target_compatible_with": attr.bool(
         doc = "DEPRECATED: Moved to `render_config`.",
         default = True,

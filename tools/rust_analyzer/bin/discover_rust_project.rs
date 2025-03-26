@@ -66,13 +66,14 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &execution_root,
         &bazel_startup_options,
         &bazel_args,
-        &rules_rust_name,
+        rules_rust_name,
         &[targets],
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })
 }
 
+#[allow(clippy::writeln_empty_string)]
 fn write_discovery<W>(mut writer: W, discovery: DiscoverProject) -> std::io::Result<()>
 where
     W: Write,

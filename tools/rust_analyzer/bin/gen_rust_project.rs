@@ -5,29 +5,34 @@ use std::{
 };
 
 use anyhow::{bail, Context};
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use clap::Parser;
-use gen_rust_project_lib::{generate_rust_project, bazel_info};
+use gen_rust_project_lib::{bazel_info, generate_rust_project};
 
-fn write_rust_project(
-    bazel: &Utf8Path,
-    output_base: &Utf8Path,
-    workspace: &Utf8Path,
-    execution_root: &Utf8Path,
-    rules_rust_name: &str,
-    targets: &[String],
-    rust_project_path: &Utf8Path,
-) -> anyhow::Result<()> {
-    let rust_project = generate_rust_project(
-        bazel,
-        output_base,
+fn write_rust_project() -> anyhow::Result<()> {
+    let Config {
         workspace,
         execution_root,
-        &[],
-        &[],
-        rules_rust_name,
+        output_base,
+        bazel,
+        bazel_args,
         targets,
+    } = Config::parse()?;
+
+    let rules_rust_name = env!("ASPECT_REPOSITORY");
+
+    let rust_project = generate_rust_project(
+        &bazel,
+        &output_base,
+        &workspace,
+        &execution_root,
+        &[],
+        &bazel_args,
+        rules_rust_name,
+        &targets,
     )?;
+
+    let rust_project_path = &workspace.join("rust-project.json");
 
     // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
     match std::fs::remove_file(rust_project_path) {
@@ -40,6 +45,7 @@ fn write_rust_project(
     let file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(rust_project_path)
         .with_context(|| format!("could not open: {rust_project_path}"))
         .map(BufWriter::new)?;
@@ -54,27 +60,8 @@ fn write_rust_project(
 fn main() -> anyhow::Result<()> {
     env_logger::init();
 
-    let Config {
-        workspace,
-        execution_root,
-        output_base,
-        bazel,
-        targets,
-    } = Config::parse()?;
-
-    let rules_rust_name = env!("ASPECT_REPOSITORY");
-
-    // Use the generated files to write rust-project.json.
-    write_rust_project(
-        &bazel,
-        &output_base,
-        &workspace,
-        &execution_root,
-        rules_rust_name,
-        &targets,
-        &workspace.join("rust-project.json"),
-    )?;
-
+    // Write rust-project.json.
+    write_rust_project()?;
     Ok(())
 }
 
@@ -92,6 +79,11 @@ pub struct Config {
     /// The path to a Bazel binary.
     bazel: Utf8PathBuf,
 
+    /// Arguments to pass to `bazel` invocations.
+    /// See the [Command-Line Reference](<https://bazel.build/reference/command-line-reference>)
+    /// for more details.
+    bazel_args: Vec<String>,
+
     /// Space separated list of target patterns that comes after all other args.
     targets: Vec<String>,
 }
@@ -104,8 +96,11 @@ impl Config {
             execution_root,
             output_base,
             bazel,
+            config,
             targets,
         } = ConfigParser::parse();
+
+        let bazel_args = config.into_iter().map(|s| format!("--config={s}")).collect();
 
         // Implemented this way instead of a classic `if let` to satisfy the
         // borrow checker.
@@ -117,13 +112,19 @@ impl Config {
                 execution_root: execution_root.unwrap(),
                 output_base: output_base.unwrap(),
                 bazel,
+                bazel_args,
                 targets,
             });
         }
 
         // We need some info from `bazel info`. Fetch it now.
-        let mut info_map =
-            bazel_info(&bazel, workspace.as_deref(), output_base.as_deref(), &[], &[])?;
+        let mut info_map = bazel_info(
+            &bazel,
+            workspace.as_deref(),
+            output_base.as_deref(),
+            &[],
+            &[],
+        )?;
 
         let config = Config {
             workspace: info_map
@@ -139,6 +140,7 @@ impl Config {
                 .expect("'output_base' must exist in bazel info")
                 .into(),
             bazel,
+            bazel_args,
             targets,
         };
 
@@ -163,6 +165,10 @@ struct ConfigParser {
     /// The path to a Bazel binary.
     #[clap(long, default_value = "bazel")]
     bazel: Utf8PathBuf,
+
+    /// A config to pass to Bazel invocations with `--config=<config>`.
+    #[clap(long)]
+    config: Option<String>,
 
     /// Space separated list of target patterns that comes after all other args.
     #[clap(default_value = "@//...")]

@@ -6,4 +6,5 @@ import "camel_case.proto";
 
 message Another {
     camel_case.NameWithCAPS inner = 1;
+    camel_case.SomethingID something = 2;
 }

@@ -21,7 +21,7 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.58.0")
+bazel_dep(name = "rules_rust", version = "0.59.0")
 
 ###############################################################################
 # T O O L C H A I N S

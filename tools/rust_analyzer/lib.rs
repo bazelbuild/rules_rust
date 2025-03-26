@@ -15,6 +15,7 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
 
+#[allow(clippy::too_many_arguments)]
 pub fn generate_rust_project(
     bazel: &Utf8Path,
     output_base: &Utf8Path,
@@ -153,14 +154,16 @@ fn deserialize_file_content<T>(
 where
     T: DeserializeOwned,
 {
-    let buf = fs::read_to_string(path)
-        .with_context(|| format!("failed to open file: {path}"))?
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("failed to read file: {path}"))?
         .replace("__WORKSPACE__", workspace.as_str())
         .replace("${pwd}", execution_root.as_str())
         .replace("__EXEC_ROOT__", execution_root.as_str())
         .replace("__OUTPUT_BASE__", output_base.as_str());
 
-    serde_json::from_str(&buf).with_context(|| format!("failed to deserialize file: {path}"))
+    log::trace!("{}\n{}", path, content);
+
+    serde_json::from_str(&content).with_context(|| format!("failed to deserialize file: {path}"))
 }
 
 /// `rust-analyzer` associates workspaces with buildfiles. Therefore, when it passes in a

@@ -6,9 +6,15 @@
 #     bazel run @@//vendor_local_pkgs:crates_vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 rust_library(
     name = "tracing",
@@ -39,6 +45,9 @@ rust_library(
     edition = "2018",
     proc_macro_deps = [
         "//vendor_local_pkgs/crates/tracing-attributes-0.1.28:tracing_attributes",
+    ],
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
     ],
     rustc_flags = [
         "--cap-lints=allow",

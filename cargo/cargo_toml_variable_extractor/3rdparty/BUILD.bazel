@@ -1,0 +1,16 @@
+load("//crate_universe:defs.bzl", "crate", "crates_vendor", "render_config")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "cargo-util-schemas": crate.spec(version = "0.3.1"),
+        "pathdiff": crate.spec(version = "0.1.0"),
+        "semver": crate.spec(version = "1"),
+        "toml": crate.spec(version = "0.8.14"),
+    },
+    render_config = render_config(generate_cargo_toml_env_vars = False),
+    repository_name = "rules_rust_ctve",
+    tags = ["manual"],
+)

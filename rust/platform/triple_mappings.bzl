@@ -114,7 +114,7 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "mipsel": None,
     "powerpc": "ppc",
     "powerpc64": None,
-    "powerpc64le": None,
+    "powerpc64le": "ppc64le",
     "riscv32": "riscv32",
     "riscv32imc": "riscv32",
     "riscv64": "riscv64",

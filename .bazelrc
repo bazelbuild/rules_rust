@@ -5,12 +5,11 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
+# Skip building runfiles links for faster builds.
+build --nobuild_runfile_links
+
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
-
-# https://bazel.build/docs/windows#symlink
-startup --windows_enable_symlinks
-build:windows --enable_runfiles
 
 # Enable the only currently supported report type
 # https://bazel.build/reference/command-line-reference#flag--combined_report

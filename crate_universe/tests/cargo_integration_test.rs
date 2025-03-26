@@ -90,6 +90,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
             "generate_binaries": false,
             "generate_build_scripts": false,
             "rendering": {
+                "generate_cargo_toml_env_vars": true,
                 "repository_name": repository_name,
                 "regen_command": "//crate_universe:cargo_integration_test"
             },
