@@ -1367,9 +1367,11 @@ cargo_bootstrap_repository(<a href="cargo.html#cargo_bootstrap_repository-name">
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><h2 id="overview-2"><a class="header" href="#overview-2">Overview</a></h2>
 <p>For <a href="https://rust-analyzer.github.io/manual.html#non-cargo-based-projects">non-Cargo projects</a>,
-<a href="https://rust-analyzer.github.io/">rust-analyzer</a> depends on a <code>rust-project.json</code> file at the
-root of the project that describes its structure. The <code>rust_analyzer</code> rule facilitates generating
-such a file.</p>
+<a href="https://rust-analyzer.github.io/">rust-analyzer</a> depends on either a <code>rust-project.json</code> file
+at the root of the project that describes its structure or on build system specific
+<a href="https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig">project auto-discovery</a>.
+The <code>rust_analyzer</code> rules facilitate both approaches.</p>
+<h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup-3"><a class="header" href="#setup-3">Setup</a></h3>
 <p>First, ensure <code>rules_rust</code> is setup in your workspace. By default, <code>rust_register_toolchains</code> will
 ensure a <a href="rust_analyzer.html#rust_analyzer_toolchain">rust_analyzer_toolchain</a> is registered within the WORKSPACE.</p>
@@ -1431,6 +1433,58 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
 <pre><code>build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 </code></pre>
 <p>Then you can use a prototype <a href="https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer">rust-analyzer plugin</a> that automatically collects the outputs whenever you recompile.</p>
+<h2 id="project-auto-discovery"><a class="header" href="#project-auto-discovery">Project auto-discovery</a></h2>
+<h3 id="setup-4"><a class="header" href="#setup-4">Setup</a></h3>
+<p>Auto-discovery makes <code>rust-analyzer</code> behave in a Bazel project in a similar fashion to how it does
+in a Cargo project. This is achieved by generating a structure similar to what <code>rust-project.json</code>
+contains but, instead of writing that to a file, the data gets piped to <code>rust-analyzer</code> directly
+through <code>stdout</code>. To use auto-discovery the <code>rust-analyzer</code> IDE settings must be configured similar to:</p>
+<pre><code class="language-json">"rust-analyzer": {
+    "workspace": {
+        "discoverConfig": {
+            "command": ["discover_bazel_rust_project.sh"],
+            "progressLabel": "rust_analyzer",
+            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
+        }
+    }
+}
+</code></pre>
+<p>The shell script passed to <code>discoverConfig.command</code> is typically meant to wrap the bazel rule invocation,
+primarily for muting <code>stderr</code> (because <code>rust-analyzer</code> will consider that an error has occurred if anything
+is passed through <code>stderr</code>) and, additionally, for specifying rule arguments. E.g:</p>
+<pre><code class="language-shell">#!/usr/bin/bash
+
+bazel \
+    run \
+    @rules_rust//tools/rust_analyzer:discover_bazel_rust_project -- \
+    --bazel_startup_option=--output_base=~/ide_bazel \
+    --bazel_arg=--watchfs \
+    ${1:+"$1"} 2&gt;/dev/null
+</code></pre>
+<p>The script above also handles an optional CLI argument which gets passed when workspace splitting is
+enabled. The script path should be either absolute or relative to the project root.</p>
+<h3 id="workspace-splitting"><a class="header" href="#workspace-splitting">Workspace splitting</a></h3>
+<p>The above configuration treats the entire project as a single workspace. However, large codebases might be
+too much to handle for <code>rust-analyzer</code> all at once. This can be addressed by splitting the codebase in
+multiple workspaces by extending the <code>discoverConfig.command</code> setting:</p>
+<pre><code class="language-json">"rust-analyzer": {
+    "workspace": {
+        "discoverConfig": {
+            "command": ["discover_bazel_rust_project.sh", "{arg}"],
+            "progressLabel": "rust_analyzer",
+            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
+        }
+    }
+}
+</code></pre>
+<p><code>{arg}</code> acts as a placeholder that <code>rust-analyzer</code> replaces with the path of the source / build file
+that gets opened.</p>
+<p>The root of the workspace will, in this configuration, be the package the crate currently being worked on
+belongs to. This means that only that package and its dependencies get built and indexed by <code>rust-analyzer</code>,
+thus allowing for a smaller footprint.</p>
+<p><code>rust-analyzer</code> will switch workspaces whenever an out-of-tree file gets opened, essentially indexing that
+crate and its dependencies separately. A caveat of this is that <em>dependents</em> of the crate currently being
+worked on are not indexed and won't be tracked by <code>rust-analyzer</code>.</p>
 <h2 id="aspects-3"><a class="header" href="#aspects-3">Aspects</a></h2>
 <ul>
 <li><a href="rust_analyzer.html#rust_analyzer_aspect">rust_analyzer_aspect</a></li>
@@ -2256,7 +2310,7 @@ rust_toolchain_tools_repository(<a href="rust_repositories.html#rust_toolchain_t
 </ul>
 </li>
 </ol>
-<h2 id="setup-4"><a class="header" href="#setup-4">Setup</a></h2>
+<h2 id="setup-5"><a class="header" href="#setup-5">Setup</a></h2>
 <p>To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.59.2")
 </code></pre>
@@ -2711,7 +2765,7 @@ can be found below where the supported keys for each template can be found in th
 <p>Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.</p>
 <p>This doc describes using crate_universe from a WORKSPACE file.</p>
 <p>If you're using bzlmod, please see <a href="crate_universe_bzlmod.html">the bzlmod equivalent of this doc</a>.</p>
-<h2 id="setup-5"><a class="header" href="#setup-5">Setup</a></h2>
+<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
 <p>After loading <code>rules_rust</code> in your workspace, set the following to begin using <code>crate_universe</code>:</p>
 <pre><code class="language-python">load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
@@ -3343,7 +3397,7 @@ allowlist:</p>
 <li><a href="rust_bindgen.html#rust_bindgen_library">rust_bindgen_library</a></li>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
+<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
 <h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
 <p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
@@ -3462,7 +3516,7 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 <li><a href="rust_mdbook.html#mdbook_server">mdbook_server</a></li>
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
-<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
+<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
 <h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">bzlmod</a></h3>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
@@ -3534,7 +3588,7 @@ using <a href="https://github.com/tokio-rs/prost">Prost</a> and <a href="https:/
 <li><a href="rust_prost.html#rust_prost_library">rust_prost_library</a></li>
 <li><a href="rust_prost.html#rust_prost_toolchain">rust_prost_toolchain</a></li>
 </ul>
-<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
+<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
 <pre><code class="language-python">load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
 
 rust_prost_dependencies()
@@ -3726,7 +3780,7 @@ actions with minimal impact to other consumers.</p>
 <h1 id="rules_rust_protobuf"><a class="header" href="#rules_rust_protobuf">rules_rust_protobuf</a></h1>
 <p>These build rules are used for building <a href="https://developers.google.com/protocol-buffers/">protobufs</a>/<a href="https://grpc.io">gRPC</a> in <a href="http://www.rust-lang.org/">Rust</a> with Bazel
 using <a href="https://github.com/stepancheg/rust-protobuf/"><code>rust-protobuf</code></a>.</p>
-<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
+<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
 <p>To use the Rust proto rules, add the following to your <code>WORKSPACE</code> file to add the
 external repositories for the Rust proto toolchain (in addition to the <a href="..">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
@@ -3885,7 +3939,7 @@ rust_binary(
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a></li>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
+<h2 id="setup-11"><a class="header" href="#setup-11">Setup</a></h2>
 <p>To begin using the <code>wasm-bindgen</code> rules, users can load the necessary dependencies
 in their workspace by adding the following to their <code>WORKSPACE.bazel</code> file.</p>
 <pre><code class="language-python">load("@rules_rust_wasm_bindgen//:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")

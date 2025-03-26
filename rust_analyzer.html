@@ -157,9 +157,11 @@
                     <main>
                         <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>For <a href="https://rust-analyzer.github.io/manual.html#non-cargo-based-projects">non-Cargo projects</a>,
-<a href="https://rust-analyzer.github.io/">rust-analyzer</a> depends on a <code>rust-project.json</code> file at the
-root of the project that describes its structure. The <code>rust_analyzer</code> rule facilitates generating
-such a file.</p>
+<a href="https://rust-analyzer.github.io/">rust-analyzer</a> depends on either a <code>rust-project.json</code> file
+at the root of the project that describes its structure or on build system specific
+<a href="https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig">project auto-discovery</a>.
+The <code>rust_analyzer</code> rules facilitate both approaches.</p>
+<h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup"><a class="header" href="#setup">Setup</a></h3>
 <p>First, ensure <code>rules_rust</code> is setup in your workspace. By default, <code>rust_register_toolchains</code> will
 ensure a <a href="#rust_analyzer_toolchain">rust_analyzer_toolchain</a> is registered within the WORKSPACE.</p>
@@ -221,6 +223,58 @@ to ensure a <code>rust-project.json</code> file is created and up to date when t
 <pre><code>build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 </code></pre>
 <p>Then you can use a prototype <a href="https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer">rust-analyzer plugin</a> that automatically collects the outputs whenever you recompile.</p>
+<h2 id="project-auto-discovery"><a class="header" href="#project-auto-discovery">Project auto-discovery</a></h2>
+<h3 id="setup-1"><a class="header" href="#setup-1">Setup</a></h3>
+<p>Auto-discovery makes <code>rust-analyzer</code> behave in a Bazel project in a similar fashion to how it does
+in a Cargo project. This is achieved by generating a structure similar to what <code>rust-project.json</code>
+contains but, instead of writing that to a file, the data gets piped to <code>rust-analyzer</code> directly
+through <code>stdout</code>. To use auto-discovery the <code>rust-analyzer</code> IDE settings must be configured similar to:</p>
+<pre><code class="language-json">"rust-analyzer": {
+    "workspace": {
+        "discoverConfig": {
+            "command": ["discover_bazel_rust_project.sh"],
+            "progressLabel": "rust_analyzer",
+            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
+        }
+    }
+}
+</code></pre>
+<p>The shell script passed to <code>discoverConfig.command</code> is typically meant to wrap the bazel rule invocation,
+primarily for muting <code>stderr</code> (because <code>rust-analyzer</code> will consider that an error has occurred if anything
+is passed through <code>stderr</code>) and, additionally, for specifying rule arguments. E.g:</p>
+<pre><code class="language-shell">#!/usr/bin/bash
+
+bazel \
+    run \
+    @rules_rust//tools/rust_analyzer:discover_bazel_rust_project -- \
+    --bazel_startup_option=--output_base=~/ide_bazel \
+    --bazel_arg=--watchfs \
+    ${1:+"$1"} 2&gt;/dev/null
+</code></pre>
+<p>The script above also handles an optional CLI argument which gets passed when workspace splitting is
+enabled. The script path should be either absolute or relative to the project root.</p>
+<h3 id="workspace-splitting"><a class="header" href="#workspace-splitting">Workspace splitting</a></h3>
+<p>The above configuration treats the entire project as a single workspace. However, large codebases might be
+too much to handle for <code>rust-analyzer</code> all at once. This can be addressed by splitting the codebase in
+multiple workspaces by extending the <code>discoverConfig.command</code> setting:</p>
+<pre><code class="language-json">"rust-analyzer": {
+    "workspace": {
+        "discoverConfig": {
+            "command": ["discover_bazel_rust_project.sh", "{arg}"],
+            "progressLabel": "rust_analyzer",
+            "filesToWatch": ["BUILD", "BUILD.bazel", "MODULE.bazel"]
+        }
+    }
+}
+</code></pre>
+<p><code>{arg}</code> acts as a placeholder that <code>rust-analyzer</code> replaces with the path of the source / build file
+that gets opened.</p>
+<p>The root of the workspace will, in this configuration, be the package the crate currently being worked on
+belongs to. This means that only that package and its dependencies get built and indexed by <code>rust-analyzer</code>,
+thus allowing for a smaller footprint.</p>
+<p><code>rust-analyzer</code> will switch workspaces whenever an out-of-tree file gets opened, essentially indexing that
+crate and its dependencies separately. A caveat of this is that <em>dependents</em> of the crate currently being
+worked on are not indexed and won't be tracked by <code>rust-analyzer</code>.</p>
 <h2 id="aspects"><a class="header" href="#aspects">Aspects</a></h2>
 <ul>
 <li><a href="#rust_analyzer_aspect">rust_analyzer_aspect</a></li>
