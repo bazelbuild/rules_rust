@@ -885,7 +885,7 @@ tasks:
     build_flags:
       - "--compile_one_dependency"
     build_targets:
-      - "tools/rust_analyzer/main.rs"
+      - "tools/rust_analyzer/bin/gen_rust_project.rs"
   extensions_bindgen_linux:
     platform: ubuntu2004
     name: Extensions Bindgen
