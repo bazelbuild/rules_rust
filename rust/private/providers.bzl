@@ -159,14 +159,14 @@ RustAnalyzerInfo = provider(
     fields = {
         "aliases": "Dict[RustAnalyzerInfo, String]: Replacement names these targets should be known as in Rust code",
         "build_info": "BuildInfo: build info for this crate if present",
+        "build_info_out_dirs": "Depset[File]: transitive closure of build script out dirs",
         "cfgs": "List[String]: features or other compilation `--cfg` settings",
         "crate": "CrateInfo: Crate information.",
         "crate_specs": "Depset[File]: transitive closure of crate spec files",
-        "proc_macro_dylibs": "Depset[File]: transitive closure of proc-macro shared library files",
-        "build_info_out_dirs": "Depset[File]: transitive closure of build script out dirs",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict[String: String]: Environment variables, used for the `env!` macro",
         "proc_macro_dylib": "File: if this is a proc-macro target, the shared library output",
+        "proc_macro_dylibs": "Depset[File]: transitive closure of proc-macro shared library files",
     },
 )
 

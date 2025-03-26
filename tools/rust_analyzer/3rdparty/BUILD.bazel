@@ -9,16 +9,16 @@ crates_vendor(
         "anyhow": crate.spec(
             version = "1.0.71",
         ),
+        "camino": crate.spec(
+            features = ["serde1"],
+            version = "1.1.9",
+        ),
         "clap": crate.spec(
             features = [
                 "derive",
                 "env",
             ],
             version = "4.3.11",
-        ),
-        "camino": crate.spec(
-            features = ["serde1"],
-            version = "1.1.9",
         ),
         "env_logger": crate.spec(
             version = "0.10.0",

@@ -247,8 +247,8 @@ def _create_single_crate(ctx, attrs, info):
     # only ones for which we want build file watching and code lens runnables support.
     if not is_external and not is_generated:
         crate["build"] = {
-            "label": ctx.label.package + ":" + ctx.label.name,
             "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
+            "label": ctx.label.package + ":" + ctx.label.name,
         }
 
     if is_generated:
