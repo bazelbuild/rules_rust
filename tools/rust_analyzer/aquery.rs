@@ -239,7 +239,9 @@ fn consolidate_crate_specs(crate_specs: Vec<CrateSpec>) -> anyhow::Result<BTreeS
             // We want to use the test target's build label to provide
             // unit tests codelens actions for library crates in IDEs.
             if spec.is_test {
-                existing.build = spec.build;
+                if let Some(build) = spec.build {
+                    existing.build = Some(build);
+                }
             }
 
             // For proc-macro crates that exist within the workspace, there will be a
@@ -283,7 +285,7 @@ mod test {
                 crate_type: CrateType::Rlib,
                 is_test: false,
                 build: Some(CrateSpecBuild {
-                    label: "//:test".to_owned(),
+                    label: "//:mylib".to_owned(),
                     build_file: "BUILD.bazel".to_owned(),
                 }),
             },
@@ -359,7 +361,7 @@ mod test {
                     crate_type: CrateType::Rlib,
                     is_test: false,
                     build: Some(CrateSpecBuild {
-                        label: "//:test".to_owned(),
+                        label: "//:mylib".to_owned(),
                         build_file: "BUILD.bazel".to_owned(),
                     }),
                 },
