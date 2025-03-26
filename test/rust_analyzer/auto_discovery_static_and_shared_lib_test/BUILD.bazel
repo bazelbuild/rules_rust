@@ -34,7 +34,7 @@ rust_test(
     # This target is tagged as manual since it's not expected to pass in
     # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
     # that target to execute this test.
-    # tags = ["manual"],
+    tags = ["manual"],
     deps = [
         "//test/rust_analyzer/3rdparty/crates:serde",
         "//test/rust_analyzer/3rdparty/crates:serde_json",
