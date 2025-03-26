@@ -100,7 +100,10 @@ impl Config {
             targets,
         } = ConfigParser::parse();
 
-        let bazel_args = config.into_iter().map(|s| format!("--config={s}")).collect();
+        let bazel_args = config
+            .into_iter()
+            .map(|s| format!("--config={s}"))
+            .collect();
 
         // Implemented this way instead of a classic `if let` to satisfy the
         // borrow checker.
