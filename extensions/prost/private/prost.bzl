@@ -308,6 +308,8 @@ def _rust_prost_aspect_impl(target, ctx):
     # https://github.com/rust-analyzer/rust-analyzer/blob/2021-11-15/crates/project_model/src/workspace.rs#L529-L531
     cfgs = ["test", "debug_assertions"]
 
+    build_info_out_dirs = [dep_variant_info.build_info.out_dir] if dep_variant_info.build_info != None and dep_variant_info.build_info.out_dir != None else None
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = {},
         crate = dep_variant_info.crate_info,
@@ -315,7 +317,9 @@ def _rust_prost_aspect_impl(target, ctx):
         env = dep_variant_info.crate_info.rustc_env,
         deps = rust_analyzer_deps,
         crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
-        proc_macro_dylib_path = None,
+        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in rust_analyzer_deps]),
+        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [dep.build_info_out_dirs for dep in rust_analyzer_deps]),
+        proc_macro_dylib = None,
         build_info = dep_variant_info.build_info,
     ))
 

@@ -92,7 +92,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "3.19.0",
+    version = "3.19.1",
     deps = [
         "@cvm__fastrand-2.3.0//:fastrand",
         "@cvm__once_cell-1.21.1//:once_cell",
