@@ -492,6 +492,11 @@ def _collect_render_config(module, repository):
             if default_alias_rule_bzl:
                 config_kwargs["default_alias_rule"] = str(default_alias_rule_bzl)
 
+        if "intra_workspace_dependencies_workspace_toml" in config_kwargs:
+            default_intra_workspace_dependencies_workspace_toml = config_kwargs.pop("intra_workspace_dependencies_workspace_toml")
+            if default_intra_workspace_dependencies_workspace_toml:
+                config_kwargs["intra_workspace_dependencies_workspace_toml"] = str(default_intra_workspace_dependencies_workspace_toml)
+
         if "default_alias_rule_name" in config_kwargs:
             config_kwargs["default_alias_rule"] = "{}:{}".format(
                 config_kwargs.get("default_alias_rule", ""),
@@ -1337,6 +1342,44 @@ can be found below where the supported keys for each template can be found in th
         "generate_target_compatible_with": attr.bool(
             doc = "Whether to generate `target_compatible_with` annotations on the generated BUILD files.  This catches a `target_triple` being targeted that isn't declared in `supported_platform_triples`.",
             default = True,
+        ),
+        "intra_workspace_dependencies_workspace_toml": attr.label(
+            doc = """
+            Whether to generate intra (cargo) workspace dependency aliases.
+            If None (the default), you are responsible for maintaining all of the dependencies
+            between your crates. If Some, the `crates_repository` will attempt to generate
+            intra-workspace dependencies. The value should be the label of the workspace `Cargo.toml` file.
+            This relies on you to have created the library targets for each intra-workspace dependency. 
+            These targets should have the following properties:
+            - They should be in the same bazel module as the `cargo_lockfile`
+            - They should have the same name as the library name in your cargo toml.
+            - They should have the same relative bazel path as their cargo path. For example
+            if your workspace has the following layout
+            ```text
+            [workspace]/
+                WORKSPACE.bazel
+                BUILD.bazel
+                Cargo.toml
+                Cargo.Bazel.lock
+                foo/
+                    Cargo.toml
+                    BUILD
+                    src/
+                        main.rs
+                bar/
+                    Cargo.toml
+                    BUILD
+                    src/
+                        lib.rs
+            ```
+            Where `foo/Cargo.toml` contains 
+            ```toml
+            [dependencies]
+            bar.path = "../bar"
+            ```
+            Then `bar/BUILD` must define a `rust_library` target names `bar`
+                        """,
+            default = None,
         ),
         "platforms_template": attr.string(
             doc = "The base template to use for platform names. See [platforms documentation](https://docs.bazel.build/versions/main/platforms.html). The available format keys are [`{triple}`].",

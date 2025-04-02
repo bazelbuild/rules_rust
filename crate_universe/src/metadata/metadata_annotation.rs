@@ -47,7 +47,10 @@ pub(crate) struct MetadataAnnotation {
 }
 
 impl MetadataAnnotation {
-    pub(crate) fn new(metadata: CargoMetadata) -> MetadataAnnotation {
+    pub(crate) fn new(
+        metadata: CargoMetadata,
+        track_intra_workspace_dependencies: bool,
+    ) -> MetadataAnnotation {
         // UNWRAP: The workspace metadata should be written by a controlled process. This should not return a result
         let workspace_metadata = find_workspace_metadata(&metadata).unwrap_or_default();
 
@@ -78,6 +81,7 @@ impl MetadataAnnotation {
                         node.clone(),
                         &metadata,
                         &workspace_metadata.tree_metadata,
+                        track_intra_workspace_dependencies,
                     ),
                 )
             })
@@ -102,9 +106,15 @@ impl MetadataAnnotation {
         node: Node,
         metadata: &CargoMetadata,
         resolver_data: &TreeResolverMetadata,
+        track_intra_workspace_dependencies: bool,
     ) -> CrateAnnotation {
         // Gather all dependencies
-        let deps = DependencySet::new_for_node(&node, metadata, resolver_data);
+        let deps = DependencySet::new_for_node(
+            &node,
+            metadata,
+            resolver_data,
+            track_intra_workspace_dependencies,
+        );
 
         CrateAnnotation { node, deps }
     }
@@ -461,7 +471,13 @@ impl Annotations {
         )?;
 
         // Annotate the cargo metadata
-        let metadata_annotation = MetadataAnnotation::new(cargo_metadata);
+        let metadata_annotation = MetadataAnnotation::new(
+            cargo_metadata,
+            config
+                .rendering
+                .intra_workspace_dependencies_workspace_toml
+                .is_some(),
+        );
 
         let mut unused_extra_annotations = config.annotations.clone();
 
@@ -572,7 +588,7 @@ mod test {
 
     #[test]
     fn annotate_metadata_with_aliases() {
-        let annotations = MetadataAnnotation::new(test::metadata::alias());
+        let annotations = MetadataAnnotation::new(test::metadata::alias(), false);
         let log_crates: BTreeMap<&PackageId, &CrateAnnotation> = annotations
             .crates
             .iter()
@@ -598,7 +614,7 @@ mod test {
 
     #[test]
     fn annotate_metadata_with_build_scripts() {
-        MetadataAnnotation::new(test::metadata::build_scripts());
+        MetadataAnnotation::new(test::metadata::build_scripts(), false);
     }
 
     #[test]

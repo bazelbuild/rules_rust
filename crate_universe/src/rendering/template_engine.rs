@@ -159,11 +159,16 @@ impl TemplateEngine {
         data: &Context,
         platforms: &Platforms,
         generator: Option<Label>,
+        generate_intra_workspace_dependencies: bool,
     ) -> Result<String> {
         let mut context = self.new_tera_ctx();
         context.insert("context", data);
         context.insert("platforms", platforms);
         context.insert("generator", &generator);
+        context.insert(
+            "generate_intra_workspace_dependencies",
+            &generate_intra_workspace_dependencies,
+        );
 
         self.engine
             .render("module_bzl.j2", &context)
