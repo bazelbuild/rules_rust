@@ -163,6 +163,9 @@ cargo_build_script(
         "@rules_rust_bindgen_deps__prettyplease-0.2.31//:prettyplease",
     ],
     pkg_name = "bindgen",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],

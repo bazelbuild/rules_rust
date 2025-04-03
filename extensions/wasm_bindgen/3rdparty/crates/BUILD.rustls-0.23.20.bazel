@@ -160,6 +160,9 @@ cargo_build_script(
         "@rrwbd__ring-0.17.8//:ring",
     ],
     pkg_name = "rustls",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
