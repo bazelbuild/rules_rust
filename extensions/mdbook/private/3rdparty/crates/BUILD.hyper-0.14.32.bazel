@@ -112,7 +112,7 @@ rust_library(
         "@rmdbi__httpdate-1.0.3//:httpdate",
         "@rmdbi__itoa-1.0.15//:itoa",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
-        "@rmdbi__socket2-0.5.8//:socket2",
+        "@rmdbi__socket2-0.5.9//:socket2",
         "@rmdbi__tokio-1.44.1//:tokio",
         "@rmdbi__tower-service-0.3.3//:tower_service",
         "@rmdbi__tracing-0.1.41//:tracing",

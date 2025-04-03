@@ -94,10 +94,10 @@ rust_library(
     }),
     version = "0.12.1",
     deps = [
-        "@rmdbi__log-0.4.26//:log",
+        "@rmdbi__log-0.4.27//:log",
         "@rmdbi__markup5ever-0.12.1//:build_script_build",
         "@rmdbi__phf-0.11.3//:phf",
-        "@rmdbi__string_cache-0.8.8//:string_cache",
+        "@rmdbi__string_cache-0.8.9//:string_cache",
         "@rmdbi__tendril-0.4.3//:tendril",
     ],
 )
@@ -137,6 +137,9 @@ cargo_build_script(
     ),
     edition = "2021",
     pkg_name = "markup5ever",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],

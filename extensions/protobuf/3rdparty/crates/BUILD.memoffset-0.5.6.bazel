@@ -139,6 +139,9 @@ cargo_build_script(
     ),
     edition = "2015",
     pkg_name = "memoffset",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],

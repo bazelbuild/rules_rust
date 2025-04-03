@@ -100,7 +100,7 @@ rust_library(
         "@rmdbi__headers-0.3.9//:headers",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__hyper-0.14.32//:hyper",
-        "@rmdbi__log-0.4.26//:log",
+        "@rmdbi__log-0.4.27//:log",
         "@rmdbi__mime-0.3.17//:mime",
         "@rmdbi__mime_guess-2.0.5//:mime_guess",
         "@rmdbi__percent-encoding-2.3.1//:percent_encoding",
