@@ -40,7 +40,7 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rmdbi__pest_derive-2.7.15//:pest_derive",
+        "@rmdbi__pest_derive-2.8.0//:pest_derive",
     ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
@@ -97,9 +97,9 @@ rust_library(
     version = "6.3.2",
     deps = [
         "@rmdbi__derive_builder-0.20.2//:derive_builder",
-        "@rmdbi__log-0.4.26//:log",
+        "@rmdbi__log-0.4.27//:log",
         "@rmdbi__num-order-1.2.0//:num_order",
-        "@rmdbi__pest-2.7.15//:pest",
+        "@rmdbi__pest-2.8.0//:pest",
         "@rmdbi__serde-1.0.219//:serde",
         "@rmdbi__serde_json-1.0.140//:serde_json",
         "@rmdbi__thiserror-2.0.12//:thiserror",

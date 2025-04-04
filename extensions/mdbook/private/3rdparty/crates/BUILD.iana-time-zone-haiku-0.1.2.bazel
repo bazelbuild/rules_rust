@@ -133,6 +133,9 @@ cargo_build_script(
     ),
     edition = "2018",
     pkg_name = "iana-time-zone-haiku",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -146,7 +149,7 @@ cargo_build_script(
     version = "0.1.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rmdbi__cc-1.2.16//:cc",
+        "@rmdbi__cc-1.2.18//:cc",
     ],
 )
 

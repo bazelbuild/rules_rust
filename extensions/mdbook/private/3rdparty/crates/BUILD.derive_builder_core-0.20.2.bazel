@@ -93,7 +93,7 @@ rust_library(
     }),
     version = "0.20.2",
     deps = [
-        "@rmdbi__darling-0.20.10//:darling",
+        "@rmdbi__darling-0.20.11//:darling",
         "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.100//:syn",

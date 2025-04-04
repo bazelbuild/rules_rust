@@ -98,7 +98,7 @@ rust_library(
     version = "1.5.0",
     deps = [
         "@rmdbi__icu_collections-1.5.0//:icu_collections",
-        "@rmdbi__icu_normalizer_data-1.5.0//:icu_normalizer_data",
+        "@rmdbi__icu_normalizer_data-1.5.1//:icu_normalizer_data",
         "@rmdbi__icu_properties-1.5.1//:icu_properties",
         "@rmdbi__icu_provider-1.5.0//:icu_provider",
         "@rmdbi__smallvec-1.14.0//:smallvec",
