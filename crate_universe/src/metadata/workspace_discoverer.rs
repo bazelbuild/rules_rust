@@ -85,6 +85,32 @@ fn discover_workspaces_with_cache(
             })
             .transpose()?;
 
+        let workspace_excludes = workspace_manifest
+            .workspace
+            .as_ref()
+            .map(|workspace| {
+                workspace
+                    .exclude
+                    .iter()
+                    .map(|pattern| {
+                        // We should always have a parent path, but be defensive here because who
+                        // knows what kind of setups folks have!
+                        let absolute_pattern = match workspace_path.parent() {
+                            // Only append the parent if the pattern isn't already absolute.
+                            Some(parent) if !pattern.starts_with('/') => {
+                                format!("{}/{pattern}", parent.as_str())
+                            }
+                            _ => pattern.to_string(),
+                        };
+                        glob::Pattern::new(&absolute_pattern).map_err(anyhow::Error::from)
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+
+        // TODO: It would be nice if WalkDir could skip entire directories so
+        // if you exclude a subtree we don't spend time walking down it.
         'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(false)
             .follow_root_links(false)
@@ -111,6 +137,13 @@ fn discover_workspaces_with_cache(
             };
 
             if entry.file_name() != "Cargo.toml" {
+                continue;
+            }
+
+            if workspace_excludes
+                .iter()
+                .any(|pattern| pattern.matches_path(entry.path()))
+            {
                 continue;
             }
 
