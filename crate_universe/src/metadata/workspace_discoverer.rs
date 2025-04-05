@@ -109,13 +109,22 @@ fn discover_workspaces_with_cache(
             .transpose()?
             .unwrap_or_default();
 
-        // TODO: It would be nice if WalkDir could skip entire directories so
-        // if you exclude a subtree we don't spend time walking down it.
-        'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
+        // Walk the entire file tree underneath the Cargo Workspace root to discover
+        // all of the `Cargo.toml` manifests.
+        let walk_dir_iter = walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(false)
             .follow_root_links(false)
             .into_iter()
-        {
+            // Do not descend into subtrees that are specified in the
+            // Workspace's `exclude` field.
+            .filter_entry(|entry| {
+                let should_exclude = workspace_excludes
+                    .iter()
+                    .any(|exclude_pat| exclude_pat.matches_path(entry.path()));
+                !should_exclude
+            });
+
+        'per_child: for entry in walk_dir_iter {
             let entry = match entry {
                 Ok(entry) => entry,
                 Err(err) => {
@@ -137,13 +146,6 @@ fn discover_workspaces_with_cache(
             };
 
             if entry.file_name() != "Cargo.toml" {
-                continue;
-            }
-
-            if workspace_excludes
-                .iter()
-                .any(|pattern| pattern.matches_path(entry.path()))
-            {
                 continue;
             }
 
