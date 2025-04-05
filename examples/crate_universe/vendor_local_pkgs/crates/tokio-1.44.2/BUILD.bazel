@@ -124,7 +124,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.44.1",
+    version = "1.44.2",
     deps = [
         "//vendor_local_pkgs/crates/bytes-1.10.1:bytes",
         "//vendor_local_pkgs/crates/mio-1.0.3:mio",

@@ -99,6 +99,6 @@ rust_library(
         "@rmdbi__futures-core-0.3.31//:futures_core",
         "@rmdbi__futures-sink-0.3.31//:futures_sink",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
-        "@rmdbi__tokio-1.44.1//:tokio",
+        "@rmdbi__tokio-1.44.2//:tokio",
     ],
 )

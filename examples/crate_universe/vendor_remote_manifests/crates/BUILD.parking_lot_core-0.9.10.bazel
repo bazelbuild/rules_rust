@@ -96,7 +96,7 @@ rust_library(
     deps = [
         "@cvm__cfg-if-1.0.0//:cfg_if",
         "@cvm__parking_lot_core-0.9.10//:build_script_build",
-        "@cvm__smallvec-1.14.0//:smallvec",
+        "@cvm__smallvec-1.15.0//:smallvec",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cvm__libc-0.2.171//:libc",  # cfg(unix)
