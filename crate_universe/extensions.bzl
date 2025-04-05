@@ -606,6 +606,7 @@ def _generate_hub_and_spokes(
             packages = packages,
             splicing_config = splicing_config,
             cargo_config = cfg.cargo_config,
+            cargo_creds = cfg.cargo_creds,
             manifests = manifests,
             manifest_to_path = module_ctx.path,
         ),
@@ -965,6 +966,8 @@ def _crate_impl(module_ctx):
                 module_ctx.watch(cfg.lockfile)
             if cfg.cargo_config:
                 module_ctx.watch(cfg.cargo_config)
+            if cfg.cargo_creds:
+                module_ctx.watch(cfg.cargo_creds)
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
                     module_ctx.watch(m)
@@ -1031,6 +1034,7 @@ def _crate_impl(module_ctx):
 
 _FROM_COMMON_ATTRS = {
     "cargo_config": CRATES_VENDOR_ATTRS["cargo_config"],
+    "cargo_creds": CRATES_VENDOR_ATTRS["cargo_creds"],
     "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
     "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
     "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],

@@ -39,6 +39,9 @@ pub(crate) struct SplicingManifest {
     /// The path of a Cargo config file
     pub(crate) cargo_config: Option<Utf8PathBuf>,
 
+    /// The path of a Cargo cred file
+    pub(crate) cargo_creds: Option<Utf8PathBuf>,
+
     /// The Cargo resolver version to use for splicing
     pub(crate) resolver_version: cargo_toml::Resolver,
 }
@@ -61,6 +64,7 @@ impl SplicingManifest {
         let Self {
             manifests,
             cargo_config,
+            cargo_creds,
             ..
         } = self;
 
@@ -88,9 +92,18 @@ impl SplicingManifest {
             Utf8PathBuf::from(resolved_path)
         });
 
+        let cargo_creds = cargo_creds.map(|path| {
+            let resolved_path = path
+                .to_string()
+                .replace("${build_workspace_directory}", &workspace_dir_str)
+                .replace("${output_base}", &output_base_str);
+            Utf8PathBuf::from(resolved_path)
+        });
+
         Self {
             manifests,
             cargo_config,
+            cargo_creds,
             ..self
         }
     }
@@ -665,6 +678,7 @@ mod test {
                 ),
             ]),
             cargo_config: None,
+            cargo_creds: None,
             resolver_version: cargo_toml::Resolver::V2,
         };
         let metadata = SplicingMetadata::try_from(manifest).unwrap();
