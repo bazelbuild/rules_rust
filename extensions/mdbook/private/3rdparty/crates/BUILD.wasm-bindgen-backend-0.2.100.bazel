@@ -91,7 +91,7 @@ rust_library(
     version = "0.2.100",
     deps = [
         "@rmdbi__bumpalo-3.17.0//:bumpalo",
-        "@rmdbi__log-0.4.26//:log",
+        "@rmdbi__log-0.4.27//:log",
         "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.100//:syn",

@@ -605,7 +605,7 @@ use_repo(
     "cvm",
     "cvm__serde_yaml-0.9.34-deprecated",
     "cvm__tempfile-3.19.1",
-    "cvm__tokio-1.44.1",
+    "cvm__tokio-1.44.2",
     "cvm__tokio-test-0.4.4",
 )
 

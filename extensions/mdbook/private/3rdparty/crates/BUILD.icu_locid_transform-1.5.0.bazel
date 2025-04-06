@@ -97,7 +97,7 @@ rust_library(
     version = "1.5.0",
     deps = [
         "@rmdbi__icu_locid-1.5.0//:icu_locid",
-        "@rmdbi__icu_locid_transform_data-1.5.0//:icu_locid_transform_data",
+        "@rmdbi__icu_locid_transform_data-1.5.1//:icu_locid_transform_data",
         "@rmdbi__icu_provider-1.5.0//:icu_provider",
         "@rmdbi__tinystr-0.7.6//:tinystr",
         "@rmdbi__zerovec-0.10.4//:zerovec",
