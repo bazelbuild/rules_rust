@@ -2,6 +2,13 @@
 name: Release
 on:
   workflow_dispatch:
+  merge_group:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - version.bzl
+      - .github/workflows/release.yaml
   push:
     branches:
       - main
@@ -17,22 +24,11 @@ env:
 
 jobs:
   validation:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
-      # so this step ensures releases are always done off of `main`.
-      - name: Ensure branch is 'main'
-        run: |
-          git fetch origin &> /dev/null
-          branch="$(git rev-parse --abbrev-ref HEAD)"
-          if [[ "${branch}" != "main" ]]; then
-            echo "The release branch must be main. Got '${branch}'' instead." >&2
-            exit 1
-          else
-            echo "Branch is '${branch}'"
-          fi
+      - uses: actions/checkout@v4
       - name: Ensure release does not already exist
+        if: startsWith(github.ref, 'refs/heads/main') == false
         run: |
           git fetch origin &> /dev/null
           version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
@@ -53,7 +49,7 @@ jobs:
           - os: macOS-13
             env:
               TARGET: "aarch64-apple-darwin"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             env:
               TARGET: "aarch64-unknown-linux-gnu"
           - os: windows-2022
@@ -62,20 +58,20 @@ jobs:
           - os: macOS-13
             env:
               TARGET: "x86_64-apple-darwin"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             env:
               TARGET: "x86_64-pc-windows-gnu"
           - os: windows-2022
             env:
               TARGET: "x86_64-pc-windows-msvc"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             env:
               TARGET: "x86_64-unknown-linux-gnu"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             env:
               TARGET: "x86_64-unknown-linux-musl"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install rust toolchains for host
         run: |
           # Detect the current version of rust
@@ -99,6 +95,8 @@ jobs:
       - name: Setup Windows Bazelrc
         run: |
           echo "startup --output_user_root=C:/tmp" > ./user.bazelrc
+          echo "startup --windows_enable_symlinks" > ./user.bazelrc
+          echo "build --enable_runfiles" > ./user.bazelrc
         if: startswith(matrix.os, 'Windows')
       - name: Build cargo-bazel binaries
         run: |
@@ -117,10 +115,11 @@ jobs:
           path: ${{ github.workspace }}/crate_universe/target/artifacts/${{ matrix.env.TARGET }}
           if-no-files-found: error
   release:
+    if: startsWith(github.ref, 'refs/heads/main')
     needs: builds
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/crate_universe/target/artifacts
