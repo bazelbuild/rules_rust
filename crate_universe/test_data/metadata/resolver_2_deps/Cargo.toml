@@ -20,5 +20,5 @@ path = "lib.rs"
 # enabled by `reqwest` should have no impact on `tokio`. `resolver = 2`
 # correctly identifies this.
 reqwest = "=0.12.4"
-tokio = {version ="=1.37.0", features = ["io-util"] }
+tokio = {version ="=1.38.2", features = ["io-util"] }
 iana-time-zone = "=0.1.60"
