@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Ensure release does not already exist
-        if: startsWith(github.ref, 'refs/heads/main') == false
+        if: startsWith(github.ref, 'refs/heads/main')
         run: |
           git fetch origin &> /dev/null
           version="$(grep 'VERSION =' ${{ github.workspace }}/version.bzl | sed 's/VERSION = "//' | sed 's/"//')"
@@ -46,12 +46,15 @@ jobs:
       matrix:
         # Create a job for each target triple
         include:
-          - os: macOS-13
+          - os: macOS-14
             env:
               TARGET: "aarch64-apple-darwin"
           - os: ubuntu-22.04
             env:
               TARGET: "aarch64-unknown-linux-gnu"
+          - os: ubuntu-22.04
+            env:
+              TARGET: "aarch64-unknown-linux-musl"
           - os: windows-2022
             env:
               TARGET: "aarch64-pc-windows-msvc"
