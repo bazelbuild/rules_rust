@@ -779,19 +779,19 @@ def _package_to_json(p):
         if v or k == "default_features"
     })
 
-def _get_generator(module_ctx):
+def _get_generator(module_ctx, host_triple):
     """Query Network Resources to local a `cargo-bazel` binary.
 
     Based off get_generator in crates_universe/private/generate_utils.bzl
 
     Args:
-        module_ctx (module_ctx):  The rules context object
+        module_ctx (module_ctx): The rules context object
+        host_triple (struct): A triple struct that represents the host.
 
     Returns:
         tuple(path, dict) The path to a 'cargo-bazel' binary. The pairing (dict)
             may be `None` if there is not need to update the attribute
     """
-    host_triple = get_host_triple(module_ctx)
     use_environ = False
     for var in GENERATOR_ENV_VARS:
         if var in module_ctx.os.environ:
@@ -858,8 +858,11 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
 
 def _crate_impl(module_ctx):
     reproducible = True
-    generator = _get_generator(module_ctx)
-    host_triple = get_host_triple(module_ctx)
+    host_triple = get_host_triple(module_ctx, abi = {
+        "aarch64-unknown-linux": "musl",
+        "x86_64-unknown-linux": "musl",
+    })
+    generator = _get_generator(module_ctx, host_triple)
 
     all_repos = []
 
