@@ -136,7 +136,7 @@ def get_host_triple(repository_ctx, abi = None):
         _validate_cpu_architecture(arch, supported_architectures["linux"])
         return triple("{}-unknown-linux-{}".format(
             arch,
-            abi or "musl",
+            abi or "gnu",
         ))
 
     if "mac" in repository_ctx.os.name:
