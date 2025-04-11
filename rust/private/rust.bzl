@@ -17,7 +17,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
-load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
+load("//rust/private:providers.bzl", "AllocatorLibrariesInfo", "BuildInfo", "LintsInfo")
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
@@ -718,6 +718,10 @@ _common_attrs = {
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
+    ),
+    "allocator_libraries": attr.label(
+        default = "//ffi/rs:default_allocator_libraries",
+        providers = [AllocatorLibrariesInfo],
     ),
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
@@ -1571,6 +1575,32 @@ rust_library_group = rule(
         )
         ```
     """),
+)
+
+def _rust_allocator_libraries_impl(ctx):
+    allocator_library = ctx.attr.allocator_library[CcInfo] if ctx.attr.allocator_library else None
+    global_allocator_library = ctx.attr.global_allocator_library[CcInfo] if ctx.attr.global_allocator_library else None
+
+    providers = [AllocatorLibrariesInfo(
+        allocator_library = allocator_library,
+        global_allocator_library = global_allocator_library,
+    )]
+
+    return providers
+
+rust_allocator_libraries = rule(
+    implementation = _rust_allocator_libraries_impl,
+    provides = [AllocatorLibrariesInfo],
+    attrs = {
+        "allocator_library": attr.label(
+            doc = "An optional library to provide when a default rust allocator is used.",
+            providers = [CcInfo],
+        ),
+        "global_allocator_library": attr.label(
+            doc = "An optional library to provide when a default rust allocator is used.",
+            providers = [CcInfo],
+        ),
+    },
 )
 
 def _replace_illlegal_chars(name):

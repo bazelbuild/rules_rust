@@ -672,6 +672,8 @@ def _rust_toolchain_impl(ctx):
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std"),
         libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std"),
         nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
+        libstd_no_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, None, "std"),
+        nostd_no_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, None, "no_std_with_alloc"),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         lto = lto,
