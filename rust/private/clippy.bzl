@@ -99,9 +99,30 @@ def _clippy_aspect_impl(target, ctx):
         if hasattr(target[OutputGroupInfo], "clippy_checks"):
             return []
 
+    output_format = "stderr-to-file" if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output else "stderr-and-touch-file"
+
+    clippy_info = rust_clippy_action(target, ctx, output_format, capture_exit_code=False)
+
+    return [
+        OutputGroupInfo(clippy_checks = clippy_info.output),
+        clippy_info,
+    ]
+
+def rust_clippy_action(target, ctx, output_format, capture_exit_code):
+    """Generate an action to run clippy.
+
+    Args:
+        target (Target): The target the aspect is running on.
+        ctx (ctx, optional): The aspect's context object.
+        output_format (str): One of "stderr-and-touch-file", "stderr-to-file", or "json-to-file"
+        capture_exit_code (boolean): If true, write the exit code to a file and exit 0.
+
+    Returns:
+        ClippyInfo: A `ClippyInfo` provider.
+    """
     crate_info = _get_clippy_ready_crate_info(target, ctx)
     if not crate_info:
-        return [ClippyInfo(output = depset([]))]
+        return ClippyInfo(output = depset([]))
 
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
@@ -171,7 +192,7 @@ def _clippy_aspect_impl(target, ctx):
 
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
-    if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
+    if output_format == "stderr-to-file":
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
         args.process_wrapper_flags.add("--stderr-file", clippy_out)
 
@@ -181,7 +202,7 @@ def _clippy_aspect_impl(target, ctx):
         # If we are capturing the output, we want the build system to be able to keep going
         # and consume the output. Some clippy lints are denials, so we cap everything at warn.
         args.rustc_flags.add("--cap-lints=warn")
-    else:
+    elif output_format == "stderr-and-touch-file":
         # A marker file indicating clippy has executed successfully.
         # This file is necessary because "ctx.actions.run" mandates an output.
         clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
@@ -196,6 +217,24 @@ def _clippy_aspect_impl(target, ctx):
             # Bazel will consider the execution result of the aspect to be "success",
             # and Clippy won't be re-triggered unless the source file is modified.
             args.rustc_flags.add("-Dwarnings")
+    elif output_format == "json-to-file":
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
+        args.process_wrapper_flags.add("--stderr-file", clippy_out)
+
+        if clippy_flags or lint_files:
+            args.rustc_flags.add_all(clippy_flags)
+        args.rustc_flags.add("--error-format=json")
+    else:
+        fail("clippy output_format must be one of stderr-to-file|stderr-and-touch-file|json-to-file but was {}".format(output_format))
+
+    outputs = [clippy_out]
+
+    if capture_exit_code:
+        exit_code_file = ctx.actions.declare_file(ctx.label.name + ".clippy.exit_code", sibling = crate_info.output)
+        args.process_wrapper_flags.add("--exit-code-file", exit_code_file)
+        outputs.append(exit_code_file)
+    else:
+        exit_code_file = None
 
     # Upstream clippy requires one of these two filenames or it silently uses
     # the default config. Enforce the naming so users are not confused.
@@ -208,7 +247,7 @@ def _clippy_aspect_impl(target, ctx):
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = [clippy_out],
+        outputs = outputs,
         env = env,
         tools = [toolchain.clippy_driver],
         arguments = args.all,
@@ -217,10 +256,7 @@ def _clippy_aspect_impl(target, ctx):
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 
-    return [
-        OutputGroupInfo(clippy_checks = depset([clippy_out])),
-        ClippyInfo(output = depset([clippy_out])),
-    ]
+    return ClippyInfo(output = depset([clippy_out]), exit_code_file = exit_code_file)
 
 # Example: Run the clippy checker on all targets in the codebase.
 #   bazel build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect \

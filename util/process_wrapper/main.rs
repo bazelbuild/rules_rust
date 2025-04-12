@@ -226,7 +226,13 @@ fn main() -> Result<(), ProcessWrapperError> {
         }
     }
 
-    exit(code)
+    if let Some(exit_code_file) = opts.exit_code_file {
+        std::fs::write(exit_code_file, format!("{code}"))
+            .map_err(|e| ProcessWrapperError(format!("failed to write exit code file: {}", e)))?;
+        Ok(())
+    } else {
+        exit(code);
+    }
 }
 
 #[cfg(test)]
