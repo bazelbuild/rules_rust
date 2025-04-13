@@ -1,0 +1,69 @@
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+
+rust_test(
+    name = "proc_macro_data_test",
+    srcs = select({
+        "//rust/settings:regular_crate_scope": ["rust_test.rs"],
+        # Analysis fails if rust_test doesn't set the condition above.
+    }),
+    edition = "2021",
+    proc_macro_deps = [
+        ":rust_proc_macro",
+    ],
+    deps = [
+        ":nonmacro_library",
+    ],
+)
+
+rust_library(
+    name = "nonmacro_library",
+    srcs = select({
+        "//rust/settings:regular_crate_scope": ["nonmacro_library.rs"],
+        # Analysis fails if rust_library doesn't set the condition above.
+    }),
+    edition = "2021",
+    proc_macro_deps = [
+        ":rust_proc_macro",
+    ],
+)
+
+rust_proc_macro(
+    name = "rust_proc_macro",
+    srcs = ["rust_proc_macro.rs"],
+    data = select({
+        "//rust/settings:proc_macro_scope": [":proc_macro_data"],
+        # Analysis fails if rust_proc_macro doesn't set the condition above.
+    }),
+    edition = "2021",
+    rustc_env = {"CARGO_MANIFEST_DIR": package_name()},
+    deps = [
+        ":proc_macro_helper",
+    ],
+)
+
+rust_library(
+    name = "proc_macro_helper",
+    srcs = ["proc_macro_helper.rs"],
+    data = select({
+        "//rust/settings:proc_macro_scope": [":helper_data"],
+        "//rust/settings:regular_crate_scope": [],
+    }),
+    edition = "2021",
+    rustc_env = {"CARGO_MANIFEST_DIR": package_name()},
+)
+
+filegroup(
+    name = "proc_macro_data",
+    srcs = select({
+        "//rust/settings:non_rust_scope": ["proc_macro_data.txt"],
+        # Analysis fails if the data attribute doesn't reset the condition above.
+    }),
+)
+
+filegroup(
+    name = "helper_data",
+    srcs = select({
+        "//rust/settings:non_rust_scope": ["helper_data.txt"],
+        # Analysis fails if the data attribute doesn't reset the condition above.
+    }),
+)

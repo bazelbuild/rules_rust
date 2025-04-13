@@ -49,6 +49,27 @@ bzl_library(
     ],
 )
 
+config_setting(
+    name = "non_rust_scope",
+    flag_values = {
+        "//rust/private:crate_scope": "none",
+    },
+)
+
+config_setting(
+    name = "proc_macro_scope",
+    flag_values = {
+        "//rust/private:crate_scope": "proc_macro",
+    },
+)
+
+config_setting(
+    name = "regular_crate_scope",
+    flag_values = {
+        "//rust/private:crate_scope": "regular",
+    },
+)
+
 capture_clippy_output()
 
 clippy_flag()

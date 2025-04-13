@@ -526,6 +526,34 @@ def _stamp_attribute(default_value):
         values = [1, 0, -1],
     )
 
+def _crate_scope_transition_impl(settings, attr):
+    if hasattr(attr, "_change_crate_scope"):
+        return {"//rust/private:crate_scope": attr._change_crate_scope}
+    if settings["//rust/private:crate_scope"] == "proc_macro":
+        # the whole transitive closure of a proc_macro should be the proc_macro scope,
+        # except that it is reset by either the _change_crate_scope attr above or the
+        # _crate_scope_reset_transition below.
+        return {"//rust/private:crate_scope": "proc_macro"}
+    return {"//rust/private:crate_scope": "regular"}
+
+_crate_scope_transition_inputs = ["//rust/private:crate_scope"]
+_crate_scope_transition_outputs = ["//rust/private:crate_scope"]
+
+_crate_scope_transition = transition(
+    implementation = _crate_scope_transition_impl,
+    inputs = _crate_scope_transition_inputs,
+    outputs = _crate_scope_transition_outputs,
+)
+
+def _crate_scope_reset_transition_impl(_settings, _attr):
+    return {"//rust/private:crate_scope": "none"}
+
+_crate_scope_reset_transition = transition(
+    implementation = _crate_scope_reset_transition_impl,
+    inputs = [],
+    outputs = _crate_scope_transition_outputs,
+)
+
 # Internal attributes core to Rustc actions.
 RUSTC_ATTRS = {
     "_error_format": attr.label(
@@ -617,6 +645,7 @@ _common_attrs = {
             or the single file in `srcs` if `srcs` contains only one file.
         """),
         allow_single_file = [".rs"],
+        cfg = _crate_scope_reset_transition,
     ),
     "data": attr.label_list(
         doc = dedent("""\
@@ -627,6 +656,7 @@ _common_attrs = {
             in the runfiles.
         """),
         allow_files = True,
+        cfg = _crate_scope_reset_transition,
     ),
     "deps": attr.label_list(
         doc = dedent("""\
@@ -683,6 +713,7 @@ _common_attrs = {
             `NAME={WORKSPACE_STATUS_VARIABLE}`.
         """),
         allow_files = True,
+        cfg = _crate_scope_reset_transition,
     ),
     "rustc_flags": attr.string_list(
         doc = dedent("""\
@@ -711,6 +742,7 @@ _common_attrs = {
         # non-builtin rulesets is undocumented outside of the bazel source:
         # https://github.com/bazelbuild/bazel/blob/7.1.1/src/main/java/com/google/devtools/build/lib/packages/Attribute.java#L102
         flags = ["DIRECT_COMPILE_TIME_INPUT"],
+        cfg = _crate_scope_reset_transition,
     ),
     "stamp": _stamp_attribute(
         default_value = 0,
@@ -718,6 +750,9 @@ _common_attrs = {
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
+    ),
+    "_allowlist_function_transition": attr.label(
+        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
     ),
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
@@ -828,6 +863,7 @@ rust_library = rule(
         ),
     },
     fragments = ["cpp"],
+    cfg = _crate_scope_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -901,16 +937,16 @@ rust_library = rule(
 def _rust_static_library_transition_impl(settings, attr):
     return {
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    } | _crate_scope_transition_impl(settings, attr)
 
 _rust_static_library_transition = transition(
     implementation = _rust_static_library_transition_impl,
     inputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_inputs,
     outputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_outputs,
 )
 
 rust_static_library = rule(
@@ -919,9 +955,6 @@ rust_static_library = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the static library to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     fragments = ["cpp"],
@@ -950,16 +983,16 @@ rust_static_library = rule(
 def _rust_shared_library_transition_impl(settings, attr):
     return {
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    } | _crate_scope_transition_impl(settings, attr)
 
 _rust_shared_library_transition = transition(
     implementation = _rust_shared_library_transition_impl,
     inputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_inputs,
     outputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_outputs,
 )
 
 rust_shared_library = rule(
@@ -968,9 +1001,6 @@ rust_shared_library = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
         "_use_grep_includes": attr.bool(default = True),
     },
@@ -1018,9 +1048,7 @@ rust_proc_macro = rule(
     # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
     attrs = dict(
         _common_attrs.items(),
-        _allowlist_function_transition = attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
+        _change_crate_scope = attr.string(default = "proc_macro"),
         deps = attr.label_list(
             doc = dedent("""\
                 List of other libraries to be linked to this library target.
@@ -1032,6 +1060,7 @@ rust_proc_macro = rule(
         ),
     ),
     fragments = ["cpp"],
+    cfg = _crate_scope_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1074,6 +1103,7 @@ _rust_binary_attrs = {
             Link script to forward into linker via rustc options.
         """),
         allow_single_file = True,
+        cfg = _crate_scope_reset_transition,
     ),
     "out_binary": attr.bool(
         doc = (
@@ -1090,16 +1120,16 @@ _rust_binary_attrs = {
 def _rust_binary_transition_impl(settings, attr):
     return {
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    } | _crate_scope_transition_impl(settings, attr)
 
 _rust_binary_transition = transition(
     implementation = _rust_binary_transition_impl,
     inputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_inputs,
     outputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_outputs,
 )
 
 rust_binary = rule(
@@ -1109,9 +1139,6 @@ rust_binary = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     executable = True,
@@ -1252,9 +1279,7 @@ rust_binary_without_process_wrapper = rule(
             doc = "Optional platform to transition the binary to.",
             default = None,
         ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
+        "_change_crate_scope": attr.string(default = "regular"),
     }),
     executable = True,
     fragments = ["cpp"],
@@ -1268,8 +1293,11 @@ rust_binary_without_process_wrapper = rule(
 rust_library_without_process_wrapper = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | {
+        "_change_crate_scope": attr.string(default = "regular"),
+    }),
     fragments = ["cpp"],
+    cfg = _crate_scope_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -1279,16 +1307,16 @@ rust_library_without_process_wrapper = rule(
 def _rust_test_transition_impl(settings, attr):
     return {
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    } | _crate_scope_transition_impl(settings, attr)
 
 _rust_test_transition = transition(
     implementation = _rust_test_transition_impl,
     inputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_inputs,
     outputs = [
         "//command_line_option:platforms",
-    ],
+    ] + _crate_scope_transition_outputs,
 )
 
 rust_test = rule(
@@ -1298,9 +1326,6 @@ rust_test = rule(
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     executable = True,
