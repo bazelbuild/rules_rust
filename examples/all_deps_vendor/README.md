@@ -141,7 +141,7 @@ def sys_deps():
 
     Commonly `*-sys` crates are built on top of some existing library and
     will have a number of dependencies. The examples here use
-    [crate_universe](https://bazelbuild.github.io/rules_rust/crate_universe.html)
+    [crate_universe workspace](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html)
     to gather these dependencies and make them available in the workspace.
     """
 
