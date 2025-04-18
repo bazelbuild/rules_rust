@@ -188,3 +188,11 @@ LintsInfo = provider(
         "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
     },
 )
+
+AllocatorLibrariesInfo = provider(
+    doc = "AllocatorLibrariesInfo provides allocator libraries for linking rust code with a non-rust linker.",
+    fields = {
+        "allocator_library": "Optional[CcInfo]: used when the default rust allocator is used",
+        "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
+    },
+)

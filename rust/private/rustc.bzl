@@ -27,7 +27,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":providers.bzl", "AllocatorLibrariesInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -1604,16 +1604,53 @@ def _is_no_std(ctx, toolchain, crate_info):
         return False
     return True
 
+def _merge_attr_and_toolchain_alloc_info(attr_alloc_cc_info, toolchain_alloc_cc_info):
+    if not attr_alloc_cc_info:
+        fail("empty attr_alloc_cc_info")
+    return cc_common.merge_cc_infos(cc_infos = [attr_alloc_cc_info, toolchain_alloc_cc_info])
+
+def _should_use_rustc_allocator_libraries(toolchain):
+    use_or_default = toolchain._experimental_use_allocator_libraries_with_mangled_symbols
+    if use_or_default not in [-1, 0, 1]:
+        fail("unexpected value of experimental_use_allocator_libraries_with_mangled_symbols (should be one of [-1, 0, 1]): " + use_or_default)
+    if use_or_default == -1:
+        return toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting
+    return bool(use_or_default)
+
 def _get_std_and_alloc_info(ctx, toolchain, crate_info):
+    # Handles standard libraries and allocator shims.
+    #
+    # The standard libraries vary between "std" and "nostd" flavors.
+    #
+    # The allocator libraries vary along two dimensions:
+    # * the type of rust allocator used (default or global)
+    # * the mechanism providing the libraries (via the rust rules
+    #   allocator_libraries attribute, or via the rust toolchain allocator
+    #   attributes).
+    #
+    # When provided, the allocator_libraries attribute takes precedence over the
+    # toolchain allocator attributes.
+    attr_allocator_library = None
+    attr_global_allocator_library = None
+    if _should_use_rustc_allocator_libraries(toolchain) and hasattr(ctx.attr, "allocator_libraries"):
+        attr_allocator_library = ctx.attr.allocator_libraries[AllocatorLibrariesInfo].allocator_library
+        attr_global_allocator_library = ctx.attr.allocator_libraries[AllocatorLibrariesInfo].global_allocator_library
     if is_exec_configuration(ctx):
+        if attr_allocator_library:
+            return _merge_attr_and_toolchain_alloc_info(attr_allocator_library, toolchain.libstd_no_allocator_ccinfo)
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
         if _is_no_std(ctx, toolchain, crate_info):
+            if attr_global_allocator_library:
+                return _merge_attr_and_toolchain_alloc_info(attr_global_allocator_library, toolchain.nostd_no_allocator_ccinfo)
             return toolchain.nostd_and_global_allocator_cc_info
         else:
+            if attr_global_allocator_library:
+                return _merge_attr_and_toolchain_alloc_info(attr_global_allocator_library, toolchain.libstd_no_allocator_ccinfo)
             return toolchain.libstd_and_global_allocator_ccinfo
-    else:
-        return toolchain.libstd_and_allocator_ccinfo
+    if attr_allocator_library:
+        return _merge_attr_and_toolchain_alloc_info(attr_allocator_library, toolchain.libstd_no_allocator_ccinfo)
+    return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)

@@ -1,0 +1,48 @@
+# Repository setup to validate rules_rust with rustc that mangles rustc_std_internal_symbols.
+#
+# To support linking rust code into non-rust contexts, we must provide
+# implementations of the default internal rust allocator symbols, e.g.:
+# https://github.com/bazelbuild/rules_rust/blob/main/ffi/cc/allocator_library/allocator_library.cc
+#
+# Recent versions of rustc started to mangle these internal symbols,
+# rendering our c++ implementations ineffective:
+# https://github.com/rust-lang/rust/pull/127173
+module(
+    name = "rules_rust_test_cc_common_link_rustc_std_internal_symbol_mangling",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+
+# A recent enough version of rustc that mangles the internal allocator symbols.
+VERSION = "nightly/2025-04-08"
+
+rust.toolchain(
+    versions = [VERSION],
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    allocator_library = "@rules_rust//ffi/rs:empty",
+    edition = "2021",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    #global_allocator_library = "",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+    versions = [VERSION],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

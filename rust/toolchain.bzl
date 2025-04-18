@@ -672,6 +672,8 @@ def _rust_toolchain_impl(ctx):
         libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std"),
         libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std"),
         nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
+        libstd_no_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, None, "std"),
+        nostd_no_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, None, "no_std_with_alloc"),
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         lto = lto,
@@ -709,6 +711,8 @@ def _rust_toolchain_impl(ctx):
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
+        _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
+        _experimental_use_allocator_libraries_with_mangled_symbols_setting = ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols_setting[BuildSettingInfo].value,
     )
     return [
         toolchain,
@@ -778,6 +782,19 @@ rust_toolchain = rule(
         "experimental_link_std_dylib": attr.label(
             default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
             doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
+        ),
+        "experimental_use_allocator_libraries_with_mangled_symbols": attr.int(
+            doc = (
+                "Whether to use rust-based allocator libraries with " +
+                "mangled symbols. Possible values: [-1, 0, 1]. " +
+                "-1 means to use the value of the build setting " +
+                "//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols. " +
+                "0 means do not use. In that case, rules_rust will try to use " +
+                "the c-based allocator libraries that don't support symbol mangling. " +
+                "1 means use the rust-based allocator libraries."
+            ),
+            values = [-1, 0, 1],
+            default = -1,
         ),
         "experimental_use_cc_common_link": attr.label(
             default = Label("//rust/settings:experimental_use_cc_common_link"),
@@ -886,6 +903,14 @@ rust_toolchain = rule(
         ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
+        ),
+        "_experimental_use_allocator_libraries_with_mangled_symbols_setting": attr.label(
+            default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
+            providers = [BuildSettingInfo],
+            doc = (
+                "Label to a boolean build setting that informs the target build whether to use rust-based " +
+                "allocator libraries that mangle symbols."
+            ),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),

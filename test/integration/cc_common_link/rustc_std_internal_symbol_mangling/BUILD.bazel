@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_library",
+    "rust_test",
+)
+
+rust_library(
+    name = "rsdep",
+    srcs = ["dep.rs"],
+)
+
+rust_test(
+    name = "rstest",
+    srcs = ["test.rs"],
+    deps = [
+        ":rsdep",
+    ],
+)
+
+cc_test(
+    name = "cctest",
+    srcs = ["test.cc"],
+    deps = [":rsdep"],
+)
