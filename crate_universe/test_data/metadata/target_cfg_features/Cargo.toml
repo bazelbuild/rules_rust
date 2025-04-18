@@ -9,7 +9,7 @@ edition = "2018"
 path = "lib.rs"
 
 [dependencies]
-tokio = "1.25.0"
+tokio = "1.38.2"
 
 [target.'cfg(unix)'.dependencies.tokio]
 features = ["fs"]
