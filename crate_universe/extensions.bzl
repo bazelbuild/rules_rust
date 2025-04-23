@@ -6,7 +6,7 @@ This doc describes using crate_universe with bzlmod.
 
 If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe.html).
 
-There are some examples of using crate_universe with bzlmod in the [example folder](../examples/bzlmod).
+There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod).
 
 # Table of Contents
 
@@ -32,7 +32,7 @@ bazel_dep(name = "rules_rust", version = "0.60.0")
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
 
 
-After adding `rules_rust` in your MODULE.bazel, set the following to begin using `crate_universe`:
+After adding `rules_rust` in your `MODULE.bazel, set the following to begin using `crate_universe`:
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -53,7 +53,7 @@ There are three different ways to declare dependencies in your MODULE.
 
 One of the simpler ways to wire up dependencies would be to first structure your project into a Cargo workspace.
 The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
-You find a complete example in the in the [example folder](../examples/bzlmod/all_crate_deps).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_crate_deps).
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -144,7 +144,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -227,9 +227,9 @@ Only a cargo workspace needs updating whenever the underlying Cargo.toml file ch
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
 and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
 or to ensure full build reproducibility since no download error could possibly occur.
-You find a complete example in the in the [example folder](../examples/bzlmod/all_deps_vendor).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_deps_vendor).
 
-For the setup, you need to add the skylib in addition to the rust rules to your MODUE.bazel.
+For the setup, you need to add the skylib in addition to the rust rules to your `MODULE.bazel`.
 
 ```python
 module(
