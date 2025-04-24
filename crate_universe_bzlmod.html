@@ -160,7 +160,7 @@
 <p>Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.</p>
 <p>This doc describes using crate_universe with bzlmod.</p>
 <p>If you're using a WORKSPACE file, please see <a href="crate_universe.html">the WORKSPACE equivalent of this doc</a>.</p>
-<p>There are some examples of using crate_universe with bzlmod in the <a href="../examples/bzlmod">example folder</a>.</p>
+<p>There are some examples of using crate_universe with bzlmod in the <a href="https://github.com/bazelbuild/rules_rust/examples/bzlmod">example folder</a>.</p>
 <h1 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h1>
 <ol>
 <li><a href="#Setup">Setup</a></li>
@@ -184,7 +184,7 @@
 <pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.60.0")
 </code></pre>
 <p>You find the latest version on the <a href="https://github.com/bazelbuild/rules_rust/releases">release page</a>.</p>
-<p>After adding <code>rules_rust</code> in your MODULE.bazel, set the following to begin using <code>crate_universe</code>:</p>
+<p>After adding <code>rules_rust</code> in your <code>MODULE.bazel, set the following to begin using </code>crate_universe`:</p>
 <pre><code class="language-python">crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 //  # ... Dependencies
 use_repo(crate, "crates")
@@ -200,7 +200,7 @@ use_repo(crate, "crates")
 <h3 id="cargo-workspaces"><a class="header" href="#cargo-workspaces">Cargo Workspaces</a></h3>
 <p>One of the simpler ways to wire up dependencies would be to first structure your project into a Cargo workspace.
 The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
-You find a complete example in the in the <a href="../examples/bzlmod/all_crate_deps">example folder</a>.</p>
+You find a complete example in the in the <a href="https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_crate_deps">example folder</a>.</p>
 <pre><code class="language-python">crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 crate.from_cargo(
@@ -274,7 +274,7 @@ For more details about repin, <a href="https://bazelbuild.github.io/rules_rust/c
 <p>In cases where Rust targets have heavy interactions with other Bazel targets (<a href="https://docs.bazel.build/versions/main/be/c-cpp.html">Cc</a>, <a href="https://rules-proto-grpc.com/en/4.5.0/lang/rust.html">Proto</a>,
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the <a href="../examples/bzlmod/hello_world_no_cargo">example folder</a>.</p>
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the <a href="https://github.com/bazelbuild/rules_rust/examples/bzlmod/hello_world_no_cargo">example folder</a>.</p>
 <p>crates_repository supports this through the packages attribute,
 as shown below.</p>
 <pre><code class="language-python">crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -338,8 +338,8 @@ Only a cargo workspace needs updating whenever the underlying Cargo.toml file ch
 <p>In some cases, it is require that all external dependencies are vendored, meaning downloaded
 and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
 or to ensure full build reproducibility since no download error could possibly occur.
-You find a complete example in the in the <a href="../examples/bzlmod/all_deps_vendor">example folder</a>.</p>
-<p>For the setup, you need to add the skylib in addition to the rust rules to your MODUE.bazel.</p>
+You find a complete example in the in the <a href="https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_deps_vendor">example folder</a>.</p>
+<p>For the setup, you need to add the skylib in addition to the rust rules to your <code>MODULE.bazel</code>.</p>
 <pre><code class="language-python">module(
     name = "deps_vendored",
     version = "0.0.0"
