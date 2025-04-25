@@ -262,3 +262,12 @@ jobs:
           asset_name: cargo-bazel-x86_64-unknown-linux-musl
           asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/x86_64-unknown-linux-musl/cargo-bazel
           asset_content_type: application/octet-stream
+      - name: "Upload aarch64-unknown-linux-musl"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-aarch64-unknown-linux-musl
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-unknown-linux-musl/cargo-bazel
+          asset_content_type: application/octet-stream
