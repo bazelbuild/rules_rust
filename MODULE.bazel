@@ -56,14 +56,9 @@ rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
 rust_host_tools.host_tools(
     name = "rust_host_tools",
 )
-rust_host_tools.host_tools(
-    name = "rust_host_tools_nightly",
-    version = "nightly",
-)
 use_repo(
     rust_host_tools,
     "rust_host_tools",
-    "rust_host_tools_nightly",
 )
 
 rust_test = use_extension("//test:test_extensions.bzl", "rust_test", dev_dependency = True)

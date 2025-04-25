@@ -263,13 +263,23 @@ use_repo(
 # C A R G O   B I N D E P S
 ###############################################################################
 
+rust_host_tools = use_extension("@rules_rust//rust:extensions.bzl", "rust_host_tools")
+rust_host_tools.host_tools(
+    name = "rust_host_tools_nightly",
+    version = "nightly",
+)
+use_repo(
+    rust_host_tools,
+    "rust_host_tools_nightly",
+)
+
 # https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
 crate_index_cargo_bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate_index_cargo_bindeps.from_cargo(
     name = "crate_index_cargo_bindeps",
     cargo_lockfile = "//cargo_bindeps:Cargo.lock",
     generate_binaries = True,
-    host_tools_repo = "rust_host_tools_nightly",
+    host_tools = "@rust_host_tools_nightly",
     manifests = ["//cargo_bindeps:Cargo.toml"],
 )
 use_repo(

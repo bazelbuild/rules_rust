@@ -195,7 +195,7 @@ You could use the syntax specified in the above document to place it in `Cargo.t
 
 This method has the following consequences:
 * if you use shared dependency tree with your project these binary dependencies will interfere with yours (may conflict)
-* you have to use  nightly `host_tools_repo` to generate dependencies because
+* you have to use  nightly `host_tools` to generate dependencies because
 
 Alternatively you can specify this in a separate `repo` with `cargo.from_specs` syntax:
 
@@ -207,7 +207,7 @@ bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
 
 bindeps.from_specs(
   name = "bindeps",
-  host_tools_repo = "rust_host_tools_nightly",
+  host_tools = "@rust_host_tools_nightly",
 )
 
 use_repo(bindeps, "bindeps")
@@ -835,21 +835,14 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
     """A helper function to get the path to the host cargo and rustc binaries.
 
     Args:
-        module_ctx: The module extension's context.
-        host_triple: The platform triple for the machine executing this extension.
-        host_tools_repo: The `rust_host_tools` repository to use.
+        module_ctx (module_ctx): The module extension's context.
+        host_triple (triple): The platform triple for the machine executing this extension.
+        host_tools_repo (Label): The `rust_host_tools` repository to use.
     Returns:
-        A tuple of path to cargo, path to rustc.
+        tuple[Path, Path]: A tuple of path to cargo, path to rustc.
     """
     binary_ext = system_to_binary_ext(host_triple.system)
-
-    # For Bazel 7 and below, `module_ctx.path` will also watch files so to avoid
-    # volatility in lock files caused by referencing host specific files, direct
-    # references are avoided. Note that `BUILD.bazel` is not used as it also
-    # contains host specific data.
-    root = module_ctx.path(Label("@{rust_host_tools}//:WORKSPACE.bazel".format(
-        rust_host_tools = host_tools_repo,
-    )))
+    root = module_ctx.path(host_tools_repo)
 
     cargo_path = root.dirname.get_child("bin/cargo{}".format(binary_ext))
     rustc_path = root.dirname.get_child("bin/rustc{}".format(binary_ext))
@@ -972,7 +965,7 @@ def _crate_impl(module_ctx):
                 for m in cfg.manifests:
                     module_ctx.watch(m)
 
-            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
+            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
                 cargo_bazel_path = generator,
@@ -1037,9 +1030,9 @@ _FROM_COMMON_ATTRS = {
     "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
     "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
     "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-    "host_tools_repo": attr.string(
-        doc = "The name of the `rust_host_tools` repository to use.",
-        default = "rust_host_tools",
+    "host_tools": attr.label(
+        doc = "The `rust_host_tools` repository to use.",
+        default = "@rust_host_tools",
     ),
     "isolated": attr.bool(
         doc = (
