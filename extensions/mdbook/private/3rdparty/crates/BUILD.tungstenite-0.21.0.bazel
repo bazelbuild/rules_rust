@@ -100,7 +100,7 @@ rust_library(
     deps = [
         "@rmdbi__byteorder-1.5.0//:byteorder",
         "@rmdbi__bytes-1.10.1//:bytes",
-        "@rmdbi__data-encoding-2.8.0//:data_encoding",
+        "@rmdbi__data-encoding-2.9.0//:data_encoding",
         "@rmdbi__http-1.3.1//:http",
         "@rmdbi__httparse-1.10.1//:httparse",
         "@rmdbi__log-0.4.27//:log",

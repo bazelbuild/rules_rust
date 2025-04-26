@@ -100,7 +100,7 @@ rust_library(
     }),
     version = "2.0.100",
     deps = [
-        "@cvm__proc-macro2-1.0.94//:proc_macro2",
+        "@cvm__proc-macro2-1.0.95//:proc_macro2",
         "@cvm__quote-1.0.40//:quote",
         "@cvm__unicode-ident-1.0.18//:unicode_ident",
     ],

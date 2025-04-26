@@ -96,7 +96,7 @@ rust_library(
     deps = [
         "@rmdbi__fnv-1.0.7//:fnv",
         "@rmdbi__ident_case-1.0.1//:ident_case",
-        "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
+        "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__strsim-0.11.1//:strsim",
         "@rmdbi__syn-2.0.100//:syn",

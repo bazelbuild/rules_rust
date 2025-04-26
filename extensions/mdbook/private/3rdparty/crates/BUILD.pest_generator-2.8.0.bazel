@@ -95,7 +95,7 @@ rust_library(
     deps = [
         "@rmdbi__pest-2.8.0//:pest",
         "@rmdbi__pest_meta-2.8.0//:pest_meta",
-        "@rmdbi__proc-macro2-1.0.94//:proc_macro2",
+        "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.100//:syn",
     ],
