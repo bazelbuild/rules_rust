@@ -104,7 +104,7 @@ rust_library(
         "@cui__gix-quote-0.4.15//:gix_quote",
         "@cui__gix-trace-0.1.12//:gix_trace",
         "@cui__gix-utils-0.1.14//:gix_utils",
-        "@cui__smallvec-1.13.2//:smallvec",
+        "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
     ],
 )

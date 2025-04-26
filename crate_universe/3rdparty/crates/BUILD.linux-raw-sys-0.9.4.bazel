@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "toml_edit",
+    name = "linux_raw_sys",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,10 +35,40 @@ rust_library(
         ],
     ),
     crate_features = [
-        "display",
-        "parse",
-        "serde",
-    ],
+        "general",
+        "ioctl",
+        "no_std",
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
+            "elf",  # aarch64-unknown-linux-gnu
+            "errno",  # aarch64-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
+            "elf",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "errno",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
+            "elf",  # arm-unknown-linux-gnueabi
+            "errno",  # arm-unknown-linux-gnueabi
+        ],
+        "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
+            "elf",  # armv7-unknown-linux-gnueabi
+            "errno",  # armv7-unknown-linux-gnueabi
+        ],
+        "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
+            "elf",  # i686-unknown-linux-gnu
+            "errno",  # i686-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
+            "elf",  # x86_64-unknown-linux-gnu
+            "errno",  # x86_64-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
+            "elf",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "errno",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+        ],
+        "//conditions:default": [],
+    }),
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -49,7 +79,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=toml_edit",
+        "crate-name=linux-raw-sys",
         "manual",
         "noclippy",
         "norustfmt",
@@ -93,12 +123,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.22.22",
-    deps = [
-        "@cui__indexmap-2.6.0//:indexmap",
-        "@cui__serde-1.0.217//:serde",
-        "@cui__serde_spanned-0.6.8//:serde_spanned",
-        "@cui__toml_datetime-0.6.8//:toml_datetime",
-        "@cui__winnow-0.6.20//:winnow",
-    ],
+    version = "0.9.4",
 )

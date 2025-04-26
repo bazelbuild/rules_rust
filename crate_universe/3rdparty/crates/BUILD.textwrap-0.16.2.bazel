@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_proc_macro(
-    name = "clap_derive",
+rust_library(
+    name = "textwrap",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -36,6 +36,9 @@ rust_proc_macro(
     ),
     crate_features = [
         "default",
+        "smawk",
+        "unicode-linebreak",
+        "unicode-width",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -47,7 +50,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=clap_derive",
+        "crate-name=textwrap",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,11 +94,10 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "4.5.24",
+    version = "0.16.2",
     deps = [
-        "@cui__heck-0.5.0//:heck",
-        "@cui__proc-macro2-1.0.92//:proc_macro2",
-        "@cui__quote-1.0.37//:quote",
-        "@cui__syn-2.0.90//:syn",
+        "@cui__smawk-0.3.2//:smawk",
+        "@cui__unicode-linebreak-0.1.5//:unicode_linebreak",
+        "@cui__unicode-width-0.2.0//:unicode_width",
     ],
 )
