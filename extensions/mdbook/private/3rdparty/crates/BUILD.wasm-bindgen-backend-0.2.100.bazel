@@ -94,7 +94,7 @@ rust_library(
         "@rmdbi__log-0.4.27//:log",
         "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
-        "@rmdbi__syn-2.0.100//:syn",
+        "@rmdbi__syn-2.0.101//:syn",
         "@rmdbi__wasm-bindgen-shared-0.2.100//:wasm_bindgen_shared",
     ],
 )

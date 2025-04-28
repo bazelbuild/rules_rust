@@ -101,7 +101,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.0.100",
+    version = "2.0.101",
     deps = [
         "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",

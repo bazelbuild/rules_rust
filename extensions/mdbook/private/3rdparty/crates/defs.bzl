@@ -2393,12 +2393,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__syn-2.0.100",
-        sha256 = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0",
+        name = "rmdbi__syn-2.0.101",
+        sha256 = "8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.100/download"],
-        strip_prefix = "syn-2.0.100",
-        build_file = Label("//private/3rdparty/crates:BUILD.syn-2.0.100.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.101/download"],
+        strip_prefix = "syn-2.0.101",
+        build_file = Label("//private/3rdparty/crates:BUILD.syn-2.0.101.bazel"),
     )
 
     maybe(
@@ -2803,12 +2803,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__web_atoms-0.1.0",
-        sha256 = "954c5a41f2bcb7314344079d0891505458cc2f4b422bdea1d5bfbe6d1a04903b",
+        name = "rmdbi__web_atoms-0.1.1",
+        sha256 = "08bcbdcad8fb2e316072ba6bbe09419afdb550285668ac2534f4230a6f2da0ee",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/web_atoms/0.1.0/download"],
-        strip_prefix = "web_atoms-0.1.0",
-        build_file = Label("//private/3rdparty/crates:BUILD.web_atoms-0.1.0.bazel"),
+        urls = ["https://static.crates.io/crates/web_atoms/0.1.1/download"],
+        strip_prefix = "web_atoms-0.1.1",
+        build_file = Label("//private/3rdparty/crates:BUILD.web_atoms-0.1.1.bazel"),
     )
 
     maybe(

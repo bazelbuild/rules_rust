@@ -487,12 +487,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__syn-2.0.100",
-        sha256 = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0",
+        name = "rtra__syn-2.0.101",
+        sha256 = "8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.100/download"],
-        strip_prefix = "syn-2.0.100",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.100.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.101/download"],
+        strip_prefix = "syn-2.0.101",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.101.bazel"),
     )
 
     maybe(
