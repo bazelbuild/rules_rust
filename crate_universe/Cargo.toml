@@ -47,7 +47,7 @@ exclude = [
 
 [package]
 name = "cargo-bazel"
-version = "0.16.0"
+version = "0.17.0"
 authors = ["Andre Brisco - andre.brisco@protonmail.com"]
 categories = ["development-tools"]
 description = "A collection of tools which use Cargo to generate build targets for Bazel"
