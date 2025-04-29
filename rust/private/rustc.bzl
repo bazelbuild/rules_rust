@@ -2008,6 +2008,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
     elif _is_dylib(lib):
         return [
             "-ldylib=%s" % get_lib_name(artifact),
+            "-Clink-arg=-l{}".format(get_lib_name(artifact)),
         ]
 
     return []
