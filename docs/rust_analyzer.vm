@@ -15,7 +15,9 @@ First, ensure `rules_rust` is setup in your workspace:
 ```python
 # MODULE.bazel
 
-bazel_dep(name = "rules_rust", version = "0.59.2")
+# See releases page for available versions:
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "{SEE_RELEASES}")
 ```
 
 Bazel will create the target `@rules_rust//tools/rust_analyzer:gen_rust_project`, which you can build
