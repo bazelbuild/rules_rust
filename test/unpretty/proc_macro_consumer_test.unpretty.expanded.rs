@@ -8,7 +8,6 @@ use proc_macro::make_answer;
 fn answer() -> u32 { 42 }
 
 extern crate test;
-#[cfg(test)]
 #[rustc_test_marker = "test_answer_macro"]
 #[doc(hidden)]
 pub const test_answer_macro: test::TestDescAndFn =

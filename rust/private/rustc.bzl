@@ -800,6 +800,12 @@ def collect_inputs(
     compile_inputs = depset(build_env_files + lint_files, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
+def _will_emit_object_file(emit):
+    return any([e == "obj" or e.startswith("obj=") for e in emit])
+
+def _remove_codegen_units(flag):
+    return None if flag.startswith("-Ccodegen-units") else flag
+
 def construct_arguments(
         *,
         ctx,
@@ -918,6 +924,12 @@ def construct_arguments(
     rustc_path.add("--")
     rustc_path.add(tool_path)
 
+    # If we're emitting an object file, remove any `-Ccodegen-units=` flags.
+    # The build rules expect to see a single object file, not the multiple
+    # object files that are produced when `-Ccodegen-units` (with a setting
+    # greater than 1) is used.
+    map_flag = _remove_codegen_units if _will_emit_object_file(emit) else None
+
     # Rustc arguments
     rustc_flags = ctx.actions.args()
     rustc_flags.set_param_file_format("multiline")
@@ -1002,7 +1014,7 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
-    rustc_flags.add_all(rust_flags)
+    rustc_flags.add_all(rust_flags, map_each = map_flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1010,7 +1022,7 @@ def construct_arguments(
 
     add_edition_flags(rustc_flags, crate_info)
     _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
-    _add_codegen_units_flags(toolchain, rustc_flags)
+    _add_codegen_units_flags(toolchain, emit, rustc_flags)
 
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
@@ -1083,29 +1095,29 @@ def construct_arguments(
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
     if crate_info.type in toolchain.extra_rustc_flags_for_crate_types.keys():
-        rustc_flags.add_all(toolchain.extra_rustc_flags_for_crate_types[crate_info.type])
+        rustc_flags.add_all(toolchain.extra_rustc_flags_for_crate_types[crate_info.type], map_each = map_flag)
 
     if is_exec_configuration(ctx):
-        rustc_flags.add_all(toolchain.extra_exec_rustc_flags)
+        rustc_flags.add_all(toolchain.extra_exec_rustc_flags, map_each = map_flag)
     else:
-        rustc_flags.add_all(toolchain.extra_rustc_flags)
+        rustc_flags.add_all(toolchain.extra_rustc_flags, map_each = map_flag)
 
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+        rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
 
     if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+        rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
 
     if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec_configuration(ctx):
         per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
-        _add_per_crate_rustc_flags(ctx, rustc_flags, crate_info, per_crate_rustc_flags)
+        _add_per_crate_rustc_flags(ctx, rustc_flags, map_flag, crate_info, per_crate_rustc_flags)
 
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
 
     if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
 
     if _is_no_std(ctx, toolchain, crate_info):
         rustc_flags.add('--cfg=feature="no_std"')
@@ -1118,6 +1130,7 @@ def construct_arguments(
             data_paths,
             {},
         ),
+        map_each = map_flag,
     )
 
     # Needed for bzlmod-aware runfiles resolution.
@@ -1632,15 +1645,23 @@ def _add_lto_flags(ctx, toolchain, args, crate):
     lto_args = construct_lto_arguments(ctx, toolchain, crate)
     args.add_all(lto_args)
 
-def _add_codegen_units_flags(toolchain, args):
+def _add_codegen_units_flags(toolchain, emit, args):
     """Adds flags to an Args object to configure codgen_units for 'rustc'.
 
     https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 
     Args:
         toolchain (rust_toolchain): The current target's `rust_toolchain`.
+        emit (list): Values for the --emit flag to rustc.
         args (Args): A reference to an Args object
     """
+
+    # If we're emitting an object file, the build rules expect to see a single
+    # object file.
+    if _will_emit_object_file(emit):
+        args.add("-Ccodegen-units=1")
+        return
+
     if not is_codegen_units_enabled(toolchain):
         return
 
@@ -2171,12 +2192,13 @@ def _get_dirname(file):
     """
     return file.dirname
 
-def _add_per_crate_rustc_flags(ctx, args, crate_info, per_crate_rustc_flags):
-    """Adds matching per-crate rustc flags to an arguments object reference
+def _add_per_crate_rustc_flags(ctx, args, map_flag, crate_info, per_crate_rustc_flags):
+    """Adds matching per-crate rustc flags to `args`.
 
     Args:
         ctx (ctx): The source rule's context object
         args (Args): A reference to an Args object
+        map_flag (function): An optional function to use to map added flags
         crate_info (CrateInfo): A CrateInfo provider
         per_crate_rustc_flags (list): A list of per_crate_rustc_flag values
     """
@@ -2200,7 +2222,10 @@ def _add_per_crate_rustc_flags(ctx, args, crate_info, per_crate_rustc_flags):
         execution_path = crate_info.root.path
 
         if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
-            args.add(flag)
+            if map_flag:
+                flag = map_flag(flag)
+            if flag:
+                args.add(flag)
 
 def _error_format_impl(ctx):
     """Implementation of the `error_format` rule

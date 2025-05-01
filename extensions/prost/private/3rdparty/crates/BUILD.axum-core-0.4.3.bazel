@@ -149,6 +149,9 @@ cargo_build_script(
     proc_macro_deps = [
         "@rrprd__rustversion-1.0.17//:rustversion",
     ],
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],

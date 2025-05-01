@@ -90,7 +90,7 @@ rust_proc_macro(
     }),
     version = "0.2.100",
     deps = [
-        "@rmdbi__quote-1.0.39//:quote",
+        "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__wasm-bindgen-macro-support-0.2.100//:wasm_bindgen_macro_support",
     ],
 )

@@ -263,13 +263,23 @@ use_repo(
 # C A R G O   B I N D E P S
 ###############################################################################
 
+rust_host_tools = use_extension("@rules_rust//rust:extensions.bzl", "rust_host_tools")
+rust_host_tools.host_tools(
+    name = "rust_host_tools_nightly",
+    version = "nightly",
+)
+use_repo(
+    rust_host_tools,
+    "rust_host_tools_nightly",
+)
+
 # https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
 crate_index_cargo_bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate_index_cargo_bindeps.from_cargo(
     name = "crate_index_cargo_bindeps",
     cargo_lockfile = "//cargo_bindeps:Cargo.lock",
     generate_binaries = True,
-    host_tools_repo = "rust_host_tools_nightly",
+    host_tools = "@rust_host_tools_nightly",
     manifests = ["//cargo_bindeps:Cargo.toml"],
 )
 use_repo(
@@ -603,8 +613,9 @@ use_repo(
     "crates_vendor_pkgs__tracing-0.1.41",
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
-    "cvm__tempfile-3.18.0",
-    "cvm__tokio-1.44.0",
+    "cvm__serde_yaml-0.9.34-deprecated",
+    "cvm__tempfile-3.19.1",
+    "cvm__tokio-1.44.2",
     "cvm__tokio-test-0.4.4",
 )
 

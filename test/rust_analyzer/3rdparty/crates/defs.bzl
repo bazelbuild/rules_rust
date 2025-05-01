@@ -427,22 +427,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__proc-macro2-1.0.94",
-        sha256 = "a31971752e70b8b2686d7e46ec17fb38dad4051d94024c88df49b667caea9c84",
+        name = "rtra__proc-macro2-1.0.95",
+        sha256 = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/proc-macro2/1.0.94/download"],
-        strip_prefix = "proc-macro2-1.0.94",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.94.bazel"),
+        urls = ["https://static.crates.io/crates/proc-macro2/1.0.95/download"],
+        strip_prefix = "proc-macro2-1.0.95",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.95.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtra__quote-1.0.39",
-        sha256 = "c1f1914ce909e1658d9907913b4b91947430c7d9be598b15a1912935b8c04801",
+        name = "rtra__quote-1.0.40",
+        sha256 = "1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/quote/1.0.39/download"],
-        strip_prefix = "quote-1.0.39",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.quote-1.0.39.bazel"),
+        urls = ["https://static.crates.io/crates/quote/1.0.40/download"],
+        strip_prefix = "quote-1.0.40",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.quote-1.0.40.bazel"),
     )
 
     maybe(

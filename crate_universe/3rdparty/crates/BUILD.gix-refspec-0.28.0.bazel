@@ -94,7 +94,7 @@ rust_library(
         "@cui__gix-hash-0.16.0//:gix_hash",
         "@cui__gix-revision-0.32.0//:gix_revision",
         "@cui__gix-validate-0.9.3//:gix_validate",
-        "@cui__smallvec-1.13.2//:smallvec",
+        "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
     ],
 )

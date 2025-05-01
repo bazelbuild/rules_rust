@@ -24,5 +24,4 @@ fn main() {
     symlink("data.txt", "relative_symlink.txt");
     symlink("../data.txt", "nested/relative_symlink.txt");
     std::env::set_current_dir(&original_cwd).unwrap();
-    println!("{}", out_dir.display());
 }

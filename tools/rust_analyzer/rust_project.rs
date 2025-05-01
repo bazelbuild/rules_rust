@@ -1,14 +1,74 @@
 //! Library for generating rust_project.json files from a `Vec<CrateSpec>`
 //! See official documentation of file format at https://rust-analyzer.github.io/manual.html
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::io::ErrorKind;
-use std::path::Path;
+use core::fmt;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    str::FromStr,
+};
 
-use anyhow::anyhow;
-use serde::Serialize;
+use anyhow::{anyhow, Context};
+use camino::{Utf8Path, Utf8PathBuf};
+use serde::{Deserialize, Serialize};
 
-use crate::aquery::CrateSpec;
+use crate::{
+    aquery::{CrateSpec, CrateType},
+    buildfile_to_targets, source_file_to_buildfile, ToolchainInfo,
+};
+
+/// The argument that `rust-analyzer` can pass to the workspace discovery command.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RustAnalyzerArg {
+    Path(Utf8PathBuf),
+    Buildfile(Utf8PathBuf),
+}
+
+impl RustAnalyzerArg {
+    /// Consumes itself to return a build file and the targets to build.
+    pub fn into_target_details(
+        self,
+        workspace: &Utf8Path,
+    ) -> anyhow::Result<(Utf8PathBuf, String)> {
+        match self {
+            Self::Path(file) => {
+                let buildfile = source_file_to_buildfile(&file)?;
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+            }
+            Self::Buildfile(buildfile) => {
+                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+            }
+        }
+    }
+}
+
+impl FromStr for RustAnalyzerArg {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s).context("rust analyzer argument error")
+    }
+}
+
+/// The format that `rust_analyzer` expects as a response when automatically invoked.
+/// See [rust-analyzer documentation][rd] for a thorough description of this interface.
+/// [rd]: <https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig>.
+#[derive(Debug, Serialize)]
+#[serde(tag = "kind")]
+#[serde(rename_all = "snake_case")]
+pub enum DiscoverProject<'a> {
+    Finished {
+        buildfile: Utf8PathBuf,
+        project: RustProject,
+    },
+    Error {
+        error: String,
+        source: Option<String>,
+    },
+    Progress {
+        message: &'a fmt::Arguments<'a>,
+    },
+}
 
 /// A `rust-project.json` workspace representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
@@ -16,24 +76,27 @@ use crate::aquery::CrateSpec;
 #[derive(Debug, Serialize)]
 pub struct RustProject {
     /// The path to a Rust sysroot.
-    sysroot: Option<String>,
+    sysroot: Utf8PathBuf,
 
     /// Path to the directory with *source code* of
     /// sysroot crates.
-    sysroot_src: Option<String>,
+    sysroot_src: Utf8PathBuf,
 
     /// The set of crates comprising the current
     /// project. Must include all transitive
     /// dependencies as well as sysroot crate (libstd,
     /// libcore and such).
     crates: Vec<Crate>,
+
+    /// The set of runnables, such as tests or benchmarks,
+    /// that can be found in the crate.
+    runnables: Vec<Runnable>,
 }
 
 /// A `rust-project.json` crate representation. See
 /// [rust-analyzer documentation][rd] for a thorough description of this interface.
 /// [rd]: https://rust-analyzer.github.io/manual.html#non-cargo-based-projects
 #[derive(Debug, Serialize)]
-#[serde(default)]
 pub struct Crate {
     /// A name used in the package's project declaration
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -74,6 +137,10 @@ pub struct Crate {
     /// For proc-macro crates, path to compiled proc-macro (.so file).
     #[serde(skip_serializing_if = "Option::is_none")]
     proc_macro_dylib_path: Option<String>,
+
+    /// Build information for the crate
+    #[serde(skip_serializing_if = "Option::is_none")]
+    build: Option<Build>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -83,7 +150,6 @@ pub struct Source {
 }
 
 impl Source {
-    /// Returns true if no include information has been added.
     fn is_empty(&self) -> bool {
         self.include_dirs.is_empty() && self.exclude_dirs.is_empty()
     }
@@ -99,18 +165,131 @@ pub struct Dependency {
     name: String,
 }
 
-pub fn generate_rust_project(
-    sysroot: &str,
-    sysroot_src: &str,
-    crates: &BTreeSet<CrateSpec>,
+#[derive(Debug, Serialize)]
+pub struct Build {
+    /// The name associated with this crate.
+    ///
+    /// This is determined by the build system that produced
+    /// the `rust-project.json` in question. For instance, if bazel were used,
+    /// the label might be something like `//ide/rust/rust-analyzer:rust-analyzer`.
+    ///
+    /// Do not attempt to parse the contents of this string; it is a build system-specific
+    /// identifier similar to [`Crate::display_name`].
+    label: String,
+    /// Path corresponding to the build system-specific file defining the crate.
+    ///
+    /// It is roughly analogous to [`ManifestPath`], but it should *not* be used with
+    /// [`crate::ProjectManifest::from_manifest_file`], as the build file may not be
+    /// be in the `rust-project.json`.
+    build_file: Utf8PathBuf,
+    /// The kind of target.
+    ///
+    /// Examples (non-exhaustively) include [`TargetKind::Bin`], [`TargetKind::Lib`],
+    /// and [`TargetKind::Test`]. This information is used to determine what sort
+    /// of runnable codelens to provide, if any.
+    target_kind: TargetKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TargetKind {
+    Bin,
+    /// Any kind of Cargo lib crate-type (dylib, rlib, proc-macro, ...).
+    Lib,
+    Test,
+}
+
+/// A template-like structure for describing runnables.
+///
+/// These are used for running and debugging binaries and tests without encoding
+/// build system-specific knowledge into rust-analyzer.
+///
+/// # Example
+///
+/// Below is an example of a test runnable. `{label}` and `{test_id}`
+/// are explained in [`Runnable::args`]'s documentation.
+///
+/// ```json
+/// {
+///     "program": "bazel",
+///     "args": [
+///         "test",
+///          "{label}",
+///          "--test_arg",
+///          "{test_id}",
+///     ],
+///     "cwd": "/home/user/repo-root/",
+///     "kind": "testOne"
+/// }
+/// ```
+#[derive(Debug, Serialize)]
+pub struct Runnable {
+    /// The program invoked by the runnable.
+    ///
+    /// For example, this might be `cargo`, `bazel`, etc.
+    program: String,
+    /// The arguments passed to [`Runnable::program`].
+    ///
+    /// The args can contain two template strings: `{label}` and `{test_id}`.
+    /// rust-analyzer will find and replace `{label}` with [`Build::label`] and
+    /// `{test_id}` with the test name.
+    args: Vec<String>,
+    /// The current working directory of the runnable.
+    cwd: Utf8PathBuf,
+    kind: RunnableKind,
+}
+
+/// The kind of runnable.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RunnableKind {
+    Check,
+
+    /// Can run a binary.
+    Run,
+
+    /// Run a single test.
+    TestOne,
+}
+
+pub fn assemble_rust_project(
+    bazel: &Utf8Path,
+    workspace: &Utf8Path,
+    toolchain_info: ToolchainInfo,
+    crate_specs: &BTreeSet<CrateSpec>,
 ) -> anyhow::Result<RustProject> {
     let mut project = RustProject {
-        sysroot: Some(sysroot.into()),
-        sysroot_src: Some(sysroot_src.into()),
+        sysroot: toolchain_info.sysroot,
+        sysroot_src: toolchain_info.sysroot_src,
         crates: Vec::new(),
+        runnables: vec![
+            Runnable {
+                program: bazel.to_string(),
+                args: vec!["build".to_owned(), "{label}".to_owned()],
+                cwd: workspace.to_owned(),
+                kind: RunnableKind::Check,
+            },
+            Runnable {
+                program: bazel.to_string(),
+                args: vec![
+                    "test".to_owned(),
+                    "{label}".to_owned(),
+                    "--test_output".to_owned(),
+                    "streamed".to_owned(),
+                    "--test_arg".to_owned(),
+                    "--nocapture".to_owned(),
+                    "--test_arg".to_owned(),
+                    "--exact".to_owned(),
+                    "--test_arg".to_owned(),
+                    "{test_id}".to_owned(),
+                ],
+                cwd: workspace.to_owned(),
+                kind: RunnableKind::TestOne,
+            },
+        ],
     };
 
-    let mut unmerged_crates: Vec<&CrateSpec> = crates.iter().collect();
+    let mut unmerged_crates: Vec<&CrateSpec> = crate_specs.iter().collect();
     let mut skipped_crates: Vec<&CrateSpec> = Vec::new();
     let mut merged_crates_index: HashMap<String, usize> = HashMap::new();
 
@@ -133,6 +312,29 @@ pub fn generate_rust_project(
             } else {
                 log::trace!("Merging crate {}", &c.crate_id);
                 merged_crates_index.insert(c.crate_id.clone(), project.crates.len());
+
+                let target_kind = match c.crate_type {
+                    CrateType::Bin if c.is_test => TargetKind::Test,
+                    CrateType::Bin => TargetKind::Bin,
+                    CrateType::Rlib
+                    | CrateType::Lib
+                    | CrateType::Dylib
+                    | CrateType::Cdylib
+                    | CrateType::Staticlib
+                    | CrateType::ProcMacro => TargetKind::Lib,
+                };
+
+                if let Some(build) = &c.build {
+                    if target_kind == TargetKind::Bin {
+                        project.runnables.push(Runnable {
+                            program: bazel.to_string(),
+                            args: vec!["run".to_string(), build.label.to_owned()],
+                            cwd: workspace.to_owned(),
+                            kind: RunnableKind::Run,
+                        });
+                    }
+                }
+
                 project.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
                     root_module: c.root_module.clone(),
@@ -170,6 +372,11 @@ pub fn generate_rust_project(
                     env: Some(c.env.clone()),
                     is_proc_macro: c.proc_macro_dylib_path.is_some(),
                     proc_macro_dylib_path: c.proc_macro_dylib_path.clone(),
+                    build: c.build.as_ref().map(|b| Build {
+                        label: b.label.clone(),
+                        build_file: b.build_file.clone().into(),
+                        target_kind,
+                    }),
                 });
             }
         }
@@ -241,51 +448,6 @@ fn detect_cycle<'a>(
     None
 }
 
-pub fn write_rust_project(
-    rust_project_path: &Path,
-    workspace: &Path,
-    execution_root: &Path,
-    output_base: &Path,
-    rust_project: &RustProject,
-) -> anyhow::Result<()> {
-    let workspace = workspace
-        .to_str()
-        .ok_or_else(|| anyhow!("workspace is not valid UTF-8"))?;
-
-    let execution_root = execution_root
-        .to_str()
-        .ok_or_else(|| anyhow!("execution_root is not valid UTF-8"))?;
-
-    let output_base = output_base
-        .to_str()
-        .ok_or_else(|| anyhow!("output_base is not valid UTF-8"))?;
-
-    // Try to remove the existing rust-project.json. It's OK if the file doesn't exist.
-    match std::fs::remove_file(rust_project_path) {
-        Ok(_) => {}
-        Err(err) if err.kind() == ErrorKind::NotFound => {}
-        Err(err) => {
-            return Err(anyhow!(
-                "Unexpected error removing old rust-project.json: {}",
-                err
-            ))
-        }
-    }
-
-    // Render the `rust-project.json` file and replace the exec root
-    // placeholders with the path to the local exec root.
-    let rust_project_content = serde_json::to_string_pretty(rust_project)?
-        .replace("${pwd}", execution_root)
-        .replace("__EXEC_ROOT__", execution_root)
-        .replace("__OUTPUT_BASE__", output_base)
-        .replace("__WORKSPACE__", workspace);
-
-    // Write the new rust-project.json file.
-    std::fs::write(rust_project_path, rust_project_content)?;
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -293,9 +455,13 @@ mod tests {
     /// A simple example with a single crate and no dependencies.
     #[test]
     fn generate_rust_project_single() {
-        let project = generate_rust_project(
-            "sysroot",
-            "sysroot_src",
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
             &BTreeSet::from([CrateSpec {
                 aliases: BTreeMap::new(),
                 crate_id: "ID-example".into(),
@@ -309,7 +475,9 @@ mod tests {
                 cfg: vec!["test".into(), "debug_assertions".into()],
                 env: BTreeMap::new(),
                 target: "x86_64-unknown-linux-gnu".into(),
-                crate_type: "rlib".into(),
+                crate_type: CrateType::Rlib,
+                is_test: false,
+                build: None,
             }]),
         )
         .expect("expect success");
@@ -324,9 +492,13 @@ mod tests {
     /// An example with a one crate having two dependencies.
     #[test]
     fn generate_rust_project_with_deps() {
-        let project = generate_rust_project(
-            "sysroot",
-            "sysroot_src",
+        let project = assemble_rust_project(
+            Utf8Path::new("bazel"),
+            Utf8Path::new("workspace"),
+            ToolchainInfo {
+                sysroot: "sysroot".to_owned().into(),
+                sysroot_src: "sysroot_src".to_owned().into(),
+            },
             &BTreeSet::from([
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -341,7 +513,9 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None,
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -356,7 +530,9 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None,
                 },
                 CrateSpec {
                     aliases: BTreeMap::new(),
@@ -371,7 +547,9 @@ mod tests {
                     cfg: vec!["test".into(), "debug_assertions".into()],
                     env: BTreeMap::new(),
                     target: "x86_64-unknown-linux-gnu".into(),
-                    crate_type: "rlib".into(),
+                    crate_type: CrateType::Rlib,
+                    is_test: false,
+                    build: None,
                 },
             ]),
         )

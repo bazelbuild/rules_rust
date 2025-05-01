@@ -6,7 +6,7 @@ This doc describes using crate_universe with bzlmod.
 
 If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe.html).
 
-There are some examples of using crate_universe with bzlmod in the [example folder](../examples/bzlmod).
+There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod).
 
 # Table of Contents
 
@@ -26,13 +26,13 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.59.1")
+bazel_dep(name = "rules_rust", version = "0.60.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
 
 
-After adding `rules_rust` in your MODULE.bazel, set the following to begin using `crate_universe`:
+After adding `rules_rust` in your `MODULE.bazel, set the following to begin using `crate_universe`:
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -53,7 +53,7 @@ There are three different ways to declare dependencies in your MODULE.
 
 One of the simpler ways to wire up dependencies would be to first structure your project into a Cargo workspace.
 The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
-You find a complete example in the in the [example folder](../examples/bzlmod/all_crate_deps).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_crate_deps).
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -144,7 +144,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](../examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -195,7 +195,7 @@ You could use the syntax specified in the above document to place it in `Cargo.t
 
 This method has the following consequences:
 * if you use shared dependency tree with your project these binary dependencies will interfere with yours (may conflict)
-* you have to use  nightly `host_tools_repo` to generate dependencies because
+* you have to use  nightly `host_tools` to generate dependencies because
 
 Alternatively you can specify this in a separate `repo` with `cargo.from_specs` syntax:
 
@@ -207,7 +207,7 @@ bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
 
 bindeps.from_specs(
   name = "bindeps",
-  host_tools_repo = "rust_host_tools_nightly",
+  host_tools = "@rust_host_tools_nightly",
 )
 
 use_repo(bindeps, "bindeps")
@@ -227,9 +227,9 @@ Only a cargo workspace needs updating whenever the underlying Cargo.toml file ch
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
 and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
 or to ensure full build reproducibility since no download error could possibly occur.
-You find a complete example in the in the [example folder](../examples/bzlmod/all_deps_vendor).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_deps_vendor).
 
-For the setup, you need to add the skylib in addition to the rust rules to your MODUE.bazel.
+For the setup, you need to add the skylib in addition to the rust rules to your `MODULE.bazel`.
 
 ```python
 module(
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.59.1")
+bazel_dep(name = "rules_rust", version = "0.60.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -779,19 +779,19 @@ def _package_to_json(p):
         if v or k == "default_features"
     })
 
-def _get_generator(module_ctx):
+def _get_generator(module_ctx, host_triple):
     """Query Network Resources to local a `cargo-bazel` binary.
 
     Based off get_generator in crates_universe/private/generate_utils.bzl
 
     Args:
-        module_ctx (module_ctx):  The rules context object
+        module_ctx (module_ctx): The rules context object
+        host_triple (struct): A triple struct that represents the host.
 
     Returns:
         tuple(path, dict) The path to a 'cargo-bazel' binary. The pairing (dict)
             may be `None` if there is not need to update the attribute
     """
-    host_triple = get_host_triple(module_ctx)
     use_environ = False
     for var in GENERATOR_ENV_VARS:
         if var in module_ctx.os.environ:
@@ -801,7 +801,11 @@ def _get_generator(module_ctx):
         generator_sha256 = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_SHA256)
         generator_url = module_ctx.os.environ.get(CARGO_BAZEL_GENERATOR_URL)
     elif len(CARGO_BAZEL_URLS) == 0:
-        return module_ctx.path(Label("@cargo_bazel_bootstrap//:cargo-bazel"))
+        # For Bazel 7 and below, `module_ctx.path` will also watch files so to avoid
+        # volatility in lock files caused by referencing host specific files, direct
+        # references are avoided.
+        return module_ctx.path(Label("@cargo_bazel_bootstrap//:BUILD.bazel")).dirname.get_child("cargo-bazel")
+
     else:
         generator_sha256 = CARGO_BAZEL_SHA256S.get(host_triple.str)
         generator_url = CARGO_BAZEL_URLS.get(host_triple.str)
@@ -831,22 +835,27 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
     """A helper function to get the path to the host cargo and rustc binaries.
 
     Args:
-        module_ctx: The module extension's context.
-        host_triple: The platform triple for the machine executing this extension.
-        host_tools_repo: The `rust_host_tools` repository to use.
+        module_ctx (module_ctx): The module extension's context.
+        host_triple (triple): The platform triple for the machine executing this extension.
+        host_tools_repo (Label): The `rust_host_tools` repository to use.
     Returns:
-        A tuple of path to cargo, path to rustc.
+        tuple[Path, Path]: A tuple of path to cargo, path to rustc.
     """
     binary_ext = system_to_binary_ext(host_triple.system)
+    root = module_ctx.path(host_tools_repo)
 
-    cargo_path = str(module_ctx.path(Label("@{}//:bin/cargo{}".format(host_tools_repo, binary_ext))))
-    rustc_path = str(module_ctx.path(Label("@{}//:bin/rustc{}".format(host_tools_repo, binary_ext))))
+    cargo_path = root.dirname.get_child("bin/cargo{}".format(binary_ext))
+    rustc_path = root.dirname.get_child("bin/rustc{}".format(binary_ext))
+
     return cargo_path, rustc_path
 
 def _crate_impl(module_ctx):
     reproducible = True
-    generator = _get_generator(module_ctx)
-    host_triple = get_host_triple(module_ctx)
+    host_triple = get_host_triple(module_ctx, abi = {
+        "aarch64-unknown-linux": "musl",
+        "x86_64-unknown-linux": "musl",
+    })
+    generator = _get_generator(module_ctx, host_triple)
 
     all_repos = []
 
@@ -956,7 +965,7 @@ def _crate_impl(module_ctx):
                 for m in cfg.manifests:
                     module_ctx.watch(m)
 
-            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools_repo)
+            cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
                 cargo_bazel_path = generator,
@@ -1021,9 +1030,9 @@ _FROM_COMMON_ATTRS = {
     "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
     "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
     "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
-    "host_tools_repo": attr.string(
-        doc = "The name of the `rust_host_tools` repository to use.",
-        default = "rust_host_tools",
+    "host_tools": attr.label(
+        doc = "The `rust_host_tools` repository to use.",
+        default = "@rust_host_tools",
     ),
     "isolated": attr.bool(
         doc = (
