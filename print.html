@@ -1373,18 +1373,32 @@ at the root of the project that describes its structure or on build system speci
 The <code>rust_analyzer</code> rules facilitate both approaches.</p>
 <h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup-3"><a class="header" href="#setup-3">Setup</a></h3>
-<p>First, ensure <code>rules_rust</code> is setup in your workspace. By default, <code>rust_register_toolchains</code> will
-ensure a <a href="rust_analyzer.html#rust_analyzer_toolchain">rust_analyzer_toolchain</a> is registered within the WORKSPACE.</p>
-<p>Next, load the dependencies for the <code>rust-project.json</code> generator tool:</p>
+<h4 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h4>
+<p>First, ensure <code>rules_rust</code> is setup in your workspace:</p>
+<pre><code class="language-python"># MODULE.bazel
+
+# See releases page for available versions:
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "{SEE_RELEASES}")
+</code></pre>
+<p>Bazel will create the target <code>@rules_rust//tools/rust_analyzer:gen_rust_project</code>, which you can build
+with</p>
+<pre><code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
+</code></pre>
+<p>whenever dependencies change to regenerate the <code>rust-project.json</code> file. It
+should be added to <code>.gitignore</code> because it is effectively a build artifact.
+Once the <code>rust-project.json</code> has been generated in the project root,
+rust-analyzer can pick it up upon restart.</p>
+<h4 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h4>
+<p>Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure <code>rules_rust</code> is
+setup in your workspace.</p>
+<p>Moreover, when loading the dependencies for the tool, you should call the function <code>rust_analyzer_dependencies()</code>:</p>
 <pre><code class="language-python">load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 </code></pre>
-<p>Finally, run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
-whenever dependencies change to regenerate the <code>rust-project.json</code> file. It
-should be added to <code>.gitignore</code> because it is effectively a build artifact.
-Once the <code>rust-project.json</code> has been generated in the project root,
-rust-analyzer can pick it up upon restart.</p>
+<p>Again, you can now run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
+whenever dependencies change to regenerate the <code>rust-project.json</code> file.</p>
 <p>For users who do not use <code>rust_register_toolchains</code> to register toolchains, the following can be added
 to their WORKSPACE to register a <code>rust_analyzer_toolchain</code>. Please make sure the Rust version used in
 this toolchain matches the version used by the currently registered toolchain or the sources/documentation
@@ -3398,7 +3412,7 @@ allowlist:</p>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
 <h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
-<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
+<h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">Bzlmod</a></h3>
 <p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
@@ -3408,7 +3422,7 @@ You need to register either your own or the default toolchain by adding the foll
 </code></pre>
 <p>The default toolchain builds libclang from source via the <a href="https://registry.bazel.build/modules/llvm-project">llvm-project</a> bazel_dep.
 <a href="https://github.com/bazelbuild/rules_rust/tree/main/examples/bindgen_toolchain">examples/bindgen_toolchain</a> shows how to use a prebuilt libclang.</p>
-<h3 id="workspace-1"><a class="header" href="#workspace-1">Workspace</a></h3>
+<h3 id="workspace-2"><a class="header" href="#workspace-2">Workspace</a></h3>
 <p>Or add the following if you're still using <code>WORKSPACE</code> to add the
 external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
@@ -3517,10 +3531,10 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
 <h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
-<h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">bzlmod</a></h3>
+<h3 id="bzlmod-3"><a class="header" href="#bzlmod-3">bzlmod</a></h3>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
-<h3 id="workspace-2"><a class="header" href="#workspace-2">WORKSPACE</a></h3>
+<h3 id="workspace-3"><a class="header" href="#workspace-3">WORKSPACE</a></h3>
 <pre><code class="language-python">load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()

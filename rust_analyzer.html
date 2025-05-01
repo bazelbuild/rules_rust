@@ -163,18 +163,32 @@ at the root of the project that describes its structure or on build system speci
 The <code>rust_analyzer</code> rules facilitate both approaches.</p>
 <h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup"><a class="header" href="#setup">Setup</a></h3>
-<p>First, ensure <code>rules_rust</code> is setup in your workspace. By default, <code>rust_register_toolchains</code> will
-ensure a <a href="#rust_analyzer_toolchain">rust_analyzer_toolchain</a> is registered within the WORKSPACE.</p>
-<p>Next, load the dependencies for the <code>rust-project.json</code> generator tool:</p>
+<h4 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h4>
+<p>First, ensure <code>rules_rust</code> is setup in your workspace:</p>
+<pre><code class="language-python"># MODULE.bazel
+
+# See releases page for available versions:
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "{SEE_RELEASES}")
+</code></pre>
+<p>Bazel will create the target <code>@rules_rust//tools/rust_analyzer:gen_rust_project</code>, which you can build
+with</p>
+<pre><code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
+</code></pre>
+<p>whenever dependencies change to regenerate the <code>rust-project.json</code> file. It
+should be added to <code>.gitignore</code> because it is effectively a build artifact.
+Once the <code>rust-project.json</code> has been generated in the project root,
+rust-analyzer can pick it up upon restart.</p>
+<h4 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h4>
+<p>Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure <code>rules_rust</code> is
+setup in your workspace.</p>
+<p>Moreover, when loading the dependencies for the tool, you should call the function <code>rust_analyzer_dependencies()</code>:</p>
 <pre><code class="language-python">load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 </code></pre>
-<p>Finally, run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
-whenever dependencies change to regenerate the <code>rust-project.json</code> file. It
-should be added to <code>.gitignore</code> because it is effectively a build artifact.
-Once the <code>rust-project.json</code> has been generated in the project root,
-rust-analyzer can pick it up upon restart.</p>
+<p>Again, you can now run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
+whenever dependencies change to regenerate the <code>rust-project.json</code> file.</p>
 <p>For users who do not use <code>rust_register_toolchains</code> to register toolchains, the following can be added
 to their WORKSPACE to register a <code>rust_analyzer_toolchain</code>. Please make sure the Rust version used in
 this toolchain matches the version used by the currently registered toolchain or the sources/documentation
