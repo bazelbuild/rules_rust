@@ -1,5 +1,5 @@
 {
-  "checksum": "bfb3a0bce9330f3e810fe98b654919477e62fc32674ab866358a180be051e4f5",
+  "checksum": "9fa5a6d2b6da11f9fa70f3e77b6ce95a7335da408dc9348a37d2705373c1e805",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
