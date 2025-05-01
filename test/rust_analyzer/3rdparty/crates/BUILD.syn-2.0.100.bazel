@@ -97,7 +97,7 @@ rust_library(
     }),
     version = "2.0.100",
     deps = [
-        "@rtra__proc-macro2-1.0.94//:proc_macro2",
+        "@rtra__proc-macro2-1.0.95//:proc_macro2",
         "@rtra__quote-1.0.40//:quote",
         "@rtra__unicode-ident-1.0.18//:unicode_ident",
     ],

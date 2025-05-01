@@ -94,6 +94,6 @@ rust_library(
     }),
     version = "0.2.21",
     deps = [
-        "@rmdbi__zerocopy-0.8.24//:zerocopy",
+        "@rmdbi__zerocopy-0.8.25//:zerocopy",
     ],
 )

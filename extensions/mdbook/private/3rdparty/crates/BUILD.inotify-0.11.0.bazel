@@ -92,6 +92,6 @@ rust_library(
     deps = [
         "@rmdbi__bitflags-2.9.0//:bitflags",
         "@rmdbi__inotify-sys-0.1.5//:inotify_sys",
-        "@rmdbi__libc-0.2.171//:libc",
+        "@rmdbi__libc-0.2.172//:libc",
     ],
 )

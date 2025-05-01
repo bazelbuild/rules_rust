@@ -99,106 +99,106 @@ rust_library(
         "@cui__zerocopy-0.7.35//:zerocopy",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-linux-android": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:i686-apple-darwin": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:i686-linux-android": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:wasm32-wasip1": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-fuchsia": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-none": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [
-            "@cui__once_cell-1.20.2//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
+            "@cui__once_cell-1.21.3//:once_cell",  # cfg(not(all(target_arch = "arm", target_os = "none")))
         ],
         "//conditions:default": [],
     }),

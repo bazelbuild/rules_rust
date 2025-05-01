@@ -99,7 +99,7 @@ rust_library(
         "@rmdbi__indexmap-2.9.0//:indexmap",
         "@rmdbi__slab-0.4.9//:slab",
         "@rmdbi__tokio-1.44.2//:tokio",
-        "@rmdbi__tokio-util-0.7.14//:tokio_util",
+        "@rmdbi__tokio-util-0.7.15//:tokio_util",
         "@rmdbi__tracing-0.1.41//:tracing",
     ],
 )

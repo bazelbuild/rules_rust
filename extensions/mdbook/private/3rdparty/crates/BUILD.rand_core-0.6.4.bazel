@@ -95,6 +95,6 @@ rust_library(
     }),
     version = "0.6.4",
     deps = [
-        "@rmdbi__getrandom-0.2.15//:getrandom",
+        "@rmdbi__getrandom-0.2.16//:getrandom",
     ],
 )

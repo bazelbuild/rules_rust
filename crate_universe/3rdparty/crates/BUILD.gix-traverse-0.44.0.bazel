@@ -97,7 +97,7 @@ rust_library(
         "@cui__gix-hashtable-0.7.0//:gix_hashtable",
         "@cui__gix-object-0.47.0//:gix_object",
         "@cui__gix-revwalk-0.18.0//:gix_revwalk",
-        "@cui__smallvec-1.13.2//:smallvec",
+        "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
     ],
 )

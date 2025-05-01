@@ -101,7 +101,7 @@ rust_library(
         "@cui__gix-path-0.10.14//:gix_path",
         "@cui__gix-quote-0.4.15//:gix_quote",
         "@cui__parking_lot-0.12.1//:parking_lot",
-        "@cui__tempfile-3.15.0//:tempfile",
+        "@cui__tempfile-3.19.1//:tempfile",
         "@cui__thiserror-2.0.4//:thiserror",
     ],
 )
