@@ -320,14 +320,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
         )
 
     rustc_srcs = rust_analyzer_toolchain.rustc_srcs
-    rustc_srcs_path = rust_analyzer_toolchain.rustc_srcs_path
-
-    sysroot_src = rustc_srcs.label.package
-
-    if not rust_analyzer_toolchain.rustc_srcs_path:
-        sysroot_src = sysroot_src + "/library"
-    else:
-        sysroot_src = sysroot_src + "/" + rust_analyzer_toolchain.rustc_srcs_path
+    sysroot_src = rustc_srcs.label.package + "/" + rust_analyzer_toolchain.rustc_srcs_path
 
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
