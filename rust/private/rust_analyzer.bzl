@@ -305,7 +305,7 @@ rust_analyzer_toolchain = rule(
         ),
         "rustc_srcs_path": attr.string(
             doc = "The direct path to rustc srcs relative to rustc_srcs package root.",
-            mandatory = False
+            default = "library"
         )
     },
 )
