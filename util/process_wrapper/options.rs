@@ -44,6 +44,8 @@ pub(crate) struct Options {
     // If set, also logs all unprocessed output from the rustc output to this file.
     // Meant to be used to get json output out of rustc for tooling usage.
     pub(crate) output_file: Option<String>,
+    // If set, output the exit code of the subprocess to this file in ASCII, and unconditionally exit 0.
+    pub(crate) exit_code_file: Option<String>,
     // If set, it configures rustc to emit an rmeta file and then
     // quit.
     pub(crate) rustc_quit_on_rmeta: bool,
@@ -64,6 +66,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut stdout_file = None;
     let mut stderr_file = None;
     let mut output_file = None;
+    let mut exit_code_file = None;
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
@@ -100,6 +103,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--output-file",
         "Log all unprocessed subprocess stderr in this file.",
         &mut output_file,
+    );
+    flags.define_flag(
+        "--exit-code-file",
+        "Log the process's exit code to this file as ASCII. Unconditionally exit with code 0 if this is set.",
+        &mut exit_code_file,
     );
     flags.define_flag(
         "--rustc-quit-on-rmeta",
@@ -210,6 +218,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         stdout_file,
         stderr_file,
         output_file,
+        exit_code_file,
         rustc_quit_on_rmeta,
         rustc_output_format,
     })
