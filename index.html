@@ -164,7 +164,7 @@
 <h3 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h3>
 <p>Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.</p>
 <p>To use <code>rules_rust</code> in a project using bzlmod, add the following to your <code>MODULE.bazel</code> file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.59.0")
+<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.61.0")
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number.</p>
 <h3 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h3>
@@ -187,7 +187,26 @@ rust_register_toolchains()
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number and integrity hash.</p>
 <h2 id="specifying-rust-version"><a class="header" href="#specifying-rust-version">Specifying Rust version</a></h2>
-<p>To build with a particular version of the Rust compiler, pass that version to <a href="flatten.html#rust_register_toolchains"><code>rust_register_toolchains</code></a>:</p>
+<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
+<p>To use a particular version of the Rust compiler, pass that version to the <code>toolchain</code> method of the <code>rust</code> extension, like this:</p>
+<pre><code class="language-python">rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    versions = [ "1.85.0" ],
+)
+</code></pre>
+<p>As well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels, as in</p>
+<pre><code class="language-python">rust.toolchain(
+    edition = "2021",
+    versions = [ "nightly/1.85.0" ],
+)
+</code></pre>
+<p>By default, a <code>stable</code> and <code>nightly</code> toolchain will be registered if no <code>toolchain</code> method is called (and thus no specific versions are registered). However, if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then the following build setting flag must be present, either on the command line or set in the project's <code>.bazelrc</code> file:</p>
+<pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
+</code></pre>
+<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
+<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
+<p>To build with a particular version of the Rust compiler when using a WORKSPACE file, pass that version to <code>rust_register_toolchains</code>:</p>
 <pre><code class="language-python">rust_register_toolchains(
     edition = "2021",
     versions = [
@@ -195,7 +214,7 @@ rust_register_toolchains()
     ],
 )
 </code></pre>
-<p>As well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels.</p>
+<p>Like in the Bzlmod approach, as well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels.</p>
 <pre><code class="language-python">rust_register_toolchains(
     edition = "2021",
     versions = [
@@ -203,12 +222,12 @@ rust_register_toolchains()
     ],
 )
 </code></pre>
-<p>By default, a <code>stable</code> and <code>nightly</code> toolchain will be registered if no versions are passed to <code>rust_register_toolchains</code>. However,
-if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then a build setting must
-also be set in the project's <code>.bazelrc</code> file.</p>
+<p>Here too a <code>stable</code> and <code>nightly</code> toolchain will be registered by default if no versions are passed to <code>rust_register_toolchains</code>. However,
+if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then the following build setting flag must
+also be set either in the command line or in the project's <code>.bazelrc</code> file.</p>
 <pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
 </code></pre>
-<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered.</p>
+<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
 <h2 id="supported-bazel-versions"><a class="header" href="#supported-bazel-versions">Supported bazel versions</a></h2>
 <p>The oldest version of Bazel the <code>main</code> branch is tested against is <code>7.4.1</code>. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.</p>
 <p>We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.</p>

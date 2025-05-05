@@ -165,7 +165,7 @@
 <h3 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h3>
 <p>Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.</p>
 <p>To use <code>rules_rust</code> in a project using bzlmod, add the following to your <code>MODULE.bazel</code> file:</p>
-<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.59.0")
+<pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.61.0")
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number.</p>
 <h3 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h3>
@@ -188,7 +188,26 @@ rust_register_toolchains()
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number and integrity hash.</p>
 <h2 id="specifying-rust-version"><a class="header" href="#specifying-rust-version">Specifying Rust version</a></h2>
-<p>To build with a particular version of the Rust compiler, pass that version to <a href="flatten.html#rust_register_toolchains"><code>rust_register_toolchains</code></a>:</p>
+<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
+<p>To use a particular version of the Rust compiler, pass that version to the <code>toolchain</code> method of the <code>rust</code> extension, like this:</p>
+<pre><code class="language-python">rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    versions = [ "1.85.0" ],
+)
+</code></pre>
+<p>As well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels, as in</p>
+<pre><code class="language-python">rust.toolchain(
+    edition = "2021",
+    versions = [ "nightly/1.85.0" ],
+)
+</code></pre>
+<p>By default, a <code>stable</code> and <code>nightly</code> toolchain will be registered if no <code>toolchain</code> method is called (and thus no specific versions are registered). However, if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then the following build setting flag must be present, either on the command line or set in the project's <code>.bazelrc</code> file:</p>
+<pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
+</code></pre>
+<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
+<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
+<p>To build with a particular version of the Rust compiler when using a WORKSPACE file, pass that version to <code>rust_register_toolchains</code>:</p>
 <pre><code class="language-python">rust_register_toolchains(
     edition = "2021",
     versions = [
@@ -196,7 +215,7 @@ rust_register_toolchains()
     ],
 )
 </code></pre>
-<p>As well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels.</p>
+<p>Like in the Bzlmod approach, as well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels.</p>
 <pre><code class="language-python">rust_register_toolchains(
     edition = "2021",
     versions = [
@@ -204,12 +223,12 @@ rust_register_toolchains()
     ],
 )
 </code></pre>
-<p>By default, a <code>stable</code> and <code>nightly</code> toolchain will be registered if no versions are passed to <code>rust_register_toolchains</code>. However,
-if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then a build setting must
-also be set in the project's <code>.bazelrc</code> file.</p>
+<p>Here too a <code>stable</code> and <code>nightly</code> toolchain will be registered by default if no versions are passed to <code>rust_register_toolchains</code>. However,
+if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then the following build setting flag must
+also be set either in the command line or in the project's <code>.bazelrc</code> file.</p>
 <pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
 </code></pre>
-<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered.</p>
+<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
 <h2 id="supported-bazel-versions"><a class="header" href="#supported-bazel-versions">Supported bazel versions</a></h2>
 <p>The oldest version of Bazel the <code>main</code> branch is tested against is <code>7.4.1</code>. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.</p>
 <p>We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.</p>
@@ -238,8 +257,6 @@ also be set in the project's <code>.bazelrc</code> file.</p>
 <li><a href="rust_protobuf.html">rust_protobuf</a>: rules for generating <a href="https://developers.google.com/protocol-buffers">protobuf</a> and <a href="https://grpc.io">gRPC</a> stubs with <a href="https://github.com/stepancheg/rust-protobuf/">rust-protobuf</a></li>
 <li><a href="rust_wasm_bindgen.html">rust_wasm_bindgen</a>: rules for generating <a href="https://www.rust-lang.org/what/wasm">WebAssembly</a> bindings.</li>
 </ul>
-<h2 id="full-api"><a class="header" href="#full-api">Full API</a></h2>
-<p>You can also browse the <a href="flatten.html">full API in one page</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <p>Public entry point to all Rust rules and supported APIs.</p>
 <h2 id="rules-1"><a class="header" href="#rules-1">Rules</a></h2>
@@ -1373,7 +1390,7 @@ at the root of the project that describes its structure or on build system speci
 The <code>rust_analyzer</code> rules facilitate both approaches.</p>
 <h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup-3"><a class="header" href="#setup-3">Setup</a></h3>
-<h4 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h4>
+<h4 id="bzlmod-2"><a class="header" href="#bzlmod-2">Bzlmod</a></h4>
 <p>First, ensure <code>rules_rust</code> is setup in your workspace:</p>
 <pre><code class="language-python"># MODULE.bazel
 
@@ -1389,7 +1406,7 @@ with</p>
 should be added to <code>.gitignore</code> because it is effectively a build artifact.
 Once the <code>rust-project.json</code> has been generated in the project root,
 rust-analyzer can pick it up upon restart.</p>
-<h4 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h4>
+<h4 id="workspace-2"><a class="header" href="#workspace-2">WORKSPACE</a></h4>
 <p>Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure <code>rules_rust</code> is
 setup in your workspace.</p>
 <p>Moreover, when loading the dependencies for the tool, you should call the function <code>rust_analyzer_dependencies()</code>:</p>
@@ -3412,7 +3429,7 @@ allowlist:</p>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
 <h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
-<h3 id="bzlmod-2"><a class="header" href="#bzlmod-2">Bzlmod</a></h3>
+<h3 id="bzlmod-3"><a class="header" href="#bzlmod-3">Bzlmod</a></h3>
 <p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
@@ -3422,7 +3439,7 @@ You need to register either your own or the default toolchain by adding the foll
 </code></pre>
 <p>The default toolchain builds libclang from source via the <a href="https://registry.bazel.build/modules/llvm-project">llvm-project</a> bazel_dep.
 <a href="https://github.com/bazelbuild/rules_rust/tree/main/examples/bindgen_toolchain">examples/bindgen_toolchain</a> shows how to use a prebuilt libclang.</p>
-<h3 id="workspace-2"><a class="header" href="#workspace-2">Workspace</a></h3>
+<h3 id="workspace-3"><a class="header" href="#workspace-3">Workspace</a></h3>
 <p>Or add the following if you're still using <code>WORKSPACE</code> to add the
 external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
 <pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
@@ -3531,10 +3548,10 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
 <h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
-<h3 id="bzlmod-3"><a class="header" href="#bzlmod-3">bzlmod</a></h3>
+<h3 id="bzlmod-4"><a class="header" href="#bzlmod-4">bzlmod</a></h3>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
-<h3 id="workspace-3"><a class="header" href="#workspace-3">WORKSPACE</a></h3>
+<h3 id="workspace-4"><a class="header" href="#workspace-4">WORKSPACE</a></h3>
 <pre><code class="language-python">load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
 
 rules_mdbook_dependencies()
