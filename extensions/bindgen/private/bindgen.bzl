@@ -221,6 +221,11 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
+
+    rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
+    if "--rust-edition " not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+        args.add("--rust-edition=%s" % rust_toolchain.default_edition)
+
     args.add(header)
     args.add("--output", output)
 
