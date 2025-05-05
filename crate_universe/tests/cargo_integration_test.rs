@@ -77,6 +77,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         serde_json::to_string(&json!({
             "manifests": manifests,
             "direct_packages": {},
+            "isolated": true,
             "resolver_version": "2"
         }))
         .unwrap(),
