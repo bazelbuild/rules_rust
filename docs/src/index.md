@@ -82,7 +82,7 @@ Failure to do so will result in rules attempting to match a `stable` toolchain w
 
 ### WORKSPACE
 
-To build with a particular version of the Rust compiler when using a WORKSPACE file, pass that version to [`rust_register_toolchains`](flatten.md#rust_register_toolchains):
+To build with a particular version of the Rust compiler when using a WORKSPACE file, pass that version to `rust_register_toolchains`:
 
 ```python
 rust_register_toolchains(
