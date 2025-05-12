@@ -8,18 +8,18 @@ proto_library(
     srcs = [
         "models.proto",
     ],
+    data = [
+        ":models_transform",
+    ],
     strip_import_prefix = "/private/tests/same_proto_name",
     deps = [
         "//private/tests/same_proto_name/package3:models",
-    ],
-    data = [
-        ":models_transform",
     ],
 )
 
 rust_prost_transform(
     name = "models_transform",
-    crate_name = "package2_models"
+    crate_name = "package2_models",
 )
 
 rust_prost_library(

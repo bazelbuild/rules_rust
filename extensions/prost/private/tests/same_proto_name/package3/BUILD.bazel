@@ -16,7 +16,7 @@ proto_library(
 
 rust_prost_transform(
     name = "models_transform",
-    crate_name = "package3_models"
+    crate_name = "package3_models",
 )
 
 rust_prost_library(
