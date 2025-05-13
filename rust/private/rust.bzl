@@ -77,7 +77,7 @@ def _rust_library_impl(ctx):
 
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc, but care must be taken to have the correct
-    dependencies on an allocator and std implemetation as needed.
+    dependencies on an allocator and std implementation as needed.
 
     Args:
         ctx (ctx): The rule's context object
