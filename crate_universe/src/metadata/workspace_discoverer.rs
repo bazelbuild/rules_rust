@@ -135,8 +135,13 @@ fn discover_workspaces_with_cache(
                                 explicit_workspace_path.display()
                             )
                         })?;
-                    actual_workspace_path =
-                        child_path.parent().unwrap().join(explicit_workspace_path);
+                    actual_workspace_path = child_path
+                        .parent()
+                        .unwrap()
+                        .join(explicit_workspace_path)
+                        .canonicalize_utf8()
+                        .unwrap()
+                        .join("Cargo.toml");
                 }
             }
             if !discovered_workspaces
