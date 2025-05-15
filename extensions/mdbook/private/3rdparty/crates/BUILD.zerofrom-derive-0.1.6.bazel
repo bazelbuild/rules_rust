@@ -93,6 +93,6 @@ rust_proc_macro(
         "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__syn-2.0.101//:syn",
-        "@rmdbi__synstructure-0.13.1//:synstructure",
+        "@rmdbi__synstructure-0.13.2//:synstructure",
     ],
 )

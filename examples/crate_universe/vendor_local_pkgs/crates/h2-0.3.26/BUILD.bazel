@@ -98,7 +98,7 @@ rust_library(
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/indexmap-2.9.0:indexmap",
         "//vendor_local_pkgs/crates/slab-0.4.9:slab",
-        "//vendor_local_pkgs/crates/tokio-1.44.2:tokio",
+        "//vendor_local_pkgs/crates/tokio-1.45.0:tokio",
         "//vendor_local_pkgs/crates/tokio-util-0.7.15:tokio_util",
         "//vendor_local_pkgs/crates/tracing-0.1.41:tracing",
     ],

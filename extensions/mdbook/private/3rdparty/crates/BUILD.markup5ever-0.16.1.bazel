@@ -92,6 +92,6 @@ rust_library(
     deps = [
         "@rmdbi__log-0.4.27//:log",
         "@rmdbi__tendril-0.4.3//:tendril",
-        "@rmdbi__web_atoms-0.1.1//:web_atoms",
+        "@rmdbi__web_atoms-0.1.2//:web_atoms",
     ],
 )

@@ -95,6 +95,6 @@ rust_library(
     version = "2.9.0",
     deps = [
         "@cvm__equivalent-1.0.2//:equivalent",
-        "@cvm__hashbrown-0.15.2//:hashbrown",
+        "@cvm__hashbrown-0.15.3//:hashbrown",
     ],
 )
