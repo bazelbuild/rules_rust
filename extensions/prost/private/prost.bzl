@@ -278,10 +278,18 @@ def _rust_prost_aspect_impl(target, ctx):
             transform_infos.append(data_target[ProstTransformInfo])
 
     rust_deps = runtime_deps + direct_deps
+    crate_name_overrides = []
     for transform_info in transform_infos:
         rust_deps.extend(transform_info.deps)
+        if transform_info.crate_name:
+            crate_name_overrides.append(transform_info.crate_name)
 
-    crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
+    if len(crate_name_overrides) > 1:
+        fail("Multiple crate name overrides detected. Only one override is allowed. Please check your rust_prost_transform targets.")
+    elif len(crate_name_overrides) == 1:
+        crate_name = crate_name_overrides[0]
+    else:
+        crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
 
     proto_info = target[ProtoInfo]
 
