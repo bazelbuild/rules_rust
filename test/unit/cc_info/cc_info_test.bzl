@@ -12,6 +12,9 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
     asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
     cc_info = tut[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    for li in linker_inputs:
+        print("li.o: ", li.owner)
+        print("li.l: ", li.libraries)
     asserts.equals(env, ccinfo_count, len(linker_inputs))
     library_to_link = linker_inputs[0].libraries[0]
     asserts.equals(env, False, library_to_link.alwayslink)

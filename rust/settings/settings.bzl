@@ -125,6 +125,32 @@ def experimental_use_global_allocator():
         build_setting_default = False,
     )
 
+def experimental_use_allocator_libraries_with_mangled_symbols(name):
+    """A flag used to select allocator libraries implemented in rust that are compatible with rustc's symbol mangling.
+
+    Also corresponding on/off config settings.
+
+    This currently requires nightly rustc from 2025-04-05 or later.
+    """
+    bool_flag(
+        name = name,
+        build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "%s_on" % name,
+        flag_values = {
+            ":experimental_use_allocator_libraries_with_mangled_symbols": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "%s_off" % name,
+        flag_values = {
+            ":experimental_use_allocator_libraries_with_mangled_symbols": "false",
+        },
+    )
+
 def experimental_use_coverage_metadata_files():
     """A flag to have coverage tooling added as `coverage_common.instrumented_files_info.metadata_files` instead of \
     reporting tools like `llvm-cov` and `llvm-profdata` as runfiles to each test.
