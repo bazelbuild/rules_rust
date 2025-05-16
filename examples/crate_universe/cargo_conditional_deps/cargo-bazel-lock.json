@@ -1,5 +1,5 @@
 {
-  "checksum": "5aec3c8b998312cad402a1792c2f281743f9b57fd6213e327de2837573ba2b1a",
+  "checksum": "78e2df6b798afd952aba794b6b863ffe287095251cc540b56c44a849cda4f4c4",
   "crates": {
     "autocfg 1.1.0": {
       "name": "autocfg",
@@ -505,7 +505,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "conditional-deps 0.1.0": "cargo_conditional_deps"
+    "conditional-deps 0.1.0": ""
   },
   "conditions": {
     "aarch64-apple-darwin": [
