@@ -6,7 +6,7 @@ pub(crate) mod target_triple;
 
 pub(crate) const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -70,6 +70,12 @@ pub(crate) trait PathCleanUtf8 {
 }
 
 impl PathCleanUtf8 for Utf8PathBuf {
+    fn clean(&self) -> Utf8PathBuf {
+        Utf8PathBuf::from_path_buf(clean_path::clean(self.as_std_path())).unwrap()
+    }
+}
+
+impl PathCleanUtf8 for Utf8Path {
     fn clean(&self) -> Utf8PathBuf {
         Utf8PathBuf::from_path_buf(clean_path::clean(self.as_std_path())).unwrap()
     }

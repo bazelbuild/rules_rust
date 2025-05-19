@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 
 use anyhow::{anyhow, bail, Context, Result};
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
+use clean_path::Clean;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
@@ -17,6 +18,7 @@ use crate::metadata::cargo_bin::Cargo;
 use crate::select::{Select, SelectableScalar};
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
+use crate::utils::PathCleanUtf8;
 
 /// A list platform triples that support host tools
 ///
@@ -308,6 +310,7 @@ impl TreeResolver {
     pub(crate) fn generate(
         &self,
         pristine_manifest_path: &Utf8Path,
+        member_dirs: &BTreeMap<Utf8PathBuf, BTreeSet<Utf8PathBuf>>,
         target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
@@ -320,6 +323,7 @@ impl TreeResolver {
         let manifest_path_with_transitive_proc_macros = self
             .copy_project_with_explicit_deps_on_all_transitive_proc_macros(
                 pristine_manifest_path,
+                member_dirs,
                 &tempdir.path().join("explicit_proc_macro_deps"),
             )
             .context("Failed to copy project with proc macro deps made direct")?;
@@ -451,8 +455,17 @@ impl TreeResolver {
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
         pristine_manifest_path: &Utf8Path,
+        member_dirs: &BTreeMap<Utf8PathBuf, BTreeSet<Utf8PathBuf>>,
         output_dir: &Path,
     ) -> Result<PathBuf> {
+        if member_dirs.len() != 1 {
+            anyhow::bail!("Failed: The workspace has multiple roots");
+        }
+        let (root, members) = member_dirs.first_key_value().unwrap();
+        let output_dir = output_dir.join(root);
+        let output_dir = output_dir.as_path();
+
+        // check size of members_dir then pop refs to single elem
         if !output_dir.exists() {
             std::fs::create_dir_all(output_dir)?;
         }
@@ -470,6 +483,22 @@ impl TreeResolver {
                     )
                 })?;
             }
+        }
+        for member_dir in members {
+            let source_path = pristine_root.join(member_dir).clean();
+            let destination = output_dir.join(member_dir).clean();
+            if destination.exists() {
+                continue;
+            }
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(&parent)?;
+            }
+            symlink(source_path.as_std_path(), &destination).with_context(|| {
+                format!(
+                    "Failed to create symlink {:?} pointing at {:?}",
+                    destination, source_path
+                )
+            })?;
         }
         std::fs::copy(
             pristine_root.join("Cargo.lock"),

@@ -82,6 +82,24 @@ fn discover_workspaces_with_cache(
             })
             .transpose()?;
 
+        workspace_manifest.workspace.as_ref().and_then(|workspace| {
+            for member in workspace.members.iter() {
+                let member_pattern = workspace_path.parent()?.to_string() + "/" + member;
+                for entry in glob::glob(&member_pattern).unwrap() {
+                    let maybe_member_cargo_toml = Utf8Path::from_path(&entry.unwrap())
+                        .unwrap()
+                        .clean()
+                        .join("Cargo.toml");
+                    discovered_workspaces
+                        .workspaces_to_members
+                        .get_mut(&workspace_path)
+                        .unwrap()
+                        .insert(maybe_member_cargo_toml);
+                }
+            }
+            Some(())
+        });
+
         'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(false)
             .follow_root_links(false)
