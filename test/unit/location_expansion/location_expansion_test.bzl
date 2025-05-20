@@ -3,15 +3,13 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_library")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains")
+load("//test/unit:common.bzl", "assert_argv_contains")
 
 def _location_expansion_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = tut.actions[1]
-    assert_action_mnemonic(env, action, "Rustc")
-    assert_argv_contains(env, action, ctx.bin_dir.path + "/test/unit/location_expansion/mylibrary.rs")
-    expected = "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/generated_flag.data"
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
+    assert_argv_contains(env, action, analysistest.target_bin_dir_path(env) + "/test/unit/location_expansion/mylibrary.rs")
+    expected = "@${pwd}/" + analysistest.target_bin_dir_path(env) + "/test/unit/location_expansion/generated_flag.data"
     assert_argv_contains(env, action, expected)
     return analysistest.end(env)
 

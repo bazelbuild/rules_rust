@@ -9,9 +9,8 @@ def _rust_binary_binary_name_test_impl(ctx):
     expected_basename = ctx.attr.expected_binary_name
 
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
     output = action.outputs.to_list()[0]
 
     filename = paths.split_extension(output.basename)[0]

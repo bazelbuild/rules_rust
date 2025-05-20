@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_env_value")
+load("//test/unit:common.bzl", "assert_env_value")
 
 _RUST_TOOLCHAIN_ENV = {
     "ENV_VAR_CARGO": "$(CARGO)",
@@ -16,25 +16,59 @@ _RUSTFMT_TOOLCHAIN_ENV = {
     "ENV_VAR_RUSTFMT": "$(RUSTFMT)",
 }
 
+_RUST_TOOLCHAIN_TYPE = str(Label("@rules_rust//rust:toolchain_type"))
+_RUSTFMT_TOOLCHAIN_TYPE = str(Label("@rules_rust//rust/rustfmt:toolchain_type"))
+_CURRENT_RUST_TOOLCHAIN = Label("//rust/toolchain:current_rust_toolchain")
+_CURRENT_RUSTFMT_TOOLCHAIN = Label("//rust/toolchain:current_rustfmt_toolchain")
+
+def _retrieve_toolchain_aspect_impl(_, ctx, toolchain_type):
+    if hasattr(ctx.rule, "toolchains") and toolchain_type in ctx.rule.toolchains:
+        return ctx.rule.toolchains[toolchain_type]
+    if toolchain_type == _RUST_TOOLCHAIN_TYPE:
+        return ctx.attr._current_rust_toolchain[platform_common.ToolchainInfo]
+    if toolchain_type == _RUSTFMT_TOOLCHAIN_TYPE:
+        return ctx.attr._current_rustfmt_toolchain[platform_common.ToolchainInfo]
+    return []
+
+_retrieve_rust_toolchain = aspect(
+    implementation = lambda target, ctx: _retrieve_toolchain_aspect_impl(
+        target,
+        ctx,
+        toolchain_type = _RUST_TOOLCHAIN_TYPE,
+    ),
+    attrs = {
+        "_current_rust_toolchain": attr.label(
+            default = _CURRENT_RUST_TOOLCHAIN,
+        ),
+    },
+    provides = [platform_common.ToolchainInfo],
+)
+
+_retrieve_rustfmt_toolchain = aspect(
+    implementation = lambda target, ctx: _retrieve_toolchain_aspect_impl(
+        target,
+        ctx,
+        toolchain_type = _RUSTFMT_TOOLCHAIN_TYPE,
+    ),
+    attrs = {
+        "_current_rustfmt_toolchain": attr.label(
+            default = _CURRENT_RUSTFMT_TOOLCHAIN,
+        ),
+    },
+    provides = [platform_common.ToolchainInfo],
+)
+
 def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
-    action = target.actions[0]
-
-    assert_action_mnemonic(
-        env = env,
-        action = action,
-        mnemonic = mnemonic,
-    )
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == mnemonic][0]
+    toolchain = analysistest.target_under_test(env)[platform_common.ToolchainInfo]
 
     if mnemonic in ["RustFmtToolchainConsumer", "CurrentRustFmtToolchainConsumer"]:
-        toolchain = ctx.attr._current_rustfmt_toolchain[platform_common.ToolchainInfo]
         env_vars = _RUSTFMT_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_RUSTFMT": toolchain.rustfmt.path,
         }
     else:
-        toolchain = ctx.attr._current_rust_toolchain[platform_common.ToolchainInfo]
         env_vars = _RUST_TOOLCHAIN_ENV
         expected_values = {
             "ENV_VAR_CARGO": toolchain.cargo.path,
@@ -57,23 +91,13 @@ def _rust_toolchain_make_variable_expansion_test_common_impl(ctx, mnemonic):
 def rust_toolchain_make_toolchain_make_variable_test(impl):
     return analysistest.make(
         impl = impl,
-        attrs = {
-            "_current_rust_toolchain": attr.label(
-                doc = "The currently registered rust toolchain",
-                default = Label("//rust/toolchain:current_rust_toolchain"),
-            ),
-        },
+        extra_target_under_test_aspects = [_retrieve_rust_toolchain],
     )
 
 def rustfmt_toolchain_make_toolchain_make_variable_test(impl):
     return analysistest.make(
         impl = impl,
-        attrs = {
-            "_current_rustfmt_toolchain": attr.label(
-                doc = "The currently registered rustfmt toolchain",
-                default = Label("//rust/toolchain:current_rustfmt_toolchain"),
-            ),
-        },
+        extra_target_under_test_aspects = [_retrieve_rustfmt_toolchain],
     )
 
 def _rustc_env_variable_expansion_test_impl(ctx):
@@ -158,7 +182,7 @@ rust_toolchain_consumer = rule(
         ),
     },
     toolchains = [
-        "@rules_rust//rust:toolchain_type",
+        _RUST_TOOLCHAIN_TYPE,
     ],
 )
 
@@ -201,7 +225,7 @@ rustfmt_toolchain_consumer = rule(
         ),
     },
     toolchains = [
-        "@rules_rust//rust/rustfmt:toolchain_type",
+        _RUSTFMT_TOOLCHAIN_TYPE,
     ],
 )
 
@@ -223,9 +247,6 @@ current_rustfmt_toolchain_consumer = rule(
             mandatory = True,
         ),
     },
-    toolchains = [
-        "@rules_rust//rust/rustfmt:toolchain_type",
-    ],
 )
 
 def _define_targets():
@@ -265,7 +286,7 @@ def _define_targets():
     current_rust_toolchain_consumer(
         name = "current_rust_toolchain_consumer",
         env = _RUST_TOOLCHAIN_ENV,
-        toolchains = ["//rust/toolchain:current_rust_toolchain"],
+        toolchains = [str(_CURRENT_RUST_TOOLCHAIN)],
         writer = ":binary",
     )
 
@@ -278,7 +299,7 @@ def _define_targets():
     current_rustfmt_toolchain_consumer(
         name = "current_rustfmt_toolchain_consumer",
         env = _RUSTFMT_TOOLCHAIN_ENV,
-        toolchains = ["//rust/toolchain:current_rustfmt_toolchain"],
+        toolchains = [str(_CURRENT_RUSTFMT_TOOLCHAIN)],
         writer = ":binary",
     )
 

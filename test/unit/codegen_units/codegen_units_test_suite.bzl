@@ -5,7 +5,6 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary", "rust_library")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_prefix_not",
 )
@@ -14,10 +13,8 @@ _EXPECTED_VALUE = 11
 
 def _codegen_units_test_impl(ctx, enabled = True):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     if enabled:
         assert_argv_contains(env, action, "-Ccodegen-units={}".format(_EXPECTED_VALUE))

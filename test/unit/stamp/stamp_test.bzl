@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_test")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_not",
 )
@@ -30,8 +29,7 @@ def _stamp_build_flag_test_impl(ctx, flag_value):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     is_test = target[rust_common.crate_info].is_test
     is_bin = target[rust_common.crate_info].type == "bin"
@@ -130,10 +128,8 @@ def _build_flag_tests():
 
 def _attribute_stamp_test_impl(ctx, attribute_value, build_flag_value):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     if attribute_value == 1:
         _assert_stamped(env, action)
@@ -279,10 +275,8 @@ def _stamp_attribute_tests():
 
 def _process_wrapper_with_stamp_test_impl(ctx):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     _assert_not_stamped(env, action)
 

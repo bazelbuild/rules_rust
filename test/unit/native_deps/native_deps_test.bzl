@@ -16,13 +16,6 @@ load(
 def _get_toolchain(ctx):
     return ctx.attr._toolchain[platform_common.ToolchainInfo]
 
-def _get_darwin_component(arg):
-    # path/to/darwin_x86_64-fastbuild-fastbuild/package -> darwin_x86_64-fastbuild
-    darwin_component = [x for x in arg.split("/") if x.startswith("darwin")][0]
-
-    # darwin_x86_64-fastbuild -> darwin
-    return darwin_component.split("-")[0]
-
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -138,15 +131,14 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     action = tut.actions[0]
 
     toolchain = _get_toolchain(ctx)
-    compilation_mode = ctx.var["COMPILATION_MODE"]
+    bin_dir = analysistest.target_bin_dir_path(env)
     workspace_prefix = _get_workspace_prefix(ctx)
     link_args = _extract_linker_args(action.argv)
     if toolchain.target_os in ["macos", "darwin"]:
-        darwin_component = _get_darwin_component(link_args[-1])
         want = [
             "-lstatic=native_dep",
             "-lnative_dep",
-            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
+            "-Wl,-force_load,{}/{}test/unit/native_deps/libalwayslink.lo".format(bin_dir, workspace_prefix),
         ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
@@ -154,21 +146,21 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "/WHOLEARCHIVE:{}/{}test/unit/native_deps/alwayslink.lo.lib".format(bin_dir, workspace_prefix),
             ]
         else:
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
                 "-Wl,--whole-archive",
-                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "{}/{}test/unit/native_deps/alwayslink.lo.lib".format(bin_dir, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
             "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "link-arg={}/{}test/unit/native_deps/libalwayslink.lo".format(bin_dir, workspace_prefix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     else:
@@ -176,7 +168,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             "-lstatic=native_dep",
             "-lnative_dep",
             "-Wl,--whole-archive",
-            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "{}/{}test/unit/native_deps/libalwayslink.lo".format(bin_dir, workspace_prefix),
             "-Wl,--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, link_args, want)
@@ -193,35 +185,35 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
 
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
+    bin_dir = analysistest.target_bin_dir_path(env)
     workspace_prefix = _get_workspace_prefix(ctx)
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
     if toolchain.target_os in ["macos", "darwin"]:
-        darwin_component = _get_darwin_component(linker_args[-1])
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
             "-lnative_dep{}".format(pic_suffix),
-            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
+            "-Wl,-force_load,{}/{}test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, workspace_prefix, pic_suffix),
         ]
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "/WHOLEARCHIVE:{}/{}test/unit/native_deps/alwayslink.lo.lib".format(bin_dir, workspace_prefix),
             ]
         else:
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
                 "-Wl,--whole-archive",
-                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "{}/{}test/unit/native_deps/alwayslink.lo.lib".format(bin_dir, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "link-arg={}/{}test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, workspace_prefix, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     else:
@@ -229,7 +221,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
             "-lstatic=native_dep{}".format(pic_suffix),
             "-lnative_dep{}".format(pic_suffix),
             "-Wl,--whole-archive",
-            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "{}/{}test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, workspace_prefix, pic_suffix),
             "-Wl,--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, linker_args, want)

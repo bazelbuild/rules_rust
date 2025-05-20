@@ -5,17 +5,14 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_not",
 )
 
 def _channel_transition_test_impl(ctx, is_nightly):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     if is_nightly:
         assert_argv_contains(env, action, "-Zunstable-options")

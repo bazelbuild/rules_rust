@@ -5,16 +5,13 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
 )
 
 def _strip_level_test_impl(ctx, expected_level):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     assert_argv_contains(env, action, "--codegen=strip={}".format(expected_level))
     return analysistest.end(env)

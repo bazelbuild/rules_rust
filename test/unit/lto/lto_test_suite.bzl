@@ -5,7 +5,6 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_not",
     "assert_argv_contains_prefix_not",
@@ -13,10 +12,8 @@ load(
 
 def _lto_test_impl(ctx, lto_setting, embed_bitcode, linker_plugin):
     env = analysistest.begin(ctx)
-    target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = [a for a in analysistest.target_actions(env) if a.mnemonic == "Rustc"][0]
 
     # Check if LTO is enabled.
     if lto_setting:
