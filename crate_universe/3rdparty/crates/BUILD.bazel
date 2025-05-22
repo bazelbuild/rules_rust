@@ -128,6 +128,18 @@ alias(
 )
 
 alias(
+    name = "clean-path-0.2.1",
+    actual = "@cui__clean-path-0.2.1//:clean_path",
+    tags = ["manual"],
+)
+
+alias(
+    name = "clean-path",
+    actual = "@cui__clean-path-0.2.1//:clean_path",
+    tags = ["manual"],
+)
+
+alias(
     name = "crates-index-3.7.0",
     actual = "@cui__crates-index-3.7.0//:crates_index",
     tags = ["manual"],

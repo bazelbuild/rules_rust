@@ -109,7 +109,7 @@ rust_library(
         "@rmdbi__serde-1.0.219//:serde",
         "@rmdbi__serde_json-1.0.140//:serde_json",
         "@rmdbi__serde_urlencoded-0.7.1//:serde_urlencoded",
-        "@rmdbi__tokio-1.44.2//:tokio",
+        "@rmdbi__tokio-1.45.0//:tokio",
         "@rmdbi__tokio-tungstenite-0.21.0//:tokio_tungstenite",
         "@rmdbi__tokio-util-0.7.15//:tokio_util",
         "@rmdbi__tower-service-0.3.3//:tower_service",

@@ -90,7 +90,7 @@ rust_library(
     }),
     version = "0.11.0",
     deps = [
-        "@rmdbi__bitflags-2.9.0//:bitflags",
+        "@rmdbi__bitflags-2.9.1//:bitflags",
         "@rmdbi__inotify-sys-0.1.5//:inotify_sys",
         "@rmdbi__libc-0.2.172//:libc",
     ],
