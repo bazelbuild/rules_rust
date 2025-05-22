@@ -6,6 +6,7 @@ pub(crate) mod target_triple;
 
 pub(crate) const CRATES_IO_INDEX_URL: &str = "https://github.com/rust-lang/crates.io-index";
 
+use camino::Utf8PathBuf;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -63,6 +64,17 @@ pub(crate) fn normalize_cargo_file_paths(
         .collect()
 }
 
+pub(crate) trait PathCleanUtf8 {
+    /// Normalize utf8 path from camino
+    fn clean(&self) -> Utf8PathBuf;
+}
+
+impl PathCleanUtf8 for Utf8PathBuf {
+    fn clean(&self) -> Utf8PathBuf {
+        Utf8PathBuf::from_path_buf(clean_path::clean(self.as_std_path())).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -110,5 +122,13 @@ mod test {
         for output in got.into_keys() {
             assert!(!output.to_str().unwrap().contains('+'));
         }
+    }
+
+    #[test]
+    fn test_normalize_utf8_path() {
+        assert_eq!(
+            Utf8PathBuf::from("my/long/../path").clean(),
+            Utf8PathBuf::from("my/path")
+        );
     }
 }

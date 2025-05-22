@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::utils::PathCleanUtf8;
 use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_toml::Manifest;
@@ -139,8 +140,7 @@ fn discover_workspaces_with_cache(
                         .parent()
                         .unwrap()
                         .join(explicit_workspace_path)
-                        .canonicalize_utf8()
-                        .unwrap()
+                        .clean()
                         .join("Cargo.toml");
                 }
             }
