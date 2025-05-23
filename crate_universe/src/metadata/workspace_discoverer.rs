@@ -53,10 +53,6 @@ fn discover_workspaces_with_cache(
             discovered_workspaces
                 .workspaces_to_members
                 .insert(workspace_parent, BTreeSet::new());
-        } else {
-            discovered_workspaces
-                .non_workspaces
-                .insert(cargo_toml_path.clone());
         }
     }
 
