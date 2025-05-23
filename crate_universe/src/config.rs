@@ -706,11 +706,32 @@ pub(crate) struct Config {
     pub(crate) rendering: RenderConfig,
 
     /// The contents of a Cargo configuration file
+    #[serde(default, deserialize_with = "deserialize_cargo_config")]
     pub(crate) cargo_config: Option<toml::Value>,
 
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) supported_platform_triples: BTreeSet<TargetTriple>,
+}
+
+// rules_rust/crate_universe/private/generate_utils.bzl:generate_config
+// injects the cargo_config as a literal JSON string, this causes line ending
+// instability in Unix vs Windows. Parsing it here fixes any cross platform differences.
+fn deserialize_cargo_config<'de, D>(deserializer: D) -> Result<Option<toml::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    match value {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(s)) => s
+            .parse::<toml::Value>()
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+        Some(other) => serde_json::from_value(other)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+    }
 }
 
 impl Config {
