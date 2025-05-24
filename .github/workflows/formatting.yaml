@@ -21,7 +21,7 @@ jobs:
           ./buildifier -lint=warn -mode=check -warnings=all -r ${{ github.workspace }}
           rm ./buildifier
         env:
-          BUILDIFIER_VERSION: 8.0.2
+          BUILDIFIER_VERSION: 8.2.0
       - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: '.'
