@@ -11,11 +11,23 @@ load(
     "assert_argv_contains_prefix_not",
 )
 
-def _lto_test_impl(ctx, lto_setting, embed_bitcode, linker_plugin):
+def _lto_test_impl(ctx, lto_setting, embed_bitcode, linker_plugin, name = None):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
+    # Find the action we want to assert on.
+    action = None
+    if name:
+        for a in target.actions:
+            if name in str(a):
+                action = a
+                break
+    else:
+        action = target.actions[0]
+
+    if not action:
+        fail("no action found")
+
     assert_action_mnemonic(env, action, "Rustc")
 
     # Check if LTO is enabled.
@@ -79,11 +91,22 @@ _lto_level_fat_test = analysistest.make(
 )
 
 def _lto_proc_macro(ctx):
-    return _lto_test_impl(ctx, None, "no", False)
+    return _lto_test_impl(ctx, None, "no", False, "my_proc_macro")
 
 _lto_proc_macro_test = analysistest.make(
     _lto_proc_macro,
     config_settings = {str(Label("//rust/settings:lto")): "thin"},
+)
+
+def _lto_proc_macro_dep(ctx):
+    return _lto_test_impl(ctx, None, "no", False, "my_proc_macro_dep")
+
+_lto_proc_macro_dep_test = analysistest.make(
+    _lto_proc_macro_dep,
+    config_settings = {
+        str(Label("//rust/settings:lto")): "thin",
+        str(Label("//rust/private:is_proc_macro_dep_enabled")): True,
+    },
 )
 
 def lto_test_suite(name):
@@ -108,9 +131,16 @@ def lto_test_suite(name):
         edition = "2021",
     )
 
-    rust_proc_macro(
-        name = "proc_macro",
+    rust_library(
+        name = "my_proc_macro_dep",
         srcs = [":lib.rs"],
+        edition = "2021",
+    )
+
+    rust_proc_macro(
+        name = "my_proc_macro",
+        srcs = [":lib.rs"],
+        deps = [":my_proc_macro_dep"],
         edition = "2021",
     )
 
@@ -141,7 +171,12 @@ def lto_test_suite(name):
 
     _lto_proc_macro_test(
         name = "lto_proc_macro_test",
-        target_under_test = ":proc_macro",
+        target_under_test = ":my_proc_macro",
+    )
+
+    _lto_proc_macro_dep_test(
+        name = "lto_proc_macro_dep_test",
+        target_under_test = ":my_proc_macro_dep",
     )
 
     native.test_suite(
