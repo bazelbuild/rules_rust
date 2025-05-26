@@ -146,7 +146,7 @@ impl<'a> SplicerKind<'a> {
         let mut manifest = (*manifest).clone();
         let manifest_dir = path
             .parent()
-            .expect("Every manifest should havee a parent directory");
+            .expect("Every manifest should have a parent directory");
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -186,7 +186,7 @@ impl<'a> SplicerKind<'a> {
     ) -> Result<SplicedManifest> {
         let manifest_dir = path
             .parent()
-            .expect("Every manifest should havee a parent directory");
+            .expect("Every manifest should have a parent directory");
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -382,7 +382,7 @@ impl<'a> SplicerKind<'a> {
 
                 let manifest_dir = path
                     .parent()
-                    .expect("Every manifest should havee a parent directory");
+                    .expect("Every manifest should have a parent directory");
 
                 let dest_package_dir = workspace_dir.join(package_name);
 
