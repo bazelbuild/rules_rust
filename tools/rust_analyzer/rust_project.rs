@@ -252,6 +252,11 @@ pub enum RunnableKind {
     TestOne,
 }
 
+fn try_symlink(f: &String) -> String {
+    std::fs::read_link(f).map(|v| v.to_string_lossy().to_string())
+        .unwrap_or(f.clone())
+}
+
 pub fn assemble_rust_project(
     bazel: &Utf8Path,
     workspace: &Utf8Path,
@@ -337,7 +342,7 @@ pub fn assemble_rust_project(
 
                 project.crates.push(Crate {
                     display_name: Some(c.display_name.clone()),
-                    root_module: c.root_module.clone(),
+                    root_module: try_symlink(&c.root_module),
                     edition: c.edition.clone(),
                     deps: c
                         .deps
