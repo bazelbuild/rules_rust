@@ -158,7 +158,7 @@ impl<'a> SplicerKind<'a> {
         // Optionally install the cargo config after contents have been symlinked
         Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
 
-        // Add any additional depeendencies to the root package
+        // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
@@ -255,7 +255,7 @@ impl<'a> SplicerKind<'a> {
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, installations)?;
         workspace_metadata.inject_into(&mut manifest)?;
 
-        // Add any additional depeendencies to the root package
+        // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
