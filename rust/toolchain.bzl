@@ -65,7 +65,7 @@ def _rust_stdlib_filegroup_impl(ctx):
         alloc_files = [f for f in dot_a_files if "alloc" in f.basename and "std" not in f.basename]
         between_alloc_and_core_files = [f for f in dot_a_files if "compiler_builtins" in f.basename]
         core_files = [f for f in dot_a_files if ("core" in f.basename or "adler" in f.basename) and "std" not in f.basename]
-        panic_files = [f for f in dot_a_files if f.basename in ["cfg_if", "libc", "panic_abort", "panic_unwind", "unwind"]]
+        panic_files = [f for f in dot_a_files if any([c in f.basename for c in ["cfg_if", "libc", "panic_abort", "panic_unwind", "unwind"]])]
         between_core_and_std_files = [
             f
             for f in dot_a_files
