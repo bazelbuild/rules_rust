@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "env_logger",
+    name = "anstyle_wincon",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,13 +34,6 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "auto-color",
-        "color",
-        "default",
-        "humantime",
-        "regex",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -51,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=env_logger",
+        "crate-name=anstyle-wincon",
         "manual",
         "noclippy",
         "norustfmt",
@@ -95,12 +88,22 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.8",
+    version = "3.0.8",
     deps = [
-        "@rmdbi__anstream-0.6.18//:anstream",
         "@rmdbi__anstyle-1.0.10//:anstyle",
-        "@rmdbi__env_filter-0.1.3//:env_filter",
-        "@rmdbi__jiff-0.2.14//:jiff",
-        "@rmdbi__log-0.4.27//:log",
-    ],
+    ] + select({
+        "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
+            "@rmdbi__once_cell_polyfill-1.70.0//:once_cell_polyfill",  # cfg(windows)
+            "@rmdbi__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:i686-pc-windows-msvc": [
+            "@rmdbi__once_cell_polyfill-1.70.0//:once_cell_polyfill",  # cfg(windows)
+            "@rmdbi__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+        ],
+        "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
+            "@rmdbi__once_cell_polyfill-1.70.0//:once_cell_polyfill",  # cfg(windows)
+            "@rmdbi__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+        ],
+        "//conditions:default": [],
+    }),
 )

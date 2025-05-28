@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "windows_result",
+    name = "windows_strings",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -44,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=windows-result",
+        "crate-name=windows-strings",
         "manual",
         "noclippy",
         "norustfmt",
@@ -88,7 +88,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.3.2",
+    version = "0.4.2",
     deps = [
         "@rmdbi__windows-link-0.1.1//:windows_link",
     ],
