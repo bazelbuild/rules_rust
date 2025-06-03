@@ -188,3 +188,21 @@ LintsInfo = provider(
         "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
     },
 )
+
+AllocatorLibrariesInfo = provider(
+    doc = "AllocatorLibrariesInfo provides allocator libraries for linking rust code with a non-rust linker.",
+    fields = {
+        "allocator_library": "Optional[CcInfo]: used when the default rust allocator is used",
+        "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
+        "libstd_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used",
+        "libstd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used",
+        "nostd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when nostd with a global rust allocator is used",
+    },
+)
+
+AllocatorLibrariesImplInfo = provider(
+    doc = "AllocatorLibrariesImplInfo provides the rust-generated linker input for linking rust code with a non-rust linker.",
+    fields = {
+        "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
+    },
+)
