@@ -338,7 +338,7 @@ def crate_repositories():
 {% include "partials/module/repo_http.j2" %}
 {%- elif repository_type in ["Git"] %}
 {% include "partials/module/repo_git.j2" %}
-{%- elif repository_type in ["Path"] %}
+{%- elif repository_type in ["Path", "LocalPath"] %}
 
     local_crate_mirror(
         name = "{{ crate_repository(name = crate.name, version = crate.version) }}",

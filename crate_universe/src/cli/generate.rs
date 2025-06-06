@@ -246,12 +246,11 @@ fn write_paths_to_track<
     unused_patches: UnusedPatches,
 ) -> Result<()> {
     let source_annotation_manifests: BTreeSet<_> = source_annotations
-        .filter_map(|v| {
-            if let SourceAnnotation::Path { path } = v {
-                Some(path.join("Cargo.toml"))
-            } else {
-                None
-            }
+        .filter_map(|source_annotation| match source_annotation {
+            SourceAnnotation::Git { .. } => None,
+            SourceAnnotation::Http { .. } => None,
+            SourceAnnotation::Path { path } => Some(path.join("Cargo.toml")),
+            SourceAnnotation::LocalPath { path } => Some(path.join("Cargo.toml")),
         })
         .collect();
     let paths_to_track: BTreeSet<_> = source_annotation_manifests
