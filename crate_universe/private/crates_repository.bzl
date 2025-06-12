@@ -307,7 +307,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "lockfile": attr.label(
             doc = (
                 "The path to a file to use for reproducible renderings. " +
-                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+                "If set, this file must exist within the workspace (but can be empty) before this rule will work." +
+                "If you already have a `MODULE.bazel.lock` file, you don't need this." +
+                "If you don't have a `MODULE.bazel.lock` file, the `lockfile` will save you generation time."
             ),
         ),
         "manifests": attr.label_list(
