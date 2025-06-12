@@ -4,7 +4,7 @@ Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 
 This doc describes using crate_universe with bzlmod.
 
-If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe.html).
+If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe_workspace.html).
 
 There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod).
 
@@ -74,7 +74,7 @@ will not be able to pull from your private registry.
 
 The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
 Notably, the all_crate_deps and aliases macros (
-see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe.html#dependencies-api)) commonly allow the
+see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html#dependencies-api)) commonly allow the
 Cargo.toml files to be the single source of truth for dependencies.
 Since these macros come from the generated repository, the dependencies and alias definitions
 they return will automatically update BUILD targets. In your BUILD files,
@@ -137,7 +137,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crates
 
 This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN`
 environment variable can also be used to customize how dependencies are updated.
-For more details about repin, [please refer to the documentation](https://bazelbuild.github.io/rules_rust/crate_universe.html#crates_vendor).
+For more details about repin, [please refer to the documentation](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html#crates_vendor).
 
 ### Direct Dependencies
 
