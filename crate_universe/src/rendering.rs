@@ -361,6 +361,7 @@ impl Renderer {
 
                 let filename = match &context.crates[id].repository {
                     Some(SourceAnnotation::Path { path }) => path.join("BUILD.bazel").into(),
+                    Some(SourceAnnotation::LocalPath { path }) => path.join("BUILD.bazel").into(),
                     _ => Renderer::label_to_path(&label),
                 };
                 let content = self.render_one_build_file(engine, platforms, &context.crates[id])?;

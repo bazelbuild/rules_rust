@@ -393,7 +393,7 @@ impl CrateContext {
                 target,
                 alias: dep.alias,
                 local_path: match source_annotations.get(&dep.package_id) {
-                    Some(SourceAnnotation::Path { path }) => Some(path.clone()),
+                    Some(SourceAnnotation::LocalPath { path }) => Some(path.clone()),
                     _ => None,
                 },
             }
@@ -494,7 +494,7 @@ impl CrateContext {
                     target: target.crate_name.clone(),
                     alias: None,
                     local_path: match source_annotations.get(&annotation.node.id) {
-                        Some(SourceAnnotation::Path { path }) => Some(path.clone()),
+                        Some(SourceAnnotation::LocalPath { path }) => Some(path.clone()),
                         _ => None,
                     },
                 },
@@ -753,6 +753,9 @@ impl CrateContext {
                         patches.clone_from(&crate_extra.patches);
                     }
                     SourceAnnotation::Path { .. } => {
+                        // We don't support applying patches to local path deps.
+                    }
+                    SourceAnnotation::LocalPath { .. } => {
                         // We don't support applying patches to local path deps.
                     }
                 }

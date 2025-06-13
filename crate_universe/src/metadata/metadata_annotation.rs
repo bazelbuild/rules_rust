@@ -164,6 +164,10 @@ pub(crate) enum SourceAnnotation {
         patches: Option<BTreeSet<String>>,
     },
     Path {
+        /// Path to crate's source.
+        path: Utf8PathBuf,
+    },
+    LocalPath {
         /// Local path to crate's source, relative to Bazel workspace root.
         path: Utf8PathBuf,
     },
@@ -265,7 +269,7 @@ impl LockfileAnnotation {
                     if let Some(path_with_suffix) = node.id.repr.strip_prefix("path+file://") {
                         if let Some((path_in_lockfile, _suffix)) = path_with_suffix.rsplit_once('#')
                         {
-                            let path = match Utf8Path::new(path_in_lockfile)
+                            match Utf8Path::new(path_in_lockfile)
                                 .strip_prefix(&metadata.workspace_root)
                             {
                                 Ok(suffix) => {
@@ -301,11 +305,14 @@ impl LockfileAnnotation {
                                         }
                                     }
                                     new_path.push(suffix);
-                                    new_path
+                                    return Ok(SourceAnnotation::LocalPath { path: new_path });
                                 }
-                                Err(_) => Utf8PathBuf::from(path_in_lockfile),
-                            };
-                            return Ok(SourceAnnotation::Path { path });
+                                Err(_) => {
+                                    return Ok(SourceAnnotation::Path {
+                                        path: Utf8PathBuf::from(path_in_lockfile),
+                                    })
+                                }
+                            }
                         }
                     }
                     bail!(
