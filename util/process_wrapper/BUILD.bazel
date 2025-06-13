@@ -31,6 +31,10 @@ selects.config_setting_group(
 rust_binary_without_process_wrapper(
     name = "process_wrapper",
     srcs = glob(["*.rs"]),
+    allocator_libraries = select({
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on": "@rules_rust//ffi/rs:allocator_libraries_with_mangling_support_without_process_wrapper",
+        "//conditions:default": "@rules_rust//ffi/rs:empty_allocator_libraries",
+    }),
     edition = "2018",
     # To ensure the process wrapper is produced deterministically
     # debug info, which is known to sometimes have host specific
