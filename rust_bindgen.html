@@ -190,7 +190,7 @@ rust_bindgen_transitive_dependencies()
 </code></pre>
 <p>Bindgen aims to be as hermetic as possible so will end up building <code>libclang</code> from <a href="https://github.com/llvm/llvm-project">llvm-project</a> from
 source. If this is found to be undesirable then no Bindgen related calls should be added to your WORKSPACE and instead
-users should define their own repositories using something akin to <a href="https://bazelbuild.github.io/rules_rust/crate_universe.html">crate_universe</a> and define their own
+users should define their own repositories using something akin to <a href="https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html">crate_universe</a> and define their own
 toolchains following the instructions for <a href="#rust_bindgen_toolchain">rust_bindgen_toolchain</a>.</p>
 <hr />
 <hr />
