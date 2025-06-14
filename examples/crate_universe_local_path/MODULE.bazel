@@ -16,12 +16,24 @@ use_repo(
 register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension(
-    "@rules_rust//crate_universe:extension.bzl",
+    "@rules_rust//crate_universe:extensions.bzl",
     "crate",
 )
 crate.from_cargo(
     name = "crates_from_cargo_workspace",
-    cargo_lockfile = "//crates_from_workspace:Cargo.lock",
+    cargo_lockfile = "//crates_from_workspace:Cargo.workspace.lock",
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
 use_repo(crate, "crates_from_cargo_workspace")
+
+crate.spec(
+    package = "lazy_static",
+    repositories = ["crates_from_packages"],
+    # Replaced by `vendor_lazy_static.sh`
+    version = "1.5.0",  # lazy_static
+)
+crate.from_specs(
+    name = "crates_from_packages",
+    cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
+)
+use_repo(crate, "crates_from_packages")

@@ -1229,7 +1229,7 @@ _spec = tag_class(
             doc = "A list of features to use for the crate.",
         ),
         "git": attr.string(
-            doc = "The Git url to use for the crate. Cannot be used with `version`.",
+            doc = "The Git url to use for the crate. Cannot be used with `version` or `path`.",
         ),
         "lib": attr.bool(
             doc = "If using `artifact = 'bin'`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.",
@@ -1237,6 +1237,9 @@ _spec = tag_class(
         "package": attr.string(
             doc = "The explicit name of the package.",
             mandatory = True,
+        ),
+        "path": attr.string(
+            doc = "The local path of the remote crate. Cannot be used with `version` or `git`.",
         ),
         "repositories": attr.string_list(
             doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this spec is applied to. Defaults to all repositories.",
@@ -1249,7 +1252,7 @@ _spec = tag_class(
             doc = "The git tag of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.",
         ),
         "version": attr.string(
-            doc = "The exact version of the crate. Cannot be used with `git`.",
+            doc = "The exact version of the crate. Cannot be used with `git` or `path`.",
         ),
     },
 )

@@ -1,9 +1,7 @@
 {
   inputs = {
-
-    # Avoid need for https://github.com/nix-community/fenix/pull/180
     nixpkgs = {
-      url = "github:NixOS/nixpkgs?rev=614462224f836ca340aed96b86799ad09b4c2298";
+      url = "github:NixOS/nixpkgs";
     };
 
     fenix = {
@@ -17,30 +15,45 @@
     };
   };
 
-  outputs = { self, nixpkgs, fenix, android-nixpkgs, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      fenix,
+      android-nixpkgs,
+      ...
+    }:
     let
       pkgs = import nixpkgs { system = "x86_64-linux"; };
 
       llvm = pkgs.llvmPackages_16;
 
-      rust = with fenix.packages."x86_64-linux"; combine [
-        complete.cargo
-        complete.clippy
-        complete.rustc
-        complete.rustfmt
-        complete.rust-src
-        targets."aarch64-apple-darwin".latest.rust-std
-        targets."aarch64-apple-ios".latest.rust-std
-        targets."aarch64-linux-android".latest.rust-std
-        targets."aarch64-unknown-linux-gnu".latest.rust-std
-        targets."wasm32-unknown-unknown".latest.rust-std
-        targets."wasm32-wasip1".latest.rust-std
-        targets."x86_64-apple-darwin".latest.rust-std
-        targets."x86_64-pc-windows-msvc".latest.rust-std
-        targets."x86_64-unknown-linux-gnu".latest.rust-std
-      ];
+      rust =
+        with fenix.packages."x86_64-linux";
+        combine [
+          complete.cargo
+          complete.clippy
+          complete.rustc
+          complete.rustfmt
+          complete.rust-src
+          targets."aarch64-apple-darwin".latest.rust-std
+          targets."aarch64-apple-ios".latest.rust-std
+          targets."aarch64-linux-android".latest.rust-std
+          targets."aarch64-unknown-linux-gnu".latest.rust-std
+          targets."wasm32-unknown-unknown".latest.rust-std
+          targets."wasm32-wasip1".latest.rust-std
+          targets."x86_64-apple-darwin".latest.rust-std
+          targets."x86_64-pc-windows-msvc".latest.rust-std
+          targets."x86_64-unknown-linux-gnu".latest.rust-std
+        ];
 
-      fetchVendor = { name, url, sha256, stripComponents ? 0 }:
+      fetchVendor =
+        {
+          name,
+          url,
+          sha256,
+          stripComponents ? 0,
+        }:
         let
           authorization =
             if (pkgs.lib.hasPrefix "https://raw.githubusercontent.com/<repo>/" url) then
@@ -54,13 +67,14 @@
             outputHashMode = "recursive";
             outputHashAlgo = "sha256";
             outputHash = sha256;
-          } ''
-          # Empty URL special cased for example
-          mkdir --parents $out
-          if [ -n "${url}" ]; then
-            ${pkgs.curl}/bin/curl -s -S -L ${authorization} "${url}" | ${pkgs.libarchive}/bin/bsdtar -C $out -xf - --strip-components ${toString stripComponents}
-          fi
-        '';
+          }
+          ''
+            # Empty URL special cased for example
+            mkdir --parents $out
+            if [ -n "${url}" ]; then
+              ${pkgs.curl}/bin/curl -s -S -L ${authorization} "${url}" | ${pkgs.libarchive}/bin/bsdtar -C $out -xf - --strip-components ${toString stripComponents}
+            fi
+          '';
 
       libclang_rt_wasm32 = fetchVendor {
         name = "libclang_rt_wasm32";
@@ -86,13 +100,15 @@
         sha256 = "pQpattmS9VmO3ZIQUFn66az8GSmB4IvYhTTCFn6SUmo="; # User needs to supply.
       };
 
-      sdk_universal-linux-android = android-nixpkgs.sdk."x86_64-linux" (sdkPkgs: with sdkPkgs; [
-        cmdline-tools-latest
-        build-tools-33-0-2
-        platform-tools
-        platforms-android-33
-        ndk-25-2-9519653
-      ]);
+      sdk_universal-linux-android = android-nixpkgs.sdk."x86_64-linux" (
+        sdkPkgs: with sdkPkgs; [
+          cmdline-tools-latest
+          build-tools-33-0-2
+          platform-tools
+          platforms-android-33
+          ndk-25-2-9519653
+        ]
+      );
 
       sdk_wasm32-wasi = fetchVendor {
         name = "sdk_wasm32-wasi";

@@ -13,7 +13,7 @@ vendor_target="$1"
 
 echo >&2 "Patching lazy_static dependency"
 
-vendored_lazy_static_dir="$(bazel run "${vendor_target}" | awk '$0 ~ /Copied to/ {print $3}')"
+vendored_lazy_static_dir="$(bazel run "${vendor_target}" | awk '$0 ~ /VENDOR_EDIT_TEST:/ {print $2}')"
 echo >&2 "Vendored lazy_static to ${vendored_lazy_static_dir}"
 
 echo >&2 "Running test which is expected to pass, now that patch is applied"

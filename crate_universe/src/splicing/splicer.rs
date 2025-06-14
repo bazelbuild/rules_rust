@@ -670,7 +670,7 @@ mod test {
 
     /// Get cargo and rustc binaries the Bazel way
     #[cfg(not(feature = "cargo"))]
-    fn get_cargo_and_rustc_paths() -> (std::path::PathBuf, std::path::PathBuf) {
+    fn get_cargo_and_rustc_paths() -> (PathBuf, PathBuf) {
         let r = runfiles::Runfiles::create().unwrap();
         let cargo_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("CARGO"))).unwrap();
         let rustc_path = runfiles::rlocation!(r, concat!("rules_rust/", env!("RUSTC"))).unwrap();
