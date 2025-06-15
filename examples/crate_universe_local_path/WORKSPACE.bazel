@@ -15,17 +15,31 @@ load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencie
 
 crate_universe_dependencies(bootstrap = True)
 
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
 
 crates_repository(
     name = "crates_from_cargo_workspace",
-    cargo_lockfile = "//crates_from_workspace:Cargo.lock",
+    cargo_lockfile = "//crates_from_workspace:Cargo.workspace.lock",
     # `generator` is not necessary in official releases.
     # See load satement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
 
-load("@crates_from_cargo_workspace//:defs.bzl", "crate_repositories")
+load("@crates_from_cargo_workspace//:defs.bzl", crate_repositories_from_cargo_workspace = "crate_repositories")
 
-crate_repositories()
+crate_repositories_from_cargo_workspace()
+
+crates_repository(
+    name = "crates_from_packages",
+    cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
+    # `generator` is not necessary in official releases.
+    # See load satement for `cargo_bazel_bootstrap`.
+    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+    # Replaced by `vendor_lazy_static.sh`
+    packages = {"lazy_static": crate.spec(version = "1.5.0")},
+)
+
+load("@crates_from_packages//:defs.bzl", crate_repositories_from_packages = "crate_repositories")
+
+crate_repositories_from_packages()
