@@ -26,14 +26,14 @@ crate.from_cargo(
 )
 use_repo(crate, "crates_from_cargo_workspace")
 
-crate.spec(
-    package = "lazy_static",
-    repositories = ["crates_from_packages"],
-    # Replaced by `vendor_lazy_static.sh`
-    version = "1.5.0",  # lazy_static
-)
-crate.from_specs(
-    name = "crates_from_packages",
-    cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
-)
-use_repo(crate, "crates_from_packages")
+# crate.spec(
+#     package = "lazy_static",
+#     repositories = ["crates_from_packages"],
+#     # Replaced by `vendor_lazy_static.sh`
+#     version = "1.5.0",  # lazy_static
+# )
+# crate.from_specs(
+#     name = "crates_from_packages",
+#     cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
+# )
+# use_repo(crate, "crates_from_packages")

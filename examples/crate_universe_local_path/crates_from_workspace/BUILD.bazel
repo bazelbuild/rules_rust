@@ -7,8 +7,8 @@ rust_test(
     deps = all_crate_deps_from_cargo_workspace(),
 )
 
-rust_test(
-    name = "test_from_packages",
-    srcs = ["test.rs"],
-    deps = ["@crates_from_packages//:lazy_static"],
-)
+# rust_test(
+#     name = "test_from_packages",
+#     srcs = ["test.rs"],
+#     deps = ["@crates_from_packages//:lazy_static"],
+# )

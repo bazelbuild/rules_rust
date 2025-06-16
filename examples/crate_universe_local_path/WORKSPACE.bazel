@@ -30,16 +30,16 @@ load("@crates_from_cargo_workspace//:defs.bzl", crate_repositories_from_cargo_wo
 
 crate_repositories_from_cargo_workspace()
 
-crates_repository(
-    name = "crates_from_packages",
-    cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
-    # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
-    generator = "@cargo_bazel_bootstrap//:cargo-bazel",
-    # Replaced by `vendor_lazy_static.sh`
-    packages = {"lazy_static": crate.spec(version = "1.5.0")},
-)
+# crates_repository(
+#     name = "crates_from_packages",
+#     cargo_lockfile = "//crates_from_workspace:Cargo.packages.lock",
+#     # `generator` is not necessary in official releases.
+#     # See load satement for `cargo_bazel_bootstrap`.
+#     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
+#     # Replaced by `vendor_lazy_static.sh`
+#     packages = {"lazy_static": crate.spec(version = "1.5.0")},
+# )
 
-load("@crates_from_packages//:defs.bzl", crate_repositories_from_packages = "crate_repositories")
+# load("@crates_from_packages//:defs.bzl", crate_repositories_from_packages = "crate_repositories")
 
-crate_repositories_from_packages()
+# crate_repositories_from_packages()
