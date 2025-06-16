@@ -129,6 +129,7 @@ def _rust_doc_test_impl(ctx):
         compile_data = crate.compile_data,
         compile_data_targets = crate.compile_data_targets,
         wrapped_crate_type = crate.type,
+        crate_features = crate.crate_features,
         owner = ctx.label,
     )
 
@@ -149,6 +150,9 @@ def _rust_doc_test_impl(ctx):
         "{}={}".format(crate_info.name, crate_info.output.short_path),
         "--test",
     ]
+
+    if ctx.attr.include_features:
+        rustdoc_flags.extend(["--cfg=feature=\"{}\"".format(feature) for feature in crate_info.crate_features])
 
     action = rustdoc_compile_action(
         ctx = ctx,
@@ -227,6 +231,10 @@ rust_doc_test = rule(
             cfg = "exec",
             default = Label("//rust/private/rustdoc:rustdoc_test_writer"),
             executable = True,
+        ),
+        "include_features": attr.bool(
+            doc = "Include the features defined by `crate_features` when building the doc tests.",
+            default = True,
         ),
     },
     test = True,
