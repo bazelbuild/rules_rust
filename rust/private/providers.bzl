@@ -36,6 +36,7 @@ CrateInfo = provider(
         "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "std_dylib": "File: libstd.so file",
+        "crate_features": "[str]: A list of feature enabled for this crate.",
         "type": (
             "str: The type of this crate " +
             "(see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit))."

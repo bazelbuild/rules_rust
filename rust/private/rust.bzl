@@ -206,6 +206,7 @@ def _rust_library_common(ctx, crate_type):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            crate_features = ctx.attr.crate_features,
         ),
     )
 

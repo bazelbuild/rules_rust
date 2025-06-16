@@ -236,6 +236,9 @@ def _rust_doc_impl(ctx):
 
     rustdoc_flags.extend(ctx.attr.rustdoc_flags)
 
+    if ctx.attr.include_features:
+        rustdoc_flags.extend(["--cfg=feature=\"{}\"".format(feature) for feature in crate_info.crate_features])
+
     action = rustdoc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
@@ -349,6 +352,10 @@ rust_doc = rule(
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """),
+        ),
+        "include_features": attr.bool(
+            doc = "Include the features defined by `crate_features` when building the doc tests.",
+            default = True,
         ),
         "_dir_zipper": attr.label(
             doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",
