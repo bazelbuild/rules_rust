@@ -637,6 +637,7 @@ mod test {
     use super::*;
 
     use std::fs::File;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     use cargo_metadata::PackageId;
