@@ -407,7 +407,7 @@ def _rust_prost_library_impl(ctx):
 rust_prost_library = rule(
     doc = "A rule for generating a Rust library using Prost.",
     implementation = _rust_prost_library_impl,
-    attrs = {
+    attrs = resource_set_attr | {
         "proto": attr.label(
             doc = "A `proto_library` target for which to generate Rust gencode.",
             providers = [ProtoInfo],
@@ -466,7 +466,7 @@ rust_prost_toolchain = rule(
     implementation = _rust_prost_toolchain_impl,
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
-    attrs = resource_set_attr | dict({
+    attrs = dict({
         "compile_well_known_types": attr.bool(
             doc = "Corresponds to prost_build's `compile_well_known_types` option. If set to False, well-known-types will not be compiled by prost, and instead rely on the provided Prost types crate.",
             default = True,
