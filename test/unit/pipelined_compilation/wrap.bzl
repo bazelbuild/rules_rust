@@ -1,5 +1,6 @@
 """A custom rule that wraps a crate called to_wrap."""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # buildifier: disable=bzl-visibility
@@ -82,7 +83,7 @@ def _wrap_impl(ctx):
 
 wrap = rule(
     implementation = _wrap_impl,
-    attrs = {
+    attrs = resource_set_attr | {
         "crate_name": attr.string(),
         "generate_metadata": attr.bool(default = False),
         "target": attr.label(),
