@@ -466,7 +466,7 @@ rust_prost_toolchain = rule(
     implementation = _rust_prost_toolchain_impl,
     doc = "Rust Prost toolchain rule.",
     fragments = ["proto"],
-    attrs = dict({
+    attrs = resource_set_attr | dict({
         "compile_well_known_types": attr.bool(
             doc = "Corresponds to prost_build's `compile_well_known_types` option. If set to False, well-known-types will not be compiled by prost, and instead rely on the provided Prost types crate.",
             default = True,
@@ -525,7 +525,7 @@ rust_prost_toolchain = rule(
         "_legacy_proto_toolchain": attr.label(
             default = Label("//private:legacy_proto_toolchain"),
         ),
-    }), **resource_set_attr),
+    })),
     toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),
 )
 
