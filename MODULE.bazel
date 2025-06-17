@@ -16,6 +16,7 @@ bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.3.0")
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "aspect_bazel_lib", version = "2.19.4")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
