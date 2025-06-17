@@ -366,7 +366,7 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//private:protoc_wrapper"),
         ),
-    } | RUSTC_ATTRS,
+    } | RUSTC_ATTRS | resource_set_attr,
     fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,
