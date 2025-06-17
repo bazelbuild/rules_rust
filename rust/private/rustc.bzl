@@ -1361,6 +1361,7 @@ def rustc_compile_action(
         rustc_resource_set = resource_set(ctx.attr)
         if rustc_resource_set == None:
             rustc_resource_set = get_rustc_resource_set(toolchain)
+
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
