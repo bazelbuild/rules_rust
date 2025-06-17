@@ -1,5 +1,6 @@
 """Bazel test rules for [wasm-bindgen](https://crates.io/crates/wasm-bindgen)"""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_rust//rust:defs.bzl", "rust_common")
 
 # buildifier: disable=bzl-visibility
@@ -329,7 +330,7 @@ rust_wasm_bindgen_test = rule(
             executable = True,
             default = Label("//private:wasm_bindgen_test_wrapper"),
         ),
-    } | RUSTC_ATTRS,
+    } | RUSTC_ATTRS | resource_set_attr,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//:toolchain_type")),

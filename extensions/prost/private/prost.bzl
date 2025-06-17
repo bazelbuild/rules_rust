@@ -1,5 +1,6 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
@@ -524,7 +525,7 @@ rust_prost_toolchain = rule(
         "_legacy_proto_toolchain": attr.label(
             default = Label("//private:legacy_proto_toolchain"),
         ),
-    })),
+    }), **resource_set_attr),
     toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),
 )
 

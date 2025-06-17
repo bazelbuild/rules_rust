@@ -14,6 +14,7 @@
 
 """Rust Protobuf Rules"""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 
 # buildifier: disable=bzl-visibility
@@ -280,7 +281,7 @@ def _rust_proto_library_impl(ctx):
 
 rust_proto_library = rule(
     implementation = _rust_proto_library_impl,
-    attrs = {
+    attrs = resource_set_attr | {
         "crate_name": attr.string(
             doc = """\
                 Crate name to use for this target.
