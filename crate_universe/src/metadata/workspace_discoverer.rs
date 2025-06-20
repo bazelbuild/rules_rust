@@ -83,6 +83,18 @@ fn discover_workspaces_with_cache(
             .transpose()?;
 
         workspace_manifest.workspace.as_ref().and_then(|workspace| {
+            let excludes: Vec<_> = workspace
+                .exclude
+                .iter()
+                .map(|exclude| {
+                    workspace_path
+                        .parent()
+                        .unwrap()
+                        .join(exclude)
+                        .clean()
+                        .join("Cargo.toml")
+                })
+                .collect();
             for member in workspace.members.iter() {
                 let member_pattern = workspace_path.parent()?.to_string() + "/" + member;
                 for entry in glob::glob(&member_pattern).unwrap() {
@@ -90,6 +102,9 @@ fn discover_workspaces_with_cache(
                         .unwrap()
                         .clean()
                         .join("Cargo.toml");
+                    if excludes.contains(&maybe_member_cargo_toml) {
+                        continue;
+                    }
                     discovered_workspaces
                         .workspaces_to_members
                         .get_mut(&workspace_path)

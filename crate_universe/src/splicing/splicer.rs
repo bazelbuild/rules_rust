@@ -155,7 +155,11 @@ impl<'a> SplicerKind<'a> {
         let (workspace_prefix, members) = match rel_dirs.first_key_value() {
             Some((workspace_prefix, members)) => {
                 workspace_dir.push(workspace_prefix);
-                (Some(workspace_prefix.to_string()), Some(members))
+                (
+                    (workspace_prefix != &Utf8PathBuf::new())
+                        .then_some(workspace_prefix.to_string()),
+                    Some(members),
+                )
             }
             None => (None, None),
         };
