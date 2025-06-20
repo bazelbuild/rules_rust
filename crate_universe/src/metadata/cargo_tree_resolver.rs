@@ -491,7 +491,7 @@ impl TreeResolver {
                 continue;
             }
             if let Some(parent) = destination.parent() {
-                std::fs::create_dir_all(&parent)?;
+                std::fs::create_dir_all(parent)?;
             }
             symlink(source_path.as_std_path(), &destination).with_context(|| {
                 format!(

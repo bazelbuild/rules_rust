@@ -174,13 +174,13 @@ impl<'a> SplicerKind<'a> {
         // Link explicitly defined members
         if let Some(members) = members {
             for member in members.iter() {
-                let link_src = manifest_dir.as_std_path().join(&member).clean();
-                let link_dest = workspace_dir.as_std_path().join(&member).clean();
+                let link_src = manifest_dir.as_std_path().join(member).clean();
+                let link_dest = workspace_dir.as_std_path().join(member).clean();
                 if link_dest.exists() {
                     continue;
                 }
                 if let Some(parent) = link_dest.parent() {
-                    std::fs::create_dir_all(&parent)?;
+                    std::fs::create_dir_all(parent)?;
                 }
                 symlink(&link_src, &link_dest).context(format!(
                     "Failed to create symlink: {} -> {}",
