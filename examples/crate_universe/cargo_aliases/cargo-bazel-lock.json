@@ -1,5 +1,5 @@
 {
-  "checksum": "ea9637a58fd073cf8ffeafbba93c2149561aae04cda997e322fbbcf4cecbb44f",
+  "checksum": "b403981aff89472d68de678103af4a5d0f1bb7947f35e3589c6a3fd4838a17a1",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -3493,7 +3493,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "aliases 0.1.0": ""
+    "aliases 0.1.0": "cargo_aliases"
   },
   "conditions": {
     "aarch64-apple-darwin": [
