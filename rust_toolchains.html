@@ -169,7 +169,7 @@
 <pre>
 load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
 
-rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-proc_macro_srv">proc_macro_srv</a>, <a href="#rust_analyzer_toolchain-rustc">rustc</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>)
+rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a href="#rust_analyzer_toolchain-proc_macro_srv">proc_macro_srv</a>, <a href="#rust_analyzer_toolchain-rustc">rustc</a>, <a href="#rust_analyzer_toolchain-rustc_srcs">rustc_srcs</a>, <a href="#rust_analyzer_toolchain-rustc_srcs_path">rustc_srcs_path</a>)
 </pre>
 <p>A toolchain for <a href="https://rust-analyzer.github.io/">rust-analyzer</a>.</p>
 <p><strong>ATTRIBUTES</strong></p>
@@ -178,6 +178,7 @@ rust_analyzer_toolchain(<a href="#rust_analyzer_toolchain-name">name</a>, <a hre
 <tr><td style="text-align: left"><a id="rust_analyzer_toolchain-proc_macro_srv"></a>proc_macro_srv</td><td style="text-align: left">The path to a <code>rust_analyzer_proc_macro_srv</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc"></a>rustc</td><td style="text-align: left">The path to a <code>rustc</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc_srcs"></a>rustc_srcs</td><td style="text-align: left">The source code of rustc.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_analyzer_toolchain-rustc_srcs_path"></a>rustc_srcs_path</td><td style="text-align: left">The direct path to rustc srcs relative to rustc_srcs package root.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"library"</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="rust_toolchain"></a></p>
