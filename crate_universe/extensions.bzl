@@ -6,7 +6,7 @@ This doc describes using crate_universe with bzlmod.
 
 If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe_workspace.html).
 
-There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod).
+There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples).
 
 # Table of Contents
 
