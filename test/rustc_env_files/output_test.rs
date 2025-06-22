@@ -1,7 +1,9 @@
 use std::process;
 
-fn main() {
-    let binary = std::env::args().nth(1).expect("No argument was provided");
+#[test]
+fn output_test() {
+    let r = runfiles::Runfiles::create().unwrap();
+    let binary = runfiles::rlocation!(r, env!("HELLO_ENV")).unwrap();
 
     let output = process::Command::new(binary)
         .output()

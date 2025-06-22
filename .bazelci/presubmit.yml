@@ -17,7 +17,8 @@ aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
-  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.72.1"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.74.0"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.74.0"],\n|' MODULE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
 nightly_aspects_flags: &nightly_aspects_flags
@@ -68,24 +69,6 @@ default_macos_targets: &default_macos_targets
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
-  - "-//test/unit/pipelined_compilation/..."
-default_windows_no_runfiles_targets: &default_windows_no_runfiles_targets
-  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
-  - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/1156
-  - "-//crate_universe/..."
-  - "-//test/chained_direct_deps:mod3_doc_test"
-  - "-//test/out_dir_in_tests:demo_lib_doc_test"
-  - "-//test/rustc_env_files:output_test"
-  - "-//test/test_env_launcher:test"
-  - "-//test/test_env:test_manifest_dir"
-  - "-//test/test_env:test_run"
-  - "-//test/unit/pipelined_compilation/..."
-  - "-//test/unit/rustdoc/..."
-  - "-//rust/runfiles/..."
-  # Runfiles used by the test only.
-  - "-//test/empty_suite:deps_test"
-  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
 crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
   - "//vendor_external:crates_vendor"
   - "//vendor_local_manifests:crates_vendor"
@@ -162,15 +145,14 @@ tasks:
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
-  windows_no_runfiles:
-    name: No Runfiles
+  windows_with_runfiles:
+    name: With Runfiles
     platform: windows
-    build_flags:
-      - "--noenable_runfiles"
-    test_flags:
-      - "--noenable_runfiles"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
   ubuntu2004_split_coverage_postprocessing:
     name: Split Coverage Postprocessing
     platform: ubuntu2004
@@ -265,18 +247,19 @@ tasks:
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_no_runfiles_with_aspects:
-    name: No Runfiles With Aspects
+    name: With Runfiles With Aspects
     platform: windows
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
     build_flags:
-      - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
     test_flags:
-      - "--noenable_runfiles"
       - "--config=rustfmt"
       - "--config=clippy"
-    build_targets: *default_windows_no_runfiles_targets
-    test_targets: *default_windows_no_runfiles_targets
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
   windows_rolling_with_aspects:
     name: "Windows Rolling Bazel Version With Aspects"
     platform: windows
@@ -379,6 +362,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
     build_targets: *single_rust_channel_targets
     test_targets: *single_rust_channel_targets
   ubuntu2004_stable_with_aspects:
@@ -387,6 +371,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
     build_flags: *aspects_flags
     build_targets: *single_rust_channel_targets
     test_flags: *aspects_flags
@@ -397,6 +382,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
     build_flags: *nightly_flags
     build_targets: *single_rust_channel_targets
     test_flags: *nightly_flags
@@ -407,6 +393,7 @@ tasks:
     # Test rules while only registering a nightly toolchain
     shell_commands:
       - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
     build_flags: *nightly_aspects_flags
     build_targets: *single_rust_channel_targets
     test_flags: *nightly_aspects_flags
@@ -898,7 +885,7 @@ tasks:
     build_flags:
       - "--compile_one_dependency"
     build_targets:
-      - "tools/rust_analyzer/main.rs"
+      - "tools/rust_analyzer/bin/gen_rust_project.rs"
   extensions_bindgen_linux:
     platform: ubuntu2004
     name: Extensions Bindgen

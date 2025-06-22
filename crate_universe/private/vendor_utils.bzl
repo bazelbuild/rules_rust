@@ -3,15 +3,14 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
-_BUILDIFIER_VERSION = "7.3.1"
+_BUILDIFIER_VERSION = "8.0.3"
 _BUILDIFIER_URL_TEMPLATE = "https://github.com/bazelbuild/buildtools/releases/download/v{version}/{bin}"
 _BUILDIFIER_INTEGRITY = {
-    "buildifier-darwin-amd64": "sha256-N1+CMQPQFiCq7CCgwpxsvKmfT9ByWuMLk2VcZwT0TXE=",
-    "buildifier-darwin-arm64": "sha256-Wmr8asegn1RVuguJvZnVriO0F03F3J1sDtXOjKrD+BM=",
-    "buildifier-linux-amd64": "sha256-VHTMUSinToBng9VAgfWBZixL6K5lAi9VfpKB7V3IgAk=",
-    "buildifier-linux-arm64": "sha256-C/hsS//69PCO7Xe95bIILkrlA5oR4uiwOYTBc8NKVhw=",
-    "buildifier-linux-s390x": "sha256-4tef9YhdRSdPdlMfGtvHtzoSn1nnZ/d36PveYz2dTi4=",
-    "buildifier-windows-amd64.exe": "sha256-NwzVdgda0pkwqC9d4TLxod5AhMeEqCUUvU2oDIWs9Kg=",
+    "buildifier-darwin-amd64": "sha256-t6MVLN4LOXGxEH8idK/neMXBVNzfbJxmmiMePABPBH4=",
+    "buildifier-darwin-arm64": "sha256-Z0xmP3tc0DwAL4yoNKjBwAjMtSegoqEy0Ip6NViDsi0=",
+    "buildifier-linux-amd64": "sha256-yWlIfBr4XnCFdsjf3Qu0aB6uWKrXnmiuSIgscIcYQbc=",
+    "buildifier-linux-arm64": "sha256-vdm5Lixl1Gr/7srvtU5o00wnLR9KjFtUkpo+kqt4ggo=",
+    "buildifier-windows-amd64.exe": "sha256-Y6JC9X4lPv57lXPXOcCKPQ5ijv2EAVyNrRfYe2Qp5EM=",
 }
 
 def crates_vendor_deps():
@@ -56,12 +55,6 @@ def crates_vendor_deps_targets():
     )
 
     native.config_setting(
-        name = "linux_s390x",
-        constraint_values = ["@platforms//os:linux", "@platforms//cpu:s390x"],
-        visibility = ["//visibility:public"],
-    )
-
-    native.config_setting(
         name = "macos_amd64",
         constraint_values = ["@platforms//os:macos", "@platforms//cpu:x86_64"],
         visibility = ["//visibility:public"],
@@ -84,7 +77,6 @@ def crates_vendor_deps_targets():
         actual = select({
             ":linux_amd64": "@cargo_bazel.buildifier-linux-amd64//file",
             ":linux_arm64": "@cargo_bazel.buildifier-linux-arm64//file",
-            ":linux_s390x": "@cargo_bazel.buildifier-linux-s390x//file",
             ":macos_amd64": "@cargo_bazel.buildifier-darwin-amd64//file",
             ":macos_arm64": "@cargo_bazel.buildifier-darwin-arm64//file",
             ":windows": "@cargo_bazel.buildifier-windows-amd64.exe//file",

@@ -5,15 +5,16 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro")
 load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
 load(":wrap.bzl", "wrap")
 
-NOT_WINDOWS = select({
-    "@platforms//os:linux": [],
-    "@platforms//os:macos": [],
-    "//conditions:default": ["@platforms//:incompatible"],
-})
-
 ENABLE_PIPELINING = {
     str(Label("//rust/settings:pipelined_compilation")): True,
 }
+
+# TODO: Fix pipeline compilation on windows
+# https://github.com/bazelbuild/rules_rust/issues/3383
+_NO_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
 
 def _second_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -109,8 +110,21 @@ def _pipelined_compilation_test():
         deps = [":second"],
     )
 
-    second_lib_test(name = "second_lib_test", target_under_test = ":second", target_compatible_with = NOT_WINDOWS)
-    bin_test(name = "bin_test", target_under_test = ":bin", target_compatible_with = NOT_WINDOWS)
+    second_lib_test(
+        name = "second_lib_test",
+        target_under_test = ":second",
+        target_compatible_with = _NO_WINDOWS,
+    )
+    bin_test(
+        name = "bin_test",
+        target_under_test = ":bin",
+        target_compatible_with = _NO_WINDOWS,
+    )
+
+    return [
+        ":second_lib_test",
+        ":bin_test",
+    ]
 
 def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -195,9 +209,12 @@ def _disable_pipelining_test():
     )
     rmeta_not_produced_if_pipelining_disabled_test(
         name = "rmeta_not_produced_if_pipelining_disabled_test",
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":lib",
     )
+
+    return [
+        ":rmeta_not_produced_if_pipelining_disabled_test",
+    ]
 
 def _custom_rule_test(generate_metadata, suffix):
     rust_library(
@@ -222,15 +239,20 @@ def _custom_rule_test(generate_metadata, suffix):
     rmeta_is_propagated_through_custom_rule_test(
         name = "rmeta_is_propagated_through_custom_rule_test" + suffix,
         generate_metadata = generate_metadata,
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":uses_wrapper" + suffix,
+        target_compatible_with = _NO_WINDOWS,
     )
 
     rmeta_is_used_when_building_custom_rule_test(
         name = "rmeta_is_used_when_building_custom_rule_test" + suffix,
-        target_compatible_with = NOT_WINDOWS,
         target_under_test = ":wrapper" + suffix,
+        target_compatible_with = _NO_WINDOWS,
     )
+
+    return [
+        ":rmeta_is_propagated_through_custom_rule_test" + suffix,
+        ":rmeta_is_used_when_building_custom_rule_test" + suffix,
+    ]
 
 def pipelined_compilation_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -238,20 +260,13 @@ def pipelined_compilation_test_suite(name):
     Args:
         name: Name of the macro.
     """
-    _pipelined_compilation_test()
-    _disable_pipelining_test()
-    _custom_rule_test(generate_metadata = True, suffix = "_with_metadata")
-    _custom_rule_test(generate_metadata = False, suffix = "_without_metadata")
+    tests = []
+    tests.extend(_pipelined_compilation_test())
+    tests.extend(_disable_pipelining_test())
+    tests.extend(_custom_rule_test(generate_metadata = True, suffix = "_with_metadata"))
+    tests.extend(_custom_rule_test(generate_metadata = False, suffix = "_without_metadata"))
 
     native.test_suite(
         name = name,
-        tests = [
-            ":bin_test",
-            ":second_lib_test",
-            ":rmeta_is_propagated_through_custom_rule_test_with_metadata",
-            ":rmeta_is_propagated_through_custom_rule_test_without_metadata",
-            ":rmeta_is_used_when_building_custom_rule_test_with_metadata",
-            ":rmeta_is_used_when_building_custom_rule_test_without_metadata",
-            ":rmeta_not_produced_if_pipelining_disabled_test",
-        ],
+        tests = tests,
     )

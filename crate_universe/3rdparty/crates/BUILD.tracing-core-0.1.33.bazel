@@ -95,6 +95,6 @@ rust_library(
     }),
     version = "0.1.33",
     deps = [
-        "@cui__once_cell-1.20.2//:once_cell",
+        "@cui__once_cell-1.21.3//:once_cell",
     ],
 )

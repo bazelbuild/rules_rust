@@ -1,6 +1,7 @@
 """Unittest to verify compile_data (attribute) propagation"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_common", "rust_doc", "rust_library", "rust_test")
 load(
     "//test/unit:common.bzl",
@@ -95,10 +96,11 @@ def _define_test_targets():
         crate = ":compile_data_env",
     )
 
-    native.genrule(
+    write_file(
         name = "generated_compile_data",
-        outs = ["generated.txt"],
-        cmd = "echo 'generated compile data contents' > $@",
+        out = "generated.txt",
+        content = ["generated compile data contents", ""],
+        newline = "unix",
     )
 
     rust_library(
@@ -113,10 +115,11 @@ def _define_test_targets():
         crate = ":compile_data_gen",
     )
 
-    native.genrule(
+    write_file(
         name = "generated_src",
-        outs = ["generated.rs"],
-        cmd = """echo 'pub const GENERATED: &str = "generated";' > $@""",
+        out = "generated.rs",
+        content = ["pub const GENERATED: &str = \"generated\";", ""],
+        newline = "unix",
     )
 
     rust_library(

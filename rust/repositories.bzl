@@ -526,8 +526,13 @@ def _rust_toolchain_tools_repository_impl(ctx):
         )
         sha256s.update(rustc_dev_sha256)
 
-    ctx.file("WORKSPACE.bazel", "")
+    ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
+        ctx.name,
+    ))
     ctx.file("BUILD.bazel", "\n".join(build_components))
+
+    # Used to locate `rust_host_tools` repositories.
+    ctx.file(ctx.name, "")
 
     repro = {"name": ctx.name}
     for key in _RUST_TOOLCHAIN_REPOSITORY_ATTRS:

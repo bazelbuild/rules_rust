@@ -135,14 +135,12 @@ def _annotation(
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
             attribute.
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
-        build_script_env (dict, optional): Additional environment variables to set on a crate's
-            `cargo_build_script::env` attribute.
+        build_script_env (dict, optional): Additional environment variables to set when running the crate's `cargo_build_script` - sets that target's `build_script_env` attribute.
         build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rundir (str, optional): An override for the build script's rundir attribute.
-        build_script_rustc_env (dict, optional): Additional environment variables to set on a crate's
-            `cargo_build_script::env` attribute.
+        build_script_rustc_env (dict, optional): Additional environment variables to set when compiling the crate's `cargo_build_script` - sets that target's `rustc_env` attribute.
         build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
         build_script_use_default_shell_env (int, optional): Whether or not to include the default shell environment for the build
             script action.
@@ -178,7 +176,7 @@ def _annotation(
         shallow_since (str, optional): An optional timestamp used for crates originating from a git repository
             instead of a crate registry. This flag optimizes fetching the source code.
         override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
-            the parent repo to provide its own version of this dependency. Keys can be `proc-marco`, `custom-build`, `lib`, `bin`.
+            the parent repo to provide its own version of this dependency. Keys can be `proc-macro`, `custom-build`, `lib`, `bin`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.

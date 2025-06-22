@@ -13,18 +13,6 @@ def _rust_example_impl(module_ctx):
     direct_deps.extend(complex_crate_repositories())
 
     http_archive(
-        name = "zlib",
-        build_file = Label("//complex/3rdparty:BUILD.zlib.bazel"),
-        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-        strip_prefix = "zlib-1.2.11",
-        urls = [
-            "https://zlib.net/zlib-1.2.11.tar.gz",
-            "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-        ],
-    )
-    direct_deps.append(struct(repo = "zlib"))
-
-    http_archive(
         name = "libgit2",
         build_file = Label("//complex/3rdparty:BUILD.libgit2.bazel"),
         sha256 = "d25866a4ee275a64f65be2d9a663680a5cf1ed87b7ee4c534997562c828e500d",

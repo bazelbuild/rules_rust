@@ -28,6 +28,7 @@ crate.from_cargo(
     manifests = ["//third-party-in-workspace:Cargo.toml"],
 )
 use_repo(crate, "crates_in_workspace")
+
 crate.annotation(
     additive_build_file = "//:BUILD.anyhow.bazel",
     crate = "anyhow",

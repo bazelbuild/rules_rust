@@ -109,6 +109,12 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
+    # TODO: `crate_universe` currently does not work on Windows.
+    # https://github.com/bazelbuild/rules_rust/issues/1156
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [
         "@rules_rust//rust/runfiles",
     ] + all_crate_deps(
@@ -136,6 +142,12 @@ rust_test(
         proc_macro_dev = True,
     ),
     tags = ["requires-network"],
+    # TODO: `crate_universe` currently does not work on Windows.
+    # https://github.com/bazelbuild/rules_rust/issues/1156
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [
         ":cargo_bazel",
         "@rules_rust//rust/runfiles",
@@ -153,9 +165,10 @@ rust_test(
     ],
     edition = "2021",
     rustc_env = {
-        "CARGO_TOML": "$(rootpath :Cargo.toml)",
-        "VERSION_BZL": "$(rootpath :version.bzl)",
+        "CARGO_TOML": "$(rlocationpath :Cargo.toml)",
+        "VERSION_BZL": "$(rlocationpath :version.bzl)",
     },
+    deps = ["//rust/runfiles"],
 )
 
 rust_doc(
@@ -172,4 +185,10 @@ rust_doc(
 rust_doc_test(
     name = "rustdoc_test",
     crate = ":cargo_bazel",
+    # TODO: `rust_doc_test` currently does not work on Windows.
+    # https://github.com/bazelbuild/rules_rust/issues/1156
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )

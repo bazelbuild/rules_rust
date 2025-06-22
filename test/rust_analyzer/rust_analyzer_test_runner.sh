@@ -102,6 +102,10 @@ function rust_analyzer_test() {
     else
         RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
     fi
+    
+    echo "Generating auto-discovery.json..."
+    RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
+    
     echo "Building..."
     bazel build //...
     echo "Testing..."

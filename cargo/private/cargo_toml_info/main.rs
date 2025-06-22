@@ -107,7 +107,7 @@ fn lint_priority(lint: &cargo_toml::Lint) -> i32 {
 fn format_lint_set<'a>(
     lints: Option<&'a BTreeMap<String, BTreeMap<String, Lint>>>,
     group: &'a LintGroup,
-) -> Option<impl Iterator<Item = String> + use<'a>> {
+) -> Option<impl Iterator<Item = String> + 'a> {
     let lints = lints?.get(group.key())?;
     let mut lints = Vec::from_iter(lints);
     lints.sort_by(|(_, a), (_, b)| {

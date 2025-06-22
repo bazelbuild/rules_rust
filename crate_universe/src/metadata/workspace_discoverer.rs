@@ -128,6 +128,13 @@ fn discover_workspaces_with_cache(
             let mut actual_workspace_path = workspace_path.clone();
             if let Some(package) = manifest.package {
                 if let Some(explicit_workspace_path) = package.workspace {
+                    let explicit_workspace_path = Utf8Path::from_path(&explicit_workspace_path)
+                        .with_context(|| {
+                            anyhow!(
+                                "Failed to construct UTF-8 path from: {}",
+                                explicit_workspace_path.display()
+                            )
+                        })?;
                     actual_workspace_path =
                         child_path.parent().unwrap().join(explicit_workspace_path);
                 }

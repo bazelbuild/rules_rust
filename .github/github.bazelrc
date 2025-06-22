@@ -3,10 +3,6 @@
 # Always display the flags being used
 common --announce_rc
 
-# These settings make the windows workers behave similarly to unix workers
-startup --windows_enable_symlinks
-build --enable_runfiles
-
 # Show errors in CI
 test --test_output=errors
 

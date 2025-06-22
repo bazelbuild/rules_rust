@@ -3,8 +3,8 @@ load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test
 load("//tools/private:tool_utils.bzl", "aspect_repository")
 
 rust_binary(
-    name = "gen_rust_project",
-    srcs = ["main.rs"],
+    name = "discover_bazel_rust_project",
+    srcs = ["bin/discover_rust_project.rs"],
     edition = "2018",
     rustc_env = {
         "ASPECT_REPOSITORY": aspect_repository(),
@@ -13,10 +13,30 @@ rust_binary(
     deps = [
         ":gen_rust_project_lib",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
         "//tools/rust_analyzer/3rdparty/crates:clap",
         "//tools/rust_analyzer/3rdparty/crates:env_logger",
         "//tools/rust_analyzer/3rdparty/crates:log",
-        "//util/label",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)
+
+rust_binary(
+    name = "gen_rust_project",
+    srcs = ["bin/gen_rust_project.rs"],
+    edition = "2018",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+    },
+    visibility = ["//visibility:public"],
+    deps = [
+        ":gen_rust_project_lib",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
     ],
 )
 
@@ -24,7 +44,7 @@ rust_library(
     name = "gen_rust_project_lib",
     srcs = glob(
         ["**/*.rs"],
-        exclude = ["main.rs"],
+        exclude = ["bin"],
     ),
     data = [
         "//rust/private:rust_analyzer_detect_sysroot",
@@ -33,6 +53,8 @@ rust_library(
     deps = [
         "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
         "//tools/rust_analyzer/3rdparty/crates:log",
         "//tools/rust_analyzer/3rdparty/crates:serde",
         "//tools/rust_analyzer/3rdparty/crates:serde_json",

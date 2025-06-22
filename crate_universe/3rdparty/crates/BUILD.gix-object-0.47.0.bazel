@@ -100,7 +100,7 @@ rust_library(
         "@cui__gix-utils-0.1.14//:gix_utils",
         "@cui__gix-validate-0.9.3//:gix_validate",
         "@cui__itoa-1.0.8//:itoa",
-        "@cui__smallvec-1.13.2//:smallvec",
+        "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
         "@cui__winnow-0.6.20//:winnow",
     ],
