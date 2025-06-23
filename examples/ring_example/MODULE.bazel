@@ -1,0 +1,44 @@
+"""Ring example using crate_universe from_cargo API"""
+
+module(
+    name = "ring_example",
+    version = "0.0.0",
+)
+
+###############################################################################
+# B A Z E L  C E N T R A L  R E G I S T R Y
+###############################################################################
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+bazel_dep(name = "platforms", version = "0.0.11")
+
+###############################################################################
+# T O O L C H A I N S
+###############################################################################
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# C R A T E  U N I V E R S E
+###############################################################################
+
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+    ],
+)
+use_repo(crate, "crates") 
