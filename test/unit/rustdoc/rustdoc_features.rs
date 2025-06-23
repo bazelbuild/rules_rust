@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![deny(rustdoc::broken_intra_doc_links)]
+
 //!
 //! Checkout [inc]
-//! 
+//!
 
 /// Increments the input.
 #[cfg(feature = "docs")]
