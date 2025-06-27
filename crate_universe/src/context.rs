@@ -187,7 +187,7 @@ impl Context {
             // If no package prefix is present, attempt to apply the workspace prefix
             // since workspace members would not have shown up with their own label
             None => match workspace_prefix {
-                Some(prefix) => PathBuf::from(prefix).join(package_path_diff),
+                Some(prefix) => clean_path::clean(PathBuf::from(prefix).join(package_path_diff)),
                 None => package_path_diff,
             },
         };

@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::utils::PathCleanUtf8;
 use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_toml::Manifest;
@@ -52,10 +53,6 @@ fn discover_workspaces_with_cache(
             discovered_workspaces
                 .workspaces_to_members
                 .insert(workspace_parent, BTreeSet::new());
-        } else {
-            discovered_workspaces
-                .non_workspaces
-                .insert(cargo_toml_path.clone());
         }
     }
 
@@ -84,6 +81,39 @@ fn discover_workspaces_with_cache(
                 Some(members)
             })
             .transpose()?;
+
+        workspace_manifest.workspace.as_ref().and_then(|workspace| {
+            let excludes: Vec<_> = workspace
+                .exclude
+                .iter()
+                .map(|exclude| {
+                    workspace_path
+                        .parent()
+                        .unwrap()
+                        .join(exclude)
+                        .clean()
+                        .join("Cargo.toml")
+                })
+                .collect();
+            for member in workspace.members.iter() {
+                let member_pattern = workspace_path.parent()?.to_string() + "/" + member;
+                for entry in glob::glob(&member_pattern).unwrap() {
+                    let maybe_member_cargo_toml = Utf8Path::from_path(&entry.unwrap())
+                        .unwrap()
+                        .clean()
+                        .join("Cargo.toml");
+                    if excludes.contains(&maybe_member_cargo_toml) {
+                        continue;
+                    }
+                    discovered_workspaces
+                        .workspaces_to_members
+                        .get_mut(&workspace_path)
+                        .unwrap()
+                        .insert(maybe_member_cargo_toml);
+                }
+            }
+            Some(())
+        });
 
         'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(false)
@@ -135,8 +165,12 @@ fn discover_workspaces_with_cache(
                                 explicit_workspace_path.display()
                             )
                         })?;
-                    actual_workspace_path =
-                        child_path.parent().unwrap().join(explicit_workspace_path);
+                    actual_workspace_path = child_path
+                        .parent()
+                        .unwrap()
+                        .join(explicit_workspace_path)
+                        .clean()
+                        .join("Cargo.toml");
                 }
             }
             if !discovered_workspaces
