@@ -41,7 +41,7 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "-//test/unpretty/..."
 single_rust_channel_min_version_targets: &single_rust_channel_min_version_targets
   # START - Copied from 'single_rust_channel_targets'.
-  # TODO: Figure out how to do proper list inheritence.
+  # TODO: Figure out how to do proper list inheritance.
   - "--"
   - "//..."
   # TODO: Remove this and replace `cargo_bootstrap_repository` with a

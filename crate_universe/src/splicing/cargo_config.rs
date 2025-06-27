@@ -173,11 +173,11 @@ mod test {
                 # Makes artifactory the default registry and saves passing --registry parameter
                 [registry]
                 default = "art-crates-remote"
-                
+
                 [registries]
                 # Remote repository proxy in Artifactory (read-only)
                 art-crates-remote = { index = "https://artprod.mycompany/artifactory/git/cargo-remote.git" }
-                
+
                 # Optional, use with --registry to publish to crates.io
                 crates-io = { index = "https://github.com/rust-lang/crates.io-index" }
 

@@ -6,4 +6,3 @@ extern crate std;
 use proc_macro::make_answer;
 
 fn answer() -> u32 { 42 }
-

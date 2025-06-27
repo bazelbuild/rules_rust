@@ -10,4 +10,3 @@ path = "lib.rs"
 
 [dependencies]
 tracing = { git = "https://github.com/tokio-rs/tracing.git", branch = "master" }
-

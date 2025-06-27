@@ -13,4 +13,3 @@ edition = "2018"
 # exist within test data.
 [lib]
 path = "lib.rs"
-
