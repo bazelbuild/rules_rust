@@ -31,7 +31,7 @@ RUSTFMT="$(rlocation "$1")"
 # MARK - Test
 
 # simulate bazel run with setting BUILD_WORKING_DIRECTORY
-export BUILD_WORKING_DIRECTORY="$PWD" 
+export BUILD_WORKING_DIRECTORY="$PWD"
 
 OUTPUT="$(echo -e "fn main() {\n\n}" | "$RUSTFMT")"
 

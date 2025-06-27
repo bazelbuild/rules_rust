@@ -31,7 +31,7 @@ CARGO="$(rlocation "$1")"
 # MARK - Test
 
 # simulate bazel run with setting BUILD_WORKING_DIRECTORY
-export BUILD_WORKING_DIRECTORY="$PWD" 
+export BUILD_WORKING_DIRECTORY="$PWD"
 
 # Run hello_world, invoking rustc
 OUTPUT="$("${CARGO}" run)"

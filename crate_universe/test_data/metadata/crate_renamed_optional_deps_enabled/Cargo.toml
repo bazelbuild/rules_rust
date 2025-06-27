@@ -10,4 +10,3 @@ path = "lib.rs"
 
 [dependencies]
 p256 = "=0.13.2"
-

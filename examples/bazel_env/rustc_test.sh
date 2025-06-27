@@ -35,6 +35,6 @@ set -x
 echo "fn main() {}" >"$DIR/main.rs"
 cd "$DIR"
 # simulate bazel run with setting BUILD_WORKING_DIRECTORY
-export BUILD_WORKING_DIRECTORY="$PWD" 
-"$RUSTC" "main.rs" || 
+export BUILD_WORKING_DIRECTORY="$PWD"
+"$RUSTC" "main.rs" ||
   fail "Couldn't compile main.rs"

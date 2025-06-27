@@ -67,4 +67,3 @@ dependencies = [
 [[patch.unused]]
 name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
-
