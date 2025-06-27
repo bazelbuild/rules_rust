@@ -9,6 +9,7 @@ get_host_triple = _get_host_triple
 CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
 CARGO_BAZEL_REPIN = "CARGO_BAZEL_REPIN"
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
+CARGO_BAZEL_TIMEOUT = "CARGO_BAZEL_TIMEOUT"
 REPIN = "REPIN"
 
 CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
@@ -45,10 +46,15 @@ def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
     if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
         quiet = False
 
+    exec_kwargs = dict(environment=env, quiet=quiet)
+
+    timeout = repository_ctx.os.environ.get(CARGO_BAZEL_TIMEOUT, None)
+    if timeout:
+        exec_kwargs.update(timeout=int(timeout))
+
     result = repository_ctx.execute(
         args,
-        environment = env,
-        quiet = quiet,
+        **exec_kwargs,
     )
 
     if result.return_code and not allow_fail:
