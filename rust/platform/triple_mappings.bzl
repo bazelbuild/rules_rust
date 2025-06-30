@@ -55,6 +55,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
