@@ -14,6 +14,7 @@
 
 """Rust rule implementations"""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
@@ -817,7 +818,7 @@ _rust_test_attrs = {
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | {
+    attrs = _common_attrs | resource_set_attr | {
         "disable_pipelining": attr.bool(
             default = False,
             doc = dedent("""\
@@ -915,7 +916,7 @@ _rust_static_library_transition = transition(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    attrs = _common_attrs | {
+    attrs = _common_attrs | resource_set_attr | {
         "platform": attr.label(
             doc = "Optional platform to transition the static library to.",
             default = None,
@@ -964,7 +965,7 @@ _rust_shared_library_transition = transition(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = _common_attrs | _experimental_use_cc_common_link_attrs | {
+    attrs = _common_attrs | _experimental_use_cc_common_link_attrs | resource_set_attr | {
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
@@ -1017,7 +1018,7 @@ rust_proc_macro = rule(
     # need to declare `_allowlist_function_transition`, see
     # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
     attrs = dict(
-        _common_attrs.items(),
+        (_common_attrs | resource_set_attr).items(),
         _allowlist_function_transition = attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
@@ -1105,7 +1106,7 @@ _rust_binary_transition = transition(
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | _rust_binary_attrs | {
+    attrs = _common_attrs | _rust_binary_attrs | resource_set_attr | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1294,7 +1295,7 @@ _rust_test_transition = transition(
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | _rust_test_attrs | {
+    attrs = _common_attrs | _rust_test_attrs | resource_set_attr | {
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,

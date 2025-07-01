@@ -27,6 +27,7 @@ bzl_library(
         ":bazel_tools_bzl_lib",
         ":rules_cc_bzl_lib",
         "//rust/platform:bzl_lib",
+        "@aspect_bazel_lib//lib:resource_sets",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//rules:common_settings",
     ],
