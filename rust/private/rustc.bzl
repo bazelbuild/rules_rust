@@ -1057,7 +1057,7 @@ def construct_arguments(
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
 
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+    if toolchain.llvm_cov and ctx.coverage_instrumented():
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
@@ -1157,7 +1157,8 @@ def rustc_compile_action(
         force_all_deps_direct = False,
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
-        include_coverage = True):
+        include_coverage = True,
+        include_coverage_runfiles = False):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1171,6 +1172,7 @@ def rustc_compile_action(
         crate_info_dict: A mutable dict used to create CrateInfo provider
         skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
         include_coverage (bool, optional): Whether to generate coverage information or not.
+        include_coverage_runfiles: (bool, optional): Whether to include the runfiles for coverage generation.
 
     Returns:
         list: A list of the following providers:
@@ -1496,7 +1498,7 @@ def rustc_compile_action(
         outputs = [crate_info.output]
 
     coverage_runfiles = []
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
+    if include_coverage_runfiles:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files

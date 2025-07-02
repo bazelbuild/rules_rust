@@ -424,6 +424,7 @@ def _rust_test_impl(ctx):
             owner = ctx.label,
         )
 
+    coverage = toolchain.llvm_cov and ctx.coverage_instrumented(target = ctx.attr.crate)
     providers = rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -431,6 +432,7 @@ def _rust_test_impl(ctx):
         crate_info_dict = crate_info_dict,
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
+        include_coverage_runfiles = coverage,
     )
     data = getattr(ctx.attr, "data", [])
 
@@ -440,7 +442,7 @@ def _rust_test_impl(ctx):
         data,
         {},
     )
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+    if coverage:
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
 
