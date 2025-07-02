@@ -89,6 +89,7 @@ def _crates_repository_impl(repository_ctx):
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             output_dir = repository_ctx.path("splicing-output"),
+            repository_name = repository_ctx.name,
         )
 
         kwargs.update({
