@@ -152,6 +152,7 @@ def rust_register_toolchains(
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
+        strip_level = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         versions = _RUST_TOOLCHAIN_VERSIONS,
         aliases = {},
@@ -190,6 +191,7 @@ def rust_register_toolchains(
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
@@ -267,6 +269,7 @@ def rust_register_toolchains(
             rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
+            strip_level = strip_level,
             sha256s = sha256s,
             urls = urls,
             versions = versions,
@@ -393,6 +396,9 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
     ),
+    "strip_level": attr.string_dict(
+        doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
+    ),
     "rustfmt_version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
     ),
@@ -513,6 +519,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
+        strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
         version = ctx.attr.version,
     ))
 
@@ -617,6 +624,7 @@ def rust_toolchain_repository(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        strip_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
@@ -644,6 +652,7 @@ def rust_toolchain_repository(
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Optimization level config for this toolchain.
+        strip_level (dict, optional): Strip level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']
@@ -676,6 +685,7 @@ def rust_toolchain_repository(
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
+        strip_level = strip_level,
         sha256s = sha256s,
         urls = urls,
         auth = auth,
@@ -1118,6 +1128,7 @@ def rust_repository_set(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
+        strip_level = None,
         sha256s = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
@@ -1151,6 +1162,7 @@ def rust_repository_set(
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, dict, optional): Dictionary of target triples to optimiztion config.
+        strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These
@@ -1206,6 +1218,7 @@ def rust_repository_set(
             extra_exec_rustc_flags = extra_exec_rustc_flags,
             extra_rustc_flags = toolchain_extra_rustc_flags,
             opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
+            strip_level = strip_level.get(toolchain.target_triple) if strip_level != None else None,
             target_settings = target_settings,
             rustfmt_version = rustfmt_version,
             sha256s = sha256s,
