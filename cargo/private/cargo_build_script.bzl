@@ -62,7 +62,7 @@ def _cargo_build_script_runfiles_impl(ctx):
             is_executable = True,
         )
 
-    # Tools are ommitted here because they should be within the `script`
+    # Tools are omitted here because they should be within the `script`
     # attribute's runfiles.
     runfiles = ctx.runfiles(files = ctx.files.data)
 
@@ -83,7 +83,7 @@ cargo_build_script_runfiles = rule(
 A rule for producing `cargo_build_script.script` with proper runfiles.
 
 This rule ensure's the executable for `cargo_build_script` has properly formed runfiles with `cfg=target` and
-`cfg=exec` files. This is a challenge becuase had the script binary been directly consumed, it would have been
+`cfg=exec` files. This is a challenge because had the script binary been directly consumed, it would have been
 in either configuration which would have been incorrect for either the `tools` (exec) or `data` (target) attributes.
 This is solved here by consuming the script as exec and creating a symlink to consumers of this rule can consume
 with `cfg=target` and still get an exec compatible binary.
