@@ -1,5 +1,5 @@
 {
-  "checksum": "5803dfc7b0b2d5413b5418fefb64cd9090b7d8ecea37158ea73af58b700924ce",
+  "checksum": "f80aa7466148f74024acc820781e335591082c05422eb08c925fc05838887735",
   "crates": {
     "ansi_term 0.12.1": {
       "name": "ansi_term",
@@ -600,7 +600,7 @@
           ],
           "selects": {}
         },
-        "edition": "2018",
+        "edition": "2021",
         "version": "0.1.0"
       },
       "license": null,
@@ -686,7 +686,7 @@
           ],
           "selects": {}
         },
-        "edition": "2018",
+        "edition": "2021",
         "version": "0.1.0"
       },
       "license": null,
@@ -989,7 +989,7 @@
           ],
           "selects": {}
         },
-        "edition": "2018",
+        "edition": "2021",
         "version": "0.1.0"
       },
       "license": null,
@@ -1595,9 +1595,9 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "num_printer 0.1.0": "cargo_workspace/num_printer",
-    "printer 0.1.0": "cargo_workspace/printer",
-    "rng 0.1.0": "cargo_workspace/rng"
+    "num_printer 0.1.0": "cargo_workspace_oot/num_printer",
+    "printer 0.1.0": "cargo_workspace_oot/printer",
+    "rng 0.1.0": "cargo_workspace_oot/rng"
   },
   "conditions": {
     "aarch64-apple-darwin": [

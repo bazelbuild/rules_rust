@@ -208,6 +208,7 @@ impl WorkspaceMetadata {
     fn new(
         splicing_manifest: &SplicingManifest,
         member_manifests: BTreeMap<&Utf8PathBuf, String>,
+        workspace_prefix: Option<String>,
     ) -> Result<Self> {
         let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
@@ -232,7 +233,7 @@ impl WorkspaceMetadata {
         // the empty key is expected to be the root package. If the root package
         // has a prefix, then all other packages will as well (even if no other
         // manifest represents them). The value is then saved as a separate value
-        let workspace_prefix = package_prefixes.remove("");
+        let workspace_prefix = workspace_prefix.or(package_prefixes.remove(""));
 
         let package_prefixes = package_prefixes
             .into_iter()
