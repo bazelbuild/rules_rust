@@ -24,7 +24,7 @@ fn test_backtrace() {
             }
             return;
         }
-        if line.contains("panic_bin::do_call") {
+        if line.contains("::do_call") {
             check_next = true;
         }
     }
