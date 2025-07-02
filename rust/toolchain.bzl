@@ -124,12 +124,12 @@ rust_stdlib_filegroup = rule(
     },
 )
 
-def _ltl(library, ctx, cc_toolchain, feature_configuration):
+def _ltl(library, actions, cc_toolchain, feature_configuration):
     """A helper to generate `LibraryToLink` objects
 
     Args:
         library (File): A rust library file to link.
-        ctx (ctx): The rule's context object.
+        actions: The rule's ctx.actions object.
         cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used.
         feature_configuration (feature_configuration): feature_configuration to be queried.
 
@@ -137,20 +137,35 @@ def _ltl(library, ctx, cc_toolchain, feature_configuration):
         LibraryToLink: A provider containing information about libraries to link.
     """
     return cc_common.create_library_to_link(
-        actions = ctx.actions,
+        actions = actions,
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
         static_library = library,
         pic_static_library = library,
     )
 
-def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "std"):
+def _make_libstd_and_allocator_ccinfo(
+        cc_toolchain,
+        feature_configuration,
+        label,
+        actions,
+        experimental_link_std_dylib,
+        rust_std,
+        allocator_library,
+        std = "std"):
     """Make the CcInfo (if possible) for libstd and allocator libraries.
 
     Args:
-        ctx (ctx): The rule's context object.
+        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used.
+        feature_configuration (feature_configuration): feature_configuration to be queried.
+        label (Label): The rule's label.
+        actions: The rule's ctx.actions object.
+        experimental_link_std_dylib (boolean): The value of the standard library's `_experimental_link_std_dylib(ctx)`.
         rust_std: The Rust standard library.
-        allocator_library: The target to use for providing allocator functions.
+        allocator_library (struct): The target to use for providing allocator functions.
+          This should be a struct with either:
+          * a cc_info field of type CcInfo
+          * an allocator_libraries_impl_info field, which should be None or of type AllocatorLibrariesImplInfo.
         std: Standard library flavor. Currently only "std" and "no_std_with_alloc" are supported,
              accompanied with the default panic behavior.
 
@@ -158,8 +173,11 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
     Returns:
         A CcInfo object for the required libraries, or None if no such libraries are available.
     """
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
     cc_infos = []
+    if not type(allocator_library) == "struct":
+        fail("Unexpected type of allocator_library, it must be a struct.")
+    if not any([hasattr(allocator_library, field) for field in ["cc_info", "allocator_libraries_impl_info"]]):
+        fail("Unexpected contents of allocator_library, it must provide either a cc_info or an allocator_libraries_impl_info.")
 
     if not rust_common.stdlib_info in rust_std:
         fail(dedent("""\
@@ -167,7 +185,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             The `rust_lib` ({}) must be a target providing `rust_common.stdlib_info`
             (typically `rust_stdlib_filegroup` rule from @rules_rust//rust:defs.bzl).
             See https://github.com/bazelbuild/rules_rust/pull/802 for more information.
-        """).format(ctx.label, rust_std))
+        """).format(label, rust_std))
     rust_stdlib_info = rust_std[rust_common.stdlib_info]
 
     if rust_stdlib_info.self_contained_files:
@@ -176,8 +194,8 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
         )
 
         linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
-            name = ctx.label.name,
-            actions = ctx.actions,
+            name = label.name,
+            actions = actions,
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
             compilation_outputs = compilation_outputs,
@@ -188,16 +206,26 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
         ))
 
     if rust_stdlib_info.std_rlibs:
+        allocator_library_inputs = []
+
+        if hasattr(allocator_library, "allocator_libraries_impl_info") and allocator_library.allocator_libraries_impl_info:
+            static_archive = allocator_library.allocator_libraries_impl_info.static_archive
+            allocator_library_inputs = [depset(
+                [_ltl(static_archive, actions, cc_toolchain, feature_configuration)],
+            )]
+
         alloc_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.alloc_files],
+            [_ltl(f, actions, cc_toolchain, feature_configuration) for f in rust_stdlib_info.alloc_files],
+            transitive = allocator_library_inputs,
+            order = "topological",
         )
         between_alloc_and_core_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_alloc_and_core_files],
+            [_ltl(f, actions, cc_toolchain, feature_configuration) for f in rust_stdlib_info.between_alloc_and_core_files],
             transitive = [alloc_inputs],
             order = "topological",
         )
         core_inputs = depset(
-            [_ltl(f, ctx, cc_toolchain, feature_configuration) for f in rust_stdlib_info.core_files],
+            [_ltl(f, actions, cc_toolchain, feature_configuration) for f in rust_stdlib_info.core_files],
             transitive = [between_alloc_and_core_inputs],
             order = "topological",
         )
@@ -220,7 +248,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             ]
             core_alloc_and_panic_inputs = depset(
                 [
-                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    _ltl(f, actions, cc_toolchain, feature_configuration)
                     for f in rust_stdlib_info.panic_files
                     if "unwind" not in f.basename
                 ],
@@ -230,7 +258,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
         else:
             core_alloc_and_panic_inputs = depset(
                 [
-                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    _ltl(f, actions, cc_toolchain, feature_configuration)
                     for f in rust_stdlib_info.panic_files
                     if "unwind" not in f.basename
                 ],
@@ -239,7 +267,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             )
         memchr_inputs = depset(
             [
-                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                _ltl(f, actions, cc_toolchain, feature_configuration)
                 for f in rust_stdlib_info.memchr_files
             ],
             transitive = [core_inputs],
@@ -247,18 +275,18 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
         )
         between_core_and_std_inputs = depset(
             [
-                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                _ltl(f, actions, cc_toolchain, feature_configuration)
                 for f in filtered_between_core_and_std_files
             ],
             transitive = [memchr_inputs],
             order = "topological",
         )
 
-        if _experimental_link_std_dylib(ctx):
+        if experimental_link_std_dylib:
             # std dylib has everything so that we do not need to include all std_files
             std_inputs = depset(
                 [cc_common.create_library_to_link(
-                    actions = ctx.actions,
+                    actions = actions,
                     feature_configuration = feature_configuration,
                     cc_toolchain = cc_toolchain,
                     dynamic_library = rust_stdlib_info.std_dylib,
@@ -267,7 +295,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
         else:
             std_inputs = depset(
                 [
-                    _ltl(f, ctx, cc_toolchain, feature_configuration)
+                    _ltl(f, actions, cc_toolchain, feature_configuration)
                     for f in rust_stdlib_info.std_files
                 ],
                 transitive = [between_core_and_std_inputs],
@@ -276,7 +304,7 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
 
         test_inputs = depset(
             [
-                _ltl(f, ctx, cc_toolchain, feature_configuration)
+                _ltl(f, actions, cc_toolchain, feature_configuration)
                 for f in rust_stdlib_info.test_files
             ],
             transitive = [std_inputs],
@@ -297,8 +325,8 @@ def _make_libstd_and_allocator_ccinfo(ctx, rust_std, allocator_library, std = "s
             fail("Requested '{}' std mode is currently not supported.".format(std))
 
         allocator_inputs = None
-        if allocator_library:
-            allocator_inputs = [allocator_library[CcInfo].linking_context.linker_inputs]
+        if hasattr(allocator_library, "cc_info"):
+            allocator_inputs = [allocator_library.cc_info.linking_context.linker_inputs]
 
         cc_infos.append(CcInfo(
             linking_context = cc_common.create_linking_context(
@@ -657,6 +685,17 @@ def _rust_toolchain_impl(ctx):
         fail("Either `target_triple` or `target_json` must be provided. Please update {}".format(
             ctx.label,
         ))
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    experimental_link_std_dylib = _experimental_link_std_dylib(ctx)
+    make_ccinfo = lambda label, actions, allocator_library, std: (
+        _make_libstd_and_allocator_ccinfo(cc_toolchain, feature_configuration, label, actions, experimental_link_std_dylib, rust_std, allocator_library, std)
+    )
+    make_local_ccinfo = lambda allocator_library, std: make_ccinfo(
+        ctx.label,
+        ctx.actions,
+        struct(cc_info = allocator_library),
+        std,
+    )
 
     toolchain = platform_common.ToolchainInfo(
         all_files = sysroot.all_files,
@@ -669,9 +708,10 @@ def _rust_toolchain_impl(ctx):
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
         exec_triple = exec_triple,
-        libstd_and_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.allocator_library, "std"),
-        libstd_and_global_allocator_ccinfo = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "std"),
-        nostd_and_global_allocator_cc_info = _make_libstd_and_allocator_ccinfo(ctx, rust_std, ctx.attr.global_allocator_library, "no_std_with_alloc"),
+        libstd_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std"),
+        libstd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std"),
+        nostd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "no_std_with_alloc"),
+        make_libstd_and_allocator_ccinfo = make_ccinfo,
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         lto = lto,
@@ -709,6 +749,8 @@ def _rust_toolchain_impl(ctx):
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
+        _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
+        _experimental_use_allocator_libraries_with_mangled_symbols_setting = ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols_setting[BuildSettingInfo].value,
     )
     return [
         toolchain,
@@ -778,6 +820,19 @@ rust_toolchain = rule(
         "experimental_link_std_dylib": attr.label(
             default = Label("@rules_rust//rust/settings:experimental_link_std_dylib"),
             doc = "Label to a boolean build setting that controls whether whether to link libstd dynamically.",
+        ),
+        "experimental_use_allocator_libraries_with_mangled_symbols": attr.int(
+            doc = (
+                "Whether to use rust-based allocator libraries with " +
+                "mangled symbols. Possible values: [-1, 0, 1]. " +
+                "-1 means to use the value of the build setting " +
+                "//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols. " +
+                "0 means do not use. In that case, rules_rust will try to use " +
+                "the c-based allocator libraries that don't support symbol mangling. " +
+                "1 means use the rust-based allocator libraries."
+            ),
+            values = [-1, 0, 1],
+            default = -1,
         ),
         "experimental_use_cc_common_link": attr.label(
             default = Label("//rust/settings:experimental_use_cc_common_link"),
@@ -886,6 +941,14 @@ rust_toolchain = rule(
         ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
+        ),
+        "_experimental_use_allocator_libraries_with_mangled_symbols_setting": attr.label(
+            default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
+            providers = [BuildSettingInfo],
+            doc = (
+                "Label to a boolean build setting that informs the target build whether to use rust-based " +
+                "allocator libraries that mangle symbols."
+            ),
         ),
         "_experimental_use_coverage_metadata_files": attr.label(
             default = Label("//rust/settings:experimental_use_coverage_metadata_files"),

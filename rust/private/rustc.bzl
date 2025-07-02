@@ -27,7 +27,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(":providers.bzl", "AllocatorLibrariesImplInfo", "AllocatorLibrariesInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -1604,16 +1604,50 @@ def _is_no_std(ctx, toolchain, crate_info):
         return False
     return True
 
+def _should_use_rustc_allocator_libraries(toolchain):
+    use_or_default = toolchain._experimental_use_allocator_libraries_with_mangled_symbols
+    if use_or_default not in [-1, 0, 1]:
+        fail("unexpected value of experimental_use_allocator_libraries_with_mangled_symbols (should be one of [-1, 0, 1]): " + use_or_default)
+    if use_or_default == -1:
+        return toolchain._experimental_use_allocator_libraries_with_mangled_symbols_setting
+    return bool(use_or_default)
+
 def _get_std_and_alloc_info(ctx, toolchain, crate_info):
+    # Handles standard libraries and allocator shims.
+    #
+    # The standard libraries vary between "std" and "nostd" flavors.
+    #
+    # The allocator libraries vary along two dimensions:
+    # * the type of rust allocator used (default or global)
+    # * the mechanism providing the libraries (via the rust rules
+    #   allocator_libraries attribute, or via the rust toolchain allocator
+    #   attributes).
+    #
+    # When provided, the allocator_libraries attribute takes precedence over the
+    # toolchain allocator attributes.
+    libs = None
+    attr_allocator_library = None
+    attr_global_allocator_library = None
+    if _should_use_rustc_allocator_libraries(toolchain) and hasattr(ctx.attr, "allocator_libraries"):
+        libs = ctx.attr.allocator_libraries[AllocatorLibrariesInfo]
+        attr_allocator_library = libs.allocator_library
+        attr_global_allocator_library = libs.global_allocator_library
     if is_exec_configuration(ctx):
+        if attr_allocator_library:
+            return libs.libstd_and_allocator_ccinfo
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
         if _is_no_std(ctx, toolchain, crate_info):
-            return toolchain.nostd_and_global_allocator_cc_info
+            if attr_global_allocator_library:
+                return libs.nostd_and_global_allocator_ccinfo
+            return toolchain.nostd_and_global_allocator_ccinfo
         else:
+            if attr_global_allocator_library:
+                return libs.libstd_and_global_allocator_ccinfo
             return toolchain.libstd_and_global_allocator_ccinfo
-    else:
-        return toolchain.libstd_and_allocator_ccinfo
+    if attr_allocator_library:
+        return libs.libstd_and_allocator_ccinfo
+    return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
     return not bool(dep.static_library or dep.pic_static_library)
@@ -1680,7 +1714,8 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         interface_library (File): Optional interface library for cdylib crates on Windows.
 
     Returns:
-        list: A list containing the CcInfo provider
+        list: A list containing the CcInfo provider and optionally AllocatorLibrariesImplInfo provider used when this crate is used as the rust allocator library implementation.
+
     """
 
     # A test will not need to produce CcInfo as nothing can depend on test targets
@@ -1695,6 +1730,8 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     # https://github.com/bazelbuild/rules_rust/issues/771
     if getattr(attr, "out_binary", False):
         return []
+
+    dot_a = None
 
     if crate_info.type == "staticlib":
         library_to_link = cc_common.create_library_to_link(
@@ -1769,7 +1806,10 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             # TODO: if we already have an rlib in our deps, we could skip this
             cc_infos.append(libstd_and_allocator_cc_info)
 
-    return [cc_common.merge_cc_infos(cc_infos = cc_infos)]
+    providers = [cc_common.merge_cc_infos(cc_infos = cc_infos)]
+    if dot_a:
+        providers.append(AllocatorLibrariesImplInfo(static_archive = dot_a))
+    return providers
 
 def add_edition_flags(args, crate):
     """Adds the Rust edition flag to an arguments object reference
