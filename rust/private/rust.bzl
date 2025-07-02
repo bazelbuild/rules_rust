@@ -432,7 +432,7 @@ def _rust_test_impl(ctx):
         crate_info_dict = crate_info_dict,
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
-        include_coverage_runfiles = coverage,
+        include_coverage = coverage,
     )
     data = getattr(ctx.attr, "data", [])
 
