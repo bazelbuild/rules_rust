@@ -7,6 +7,7 @@ load(
     "clippy_toml",
     "codegen_units",
     "error_format",
+    "experimental_cross_language_lto",
     "experimental_link_std_dylib",
     "experimental_per_crate_rustc_flag",
     "experimental_use_cc_common_link",
@@ -60,6 +61,8 @@ clippy_toml()
 codegen_units()
 
 error_format()
+
+experimental_cross_language_lto()
 
 experimental_link_std_dylib()
 
