@@ -73,9 +73,7 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
                 path
             });
 
-        let test_binary = execroot
-            .join(configuration)
-            .join(&bin);
+        let test_binary = execroot.join(configuration).join(&bin);
 
         debug_log!(
             "TEST_BINARY is not found in runfiles. Falling back to: {}",
