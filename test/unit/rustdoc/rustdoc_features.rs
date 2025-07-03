@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![deny(rustdoc::broken_intra_doc_links)]
+#![cfg_attr(not(no_feature_test), deny(rustdoc::broken_intra_doc_links))]
+#![cfg_attr(no_feature_test, allow(rustdoc::broken_intra_doc_links))]
 
 //!
 //! Checkout [inc]
 //!
+
+#[cfg(all(no_feature_test, feature = "docs"))]
+compiler_error!("cannot have both no_feature_test and feature=\"docs\" enabled");
 
 /// Increments the input.
 #[cfg(feature = "docs")]
