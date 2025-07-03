@@ -2,6 +2,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     ":settings.bzl",
     "capture_clippy_output",
+    "clippy_error_format",
     "clippy_flag",
     "clippy_flags",
     "clippy_toml",
@@ -17,6 +18,7 @@ load(
     "extra_exec_rustc_flags",
     "extra_rustc_flag",
     "extra_rustc_flags",
+    "incompatible_change_clippy_error_format",
     "incompatible_change_rust_test_compilation_output_directory",
     "incompatible_do_not_include_data_in_compile_data",
     "lto",
@@ -61,6 +63,8 @@ codegen_units()
 
 error_format()
 
+clippy_error_format()
+
 experimental_link_std_dylib()
 
 experimental_per_crate_rustc_flag()
@@ -80,6 +84,8 @@ extra_exec_rustc_flags()
 extra_rustc_flag()
 
 extra_rustc_flags()
+
+incompatible_change_clippy_error_format()
 
 incompatible_change_rust_test_compilation_output_directory()
 

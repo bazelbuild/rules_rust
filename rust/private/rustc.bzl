@@ -833,7 +833,8 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
-        skip_expanding_rustc_env = False):
+        skip_expanding_rustc_env = False,
+        error_format = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -865,6 +866,7 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
 
     Returns:
         tuple: A tuple of the following items
@@ -938,9 +940,8 @@ def construct_arguments(
     rustc_flags.add(crate_info.name, format = "--crate-name=%s")
     rustc_flags.add(crate_info.type, format = "--crate-type=%s")
 
-    error_format = "human"
-    if hasattr(attr, "_error_format"):
-        error_format = attr._error_format[ErrorFormatInfo].error_format
+    if error_format == None:
+        error_format = get_error_format(attr, "_error_format")
 
     if use_json_output:
         # If --error-format was set to json, we just pass the output through
@@ -2253,6 +2254,11 @@ error_format = rule(
     implementation = _error_format_impl,
     build_setting = config.string(flag = True),
 )
+
+def get_error_format(attr, attr_name):
+    if hasattr(attr, attr_name):
+        return getattr(attr, attr_name)[ErrorFormatInfo].error_format
+    return "human"
 
 def _rustc_output_diagnostics_impl(ctx):
     """Implementation of the `rustc_output_diagnostics` rule

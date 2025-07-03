@@ -238,6 +238,28 @@ def error_format():
     )
 
 # buildifier: disable=unnamed-macro
+def clippy_error_format():
+    """This setting may be changed from the command line to generate machine readable errors.
+    """
+    _error_format(
+        name = "clippy_error_format",
+        build_setting_default = "human",
+    )
+
+# buildifier: disable=unnamed-macro
+def incompatible_change_clippy_error_format():
+    """A flag to enable the `clippy_error_format` setting.
+
+    If this flag is true, Clippy uses the format set in `clippy_error_format` to
+    format its diagnostics; otherwise, it uses the format set in `error_format`.
+    """
+    incompatible_flag(
+        name = "incompatible_change_clippy_error_format",
+        build_setting_default = False,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
+    )
+
+# buildifier: disable=unnamed-macro
 def rustc_output_diagnostics():
     """This setting may be changed from the command line to generate rustc diagnostics.
     """
