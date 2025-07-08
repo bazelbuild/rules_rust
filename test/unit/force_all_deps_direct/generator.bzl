@@ -1,5 +1,6 @@
 """A custom rule that threats all its dependencies as direct dependencies."""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # buildifier: disable=bzl-visibility
@@ -73,7 +74,7 @@ def _generator_impl(ctx):
 
 generator = rule(
     implementation = _generator_impl,
-    attrs = {
+    attrs = resource_set_attr | {
         "deps": attr.label_list(
             doc = "List of other libraries to be linked to this library target.",
             providers = [CrateInfo],
