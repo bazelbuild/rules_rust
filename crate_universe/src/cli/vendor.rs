@@ -228,6 +228,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
 
     let resolver_data = TreeResolver::new(cargo.clone()).generate(
         manifest_path.as_path_buf(),
+        &splicer.member_dirs(),
         &config.supported_platform_triples,
     )?;
 
