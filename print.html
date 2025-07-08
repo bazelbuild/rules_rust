@@ -1632,6 +1632,12 @@ rust_test(
 --@rules_rust//rust/settings:capture_clippy_output
 </pre>
 <p>Control whether to print clippy output or store it to a file, using the configured error_format.</p>
+<p><a id="clippy_error_format"></a></p>
+<h2 id="clippy_error_format"><a class="header" href="#clippy_error_format">clippy_error_format</a></h2>
+<pre>
+--@rules_rust//rust/settings:clippy_error_format
+</pre>
+<p>This setting may be changed from the command line to generate machine readable errors.</p>
 <p><a id="clippy_flag"></a></p>
 <h2 id="clippy_flag"><a class="header" href="#clippy_flag">clippy_flag</a></h2>
 <pre>
@@ -1741,6 +1747,14 @@ to that target. This can be useful for passing build-wide options such as LTO.</
 <p>This setting may be used to pass extra options to rustc from the command line in non-exec configuration.</p>
 <p>It applies across all targets whereas the rustc_flags option on targets applies only
 to that target. This can be useful for passing build-wide options such as LTO.</p>
+<p><a id="incompatible_change_clippy_error_format"></a></p>
+<h2 id="incompatible_change_clippy_error_format"><a class="header" href="#incompatible_change_clippy_error_format">incompatible_change_clippy_error_format</a></h2>
+<pre>
+--@rules_rust//rust/settings:incompatible_change_clippy_error_format
+</pre>
+<p>A flag to enable the <code>clippy_error_format</code> setting.</p>
+<p>If this flag is true, Clippy uses the format set in <code>clippy_error_format</code> to
+format its diagnostics; otherwise, it uses the format set in <code>error_format</code>.</p>
 <p><a id="incompatible_change_rust_test_compilation_output_directory"></a></p>
 <h2 id="incompatible_change_rust_test_compilation_output_directory"><a class="header" href="#incompatible_change_rust_test_compilation_output_directory">incompatible_change_rust_test_compilation_output_directory</a></h2>
 <pre>
