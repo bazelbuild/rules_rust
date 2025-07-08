@@ -245,6 +245,10 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "cargo_config": attr.label(
             doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
         ),
+        "cargo_creds": attr.label(
+            doc = "A [Cargo credentials](https://doc.rust-lang.org/cargo/reference/config.html#credentials) file.",
+            allow_single_file = True,
+        ),
         "cargo_lockfile": attr.label(
             doc = (
                 "The path used to store the `crates_repository` specific " +
