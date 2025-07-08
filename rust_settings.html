@@ -223,6 +223,48 @@ with the prefix filter will be built with the given flag. The label matching use
 the label (i.e <code>//package:label_name</code>). The execution path is the relative path to your workspace directory
 including the base name (including extension) of the crate root. This flag is not applied to the exec
 configuration (proc-macros, cargo_build_script, etc). Multiple uses are accumulated.</p>
+<p><a id="experimental_use_allocator_libraries_with_mangled_symbols"></a></p>
+<h2 id="experimental_use_allocator_libraries_with_mangled_symbols"><a class="header" href="#experimental_use_allocator_libraries_with_mangled_symbols">experimental_use_allocator_libraries_with_mangled_symbols</a></h2>
+<pre>
+--@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols
+</pre>
+<p>A flag used to select allocator libraries implemented in rust that are compatible with the rustc allocator symbol mangling.</p>
+<p>The symbol mangling mechanism relies on unstable language features and requires a nightly rustc from 2025-04-05 or later.</p>
+<p>Rustc generates references to internal allocator symbols when building rust
+libraries.  At link time, rustc generates the definitions of these symbols.
+When rustc is not used as the final linker, we need to generate the
+definitions ourselves.  This happens for example when a rust_library is
+used as a dependency of a rust_binary, or when the
+experimental_use_cc_common_link setting is used.</p>
+<p>For older versions of rustc, the allocator symbol definitions can be provided
+via the <code>rust_toolchain</code>'s <code>allocator_library</code> or <code>global_allocator_library</code>
+attributes, with sample targets like <code>@rules_rust//ffi/cc/allocator_library</code>
+and <code>@rules_rust//ffi/cc/global_allocator_library</code>.</p>
+<p>Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
+The mangling uses a scheme that is specific to the exact version of the compiler.
+This makes the cc allocator library definitions ineffective. To work around
+this, we provide rust versions of the symbol definitions annotated with
+an unstable language attribute that instructs rustc to mangle them consistently.
+Because of that, this is only compatible with nightly versions of the compiler.</p>
+<p>Since the new symbol definitions are written in rust, we cannot just attach
+them as attributes on the <code>rust_toolchain</code> as the old cc versions, as that
+would create a build graph cycle (we need a <code>rust_toolchain</code> to build a
+<code>rust_library</code>, so the allocator library cannot be a rust_library directly).</p>
+<p>The bootstrapping cycle can be avoided by defining a separate internal
+"initial" rust toolchain specifically for building the rust allocator libraries,
+and use a transition to attach the generated libraries to the "main" rust
+toolchain. But that duplicates the whole sub-graph of the build around the
+rust toolchains, repository and supporting tools used for them.</p>
+<p>Instead, we define a new custom <code>rust_allocator_library</code> rule, which exposes
+the result of building the rust allocator libraries via a provider, which
+can be consumed by the rust build actions. We attach an instance of this
+as a common attribute to the rust rule set.</p>
+<p>TODO: how this interacts with stdlibs</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Options</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="experimental_use_allocator_libraries_with_mangled_symbols-name"></a>name</td><td style="text-align: left"><p align="center"> - </p></td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
 <p><a id="experimental_use_cc_common_link"></a></p>
 <h2 id="experimental_use_cc_common_link"><a class="header" href="#experimental_use_cc_common_link">experimental_use_cc_common_link</a></h2>
 <pre>
