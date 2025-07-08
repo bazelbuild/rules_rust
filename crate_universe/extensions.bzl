@@ -638,6 +638,7 @@ def _generate_hub_and_spokes(
             config_path = config_file,
             output_dir = tag_path.get_child("splicing-output"),
             debug_workspace_dir = tag_path.get_child("splicing-workspace"),
+            repository_name = cfg.name,
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
