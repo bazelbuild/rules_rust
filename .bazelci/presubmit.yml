@@ -41,7 +41,7 @@ single_rust_channel_targets: &single_rust_channel_targets
   - "-//test/unpretty/..."
 single_rust_channel_min_version_targets: &single_rust_channel_min_version_targets
   # START - Copied from 'single_rust_channel_targets'.
-  # TODO: Figure out how to do proper list inheritence.
+  # TODO: Figure out how to do proper list inheritance.
   - "--"
   - "//..."
   # TODO: Remove this and replace `cargo_bootstrap_repository` with a
@@ -534,6 +534,18 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  cc_common_link_and_mangling_ubuntu2004:
+    name: Build via cc_common.link with rustc mangling alloc symbols
+    platform: ubuntu2004
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--config=mangled_alloc_symbols"
+    test_flags:
+      - "--config=mangled_alloc_symbols"
   cc_common_link_with_global_alloc_ubuntu2004:
     name: Build via cc_common.link using a global allocator
     platform: ubuntu2004
@@ -550,6 +562,18 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  cc_common_link_with_global_alloc_and_mangling_ubuntu2004:
+    name: Build via cc_common.link using a global allocator with rustc mangling alloc symbols
+    platform: ubuntu2004
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--config=mangled_alloc_symbols"
+    test_flags:
+      - "--config=mangled_alloc_symbols"
   cc_common_link_no_std_ubuntu2004:
     name: Build with no_std + alloc using cc_common.link infrastructure for linking
     platform: ubuntu2004
@@ -562,6 +586,18 @@ tasks:
       - "--config=no_std_alloc_using_cc_common_link"
     test_flags:
       - "--config=no_std_alloc_using_cc_common_link"
+  cc_common_link_no_std_and_mangling_ubuntu2004:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking with rust toolchain mangling alloc symbols
+    platform: ubuntu2004
+    working_directory: test/integration/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--config=no_std_alloc_using_cc_common_link_and_mangled_alloc_symbols"
+    test_flags:
+      - "--config=no_std_alloc_using_cc_common_link_and_mangled_alloc_symbols"
   no_std_ubuntu2004:
     name: Build with no_std + alloc
     platform: ubuntu2004

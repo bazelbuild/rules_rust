@@ -21,6 +21,7 @@ load(
     "collect_deps",
     "collect_inputs",
     "construct_arguments",
+    "get_error_format",
 )
 load(
     "//rust/private:utils.bzl",
@@ -28,6 +29,7 @@ load(
     "find_cc_toolchain",
     "find_toolchain",
 )
+load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 ClippyFlagsInfo = provider(
     doc = "Pass each value as an additional flag to clippy invocations",
@@ -138,6 +140,12 @@ def _clippy_aspect_impl(target, ctx):
         lint_files,
     )
 
+    use_clippy_error_format = ctx.attr._incompatible_change_clippy_error_format[IncompatibleFlagInfo].enabled
+    error_format = get_error_format(
+        ctx.attr,
+        "_clippy_error_format" if use_clippy_error_format else "_error_format",
+    )
+
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.rule.attr,
@@ -157,6 +165,7 @@ def _clippy_aspect_impl(target, ctx):
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
         skip_expanding_rustc_env = True,
+        error_format = error_format,
     )
 
     if crate_info.is_test:
@@ -233,6 +242,10 @@ rust_clippy_aspect = aspect(
             doc = "Value of the `capture_clippy_output` build setting",
             default = Label("//rust/settings:capture_clippy_output"),
         ),
+        "_clippy_error_format": attr.label(
+            doc = "The desired `--error-format` flags for clippy",
+            default = "//rust/settings:clippy_error_format",
+        ),
         "_clippy_flag": attr.label(
             doc = "Arguments to pass to clippy." +
                   "Multiple uses are accumulated and appended after the extra_rustc_flags.",
@@ -248,11 +261,15 @@ rust_clippy_aspect = aspect(
             default = Label("//rust/settings:clippy.toml"),
         ),
         "_error_format": attr.label(
-            doc = "The desired `--error-format` flags for clippy",
+            doc = "The desired `--error-format` flags for rustc",
             default = "//rust/settings:error_format",
         ),
         "_extra_rustc_flag": attr.label(
             default = Label("//rust/settings:extra_rustc_flag"),
+        ),
+        "_incompatible_change_clippy_error_format": attr.label(
+            doc = "Whether to use the _clippy_error_format attribute",
+            default = "//rust/settings:incompatible_change_clippy_error_format",
         ),
         "_per_crate_rustc_flag": attr.label(
             default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
