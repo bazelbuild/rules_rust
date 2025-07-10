@@ -258,7 +258,8 @@ def collect_deps(
         dep_build_info = _get_build_info(dep)
 
         if cc_info:
-            linkstamps.append(cc_info.linking_context.linkstamps())
+            for li in cc_info.linking_context.linker_inputs.to_list():
+                linkstamps.extend(li.linkstamps)
 
         if crate_info:
             # This dependency is a rust_library
@@ -359,7 +360,7 @@ def collect_deps(
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
-        depset(transitive = linkstamps),
+        depset(linkstamps),
     )
 
 def _collect_libs_from_linker_inputs(linker_inputs, use_pic):
