@@ -24,7 +24,7 @@ rust.toolchain(
 # Generate a toolchain to be used for rust-based allocator symbols.
 
 # A recent enough version of rustc that mangles the internal allocator symbols.
-VERSION = "nightly/2025-04-08"
+VERSION = "nightly/2025-07-08"
 
 rust.repository_set(
     name = "rust_with_alloc_mangling_linux_x86_64",
