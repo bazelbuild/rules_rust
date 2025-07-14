@@ -333,8 +333,8 @@ def _define_targets():
         crate = ":lib_with_features",
         include_features = False,
         rustdoc_flags = [
-            "--cfg=no_feature_test"
-        ]
+            "--cfg=no_feature_test",
+        ],
     )
 
     cc_library(

@@ -336,6 +336,10 @@ rust_doc = rule(
             doc = "File to add to `<head>`.",
             allow_single_file = [".html", ".md"],
         ),
+        "include_features": attr.bool(
+            doc = "Include the features defined by `crate_features` when building the doc tests.",
+            default = True,
+        ),
         "markdown_css": attr.label_list(
             doc = "CSS files to include via `<link>` in a rendered Markdown file.",
             allow_files = [".css"],
@@ -352,10 +356,6 @@ rust_doc = rule(
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """),
-        ),
-        "include_features": attr.bool(
-            doc = "Include the features defined by `crate_features` when building the doc tests.",
-            default = True,
         ),
         "_dir_zipper": attr.label(
             doc = "A tool that orchestrates the creation of zip archives for rustdoc outputs.",

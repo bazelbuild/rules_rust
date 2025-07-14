@@ -213,6 +213,10 @@ rust_doc_test = rule(
             """),
             providers = [[CrateInfo], [CcInfo]],
         ),
+        "include_features": attr.bool(
+            doc = "Include the features defined by `crate_features` when building the doc tests.",
+            default = True,
+        ),
         "proc_macro_deps": attr.label_list(
             doc = dedent("""\
                 List of `rust_proc_macro` targets used to help build this library target.
@@ -231,10 +235,6 @@ rust_doc_test = rule(
             cfg = "exec",
             default = Label("//rust/private/rustdoc:rustdoc_test_writer"),
             executable = True,
-        ),
-        "include_features": attr.bool(
-            doc = "Include the features defined by `crate_features` when building the doc tests.",
-            default = True,
         ),
     },
     test = True,
