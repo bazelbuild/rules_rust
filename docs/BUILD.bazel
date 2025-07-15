@@ -11,6 +11,7 @@ bzl_library(
         "@bazel_tools//tools:bzl_srcs",
     ],
     deps = [
+        "@aspect_bazel_lib//lib:resource_sets",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:selects",
         "@bazel_skylib//lib:structs",
