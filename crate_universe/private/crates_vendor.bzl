@@ -666,10 +666,15 @@ call against the generated workspace. The following table describes how to contr
 
 def _crates_vendor_remote_repository_impl(repository_ctx):
     build_file = repository_ctx.path(repository_ctx.attr.build_file)
-    defs_module = repository_ctx.path(repository_ctx.attr.defs_module)
-
     repository_ctx.file("BUILD.bazel", repository_ctx.read(build_file))
+
+    defs_module = repository_ctx.path(repository_ctx.attr.defs_module)
     repository_ctx.file("defs.bzl", repository_ctx.read(defs_module))
+
+    if repository_ctx.attr.alias_rules_module:
+        alias_rules_module = repository_ctx.path(repository_ctx.attr.alias_rules_module)
+        repository_ctx.file("alias_rules.bzl", repository_ctx.read(alias_rules_module))
+
     repository_ctx.file("crates.bzl", "")
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
@@ -679,6 +684,12 @@ crates_vendor_remote_repository = repository_rule(
     doc = "Creates a repository paired with `crates_vendor` targets using the `remote` vendor mode.",
     implementation = _crates_vendor_remote_repository_impl,
     attrs = {
+        "alias_rules_module": attr.label(
+            doc = "The `alias_rules.bzl` file to use in the repository",
+            # Not mandatory because making it mandatory would break all current vendors,
+            # making it very hard to re-vendor without manually changing the files.
+            mandatory = False,
+        ),
         "build_file": attr.label(
             doc = "The BUILD file to use for the root package",
             mandatory = True,
