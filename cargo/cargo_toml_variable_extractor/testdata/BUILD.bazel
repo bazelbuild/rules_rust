@@ -1,12 +1,6 @@
 load("//cargo:defs.bzl", "cargo_toml_env_vars")
 load("//rust:defs.bzl", "rust_binary", "rust_test")
 
-# TODO: This target currently fails on windows.
-NOT_WINDOWS = select({
-    "@platforms//os:windows": ["@platforms//:incompatible"],
-    "//conditions:default": [],
-})
-
 genrule(
     name = "gen_empty_cargo_output",
     srcs = glob([
@@ -16,7 +10,6 @@ genrule(
     outs = ["empty_cargo_output"],
     cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/empty/Cargo.toml > $@",
     cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\empty\\Cargo.toml > $@",
-    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//tools/upstream_wrapper:cargo",
         "//tools/upstream_wrapper:rustc",
@@ -69,7 +62,6 @@ genrule(
     outs = ["standalone_cargo_output"],
     cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/cargo_toml_variable_extractor/testdata/standalone/Cargo.toml > $@",
     cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\standalone\\Cargo.toml > $@",
-    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//rust/toolchain:current_rust_stdlib_files",
         "//tools/upstream_wrapper:cargo",
@@ -127,7 +119,6 @@ genrule(
     outs = ["workspace_subcrate_cargo_output"],
     cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
     cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo\\cargo_toml_variable_extractor\\testdata\\workspace\\subcrate\\Cargo.toml > $@",
-    target_compatible_with = NOT_WINDOWS,
     tools = [
         "//rust/toolchain:current_rust_stdlib_files",
         "//tools/upstream_wrapper:cargo",
