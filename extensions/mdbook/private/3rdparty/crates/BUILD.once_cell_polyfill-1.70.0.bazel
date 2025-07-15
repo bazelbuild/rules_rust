@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "windows_core",
+    name = "once_cell_polyfill",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,12 +34,11 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    proc_macro_deps = [
-        "@rmdbi__windows-implement-0.60.0//:windows_implement",
-        "@rmdbi__windows-interface-0.59.1//:windows_interface",
-    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -48,7 +47,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=windows-core",
+        "crate-name=once_cell_polyfill",
         "manual",
         "noclippy",
         "norustfmt",
@@ -92,10 +91,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.61.0",
+    version = "1.70.0",
     deps = [
-        "@rmdbi__windows-link-0.1.1//:windows_link",
-        "@rmdbi__windows-result-0.3.2//:windows_result",
-        "@rmdbi__windows-strings-0.4.0//:windows_strings",
+        "@rmdbi__once_cell-1.21.3//:once_cell",
     ],
 )

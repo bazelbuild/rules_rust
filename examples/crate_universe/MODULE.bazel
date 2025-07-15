@@ -351,6 +351,29 @@ use_repo(
 )
 
 ###############################################################################
+# C A R G O   W O R K S P A C E - O U T   O F   T R E E
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+crate_index_cargo_workspace_oot = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_cargo_workspace_oot.from_cargo(
+    name = "crate_index_cargo_workspace_oot",
+    cargo_config = "//cargo_workspace_oot/workspace:.cargo/config.toml",
+    cargo_lockfile = "//cargo_workspace_oot/workspace:Cargo.Bazel.lock",
+    lockfile = "//cargo_workspace_oot/workspace:cargo-bazel-lock.json",
+    manifests = [
+        "//cargo_workspace_oot/workspace:Cargo.toml",
+        "//cargo_workspace_oot/num_printer:Cargo.toml",
+        "//cargo_workspace_oot/printer:Cargo.toml",
+        "//cargo_workspace_oot/rng:Cargo.toml",
+    ],
+)
+use_repo(
+    crate_index_cargo_workspace_oot,
+    "crate_index_cargo_workspace_oot",
+)
+
+###############################################################################
 # C A R G O   C O N D I T I O N A L   D E P S
 ###############################################################################
 
