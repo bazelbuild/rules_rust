@@ -193,12 +193,18 @@ def _make_libstd_and_allocator_ccinfo(
             objects = depset(rust_stdlib_info.self_contained_files),
         )
 
+        # Include C++ toolchain files as additional inputs for cross-compilation scenarios
+        additional_inputs = []
+        if cc_toolchain and cc_toolchain.all_files:
+            additional_inputs = cc_toolchain.all_files.to_list()
+
         linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
             name = label.name,
             actions = actions,
             feature_configuration = feature_configuration,
             cc_toolchain = cc_toolchain,
             compilation_outputs = compilation_outputs,
+            additional_inputs = additional_inputs,
         )
 
         cc_infos.append(CcInfo(
@@ -697,8 +703,14 @@ def _rust_toolchain_impl(ctx):
         std,
     )
 
+    # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
+    cc_toolchain, _ = find_cc_toolchain(ctx)
+    all_files_depsets = [sysroot.all_files]
+    if cc_toolchain and cc_toolchain.all_files:
+        all_files_depsets.append(cc_toolchain.all_files)
+
     toolchain = platform_common.ToolchainInfo(
-        all_files = sysroot.all_files,
+        all_files = depset(transitive = all_files_depsets),
         binary_ext = ctx.attr.binary_ext,
         cargo = sysroot.cargo,
         clippy_driver = sysroot.clippy,
