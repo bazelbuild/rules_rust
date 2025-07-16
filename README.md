@@ -6,6 +6,16 @@
 
 This repository provides rules for building [Rust](https://www.rust-lang.org/) projects with [Bazel](https://bazel.build/).
 
+### Features
+
+- Build Rust crates and binaries
+- Automatic toolchain fetching and configuration  
+- Cross-compilation support
+- Proto/gRPC support
+- WebAssembly and WASI support (including wasm32-wasip1 and wasm32-wasip2)
+- Interoperability with cc rules for mixed Rust/C/C++ projects
+- Cargo workspace integration
+
 ## Community
 
 General discussions and announcements take place in the [GitHub Discussions](https://github.com/bazelbuild/rules_rust/discussions), but there are
