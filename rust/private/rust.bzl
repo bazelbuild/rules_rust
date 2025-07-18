@@ -537,11 +537,17 @@ RUSTC_ATTRS = {
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
     ),
+    "_extra_exec_rustc_env": attr.label(
+        default = Label("//rust/settings:extra_exec_rustc_env"),
+    ),
     "_extra_exec_rustc_flag": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_flag"),
     ),
     "_extra_exec_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_env": attr.label(
+        default = Label("//rust/settings:extra_rustc_env"),
     ),
     "_extra_rustc_flag": attr.label(
         default = Label("//rust/settings:extra_rustc_flag"),
