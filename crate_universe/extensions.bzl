@@ -868,6 +868,22 @@ def _crate_impl(module_ctx):
         repo_specific_annotations = {}
         for annotation_tag in mod.tags.annotation:
             annotation_dict = structs.to_dict(annotation_tag)
+            if annotation_dict["build_script_data_select"]:
+                annotation_dict["build_script_data"] = struct(
+                    common = annotation_dict["build_script_data"],
+                    selects = annotation_dict["build_script_data_select"],
+                )
+                annotation_dict.pop("build_script_data_select")
+            if annotation_dict["build_script_env_select"]:
+                annotation_dict["build_script_env"] = struct(
+                    common = annotation_dict["build_script_env"],
+                    selects = {
+                        k: json.decode(v)
+                        for k, v in annotation_dict["build_script_env_select"].items()
+                    },
+                )
+                annotation_dict.pop("build_script_env_select")
+
             repositories = annotation_dict.pop("repositories")
             crate = annotation_dict.pop("crate")
 
@@ -1088,11 +1104,17 @@ _annotation = tag_class(
         "build_script_data_glob": attr.string_list(
             doc = "A list of glob patterns to add to a crate's `cargo_build_script::data` attribute",
         ),
+        "build_script_data_select": attr.string_list_dict(
+            doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute. Keys should be the platform triplet. Value should be a list of labels.",
+        ),
         "build_script_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::deps` attribute.",
         ),
         "build_script_env": attr.string_dict(
             doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+        ),
+        "build_script_env_select": attr.string_dict(
+            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute. Key should be the platform triplet. Value should be a JSON encoded dictionary mapping variable names to values, for example `{\"FOO\": \"bar\"}`.",
         ),
         "build_script_link_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
