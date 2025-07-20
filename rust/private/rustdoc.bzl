@@ -84,6 +84,17 @@ def rustdoc_compile_action(
         rustdoc_flags = rustdoc_flags + lints_info.rustdoc_lint_flags
         lint_files = lint_files + lints_info.rustdoc_lint_files
 
+    # Collect HTML customization files
+    html_input_files = []
+    if hasattr(ctx.file, "html_in_header") and ctx.file.html_in_header:
+        html_input_files.append(ctx.file.html_in_header)
+    if hasattr(ctx.file, "html_before_content") and ctx.file.html_before_content:
+        html_input_files.append(ctx.file.html_before_content)
+    if hasattr(ctx.file, "html_after_content") and ctx.file.html_after_content:
+        html_input_files.append(ctx.file.html_after_content)
+    if hasattr(ctx.files, "markdown_css"):
+        html_input_files.extend(ctx.files.markdown_css)
+
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, _ = collect_deps(
@@ -149,9 +160,12 @@ def rustdoc_compile_action(
         if "OUT_DIR" in env:
             env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
 
+    # Create the combined inputs including HTML customization files
+    all_inputs = depset([crate_info.output], transitive = [compile_inputs, depset(html_input_files)])
+
     return struct(
         executable = ctx.executable._process_wrapper,
-        inputs = depset([crate_info.output], transitive = [compile_inputs]),
+        inputs = all_inputs,
         env = env,
         arguments = args.all,
         tools = [toolchain.rust_doc],
@@ -205,6 +219,21 @@ def _rust_doc_impl(ctx):
         "--extern",
         "{}={}".format(crate_info.name, crate_info.output.path),
     ]
+
+    # Add HTML customization flags if attributes are provided
+    if ctx.attr.html_in_header:
+        rustdoc_flags.extend(["--html-in-header", ctx.file.html_in_header.path])
+
+    if ctx.attr.html_before_content:
+        rustdoc_flags.extend(["--html-before-content", ctx.file.html_before_content.path])
+
+    if ctx.attr.html_after_content:
+        rustdoc_flags.extend(["--html-after-content", ctx.file.html_after_content.path])
+
+    # Add markdown CSS files if provided
+    for css_file in ctx.files.markdown_css:
+        rustdoc_flags.extend(["--markdown-css", css_file.path])
+
     rustdoc_flags.extend(ctx.attr.rustdoc_flags)
 
     action = rustdoc_compile_action(

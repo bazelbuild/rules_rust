@@ -1,0 +1,23 @@
+default_stages: [pre-commit]
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.33.1
+    hooks:
+      - id: typos
+        exclude: |
+          (?x)^(
+            cargo|
+            crate_universe|
+            examples|
+            extensions|
+            ffi|
+            nix|
+            rust|
+            test|
+            tools|
+            util
+          )
