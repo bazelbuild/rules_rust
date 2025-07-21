@@ -303,6 +303,7 @@ _NORMAL_DEPENDENCIES = {
             "cargo_toml": Label("@cui//:cargo_toml-0.22.1"),
             "cfg-expr": Label("@cui//:cfg-expr-0.18.0"),
             "clap": Label("@cui//:clap-4.5.37"),
+            "clean-path": Label("@cui//:clean-path-0.2.1"),
             "crates-index": Label("@cui//:crates-index-3.7.0"),
             "glob": Label("@cui//:glob-0.3.2"),
             "hex": Label("@cui//:hex-0.4.3"),
@@ -844,6 +845,16 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/clap_lex/0.7.4/download"],
         strip_prefix = "clap_lex-0.7.4",
         build_file = Label("//crate_universe/3rdparty/crates:BUILD.clap_lex-0.7.4.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "cui__clean-path-0.2.1",
+        sha256 = "aaa6b4b263a5d737e9bf6b7c09b72c41a5480aec4d7219af827f6564e950b6a5",
+        type = "tar.gz",
+        urls = ["https://static.crates.io/crates/clean-path/0.2.1/download"],
+        strip_prefix = "clean-path-0.2.1",
+        build_file = Label("//crate_universe/3rdparty/crates:BUILD.clean-path-0.2.1.bazel"),
     )
 
     maybe(
@@ -3275,6 +3286,7 @@ def crate_repositories():
         struct(repo = "cui__cargo_toml-0.22.1", is_dev_dep = False),
         struct(repo = "cui__cfg-expr-0.18.0", is_dev_dep = False),
         struct(repo = "cui__clap-4.5.37", is_dev_dep = False),
+        struct(repo = "cui__clean-path-0.2.1", is_dev_dep = False),
         struct(repo = "cui__crates-index-3.7.0", is_dev_dep = False),
         struct(repo = "cui__glob-0.3.2", is_dev_dep = False),
         struct(repo = "cui__hex-0.4.3", is_dev_dep = False),

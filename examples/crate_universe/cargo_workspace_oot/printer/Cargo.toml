@@ -1,8 +1,8 @@
 [package]
 name = "printer"
 version = "0.1.0"
-edition = "2018"
-workspace = ".."
+edition = "2021"
+workspace = "../workspace"
 
 [dependencies]
 rng = { path = "../rng" }
