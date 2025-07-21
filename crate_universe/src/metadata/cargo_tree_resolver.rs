@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 
 use anyhow::{anyhow, bail, Context, Result};
-use camino::Utf8Path;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
@@ -14,6 +13,7 @@ use url::Url;
 
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
+use crate::metadata::CargoTomlPath;
 use crate::select::{Select, SelectableScalar};
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
@@ -307,7 +307,7 @@ impl TreeResolver {
     #[tracing::instrument(name = "TreeResolver::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        pristine_manifest_path: &Utf8Path,
+        pristine_manifest_path: &CargoTomlPath,
         target_triples: &BTreeSet<TargetTriple>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
@@ -450,14 +450,14 @@ impl TreeResolver {
     // and if we don't have this fake root injection, cross-compiling from Darwin to Linux won't work because features don't get correctly resolved for the exec=darwin case.
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
-        pristine_manifest_path: &Utf8Path,
+        pristine_manifest_path: &CargoTomlPath,
         output_dir: &Path,
     ) -> Result<PathBuf> {
         if !output_dir.exists() {
             std::fs::create_dir_all(output_dir)?;
         }
 
-        let pristine_root = pristine_manifest_path.parent().unwrap();
+        let pristine_root = pristine_manifest_path.parent();
         for file in std::fs::read_dir(pristine_root).context("Failed to read dir")? {
             let source_path = file?.path();
             let file_name = source_path.file_name().unwrap();

@@ -10,7 +10,7 @@ use cargo_toml::Manifest;
 use tracing::debug;
 
 use crate::config::CrateId;
-use crate::metadata::discover_workspaces;
+use crate::metadata::{discover_workspaces, CargoTomlPath};
 use crate::splicing::{SplicedManifest, SplicingManifest};
 use crate::utils::starlark::Label;
 use crate::utils::symlink::{remove_symlink, symlink};
@@ -22,20 +22,20 @@ use super::{read_manifest, DirectPackageManifest, WorkspaceMetadata};
 pub(crate) enum SplicerKind<'a> {
     /// Splice a manifest which is represented by a Cargo workspace
     Workspace {
-        path: &'a Utf8PathBuf,
+        path: &'a CargoTomlPath,
         manifest: &'a Manifest,
         splicing_manifest: &'a SplicingManifest,
     },
     /// Splice a manifest for a single package. This includes cases where
     /// were defined directly in Bazel.
     Package {
-        path: &'a Utf8PathBuf,
+        path: &'a CargoTomlPath,
         manifest: &'a Manifest,
         splicing_manifest: &'a SplicingManifest,
     },
     /// Splice a manifest from multiple disjoint Cargo manifests.
     MultiPackage {
-        manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
+        manifests: &'a BTreeMap<CargoTomlPath, Manifest>,
         splicing_manifest: &'a SplicingManifest,
     },
 }
@@ -45,7 +45,7 @@ const IGNORE_LIST: &[&str] = &[".git", "bazel-*", ".svn"];
 
 impl<'a> SplicerKind<'a> {
     pub(crate) fn new(
-        manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
+        manifests: &'a BTreeMap<CargoTomlPath, Manifest>,
         splicing_manifest: &'a SplicingManifest,
     ) -> Result<Self> {
         let workspaces = discover_workspaces(manifests.keys().cloned().collect(), manifests)?;
@@ -139,14 +139,12 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_workspace(
         workspace_dir: &Utf8Path,
-        path: &&Utf8PathBuf,
+        path: &&CargoTomlPath,
         manifest: &&Manifest,
         splicing_manifest: &&SplicingManifest,
     ) -> Result<SplicedManifest> {
         let mut manifest = (*manifest).clone();
-        let manifest_dir = path
-            .parent()
-            .expect("Every manifest should have a parent directory");
+        let manifest_dir = path.parent();
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -163,7 +161,7 @@ impl<'a> SplicerKind<'a> {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
 
-        let root_manifest_path = workspace_dir.join("Cargo.toml");
+        let root_manifest_path = CargoTomlPath::for_dir(workspace_dir);
         let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
@@ -180,13 +178,11 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_package(
         workspace_dir: &Utf8Path,
-        path: &&Utf8PathBuf,
+        path: &&CargoTomlPath,
         manifest: &&Manifest,
         splicing_manifest: &&SplicingManifest,
     ) -> Result<SplicedManifest> {
-        let manifest_dir = path
-            .parent()
-            .expect("Every manifest should have a parent directory");
+        let manifest_dir = path.parent();
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -210,7 +206,7 @@ impl<'a> SplicerKind<'a> {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
 
-        let root_manifest_path = workspace_dir.join("Cargo.toml");
+        let root_manifest_path = CargoTomlPath::for_dir(workspace_dir);
         let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
@@ -227,7 +223,7 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_multi_package(
         workspace_dir: &Utf8Path,
-        manifests: &&BTreeMap<Utf8PathBuf, Manifest>,
+        manifests: &&BTreeMap<CargoTomlPath, Manifest>,
         splicing_manifest: &&SplicingManifest,
     ) -> Result<SplicedManifest> {
         let mut manifest = default_cargo_workspace_manifest(&splicing_manifest.resolver_version);
@@ -261,7 +257,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         // Write the root manifest
-        let root_manifest_path = workspace_dir.join("Cargo.toml");
+        let root_manifest_path = CargoTomlPath::for_dir(workspace_dir);
         write_root_manifest(root_manifest_path.as_std_path(), manifest)?;
 
         Ok(SplicedManifest::MultiPackage(root_manifest_path))
@@ -361,9 +357,9 @@ impl<'a> SplicerKind<'a> {
     /// Cargo workspace members.
     fn inject_workspace_members<'b>(
         root_manifest: &mut Manifest,
-        manifests: &'b BTreeMap<Utf8PathBuf, Manifest>,
+        manifests: &'b BTreeMap<CargoTomlPath, Manifest>,
         workspace_dir: &Path,
-    ) -> Result<BTreeMap<&'b Utf8PathBuf, String>> {
+    ) -> Result<BTreeMap<&'b CargoTomlPath, String>> {
         manifests
             .iter()
             .map(|(path, manifest)| {
@@ -380,9 +376,7 @@ impl<'a> SplicerKind<'a> {
                     .members
                     .push(package_name.clone());
 
-                let manifest_dir = path
-                    .parent()
-                    .expect("Every manifest should have a parent directory");
+                let manifest_dir = path.parent();
 
                 let dest_package_dir = workspace_dir.join(package_name);
 
@@ -469,7 +463,7 @@ impl<'a> SplicerKind<'a> {
 
 pub(crate) struct Splicer {
     workspace_dir: Utf8PathBuf,
-    manifests: BTreeMap<Utf8PathBuf, Manifest>,
+    manifests: BTreeMap<CargoTomlPath, Manifest>,
     splicing_manifest: SplicingManifest,
 }
 
@@ -487,7 +481,7 @@ impl Splicer {
                     .with_context(|| format!("Failed to read manifest at {}", path))?;
                 Ok((path.clone(), m))
             })
-            .collect::<Result<BTreeMap<Utf8PathBuf, Manifest>>>()?;
+            .collect::<Result<BTreeMap<CargoTomlPath, Manifest>>>()?;
 
         Ok(Self {
             workspace_dir,
@@ -771,14 +765,14 @@ mod test {
 
         // Write workspace members
         for pkg in &["sub_pkg_a", "sub_pkg_b"] {
-            let manifest_path = Utf8PathBuf::try_from(
+            let manifest_path = CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(
                 cache_dir
                     .as_ref()
                     .join("root_pkg")
                     .join(pkg)
                     .join("Cargo.toml"),
             )
-            .unwrap();
+            .unwrap());
             let deps = if pkg == &"sub_pkg_b" {
                 vec![r#"sub_pkg_a = { path = "../sub_pkg_a" }"#]
             } else {
@@ -814,8 +808,8 @@ mod test {
             File::create(workspace_root.join("WORKSPACE.bazel")).unwrap();
         }
         let root_pkg = workspace_root.join("root_pkg");
-        let manifest_path = Utf8PathBuf::try_from(root_pkg.join("Cargo.toml")).unwrap();
-        fs::create_dir_all(manifest_path.parent().unwrap()).unwrap();
+        let manifest_path = CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(root_pkg.join("Cargo.toml")).unwrap());
+        fs::create_dir_all(manifest_path.parent()).unwrap();
         fs::write(&manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
         {
             File::create(root_pkg.join("BUILD.bazel")).unwrap();
@@ -842,7 +836,7 @@ mod test {
         // Write workspace members
         for pkg in &["sub_pkg_a", "sub_pkg_b"] {
             let manifest_path =
-                Utf8PathBuf::try_from(cache_dir.as_ref().join(pkg).join("Cargo.toml")).unwrap();
+                CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(cache_dir.as_ref().join(pkg).join("Cargo.toml")).unwrap());
             mock_cargo_toml(&manifest_path, pkg);
 
             splicing_manifest.manifests.insert(
@@ -872,8 +866,8 @@ mod test {
         {
             File::create(workspace_root.join("WORKSPACE.bazel")).unwrap();
         }
-        let manifest_path = Utf8PathBuf::try_from(workspace_root.join("Cargo.toml")).unwrap();
-        fs::create_dir_all(manifest_path.parent().unwrap()).unwrap();
+        let manifest_path = CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(workspace_root.join("Cargo.toml")).unwrap());
+        fs::create_dir_all(manifest_path.parent()).unwrap();
         fs::write(&manifest_path, toml::to_string(&manifest).unwrap()).unwrap();
 
         splicing_manifest
@@ -895,7 +889,7 @@ mod test {
 
         // Add an additional package
         let manifest_path =
-            Utf8PathBuf::try_from(cache_dir.as_ref().join("root_pkg").join("Cargo.toml")).unwrap();
+            CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(cache_dir.as_ref().join("root_pkg").join("Cargo.toml")).unwrap());
         mock_cargo_toml(&manifest_path, "root_pkg");
         splicing_manifest
             .manifests
@@ -911,7 +905,7 @@ mod test {
         // Add an additional package
         for pkg in &["pkg_a", "pkg_b", "pkg_c"] {
             let manifest_path =
-                Utf8PathBuf::try_from(cache_dir.as_ref().join(pkg).join("Cargo.toml")).unwrap();
+                CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(cache_dir.as_ref().join(pkg).join("Cargo.toml")).unwrap());
             mock_cargo_toml(&manifest_path, pkg);
             splicing_manifest
                 .manifests
@@ -976,7 +970,7 @@ mod test {
         let cargo = cargo();
 
         // Ensure metadata is valid
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
@@ -1019,7 +1013,7 @@ mod test {
         let cargo = cargo();
 
         // Ensure metadata is valid
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
@@ -1111,14 +1105,14 @@ mod test {
 
         // Add a new package from an existing external workspace
         let external_workspace_root = tempfile::tempdir().unwrap();
-        let external_manifest = Utf8PathBuf::try_from(
-            external_workspace_root
+        let external_manifest = CargoTomlPath::new(
+            Utf8PathBuf::try_from(external_workspace_root
                 .as_ref()
                 .join("external_workspace_member")
-                .join("Cargo.toml"),
+                .join("Cargo.toml")).unwrap(),
         )
         .unwrap();
-        fs::create_dir_all(external_manifest.parent().unwrap()).unwrap();
+        fs::create_dir_all(external_manifest.parent()).unwrap();
 
         fs::write(
             external_workspace_root.as_ref().join("Cargo.toml"),
@@ -1201,7 +1195,7 @@ mod test {
                 .splice_workspace()
                 .unwrap();
 
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
 
         // Since no direct packages were added to the splicing manifest, the cargo_bazel
         // deps target should __not__ have been injected into the manifest.
@@ -1230,7 +1224,7 @@ mod test {
         let cargo = cargo();
 
         // Ensure metadata is valid
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![new_package_id(
@@ -1265,7 +1259,7 @@ mod test {
 
         // Check the default resolver version
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
         assert!(cargo_manifest.workspace.is_some());
@@ -1278,7 +1272,7 @@ mod test {
         let cargo = cargo();
 
         // Ensure metadata is valid
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
@@ -1315,7 +1309,7 @@ mod test {
 
         // Check the specified resolver version
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
         assert!(cargo_manifest.workspace.is_some());
@@ -1328,7 +1322,7 @@ mod test {
         let cargo = cargo();
 
         // Ensure metadata is valid
-        let metadata = generate_metadata(workspace_manifest.as_path_buf());
+        let metadata = generate_metadata(workspace_manifest.cargo_toml_path());
         assert_sort_eq!(
             metadata.workspace_members,
             vec![
@@ -1375,7 +1369,7 @@ mod test {
 
         // Check the default resolver version
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
 
@@ -1417,7 +1411,7 @@ mod test {
 
         // Ensure the patches match the expected value
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
         assert_eq!(expected, cargo_manifest.patch);
@@ -1480,7 +1474,7 @@ mod test {
 
         // Ensure the patches match the expected value
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
         assert_eq!(expected, cargo_manifest.patch);
@@ -1531,7 +1525,7 @@ mod test {
 
         // Ensure the patches match the expected value
         let cargo_manifest = cargo_toml::Manifest::from_str(
-            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+            &fs::read_to_string(workspace_manifest.cargo_toml_path()).unwrap(),
         )
         .unwrap();
         assert_eq!(expected, cargo_manifest.patch);

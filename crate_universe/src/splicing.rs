@@ -10,13 +10,15 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Result};
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use cargo_lock::package::SourceKind;
 use cargo_toml::Manifest;
 use serde::{Deserialize, Serialize};
 
 use crate::config::CrateId;
-use crate::metadata::{Cargo, CargoUpdateRequest, LockGenerator, TreeResolverMetadata};
+use crate::metadata::{
+    Cargo, CargoTomlPath, CargoUpdateRequest, LockGenerator, TreeResolverMetadata,
+};
 use crate::utils;
 use crate::utils::starlark::Label;
 
@@ -34,7 +36,7 @@ pub(crate) struct SplicingManifest {
     pub(crate) direct_packages: DirectPackageManifest,
 
     /// A mapping of manifest paths to the labels representing them
-    pub(crate) manifests: BTreeMap<Utf8PathBuf, Label>,
+    pub(crate) manifests: BTreeMap<CargoTomlPath, Label>,
 
     /// The path of a Cargo config file
     pub(crate) cargo_config: Option<Utf8PathBuf>,
@@ -75,7 +77,10 @@ impl SplicingManifest {
                     .to_string()
                     .replace("${build_workspace_directory}", &workspace_dir_str)
                     .replace("${output_base}", &output_base_str);
-                (Utf8PathBuf::from(resolved_path), label)
+                (
+                    CargoTomlPath::unchecked_new(Utf8PathBuf::from(resolved_path)),
+                    label,
+                )
             })
             .collect();
 
@@ -207,7 +212,7 @@ impl TryFrom<serde_json::Value> for WorkspaceMetadata {
 impl WorkspaceMetadata {
     fn new(
         splicing_manifest: &SplicingManifest,
-        member_manifests: BTreeMap<&Utf8PathBuf, String>,
+        member_manifests: BTreeMap<&CargoTomlPath, String>,
     ) -> Result<Self> {
         let mut package_prefixes: BTreeMap<String, String> = member_manifests
             .iter()
@@ -258,8 +263,8 @@ impl WorkspaceMetadata {
         cargo: &Cargo,
         lockfile: &cargo_lock::Lockfile,
         resolver_data: TreeResolverMetadata,
-        input_manifest_path: &Utf8Path,
-        output_manifest_path: &Utf8Path,
+        input_manifest_path: &CargoTomlPath,
+        output_manifest_path: &CargoTomlPath,
     ) -> Result<()> {
         let mut manifest = read_manifest(input_manifest_path)?;
 
@@ -296,7 +301,6 @@ impl WorkspaceMetadata {
             // Note that this path must match the one defined in `splicing::setup_cargo_config`
             let config_path = input_manifest_path
                 .parent()
-                .unwrap()
                 .join(".cargo")
                 .join("config.toml");
 
@@ -439,13 +443,13 @@ impl WorkspaceMetadata {
 
 #[derive(Debug)]
 pub(crate) enum SplicedManifest {
-    Workspace(Utf8PathBuf),
-    Package(Utf8PathBuf),
-    MultiPackage(Utf8PathBuf),
+    Workspace(CargoTomlPath),
+    Package(CargoTomlPath),
+    MultiPackage(CargoTomlPath),
 }
 
 impl SplicedManifest {
-    pub(crate) fn as_path_buf(&self) -> &Utf8PathBuf {
+    pub(crate) fn cargo_toml_path(&self) -> &CargoTomlPath {
         match self {
             SplicedManifest::Workspace(p) => p,
             SplicedManifest::Package(p) => p,
@@ -454,7 +458,7 @@ impl SplicedManifest {
     }
 }
 
-pub(crate) fn read_manifest(manifest: &Utf8Path) -> Result<Manifest> {
+pub(crate) fn read_manifest(manifest: &CargoTomlPath) -> Result<Manifest> {
     let content = fs::read_to_string(manifest.as_std_path())?;
     cargo_toml::Manifest::from_str(content.as_str()).context("Failed to deserialize manifest")
 }
@@ -465,10 +469,7 @@ pub(crate) fn generate_lockfile(
     cargo_bin: Cargo,
     update_request: &Option<CargoUpdateRequest>,
 ) -> Result<cargo_lock::Lockfile> {
-    let manifest_dir = manifest_path
-        .as_path_buf()
-        .parent()
-        .expect("Every manifest should be contained in a parent directory");
+    let manifest_dir = manifest_path.cargo_toml_path().parent();
 
     let root_lockfile_path = manifest_dir.join("Cargo.lock");
 
@@ -479,7 +480,7 @@ pub(crate) fn generate_lockfile(
 
     // Generate the new lockfile
     let lockfile = LockGenerator::new(cargo_bin).generate(
-        manifest_path.as_path_buf(),
+        manifest_path.cargo_toml_path(),
         existing_lock,
         update_request,
     )?;
@@ -514,15 +515,15 @@ mod test {
             manifest.manifests,
             BTreeMap::from([
                 (
-                    Utf8PathBuf::from("${build_workspace_directory}/submod/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("${build_workspace_directory}/submod/Cargo.toml"),
                     Label::from_str("//submod:Cargo.toml").unwrap()
                 ),
                 (
-                    Utf8PathBuf::from("${output_base}/external_crate/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("${output_base}/external_crate/Cargo.toml"),
                     Label::from_str("@external_crate//:Cargo.toml").unwrap()
                 ),
                 (
-                    Utf8PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("/tmp/abs/path/workspace/Cargo.toml"),
                     Label::from_str("//:Cargo.toml").unwrap()
                 ),
             ])
@@ -608,15 +609,15 @@ mod test {
             manifest.manifests,
             BTreeMap::from([
                 (
-                    Utf8PathBuf::from("/tmp/abs/path/workspace/submod/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("/tmp/abs/path/workspace/submod/Cargo.toml"),
                     Label::from_str("//submod:Cargo.toml").unwrap()
                 ),
                 (
-                    Utf8PathBuf::from("/tmp/output_base/external_crate/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("/tmp/output_base/external_crate/Cargo.toml"),
                     Label::from_str("@external_crate//:Cargo.toml").unwrap()
                 ),
                 (
-                    Utf8PathBuf::from("/tmp/abs/path/workspace/Cargo.toml"),
+                    CargoTomlPath::unchecked_new("/tmp/abs/path/workspace/Cargo.toml"),
                     Label::from_str("//:Cargo.toml").unwrap()
                 ),
             ])
@@ -652,15 +653,15 @@ mod test {
             direct_packages: BTreeMap::new(),
             manifests: BTreeMap::from([
                 (
-                    Utf8PathBuf::try_from(workspace_manifest_path).unwrap(),
+                    CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(workspace_manifest_path).unwrap()),
                     Label::from_str("//:Cargo.toml").unwrap(),
                 ),
                 (
-                    Utf8PathBuf::try_from(child_a_manifest_path).unwrap(),
+                    CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(child_a_manifest_path).unwrap()),
                     Label::from_str("//child_a:Cargo.toml").unwrap(),
                 ),
                 (
-                    Utf8PathBuf::try_from(child_b_manifest_path).unwrap(),
+                    CargoTomlPath::unchecked_new(Utf8PathBuf::try_from(child_b_manifest_path).unwrap()),
                     Label::from_str("//child_b:Cargo.toml").unwrap(),
                 ),
             ]),

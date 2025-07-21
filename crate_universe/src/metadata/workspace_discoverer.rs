@@ -1,23 +1,24 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::metadata::CargoTomlPath;
 use anyhow::{anyhow, bail, Context, Result};
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8Path;
 use cargo_toml::Manifest;
 
 /// A description of Cargo.toml files and how they are related in workspaces.
 /// All `Utf8PathBuf` values are paths of Cargo.toml files.
 #[derive(Debug, PartialEq)]
 pub(crate) struct DiscoveredWorkspaces {
-    workspaces_to_members: BTreeMap<Utf8PathBuf, BTreeSet<Utf8PathBuf>>,
-    non_workspaces: BTreeSet<Utf8PathBuf>,
+    workspaces_to_members: BTreeMap<CargoTomlPath, BTreeSet<CargoTomlPath>>,
+    non_workspaces: BTreeSet<CargoTomlPath>,
 }
 
 impl DiscoveredWorkspaces {
-    pub(crate) fn workspaces(&self) -> BTreeSet<Utf8PathBuf> {
+    pub(crate) fn workspaces(&self) -> BTreeSet<CargoTomlPath> {
         self.workspaces_to_members.keys().cloned().collect()
     }
 
-    pub(crate) fn all_workspaces_and_members(&self) -> BTreeSet<Utf8PathBuf> {
+    pub(crate) fn all_workspaces_and_members(&self) -> BTreeSet<CargoTomlPath> {
         self.workspaces_to_members
             .keys()
             .chain(self.workspaces_to_members.values().flatten())
@@ -27,8 +28,8 @@ impl DiscoveredWorkspaces {
 }
 
 pub(crate) fn discover_workspaces(
-    cargo_toml_paths: BTreeSet<Utf8PathBuf>,
-    known_manifests: &BTreeMap<Utf8PathBuf, Manifest>,
+    cargo_toml_paths: BTreeSet<CargoTomlPath>,
+    known_manifests: &BTreeMap<CargoTomlPath, Manifest>,
 ) -> Result<DiscoveredWorkspaces> {
     let mut manifest_cache = ManifestCache {
         cache: BTreeMap::new(),
@@ -38,7 +39,7 @@ pub(crate) fn discover_workspaces(
 }
 
 fn discover_workspaces_with_cache(
-    cargo_toml_paths: BTreeSet<Utf8PathBuf>,
+    cargo_toml_paths: BTreeSet<CargoTomlPath>,
     manifest_cache: &mut ManifestCache,
 ) -> Result<DiscoveredWorkspaces> {
     let mut discovered_workspaces = DiscoveredWorkspaces {
@@ -85,7 +86,7 @@ fn discover_workspaces_with_cache(
             })
             .transpose()?;
 
-        'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
+        'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent())
             .follow_links(false)
             .follow_root_links(false)
             .into_iter()
@@ -117,6 +118,7 @@ fn discover_workspaces_with_cache(
             let child_path = Utf8Path::from_path(entry.path())
                 .ok_or_else(|| anyhow!("Failed to parse {:?} as UTF-8", entry.path()))?
                 .to_path_buf();
+            let child_path = CargoTomlPath::unchecked_new(child_path);
             if child_path == workspace_path {
                 continue;
             }
@@ -136,7 +138,7 @@ fn discover_workspaces_with_cache(
                             )
                         })?;
                     actual_workspace_path =
-                        child_path.parent().unwrap().join(explicit_workspace_path);
+                        CargoTomlPath::new(child_path.parent().join(explicit_workspace_path))?;
                 }
             }
             if !discovered_workspaces
@@ -146,10 +148,8 @@ fn discover_workspaces_with_cache(
                 bail!("Found manifest at {} which is a member of the workspace at {} which isn't included in the crates_universe", child_path, actual_workspace_path);
             }
 
-            let dir_relative_to_workspace_dir = child_path
-                .parent()
-                .unwrap()
-                .strip_prefix(workspace_path.parent().unwrap());
+            let dir_relative_to_workspace_dir =
+                child_path.parent().strip_prefix(workspace_path.parent());
 
             if let Ok(dir_relative_to_workspace_dir) = dir_relative_to_workspace_dir {
                 use itertools::Itertools;
@@ -201,11 +201,11 @@ fn discover_workspaces_with_cache(
 }
 
 fn discover_workspace_parent(
-    cargo_toml_path: &Utf8PathBuf,
+    cargo_toml_path: &CargoTomlPath,
     manifest_cache: &mut ManifestCache,
-) -> Option<Utf8PathBuf> {
+) -> Option<CargoTomlPath> {
     for parent_dir in cargo_toml_path.ancestors().skip(1) {
-        let maybe_cargo_toml_path = parent_dir.join("Cargo.toml");
+        let maybe_cargo_toml_path = CargoTomlPath::for_dir(parent_dir);
         let maybe_manifest = manifest_cache.get(&maybe_cargo_toml_path);
         if let Some(manifest) = maybe_manifest {
             if manifest.workspace.is_some() {
@@ -217,12 +217,12 @@ fn discover_workspace_parent(
 }
 
 struct ManifestCache<'a> {
-    cache: BTreeMap<Utf8PathBuf, Option<Manifest>>,
-    known_manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
+    cache: BTreeMap<CargoTomlPath, Option<Manifest>>,
+    known_manifests: &'a BTreeMap<CargoTomlPath, Manifest>,
 }
 
 impl ManifestCache<'_> {
-    fn get(&mut self, path: &Utf8PathBuf) -> Option<Manifest> {
+    fn get(&mut self, path: &CargoTomlPath) -> Option<Manifest> {
         if let Some(manifest) = self.known_manifests.get(path) {
             return Some(manifest.clone());
         }
@@ -240,6 +240,7 @@ mod test {
     use super::*;
     use std::path::{Path, PathBuf};
     use std::sync::Mutex;
+    use camino::Utf8PathBuf;
 
     // Both of these tests try to create the same symlink, so they can't run in parallel.
     static FILESYSTEM_GUARD: Mutex<()> = Mutex::new(());
@@ -262,28 +263,27 @@ mod test {
         let mut expected = ws1_discovered_workspaces(&root_dir);
 
         expected.workspaces_to_members.insert(
-            root_dir.join("ws2").join("Cargo.toml"),
+            CargoTomlPath::for_dir(root_dir.join("ws2")),
             BTreeSet::from([
-                root_dir.join("ws2").join("ws2c1").join("Cargo.toml"),
-                root_dir
+                CargoTomlPath::for_dir(root_dir.join("ws2").join("ws2c1")),
+                CargoTomlPath::for_dir(root_dir
                     .join("ws2")
                     .join("ws2excluded")
-                    .join("ws2included")
-                    .join("Cargo.toml"),
+                    .join("ws2included")),
             ]),
         );
 
         expected.non_workspaces.extend([
-            root_dir.join("non-ws").join("Cargo.toml"),
-            root_dir.join("ws2").join("ws2excluded").join("Cargo.toml"),
+            CargoTomlPath::for_dir(root_dir.join("non-ws")),
+            CargoTomlPath::for_dir(root_dir.join("ws2").join("ws2excluded")),
         ]);
 
         let actual = discover_workspaces(
             vec![
-                root_dir.join("ws1").join("ws1c1").join("Cargo.toml"),
-                root_dir.join("ws2").join("Cargo.toml"),
-                root_dir.join("ws2").join("ws2excluded").join("Cargo.toml"),
-                root_dir.join("non-ws").join("Cargo.toml"),
+                CargoTomlPath::for_dir(root_dir.join("ws1").join("ws1c1")),
+                CargoTomlPath::for_dir(root_dir.join("ws2")),
+                CargoTomlPath::for_dir(root_dir.join("ws2").join("ws2excluded")),
+                CargoTomlPath::for_dir(root_dir.join("non-ws")),
             ]
             .into_iter()
             .collect(),
@@ -318,7 +318,7 @@ mod test {
         let expected = ws1_discovered_workspaces(&root_dir);
 
         let actual = discover_workspaces(
-            vec![root_dir.join("ws1").join("ws1c1").join("Cargo.toml")]
+            vec![CargoTomlPath::for_dir(root_dir.join("ws1").join("ws1c1"))]
                 .into_iter()
                 .collect(),
             &BTreeMap::new(),
@@ -346,7 +346,7 @@ mod test {
         let expected = ws1_discovered_workspaces(&root_dir);
 
         let actual = discover_workspaces(
-            vec![root_dir.join("ws1").join("ws1c1").join("Cargo.toml")]
+            vec![CargoTomlPath::for_dir(root_dir.join("ws1").join("ws1c1"))]
                 .into_iter()
                 .collect(),
             &BTreeMap::new(),
@@ -364,7 +364,7 @@ mod test {
                 .unwrap();
         let root_dir = Utf8PathBuf::from_path_buf(root_dir).unwrap();
 
-        let mut workspaces_to_members = BTreeMap::<Utf8PathBuf, BTreeSet<Utf8PathBuf>>::new();
+        let mut workspaces_to_members = BTreeMap::<CargoTomlPath, BTreeSet<CargoTomlPath>>::new();
 
         let mut includes_members = BTreeSet::new();
         let includes_root = root_dir.join("includes");
@@ -388,12 +388,11 @@ mod test {
             for path_part in child {
                 path.push(path_part);
             }
-            path.push("Cargo.toml");
-            includes_members.insert(path);
+            includes_members.insert(CargoTomlPath::for_dir(path));
         }
 
-        workspaces_to_members.insert(includes_root.join("Cargo.toml"), includes_members);
-        let non_workspaces = BTreeSet::<Utf8PathBuf>::new();
+        workspaces_to_members.insert(CargoTomlPath::for_dir(includes_root), includes_members);
+        let non_workspaces = BTreeSet::<CargoTomlPath>::new();
 
         let expected = DiscoveredWorkspaces {
             workspaces_to_members,
@@ -401,10 +400,9 @@ mod test {
         };
 
         let actual = discover_workspaces(
-            vec![root_dir
+            vec![CargoTomlPath::for_dir(root_dir
                 .join("includes")
-                .join("explicit-child")
-                .join("Cargo.toml")]
+                .join("explicit-child"))]
             .into_iter()
             .collect(),
             &BTreeMap::new(),
@@ -417,15 +415,14 @@ mod test {
     fn ws1_discovered_workspaces(root_dir: &Utf8Path) -> DiscoveredWorkspaces {
         let mut workspaces_to_members = BTreeMap::new();
         workspaces_to_members.insert(
-            root_dir.join("ws1").join("Cargo.toml"),
+            CargoTomlPath::for_dir(root_dir.join("ws1")),
             BTreeSet::from([
-                root_dir.join("ws1").join("ws1c1").join("Cargo.toml"),
-                root_dir
+                CargoTomlPath::for_dir(root_dir.join("ws1").join("ws1c1")),
+                CargoTomlPath::for_dir(root_dir
                     .join("ws1")
                     .join("ws1c1")
-                    .join("ws1c1c1")
-                    .join("Cargo.toml"),
-                root_dir.join("ws1").join("ws1c2").join("Cargo.toml"),
+                    .join("ws1c1c1")),
+                CargoTomlPath::for_dir(root_dir.join("ws1").join("ws1c2")),
             ]),
         );
         let non_workspaces = BTreeSet::new();
