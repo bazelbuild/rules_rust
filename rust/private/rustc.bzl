@@ -41,6 +41,7 @@ load(
     "is_exec_configuration",
     "is_std_dylib",
     "make_static_lib_symlink",
+    "parse_env_strings",
     "relativize",
 )
 
@@ -2344,12 +2345,7 @@ rustc_output_diagnostics = rule(
 )
 
 def _extra_rustc_env_impl(ctx):
-    env_vars = {}
-    for entry in ctx.build_setting_value:
-        if "=" not in entry:
-            fail("Invalid format for rustc env var: '{}'. Expected 'KEY=value'".format(entry))
-        key, val = entry.split("=", 1)
-        env_vars[key] = val
+    env_vars = parse_env_strings(ctx.build_setting_value)
     return ExtraRustcEnvInfo(extra_rustc_env = env_vars)
 
 extra_rustc_env = rule(
@@ -2402,12 +2398,7 @@ extra_exec_rustc_flags = rule(
 )
 
 def _extra_exec_rustc_env_impl(ctx):
-    env_vars = {}
-    for entry in ctx.build_setting_value:
-        if "=" not in entry:
-            fail("Invalid format for rustc env var: '{}'. Expected 'KEY=value'".format(entry))
-        key, val = entry.split("=", 1)
-        env_vars[key] = val
+    env_vars = parse_env_strings(ctx.build_setting_value)
     return ExtraExecRustcEnvInfo(extra_exec_rustc_env = env_vars)
 
 extra_exec_rustc_env = rule(
