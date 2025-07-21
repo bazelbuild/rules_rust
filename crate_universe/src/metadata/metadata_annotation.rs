@@ -281,7 +281,7 @@ impl LockfileAnnotation {
                                             path.parent()
                                                 .context("unexpected empty lockfile path")?,
                                         )
-                                        .context("unxpected non-Unicode lockfile path")?;
+                                        .context("unexpected non-Unicode lockfile path")?;
                                         if p.starts_with(nonhermetic_root_bazel_workspace_dir) {
                                             // If path in lockfile is under Bazel root, strip Bazel
                                             // root to get the actual path.
@@ -523,7 +523,7 @@ fn find_workspace_metadata(cargo_metadata: &CargoMetadata) -> Option<WorkspaceMe
 }
 
 /// Determines whether or not a package is a workspace member. This follows
-/// the Cargo definition of a workspace memeber with one exception where
+/// the Cargo definition of a workspace member with one exception where
 /// "extra workspace members" are *not* treated as workspace members
 fn is_workspace_member(id: &PackageId, cargo_metadata: &CargoMetadata) -> bool {
     if cargo_metadata.workspace_members.contains(id) {

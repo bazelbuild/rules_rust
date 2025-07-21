@@ -159,7 +159,7 @@ def _annotation(
         gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
             targets produced. Or `True` to generate all, `False` to generate none.
         disable_pipelining (bool, optional): If True, disables pipelining for library targets for this crate.
-        gen_build_script (bool, optional): An authorative flag to determine whether or not to produce
+        gen_build_script (bool, optional): An authoritative flag to determine whether or not to produce
             `cargo_build_script` targets for the current crate.
         patch_args (list, optional): The `patch_args` attribute of a Bazel repository rule. See
             [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)

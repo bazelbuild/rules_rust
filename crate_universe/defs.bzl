@@ -99,7 +99,7 @@ rust_test(
 
 ### Direct Packages
 
-In cases where Rust targets have heavy interractions with other Bazel targests ([Cc][cc], [Proto][proto], etc.),
+In cases where Rust targets have heavy interractions with other Bazel targets ([Cc][cc], [Proto][proto], etc.),
 maintaining `Cargo.toml` files may have deminishing returns as things like [rust-analyzer][ra] begin to be confused
 about missing targets or environment variables defined only in Bazel. In workspaces like this, it may be desirable
 to have a "Cargo free" setup. `crates_repository` supports this through the `packages` attribute.
@@ -124,7 +124,7 @@ crates_repository(
     },
     # Setting the default package name to `""` forces the use of the macros defined in this repository
     # to always use the root package when looking for dependencies or aliases. This should be considered
-    # optional as the repository also exposes alises for easy access to all dependencies.
+    # optional as the repository also exposes aliases for easy access to all dependencies.
     render_config = render_config(
         default_package_name = ""
     ),
