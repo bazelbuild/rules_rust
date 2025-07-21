@@ -227,7 +227,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     let config = Config::try_from_path(&opt.config)?;
 
     let resolver_data = TreeResolver::new(cargo.clone()).generate(
-        manifest_path.as_path_buf(),
+        manifest_path.cargo_toml_path(),
         &config.supported_platform_triples,
     )?;
 
@@ -236,15 +236,15 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         &cargo,
         &cargo_lockfile,
         resolver_data,
-        manifest_path.as_path_buf(),
-        manifest_path.as_path_buf(),
+        manifest_path.cargo_toml_path(),
+        manifest_path.cargo_toml_path(),
     )?;
 
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, cargo_lockfile) = Generator::new()
         .with_cargo(cargo.clone())
         .with_rustc(opt.rustc.clone())
-        .generate(manifest_path.as_path_buf())?;
+        .generate(manifest_path.cargo_toml_path())?;
 
     // Annotate metadata
     let annotations = Annotations::new(
@@ -281,7 +281,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
 
     if matches!(config.rendering.vendor_mode, Some(VendorMode::Local)) {
         VendorGenerator::new(cargo, opt.rustc.clone())
-            .generate(manifest_path.as_path_buf(), &vendor_dir)
+            .generate(manifest_path.cargo_toml_path(), &vendor_dir)
             .context("Failed to vendor dependencies")?;
     }
 

@@ -99,7 +99,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     let resolver_data = TreeResolver::new(cargo.clone())
         .generate(
-            manifest_path.as_path_buf(),
+            manifest_path.cargo_toml_path(),
             &config.supported_platform_triples,
         )
         .context("Failed to generate features")?;
@@ -108,8 +108,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         &cargo,
         &cargo_lockfile,
         resolver_data,
-        manifest_path.as_path_buf(),
-        manifest_path.as_path_buf(),
+        manifest_path.cargo_toml_path(),
+        manifest_path.cargo_toml_path(),
     )
     .context("Failed to write registry URLs and feature map")?;
 
@@ -119,19 +119,10 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let (cargo_metadata, _) = Generator::new()
         .with_cargo(cargo)
         .with_rustc(opt.rustc)
-        .generate(manifest_path.as_path_buf())
+        .generate(manifest_path.cargo_toml_path())
         .context("Failed to generate cargo metadata")?;
 
-    let cargo_lockfile_path = manifest_path
-        .as_path_buf()
-        .parent()
-        .with_context(|| {
-            format!(
-                "The path {} is expected to have a parent directory",
-                manifest_path.as_path_buf()
-            )
-        })?
-        .join("Cargo.lock");
+    let cargo_lockfile_path = manifest_path.cargo_toml_path().parent().join("Cargo.lock");
 
     // Generate the consumable outputs of the splicing process
     std::fs::create_dir_all(&output_dir)

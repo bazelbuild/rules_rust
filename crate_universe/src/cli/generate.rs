@@ -13,7 +13,7 @@ use clap::Parser;
 use crate::config::Config;
 use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
-use crate::metadata::{load_metadata, Annotations, Cargo, SourceAnnotation};
+use crate::metadata::{load_metadata, Annotations, Cargo, CargoTomlPath, SourceAnnotation};
 use crate::rendering::{write_outputs, Renderer};
 use crate::splicing::SplicingManifest;
 use crate::utils::normalize_cargo_file_paths;
@@ -236,7 +236,7 @@ fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
 fn write_paths_to_track<
     'a,
     SourceAnnotations: Iterator<Item = &'a SourceAnnotation>,
-    Paths: Iterator<Item = Utf8PathBuf>,
+    Paths: Iterator<Item = CargoTomlPath>,
     UnusedPatches: Iterator<Item = &'a cargo_lock::Dependency>,
 >(
     output_file: &Path,
@@ -248,7 +248,7 @@ fn write_paths_to_track<
     let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
             if let SourceAnnotation::Path { path } = v {
-                Some(path.join("Cargo.toml"))
+                Some(CargoTomlPath::for_dir(path))
             } else {
                 None
             }

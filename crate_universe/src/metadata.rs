@@ -1,6 +1,7 @@
 //! Tools for gathering various kinds of metadata (Cargo.lock, Cargo metadata, Crate Index info).
 
 mod cargo_bin;
+mod cargo_toml_path;
 mod cargo_tree_resolver;
 mod dependency;
 mod metadata_annotation;
@@ -12,12 +13,12 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Context, Result};
-use camino::Utf8Path;
 use cargo_lock::Lockfile as CargoLockfile;
 use cargo_metadata::Metadata as CargoMetadata;
 use tracing::debug;
 
 pub(crate) use self::cargo_bin::*;
+pub(crate) use self::cargo_toml_path::*;
 pub(crate) use self::cargo_tree_resolver::*;
 pub(crate) use self::dependency::*;
 pub(crate) use self::metadata_annotation::*;
@@ -190,13 +191,13 @@ impl LockGenerator {
     #[tracing::instrument(name = "LockGenerator::generate", skip_all)]
     pub(crate) fn generate(
         &self,
-        manifest_path: &Utf8Path,
+        manifest_path: &CargoTomlPath,
         existing_lock: &Option<PathBuf>,
         update_request: &Option<CargoUpdateRequest>,
     ) -> Result<cargo_lock::Lockfile> {
         debug!("Generating Cargo Lockfile for {}", manifest_path);
 
-        let manifest_dir = manifest_path.parent().unwrap();
+        let manifest_dir = manifest_path.parent();
         let generated_lockfile_path = manifest_dir.join("Cargo.lock");
 
         if let Some(lock) = existing_lock {
@@ -304,9 +305,9 @@ impl VendorGenerator {
         }
     }
     #[tracing::instrument(name = "VendorGenerator::generate", skip_all)]
-    pub(crate) fn generate(&self, manifest_path: &Utf8Path, output_dir: &Path) -> Result<()> {
+    pub(crate) fn generate(&self, manifest_path: &CargoTomlPath, output_dir: &Path) -> Result<()> {
         debug!("Vendoring {} to {}", manifest_path, output_dir.display());
-        let manifest_dir = manifest_path.parent().unwrap();
+        let manifest_dir = manifest_path.parent();
 
         // Simply invoke `cargo generate-lockfile`
         let output = self
