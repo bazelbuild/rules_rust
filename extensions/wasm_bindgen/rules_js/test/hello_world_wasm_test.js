@@ -21,10 +21,10 @@ const main = async function (typ, dir) {
 };
 
 ["bundler", "web", "deno", "nomodules", "nodejs"].forEach((typ) => {
-    main(typ, process.argv.length > 2 ? process.argv[2] : "").catch(function (
-        err,
-    ) {
-        console.error(err);
-        process.exit(1);
-    });
+    main(typ, process.argv.length > 2 ? process.argv[2] : "").catch(
+        function (err) {
+            console.error(err);
+            process.exit(1);
+        },
+    );
 });
