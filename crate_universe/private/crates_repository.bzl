@@ -219,7 +219,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 
 This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN` environment variable
 can also be used to customize how dependencies are updated. The following table shows translations from environment
-variable values to the equivilant [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
+variable values to the equivalent [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
 that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
@@ -259,7 +259,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             mandatory = True,
         ),
         "compressed_windows_toolchain_names": attr.bool(
-            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            doc = "Whether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
             default = True,
         ),
         "generate_binaries": attr.bool(
@@ -303,7 +303,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
                 "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
                 "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-                "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+                "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
             ),
             default = True,
         ),

@@ -110,7 +110,7 @@ pub(crate) struct RenderConfig {
 }
 
 // Default is manually implemented so that the default values match the default
-// values when deserializing, which involves calling the vairous `default_x()`
+// values when deserializing, which involves calling the various `default_x()`
 // functions specified in `#[serde(default = "default_x")]`.
 impl Default for RenderConfig {
     fn default() -> Self {
@@ -240,7 +240,7 @@ pub(crate) struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
     pub(crate) gen_binaries: Option<GenBinaries>,
 
-    /// Determins whether or not Cargo build scripts should be generated for the current package
+    /// Determines whether or not Cargo build scripts should be generated for the current package
     pub(crate) gen_build_script: Option<bool>,
 
     /// Additional data to pass to

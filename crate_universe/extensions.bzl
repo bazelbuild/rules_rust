@@ -1047,7 +1047,7 @@ _FROM_COMMON_ATTRS = {
             "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
             "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
             "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-            "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+            "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
         ),
         default = True,
     ),
@@ -1342,7 +1342,7 @@ can be found below where the supported keys for each template can be found in th
             default = True,
         ),
         "generate_rules_license_metadata": attr.bool(
-            doc = "Whether to generate rules license metedata.",
+            doc = "Whether to generate rules license metadata.",
             default = False,
         ),
         "generate_target_compatible_with": attr.bool(

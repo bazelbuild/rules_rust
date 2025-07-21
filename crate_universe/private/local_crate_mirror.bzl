@@ -29,7 +29,7 @@ def _local_crate_mirror_impl(repository_ctx):
 local_crate_mirror = repository_rule(
     doc = """This is a private implementation detail of crate_universe, and should not be relied on in manually written code.
 
-This is effectively a `local_repository` rule impementation, but where the BUILD.bazel file is generated using the `cargo-bazel render` command.""",
+This is effectively a `local_repository` rule implementation, but where the `BUILD.bazel` file is generated using the `cargo-bazel render` command.""",
     implementation = _local_crate_mirror_impl,
     attrs = {
         "generator": attr.string(
