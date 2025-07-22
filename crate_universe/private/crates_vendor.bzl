@@ -39,6 +39,9 @@ if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
     _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
 fi
 
+# Pass on CARGO_REGISTRIES_* and CARGO_REGISTRY*
+while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_REGISTR)
+
 # The path needs to be preserved to prevent bazel from starting with different
 # startup options (requiring a restart of bazel).
 # If you provide an empty path, bazel starts itself with
