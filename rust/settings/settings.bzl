@@ -18,6 +18,7 @@ load(
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load(
     "//rust/private:rustc.bzl",
+    _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
     _error_format = "error_format",
     _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
@@ -319,6 +320,18 @@ def incompatible_change_clippy_error_format():
         name = "incompatible_change_clippy_error_format",
         build_setting_default = False,
         issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
+    )
+
+# buildifier: disable=unnamed-macro
+def always_enable_metadata_output_groups():
+    """A flag to enable the `always_enable_metadata_output_groups` setting.
+
+    If this flag is true, all rules will support the `metadata` and
+    `rustc_rmeta_output` output groups."""
+    _always_enable_metadata_output_groups(
+        name = "always_enable_metadata_output_groups",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
     )
 
 # buildifier: disable=unnamed-macro
