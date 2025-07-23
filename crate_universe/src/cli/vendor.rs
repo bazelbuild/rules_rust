@@ -210,8 +210,8 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path));
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer =
-        Splicer::new(temp_dir_path, splicing_manifest.clone()).context("Failed to create splicer")?;
+    let splicer = Splicer::new(temp_dir_path, splicing_manifest.clone())
+        .context("Failed to create splicer")?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
@@ -318,8 +318,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
 
     // Write the rendering lockfile if requested.
     if let Some(lockfile) = opt.lockfile {
-        let lock_content =
-            lock_context(context, &config, &splicing_manifest, &cargo, &opt.rustc)?;
+        let lock_content = lock_context(context, &config, &splicing_manifest, &cargo, &opt.rustc)?;
 
         write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
