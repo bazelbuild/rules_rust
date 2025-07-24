@@ -5,6 +5,7 @@ load(
     "clippy_error_format",
     "clippy_flag",
     "clippy_flags",
+    "clippy_output_diagnostics",
     "clippy_toml",
     "codegen_units",
     "error_format",
@@ -57,6 +58,8 @@ capture_clippy_output()
 clippy_flag()
 
 clippy_flags()
+
+clippy_output_diagnostics()
 
 clippy_toml()
 
