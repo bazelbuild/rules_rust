@@ -1149,6 +1149,32 @@ def construct_arguments(
 
     return args, env
 
+
+def _get_dynamic_libraries_for_runtime(cc_linking_context, linking_statically):
+    libraries = []
+    if not cc_linking_context:
+        return libraries
+
+    for linker_input in cc_linking_context.linker_inputs.to_list():
+        libraries.extend(linker_input.libraries)
+
+    dynamic_libraries_for_runtime = []
+    for library in libraries:
+        artifact = _get_dynamic_library_for_runtime_or_none(library, linking_statically)
+        if artifact != None:
+            dynamic_libraries_for_runtime.append(artifact)
+
+    return dynamic_libraries_for_runtime
+
+def _get_dynamic_library_for_runtime_or_none(library, linking_statically):
+    if library.dynamic_library == None:
+        return None
+
+    if linking_statically and (library.static_library != None or library.pic_static_library != None):
+        return None
+
+    return library.dynamic_library
+
 def rustc_compile_action(
         *,
         ctx,
@@ -1503,20 +1529,37 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
-    dynamic_libraries = [
-        library_to_link.dynamic_library
-        for dep in getattr(ctx.attr, "deps", [])
-        if CcInfo in dep
-        for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
-        for library_to_link in linker_input.libraries
-        if _is_dylib(library_to_link)
-    ]
-    runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) +
-                ([] if experimental_use_coverage_metadata_files else coverage_runfiles) +
-                dynamic_libraries,
-        collect_data = True,
-    )
+    cc_info = establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, output_o, lto_ctx, debug_context)
+    linking_context = cc_info[0].linking_context if cc_info else None
+
+    runfiles_list = []
+    for data_dep in getattr(ctx.attr, "data", []):
+        if data_dep[DefaultInfo].data_runfiles.files:
+            runfiles_list.append(data_dep[DefaultInfo].data_runfiles)
+        else:
+            # This branch ensures interop with custom Starlark rules following
+            # https://bazel.build/extending/rules#runfiles_features_to_avoid
+            runfiles_list.append(ctx.runfiles(transitive_files = data_dep[DefaultInfo].files))
+            runfiles_list.append(data_dep[DefaultInfo].default_runfiles)
+
+    for src in getattr(ctx.attr, "srcs", []):
+        runfiles_list.append(src[DefaultInfo].default_runfiles)
+
+    for dep in getattr(ctx.attr, "deps", []):
+        runfiles_list.append(dep[DefaultInfo].default_runfiles)
+
+        runfiles_list.append(dep[DefaultInfo].default_runfiles)
+
+    runfiles_list.append(ctx.runfiles(files = ([] if experimental_use_coverage_metadata_files else coverage_runfiles)))
+
+    runfiles = ctx.runfiles().merge_all(runfiles_list)
+
+    default_runfiles = ctx.runfiles(files = _get_dynamic_libraries_for_runtime(linking_context, True))
+    default_runfiles = runfiles.merge(default_runfiles)
+
+    data_runfiles = ctx.runfiles(files = _get_dynamic_libraries_for_runtime(linking_context, False))
+    data_runfiles = runfiles.merge(data_runfiles)
+
     if getattr(ctx.attr, "crate", None):
         runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].default_runfiles)
         runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].data_runfiles)
@@ -1542,10 +1585,11 @@ def rustc_compile_action(
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
-            runfiles = runfiles,
+            default_runfiles = default_runfiles,
+            data_runfiles = data_runfiles,
             executable = executable,
         ),
-    ]
+    ] + cc_info
 
     # When invoked by aspects (and when running `bazel coverage`), the
     # baseline_coverage.dat created here will conflict with the baseline_coverage.dat of the
@@ -1573,8 +1617,6 @@ def rustc_compile_action(
         providers.extend([rust_common.test_crate_info(crate = crate_info), dep_info])
     else:
         providers.extend([crate_info, dep_info])
-
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
 
     output_group_info = {}
 
