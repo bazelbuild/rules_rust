@@ -1552,6 +1552,16 @@ def rustc_compile_action(
 
     runfiles_list.append(ctx.runfiles(files = ([] if experimental_use_coverage_metadata_files else coverage_runfiles)))
 
+    dynamic_libraries = [
+        library_to_link.dynamic_library
+        for dep in getattr(ctx.attr, "deps", [])
+        if CcInfo in dep
+        for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
+        for library_to_link in linker_input.libraries
+        if _is_dylib(library_to_link)
+    ]
+    runfiles_list.append(ctx.runfiles(files = dynamic_libraries))
+
     runfiles = ctx.runfiles().merge_all(runfiles_list)
 
     default_runfiles = ctx.runfiles(files = _get_dynamic_libraries_for_runtime(linking_context, True))
