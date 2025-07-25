@@ -1529,7 +1529,7 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
-    cc_info = establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library, output_o, lto_ctx, debug_context)
+    cc_info = establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
     linking_context = cc_info[0].linking_context if cc_info else None
 
     runfiles_list = []
