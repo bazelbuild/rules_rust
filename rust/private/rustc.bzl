@@ -1595,8 +1595,9 @@ def rustc_compile_action(
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
-            default_runfiles = default_runfiles,
-            data_runfiles = data_runfiles,
+            default_runfiles = default_runfiles if crate_info.type not in ["bin", "staticlib", "cdylib"] else None,
+            data_runfiles = data_runfiles if crate_info.type not in ["bin", "staticlib", "cdylib"] else None,
+            runfiles = runfiles if crate_info.type in ["bin", "staticlib", "cdylib"] else None,
             executable = executable,
         ),
     ] + cc_info
