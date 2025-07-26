@@ -14,6 +14,7 @@ load(
     _capture_clippy_output = "capture_clippy_output",
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
+    _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load(
@@ -327,6 +328,20 @@ def rustc_output_diagnostics():
     """
     _rustc_output_diagnostics(
         name = "rustc_output_diagnostics",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
+    )
+
+# buildifier: disable=unnamed-macro
+def clippy_output_diagnostics():
+    """A flag to enable the `clippy_output_diagnostics` setting.
+
+    If this flag is true, rules_rust will save clippy json output (suitable for consumption
+    by rust-analyzer) in a file, available from the `clippy_output` output group. This is the
+    clippy equivalent of `rustc_output_diagnostics`.
+    """
+    _clippy_output_diagnostics(
+        name = "clippy_output_diagnostics",
         build_setting_default = False,
         visibility = ["//visibility:public"],
     )

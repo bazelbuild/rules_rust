@@ -135,6 +135,11 @@ CaptureClippyOutputInfo = provider(
     fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
 )
 
+ClippyOutputDiagnosticsInfo = provider(
+    doc = "Value of the `clippy_output_diagnostics` build setting",
+    fields = {"output_diagnostics": "Value of the `clippy_output_diagnostics` build setting"},
+)
+
 ClippyInfo = provider(
     doc = "Provides information on a clippy run.",
     fields = {
