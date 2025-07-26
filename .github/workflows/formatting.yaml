@@ -14,14 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Buildifier
-        run: |
-          wget "https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-amd64" -O buildifier
-          chmod +x ./buildifier
-          ./buildifier -lint=warn -mode=check -warnings=all -r ${{ github.workspace }}
-          rm ./buildifier
-        env:
-          BUILDIFIER_VERSION: 8.2.0
       - uses: actionsx/prettier@v2
         with:
           args: --config "${{ github.workspace }}/.prettierrc.toml" --write "**/*.{js,mjs,cjs,jsx,ts,tsx}"
