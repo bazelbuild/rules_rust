@@ -96,6 +96,6 @@ rust_library(
         "@rmdbi__dtoa-short-0.3.5//:dtoa_short",
         "@rmdbi__itoa-1.0.15//:itoa",
         "@rmdbi__phf-0.11.3//:phf",
-        "@rmdbi__smallvec-1.15.0//:smallvec",
+        "@rmdbi__smallvec-1.15.1//:smallvec",
     ],
 )

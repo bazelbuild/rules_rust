@@ -830,7 +830,7 @@ def construct_arguments(
         add_flags_for_binary = False,
         include_link_flags = True,
         stamp = False,
-        remap_path_prefix = "",
+        remap_path_prefix = ".",
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,

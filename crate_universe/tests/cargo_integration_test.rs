@@ -116,6 +116,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         config,
         cargo,
         rustc,
+        repository_name: String::from("crates_index"),
     })
     .unwrap();
 

@@ -96,7 +96,7 @@ rust_library(
     version = "0.8.9",
     deps = [
         "@rmdbi__new_debug_unreachable-1.0.6//:debug_unreachable",
-        "@rmdbi__parking_lot-0.12.3//:parking_lot",
+        "@rmdbi__parking_lot-0.12.4//:parking_lot",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
         "@rmdbi__precomputed-hash-0.1.1//:precomputed_hash",
         "@rmdbi__serde-1.0.219//:serde",

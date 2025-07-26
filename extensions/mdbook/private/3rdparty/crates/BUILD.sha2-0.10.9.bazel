@@ -90,7 +90,7 @@ rust_library(
     }),
     version = "0.10.9",
     deps = [
-        "@rmdbi__cfg-if-1.0.0//:cfg_if",
+        "@rmdbi__cfg-if-1.0.1//:cfg_if",
         "@rmdbi__digest-0.10.7//:digest",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

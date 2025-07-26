@@ -449,6 +449,12 @@ def _crates_vendor_impl(ctx):
         args.extend(["--bazel", _expand_env("BAZEL_REAL", is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.bazel)
 
+    # Optionally write the rendering lockfile.
+    if ctx.attr.lockfile:
+        environ.append(_sys_runfile_env(ctx, "BAZEL_LOCK", ctx.file.lockfile, is_windows))
+        args.extend(["--lockfile", _expand_env("BAZEL_LOCK", is_windows)])
+        cargo_bazel_runfiles.extend([ctx.file.lockfile])
+
     # Determine platform specific settings
     if is_windows:
         extension = ".bat"
@@ -535,6 +541,14 @@ CRATES_VENDOR_ATTRS = {
     "generate_target_compatible_with": attr.bool(
         doc = "DEPRECATED: Moved to `render_config`.",
         default = True,
+    ),
+    "lockfile": attr.label(
+        doc = (
+            "The path to a file to write rendering information. It contains the same information as the " +
+            "lockfile attribute of crates_repository. It is not used by crates_vendor but may be useful " +
+            "for code generators like gazelle."
+        ),
+        allow_single_file = True,
     ),
     "manifests": attr.label_list(
         doc = "A list of Cargo manifests (`Cargo.toml` files).",

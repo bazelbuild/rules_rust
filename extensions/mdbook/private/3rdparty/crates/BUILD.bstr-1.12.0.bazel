@@ -132,7 +132,7 @@ rust_library(
     }),
     version = "1.12.0",
     deps = [
-        "@rmdbi__memchr-2.7.4//:memchr",
+        "@rmdbi__memchr-2.7.5//:memchr",
     ] + select({
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
             "@rmdbi__regex-automata-0.4.9//:regex_automata",  # aarch64-unknown-linux-gnu

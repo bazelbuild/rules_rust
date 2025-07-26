@@ -1,0 +1,2 @@
+[default.extend-words]
+nto = "nto"  # For toolchains

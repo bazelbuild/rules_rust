@@ -57,6 +57,10 @@ pub struct SpliceOptions {
     /// The path to a rustc binary for use with Cargo
     #[clap(long, env = "RUSTC")]
     pub rustc: PathBuf,
+
+    /// The name of the repository being generated.
+    #[clap(long)]
+    pub repository_name: String,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -84,7 +88,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Splice together the manifest
     let manifest_path = splicer
         .splice_workspace()
-        .context("Failed to splice workspace")?;
+        .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(

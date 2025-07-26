@@ -15,7 +15,7 @@ def experimental_symlink_execroot():
     )
 
 def incompatible_runfiles_cargo_manifest_dir():
-    """A flag which causes `cargo_build_script` to write an explicit `CARGO_MANFIEST_DIR` \
+    """A flag which causes `cargo_build_script` to write an explicit `CARGO_MANIFEST_DIR` \
     directory from an action instead of using runfiles directories which cannot be \
     passed to downstream actions.
 

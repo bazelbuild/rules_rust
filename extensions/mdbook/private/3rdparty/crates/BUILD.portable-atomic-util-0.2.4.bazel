@@ -97,7 +97,7 @@ rust_library(
     }),
     version = "0.2.4",
     deps = [
-        "@rmdbi__portable-atomic-1.11.0//:portable_atomic",
+        "@rmdbi__portable-atomic-1.11.1//:portable_atomic",
         "@rmdbi__portable-atomic-util-0.2.4//:build_script_build",
     ],
 )
