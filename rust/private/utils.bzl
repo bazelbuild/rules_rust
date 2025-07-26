@@ -33,6 +33,23 @@ UNSUPPORTED_FEATURES = [
     "rules_rust_unsupported_feature",
 ]
 
+def parse_env_strings(entries):
+    """Parses a list of environment variable entries in the form 'KEY=value'.
+
+    Args:
+        entries(list): A list of strings, each of the form 'KEY=value'.
+
+    Returns:
+        A dict mapping environment variable names to their values.
+    """
+    env_vars = {}
+    for entry in entries:
+        if "=" not in entry:
+            fail("Invalid format for env var: '{}'. Expected 'KEY=value'".format(entry))
+        key, val = entry.split("=", 1)
+        env_vars[key] = val
+    return env_vars
+
 def find_toolchain(ctx):
     """Finds the first rust toolchain that is configured.
 
