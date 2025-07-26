@@ -27,7 +27,15 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "AllocatorLibrariesImplInfo", "AllocatorLibrariesInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(
+    ":providers.bzl",
+    "AllocatorLibrariesImplInfo",
+    "AllocatorLibrariesInfo",
+    "AlwaysEnableMetadataOutputGroupsInfo",
+    "LintsInfo",
+    "RustcOutputDiagnosticsInfo",
+    _BuildInfo = "BuildInfo",
+)
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -296,7 +304,7 @@ def collect_deps(
             # If it doesn't (for example a custom library that exports crate_info),
             # we depend on crate_info.output.
             depend_on = crate_info.metadata
-            if not crate_info.metadata:
+            if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
                 depend_on = crate_info.output
 
             # If this dependency is a proc_macro, it still can be used for lib crates
@@ -1986,7 +1994,7 @@ def _crate_to_link_flag_metadata(crate):
         crate_info = crate
 
     lib_or_meta = crate_info.metadata
-    if not crate_info.metadata:
+    if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
         lib_or_meta = crate_info.output
     return ["--extern={}={}".format(name, lib_or_meta.path)]
 
@@ -2301,6 +2309,30 @@ def get_error_format(attr, attr_name):
         return getattr(attr, attr_name)[ErrorFormatInfo].error_format
     return "human"
 
+def _always_enable_metadata_output_groups_impl(ctx):
+    """Implementation of the `always_enable_metadata_output_groups` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the AlwaysEnableMetadataOutputGroupsInfo provider
+    """
+    return [AlwaysEnableMetadataOutputGroupsInfo(
+        always_enable_metadata_output_groups = ctx.build_setting_value,
+    )]
+
+always_enable_metadata_output_groups = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:always_enable_metadata_output_groups` " +
+        "will cause all rules to generate the `metadata` and `rustc_rmeta_output` output groups, " +
+        "rather than the default behavior of only generated them for libraries when pipelined " +
+        "compilation is enabled."
+    ),
+    implementation = _always_enable_metadata_output_groups_impl,
+    build_setting = config.bool(flag = True),
+)
+
 def _rustc_output_diagnostics_impl(ctx):
     """Implementation of the `rustc_output_diagnostics` rule
 
@@ -2318,8 +2350,8 @@ rustc_output_diagnostics = rule(
     doc = (
         "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
-        "These are accessible via the " +
-        "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
+        "These are accessible via the `rustc_rmeta_output` (for pipelined compilation or if " +
+        "`always_enable_metadata_output_groups` is enabled) and `rustc_output` output groups. " +
         "You can find these using `bazel cquery`"
     ),
     implementation = _rustc_output_diagnostics_impl,
