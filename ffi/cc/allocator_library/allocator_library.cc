@@ -1,4 +1,11 @@
-#include <stdint.h>
+// Define types directly without including stdint.h
+// This avoids absolute path inclusion issues with cross-compilation toolchains
+typedef unsigned char uint8_t;
+#ifdef _WIN32
+  typedef unsigned __int64 uintptr_t;
+#else
+  typedef __SIZE_TYPE__ uintptr_t;
+#endif
 
 // This file has some exciting magic to get Rust code linking in a cc_binary.
 // The Rust compiler generates some similar symbol aliases when it links, so we
