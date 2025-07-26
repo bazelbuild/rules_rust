@@ -96,6 +96,12 @@ pub struct GenerateOptions {
     /// so this provides a way for the repository rule to force printing.
     #[clap(long)]
     pub warnings_output_path: PathBuf,
+
+    /// Whether to skip writing the cargo lockfile back after resolving.
+    /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+    /// But you probably don't want to set this.
+    #[clap(long)]
+    pub skip_cargo_lockfile_overwrite: bool,
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
@@ -213,7 +219,9 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
 
-    update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile)?;
+    if !opt.skip_cargo_lockfile_overwrite {
+        update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile)?;
+    }
 
     Ok(())
 }

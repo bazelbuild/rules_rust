@@ -558,6 +558,7 @@ def _generate_hub_and_spokes(
         render_config,
         splicing_config,
         lockfile,
+        skip_cargo_lockfile_overwrite,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -571,6 +572,9 @@ def _generate_hub_and_spokes(
         render_config (dict): The render config to use.
         splicing_config (dict): The splicing config to use.
         lockfile (path): The path to the crate_universe lock file, if one was provided.
+        skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
+            You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+            But you probably don't want to set this.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -672,6 +676,7 @@ def _generate_hub_and_spokes(
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        skip_cargo_lockfile_overwrite = skip_cargo_lockfile_overwrite,
         **kwargs
     )
 
@@ -1018,6 +1023,7 @@ def _crate_impl(module_ctx):
                 splicing_config = splicing_config,
                 manifests = manifests,
                 packages = packages,
+                skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
             )
 
     metadata_kwargs = {}
@@ -1050,6 +1056,14 @@ _FROM_COMMON_ATTRS = {
             "The path to a file to use for reproducible renderings. " +
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
+    ),
+    "skip_cargo_lockfile_overwrite": attr.bool(
+        doc = (
+            "Whether to skip writing the cargo lockfile back after resolving. " +
+            "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
+            "But you probably don't want to set this."
+        ),
+        default = False,
     ),
     "supported_platform_triples": attr.string_list(
         doc = "A set of all platform triples to consider when generating dependencies.",
