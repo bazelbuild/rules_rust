@@ -1,2 +1,3 @@
 [default.extend-words]
 nto = "nto"  # For toolchains
+flate = "flate"  # https://crates.io/crates/flate2

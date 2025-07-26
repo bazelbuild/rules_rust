@@ -38,7 +38,7 @@ fn calculate_sha256(file_path: &Path) -> String {
     let mut hasher = Sha256::new();
 
     loop {
-        let consummed = {
+        let consumed = {
             let buffer = reader.fill_buf().unwrap();
             if buffer.is_empty() {
                 break;
@@ -46,7 +46,7 @@ fn calculate_sha256(file_path: &Path) -> String {
             hasher.update(buffer);
             buffer.len()
         };
-        reader.consume(consummed);
+        reader.consume(consumed);
     }
 
     let digest = hasher.finalize();
