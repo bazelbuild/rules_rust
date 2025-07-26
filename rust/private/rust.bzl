@@ -732,7 +732,7 @@ _common_attrs = {
         flags = ["DIRECT_COMPILE_TIME_INPUT"],
     ),
     "stamp": _stamp_attribute(
-        default_value = 0,
+        default_value = -1,
     ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",
