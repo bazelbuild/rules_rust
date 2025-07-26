@@ -860,9 +860,8 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| match dep.local_path {
-                Some(path) => Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap(),
-                _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
+            deps.map(|dep| {
+                self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target)
             }),
             extra_deps,
         )
@@ -2026,7 +2025,6 @@ mod test {
                         // this is identical to what we have in the `name` attribute
                         // which creates conflict in `render_module_build_file`
                         alias: Some("mock_crate".into()),
-                        local_path: None,
                     }])),
                     ..Default::default()
                 },
@@ -2152,13 +2150,11 @@ mod test {
                             id: dependency_id.clone(),
                             target: "my_dependency".into(),
                             alias: None,
-                            local_path: None,
                         },
                         CrateDependency {
                             id: dependency_id,
                             target: "my_dependency".into(),
                             alias: Some("my_dependency_other".into()),
-                            local_path: None,
                         },
                     ])),
                     ..Default::default()
