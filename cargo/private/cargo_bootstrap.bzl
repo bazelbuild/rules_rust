@@ -142,7 +142,7 @@ rust_binary(
 """
 
 def _collect_environ(repository_ctx, host_triple):
-    """Gather environment varialbes to use from the current rule context
+    """Gather environment variables to use from the current rule context
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
@@ -169,7 +169,7 @@ def _detect_changes(repository_ctx):
     Args:
         repository_ctx (repository_ctx): The rule's context object.
     """
-    # Simply generating a `path` object consideres the file as 'tracked' or
+    # Simply generating a `path` object considered the file as 'tracked' or
     # 'consumed' which means changes to it will trigger rebuilds
 
     for src in repository_ctx.attr.srcs:
@@ -229,7 +229,7 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         timeout = repository_ctx.attr.timeout,
     )
 
-    # Create a symlink so that the binary can be accesed via it's target name
+    # Create a symlink so that the binary can be accessed via it's target name
     repository_ctx.symlink(built_binary, binary_name)
 
     repository_ctx.file("BUILD.bazel", _BUILD_FILE_CONTENT.format(
@@ -267,7 +267,7 @@ cargo_bootstrap_repository = repository_rule(
             mandatory = True,
         ),
         "compressed_windows_toolchain_names": attr.bool(
-            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            doc = "Whether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
             default = True,
         ),
         "env": attr.string_dict(
@@ -303,7 +303,7 @@ cargo_bootstrap_repository = repository_rule(
             default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
         ),
         "srcs": attr.label_list(
-            doc = "Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",
+            doc = "Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made",
             allow_files = True,
         ),
         "timeout": attr.int(

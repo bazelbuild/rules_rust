@@ -43,7 +43,7 @@ def _cargo_dep_env_impl(ctx):
         # (cargo_build_script and otherwise), alongside the DepInfo. This is how other rules
         # identify this one as a valid dependency, but we don't otherwise have a use for it.
         #
-        # TLDR: This BuildInfo propagates up normal (non build script) depenencies.
+        # TLDR: This BuildInfo propagates up normal (non build script) dependencies.
         #
         # In the future, we could consider setting rustc_env here, and also propagating dep_dir
         # so files in it can be referenced there.

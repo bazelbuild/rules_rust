@@ -146,7 +146,7 @@ impl<'a> SplicerKind<'a> {
         let mut manifest = (*manifest).clone();
         let manifest_dir = path
             .parent()
-            .expect("Every manifest should havee a parent directory");
+            .expect("Every manifest should have a parent directory");
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -158,7 +158,7 @@ impl<'a> SplicerKind<'a> {
         // Optionally install the cargo config after contents have been symlinked
         Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
 
-        // Add any additional depeendencies to the root package
+        // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
@@ -186,7 +186,7 @@ impl<'a> SplicerKind<'a> {
     ) -> Result<SplicedManifest> {
         let manifest_dir = path
             .parent()
-            .expect("Every manifest should havee a parent directory");
+            .expect("Every manifest should have a parent directory");
 
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
@@ -255,7 +255,7 @@ impl<'a> SplicerKind<'a> {
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, installations)?;
         workspace_metadata.inject_into(&mut manifest)?;
 
-        // Add any additional depeendencies to the root package
+        // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
             Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
         }
@@ -382,7 +382,7 @@ impl<'a> SplicerKind<'a> {
 
                 let manifest_dir = path
                     .parent()
-                    .expect("Every manifest should havee a parent directory");
+                    .expect("Every manifest should have a parent directory");
 
                 let dest_package_dir = workspace_dir.join(package_name);
 

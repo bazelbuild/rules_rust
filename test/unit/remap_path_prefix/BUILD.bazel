@@ -1,4 +1,5 @@
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load(":debug_transition.bzl", "dbg_rust_binary")
 
 rust_library(
     name = "dep",
@@ -11,4 +12,26 @@ rust_test(
     srcs = ["test.rs"],
     edition = "2018",
     deps = [":dep"],
+)
+
+rust_binary(
+    name = "panic_bin",
+    srcs = ["panic_bin.rs"],
+    edition = "2018",
+)
+
+dbg_rust_binary(
+    name = "panic_bin_dbg",
+    binary = ":panic_bin",
+)
+
+rust_test(
+    name = "integration_test",
+    srcs = ["integration_test.rs"],
+    data = [":panic_bin_dbg"],
+    edition = "2018",
+    env = {
+        "BINARY": "$(rlocationpath :panic_bin_dbg)",
+    },
+    deps = ["//rust/runfiles"],
 )

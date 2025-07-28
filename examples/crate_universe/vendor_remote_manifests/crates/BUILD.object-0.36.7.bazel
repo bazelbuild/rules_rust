@@ -94,7 +94,7 @@ rust_library(
     }),
     version = "0.36.7",
     deps = [
-        "@cvm__memchr-2.7.4//:memchr",
+        "@cvm__memchr-2.7.5//:memchr",
         "@cvm__object-0.36.7//:build_script_build",
     ],
 )

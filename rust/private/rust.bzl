@@ -17,7 +17,13 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
-load("//rust/private:providers.bzl", "BuildInfo", "LintsInfo")
+load(
+    "//rust/private:providers.bzl",
+    "AllocatorLibrariesImplInfo",
+    "AllocatorLibrariesInfo",
+    "BuildInfo",
+    "LintsInfo",
+)
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
@@ -564,6 +570,19 @@ RUSTC_ATTRS = {
     ),
 }
 
+# Attributes for rust-based allocator library support.
+# Can't add it directly to RUSTC_ATTRS above, as those are used as
+# aspect parameters and only support simple types ('bool', 'int' or 'string').
+_rustc_allocator_libraries_attrs = {
+    # This is really internal. Not prefixed with `_` since we need to adapt this
+    # in bootstrapping situations, e.g., when building the process wrapper
+    # or allocator libraries themselves.
+    "allocator_libraries": attr.label(
+        default = "//ffi/rs:default_allocator_libraries",
+        providers = [AllocatorLibrariesInfo],
+    ),
+}
+
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
@@ -723,7 +742,7 @@ _common_attrs = {
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
     ),
-} | RUSTC_ATTRS
+} | RUSTC_ATTRS | _rustc_allocator_libraries_attrs
 
 _coverage_attrs = {
     "_collect_cc_coverage": attr.label(
@@ -1571,6 +1590,47 @@ rust_library_group = rule(
         )
         ```
     """),
+)
+
+def _rust_allocator_libraries_impl(ctx):
+    toolchain = find_toolchain(ctx)
+    allocator_library = ctx.attr.allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.allocator_library else None
+    global_allocator_library = ctx.attr.global_allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.global_allocator_library else None
+
+    make_ccinfo = lambda info, std: toolchain.make_libstd_and_allocator_ccinfo(
+        ctx.label,
+        ctx.actions,
+        struct(allocator_libraries_impl_info = info),
+        std,
+    )
+
+    providers = [AllocatorLibrariesInfo(
+        allocator_library = allocator_library,
+        global_allocator_library = global_allocator_library,
+        libstd_and_allocator_ccinfo = make_ccinfo(allocator_library, "std"),
+        libstd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "std"),
+        nostd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "no_std_with_alloc"),
+    )]
+
+    return providers
+
+rust_allocator_libraries = rule(
+    implementation = _rust_allocator_libraries_impl,
+    provides = [AllocatorLibrariesInfo],
+    attrs = {
+        "allocator_library": attr.label(
+            doc = "An optional library to provide when a default rust allocator is used.",
+            providers = [AllocatorLibrariesImplInfo],
+        ),
+        "global_allocator_library": attr.label(
+            doc = "An optional library to provide when a default rust allocator is used.",
+            providers = [AllocatorLibrariesImplInfo],
+        ),
+    },
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
 )
 
 def _replace_illlegal_chars(name):

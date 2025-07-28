@@ -11,6 +11,10 @@ build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:experimenta
 build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:experimental_use_global_allocator=True
 build:no_std_alloc_using_cc_common_link --@rules_rust//rust/settings:no_std=alloc
 
+build:no_std_alloc_using_cc_common_link_and_mangled_alloc_symbols --config=no_std_alloc_using_cc_common_link
+build:no_std_alloc_using_cc_common_link_and_mangled_alloc_symbols --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=True
+
+
 # Build with no_std + alloc
 build:no_std_alloc --@rules_rust//rust/toolchain/channel=nightly
 build:no_std_alloc --@rules_rust//rust/settings:no_std=alloc

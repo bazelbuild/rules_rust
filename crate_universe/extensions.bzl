@@ -4,9 +4,9 @@ Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.
 
 This doc describes using crate_universe with bzlmod.
 
-If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe.html).
+If you're using a WORKSPACE file, please see [the WORKSPACE equivalent of this doc](crate_universe_workspace.html).
 
-There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod).
+There are some examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples).
 
 # Table of Contents
 
@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.61.0")
+bazel_dep(name = "rules_rust", version = "0.62.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -74,7 +74,7 @@ will not be able to pull from your private registry.
 
 The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
 Notably, the all_crate_deps and aliases macros (
-see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe.html#dependencies-api)) commonly allow the
+see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html#dependencies-api)) commonly allow the
 Cargo.toml files to be the single source of truth for dependencies.
 Since these macros come from the generated repository, the dependencies and alias definitions
 they return will automatically update BUILD targets. In your BUILD files,
@@ -137,7 +137,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crates
 
 This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN`
 environment variable can also be used to customize how dependencies are updated.
-For more details about repin, [please refer to the documentation](https://bazelbuild.github.io/rules_rust/crate_universe.html#crates_vendor).
+For more details about repin, [please refer to the documentation](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html#crates_vendor).
 
 ### Direct Dependencies
 
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.61.0")
+bazel_dep(name = "rules_rust", version = "0.62.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -558,6 +558,7 @@ def _generate_hub_and_spokes(
         render_config,
         splicing_config,
         lockfile,
+        skip_cargo_lockfile_overwrite,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -571,6 +572,9 @@ def _generate_hub_and_spokes(
         render_config (dict): The render config to use.
         splicing_config (dict): The splicing config to use.
         lockfile (path): The path to the crate_universe lock file, if one was provided.
+        skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
+            You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+            But you probably don't want to set this.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -638,6 +642,7 @@ def _generate_hub_and_spokes(
             config_path = config_file,
             output_dir = tag_path.get_child("splicing-output"),
             debug_workspace_dir = tag_path.get_child("splicing-workspace"),
+            repository_name = cfg.name,
         )
 
         # If a cargo lockfile was not provided, use the splicing lockfile.
@@ -671,6 +676,7 @@ def _generate_hub_and_spokes(
         nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        skip_cargo_lockfile_overwrite = skip_cargo_lockfile_overwrite,
         **kwargs
     )
 
@@ -1017,6 +1023,7 @@ def _crate_impl(module_ctx):
                 splicing_config = splicing_config,
                 manifests = manifests,
                 packages = packages,
+                skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
             )
 
     metadata_kwargs = {}
@@ -1049,6 +1056,14 @@ _FROM_COMMON_ATTRS = {
             "The path to a file to use for reproducible renderings. " +
             "If set, this file must exist within the workspace (but can be empty) before this rule will work."
         ),
+    ),
+    "skip_cargo_lockfile_overwrite": attr.bool(
+        doc = (
+            "Whether to skip writing the cargo lockfile back after resolving. " +
+            "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
+            "But you probably don't want to set this."
+        ),
+        default = False,
     ),
     "supported_platform_triples": attr.string_list(
         doc = "A set of all platform triples to consider when generating dependencies.",
@@ -1360,7 +1375,7 @@ Environment Variables:
 | `CARGO_BAZEL_GENERATOR_SHA256` | The sha256 checksum of the file located at `CARGO_BAZEL_GENERATOR_URL` |
 | `CARGO_BAZEL_GENERATOR_URL` | The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use `file://` for local paths |
 | `CARGO_BAZEL_ISOLATED` | An authoritative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
-| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
+| `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](crate_universe_workspace.html#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
 
 """,

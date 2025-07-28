@@ -89,6 +89,7 @@ def _crates_repository_impl(repository_ctx):
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             output_dir = repository_ctx.path("splicing-output"),
+            repository_name = repository_ctx.name,
         )
 
         kwargs.update({
@@ -111,6 +112,7 @@ def _crates_repository_impl(repository_ctx):
         nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
         # sysroot = tools.sysroot,
         **kwargs
     )
@@ -307,7 +309,9 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "lockfile": attr.label(
             doc = (
                 "The path to a file to use for reproducible renderings. " +
-                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+                "If set, this file must exist within the workspace (but can be empty) before this rule will work." +
+                "If you already have a `MODULE.bazel.lock` file, you don't need this." +
+                "If you don't have a `MODULE.bazel.lock` file, the `lockfile` will save you generation time."
             ),
         ),
         "manifests": attr.label_list(
@@ -350,6 +354,14 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "rust_version": attr.string(
             doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
             default = rust_common.default_version,
+        ),
+        "skip_cargo_lockfile_overwrite": attr.bool(
+            doc = (
+                "Whether to skip writing the cargo lockfile back after resolving. " +
+                "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
+                "But you probably don't want to set this."
+            ),
+            default = False,
         ),
         "splicing_config": attr.string(
             doc = (
