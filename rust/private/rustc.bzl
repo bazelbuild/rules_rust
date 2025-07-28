@@ -1548,8 +1548,6 @@ def rustc_compile_action(
     for dep in getattr(ctx.attr, "deps", []):
         runfiles_list.append(dep[DefaultInfo].default_runfiles)
 
-        runfiles_list.append(dep[DefaultInfo].default_runfiles)
-
     runfiles_list.append(ctx.runfiles(files = ([] if experimental_use_coverage_metadata_files else coverage_runfiles)))
 
     dynamic_libraries = [
