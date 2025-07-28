@@ -1149,7 +1149,6 @@ def construct_arguments(
 
     return args, env
 
-
 def _get_dynamic_libraries_for_runtime(cc_linking_context, linking_statically):
     libraries = []
     if not cc_linking_context:
