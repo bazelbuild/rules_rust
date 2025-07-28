@@ -1,5 +1,6 @@
 """Rules for building protos in Rust with Prost and Tonic."""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set_attr")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
@@ -373,7 +374,7 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//private:protoc_wrapper"),
         ),
-    } | RUSTC_ATTRS,
+    } | RUSTC_ATTRS | resource_set_attr,
     fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,
@@ -414,7 +415,7 @@ def _rust_prost_library_impl(ctx):
 rust_prost_library = rule(
     doc = "A rule for generating a Rust library using Prost.",
     implementation = _rust_prost_library_impl,
-    attrs = {
+    attrs = resource_set_attr | {
         "proto": attr.label(
             doc = "A `proto_library` target for which to generate Rust gencode.",
             providers = [ProtoInfo],

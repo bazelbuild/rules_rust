@@ -12,6 +12,7 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "protobuf", version = "28.3", repo_name = "com_google_protobuf")
+bazel_dep(name = "aspect_bazel_lib", version = "2.19.4")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 

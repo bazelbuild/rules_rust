@@ -14,6 +14,7 @@
 
 """Functionality for constructing actions that invoke the Rust compiler"""
 
+load("@aspect_bazel_lib//lib:resource_sets.bzl", "resource_set")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
@@ -1359,6 +1360,10 @@ def rustc_compile_action(
             action_outputs.append(dsym_folder)
 
     if ctx.executable._process_wrapper:
+        rustc_resource_set = resource_set(ctx.attr)
+        if rustc_resource_set == None:
+            rustc_resource_set = get_rustc_resource_set(toolchain)
+
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
@@ -1373,8 +1378,8 @@ def rustc_compile_action(
                 formatted_version,
                 len(crate_info.srcs.to_list()),
             ),
+            resource_set = rustc_resource_set,
             toolchain = "@rules_rust//rust:toolchain_type",
-            resource_set = get_rustc_resource_set(toolchain),
         )
         if args_metadata:
             ctx.actions.run(
@@ -1390,6 +1395,7 @@ def rustc_compile_action(
                     formatted_version,
                     len(crate_info.srcs.to_list()),
                 ),
+                resource_set = resource_set(ctx.attr),
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
