@@ -4,6 +4,7 @@ load(
     ":common_utils.bzl",
     "CARGO_BAZEL_DEBUG",
     "CARGO_BAZEL_ISOLATED",
+    "CARGO_BAZEL_TIMEOUT",
     "REPIN_ALLOWLIST_ENV_VAR",
     "REPIN_ENV_VARS",
     "parse_alias_rule",
@@ -21,6 +22,7 @@ CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
     REPIN_ALLOWLIST_ENV_VAR,
     CARGO_BAZEL_ISOLATED,
     CARGO_BAZEL_DEBUG,
+    CARGO_BAZEL_TIMEOUT,
 ]
 
 def get_generator(repository_ctx, host_triple):
