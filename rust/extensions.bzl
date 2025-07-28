@@ -64,6 +64,7 @@ def _rust_impl(module_ctx):
                 "name": repository_set.name,
                 "rustfmt_version": repository_set.rustfmt_version,
                 "sha256s": repository_set.sha256s,
+                "target_settings": [str(v) for v in repository_set.target_settings],
                 "urls": repository_set.urls,
                 "versions": repository_set.versions,
             }
@@ -119,6 +120,7 @@ def _rust_impl(module_ctx):
                 register_toolchains = False,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
+                target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
             )
     metadata_kwargs = {}
@@ -170,6 +172,9 @@ _RUST_REPOSITORY_SET_TAG_ATTRS = {
     "target_compatible_with": attr.label_list(
         doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for.",
     ),
+    "target_settings": attr.label_list(
+        doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
+    ),
     "target_triple": attr.string(
         doc = "target_triple to configure.",
     ),
@@ -213,6 +218,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
+        ),
+        "target_settings": attr.label_list(
+            doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
         "versions": attr.string_list(
             doc = (

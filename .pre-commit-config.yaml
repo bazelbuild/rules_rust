@@ -1,0 +1,39 @@
+default_stages: [pre-commit]
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.33.1
+    hooks:
+      - id: typos
+        exclude: |
+          (?x)^(
+            crate_universe|
+            examples|
+            extensions|
+            ffi|
+            nix|
+            rust|
+            test|
+            tools|
+            util
+          )
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile, black]
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    # See supported types: https://github.com/pre-commit/mirrors-clang-format/blob/v14.0.6/.pre-commit-hooks.yaml#L6
+    rev: v14.0.6
+    hooks:
+      - id: clang-format
+        exclude_types:
+          - json
+          - javascript

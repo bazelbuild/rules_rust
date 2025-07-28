@@ -125,6 +125,68 @@ def experimental_use_global_allocator():
         build_setting_default = False,
     )
 
+def experimental_use_allocator_libraries_with_mangled_symbols(name):
+    """A flag used to select allocator libraries implemented in rust that are compatible with the rustc allocator symbol mangling.
+
+    The symbol mangling mechanism relies on unstable language features and requires a nightly rustc from 2025-04-05 or later.
+
+    Rustc generates references to internal allocator symbols when building rust
+    libraries.  At link time, rustc generates the definitions of these symbols.
+    When rustc is not used as the final linker, we need to generate the
+    definitions ourselves.  This happens for example when a rust_library is
+    used as a dependency of a rust_binary, or when the
+    experimental_use_cc_common_link setting is used.
+
+
+    For older versions of rustc, the allocator symbol definitions can be provided
+    via the `rust_toolchain`'s `allocator_library` or `global_allocator_library`
+    attributes, with sample targets like `@rules_rust//ffi/cc/allocator_library`
+    and `@rules_rust//ffi/cc/global_allocator_library`.
+
+    Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
+    The mangling uses a scheme that is specific to the exact version of the compiler.
+    This makes the cc allocator library definitions ineffective. To work around
+    this, we provide rust versions of the symbol definitions annotated with
+    an unstable language attribute that instructs rustc to mangle them consistently.
+    Because of that, this is only compatible with nightly versions of the compiler.
+
+    Since the new symbol definitions are written in rust, we cannot just attach
+    them as attributes on the `rust_toolchain` as the old cc versions, as that
+    would create a build graph cycle (we need a `rust_toolchain` to build a
+    `rust_library`, so the allocator library cannot be a rust_library directly).
+
+    The bootstrapping cycle can be avoided by defining a separate internal
+    "initial" rust toolchain specifically for building the rust allocator libraries,
+    and use a transition to attach the generated libraries to the "main" rust
+    toolchain. But that duplicates the whole sub-graph of the build around the
+    rust toolchains, repository and supporting tools used for them.
+
+    Instead, we define a new custom `rust_allocator_library` rule, which exposes
+    the result of building the rust allocator libraries via a provider, which
+    can be consumed by the rust build actions. We attach an instance of this
+    as a common attribute to the rust rule set.
+
+    TODO: how this interacts with stdlibs
+    """
+    bool_flag(
+        name = name,
+        build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "%s_on" % name,
+        flag_values = {
+            ":experimental_use_allocator_libraries_with_mangled_symbols": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "%s_off" % name,
+        flag_values = {
+            ":experimental_use_allocator_libraries_with_mangled_symbols": "false",
+        },
+    )
+
 def experimental_use_coverage_metadata_files():
     """A flag to have coverage tooling added as `coverage_common.instrumented_files_info.metadata_files` instead of \
     reporting tools like `llvm-cov` and `llvm-profdata` as runfiles to each test.
@@ -235,6 +297,28 @@ def error_format():
     _error_format(
         name = "error_format",
         build_setting_default = "human",
+    )
+
+# buildifier: disable=unnamed-macro
+def clippy_error_format():
+    """This setting may be changed from the command line to generate machine readable errors.
+    """
+    _error_format(
+        name = "clippy_error_format",
+        build_setting_default = "human",
+    )
+
+# buildifier: disable=unnamed-macro
+def incompatible_change_clippy_error_format():
+    """A flag to enable the `clippy_error_format` setting.
+
+    If this flag is true, Clippy uses the format set in `clippy_error_format` to
+    format its diagnostics; otherwise, it uses the format set in `error_format`.
+    """
+    incompatible_flag(
+        name = "incompatible_change_clippy_error_format",
+        build_setting_default = False,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
     )
 
 # buildifier: disable=unnamed-macro

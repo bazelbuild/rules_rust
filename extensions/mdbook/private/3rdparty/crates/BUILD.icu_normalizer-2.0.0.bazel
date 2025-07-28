@@ -99,7 +99,7 @@ rust_library(
         "@rmdbi__icu_collections-2.0.0//:icu_collections",
         "@rmdbi__icu_normalizer_data-2.0.0//:icu_normalizer_data",
         "@rmdbi__icu_provider-2.0.0//:icu_provider",
-        "@rmdbi__smallvec-1.15.0//:smallvec",
+        "@rmdbi__smallvec-1.15.1//:smallvec",
         "@rmdbi__zerovec-0.11.2//:zerovec",
     ],
 )

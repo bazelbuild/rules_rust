@@ -56,14 +56,14 @@ alias(
 )
 
 alias(
-    name = "tokio-1.45.0",
-    actual = "@cvm__tokio-1.45.0//:tokio",
+    name = "tokio-1.46.1",
+    actual = "@cvm__tokio-1.46.1//:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "@cvm__tokio-1.45.0//:tokio",
+    actual = "@cvm__tokio-1.46.1//:tokio",
     tags = ["manual"],
 )
 
