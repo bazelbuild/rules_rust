@@ -1149,7 +1149,7 @@ def construct_arguments(
 
     return args, env
 
-def _get_dynamic_libraries_for_runtime(cc_linking_context, linking_statically):
+def _get_dynamic_libraries_for_runtime(cc_linking_context, is_linking_statically):
     libraries = []
     if not cc_linking_context:
         return libraries
@@ -1159,17 +1159,17 @@ def _get_dynamic_libraries_for_runtime(cc_linking_context, linking_statically):
 
     dynamic_libraries_for_runtime = []
     for library in libraries:
-        artifact = _get_dynamic_library_for_runtime_or_none(library, linking_statically)
+        artifact = _get_dynamic_library_for_runtime_or_none(library, is_linking_statically)
         if artifact != None:
             dynamic_libraries_for_runtime.append(artifact)
 
     return dynamic_libraries_for_runtime
 
-def _get_dynamic_library_for_runtime_or_none(library, linking_statically):
+def _get_dynamic_library_for_runtime_or_none(library, is_linking_statically):
     if library.dynamic_library == None:
         return None
 
-    if linking_statically and (library.static_library != None or library.pic_static_library != None):
+    if is_linking_statically and (library.static_library != None or library.pic_static_library != None):
         return None
 
     return library.dynamic_library
