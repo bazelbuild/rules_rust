@@ -53,7 +53,7 @@ There are three different ways to declare dependencies in your MODULE.
 
 One of the simpler ways to wire up dependencies would be to first structure your project into a Cargo workspace.
 The crates_repository rule can ingest a root Cargo.toml file and generate Bazel dependencies from there.
-You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_crate_deps).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples/all_crate_deps).
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
