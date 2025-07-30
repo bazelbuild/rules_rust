@@ -1547,29 +1547,40 @@ def rustc_compile_action(
     for dep in getattr(ctx.attr, "deps", []):
         runfiles_list.append(dep[DefaultInfo].default_runfiles)
 
-    runfiles_list.append(ctx.runfiles(files = ([] if experimental_use_coverage_metadata_files else coverage_runfiles)))
+    if not experimental_use_coverage_metadata_files:
+        runfiles_list.append(ctx.runfiles(files = coverage_runfiles))
 
-    dynamic_libraries = [
-        library_to_link.dynamic_library
-        for dep in getattr(ctx.attr, "deps", [])
-        if CcInfo in dep
-        for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
-        for library_to_link in linker_input.libraries
-        if _is_dylib(library_to_link)
-    ]
-    runfiles_list.append(ctx.runfiles(files = dynamic_libraries))
+    common_runfiles = ctx.runfiles().merge_all(runfiles_list)
 
-    runfiles = ctx.runfiles().merge_all(runfiles_list)
+    dynamic_libraries = ctx.runfiles(
+        files = _get_dynamic_libraries_for_runtime(linking_context, True),
+    )
+    library_default_runfiles = None
+    library_data_runfiles = None
+    binary_runfiles = None
+    if crate_info.type in ["rlib", "lib", "dylib"]:
+        # Default runfiles for library include dynamic libraries that don't have
+        # a static library equivalent.
+        library_default_runfiles = common_runfiles.merge(dynamic_libraries)
 
-    default_runfiles = ctx.runfiles(files = _get_dynamic_libraries_for_runtime(linking_context, True))
-    default_runfiles = runfiles.merge(default_runfiles)
+        data_runfiles = ctx.runfiles(
+            files = _get_dynamic_libraries_for_runtime(linking_context, False),
+        )
 
-    data_runfiles = ctx.runfiles(files = _get_dynamic_libraries_for_runtime(linking_context, False))
-    data_runfiles = runfiles.merge(data_runfiles)
+        # Data runfiles for library include dynamic libraries even when they have
+        # a static library equivalent.
+        library_data_runfiles = common_runfiles.merge(data_runfiles)
+    else:
+        binary_runfiles = common_runfiles.merge(dynamic_libraries)
 
-    if getattr(ctx.attr, "crate", None):
-        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].default_runfiles)
-        runfiles = runfiles.merge(ctx.attr.crate[DefaultInfo].data_runfiles)
+        if getattr(ctx.attr, "crate", None):
+            crate_default_info = ctx.attr.crate[DefaultInfo]
+            binary_runfiles = binary_runfiles.merge_all(
+                [
+                    crate_default_info.default_runfiles,
+                    crate_default_info.data_runfiles,
+                ],
+            )
 
     # TODO: Remove after some resolution to
     # https://github.com/bazelbuild/rules_rust/issues/771
@@ -1592,9 +1603,9 @@ def rustc_compile_action(
         DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
-            default_runfiles = default_runfiles if crate_info.type not in ["bin", "staticlib", "cdylib"] else None,
-            data_runfiles = data_runfiles if crate_info.type not in ["bin", "staticlib", "cdylib"] else None,
-            runfiles = runfiles if crate_info.type in ["bin", "staticlib", "cdylib"] else None,
+            default_runfiles = library_default_runfiles,
+            data_runfiles = library_data_runfiles,
+            runfiles = binary_runfiles,
             executable = executable,
         ),
     ] + cc_info
