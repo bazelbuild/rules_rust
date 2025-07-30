@@ -107,6 +107,16 @@ def declare_config_settings():
         constraint_values = [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
+            str(Label("//rust/platform:wasi_preview_1")),
+        ],
+    )
+
+    native.platform(
+        name = "wasip2",
+        constraint_values = [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+            str(Label("//rust/platform:wasi_preview_2")),
         ],
     )
 
