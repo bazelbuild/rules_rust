@@ -1503,7 +1503,10 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
-    runfiles = ctx.runfiles(files = getattr(ctx.files, "data", []))
+    runfiles = ctx.runfiles(
+        files = getattr(ctx.files, "data", []) +
+                ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
+    )
     transitive_runfiles = []
     crate_attr = getattr(ctx.attr, "crate", None)
     for runfiles_attr in (
