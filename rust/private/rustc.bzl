@@ -1149,13 +1149,12 @@ def construct_arguments(
 
     return args, env
 
-def _get_dynamic_libraries_for_runtime(cc_linking_context, is_linking_statically):
+def _get_dynamic_libraries_for_runtime(cc_infos, is_linking_statically):
     libraries = []
-    if not cc_linking_context:
-        return libraries
 
-    for linker_input in cc_linking_context.linker_inputs.to_list():
-        libraries.extend(linker_input.libraries)
+    for cc_info in cc_infos:
+        for linker_input in cc_info.linking_context.linker_inputs.to_list():
+            libraries.extend(linker_input.libraries)
 
     dynamic_libraries_for_runtime = []
     for library in libraries:
@@ -1528,9 +1527,6 @@ def rustc_compile_action(
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
-    cc_info = establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
-    linking_context = cc_info[0].linking_context if cc_info else None
-
     runfiles_list = []
     for data_dep in getattr(ctx.attr, "data", []):
         if data_dep[DefaultInfo].data_runfiles.files:
@@ -1552,8 +1548,10 @@ def rustc_compile_action(
 
     common_runfiles = ctx.runfiles().merge_all(runfiles_list)
 
+    cc_infos_from_deps = _collect_cc_infos_from_deps(ctx, toolchain, crate_info)
+
     dynamic_libraries = ctx.runfiles(
-        files = _get_dynamic_libraries_for_runtime(linking_context, True),
+        files = _get_dynamic_libraries_for_runtime(cc_infos_from_deps, True),
     )
     library_default_runfiles = None
     library_data_runfiles = None
@@ -1564,7 +1562,7 @@ def rustc_compile_action(
         library_default_runfiles = common_runfiles.merge(dynamic_libraries)
 
         data_runfiles = ctx.runfiles(
-            files = _get_dynamic_libraries_for_runtime(linking_context, False),
+            files = _get_dynamic_libraries_for_runtime(cc_infos_from_deps, False),
         )
 
         # Data runfiles for library include dynamic libraries even when they have
@@ -1608,7 +1606,7 @@ def rustc_compile_action(
             runfiles = binary_runfiles,
             executable = executable,
         ),
-    ] + cc_info
+    ]
 
     # When invoked by aspects (and when running `bazel coverage`), the
     # baseline_coverage.dat created here will conflict with the baseline_coverage.dat of the
@@ -1636,6 +1634,8 @@ def rustc_compile_action(
         providers.extend([rust_common.test_crate_info(crate = crate_info), dep_info])
     else:
         providers.extend([crate_info, dep_info])
+
+    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
 
     output_group_info = {}
 
@@ -1764,6 +1764,31 @@ def _add_codegen_units_flags(toolchain, emit, args):
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
 
+def _collect_cc_infos_from_deps(ctx, toolchain, crate_info):
+    cc_infos = []
+
+    # Flattening is okay since crate_info.deps only records direct deps.
+    for dep in crate_info.deps.to_list():
+        if dep.cc_info:
+            # A Rust staticlib or shared library doesn't need to propagate linker inputs
+            # of its dependencies, except for shared libraries.
+            if crate_info.type in ["cdylib", "staticlib"]:
+                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
+                if shared_linker_inputs:
+                    linking_context = cc_common.create_linking_context(
+                        linker_inputs = depset(shared_linker_inputs),
+                    )
+                    cc_infos.append(CcInfo(linking_context = linking_context))
+            else:
+                cc_infos.append(dep.cc_info)
+
+    if crate_info.type in ("rlib", "lib"):
+        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info)
+        if libstd_and_allocator_cc_info:
+            # TODO: if we already have an rlib in our deps, we could skip this
+            cc_infos.append(libstd_and_allocator_cc_info)
+    return cc_infos
+
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
 
@@ -1846,28 +1871,7 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     cc_infos = [
         CcInfo(linking_context = linking_context),
         toolchain.stdlib_linkflags,
-    ]
-
-    # Flattening is okay since crate_info.deps only records direct deps.
-    for dep in crate_info.deps.to_list():
-        if dep.cc_info:
-            # A Rust staticlib or shared library doesn't need to propagate linker inputs
-            # of its dependencies, except for shared libraries.
-            if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
-                if shared_linker_inputs:
-                    linking_context = cc_common.create_linking_context(
-                        linker_inputs = depset(shared_linker_inputs),
-                    )
-                    cc_infos.append(CcInfo(linking_context = linking_context))
-            else:
-                cc_infos.append(dep.cc_info)
-
-    if crate_info.type in ("rlib", "lib"):
-        libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info)
-        if libstd_and_allocator_cc_info:
-            # TODO: if we already have an rlib in our deps, we could skip this
-            cc_infos.append(libstd_and_allocator_cc_info)
+    ] + _collect_cc_infos_from_deps(ctx, toolchain, crate_info)
 
     providers = [cc_common.merge_cc_infos(cc_infos = cc_infos)]
     if dot_a:
