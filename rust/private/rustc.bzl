@@ -141,6 +141,7 @@ def _get_rustc_env(attr, toolchain, crate_name):
         "CARGO_PKG_VERSION_MINOR": minor,
         "CARGO_PKG_VERSION_PATCH": patch,
         "CARGO_PKG_VERSION_PRE": pre,
+        "CARGO_PKG_LICENSE": "",
     }
     if hasattr(attr, "_is_proc_macro_dep_enabled") and attr._is_proc_macro_dep_enabled[IsProcMacroDepEnabledInfo].enabled:
         is_proc_macro_dep = "0"
