@@ -226,6 +226,7 @@ def collect_deps(
     transitive_proc_macro_data = []
     transitive_noncrates = []
     transitive_build_infos = []
+    transitive_out_dirs = []
     transitive_link_search_paths = []
     build_info = None
     linkstamps = []
@@ -321,6 +322,7 @@ def collect_deps(
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
             transitive_build_infos.append(dep_info.transitive_build_infos)
+            transitive_out_dirs.append(dep_info.transitive_out_dirs)
         elif cc_info or dep_build_info:
             if cc_info:
                 # This dependency is a cc_library
@@ -332,6 +334,8 @@ def collect_deps(
                          "only one is allowed in the dependencies")
                 build_info = dep_build_info
                 transitive_build_infos.append(depset([build_info]))
+                if build_info.out_dir:
+                    transitive_out_dirs.append(depset([build_info.out_dir]))
                 if build_info.link_search_paths:
                     transitive_link_search_paths.append(depset([build_info.link_search_paths]))
                 transitive_data.append(build_info.compile_data)
@@ -356,6 +360,7 @@ def collect_deps(
             transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
             transitive_metadata_outputs = depset(transitive = transitive_metadata_outputs),
             transitive_build_infos = depset(transitive = transitive_build_infos),
+            transitive_out_dirs = depset(transitive = transitive_out_dirs),
             link_search_path_files = depset(transitive = transitive_link_search_paths),
             dep_env = build_info.dep_env if build_info else None,
         ),
@@ -1872,7 +1877,7 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
 
     out_dir_compile_inputs = depset(
         input_files,
-        transitive = [dep_info.link_search_path_files, dep_info.transitive_data] + input_depsets,
+        transitive = [dep_info.link_search_path_files, dep_info.transitive_data, dep_info.transitive_out_dirs] + input_depsets,
     )
 
     return (

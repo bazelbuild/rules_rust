@@ -54,6 +54,7 @@ DepInfo = provider(
         "direct_crates": "depset[AliasableDepInfo]",
         "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
+        "transitive_out_dirs": "depset[File]: The out directories of the build scripts of all transitive dependencies",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_data": "depset[File]: Data of all transitive non-macro dependencies.",
