@@ -533,6 +533,12 @@ def _generate_sysroot(
 def _experimental_use_cc_common_link(ctx):
     return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
 
+def _expand_flags(ctx, flags, targets):
+    expanded_flags = []
+    for flag in flags:
+        expanded_flags.append(dedup_expand_location(ctx, flag, targets))
+    return expanded_flags
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -587,25 +593,9 @@ def _rust_toolchain_impl(ctx):
         llvm_tools = ctx.attr.llvm_tools,
     )
 
-    expanded_stdlib_linkflags = []
-    for flag in ctx.attr.stdlib_linkflags:
-        expanded_stdlib_linkflags.append(
-            dedup_expand_location(
-                ctx,
-                flag,
-                targets = rust_std[rust_common.stdlib_info].srcs,
-            ),
-        )
-
-    expanded_extra_rustc_flags = []
-    for flag in ctx.attr.extra_rustc_flags:
-        expanded_extra_rustc_flags.append(
-            dedup_expand_location(
-                ctx,
-                flag,
-                targets = rust_std[rust_common.stdlib_info].srcs,
-            ),
-        )
+    expanded_stdlib_linkflags = _expand_flags(ctx, ctx.attr.stdlib_linkflags, rust_std[rust_common.stdlib_info].srcs)
+    expanded_extra_rustc_flags = _expand_flags(ctx, ctx.attr.extra_rustc_flags, rust_std[rust_common.stdlib_info].srcs)
+    expanded_extra_exec_rustc_flags = _expand_flags(ctx, ctx.attr.extra_exec_rustc_flags, rust_std[rust_common.stdlib_info].srcs)
 
     linking_context = cc_common.create_linking_context(
         linker_inputs = depset([
@@ -738,7 +728,7 @@ def _rust_toolchain_impl(ctx):
         stdlib_linkflags = stdlib_linkflags_cc_info,
         extra_rustc_flags = expanded_extra_rustc_flags,
         extra_rustc_flags_for_crate_types = ctx.attr.extra_rustc_flags_for_crate_types,
-        extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
+        extra_exec_rustc_flags = expanded_extra_exec_rustc_flags,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
@@ -851,7 +841,7 @@ rust_toolchain = rule(
             doc = "Label to a boolean build setting that controls whether cc_common.link is used to link rust binaries.",
         ),
         "extra_exec_rustc_flags": attr.string_list(
-            doc = "Extra flags to pass to rustc in exec configuration",
+            doc = "Extra flags to pass to rustc in exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute.",
         ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute.",
