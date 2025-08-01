@@ -41,6 +41,7 @@ load(
     "is_exec_configuration",
     "is_std_dylib",
     "make_static_lib_symlink",
+    "parse_env_strings",
     "relativize",
 )
 
@@ -65,6 +66,16 @@ _error_format_values = ["human", "json", "short"]
 ErrorFormatInfo = provider(
     doc = "Set the --error-format flag for all rustc invocations",
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
+)
+
+ExtraRustcEnvInfo = provider(
+    doc = "Pass each value as an environment variable to non-exec rustc invocations",
+    fields = {"extra_rustc_env": "List[string] Extra env to pass to rustc in non-exec configuration"},
+)
+
+ExtraExecRustcEnvInfo = provider(
+    doc = "Pass each value as an environment variable to exec rustc invocations",
+    fields = {"extra_exec_rustc_env": "List[string] Extra env to pass to rustc in exec configuration"},
 )
 
 ExtraRustcFlagsInfo = provider(
@@ -1104,6 +1115,10 @@ def construct_arguments(
     else:
         rustc_flags.add_all(toolchain.extra_rustc_flags, map_each = map_flag)
 
+    # extra_rustc_env applies to the target configuration, not the exec configuration.
+    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
+        env.update(ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env)
+
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
@@ -1114,6 +1129,9 @@ def construct_arguments(
     if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec_configuration(ctx):
         per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
         _add_per_crate_rustc_flags(ctx, rustc_flags, map_flag, crate_info, per_crate_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
+        env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
@@ -2336,6 +2354,19 @@ rustc_output_diagnostics = rule(
     build_setting = config.bool(flag = True),
 )
 
+def _extra_rustc_env_impl(ctx):
+    env_vars = parse_env_strings(ctx.build_setting_value)
+    return ExtraRustcEnvInfo(extra_rustc_env = env_vars)
+
+extra_rustc_env = rule(
+    doc = (
+        "Add additional environment variables to rustc in non-exec configuration using " +
+        "`--@rules_rust//rust/settings:extra_rustc_env=FOO=bar`. Multiple values may be specified."
+    ),
+    implementation = _extra_rustc_env_impl,
+    build_setting = config.string_list(flag = True),
+)
+
 def _extra_rustc_flags_impl(ctx):
     return ExtraRustcFlagsInfo(extra_rustc_flags = ctx.build_setting_value)
 
@@ -2373,6 +2404,19 @@ extra_exec_rustc_flags = rule(
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
     implementation = _extra_exec_rustc_flags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_env_impl(ctx):
+    env_vars = parse_env_strings(ctx.build_setting_value)
+    return ExtraExecRustcEnvInfo(extra_exec_rustc_env = env_vars)
+
+extra_exec_rustc_env = rule(
+    doc = (
+        "Add additional environment variables to rustc in non-exec configuration using " +
+        "`--@rules_rust//rust/settings:extra_exec_rustc_env=FOO=bar`. Multiple values may be specified."
+    ),
+    implementation = _extra_exec_rustc_env_impl,
     build_setting = config.string_list(flag = True),
 )
 

@@ -19,8 +19,10 @@ load("//rust/private:lto.bzl", "rust_lto_flag")
 load(
     "//rust/private:rustc.bzl",
     _error_format = "error_format",
+    _extra_exec_rustc_env = "extra_exec_rustc_env",
     _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
+    _extra_rustc_env = "extra_rustc_env",
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
     _no_std = "no_std",
@@ -343,6 +345,18 @@ def clippy_flags():
     )
 
 # buildifier: disable=unnamed-macro
+def extra_rustc_env():
+    """This setting may be used to pass extra environment variables to rustc from the command line in non-exec configuration.
+
+    It applies across all targets whereas environment variables set in a specific rule apply only to that target.
+    This can be useful for setting build-wide env flags such as `RUSTC_BOOTSTRAP=1`.
+    """
+    _extra_rustc_env(
+        name = "extra_rustc_env",
+        build_setting_default = [],
+    )
+
+# buildifier: disable=unnamed-macro
 def clippy_flag():
     """Add a custom clippy flag from the command line with `--@rules_rust//rust/settings:clippy_flag`.
 
@@ -373,6 +387,18 @@ def extra_rustc_flag():
     """
     _extra_rustc_flag(
         name = "extra_rustc_flag",
+        build_setting_default = [],
+    )
+
+# buildifier: disable=unnamed-macro
+def extra_exec_rustc_env():
+    """This setting may be used to pass extra environment variables to rustc from the command line in exec configuration.
+
+    It applies to tools built and run during the build process, such as proc-macros and build scripts.
+    This can be useful for enabling features that are needed during tool compilation.
+    """
+    _extra_exec_rustc_env(
+        name = "extra_exec_rustc_env",
         build_setting_default = [],
     )
 
