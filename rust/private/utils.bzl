@@ -19,7 +19,16 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_t
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compat.bzl", "abs")
-load(":providers.bzl", "BuildInfo", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustcOutputDiagnosticsInfo")
+load(
+    ":providers.bzl",
+    "AlwaysEnableMetadataOutputGroupsInfo",
+    "BuildInfo",
+    "CrateGroupInfo",
+    "CrateInfo",
+    "DepInfo",
+    "DepVariantInfo",
+    "RustcOutputDiagnosticsInfo",
+)
 
 UNSUPPORTED_FEATURES = [
     "thin_lto",
@@ -679,24 +688,50 @@ def _replace_all(string, substitutions):
 
     return string
 
-def can_build_metadata(toolchain, ctx, crate_type):
-    """Can we build metadata for this rust_library?
+def can_build_metadata(toolchain, ctx, crate_type, *, disable_pipelining = False):
+    """Can we build metadata for the target built using this context?
 
     Args:
         toolchain (toolchain): The rust toolchain
         ctx (ctx): The rule's context object
-        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+        crate_type (String): The rule's crate type
+        disable_pipelining: Does the rule have pipelining explicitly disabled?
 
     Returns:
         bool: whether we can build metadata for this rule.
     """
 
+    # Building metadata requires that:
+    # 1) process_wrapper is enabled (this is disabled when compiling process_wrapper itself)
+    # 2) either:
+    #   * always_enable_metadata_output_groups is set
+    #   * this target can use metadata for pipelined compilation
+    return bool(ctx.attr._process_wrapper) and (
+        ctx.attr._always_enable_metadata_output_groups[AlwaysEnableMetadataOutputGroupsInfo].always_enable_metadata_output_groups or
+        (not disable_pipelining and
+         can_use_metadata_for_pipelining(toolchain, crate_type))
+    )
+
+def can_use_metadata_for_pipelining(toolchain, crate_type):
+    """Can we use metadata from this rust_library for pipelined compilation?
+
+    This does not include whether or not metadata itself can be generated, which
+    is covered instead by can_build_metadata.
+
+    Args:
+        toolchain (toolchain): The rust toolchain
+        crate_type (String): one of lib|rlib|dylib|staticlib|cdylib|proc-macro
+
+    Returns:
+        bool: whether we can use the metadata for pipelined compilation.
+    """
+
     # In order to enable pipelined compilation we require that:
     # 1) The _pipelined_compilation flag is enabled,
-    # 2) process_wrapper is enabled (this is disabled when compiling process_wrapper itself),
-    # 3) the crate_type is rlib or lib.
+    # 2) the crate_type is rlib or lib.
+    # This is *in addition* to the checks in can_build_metadata (i.e. that
+    # process_wrapper is enabled).
     return toolchain._pipelined_compilation and \
-           ctx.attr._process_wrapper and \
            crate_type in ("rlib", "lib")
 
 def crate_root_src(name, crate_name, srcs, crate_type):
