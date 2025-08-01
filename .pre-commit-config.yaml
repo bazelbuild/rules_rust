@@ -12,12 +12,12 @@ repos:
       - id: buildifier-lint
         args: [--version, "v8.2.0", --warnings=all]
   - repo: https://github.com/crate-ci/typos
-    rev: v1.33.1
+    rev: v1.34.0
     hooks:
       - id: typos
         exclude: |
           (?x)^(
-            crate_universe|
+            crate_universe/test_data|
             examples|
             extensions|
             ffi|

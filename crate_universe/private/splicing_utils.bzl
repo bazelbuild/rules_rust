@@ -49,7 +49,7 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
         dict: A dictionary representation of a `cargo_bazel::splicing::SplicingManifest`
     """
 
-    # Deserialize information about direct packges
+    # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
         pkg: kebab_case_keys(dict(json.decode(data)))
@@ -66,7 +66,7 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
     return splicing_config | splicing_manifest_content
 
 def _no_at_label(label):
-    """Strips leading '@'s for stringified labels in the main repository for backwards-comaptibility reasons."""
+    """Strips leading '@'s for stringified labels in the main repository for backwards-compatibility reasons."""
     s = str(label)
     if s.startswith("@@//"):
         return s[2:]
