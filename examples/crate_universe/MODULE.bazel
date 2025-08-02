@@ -15,9 +15,9 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 

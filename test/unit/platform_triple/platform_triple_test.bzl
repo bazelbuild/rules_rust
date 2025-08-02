@@ -124,9 +124,24 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("aarch64-unknown-linux-musl"), "aarch64", "unknown", "linux", "musl")
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
+
+    # Test all WASM32 targets
     _assert_parts(env, triple("wasm32-unknown-unknown"), "wasm32", "unknown", "unknown", None)
+    _assert_parts(env, triple("wasm32-unknown-emscripten"), "wasm32", "unknown", "emscripten", None)
+
+    # WASI targets - backward compatibility
     _assert_parts(env, triple("wasm32-wasi"), "wasm32", "wasip1", "wasip1", None)
+
+    # WASI Preview 1
     _assert_parts(env, triple("wasm32-wasip1"), "wasm32", "wasip1", "wasip1", None)
+    _assert_parts(env, triple("wasm32-wasip1-threads"), "wasm32", "wasip1", "threads", None)
+
+    # WASI Preview 2
+    _assert_parts(env, triple("wasm32-wasip2"), "wasm32", "wasip2", "wasip2", None)
+
+    # WebAssembly MVP target
+    _assert_parts(env, triple("wasm32v1-none"), "wasm32", "v1", "none", None)
+
     _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "unknown", "fuchsia", None)
 
     return unittest.end(env)

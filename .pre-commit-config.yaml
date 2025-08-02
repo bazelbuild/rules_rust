@@ -4,6 +4,13 @@ repos:
     hooks:
       - id: check-hooks-apply
       - id: check-useless-excludes
+  - repo: https://github.com/Warchant/pre-commit-buildifier
+    rev: 0.1.5
+    hooks:
+      - id: buildifier
+        args: [--version, "v8.2.0"]
+      - id: buildifier-lint
+        args: [--version, "v8.2.0", --warnings=all]
   - repo: https://github.com/crate-ci/typos
     rev: v1.33.1
     hooks:

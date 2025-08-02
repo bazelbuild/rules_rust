@@ -4,7 +4,7 @@
 # https://bazel.build/external/migration#hybrid-mode
 ###############################################################################
 # rule http_archive
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")  # buildifier: disable=load
 load("//:sys_deps.bzl", "sys_deps")
+
 sys_deps()
