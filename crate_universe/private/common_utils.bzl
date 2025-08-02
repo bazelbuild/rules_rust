@@ -46,15 +46,15 @@ def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
     if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
         quiet = False
 
-    exec_kwargs = dict(environment=env, quiet=quiet)
+    exec_kwargs = dict(environment = env, quiet = quiet)
 
     timeout = repository_ctx.os.environ.get(CARGO_BAZEL_TIMEOUT, None)
     if timeout:
-        exec_kwargs.update(timeout=int(timeout))
+        exec_kwargs.update(timeout = int(timeout))
 
     result = repository_ctx.execute(
         args,
-        **exec_kwargs,
+        **exec_kwargs
     )
 
     if result.return_code and not allow_fail:
