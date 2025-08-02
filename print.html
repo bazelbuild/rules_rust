@@ -2719,6 +2719,7 @@ crate.splicing_config(<a href="crate_universe_bzlmod.html#crate.splicing_config-
 <tr><td><code>CARGO_BAZEL_ISOLATED</code></td><td>An authoritative flag as to whether or not the <code>CARGO_HOME</code> environment variable should be isolated from the host configuration</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN</code></td><td>An indicator that the dependencies represented by the rule should be regenerated. <code>REPIN</code> may also be used. See <a href="crate_universe_workspace.html#repinning--updating-dependencies">Repinning / Updating Dependencies</a> for more details.</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN_ONLY</code></td><td>A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them.</td></tr>
+<tr><td><code>CARGO_BAZEL_TIMEOUT</code></td><td>An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds.</td></tr>
 </tbody></table>
 </div>
 <p><strong>TAG CLASSES</strong></p>
@@ -3383,6 +3384,7 @@ handles all the same <a href="crate_universe_workspace.html#workflows">workflows
 <tr><td><code>CARGO_BAZEL_ISOLATED</code></td><td>An authoritative flag as to whether or not the <code>CARGO_HOME</code> environment variable should be isolated from the host configuration</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN</code></td><td>An indicator that the dependencies represented by the rule should be regenerated. <code>REPIN</code> may also be used. See <a href="crate_universe_workspace.html#repinning--updating-dependencies">Repinning / Updating Dependencies</a> for more details.</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN_ONLY</code></td><td>A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them.</td></tr>
+<tr><td><code>CARGO_BAZEL_TIMEOUT</code></td><td>An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds.</td></tr>
 </tbody></table>
 </div>
 <p>Example:</p>
@@ -3483,6 +3485,7 @@ allowlist:</p>
 <li><code>CARGO_BAZEL_REPIN_ONLY</code></li>
 <li><code>CARGO_BAZEL_ISOLATED</code></li>
 <li><code>CARGO_BAZEL_DEBUG</code></li>
+<li><code>CARGO_BAZEL_TIMEOUT</code></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="upstream-tooling"><a class="header" href="#upstream-tooling">Upstream Tooling</a></h1>
 <p>rules_rust manages versions of things like rustc. If you want to manually run upstream tooling configured at the versions, plugins and such that rules_rust has configured, rules_rust exposes these as targets in <code>@rules_rust//tools/upstream_wrapper</code>:</p>

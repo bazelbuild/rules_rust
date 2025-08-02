@@ -489,6 +489,7 @@ crate.splicing_config(<a href="#crate.splicing_config-repositories">repositories
 <tr><td><code>CARGO_BAZEL_ISOLATED</code></td><td>An authoritative flag as to whether or not the <code>CARGO_HOME</code> environment variable should be isolated from the host configuration</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN</code></td><td>An indicator that the dependencies represented by the rule should be regenerated. <code>REPIN</code> may also be used. See <a href="crate_universe_workspace.html#repinning--updating-dependencies">Repinning / Updating Dependencies</a> for more details.</td></tr>
 <tr><td><code>CARGO_BAZEL_REPIN_ONLY</code></td><td>A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them.</td></tr>
+<tr><td><code>CARGO_BAZEL_TIMEOUT</code></td><td>An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds.</td></tr>
 </tbody></table>
 </div>
 <p><strong>TAG CLASSES</strong></p>
