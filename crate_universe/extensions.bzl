@@ -855,6 +855,103 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
 
     return cargo_path, rustc_path
 
+def _update_annotations(annotations, crate, version, triples, data, env):
+    """Insert build-script data/env for each target triple if keys exist."""
+    crate_info = annotations.get(crate)
+    if not crate_info:
+        fail("Crate {} not found in annotations".format(crate))
+
+    version_info = crate_info.get(version)
+    if not version_info:
+        fail("Version {} not found in annotations for crate {}".format(version, crate))
+
+    for triple in triples:
+        entry = _insert_build_script_data(version_info, data, triple)
+        entry = _insert_build_script_env(entry, env, triple)
+        crate_info[version] = entry
+
+    return crate_info
+
+def _insert_annotation(store, crate, annotation):
+    """Insert `annotation` (dict) into `store[crate][version]`.
+
+    Raises `fail()` if that (crate, version) pair already exists.
+    """
+    version = annotation["version"]
+    crate_map = store.setdefault(crate, {})  # create nested map if needed
+
+    if version in crate_map:
+        fail("Duplicate annotation for crate {} version {}".format(crate, version))
+
+    crate_map[version] = annotation
+
+def _insert_select(annotation, field, value, triple):
+    """
+    Add a per-triple override to annotation[field].
+
+    If annotation[field] is in a list or dict, we wrap that into the common field. Then
+
+    On later calls we just update the existing selects.
+    """
+    current = annotation.get(field)
+
+    if type(current) != "struct":
+        annotation[field] = struct(
+            common = current,
+            selects = {triple: value},
+        )
+    else:
+        current.selects.update({triple: value})
+
+    return annotation
+
+def _insert_build_script_data(annotation, build_script_data, triple):
+    return _insert_select(
+        annotation,
+        "build_script_data",
+        build_script_data,
+        triple,
+    )
+
+def _insert_build_script_env(annotation, build_script_env, triple):
+    return _insert_select(
+        annotation,
+        "build_script_env",
+        build_script_env,
+        triple,
+    )
+
+def _create_annotation(annotation_dict):
+    return _crate_universe_crate.annotation(**{
+        k: v
+        for k, v in annotation_dict.items()
+        # Tag classes can't take in None, but the function requires None
+        # instead of the empty values in many cases.
+        # https://github.com/bazelbuild/bazel/issues/20744
+        if v != "" and v != [] and v != {}
+    })
+
+def _collapse_crate_versions(crates, create = _create_annotation):
+    """{crate: {version: annotation}} -> {crate: [annotation,…]}"""
+    return {
+        crate: [create(v) for v in versions.values()]
+        for crate, versions in crates.items()
+    }
+
+def _collapse_versions(repo_specific, module, create = _create_annotation):
+    """
+    Return new (repo_specific, module) dicts with versions collapsed.
+
+    repo_specific: {repo: {crate: {version: annotation}}}
+    module       : {crate: {version: annotation}}
+    """
+    new_repo_specific = {
+        repo: _collapse_crate_versions(crates, create)
+        for repo, crates in repo_specific.items()
+    }
+    new_module = _collapse_crate_versions(module, create)
+    return new_repo_specific, new_module
+
 def _crate_impl(module_ctx):
     reproducible = True
     host_triple = get_host_triple(module_ctx, abi = {
@@ -908,23 +1005,45 @@ def _crate_impl(module_ctx):
             if replacement:
                 annotation_dict["override_targets"]["bin"] = str(replacement)
 
-            annotation = _crate_universe_crate.annotation(**{
-                k: v
-                for k, v in annotation_dict.items()
-                # Tag classes can't take in None, but the function requires None
-                # instead of the empty values in many cases.
-                # https://github.com/bazelbuild/bazel/issues/20744
-                if v != "" and v != [] and v != {}
-            })
             if not repositories:
-                _get_or_insert(module_annotations, crate, []).append(annotation)
-            for repo in repositories:
-                _get_or_insert(
-                    _get_or_insert(repo_specific_annotations, repo, {}),
-                    crate,
-                    [],
-                ).append(annotation)
+                _insert_annotation(module_annotations, crate, annotation_dict)
+            else:
+                for repo in repositories:
+                    # each repo gets its own top-level dict:
+                    repo_map = repo_specific_annotations.setdefault(repo, {})
+                    _insert_annotation(repo_map, crate, annotation_dict)
 
+        for annotation_select_tag in mod.tags.annotation_select:
+            annotation_select_dict = structs.to_dict(annotation_select_tag)
+            repositories = annotation_select_dict.pop("repositories")
+            crate = annotation_select_dict.pop("crate")
+            triples = annotation_select_dict.pop("triples")
+            version = annotation_select_dict["version"]
+            build_script_data = annotation_select_dict["build_script_data"]
+            build_script_env = annotation_select_dict["build_script_env"]
+
+            if repositories:
+                for repo in repositories:
+                    _update_annotations(
+                        repo_specific_annotations.get(repo, {}),
+                        crate,
+                        version,
+                        triples,
+                        build_script_data,
+                        build_script_env,
+                    )
+            else:
+                _update_annotations(
+                    module_annotations,
+                    crate,
+                    version,
+                    triples,
+                    build_script_data,
+                    build_script_env,
+                )
+
+        # Now transform the annotations into a format that the `_generate_hub_and_spokes` function expects.
+        repo_specific_annotations, module_annotations = _collapse_versions(repo_specific_annotations, module_annotations)
         common_specs = []
         repo_specific_specs = {}
         for spec in mod.tags.spec:
@@ -1364,6 +1483,35 @@ can be found below where the supported keys for each template can be found in th
     },
 )
 
+_annotation_select = tag_class(
+    doc = "A constructor for a crate dependency with selectable attributes.",
+    attrs = {
+        "crate": attr.string(
+            doc = "The name of the crate the annotation is applied to",
+            mandatory = True,
+        ),
+        "repositories": attr.string_list(
+            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+            default = [],
+        ),
+        "version": attr.string(
+            doc = "The versions of the crate the annotation is applied to. Defaults to all versions.",
+            default = "*",
+        ),
+    } | {
+        "build_script_data": attr.string_list(
+            doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute.",
+        ),
+        "build_script_env": attr.string_dict(
+            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+        ),
+        "triples": attr.string_list(
+            doc = "A list of triples to apply the annotation to.",
+            mandatory = True,
+        ),
+    },
+)
+
 crate = module_extension(
     doc = """\
 Crate universe module extensions.
@@ -1383,6 +1531,7 @@ Environment Variables:
     implementation = _crate_impl,
     tag_classes = {
         "annotation": _annotation,
+        "annotation_select": _annotation_select,
         "from_cargo": _from_cargo,
         "from_specs": _from_specs,
         "render_config": _render_config,
