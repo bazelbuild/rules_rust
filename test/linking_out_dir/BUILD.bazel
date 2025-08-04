@@ -2,9 +2,9 @@
 them. This requires that binaries or shared libraries include the out dirs of
 transitive dependencies when linking."""
 
-load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_library", "rust_binary")
 load("@bazel_skylib//rules:native_binary.bzl", "native_test")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
 
 cc_library(
     name = "foo",
@@ -19,10 +19,11 @@ filegroup(
 
 cargo_build_script(
     name = "build_script",
+    srcs = ["build.rs"],
+    build_script_env = {"ARCHIVE_PATH": "$(execpath :foo_static)"},
     crate_root = "build.rs",
     data = [":foo_static"],
-    srcs = ["build.rs"],
-    build_script_env = { "ARCHIVE_PATH": "$(execpath :foo_static)" },
+    edition = "2024",
 )
 
 rust_library(
