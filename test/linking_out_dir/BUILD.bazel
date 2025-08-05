@@ -23,20 +23,20 @@ cargo_build_script(
     build_script_env = {"ARCHIVE_PATH": "$(execpath :foo_static)"},
     crate_root = "build.rs",
     data = [":foo_static"],
-    edition = "2024",
+    edition = "2021",
 )
 
 rust_library(
     name = "bar",
     srcs = ["bar.rs"],
-    edition = "2024",
+    edition = "2021",
     deps = [":build_script"],
 )
 
 rust_binary(
     name = "main",
     srcs = ["main.rs"],
-    edition = "2024",
+    edition = "2021",
     deps = [":bar"],
 )
 
