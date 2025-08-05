@@ -1,3 +1,3 @@
-int foo() {
-    return 1;
-}
+#include <stdint.h>
+
+int32_t foo() { return 1; }

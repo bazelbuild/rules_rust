@@ -3,6 +3,7 @@ them. This requires that binaries or shared libraries include the out dirs of
 transitive dependencies when linking."""
 
 load("@bazel_skylib//rules:native_binary.bzl", "native_test")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_binary", "rust_library")
 
