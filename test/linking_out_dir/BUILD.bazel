@@ -29,12 +29,14 @@ cargo_build_script(
 rust_library(
     name = "bar",
     srcs = ["bar.rs"],
+    edition = "2024",
     deps = [":build_script"],
 )
 
 rust_binary(
     name = "main",
     srcs = ["main.rs"],
+    edition = "2024",
     deps = [":bar"],
 )
 
