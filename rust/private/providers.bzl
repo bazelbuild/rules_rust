@@ -54,12 +54,12 @@ DepInfo = provider(
         "direct_crates": "depset[AliasableDepInfo]",
         "link_search_path_files": "depset[File]: All transitive files containing search paths to pass to the linker",
         "transitive_build_infos": "depset[BuildInfo]",
-        "transitive_out_dirs": "depset[File]: The out directories of the build scripts of all transitive dependencies",
         "transitive_crate_outputs": "depset[File]: All transitive crate outputs.",
         "transitive_crates": "depset[CrateInfo]",
         "transitive_data": "depset[File]: Data of all transitive non-macro dependencies.",
         "transitive_metadata_outputs": "depset[File]: All transitive metadata dependencies (.rmeta, for crates that provide them) and all transitive object dependencies (.rlib) for crates that don't provide metadata.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+        "transitive_out_dirs": "depset[File]: The out directories of the build scripts of all transitive dependencies",
         "transitive_proc_macro_data": "depset[File]: Data of all transitive proc-macro dependencies, and non-macro dependencies of those macros.",
     },
 )
