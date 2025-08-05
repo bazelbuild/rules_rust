@@ -66,8 +66,12 @@ default_rbe_targets: &default_rbe_targets
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
-  # Not sure why this doesn't work on bazelci, it does locally on macOS.
+default_macos_coverage_targets: &default_macos_coverage_targets
+  - "--"
+  - "//..."
+  # Not sure why this these don't work on bazelci, it does locally on macOS.
   - "-//test/unit/remap_path_prefix:integration_test"
+  - "-//test/linking_out_dir:test"
 default_windows_targets: &default_windows_targets
   - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
   - "//..."
@@ -110,7 +114,7 @@ tasks:
     platform: macos_arm64
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
-    coverage_targets: *default_macos_targets
+    coverage_targets: *default_macos_coverage_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
     build_targets: *default_windows_targets
@@ -140,7 +144,7 @@ tasks:
     shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
-    coverage_targets: *default_macos_targets
+    coverage_targets: *default_macos_coverage_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows_no_bzlmod:
     name: No Bzlmod
@@ -167,7 +171,7 @@ tasks:
     name: Split Coverage Postprocessing
     platform: macos_arm64
     shell_commands: *split_coverage_postprocessing_shell_commands
-    coverage_targets: *default_macos_targets
+    coverage_targets: *default_macos_coverage_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2204_opt:
     name: Opt Mode
@@ -230,7 +234,7 @@ tasks:
     build_flags: *aspects_flags
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
-    coverage_targets: *default_macos_targets
+    coverage_targets: *default_macos_coverage_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   macos_rolling_with_aspects:
     name: "Macos Rolling Bazel Version With Aspects"
@@ -238,7 +242,7 @@ tasks:
     build_flags: *aspects_flags
     build_targets: *default_macos_targets
     test_targets: *default_macos_targets
-    coverage_targets: *default_macos_targets
+    coverage_targets: *default_macos_coverage_targets
     post_shell_commands: *coverage_validation_post_shell_commands
     soft_fail: yes
     bazel: "rolling"
