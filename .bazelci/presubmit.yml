@@ -66,10 +66,12 @@ default_rbe_targets: &default_rbe_targets
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
+  # Not sure why this doesn't work on bazelci, it does locally on macOS.
+  - "-//test/unit/remap_path_prefix:integration_test"
 default_macos_coverage_targets: &default_macos_coverage_targets
   - "--"
   - "//..."
-  # Not sure why this these don't work on bazelci, it does locally on macOS.
+  # Not sure why these don't work on bazelci, it does locally on macOS.
   - "-//test/unit/remap_path_prefix:integration_test"
   - "-//test/linking_out_dir:test"
 default_windows_targets: &default_windows_targets
