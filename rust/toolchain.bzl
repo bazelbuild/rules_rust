@@ -726,6 +726,7 @@ def _rust_toolchain_impl(ctx):
         make_libstd_and_allocator_ccinfo = make_ccinfo,
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
+        llvm_lib = ctx.files.llvm_lib,
         lto = lto,
         make_variables = make_variable_info,
         rust_doc = sysroot.rustdoc,
@@ -871,6 +872,11 @@ rust_toolchain = rule(
         "llvm_profdata": attr.label(
             doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
             allow_single_file = True,
+            cfg = "exec",
+        ),
+        "llvm_lib": attr.label(
+            doc = "The location of the `libLLVM` shared object files. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
+            allow_files = True,
             cfg = "exec",
         ),
         "llvm_tools": attr.label(
