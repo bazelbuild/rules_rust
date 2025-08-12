@@ -53,7 +53,7 @@ test_cc_config = rule(
     provides = [CcToolchainConfigInfo],
 )
 
-def _with_extra_toolchains_transition_impl(_setings, attr):
+def _with_extra_toolchains_transition_impl(_settings, attr):
     return {"//command_line_option:extra_toolchains": attr.extra_toolchains}
 
 with_extra_toolchains_transition = transition(

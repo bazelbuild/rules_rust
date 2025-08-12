@@ -1,4 +1,4 @@
-//! Tests for the boostrap process wrapper
+//! Tests for the bootstrap process wrapper
 
 use std::fs::read_to_string;
 

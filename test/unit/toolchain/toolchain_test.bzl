@@ -25,7 +25,7 @@ def _toolchain_specifies_target_json_test_impl(ctx):
     asserts.equals(env, None, toolchain_info.target_triple)
     asserts.equals(env, "x86_64", toolchain_info.target_arch)
 
-    # The specific name here is not as vaulable as identifying that `target_json` is a json file
+    # The specific name here is not as valuable as identifying that `target_json` is a json file
     expected_basename = "{}.target.json".format(target.label.name)
     asserts.equals(env, expected_basename, toolchain_info.target_json.basename)
 
