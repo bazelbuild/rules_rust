@@ -1765,6 +1765,14 @@ When the linking is not done by rustc, the <code>rust_toolchain</code> itself pr
 --@rules_rust//rust/settings:experimental_use_sh_toolchain_for_bootstrap_process_wrapper
 </pre>
 <p>A flag to control whether the shell path from a shell toolchain (<code>@bazel_tools//tools/sh:toolchain_type</code>)     is embedded into the bootstrap process wrapper for the <code>.sh</code> file.</p>
+<p><a id="extra_exec_rustc_env"></a></p>
+<h2 id="extra_exec_rustc_env"><a class="header" href="#extra_exec_rustc_env">extra_exec_rustc_env</a></h2>
+<pre>
+--@rules_rust//rust/settings:extra_exec_rustc_env
+</pre>
+<p>This setting may be used to pass extra environment variables to rustc from the command line in exec configuration.</p>
+<p>It applies to tools built and run during the build process, such as proc-macros and build scripts.
+This can be useful for enabling features that are needed during tool compilation.</p>
 <p><a id="extra_exec_rustc_flag"></a></p>
 <h2 id="extra_exec_rustc_flag"><a class="header" href="#extra_exec_rustc_flag">extra_exec_rustc_flag</a></h2>
 <pre>
@@ -1780,6 +1788,14 @@ When the linking is not done by rustc, the <code>rust_toolchain</code> itself pr
 <p>This setting may be used to pass extra options to rustc from the command line in exec configuration.</p>
 <p>It applies across all targets whereas the rustc_flags option on targets applies only
 to that target. This can be useful for passing build-wide options such as LTO.</p>
+<p><a id="extra_rustc_env"></a></p>
+<h2 id="extra_rustc_env"><a class="header" href="#extra_rustc_env">extra_rustc_env</a></h2>
+<pre>
+--@rules_rust//rust/settings:extra_rustc_env
+</pre>
+<p>This setting may be used to pass extra environment variables to rustc from the command line in non-exec configuration.</p>
+<p>It applies across all targets whereas environment variables set in a specific rule apply only to that target.
+This can be useful for setting build-wide env flags such as <code>RUSTC_BOOTSTRAP=1</code>.</p>
 <p><a id="extra_rustc_flag"></a></p>
 <h2 id="extra_rustc_flag"><a class="header" href="#extra_rustc_flag">extra_rustc_flag</a></h2>
 <pre>
