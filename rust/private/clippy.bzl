@@ -14,8 +14,15 @@
 
 """A module defining clippy rules"""
 
+load("@bazel_skylib//lib:structs.bzl", "structs")
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:providers.bzl", "CaptureClippyOutputInfo", "ClippyInfo", "LintsInfo")
+load(
+    "//rust/private:providers.bzl",
+    "CaptureClippyOutputInfo",
+    "ClippyInfo",
+    "ClippyOutputDiagnosticsInfo",
+    "LintsInfo",
+)
 load(
     "//rust/private:rustc.bzl",
     "collect_deps",
@@ -146,6 +153,13 @@ def _clippy_aspect_impl(target, ctx):
         "_clippy_error_format" if use_clippy_error_format else "_error_format",
     )
 
+    clippy_diagnostics = None
+    if ctx.attr._clippy_output_diagnostics[ClippyOutputDiagnosticsInfo].output_diagnostics:
+        clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
+        crate_info_dict = structs.to_dict(crate_info)
+        crate_info_dict["rustc_output"] = clippy_diagnostics
+        crate_info = rust_common.create_crate_info(**crate_info_dict)
+
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.rule.attr,
@@ -165,6 +179,7 @@ def _clippy_aspect_impl(target, ctx):
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
         skip_expanding_rustc_env = True,
+        use_json_output = bool(clippy_diagnostics),
         error_format = error_format,
     )
 
@@ -217,7 +232,7 @@ def _clippy_aspect_impl(target, ctx):
     ctx.actions.run(
         executable = ctx.executable._process_wrapper,
         inputs = compile_inputs,
-        outputs = [clippy_out],
+        outputs = [clippy_out] + [x for x in [clippy_diagnostics] if x],
         env = env,
         tools = [toolchain.clippy_driver],
         arguments = args.all,
@@ -226,8 +241,12 @@ def _clippy_aspect_impl(target, ctx):
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 
+    output_group_info = {"clippy_checks": depset([clippy_out])}
+    if clippy_diagnostics:
+        output_group_info["clippy_output"] = depset([clippy_diagnostics])
+
     return [
-        OutputGroupInfo(clippy_checks = depset([clippy_out])),
+        OutputGroupInfo(**output_group_info),
         ClippyInfo(output = depset([clippy_out])),
     ]
 
@@ -254,6 +273,10 @@ rust_clippy_aspect = aspect(
         "_clippy_flags": attr.label(
             doc = "Arguments to pass to clippy",
             default = Label("//rust/settings:clippy_flags"),
+        ),
+        "_clippy_output_diagnostics": attr.label(
+            doc = "Value of the `clippy_output_diagnostics` build setting",
+            default = "//rust/settings:clippy_output_diagnostics",
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
@@ -393,5 +416,27 @@ def _capture_clippy_output_impl(ctx):
 capture_clippy_output = rule(
     doc = "Control whether to print clippy output or store it to a file, using the configured error_format.",
     implementation = _capture_clippy_output_impl,
+    build_setting = config.bool(flag = True),
+)
+
+def _clippy_output_diagnostics_impl(ctx):
+    """Implementation of the `clippy_output_diagnostics` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the CaptureClippyOutputInfo provider
+    """
+    return [ClippyOutputDiagnosticsInfo(output_diagnostics = ctx.build_setting_value)]
+
+clippy_output_diagnostics = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:clippy_output_diagnostics` " +
+        "makes rules_rust save lippy json output (suitable for consumption by rust-analyzer) in a file, " +
+        "available from the `clippy_output` output group. This is the clippy equivalent of " +
+        "`@rules_rust//settings:rustc_output_diagnostics`."
+    ),
+    implementation = _clippy_output_diagnostics_impl,
     build_setting = config.bool(flag = True),
 )
