@@ -321,6 +321,11 @@ rust_doc = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
+        "crate_features": attr.string_list(
+            doc = dedent("""\
+                List of features to enable for the crate being documented.
+            """),
+        ),
         "html_after_content": attr.label(
             doc = "File to add in `<body>`, after content.",
             allow_single_file = [".html", ".md"],

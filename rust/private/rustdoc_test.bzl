@@ -200,6 +200,11 @@ rust_doc_test = rule(
             providers = [rust_common.crate_info],
             mandatory = True,
         ),
+        "crate_features": attr.string_list(
+            doc = dedent("""\
+                List of features to enable for the crate being documented.
+            """),
+        ),
         "deps": attr.label_list(
             doc = dedent("""\
                 List of other libraries to be linked to this library target.
