@@ -4,6 +4,7 @@ TOOLS = {
     "cargo": "//rust/toolchain:current_cargo_files",
     "cargo_clippy": "//rust/toolchain:current_cargo_clippy_files",
     "rustc": "//rust/toolchain:current_rustc_files",
+    "rustdoc": "//rust/toolchain:current_rustdoc_files",
     "rustfmt": "//rust/toolchain:current_rustfmt_toolchain_for_target",
 }
 
