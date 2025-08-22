@@ -139,6 +139,7 @@ ClippyInfo = provider(
     doc = "Provides information on a clippy run.",
     fields = {
         "output": "File with the clippy output.",
+        "exit_code_file": "File with clippy's exit code, or None if the action is expected to fail on failure.",
     },
 )
 
