@@ -511,12 +511,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__bitflags-2.9.2",
-        sha256 = "6a65b545ab31d687cff52899d4890855fec459eb6afe0da6417b8a18da87aa29",
+        name = "cvm__bitflags-2.9.3",
+        sha256 = "34efbcccd345379ca2868b2b2c9d3782e9cc58ba87bc7d79d5b53d9c9ae6f25d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/bitflags/2.9.2/download"],
-        strip_prefix = "bitflags-2.9.2",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.bitflags-2.9.2.bazel"),
+        urls = ["https://static.crates.io/crates/bitflags/2.9.3/download"],
+        strip_prefix = "bitflags-2.9.3",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.bitflags-2.9.3.bazel"),
     )
 
     maybe(
@@ -611,22 +611,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__indexmap-2.10.0",
-        sha256 = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661",
+        name = "cvm__indexmap-2.11.0",
+        sha256 = "f2481980430f9f78649238835720ddccc57e52df14ffce1c6f37391d61b563e9",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/indexmap/2.10.0/download"],
-        strip_prefix = "indexmap-2.10.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.indexmap-2.10.0.bazel"),
+        urls = ["https://static.crates.io/crates/indexmap/2.11.0/download"],
+        strip_prefix = "indexmap-2.11.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.indexmap-2.11.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__io-uring-0.7.9",
-        sha256 = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4",
+        name = "cvm__io-uring-0.7.10",
+        sha256 = "046fa2d4d00aea763528b4950358d0ead425372445dc8ff86312b3c69ff7727b",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/io-uring/0.7.9/download"],
-        strip_prefix = "io-uring-0.7.9",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.io-uring-0.7.9.bazel"),
+        urls = ["https://static.crates.io/crates/io-uring/0.7.10/download"],
+        strip_prefix = "io-uring-0.7.10",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.io-uring-0.7.10.bazel"),
     )
 
     maybe(

@@ -100,7 +100,7 @@ rust_library(
     }),
     version = "0.39.0",
     deps = [
-        "//vendor_local_manifests/crates/bitflags-2.9.2:bitflags",
+        "//vendor_local_manifests/crates/bitflags-2.9.3:bitflags",
         "//vendor_local_manifests/crates/wit-bindgen-rt-0.39.0:build_script_build",
     ],
 )
