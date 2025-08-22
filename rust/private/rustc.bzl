@@ -1544,7 +1544,7 @@ def rustc_compile_action(
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
-            if _is_dylib(library_to_link)
+            if _is_dylib(library_to_link) and library_to_link.dynamic_library
         ])
         transitive_runfiles.append(dynamic_libraries)
     runfiles = runfiles.merge_all(transitive_runfiles)
@@ -1680,6 +1680,14 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
     return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
+    """Determine if the dependency represents a dynamic library.
+
+    Args:
+        dep (LibraryToLink): The `LibraryToLink` component of a target (e.g. from `CcInfo`)
+
+    Returns:
+        bool: True if the dependency should be thought of as a dynamic library.
+    """
     return not bool(dep.static_library or dep.pic_static_library)
 
 def _collect_nonstatic_linker_inputs(cc_info):
