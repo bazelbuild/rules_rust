@@ -11,7 +11,7 @@ log = "=0.4.14"
 pinned_log = { package = "log", version = "=0.3.9" }
 
 # Contains a transitive alias
-value-bag = "=1.0.0-alpha.7"
+value-bag = "=1.11.1"
 
 # Defines binary targets
 names = "=0.13.0"
