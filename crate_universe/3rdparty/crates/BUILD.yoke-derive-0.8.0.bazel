@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_library(
-    name = "icu_normalizer",
+rust_proc_macro(
+    name = "yoke_derive",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,15 +34,8 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "compiled_data",
-        "default",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    proc_macro_deps = [
-        "@cui__displaydoc-0.2.5//:displaydoc",
-    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -51,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_normalizer",
+        "crate-name=yoke-derive",
         "manual",
         "noclippy",
         "norustfmt",
@@ -98,16 +91,11 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "0.8.0",
     deps = [
-        "@cui__icu_collections-1.5.0//:icu_collections",
-        "@cui__icu_normalizer_data-1.5.0//:icu_normalizer_data",
-        "@cui__icu_properties-1.5.1//:icu_properties",
-        "@cui__icu_provider-1.5.0//:icu_provider",
-        "@cui__smallvec-1.15.0//:smallvec",
-        "@cui__utf16_iter-1.0.5//:utf16_iter",
-        "@cui__utf8_iter-1.0.4//:utf8_iter",
-        "@cui__write16-1.0.0//:write16",
-        "@cui__zerovec-0.10.4//:zerovec",
+        "@cui__proc-macro2-1.0.92//:proc_macro2",
+        "@cui__quote-1.0.37//:quote",
+        "@cui__syn-2.0.90//:syn",
+        "@cui__synstructure-0.13.1//:synstructure",
     ],
 )

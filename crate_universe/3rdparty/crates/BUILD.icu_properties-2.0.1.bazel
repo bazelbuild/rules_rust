@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "icu_collections",
+    name = "icu_properties",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,6 +34,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "compiled_data",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
@@ -47,7 +50,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_collections",
+        "crate-name=icu_properties",
         "manual",
         "noclippy",
         "norustfmt",
@@ -94,10 +97,14 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "2.0.1",
     deps = [
-        "@cui__yoke-0.7.5//:yoke",
-        "@cui__zerofrom-0.1.5//:zerofrom",
-        "@cui__zerovec-0.10.4//:zerovec",
+        "@cui__icu_collections-2.0.0//:icu_collections",
+        "@cui__icu_locale_core-2.0.0//:icu_locale_core",
+        "@cui__icu_properties_data-2.0.1//:icu_properties_data",
+        "@cui__icu_provider-2.0.0//:icu_provider",
+        "@cui__potential_utf-0.1.2//:potential_utf",
+        "@cui__zerotrie-0.2.2//:zerotrie",
+        "@cui__zerovec-0.11.4//:zerovec",
     ],
 )

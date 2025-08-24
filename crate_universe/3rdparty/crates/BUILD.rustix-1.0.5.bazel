@@ -224,7 +224,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__errno-0.3.11//:errno",  # cfg(windows)
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@cui__errno-0.3.11//:errno",  # aarch64-unknown-fuchsia, cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64")))))))
@@ -266,7 +266,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cui__errno-0.3.11//:errno",  # cfg(windows)
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@cui__errno-0.3.11//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), i686-unknown-freebsd
@@ -336,7 +336,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cui__errno-0.3.11//:errno",  # cfg(windows)
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@cui__errno-0.3.11//:errno",  # cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = "linux", any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), all(rustix_use_experimental_asm, target_arch = "powerpc64"), all(rustix_use_experimental_asm, target_arch = "s390x"), all(rustix_use_experimental_asm, target_arch = "mips"), all(rustix_use_experimental_asm, target_arch = "mips32r6"), all(rustix_use_experimental_asm, target_arch = "mips64"), all(rustix_use_experimental_asm, target_arch = "mips64r6"), target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))))), x86_64-unknown-freebsd

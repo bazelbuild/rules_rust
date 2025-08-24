@@ -96,8 +96,8 @@ rust_library(
         "@cui__bstr-1.6.0//:bstr",
         "@cui__gix-features-0.40.0//:gix_features",
         "@cui__gix-path-0.10.14//:gix_path",
-        "@cui__percent-encoding-2.3.1//:percent_encoding",
+        "@cui__percent-encoding-2.3.2//:percent_encoding",
         "@cui__thiserror-2.0.4//:thiserror",
-        "@cui__url-2.5.4//:url",
+        "@cui__url-2.5.7//:url",
     ],
 )

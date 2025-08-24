@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "percent_encoding",
+    name = "form_urlencoded",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -36,7 +36,6 @@ rust_library(
     ),
     crate_features = [
         "alloc",
-        "default",
         "std",
     ],
     crate_root = "src/lib.rs",
@@ -49,7 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=percent-encoding",
+        "crate-name=form_urlencoded",
         "manual",
         "noclippy",
         "norustfmt",
@@ -96,5 +95,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "2.3.1",
+    version = "1.2.2",
+    deps = [
+        "@cui__percent-encoding-2.3.2//:percent_encoding",
+    ],
 )

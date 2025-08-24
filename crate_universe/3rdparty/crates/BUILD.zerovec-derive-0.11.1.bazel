@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_library(
-    name = "icu_properties_data",
+rust_proc_macro(
+    name = "zerovec_derive",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -44,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_properties_data",
+        "crate-name=zerovec-derive",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,5 +91,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "0.11.1",
+    deps = [
+        "@cui__proc-macro2-1.0.92//:proc_macro2",
+        "@cui__quote-1.0.37//:quote",
+        "@cui__syn-2.0.90//:syn",
+    ],
 )

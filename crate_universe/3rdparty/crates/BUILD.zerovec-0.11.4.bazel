@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "icu_locid",
+    name = "zerovec",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,12 +35,14 @@ rust_library(
         ],
     ),
     crate_features = [
-        "zerovec",
+        "alloc",
+        "derive",
+        "yoke",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@cui__displaydoc-0.2.5//:displaydoc",
+        "@cui__zerovec-derive-0.11.1//:zerovec_derive",
     ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
@@ -50,7 +52,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_locid",
+        "crate-name=zerovec",
         "manual",
         "noclippy",
         "norustfmt",
@@ -97,11 +99,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "0.11.4",
     deps = [
-        "@cui__litemap-0.7.4//:litemap",
-        "@cui__tinystr-0.7.6//:tinystr",
-        "@cui__writeable-0.5.5//:writeable",
-        "@cui__zerovec-0.10.4//:zerovec",
+        "@cui__yoke-0.8.0//:yoke",
+        "@cui__zerofrom-0.1.5//:zerofrom",
     ],
 )
