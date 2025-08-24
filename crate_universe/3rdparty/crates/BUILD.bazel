@@ -32,26 +32,26 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "anyhow-1.0.98",
-    actual = "@cui__anyhow-1.0.98//:anyhow",
+    name = "anyhow-1.0.99",
+    actual = "@cui__anyhow-1.0.99//:anyhow",
     tags = ["manual"],
 )
 
 alias(
     name = "anyhow",
-    actual = "@cui__anyhow-1.0.98//:anyhow",
+    actual = "@cui__anyhow-1.0.99//:anyhow",
     tags = ["manual"],
 )
 
 alias(
-    name = "camino-1.1.9",
-    actual = "@cui__camino-1.1.9//:camino",
+    name = "camino-1.1.11",
+    actual = "@cui__camino-1.1.11//:camino",
     tags = ["manual"],
 )
 
 alias(
     name = "camino",
-    actual = "@cui__camino-1.1.9//:camino",
+    actual = "@cui__camino-1.1.11//:camino",
     tags = ["manual"],
 )
 
@@ -116,14 +116,14 @@ alias(
 )
 
 alias(
-    name = "clap-4.5.37",
-    actual = "@cui__clap-4.5.37//:clap",
+    name = "clap-4.5.45",
+    actual = "@cui__clap-4.5.45//:clap",
     tags = ["manual"],
 )
 
 alias(
     name = "clap",
-    actual = "@cui__clap-4.5.37//:clap",
+    actual = "@cui__clap-4.5.45//:clap",
     tags = ["manual"],
 )
 
@@ -308,14 +308,14 @@ alias(
 )
 
 alias(
-    name = "spdx-0.10.8",
-    actual = "@cui__spdx-0.10.8//:spdx",
+    name = "spdx-0.10.9",
+    actual = "@cui__spdx-0.10.9//:spdx",
     tags = ["manual"],
 )
 
 alias(
     name = "spdx",
-    actual = "@cui__spdx-0.10.8//:spdx",
+    actual = "@cui__spdx-0.10.9//:spdx",
     tags = ["manual"],
 )
 
@@ -392,14 +392,14 @@ alias(
 )
 
 alias(
-    name = "url-2.5.4",
-    actual = "@cui__url-2.5.4//:url",
+    name = "url-2.5.7",
+    actual = "@cui__url-2.5.7//:url",
     tags = ["manual"],
 )
 
 alias(
     name = "url",
-    actual = "@cui__url-2.5.4//:url",
+    actual = "@cui__url-2.5.7//:url",
     tags = ["manual"],
 )
 

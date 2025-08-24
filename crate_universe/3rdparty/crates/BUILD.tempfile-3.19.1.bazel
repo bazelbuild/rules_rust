@@ -118,7 +118,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__getrandom-0.3.2//:getrandom",  # aarch64-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:aarch64-unknown-fuchsia": [
             "@cui__getrandom-0.3.2//:getrandom",  # aarch64-unknown-fuchsia
@@ -158,7 +158,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cui__getrandom-0.3.2//:getrandom",  # i686-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:i686-unknown-freebsd": [
             "@cui__getrandom-0.3.2//:getrandom",  # i686-unknown-freebsd
@@ -206,7 +206,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cui__getrandom-0.3.2//:getrandom",  # x86_64-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # cfg(windows)
+            "@cui__windows-sys-0.52.0//:windows_sys",  # cfg(windows)
         ],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [
             "@cui__getrandom-0.3.2//:getrandom",  # x86_64-unknown-freebsd

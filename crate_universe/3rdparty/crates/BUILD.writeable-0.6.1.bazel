@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "tinystr",
+    name = "writeable",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,15 +34,8 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_features = [
-        "alloc",
-        "zerovec",
-    ],
     crate_root = "src/lib.rs",
     edition = "2021",
-    proc_macro_deps = [
-        "@cui__displaydoc-0.2.5//:displaydoc",
-    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -51,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=tinystr",
+        "crate-name=writeable",
         "manual",
         "noclippy",
         "norustfmt",
@@ -98,8 +91,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.7.6",
-    deps = [
-        "@cui__zerovec-0.10.4//:zerovec",
-    ],
+    version = "0.6.1",
 )

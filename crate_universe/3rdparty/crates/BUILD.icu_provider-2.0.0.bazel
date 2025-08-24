@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_proc_macro(
-    name = "icu_provider_macros",
+rust_library(
+    name = "icu_provider",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,8 +34,15 @@ rust_proc_macro(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "baked",
+        "zerotrie",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    proc_macro_deps = [
+        "@cui__displaydoc-0.2.5//:displaydoc",
+    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -44,7 +51,7 @@ rust_proc_macro(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_provider_macros",
+        "crate-name=icu_provider",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,10 +98,15 @@ rust_proc_macro(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "2.0.0",
     deps = [
-        "@cui__proc-macro2-1.0.92//:proc_macro2",
-        "@cui__quote-1.0.37//:quote",
-        "@cui__syn-2.0.90//:syn",
+        "@cui__icu_locale_core-2.0.0//:icu_locale_core",
+        "@cui__stable_deref_trait-1.2.0//:stable_deref_trait",
+        "@cui__tinystr-0.8.1//:tinystr",
+        "@cui__writeable-0.6.1//:writeable",
+        "@cui__yoke-0.8.0//:yoke",
+        "@cui__zerofrom-0.1.5//:zerofrom",
+        "@cui__zerotrie-0.2.2//:zerotrie",
+        "@cui__zerovec-0.11.4//:zerovec",
     ],
 )

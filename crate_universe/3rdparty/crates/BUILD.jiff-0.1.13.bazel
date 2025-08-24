@@ -103,11 +103,11 @@ rust_library(
     deps = select({
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [
             "@cui__jiff-tzdb-platform-0.1.1//:jiff_tzdb_platform",  # aarch64-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # aarch64-pc-windows-msvc
+            "@cui__windows-sys-0.52.0//:windows_sys",  # aarch64-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:i686-pc-windows-msvc": [
             "@cui__jiff-tzdb-platform-0.1.1//:jiff_tzdb_platform",  # i686-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # i686-pc-windows-msvc
+            "@cui__windows-sys-0.52.0//:windows_sys",  # i686-pc-windows-msvc
         ],
         "@rules_rust//rust/platform:wasm32-unknown-emscripten": [
             "@cui__jiff-tzdb-platform-0.1.1//:jiff_tzdb_platform",  # wasm32-unknown-emscripten
@@ -126,7 +126,7 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [
             "@cui__jiff-tzdb-platform-0.1.1//:jiff_tzdb_platform",  # x86_64-pc-windows-msvc
-            "@cui__windows-sys-0.59.0//:windows_sys",  # x86_64-pc-windows-msvc
+            "@cui__windows-sys-0.52.0//:windows_sys",  # x86_64-pc-windows-msvc
         ],
         "//conditions:default": [],
     }),

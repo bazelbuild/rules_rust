@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "icu_locid_transform_data",
+    name = "icu_locale_core",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,8 +34,14 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "zerovec",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
+    proc_macro_deps = [
+        "@cui__displaydoc-0.2.5//:displaydoc",
+    ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -44,7 +50,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=icu_locid_transform_data",
+        "crate-name=icu_locale_core",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,5 +97,11 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "1.5.0",
+    version = "2.0.0",
+    deps = [
+        "@cui__litemap-0.8.0//:litemap",
+        "@cui__tinystr-0.8.1//:tinystr",
+        "@cui__writeable-0.6.1//:writeable",
+        "@cui__zerovec-0.11.4//:zerovec",
+    ],
 )
