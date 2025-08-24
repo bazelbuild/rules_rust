@@ -96,7 +96,7 @@ rust_library(
         "@cui__gix-fs-0.13.0//:gix_fs",
         "@cui__once_cell-1.21.3//:once_cell",
         "@cui__parking_lot-0.12.1//:parking_lot",
-        "@cui__tempfile-3.19.1//:tempfile",
+        "@cui__tempfile-3.21.0//:tempfile",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
             "@cui__libc-0.2.172//:libc",  # cfg(not(windows))
