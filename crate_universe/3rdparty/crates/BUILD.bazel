@@ -140,14 +140,14 @@ alias(
 )
 
 alias(
-    name = "glob-0.3.2",
-    actual = "@cui__glob-0.3.2//:glob",
+    name = "glob-0.3.3",
+    actual = "@cui__glob-0.3.3//:glob",
     tags = ["manual"],
 )
 
 alias(
     name = "glob",
-    actual = "@cui__glob-0.3.2//:glob",
+    actual = "@cui__glob-0.3.3//:glob",
     tags = ["manual"],
 )
 
@@ -296,14 +296,14 @@ alias(
 )
 
 alias(
-    name = "sha2-0.10.8",
-    actual = "@cui__sha2-0.10.8//:sha2",
+    name = "sha2-0.10.9",
+    actual = "@cui__sha2-0.10.9//:sha2",
     tags = ["manual"],
 )
 
 alias(
     name = "sha2",
-    actual = "@cui__sha2-0.10.8//:sha2",
+    actual = "@cui__sha2-0.10.9//:sha2",
     tags = ["manual"],
 )
 
@@ -320,14 +320,14 @@ alias(
 )
 
 alias(
-    name = "tempfile-3.19.1",
-    actual = "@cui__tempfile-3.19.1//:tempfile",
+    name = "tempfile-3.21.0",
+    actual = "@cui__tempfile-3.21.0//:tempfile",
     tags = ["manual"],
 )
 
 alias(
     name = "tempfile",
-    actual = "@cui__tempfile-3.19.1//:tempfile",
+    actual = "@cui__tempfile-3.21.0//:tempfile",
     tags = ["manual"],
 )
 
@@ -356,14 +356,14 @@ alias(
 )
 
 alias(
-    name = "toml-0.8.21",
-    actual = "@cui__toml-0.8.21//:toml",
+    name = "toml-0.8.23",
+    actual = "@cui__toml-0.8.23//:toml",
     tags = ["manual"],
 )
 
 alias(
     name = "toml",
-    actual = "@cui__toml-0.8.21//:toml",
+    actual = "@cui__toml-0.8.23//:toml",
     tags = ["manual"],
 )
 

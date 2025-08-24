@@ -95,7 +95,7 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.10.8",
+    version = "0.10.9",
     deps = [
         "@cui__cfg-if-1.0.0//:cfg_if",
         "@cui__digest-0.10.7//:digest",
