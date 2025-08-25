@@ -1,0 +1,28 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+# This program uses std::os::wasi that is only available on WASI
+# When running `bazel build` with `--platforms=//:aarch64-apple-darwin`
+# rust toolchain is resolved to rebuild `std` for WASI specifically
+
+# As a counterexample, try removing `target_compatible_with` attr and rebuild
+# with `--platforms=//:aarch64-apple-darwin`. You'll see the following error
+#  --> hello_program/src/main_with_wasi.rs:4:14
+#   |
+# 4 | use std::os::wasi::prelude::*;
+#   |              ^^^^ could not find `wasi` in `os`
+# which is expected because std is now built for aarch64-apple-darwin.
+rust_binary(
+    name = "program_with_wasi",
+    srcs = [
+        "src/main_with_wasi.rs",
+    ],
+    target_compatible_with = select({
+        "@rules_rust//rust/platform:wasm32-wasi": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
