@@ -4,7 +4,6 @@ mod cargo_bin;
 mod cargo_tree_resolver;
 mod dependency;
 mod metadata_annotation;
-mod workspace_discoverer;
 
 use std::env;
 use std::fs;
@@ -21,7 +20,6 @@ pub(crate) use self::cargo_bin::*;
 pub(crate) use self::cargo_tree_resolver::*;
 pub(crate) use self::dependency::*;
 pub(crate) use self::metadata_annotation::*;
-pub(crate) use self::workspace_discoverer::*;
 
 // TODO: This should also return a set of [crate-index::IndexConfig]s for packages in metadata.packages
 /// A Trait for generating metadata (`cargo metadata` output and a lock file) from a Cargo manifest.

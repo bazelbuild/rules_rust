@@ -2,16 +2,20 @@
 
 use std::path::PathBuf;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use camino::Utf8PathBuf;
+use cargo_metadata::Metadata as CargoMetadata;
 use clap::Parser;
+use itertools::Itertools;
 
 use crate::cli::Result;
 use crate::config::Config;
 use crate::metadata::{
     write_metadata, Cargo, CargoUpdateRequest, Generator, MetadataGenerator, TreeResolver,
 };
-use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
+use crate::splicing::{
+    generate_lockfile, Splicer, SplicerKind, SplicingManifest, WorkspaceMetadata,
+};
 
 /// Command line options for the `splice` subcommand
 #[derive(Parser, Debug)]
@@ -81,13 +85,14 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     };
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
+    let splicer = Splicer::new(splicing_dir.clone(), splicing_manifest)?;
+    let prepared_splicer = splicer.prepare()?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
     // Splice together the manifest
-    let manifest_path = splicer
-        .splice_workspace()
+    let manifest_path = prepared_splicer
+        .splice(&splicing_dir)
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
     // Generate a lockfile
@@ -121,8 +126,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Write metadata to the workspace for future reuse
     let (cargo_metadata, _) = Generator::new()
-        .with_cargo(cargo)
-        .with_rustc(opt.rustc)
+        .with_cargo(cargo.clone())
+        .with_rustc(opt.rustc.clone())
         .generate(manifest_path.as_path_buf())
         .context("Failed to generate cargo metadata")?;
 
@@ -147,5 +152,47 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     std::fs::copy(cargo_lockfile_path, output_dir.join("Cargo.lock"))
         .context("Failed to copy lockfile")?;
 
+    if let SplicerKind::Workspace { path, .. } = prepared_splicer {
+        println!("MANIFEST {}", path);
+
+        let child = cargo
+            .command()?
+            .env("RUSTC_WRAPPER", opt.rustc)
+            .env("CARGO_CACHE_RUSTC_INFO", "0")
+            .current_dir(path.parent().expect("All manifests should have a valid parent."))
+            .arg("metadata")
+            .arg("--no-deps")
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .with_context(|| {
+                format!(
+                    "Error spawning cargo in child process to compute crate paths for workspace '{}'",
+                    path
+                )
+            })?;
+
+        let output = child.wait_with_output().with_context(|| {
+            format!(
+                "Error running `cargo metadata --no-deps` manifest path '{}'",
+                path
+            )
+        })?;
+        if !output.status.success() {
+            tracing::error!("{}", String::from_utf8_lossy(&output.stdout));
+            tracing::error!("{}", String::from_utf8_lossy(&output.stderr));
+            bail!(format!("Failed to run cargo tree: {}", output.status))
+        }
+
+        let metadata: CargoMetadata =
+            serde_json::from_str(&String::from_utf8_lossy(&output.stdout))
+                .context("Unable to deserialize Cargo metadata")?;
+        let contents = metadata
+            .packages
+            .iter()
+            .map(|package| package.manifest_path.clone())
+            .join("\n");
+        std::fs::write(opt.output_dir.join("extra_paths_to_track"), contents)?;
+    }
     Ok(())
 }

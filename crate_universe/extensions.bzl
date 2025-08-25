@@ -658,6 +658,11 @@ def _generate_hub_and_spokes(
             "metadata": splice_outputs.metadata,
         })
 
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
+            # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
+            module_ctx.read(path_to_track)
+
     # The workspace root when one is explicitly provided.
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 

@@ -92,6 +92,11 @@ def _crates_repository_impl(repository_ctx):
             repository_name = repository_ctx.name,
         )
 
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
+            # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
+            repository_ctx.read(path_to_track)
+
         kwargs.update({
             "metadata": splice_outputs.metadata,
         })
