@@ -20,6 +20,7 @@ CrateInfo = provider(
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
+        "crate_features": "[str]: A list of feature enabled for this crate.",
         "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
         "deps": "depset[DepVariantInfo]: This crate's (rust or cc) dependencies' providers.",
         "edition": "str: The edition of this crate.",
