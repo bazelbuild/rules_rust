@@ -1391,6 +1391,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
+            use_default_shell_env = True,
             arguments = args.all,
             mnemonic = "Rustc",
             progress_message = "Compiling Rust {} {}{} ({} files)".format(
@@ -1408,6 +1409,7 @@ def rustc_compile_action(
                 inputs = compile_inputs,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
+                use_default_shell_env = True,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
                 progress_message = "Compiling Rust metadata {} {}{} ({} files)".format(
@@ -1427,6 +1429,7 @@ def rustc_compile_action(
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
+            use_default_shell_env = True,
             arguments = [args.rustc_path, args.rustc_flags],
             mnemonic = "Rustc",
             progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
