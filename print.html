@@ -1666,6 +1666,15 @@ rust_test(
 </pre>
 <p>This setting may be used to pass extra options to clippy from the command line.</p>
 <p>It applies across all targets.</p>
+<p><a id="clippy_output_diagnostics"></a></p>
+<h2 id="clippy_output_diagnostics"><a class="header" href="#clippy_output_diagnostics">clippy_output_diagnostics</a></h2>
+<pre>
+--@rules_rust//rust/settings:clippy_output_diagnostics
+</pre>
+<p>A flag to enable the <code>clippy_output_diagnostics</code> setting.</p>
+<p>If this flag is true, rules_rust will save clippy json output (suitable for consumption
+by rust-analyzer) in a file, available from the <code>clippy_output</code> output group. This is the
+clippy equivalent of <code>rustc_output_diagnostics</code>.</p>
 <p><a id="clippy_toml"></a></p>
 <h2 id="clippy_toml"><a class="header" href="#clippy_toml">clippy_toml</a></h2>
 <pre>
