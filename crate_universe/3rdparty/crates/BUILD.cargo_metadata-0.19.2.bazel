@@ -96,7 +96,7 @@ rust_library(
     }),
     version = "0.19.2",
     deps = [
-        "@cui__camino-1.1.9//:camino",
+        "@cui__camino-1.1.11//:camino",
         "@cui__cargo-platform-0.1.9//:cargo_platform",
         "@cui__semver-1.0.26//:semver",
         "@cui__serde-1.0.219//:serde",
