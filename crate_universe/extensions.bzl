@@ -684,9 +684,7 @@ def _generate_hub_and_spokes(
 
     paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
     for path in paths_to_track:
-        # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
-        # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
-        module_ctx.read(path)
+        module_ctx.watch(path)
 
     warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
     for warning in warnings_output_file:
