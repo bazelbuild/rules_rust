@@ -398,14 +398,14 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
     ),
-    "strip_level": attr.string_dict(
-        doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
-    ),
     "rustfmt_version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
     ),
     "sha256s": attr.string_dict(
         doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_register_toolchains](#rust_register_toolchains) for more details.",
+    ),
+    "strip_level": attr.string_dict(
+        doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
     ),
     "target_triple": attr.string(
         doc = "The Rust-style target that this compiler builds for.",
