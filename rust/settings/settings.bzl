@@ -321,7 +321,7 @@ def incompatible_change_clippy_error_format():
     """
     incompatible_flag(
         name = "incompatible_change_clippy_error_format",
-        build_setting_default = False,
+        build_setting_default = True,
         issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
     )
 
