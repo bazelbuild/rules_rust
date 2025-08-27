@@ -192,6 +192,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
     attrs = WASM_BINDGEN_ATTR,
     toolchains = [
         str(Label("//:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 

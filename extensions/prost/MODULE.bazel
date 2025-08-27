@@ -6,6 +6,11 @@ module(
 )
 
 bazel_dep(name = "rules_rust", version = "0.63.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "bazel_features", version = "1.32.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")

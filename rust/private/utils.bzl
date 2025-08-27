@@ -78,9 +78,13 @@ def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
         extra_unsupported_features (sequence of str): Extra featrures to disable
 
     Returns:
-        tuple: A tuple of (CcToolchain, FeatureConfiguration)
+        tuple: A tuple of (CcToolchain, FeatureConfiguration) or (None, None) if no C++ toolchain is available
     """
-    cc_toolchain = find_rules_cc_toolchain(ctx)
+
+    # C++ toolchain is optional, so we need to check if it's available
+    cc_toolchain = find_rules_cc_toolchain(ctx, mandatory = False)
+    if not cc_toolchain:
+        return None, None
 
     feature_configuration = cc_common.configure_features(
         ctx = ctx,

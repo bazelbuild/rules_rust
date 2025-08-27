@@ -311,7 +311,7 @@ rust_clippy_aspect = aspect(
     ],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     implementation = _clippy_aspect_impl,
     doc = """\

@@ -55,5 +55,6 @@ Generates javascript and typescript bindings for a webassembly module using [was
     attrs = WASM_BINDGEN_ATTR,
     toolchains = [
         str(Label("//:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )

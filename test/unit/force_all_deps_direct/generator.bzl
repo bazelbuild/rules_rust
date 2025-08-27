@@ -90,7 +90,7 @@ generator = rule(
     },
     toolchains = [
         "@rules_rust//rust:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     fragments = ["cpp"],
 )

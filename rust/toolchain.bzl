@@ -188,7 +188,7 @@ def _make_libstd_and_allocator_ccinfo(
         """).format(label, rust_std))
     rust_stdlib_info = rust_std[rust_common.stdlib_info]
 
-    if rust_stdlib_info.self_contained_files:
+    if rust_stdlib_info.self_contained_files and cc_toolchain:
         compilation_outputs = cc_common.create_compilation_outputs(
             objects = depset(rust_stdlib_info.self_contained_files),
         )
@@ -211,7 +211,7 @@ def _make_libstd_and_allocator_ccinfo(
             linking_context = linking_context,
         ))
 
-    if rust_stdlib_info.std_rlibs:
+    if rust_stdlib_info.std_rlibs and cc_toolchain:
         allocator_library_inputs = []
 
         if hasattr(allocator_library, "allocator_libraries_impl_info") and allocator_library.allocator_libraries_impl_info:
@@ -694,7 +694,6 @@ def _rust_toolchain_impl(ctx):
     )
 
     # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
-    cc_toolchain, _ = find_cc_toolchain(ctx)
     all_files_depsets = [sysroot.all_files]
     if cc_toolchain and cc_toolchain.all_files:
         all_files_depsets.append(cc_toolchain.all_files)
@@ -990,7 +989,7 @@ rust_toolchain = rule(
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = """Declares a Rust toolchain for use.
 
