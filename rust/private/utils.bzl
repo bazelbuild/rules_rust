@@ -15,7 +15,6 @@
 """Utility functions not specific to the rust toolchain."""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compat.bzl", "abs")
@@ -78,9 +77,37 @@ def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
         extra_unsupported_features (sequence of str): Extra featrures to disable
 
     Returns:
-        tuple: A tuple of (CcToolchain, FeatureConfiguration)
+        tuple: A tuple of (CcToolchain, FeatureConfiguration) or (None, None) if no C++ toolchain is available
     """
-    cc_toolchain = find_rules_cc_toolchain(ctx)
+
+    # Try to get the C++ toolchain using the standard pattern from rules_cc
+    # The toolchain type is marked as mandatory=False in rule definitions,
+    # so it may not be available (e.g., for wasm32 targets or pure Rust builds)
+
+    CC_TOOLCHAIN_TYPE = "@bazel_tools//tools/cpp:toolchain_type"
+
+    # Check if toolchain resolution is being used
+    # For optional toolchains (mandatory=False), accessing ctx.toolchains[type] returns None if not available
+    if CC_TOOLCHAIN_TYPE not in ctx.toolchains:
+        return None, None
+
+    toolchain_info = ctx.toolchains[CC_TOOLCHAIN_TYPE]
+
+    if not toolchain_info:
+        return None, None
+
+    # Extract the CcToolchainInfo from the resolved toolchain
+    # Based on rules_cc's find_cc_toolchain implementation:
+    # If toolchain_info has both cc_provider_in_toolchain and cc attributes, use .cc
+    # Otherwise use toolchain_info directly
+    cc_toolchain = None
+    if hasattr(toolchain_info, "cc_provider_in_toolchain") and hasattr(toolchain_info, "cc"):
+        cc_toolchain = toolchain_info.cc
+    else:
+        cc_toolchain = toolchain_info
+
+    if not cc_toolchain:
+        return None, None
 
     feature_configuration = cc_common.configure_features(
         ctx = ctx,

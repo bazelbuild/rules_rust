@@ -124,6 +124,18 @@ We test these rules against the latest rolling releases of Bazel, and aim for co
 
 WORKSPACE support is officially tested with Bazel 7 for as long as that is the min supported version. While it may work with later versions, compatibility with those versions is not guaranteed or actively verified.
 
+## Building without a C++ toolchain
+
+`rules_rust` supports building pure Rust targets without requiring a C++ toolchain to be configured. This is particularly useful for:
+
+- **WebAssembly (WASM) compilation**: Building for `wasm32` or `wasm64` targets no longer requires a C++ toolchain
+- **Cross-compilation**: Simplified setup when cross-compiling to platforms without readily available C++ toolchains
+- **Pure Rust projects**: Projects that don't link against C/C++ code can build without C++ toolchain complexity
+
+The C++ toolchain is automatically used when needed (e.g., when linking C/C++ dependencies), and gracefully skipped when not required. This feature works with both WORKSPACE and Bzlmod setups.
+
+**Note**: If your Rust code depends on C/C++ libraries (via `cc_library` or similar), you will still need a properly configured C++ toolchain.
+
 ## Supported platforms
 
 We aim to support Linux and macOS.

@@ -58,6 +58,14 @@ next Bazel LTS release at latest.
 Whenever there is a new Bazel LTS release, all releases of `rules_rust` will maintain
 support for the older LTS version for at least 3 months unless Bazel doesn't allow this.
 
+### Optional C++ Toolchain Support
+
+`rules_rust` supports building pure Rust targets without
+requiring a C++ toolchain to be configured. This feature leverages Bazel's
+optional toolchain API (available since Bazel 6.0) to make the C++ toolchain
+optional. The C++ toolchain is still required when building Rust code that
+depends on C/C++ libraries.
+
 ## What host platforms are supported?
 
 Platforms subject to backwards compatibility policy are

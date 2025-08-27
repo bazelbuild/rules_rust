@@ -199,7 +199,7 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
     [pic]: https://en.wikipedia.org/wiki/Position-independent_code
 
     Args:
-        cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
+        cc_toolchain (CcToolchainInfo): The current `cc_toolchain` or None if not available.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         crate_type (str): A Rust target's crate type.
         compilation_mode: The compilation mode.
@@ -213,6 +213,9 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
     # - In `fastbuild` and `dbg` mode we use `pic` by default.
     # - In `opt` mode we use `nopic` outputs to build binaries.
     if crate_type in ("cdylib", "dylib", "proc-macro"):
+        # If no C++ toolchain is available, default to True for safety
+        if not cc_toolchain:
+            return True
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     elif compilation_mode in ("fastbuild", "dbg"):
         return True
@@ -677,10 +680,13 @@ def collect_inputs(
     # rules_rust is not coupled with Bazel release. Remove conditional and change to
     # _linker_files once Starlark CcToolchainInfo is visible to Bazel.
     # https://github.com/bazelbuild/rules_rust/issues/2425
-    if hasattr(cc_toolchain, "_linker_files"):
-        linker_depset = cc_toolchain._linker_files
+    if cc_toolchain:
+        if hasattr(cc_toolchain, "_linker_files"):
+            linker_depset = cc_toolchain._linker_files
+        else:
+            linker_depset = cc_toolchain.linker_files()
     else:
-        linker_depset = cc_toolchain.linker_files()
+        linker_depset = depset([])
     compilation_mode = ctx.var["COMPILATION_MODE"]
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
@@ -1031,20 +1037,21 @@ def construct_arguments(
         # linker since it won't understand.
         compilation_mode = ctx.var["COMPILATION_MODE"]
         if toolchain.target_arch not in ("wasm32", "wasm64"):
-            if output_dir:
-                use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
-            else:
-                rpaths = depset()
+            if cc_toolchain:
+                if output_dir:
+                    use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
+                    rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
+                else:
+                    rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(ctx, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
+                ld, link_args, link_env = get_linker_and_args(ctx, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
 
-            env.update(link_env)
-            rustc_flags.add(ld, format = "--codegen=linker=%s")
+                env.update(link_env)
+                rustc_flags.add(ld, format = "--codegen=linker=%s")
 
-            # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
-            # Additional context: https://github.com/rust-lang/rust/pull/36574
-            rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
+                # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
+                # Additional context: https://github.com/rust-lang/rust/pull/36574
+                rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
 
         _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode, include_link_flags = include_link_flags)
 
@@ -1237,7 +1244,7 @@ def rustc_compile_action(
         # One or more of the transitive deps is a cc_library / cc_import
         extra_disabled_features = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
-    if not _are_linkstamps_supported(
+    if not feature_configuration or not _are_linkstamps_supported(
         feature_configuration = feature_configuration,
         has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
     ):
@@ -1779,6 +1786,20 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
     if getattr(attr, "out_binary", False):
         return []
 
+    # If no C++ toolchain is available, we cannot create CcInfo with cc_common constructs,
+    # but we still need to provide AllocatorLibrariesImplInfo for rlib/lib types
+    if not cc_toolchain:
+        dot_a = None
+        if crate_info.type in ("rlib", "lib"):
+            # Create the .a symlink for allocator library support
+            dot_a = make_static_lib_symlink(ctx.label.package, ctx.actions, crate_info.output)
+            providers = [CcInfo()]
+            providers.append(AllocatorLibrariesImplInfo(static_archive = dot_a))
+            return providers
+        else:
+            # For staticlib/cdylib without a C++ toolchain, just return empty CcInfo
+            return [CcInfo()]
+
     dot_a = None
 
     if crate_info.type == "staticlib":
@@ -2253,31 +2274,33 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
-        args.add_all(
-            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
-        if include_link_flags:
+        if cc_toolchain:
             args.add_all(
                 cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-ldylib=%s",
+                map_each = _get_dirname,
+                format_each = "-Lnative=%s",
             )
+            if include_link_flags:
+                args.add_all(
+                    cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+                    map_each = get_lib_name,
+                    format_each = "-ldylib=%s",
+                )
     else:
         # For all other crate types we want to link C++ runtime library statically
         # (for example libstdc++.a or libc++.a).
-        args.add_all(
-            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
-        if include_link_flags:
+        if cc_toolchain:
             args.add_all(
                 cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-lstatic=%s",
+                map_each = _get_dirname,
+                format_each = "-Lnative=%s",
             )
+            if include_link_flags:
+                args.add_all(
+                    cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+                    map_each = get_lib_name,
+                    format_each = "-lstatic=%s",
+                )
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.

@@ -334,7 +334,7 @@ rust_wasm_bindgen_test = rule(
     toolchains = [
         str(Label("//:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     test = True,
 )
