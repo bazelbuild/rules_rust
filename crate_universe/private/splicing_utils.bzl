@@ -188,7 +188,14 @@ def splice_workspace_manifest(
     if not spliced_metadata.exists:
         fail("Metadata file does not exist: " + str(spliced_metadata))
 
+    extra_paths_to_track_path = repository_ctx.path(output_dir.get_child("extra_paths_to_track"))
+    if extra_paths_to_track_path.exists:
+        extra_paths_to_track = repository_ctx.read(extra_paths_to_track_path).split("\n")
+    else:
+        extra_paths_to_track = []
+
     return struct(
         metadata = spliced_metadata,
         cargo_lock = spliced_lockfile,
+        extra_paths_to_track = extra_paths_to_track,
     )
