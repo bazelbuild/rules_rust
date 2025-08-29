@@ -8,6 +8,9 @@ load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVa
 # buildifier: disable=bzl-visibility
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
+# buildifier: disable=bzl-visibility
+load("//rust/private:utils.bzl", "can_use_metadata_for_pipelining")
+
 _CONTENT = """\
 // crate_name: {}
 use to_wrap::to_wrap;
@@ -70,6 +73,8 @@ def _wrap_impl(ctx):
             aliases = {},
             output = rust_lib,
             metadata = rust_metadata,
+            metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, crate_type) and
+                                           ctx.attr.generate_metadata,
             owner = ctx.label,
             edition = "2018",
             compile_data = depset([]),
@@ -86,6 +91,9 @@ wrap = rule(
         "crate_name": attr.string(),
         "generate_metadata": attr.bool(default = False),
         "target": attr.label(),
+        "_always_enable_metadata_output_groups": attr.label(
+            default = Label("//rust/settings:always_enable_metadata_output_groups"),
+        ),
         "_error_format": attr.label(
             default = Label("//rust/settings:error_format"),
         ),

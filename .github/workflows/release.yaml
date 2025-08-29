@@ -57,6 +57,9 @@ jobs:
           - os: windows-2022
             env:
               TARGET: "aarch64-pc-windows-msvc"
+          - os: ubuntu-22.04
+            env:
+              TARGET: "s390x-unknown-linux-gnu"
           - os: macOS-13
             env:
               TARGET: "x86_64-apple-darwin"
@@ -216,6 +219,15 @@ jobs:
           upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
           asset_name: cargo-bazel-aarch64-unknown-linux-gnu
           asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/aarch64-unknown-linux-gnu/cargo-bazel
+          asset_content_type: application/octet-stream
+      - name: "Upload s390x-unknown-linux-gnu"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.rules_rust_release.outputs.upload_url }}
+          asset_name: cargo-bazel-s390x-unknown-linux-gnu
+          asset_path: ${{ github.workspace }}/crate_universe/target/artifacts/s390x-unknown-linux-gnu/cargo-bazel
           asset_content_type: application/octet-stream
       - name: "Upload x86_64-apple-darwin"
         uses: actions/upload-release-asset@v1

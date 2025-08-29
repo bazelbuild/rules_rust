@@ -25,6 +25,8 @@ CrateInfo = provider(
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
+        "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
+                                        "usable for pipelined compilation.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -98,6 +100,17 @@ DepVariantInfo = provider(
     },
 )
 
+AlwaysEnableMetadataOutputGroupsInfo = provider(
+    doc = (
+        "Enable the 'metadata' and 'rustc_rmeta_output' groups for all targets, " +
+        "even if not a library or if pipelining is disabled"
+    ),
+    fields = {
+        "always_enable_metadata_output_groups": ("bool: Whether or not to always enable " +
+                                                 "metadata-related output groups"),
+    },
+)
+
 RustcOutputDiagnosticsInfo = provider(
     doc = (
         "Save json diagnostics from rustc. Json diagnostics are able to be " +
@@ -133,6 +146,11 @@ StdLibInfo = provider(
 CaptureClippyOutputInfo = provider(
     doc = "Value of the `capture_clippy_output` build setting",
     fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
+)
+
+ClippyOutputDiagnosticsInfo = provider(
+    doc = "Value of the `clippy_output_diagnostics` build setting",
+    fields = {"output_diagnostics": "Value of the `clippy_output_diagnostics` build setting"},
 )
 
 ClippyInfo = provider(
