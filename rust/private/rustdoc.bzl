@@ -152,7 +152,7 @@ def rustdoc_compile_action(
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot
-    # must be updated to the `short_path` equivilant as it will now be
+    # must be updated to the `short_path` equivalent as it will now be
     # a part of runfiles.
     if is_test:
         if "SYSROOT" in env:

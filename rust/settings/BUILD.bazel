@@ -1,10 +1,12 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     ":settings.bzl",
+    "always_enable_metadata_output_groups",
     "capture_clippy_output",
     "clippy_error_format",
     "clippy_flag",
     "clippy_flags",
+    "clippy_output_diagnostics",
     "clippy_toml",
     "codegen_units",
     "error_format",
@@ -54,11 +56,15 @@ bzl_library(
     ],
 )
 
+always_enable_metadata_output_groups()
+
 capture_clippy_output()
 
 clippy_flag()
 
 clippy_flags()
+
+clippy_output_diagnostics()
 
 clippy_toml()
 

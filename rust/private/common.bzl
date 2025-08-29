@@ -42,7 +42,7 @@ def _create_crate_info(**kwargs):
     provider to improve API stability.
 
     Args:
-        **kwargs: An inital set of keyword arguments.
+        **kwargs: An initial set of keyword arguments.
 
     Returns:
         CrateInfo: A provider
@@ -51,6 +51,8 @@ def _create_crate_info(**kwargs):
         kwargs.update({"wrapped_crate_type": None})
     if not "metadata" in kwargs:
         kwargs.update({"metadata": None})
+    if not "metadata_supports_pipelining" in kwargs:
+        kwargs.update({"metadata_supports_pipelining": False})
     if not "rustc_rmeta_output" in kwargs:
         kwargs.update({"rustc_rmeta_output": None})
     if not "rustc_output" in kwargs:

@@ -282,7 +282,7 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
 }
 
 def cpu_arch_to_constraints(cpu_arch, *, system = None):
-    """Returns a list of contraint values which represents a triple's CPU.
+    """Returns a list of constraint values which represents a triple's CPU.
 
     Args:
         cpu_arch (str): The architecture to match constraints for

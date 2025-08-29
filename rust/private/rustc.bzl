@@ -27,7 +27,15 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "AllocatorLibrariesImplInfo", "AllocatorLibrariesInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(
+    ":providers.bzl",
+    "AllocatorLibrariesImplInfo",
+    "AllocatorLibrariesInfo",
+    "AlwaysEnableMetadataOutputGroupsInfo",
+    "LintsInfo",
+    "RustcOutputDiagnosticsInfo",
+    _BuildInfo = "BuildInfo",
+)
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -307,7 +315,7 @@ def collect_deps(
             # If it doesn't (for example a custom library that exports crate_info),
             # we depend on crate_info.output.
             depend_on = crate_info.metadata
-            if not crate_info.metadata:
+            if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
                 depend_on = crate_info.output
 
             # If this dependency is a proc_macro, it still can be used for lib crates
@@ -1718,7 +1726,7 @@ def _add_lto_flags(ctx, toolchain, args, crate):
     args.add_all(lto_args)
 
 def _add_codegen_units_flags(toolchain, emit, args):
-    """Adds flags to an Args object to configure codgen_units for 'rustc'.
+    """Adds flags to an Args object to configure codegen_units for 'rustc'.
 
     https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 
@@ -1983,7 +1991,7 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
         dep_info (DepInfo): The current target's dependency info
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
-        use_metadata (bool, optional): Build command line arugments using metadata for crates that provide it.
+        use_metadata (bool, optional): Build command line arguments using metadata for crates that provide it.
     """
 
     direct_crates = depset(
@@ -2022,7 +2030,7 @@ def _crate_to_link_flag_metadata(crate):
         crate_info = crate
 
     lib_or_meta = crate_info.metadata
-    if not crate_info.metadata:
+    if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
         lib_or_meta = crate_info.output
     return ["--extern={}={}".format(name, lib_or_meta.path)]
 
@@ -2083,7 +2091,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
         # On linux, Rustc adds a -Bdynamic to the linker command line before the libraries specified
         # with `-Clink-arg`, which leads to us linking against the `.so`s but not putting the
         # corresponding value to the runtime library search paths, which results in a
-        # "cannot open shared object file: No such file or directory" error at exectuion time.
+        # "cannot open shared object file: No such file or directory" error at execution time.
         # We can fix this by adding a `-Clink-arg=-Bstatic` on linux, but we don't have that option for
         # macos. The proper solution for this issue would be to remove `libtest-{hash}.so` and `libstd-{hash}.so`
         # from the toolchain. However, it is not enough to change the toolchain's `rust_std_{...}` filegroups
@@ -2337,6 +2345,30 @@ def get_error_format(attr, attr_name):
         return getattr(attr, attr_name)[ErrorFormatInfo].error_format
     return "human"
 
+def _always_enable_metadata_output_groups_impl(ctx):
+    """Implementation of the `always_enable_metadata_output_groups` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the AlwaysEnableMetadataOutputGroupsInfo provider
+    """
+    return [AlwaysEnableMetadataOutputGroupsInfo(
+        always_enable_metadata_output_groups = ctx.build_setting_value,
+    )]
+
+always_enable_metadata_output_groups = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:always_enable_metadata_output_groups` " +
+        "will cause all rules to generate the `metadata` and `rustc_rmeta_output` output groups, " +
+        "rather than the default behavior of only generated them for libraries when pipelined " +
+        "compilation is enabled."
+    ),
+    implementation = _always_enable_metadata_output_groups_impl,
+    build_setting = config.bool(flag = True),
+)
+
 def _rustc_output_diagnostics_impl(ctx):
     """Implementation of the `rustc_output_diagnostics` rule
 
@@ -2354,8 +2386,8 @@ rustc_output_diagnostics = rule(
     doc = (
         "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
-        "These are accessible via the " +
-        "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
+        "These are accessible via the `rustc_rmeta_output` (for pipelined compilation or if " +
+        "`always_enable_metadata_output_groups` is enabled) and `rustc_output` output groups. " +
         "You can find these using `bazel cquery`"
     ),
     implementation = _rustc_output_diagnostics_impl,

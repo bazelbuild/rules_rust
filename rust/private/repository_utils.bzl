@@ -269,6 +269,7 @@ rust_toolchain(
     extra_rustc_flags = {extra_rustc_flags},
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
     opt_level = {opt_level},
+    strip_level = {strip_level},
     tags = ["rust_version={version}"],
 )
 """
@@ -286,7 +287,8 @@ def BUILD_for_rust_toolchain(
         stdlib_linkflags = None,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
-        opt_level = None):
+        opt_level = None,
+        strip_level = None):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -301,12 +303,13 @@ def BUILD_for_rust_toolchain(
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
-        stdlib_linkflags (list, optional): Overriden flags needed for linking to rust
+        stdlib_linkflags (list, optional): Overridden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Optimization level config for this toolchain.
+        strip_level (dict, optional): Strip level config for this toolchain.
 
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
@@ -346,6 +349,7 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
+        strip_level = strip_level,
         version = version,
     )
 
@@ -808,7 +812,7 @@ def load_arbitrary_tool(
         is_reproducible = bool(ctx_sha256)
 
     for subdirectory in tool_subdirectories:
-        # As long as the sha256 value is consistent accross calls here the
+        # As long as the sha256 value is consistent across calls here the
         # cost of downloading an artifact is negated as by Bazel's caching.
         result = ctx.download_and_extract(
             urls,
@@ -878,7 +882,7 @@ def _get_tool_extension(urls = None):
         return ""
 
 def select_rust_version(versions):
-    """Select the highest priorty version for a list of Rust versions
+    """Select the highest priority version for a list of Rust versions
 
     Priority order: `stable > nightly > beta`
 

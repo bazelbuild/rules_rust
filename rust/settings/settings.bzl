@@ -14,10 +14,12 @@ load(
     _capture_clippy_output = "capture_clippy_output",
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
+    _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load(
     "//rust/private:rustc.bzl",
+    _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
     _error_format = "error_format",
     _extra_exec_rustc_env = "extra_exec_rustc_env",
     _extra_exec_rustc_flag = "extra_exec_rustc_flag",
@@ -319,8 +321,20 @@ def incompatible_change_clippy_error_format():
     """
     incompatible_flag(
         name = "incompatible_change_clippy_error_format",
-        build_setting_default = False,
+        build_setting_default = True,
         issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
+    )
+
+# buildifier: disable=unnamed-macro
+def always_enable_metadata_output_groups():
+    """A flag to enable the `always_enable_metadata_output_groups` setting.
+
+    If this flag is true, all rules will support the `metadata` and
+    `rustc_rmeta_output` output groups."""
+    _always_enable_metadata_output_groups(
+        name = "always_enable_metadata_output_groups",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
     )
 
 # buildifier: disable=unnamed-macro
@@ -329,6 +343,20 @@ def rustc_output_diagnostics():
     """
     _rustc_output_diagnostics(
         name = "rustc_output_diagnostics",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
+    )
+
+# buildifier: disable=unnamed-macro
+def clippy_output_diagnostics():
+    """A flag to enable the `clippy_output_diagnostics` setting.
+
+    If this flag is true, rules_rust will save clippy json output (suitable for consumption
+    by rust-analyzer) in a file, available from the `clippy_output` output group. This is the
+    clippy equivalent of `rustc_output_diagnostics`.
+    """
+    _clippy_output_diagnostics(
+        name = "clippy_output_diagnostics",
         build_setting_default = False,
         visibility = ["//visibility:public"],
     )
