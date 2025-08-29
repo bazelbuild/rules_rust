@@ -42,7 +42,7 @@ def _create_crate_info(**kwargs):
     provider to improve API stability.
 
     Args:
-        **kwargs: An inital set of keyword arguments.
+        **kwargs: An initial set of keyword arguments.
 
     Returns:
         CrateInfo: A provider

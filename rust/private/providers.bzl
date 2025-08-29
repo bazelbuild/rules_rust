@@ -76,7 +76,7 @@ BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
-        "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
+        "dep_env": "Optional[File]: extra build script environment variables to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
         "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
         "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",

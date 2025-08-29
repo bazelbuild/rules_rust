@@ -65,7 +65,7 @@ impl TryFrom<JsonValue> for RustcMessage {
 /// --error-format=json, parses the json and returns the appropriate output
 /// according to the original --error-format supplied.
 /// Only messages are returned, emits are ignored.
-/// Retuns an errors if parsing json fails.
+/// Returns an errors if parsing json fails.
 pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResult {
     let parsed: JsonValue = line
         .parse()
@@ -83,7 +83,7 @@ pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResul
 /// is emitted so the compiler can be terminated.
 /// This is used to implement pipelining in rules_rust, please see
 /// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199
-/// Retuns an error if parsing json fails.
+/// Returns an error if parsing json fails.
 /// TODO: pass a function to handle the emit event and merge with process_json
 pub(crate) fn stop_on_rmeta_completion(
     line: String,

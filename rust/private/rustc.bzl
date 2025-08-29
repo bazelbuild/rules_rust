@@ -1718,7 +1718,7 @@ def _add_lto_flags(ctx, toolchain, args, crate):
     args.add_all(lto_args)
 
 def _add_codegen_units_flags(toolchain, emit, args):
-    """Adds flags to an Args object to configure codgen_units for 'rustc'.
+    """Adds flags to an Args object to configure codegen_units for 'rustc'.
 
     https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 
@@ -1983,7 +1983,7 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
         dep_info (DepInfo): The current target's dependency info
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
-        use_metadata (bool, optional): Build command line arugments using metadata for crates that provide it.
+        use_metadata (bool, optional): Build command line arguments using metadata for crates that provide it.
     """
 
     direct_crates = depset(
@@ -2083,7 +2083,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
         # On linux, Rustc adds a -Bdynamic to the linker command line before the libraries specified
         # with `-Clink-arg`, which leads to us linking against the `.so`s but not putting the
         # corresponding value to the runtime library search paths, which results in a
-        # "cannot open shared object file: No such file or directory" error at exectuion time.
+        # "cannot open shared object file: No such file or directory" error at execution time.
         # We can fix this by adding a `-Clink-arg=-Bstatic` on linux, but we don't have that option for
         # macos. The proper solution for this issue would be to remove `libtest-{hash}.so` and `libstd-{hash}.so`
         # from the toolchain. However, it is not enough to change the toolchain's `rust_std_{...}` filegroups

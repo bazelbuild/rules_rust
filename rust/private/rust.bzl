@@ -84,7 +84,7 @@ def _rust_library_impl(ctx):
 
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc, but care must be taken to have the correct
-    dependencies on an allocator and std implemetation as needed.
+    dependencies on an allocator and std implementation as needed.
 
     Args:
         ctx (ctx): The rule's context object
@@ -1563,7 +1563,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
         shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
-        **kwargs (dict): Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The
+        **kwargs (dict): Additional keyword arguments for the underlying [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """
     tests = []

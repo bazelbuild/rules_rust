@@ -468,7 +468,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
             if iso_date:
                 rustfmt_iso_date = iso_date
             else:
-                fail("`rustfmt_version` does not include an iso_date. The following reposiotry should either set `iso_date` or update `rustfmt_version` to include an iso_date suffix: {}".format(
+                fail("`rustfmt_version` does not include an iso_date. The following repository should either set `iso_date` or update `rustfmt_version` to include an iso_date suffix: {}".format(
                     ctx.name,
                 ))
         elif rustfmt_version.startswith(("nightly", "beta")):
@@ -819,7 +819,7 @@ def rust_analyzer_toolchain_repository(
     """Assemble a remote rust_analyzer_toolchain target based on the given params.
 
     Args:
-        name (str): The name of the toolchain proxy repository contianing the registerable toolchain.
+        name (str): The name of the toolchain proxy repository containing the registerable toolchain.
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
         target_compatible_with (list, optional): A list of constraints for the target platform for this toolchain.
@@ -963,7 +963,7 @@ def rustfmt_toolchain_repository(
     """Assemble a remote rustfmt_toolchain target based on the given params.
 
     Args:
-        name (str): The name of the toolchain proxy repository contianing the registerable toolchain.
+        name (str): The name of the toolchain proxy repository containing the registerable toolchain.
         version (str): The version of the tool among "nightly", "beta', or an exact version.
         exec_triple (str): The platform triple Rustfmt is expected to run on.
         exec_compatible_with (list, optional): A list of constraints for the execution platform for this toolchain.
@@ -1058,7 +1058,7 @@ def _get_toolchain_repositories(
             - name: The name of the toolchain repository.
             - target_triple: The target triple of the toolchain.
             - channel: The toolchain channel (nightly/stable).
-            - target_constraints: Bazel constrants assicated with the toolchain.
+            - target_constraints: Bazel constraints associated with the toolchain.
     """
     extra_target_triples_list = extra_target_triples.keys() if type(extra_target_triples) == "dict" else extra_target_triples
 
@@ -1146,7 +1146,7 @@ def rust_repository_set(
 
     Args:
         name (str): The name of the generated repository
-        versions (list, optional): A list of toolchain versions to download. This paramter only accepts one versions
+        versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
             per channel. E.g. `["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]`.
         exec_triple (str): The Rust-style target that this compiler runs on
         target_settings (list of labels as strings, optional): A list of config_settings that must be satisfied by the target configuration in order for this set of toolchains to be selected during toolchain resolution.
@@ -1163,7 +1163,7 @@ def rust_repository_set(
             Requires version to be "nightly".
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
-        opt_level (dict, dict, optional): Dictionary of target triples to optimiztion config.
+        opt_level (dict, dict, optional): Dictionary of target triples to optimization config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
             [rust_register_toolchains](#rust_register_toolchains) for more details.
@@ -1182,7 +1182,7 @@ def rust_repository_set(
             toolchains. This is to avoid MAX_PATH issues.
 
     Returns:
-        dict[str, dict]: A dict of informations about all generated toolchains.
+        dict[str, dict]: A dict of information about all generated toolchains.
     """
 
     all_toolchain_details = {}
