@@ -18,8 +18,7 @@ repos:
         exclude: |
           (?x)^(
             crate_universe/test_data|
-            examples|
-            extensions
+            examples
           )
         exclude_types:
           - diff
