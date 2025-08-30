@@ -26,7 +26,7 @@ load("//:providers.bzl", "RustWasmBindgenInfo")
 load("//private:transitions.bzl", "wasm_bindgen_transition")
 
 WasmBindgenTestCrateInfo = provider(
-    doc = "A provider encompasing the crate from a `rust_wasm_bindgen` target.",
+    doc = "A provider encompassing the crate from a `rust_wasm_bindgen` target.",
     fields = {
         "crate": "The underlying `rust_wasm_bindgen.crate`.",
     },
