@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "gix_url",
+    name = "idna",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,8 +34,13 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "alloc",
+        "compiled_data",
+        "std",
+    ],
     crate_root = "src/lib.rs",
-    edition = "2021",
+    edition = "2018",
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -44,7 +49,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=gix-url",
+        "crate-name=idna",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,13 +96,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.29.0",
+    version = "1.1.0",
     deps = [
-        "@cui__bstr-1.6.0//:bstr",
-        "@cui__gix-features-0.40.0//:gix_features",
-        "@cui__gix-path-0.10.14//:gix_path",
-        "@cui__percent-encoding-2.3.2//:percent_encoding",
-        "@cui__thiserror-2.0.4//:thiserror",
-        "@cui__url-2.5.7//:url",
+        "@cui__idna_adapter-1.2.1//:idna_adapter",
+        "@cui__smallvec-1.15.0//:smallvec",
+        "@cui__utf8_iter-1.0.4//:utf8_iter",
     ],
 )
