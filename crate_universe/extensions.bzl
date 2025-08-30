@@ -866,8 +866,8 @@ def _update_annotations(annotations, crate, version, triples, data, env):
         fail("Version {} not found in annotations for crate {}".format(version, crate))
 
     for triple in triples:
-        entry = _insert_build_script_data(version_info, data, triple)
-        entry = _insert_build_script_env(entry, env, triple)
+        entry = _insert_build_script_data(version_info, data, triple, crate, version)
+        entry = _insert_build_script_env(entry, env, triple, crate, version)
         crate_info[version] = entry
 
     return crate_info
@@ -885,7 +885,7 @@ def _insert_annotation(store, crate, annotation):
 
     crate_map[version] = annotation
 
-def _insert_select(annotation, field, value, triple):
+def _insert_select(annotation, field, value, triple, crate, version):
     """
     Add a per-triple override to annotation[field].
 
@@ -901,24 +901,30 @@ def _insert_select(annotation, field, value, triple):
             selects = {triple: value},
         )
     else:
+        if triple in current.selects:
+            fail("Duplicate annotation for crate {} version {} triple {}".format(crate, version, triple))
         current.selects.update({triple: value})
 
     return annotation
 
-def _insert_build_script_data(annotation, build_script_data, triple):
+def _insert_build_script_data(annotation, build_script_data, triple, crate, version):
     return _insert_select(
         annotation,
         "build_script_data",
         build_script_data,
         triple,
+        crate,
+        version,
     )
 
-def _insert_build_script_env(annotation, build_script_env, triple):
+def _insert_build_script_env(annotation, build_script_env, triple, crate, version):
     return _insert_select(
         annotation,
         "build_script_env",
         build_script_env,
         triple,
+        crate,
+        version,
     )
 
 def _create_annotation(annotation_dict):
