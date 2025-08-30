@@ -2,7 +2,6 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
-load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
@@ -197,32 +196,6 @@ rust_cc_injection = rule(
         ),
     },
     implementation = _rust_cc_injection_impl,
-)
-
-def _rust_cc_empty_info_impl(ctx):
-    cc_info = cc_common.merge_cc_infos(direct_cc_infos = [])
-
-    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    if not linker_inputs:
-        fail("{} no linker inputs".format(ctx.label))
-
-    for linker_input in linker_inputs:
-        if not linker_input.libraries:
-            fail("{} no library files".format(ctx.label))
-
-        fail_msg = "{} unexpected library file.".format(ctx.label)
-        for library_to_link in linker_input.libraries:
-            if library_to_link.dynamic_library != None:
-                fail(fail_msg)
-            if library_to_link.static_library != None:
-                fail(fail_msg)
-            if library_to_link.pic_static_library != None:
-                fail(fail_msg)
-
-    return [cc_info]
-
-rust_cc_empty_info = rule(
-    implementation = _rust_cc_empty_info_impl,
 )
 
 def _rust_output_extractor_impl(ctx):
