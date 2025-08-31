@@ -1155,7 +1155,7 @@ rust_doc(
 <pre>
 load("@rules_rust//rust:defs.bzl", "rust_doc_test")
 
-rust_doc_test(<a href="rust_doc.html#rust_doc_test-name">name</a>, <a href="rust_doc.html#rust_doc_test-deps">deps</a>, <a href="rust_doc.html#rust_doc_test-crate">crate</a>, <a href="rust_doc.html#rust_doc_test-proc_macro_deps">proc_macro_deps</a>)
+rust_doc_test(<a href="rust_doc.html#rust_doc_test-name">name</a>, <a href="rust_doc.html#rust_doc_test-deps">deps</a>, <a href="rust_doc.html#rust_doc_test-crate">crate</a>, <a href="rust_doc.html#rust_doc_test-proc_macro_deps">proc_macro_deps</a>, <a href="rust_doc.html#rust_doc_test-rustdoc_flags">rustdoc_flags</a>)
 </pre>
 <p>Runs Rust documentation tests.</p>
 <p>Example:</p>
@@ -1189,6 +1189,7 @@ rust_doc_test(
 <tr><td style="text-align: left"><a id="rust_doc_test-deps"></a>deps</td><td style="text-align: left">List of other libraries to be linked to this library target.<br><br>These can be either other <code>rust_library</code> targets or <code>cc_library</code> targets if linking a native library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_doc_test-crate"></a>crate</td><td style="text-align: left">The label of the target to generate code documentation for. <code>rust_doc_test</code> can generate HTML code documentation for the source files of <code>rust_library</code> or <code>rust_binary</code> targets.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 <tr><td style="text-align: left"><a id="rust_doc_test-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of <code>rust_proc_macro</code> targets used to help build this library target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_doc_test-rustdoc_flags"></a>rustdoc_flags</td><td style="text-align: left">List of flags passed to <code>rustdoc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="cargo"><a class="header" href="#cargo">Cargo</a></h1>
