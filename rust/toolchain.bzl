@@ -859,14 +859,14 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
-        "llvm_profdata": attr.label(
-            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
-            allow_single_file = True,
-            cfg = "exec",
-        ),
         "llvm_lib": attr.label(
             doc = "The location of the `libLLVM` shared object files. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
             allow_files = True,
+            cfg = "exec",
+        ),
+        "llvm_profdata": attr.label(
+            doc = "The location of the `llvm-profdata` binary. Can be a direct source or a filegroup containing one item. If `llvm_cov` is None, this can be None as well and rust code is not instrumented for coverage.",
+            allow_single_file = True,
             cfg = "exec",
         ),
         "llvm_tools": attr.label(
