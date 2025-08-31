@@ -173,6 +173,15 @@ def BUILD_for_clippy(target_triple):
 
 _build_file_for_llvm_tools = """\
 filegroup(
+    name = "llvm_lib",
+    srcs = glob(
+      ["lib/rustlib/{target_triple}/lib/libLLVM*.so*"],
+      allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "llvm_cov_bin",
     srcs = ["lib/rustlib/{target_triple}/bin/llvm-cov{binary_ext}"],
     visibility = ["//visibility:public"],
@@ -255,6 +264,7 @@ rust_toolchain(
     cargo_clippy = "//:cargo_clippy_bin",
     llvm_cov = {llvm_cov_label},
     llvm_profdata = {llvm_profdata_label},
+    llvm_lib = {llvm_lib_label},
     rustc_lib = "//:rustc_lib",
     allocator_library = {allocator_library},
     global_allocator_library = {global_allocator_library},
@@ -322,9 +332,11 @@ def BUILD_for_rust_toolchain(
         rustfmt_label = "\"//:rustfmt_bin\""
     llvm_cov_label = "None"
     llvm_profdata_label = "None"
+    llvm_lib_label = "None"
     if include_llvm_tools:
         llvm_cov_label = "\"//:llvm_cov_bin\""
         llvm_profdata_label = "\"//:llvm_profdata_bin\""
+        llvm_lib_label = "\"//:llvm_lib\""
     allocator_library_label = "None"
     if allocator_library:
         allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
@@ -346,6 +358,7 @@ def BUILD_for_rust_toolchain(
         rustfmt_label = rustfmt_label,
         llvm_cov_label = llvm_cov_label,
         llvm_profdata_label = llvm_profdata_label,
+        llvm_lib_label = llvm_lib_label,
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,

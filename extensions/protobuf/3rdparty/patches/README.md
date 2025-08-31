@@ -10,7 +10,7 @@ script in the 2.x.x series. This generates a small version.rs file that would be
 However, the build.rs file requires a number of environment variables, normally
 provided by cargo to the build file. Crate Universe does not provide these
 variables. The resulting code includes a version string and version identifier.
-The version string is then used by protobuf-codegen to generate code refering to
+The version string is then used by protobuf-codegen to generate code referring to
 the identifier in the protobuf library. The use can be seen
 [here](https://github.com/stepancheg/rust-protobuf/blob/v2.8/protobuf-codegen/src/lib.rs#L160).
 This is to enforce at compile time that the version of protobuf-codegen matches

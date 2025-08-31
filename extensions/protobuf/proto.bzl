@@ -92,7 +92,7 @@ def _rust_proto_aspect_impl(target, ctx):
         ctx (ctx): The rule context which the targetis created from
 
     Returns:
-        list: A list containg a `RustProtoInfo` provider
+        list: A list containing a `RustProtoInfo` provider
     """
     if ProtoInfo not in target:
         return None

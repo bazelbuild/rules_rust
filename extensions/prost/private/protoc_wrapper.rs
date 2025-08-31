@@ -105,7 +105,7 @@ impl Module {
 const ADDITIONAL_CONTENT_HEADER: &str =
     "// A D D I T I O N A L   S O U R C E S ========================================";
 
-/// Generate a lib.rs file with all prost/tonic outputs embeeded in modules which
+/// Generate a lib.rs file with all prost/tonic outputs embedded in modules which
 /// mirror the proto packages. For the example proto file we would expect to see
 /// the Rust output that follows it.
 ///
