@@ -3,7 +3,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
-use std::process::Child;
+use std::process::Output;
+use std::thread;
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::Utf8Path;
@@ -131,84 +132,127 @@ impl TreeResolver {
                 .insert(triple);
         }
 
-        for host_triple in cargo_host_triples.keys() {
-            // Note that for each host triple `cargo tree` child processes are spawned and then
-            // immediately waited upon so that we don't end up with `{HOST_TRIPLES} * {TARGET_TRIPLES}`
-            // number of processes (which can be +400 and hit operating system limitations).
-            let mut target_triple_to_child = BTreeMap::<String, Child>::new();
+        // Limit the concurrency so we don't concurrently spawn `{HOST_TRIPLES} * {TARGET_TRIPLES}`
+        // number of processes (which can be +400 and hit operating system limitations).
+        let max_parallel = thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4);
+
+        // Prepare all unique jobs: (cargo_host, cargo_target)
+        let mut jobs = Vec::<(String, String)>::new();
+        for cargo_host in cargo_host_triples.keys() {
+            for cargo_target in cargo_target_triples.keys() {
+                jobs.push((cargo_host.clone(), cargo_target.clone()));
+            }
+        }
+
+        // Spawn workers up to the cap; join one whenever the cap is reached.
+        let mut in_flight =
+            Vec::<thread::JoinHandle<anyhow::Result<(String, String, Output)>>>::new();
+        let mut results = Vec::<(String, String, Output)>::new();
+
+        for (cargo_host, cargo_target) in jobs {
+            // If we've hit the limit, free a slot by joining one worker.
+            if in_flight.len() >= max_parallel {
+                let res = in_flight
+                    .remove(0)
+                    .join()
+                    .expect("worker thread panicked")?;
+                results.push(res);
+            }
 
             debug!(
-                "Spawning `cargo tree` processes for host `{}`: {}",
-                host_triple,
-                cargo_target_triples.keys().len(),
+                "Spawning `cargo tree` process for host `{}`: {}",
+                cargo_host, cargo_target,
             );
 
-            for target_triple in cargo_target_triples.keys() {
-                // We use `cargo tree` here because `cargo metadata` doesn't report
-                // back target-specific features (enabled with `resolver = "2"`).
-                // This is unfortunately a bit of a hack. See:
-                // - https://github.com/rust-lang/cargo/issues/9863
-                // - https://github.com/bazelbuild/rules_rust/issues/1662
-                let child = self
-                    .cargo_bin
-                    .command()?
-                    // These next two environment variables are used to hack cargo into using a custom
-                    // host triple instead of the host triple detected by rustc.
-                    .env("RUSTC_WRAPPER", rustc_wrapper)
-                    .env("HOST_TRIPLE", host_triple)
-                    .env("CARGO_CACHE_RUSTC_INFO", "0")
-                    .current_dir(manifest_path.parent().expect("All manifests should have a valid parent."))
-                    .arg("tree")
-                    .arg("--manifest-path")
-                    .arg(manifest_path)
-                    .arg("--edges")
-                    .arg("normal,build,dev")
-                    .arg("--prefix=indent")
-                    // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
-                    .arg("--format=;{p};{f};")
-                    .arg("--color=never")
-                    .arg("--charset=ascii")
-                    .arg("--workspace")
-                    .arg("--target")
-                    .arg(target_triple)
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::piped())
-                    .spawn()
-                    .with_context(|| {
-                        format!(
+            let manifest_path = manifest_path.to_owned();
+            let rustc_wrapper = rustc_wrapper.to_owned();
+            let cargo_bin = self.cargo_bin.clone();
+
+            in_flight.push(thread::spawn(
+                move || -> anyhow::Result<(String, String, Output)> {
+                    // We use `cargo tree` here because `cargo metadata` doesn't report
+                    // back target-specific features (enabled with `resolver = "2"`).
+                    // This is unfortunately a bit of a hack. See:
+                    // - https://github.com/rust-lang/cargo/issues/9863
+                    // - https://github.com/bazelbuild/rules_rust/issues/1662
+                    let child = cargo_bin
+                        .command()?
+                        // These next two environment variables are used to hack cargo into using a custom
+                        // host triple instead of the host triple detected by rustc.
+                        .env("RUSTC_WRAPPER", &rustc_wrapper)
+                        .env("HOST_TRIPLE", &cargo_host)
+                        .env("CARGO_CACHE_RUSTC_INFO", "0")
+                        .current_dir(
+                            manifest_path
+                                .parent()
+                                .expect("All manifests should have a valid parent."),
+                        )
+                        .arg("tree")
+                        .arg("--manifest-path")
+                        .arg(&manifest_path)
+                        .arg("--edges")
+                        .arg("normal,build,dev")
+                        .arg("--prefix=indent")
+                        // https://doc.rust-lang.org/cargo/commands/cargo-tree.html#tree-formatting-options
+                        .arg("--format=;{p};{f};")
+                        .arg("--color=never")
+                        .arg("--charset=ascii")
+                        .arg("--workspace")
+                        .arg("--target")
+                        .arg(&cargo_target)
+                        .stdout(std::process::Stdio::piped())
+                        .stderr(std::process::Stdio::piped())
+                        .spawn()
+                        .with_context(|| {
+                            format!(
                             "Error spawning cargo in child process to compute features for target '{}', manifest path '{}'",
-                            target_triple,
+                            cargo_target,
+                            manifest_path.display()
+                        )
+                        })?;
+
+                    let output = child.wait_with_output().with_context(|| {
+                        format!(
+                            "Error running `cargo tree --target={}` (host = '{}'), manifest path '{}'",
+                            cargo_target,
+                            cargo_host,
                             manifest_path.display()
                         )
                     })?;
-                target_triple_to_child.insert(target_triple.clone(), child);
+
+                    Ok((cargo_host, cargo_target, output))
+                },
+            ));
+        }
+
+        for handle in in_flight {
+            let res = handle.join().expect("worker thread panicked")?;
+            results.push(res);
+        }
+
+        // Process results and replicate outputs for de-duplicated platforms.
+        for (cargo_host, cargo_target, output) in results {
+            if !output.status.success() {
+                tracing::error!("{}", String::from_utf8_lossy(&output.stdout));
+                tracing::error!("{}", String::from_utf8_lossy(&output.stderr));
+                bail!(format!("Failed to run cargo tree: {}", output.status));
             }
 
-            for (target_triple, child) in target_triple_to_child.into_iter() {
-                let output = child.wait_with_output().with_context(|| {
-                    format!(
-                        "Error running `cargo tree --target={}` (host = '{}'), manifest path '{}'",
-                        target_triple,
-                        host_triple,
-                        manifest_path.display()
-                    )
-                })?;
-                if !output.status.success() {
-                    tracing::error!("{}", String::from_utf8_lossy(&output.stdout));
-                    tracing::error!("{}", String::from_utf8_lossy(&output.stderr));
-                    bail!(format!("Failed to run cargo tree: {}", output.status))
-                }
+            tracing::trace!(
+                "`cargo tree --target={}` (host `{}`) completed.",
+                cargo_target,
+                cargo_host
+            );
 
-                tracing::trace!("`cargo tree --target={}` completed.", target_triple);
-
-                // Replicate outputs for any de-duplicated platforms
-                for host_plat in cargo_host_triples[host_triple].iter() {
-                    for target_plat in cargo_target_triples[&target_triple].iter() {
-                        stdouts
-                            .entry((*host_plat).clone())
-                            .or_default()
-                            .insert((*target_plat).clone(), output.stdout.clone());
-                    }
+            // Replicate outputs for any de-duplicated platforms
+            for host_plat in cargo_host_triples[&cargo_host].iter() {
+                for target_plat in cargo_target_triples[&cargo_target].iter() {
+                    stdouts
+                        .entry((*host_plat).clone())
+                        .or_default()
+                        .insert((*target_plat).clone(), output.stdout.clone());
                 }
             }
         }
