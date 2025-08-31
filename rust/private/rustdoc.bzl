@@ -236,6 +236,9 @@ def _rust_doc_impl(ctx):
 
     rustdoc_flags.extend(ctx.attr.rustdoc_flags)
 
+    if ctx.attr.include_features:
+        rustdoc_flags.extend(["--cfg=feature=\"{}\"".format(feature) for feature in crate_info.crate_features])
+
     action = rustdoc_compile_action(
         ctx = ctx,
         toolchain = find_toolchain(ctx),
@@ -332,6 +335,10 @@ rust_doc = rule(
         "html_in_header": attr.label(
             doc = "File to add to `<head>`.",
             allow_single_file = [".html", ".md"],
+        ),
+        "include_features": attr.bool(
+            doc = "Include the features defined by `crate_features` when building the doc tests.",
+            default = True,
         ),
         "markdown_css": attr.label_list(
             doc = "CSS files to include via `<link>` in a rendered Markdown file.",

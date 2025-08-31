@@ -97,6 +97,30 @@ def _rustdoc_for_bin_with_transitive_proc_macro_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_for_lib_with_features_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    action = _get_rustdoc_action(env, tut)
+
+    assert_argv_contains(env, action, "--cfg=feature=\"docs\"")
+
+    return analysistest.end(env)
+
+def _rustdoc_for_lib_without_features_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    _common_rustdoc_checks(env, tut)
+
+    action = _get_rustdoc_action(env, tut)
+
+    assert_argv_contains_prefix_not(env, action, "--cfg=feature")
+
+    return analysistest.end(env)
+
 def _rustdoc_for_lib_with_cc_lib_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -164,6 +188,8 @@ rustdoc_for_lib_with_proc_macro_in_docs_test = analysistest.make(_rustdoc_for_li
 rustdoc_for_bin_with_transitive_proc_macro_test = analysistest.make(_rustdoc_for_bin_with_transitive_proc_macro_test_impl)
 rustdoc_for_lib_with_cc_lib_test = analysistest.make(_rustdoc_for_lib_with_cc_lib_test_impl)
 rustdoc_with_args_test = analysistest.make(_rustdoc_with_args_test_impl)
+rustdoc_for_lib_with_features_test = analysistest.make(_rustdoc_for_lib_with_features_test_impl)
+rustdoc_for_lib_without_features_test = analysistest.make(_rustdoc_for_lib_without_features_test_impl)
 rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
     str(Label("//rust/settings:error_format")): "json",
@@ -281,6 +307,34 @@ def _define_targets():
         deps = [":lib_with_proc_macro"],
         proc_macro_deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_with_features",
+        srcs = ["rustdoc_features.rs"],
+        crate_features = ["docs"],
+    )
+
+    rust_doc(
+        name = "rustdoc_lib_with_features",
+        crate = ":lib_with_features",
+    )
+
+    _target_maker(
+        rust_library,
+        name = "lib_without_features",
+        srcs = ["rustdoc_features.rs"],
+        crate_features = ["docs"],
+    )
+
+    rust_doc(
+        name = "rustdoc_lib_without_features",
+        crate = ":lib_with_features",
+        include_features = False,
+        rustdoc_flags = [
+            "--cfg=no_feature_test",
+        ],
     )
 
     cc_library(
@@ -424,6 +478,16 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_with_cc_doc",
     )
 
+    rustdoc_for_lib_with_features_test(
+        name = "rustdoc_for_lib_with_features_test",
+        target_under_test = ":rustdoc_lib_with_features",
+    )
+
+    rustdoc_for_lib_without_features_test(
+        name = "rustdoc_for_lib_without_features_test",
+        target_under_test = ":rustdoc_lib_without_features",
+    )
+
     rustdoc_with_args_test(
         name = "rustdoc_with_args_test",
         target_under_test = ":rustdoc_with_args",
@@ -455,6 +519,8 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_lib_with_proc_macro_in_docs_test",
             ":rustdoc_for_lib_with_proc_macro_test",
             ":rustdoc_for_lib_with_cc_lib_test",
+            ":rustdoc_for_lib_with_features_test",
+            ":rustdoc_for_lib_without_features_test",
             ":rustdoc_with_args_test",
             ":rustdoc_with_json_error_format_test",
             ":rustdoc_zip_output_test",
