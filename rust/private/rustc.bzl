@@ -1908,7 +1908,8 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
     # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
     # This should probably only actually be exposed to actions which link.
     for dep_build_info in dep_info.transitive_build_infos.to_list():
-        input_files.append(dep_build_info.out_dir)
+        if dep_build_info.out_dir:
+            input_files.append(dep_build_info.out_dir)
 
     out_dir_compile_inputs = depset(
         input_files,
