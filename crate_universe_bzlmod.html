@@ -221,7 +221,7 @@ Cargo.toml files to be the single source of truth for dependencies.
 Since these macros come from the generated repository, the dependencies and alias definitions
 they return will automatically update BUILD targets. In your BUILD files,
 you use these macros for a Rust library as shown below:</p>
-<pre><code class="language-python">load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+<pre><code class="language-python">load("@crates//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
