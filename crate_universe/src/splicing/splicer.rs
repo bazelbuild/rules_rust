@@ -506,7 +506,7 @@ const DEFAULT_SPLICING_PACKAGE_VERSION: &str = "0.0.1";
 
 pub(crate) fn default_cargo_package_manifest() -> cargo_toml::Manifest {
     // A manifest is generated with a fake workspace member so the [cargo_toml::Manifest::Workspace]
-    // member is deseralized and is not `None`.
+    // member is deserialized and is not `None`.
     cargo_toml::Manifest::from_str(
         &toml::toml! {
             [package]
@@ -536,7 +536,7 @@ pub(crate) fn default_cargo_workspace_manifest(
     resolver_version: &cargo_toml::Resolver,
 ) -> cargo_toml::Manifest {
     // A manifest is generated with a fake workspace member so the [cargo_toml::Manifest::Workspace]
-    // member is deseralized and is not `None`.
+    // member is deserialized and is not `None`.
     let mut manifest = cargo_toml::Manifest::from_str(&textwrap::dedent(&format!(
         r#"
             [workspace]
@@ -1379,7 +1379,7 @@ mod test {
         )
         .unwrap();
 
-        // Due to the addition of direct deps for splicing, this package should have been added to the root manfiest.
+        // Due to the addition of direct deps for splicing, this package should have been added to the root manifest.
         assert!(cargo_manifest.package.unwrap().name == DEFAULT_SPLICING_PACKAGE_NAME);
     }
 

@@ -235,7 +235,7 @@ def _rust_bindgen_impl(ctx):
     if wrap_static_fns:
         if "--wrap-static-fns" in ctx.attr.bindgen_flags:
             fail("Do not pass `--wrap-static-fns` to `bindgen_flags, it's added automatically." +
-                 "The generated C file is accesible in the `bindgen_c_thunks` output group.")
+                 "The generated C file is accessible in the `bindgen_c_thunks` output group.")
         c_output = ctx.actions.declare_file(ctx.label.name + ".bindgen_c_thunks.c")
         args.add("--experimental")
         args.add("--wrap-static-fns")

@@ -78,8 +78,11 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
+        "@rules_rust//rust/platform:wasm32-unknown-emscripten": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
+        "@rules_rust//rust/platform:wasm32-wasip1-threads": [],
+        "@rules_rust//rust/platform:wasm32-wasip2": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
@@ -96,9 +99,9 @@ rust_library(
     deps = [
         "@rmdbi__fnv-1.0.7//:fnv",
         "@rmdbi__ident_case-1.0.1//:ident_case",
-        "@rmdbi__proc-macro2-1.0.95//:proc_macro2",
+        "@rmdbi__proc-macro2-1.0.101//:proc_macro2",
         "@rmdbi__quote-1.0.40//:quote",
         "@rmdbi__strsim-0.11.1//:strsim",
-        "@rmdbi__syn-2.0.104//:syn",
+        "@rmdbi__syn-2.0.106//:syn",
     ],
 )

@@ -1,10 +1,12 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     ":settings.bzl",
+    "always_enable_metadata_output_groups",
     "capture_clippy_output",
     "clippy_error_format",
     "clippy_flag",
     "clippy_flags",
+    "clippy_output_diagnostics",
     "clippy_toml",
     "codegen_units",
     "error_format",
@@ -15,8 +17,10 @@ load(
     "experimental_use_coverage_metadata_files",
     "experimental_use_global_allocator",
     "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
+    "extra_exec_rustc_env",
     "extra_exec_rustc_flag",
     "extra_exec_rustc_flags",
+    "extra_rustc_env",
     "extra_rustc_flag",
     "extra_rustc_flags",
     "incompatible_change_clippy_error_format",
@@ -52,11 +56,15 @@ bzl_library(
     ],
 )
 
+always_enable_metadata_output_groups()
+
 capture_clippy_output()
 
 clippy_flag()
 
 clippy_flags()
+
+clippy_output_diagnostics()
 
 clippy_toml()
 
@@ -82,9 +90,13 @@ experimental_use_allocator_libraries_with_mangled_symbols(
 
 experimental_use_sh_toolchain_for_bootstrap_process_wrapper()
 
+extra_exec_rustc_env()
+
 extra_exec_rustc_flag()
 
 extra_exec_rustc_flags()
+
+extra_rustc_env()
 
 extra_rustc_flag()
 

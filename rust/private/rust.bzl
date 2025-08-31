@@ -28,6 +28,7 @@ load("//rust/private:rustc.bzl", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
     "can_build_metadata",
+    "can_use_metadata_for_pipelining",
     "compute_crate_name",
     "crate_root_src",
     "dedent",
@@ -83,7 +84,7 @@ def _rust_library_impl(ctx):
 
     This rule provides CcInfo, so it can be used everywhere Bazel
     expects rules_cc, but care must be taken to have the correct
-    dependencies on an allocator and std implemetation as needed.
+    dependencies on an allocator and std implementation as needed.
 
     Args:
         ctx (ctx): The rule's context object
@@ -177,12 +178,22 @@ def _rust_library_common(ctx, crate_type):
     rust_lib = ctx.actions.declare_file(rust_lib_name)
     rust_metadata = None
     rustc_rmeta_output = None
-    if can_build_metadata(toolchain, ctx, crate_type) and not ctx.attr.disable_pipelining:
+    metadata_supports_pipelining = False
+    if can_build_metadata(
+        toolchain,
+        ctx,
+        crate_type,
+        disable_pipelining = getattr(ctx.attr, "disable_pipelining", False),
+    ):
         rust_metadata = ctx.actions.declare_file(
             paths.replace_extension(rust_lib_name, ".rmeta"),
             sibling = rust_lib,
         )
         rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+        metadata_supports_pipelining = (
+            can_use_metadata_for_pipelining(toolchain, crate_type) and
+            not ctx.attr.disable_pipelining
+        )
 
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
@@ -203,6 +214,7 @@ def _rust_library_common(ctx, crate_type):
             output = rust_lib,
             rustc_output = generate_output_diagnostics(ctx, rust_lib),
             metadata = rust_metadata,
+            metadata_supports_pipelining = metadata_supports_pipelining,
             rustc_rmeta_output = rustc_rmeta_output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
@@ -242,6 +254,15 @@ def _rust_binary_impl(ctx):
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
+    rust_metadata = None
+    rustc_rmeta_output = None
+    if can_build_metadata(toolchain, ctx, ctx.attr.crate_type):
+        rust_metadata = ctx.actions.declare_file(
+            paths.replace_extension("lib" + crate_name, ".rmeta"),
+            sibling = output,
+        )
+        rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+
     providers = rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
@@ -256,6 +277,8 @@ def _rust_binary_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
+            metadata = rust_metadata,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = ctx.attr.rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
@@ -337,6 +360,15 @@ def _rust_test_impl(ctx):
                 ),
             )
 
+        rust_metadata = None
+        rustc_rmeta_output = None
+        if can_build_metadata(toolchain, ctx, crate_type):
+            rust_metadata = ctx.actions.declare_file(
+                paths.replace_extension("lib" + crate_name, ".rmeta"),
+                sibling = output,
+            )
+            rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+
         # Need to consider all src files together when transforming
         srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
         compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
@@ -371,6 +403,8 @@ def _rust_test_impl(ctx):
             aliases = aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
+            metadata = rust_metadata,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = crate.edition,
             rustc_env = rustc_env,
             rustc_env_files = rustc_env_files,
@@ -381,6 +415,8 @@ def _rust_test_impl(ctx):
             owner = ctx.label,
         )
     else:
+        crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
+
         crate_root = getattr(ctx.file, "crate_root", None)
 
         if not crate_root:
@@ -402,6 +438,15 @@ def _rust_test_impl(ctx):
                 ),
             )
 
+        rust_metadata = None
+        rustc_rmeta_output = None
+        if can_build_metadata(toolchain, ctx, crate_type):
+            rust_metadata = ctx.actions.declare_file(
+                paths.replace_extension("lib" + crate_name, ".rmeta"),
+                sibling = output,
+            )
+            rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+
         data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
         rustc_env = expand_dict_value_locations(
             ctx,
@@ -412,7 +457,7 @@ def _rust_test_impl(ctx):
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info_dict = dict(
-            name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name),
+            name = crate_name,
             type = crate_type,
             root = crate_root,
             srcs = depset(srcs),
@@ -421,6 +466,8 @@ def _rust_test_impl(ctx):
             aliases = ctx.attr.aliases,
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
+            metadata = rust_metadata,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = get_edition(ctx.attr, toolchain, ctx.label),
             rustc_env = rustc_env,
             rustc_env_files = ctx.files.rustc_env_files,
@@ -534,14 +581,23 @@ def _stamp_attribute(default_value):
 
 # Internal attributes core to Rustc actions.
 RUSTC_ATTRS = {
+    "_always_enable_metadata_output_groups": attr.label(
+        default = Label("//rust/settings:always_enable_metadata_output_groups"),
+    ),
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
+    ),
+    "_extra_exec_rustc_env": attr.label(
+        default = Label("//rust/settings:extra_exec_rustc_env"),
     ),
     "_extra_exec_rustc_flag": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_flag"),
     ),
     "_extra_exec_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_flags"),
+    ),
+    "_extra_rustc_env": attr.label(
+        default = Label("//rust/settings:extra_rustc_env"),
     ),
     "_extra_rustc_flag": attr.label(
         default = Label("//rust/settings:extra_rustc_flag"),
@@ -1507,7 +1563,7 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
         shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
-        **kwargs (dict): Additional keyword arguments for the underyling [rust_test](#rust_test) targets. The
+        **kwargs (dict): Additional keyword arguments for the underlying [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """
     tests = []

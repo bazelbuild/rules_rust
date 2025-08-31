@@ -352,7 +352,7 @@ mod test {
     /// A mutex used to guard
     static GLOBAL_MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
-    /// Mock out environment variables for a given body fo work. Very similar to
+    /// Mock out environment variables for a given body to work. Very similar to
     /// [temp-env](https://crates.io/crates/temp-env).
     fn with_mock_env<K, V, F, R>(kvs: impl AsRef<[(K, Option<V>)]>, closure: F) -> R
     where

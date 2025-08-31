@@ -150,6 +150,8 @@ def _rust_doc_test_impl(ctx):
         "--test",
     ]
 
+    rustdoc_flags.extend(ctx.attr.rustdoc_flags)
+
     action = rustdoc_compile_action(
         ctx = ctx,
         toolchain = toolchain,
@@ -215,6 +217,16 @@ rust_doc_test = rule(
             """),
             cfg = "exec",
             providers = [rust_common.crate_info],
+        ),
+        "rustdoc_flags": attr.string_list(
+            doc = dedent("""\
+                List of flags passed to `rustdoc`.
+
+                These strings are subject to Make variable expansion for predefined
+                source/output path variables like `$location`, `$execpath`, and
+                `$rootpath`. This expansion is useful if you wish to pass a generated
+                file of arguments to rustc: `@$(location //package:target)`.
+            """),
         ),
         "_process_wrapper": attr.label(
             doc = "A process wrapper for running rustdoc on all platforms",

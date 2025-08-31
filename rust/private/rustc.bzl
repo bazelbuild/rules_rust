@@ -27,7 +27,15 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
-load(":providers.bzl", "AllocatorLibrariesImplInfo", "AllocatorLibrariesInfo", "LintsInfo", "RustcOutputDiagnosticsInfo", _BuildInfo = "BuildInfo")
+load(
+    ":providers.bzl",
+    "AllocatorLibrariesImplInfo",
+    "AllocatorLibrariesInfo",
+    "AlwaysEnableMetadataOutputGroupsInfo",
+    "LintsInfo",
+    "RustcOutputDiagnosticsInfo",
+    _BuildInfo = "BuildInfo",
+)
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
 load(":stamp.bzl", "is_stamping_enabled")
 load(
@@ -41,6 +49,7 @@ load(
     "is_exec_configuration",
     "is_std_dylib",
     "make_static_lib_symlink",
+    "parse_env_strings",
     "relativize",
 )
 
@@ -65,6 +74,16 @@ _error_format_values = ["human", "json", "short"]
 ErrorFormatInfo = provider(
     doc = "Set the --error-format flag for all rustc invocations",
     fields = {"error_format": "(string) [" + ", ".join(_error_format_values) + "]"},
+)
+
+ExtraRustcEnvInfo = provider(
+    doc = "Pass each value as an environment variable to non-exec rustc invocations",
+    fields = {"extra_rustc_env": "List[string] Extra env to pass to rustc in non-exec configuration"},
+)
+
+ExtraExecRustcEnvInfo = provider(
+    doc = "Pass each value as an environment variable to exec rustc invocations",
+    fields = {"extra_exec_rustc_env": "List[string] Extra env to pass to rustc in exec configuration"},
 )
 
 ExtraRustcFlagsInfo = provider(
@@ -296,7 +315,7 @@ def collect_deps(
             # If it doesn't (for example a custom library that exports crate_info),
             # we depend on crate_info.output.
             depend_on = crate_info.metadata
-            if not crate_info.metadata:
+            if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
                 depend_on = crate_info.output
 
             # If this dependency is a proc_macro, it still can be used for lib crates
@@ -1104,6 +1123,10 @@ def construct_arguments(
     else:
         rustc_flags.add_all(toolchain.extra_rustc_flags, map_each = map_flag)
 
+    # extra_rustc_env applies to the target configuration, not the exec configuration.
+    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
+        env.update(ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env)
+
     # extra_rustc_flags apply to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
@@ -1114,6 +1137,9 @@ def construct_arguments(
     if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec_configuration(ctx):
         per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
         _add_per_crate_rustc_flags(ctx, rustc_flags, map_flag, crate_info, per_crate_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
+        env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
     if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
         rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
@@ -1499,7 +1525,7 @@ def rustc_compile_action(
 
     coverage_runfiles = []
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
-        coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata]
+        coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata] + toolchain.llvm_lib
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 
@@ -1526,7 +1552,7 @@ def rustc_compile_action(
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
-            if _is_dylib(library_to_link)
+            if _is_dylib(library_to_link) and library_to_link.dynamic_library
         ])
         transitive_runfiles.append(dynamic_libraries)
     runfiles = runfiles.merge_all(transitive_runfiles)
@@ -1662,6 +1688,14 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
     return toolchain.libstd_and_allocator_ccinfo
 
 def _is_dylib(dep):
+    """Determine if the dependency represents a dynamic library.
+
+    Args:
+        dep (LibraryToLink): The `LibraryToLink` component of a target (e.g. from `CcInfo`)
+
+    Returns:
+        bool: True if the dependency should be thought of as a dynamic library.
+    """
     return not bool(dep.static_library or dep.pic_static_library)
 
 def _collect_nonstatic_linker_inputs(cc_info):
@@ -1692,7 +1726,7 @@ def _add_lto_flags(ctx, toolchain, args, crate):
     args.add_all(lto_args)
 
 def _add_codegen_units_flags(toolchain, emit, args):
-    """Adds flags to an Args object to configure codgen_units for 'rustc'.
+    """Adds flags to an Args object to configure codegen_units for 'rustc'.
 
     https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 
@@ -1957,7 +1991,7 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
         dep_info (DepInfo): The current target's dependency info
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
-        use_metadata (bool, optional): Build command line arugments using metadata for crates that provide it.
+        use_metadata (bool, optional): Build command line arguments using metadata for crates that provide it.
     """
 
     direct_crates = depset(
@@ -1996,7 +2030,7 @@ def _crate_to_link_flag_metadata(crate):
         crate_info = crate
 
     lib_or_meta = crate_info.metadata
-    if not crate_info.metadata:
+    if not crate_info.metadata or not crate_info.metadata_supports_pipelining:
         lib_or_meta = crate_info.output
     return ["--extern={}={}".format(name, lib_or_meta.path)]
 
@@ -2057,7 +2091,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
         # On linux, Rustc adds a -Bdynamic to the linker command line before the libraries specified
         # with `-Clink-arg`, which leads to us linking against the `.so`s but not putting the
         # corresponding value to the runtime library search paths, which results in a
-        # "cannot open shared object file: No such file or directory" error at exectuion time.
+        # "cannot open shared object file: No such file or directory" error at execution time.
         # We can fix this by adding a `-Clink-arg=-Bstatic` on linux, but we don't have that option for
         # macos. The proper solution for this issue would be to remove `libtest-{hash}.so` and `libstd-{hash}.so`
         # from the toolchain. However, it is not enough to change the toolchain's `rust_std_{...}` filegroups
@@ -2311,6 +2345,30 @@ def get_error_format(attr, attr_name):
         return getattr(attr, attr_name)[ErrorFormatInfo].error_format
     return "human"
 
+def _always_enable_metadata_output_groups_impl(ctx):
+    """Implementation of the `always_enable_metadata_output_groups` rule
+
+    Args:
+        ctx (ctx): The rule's context object
+
+    Returns:
+        list: A list containing the AlwaysEnableMetadataOutputGroupsInfo provider
+    """
+    return [AlwaysEnableMetadataOutputGroupsInfo(
+        always_enable_metadata_output_groups = ctx.build_setting_value,
+    )]
+
+always_enable_metadata_output_groups = rule(
+    doc = (
+        "Setting this flag from the command line with `--@rules_rust//rust/settings:always_enable_metadata_output_groups` " +
+        "will cause all rules to generate the `metadata` and `rustc_rmeta_output` output groups, " +
+        "rather than the default behavior of only generated them for libraries when pipelined " +
+        "compilation is enabled."
+    ),
+    implementation = _always_enable_metadata_output_groups_impl,
+    build_setting = config.bool(flag = True),
+)
+
 def _rustc_output_diagnostics_impl(ctx):
     """Implementation of the `rustc_output_diagnostics` rule
 
@@ -2328,12 +2386,25 @@ rustc_output_diagnostics = rule(
     doc = (
         "Setting this flag from the command line with `--@rules_rust//rust/settings:rustc_output_diagnostics` " +
         "makes rules_rust save rustc json output(suitable for consumption by rust-analyzer) in a file. " +
-        "These are accessible via the " +
-        "`rustc_rmeta_output`(for pipelined compilation) and `rustc_output` output groups. " +
+        "These are accessible via the `rustc_rmeta_output` (for pipelined compilation or if " +
+        "`always_enable_metadata_output_groups` is enabled) and `rustc_output` output groups. " +
         "You can find these using `bazel cquery`"
     ),
     implementation = _rustc_output_diagnostics_impl,
     build_setting = config.bool(flag = True),
+)
+
+def _extra_rustc_env_impl(ctx):
+    env_vars = parse_env_strings(ctx.build_setting_value)
+    return ExtraRustcEnvInfo(extra_rustc_env = env_vars)
+
+extra_rustc_env = rule(
+    doc = (
+        "Add additional environment variables to rustc in non-exec configuration using " +
+        "`--@rules_rust//rust/settings:extra_rustc_env=FOO=bar`. Multiple values may be specified."
+    ),
+    implementation = _extra_rustc_env_impl,
+    build_setting = config.string_list(flag = True),
 )
 
 def _extra_rustc_flags_impl(ctx):
@@ -2373,6 +2444,19 @@ extra_exec_rustc_flags = rule(
         "These flags only apply to the exec configuration (proc-macros, cargo_build_script, etc)."
     ),
     implementation = _extra_exec_rustc_flags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
+def _extra_exec_rustc_env_impl(ctx):
+    env_vars = parse_env_strings(ctx.build_setting_value)
+    return ExtraExecRustcEnvInfo(extra_exec_rustc_env = env_vars)
+
+extra_exec_rustc_env = rule(
+    doc = (
+        "Add additional environment variables to rustc in non-exec configuration using " +
+        "`--@rules_rust//rust/settings:extra_exec_rustc_env=FOO=bar`. Multiple values may be specified."
+    ),
+    implementation = _extra_exec_rustc_env_impl,
     build_setting = config.string_list(flag = True),
 )
 
