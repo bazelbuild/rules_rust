@@ -85,11 +85,46 @@ fn discover_workspaces_with_cache(
             })
             .transpose()?;
 
-        'per_child: for entry in walkdir::WalkDir::new(workspace_path.parent().unwrap())
+        let workspace_excludes = workspace_manifest
+            .workspace
+            .as_ref()
+            .map(|workspace| {
+                workspace
+                    .exclude
+                    .iter()
+                    .map(|pattern| {
+                        // We should always have a parent path, but be defensive here because who
+                        // knows what kind of setups folks have!
+                        let absolute_pattern = match workspace_path.parent() {
+                            // Only append the parent if the pattern isn't already absolute.
+                            Some(parent) if !pattern.starts_with('/') => {
+                                format!("{}/{pattern}", parent.as_str())
+                            }
+                            _ => pattern.to_string(),
+                        };
+                        glob::Pattern::new(&absolute_pattern).map_err(anyhow::Error::from)
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+
+        // Walk the entire file tree underneath the Cargo Workspace root to discover
+        // all of the `Cargo.toml` manifests.
+        let walk_dir_iter = walkdir::WalkDir::new(workspace_path.parent().unwrap())
             .follow_links(false)
             .follow_root_links(false)
             .into_iter()
-        {
+            // Do not descend into subtrees that are specified in the
+            // Workspace's `exclude` field.
+            .filter_entry(|entry| {
+                let should_exclude = workspace_excludes
+                    .iter()
+                    .any(|exclude_pat| exclude_pat.matches_path(entry.path()));
+                !should_exclude
+            });
+
+        'per_child: for entry in walk_dir_iter {
             let entry = match entry {
                 Ok(entry) => entry,
                 Err(err) => {
