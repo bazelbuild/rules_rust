@@ -81,7 +81,7 @@ they return will automatically update BUILD targets. In your BUILD files,
 you use these macros for a Rust library as shown below:
 
 ```python
-load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@crates//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
