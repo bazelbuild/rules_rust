@@ -15,29 +15,6 @@ use crate::utils::symlink::{remove_symlink, symlink};
 
 use super::{read_manifest, DirectPackageManifest, WorkspaceMetadata};
 
-/// The core splicer implementation. Each style of Bazel workspace should be represented
-/// here and a splicing implementation defined.
-pub(crate) enum SplicerKind<'a> {
-    /// Splice a manifest which is represented by a Cargo workspace
-    Workspace {
-        path: &'a Utf8PathBuf,
-        manifest: &'a Manifest,
-        splicing_manifest: &'a SplicingManifest,
-    },
-    /// Splice a manifest for a single package. This includes cases where
-    /// were defined directly in Bazel.
-    Package {
-        path: &'a Utf8PathBuf,
-        manifest: &'a Manifest,
-        splicing_manifest: &'a SplicingManifest,
-    },
-    /// Splice a manifest from multiple disjoint Cargo manifests.
-    MultiPackage {
-        manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
-        splicing_manifest: &'a SplicingManifest,
-    },
-}
-
 /// A list of files or directories to ignore when when symlinking
 const IGNORE_LIST: &[&str] = &[".git", "bazel-*", ".svn"];
 
@@ -54,39 +31,81 @@ fn parent_workspace(cargo_toml_path: &Utf8PathBuf) -> Option<Utf8PathBuf> {
     None
 }
 
-impl<'a> SplicerKind<'a> {
+/// The core splicer implementation. Each style of Bazel workspace should be represented
+/// here and a splicing implementation defined.
+pub(crate) enum Splicer {
+    /// Splice a manifest which is represented by a Cargo workspace
+    Workspace {
+        workspace_dir: Utf8PathBuf,
+        path: Utf8PathBuf,
+        manifest: Manifest,
+        splicing_manifest: SplicingManifest,
+    },
+    /// Splice a manifest for a single package. This includes cases where
+    /// were defined directly in Bazel.
+    Package {
+        workspace_dir: Utf8PathBuf,
+        path: Utf8PathBuf,
+        manifest: Manifest,
+        splicing_manifest: SplicingManifest,
+    },
+    /// Splice a manifest from multiple disjoint Cargo manifests.
+    MultiPackage {
+        workspace_dir: Utf8PathBuf,
+        manifests: BTreeMap<Utf8PathBuf, Manifest>,
+        splicing_manifest: SplicingManifest,
+    },
+}
+
+impl Splicer {
     pub(crate) fn new(
-        manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
-        splicing_manifest: &'a SplicingManifest,
+        workspace_dir: Utf8PathBuf,
+        splicing_manifest: SplicingManifest,
     ) -> Result<Self> {
+        // Load all manifests (owned)
+        let manifests: BTreeMap<Utf8PathBuf, Manifest> = splicing_manifest
+            .manifests
+            .keys()
+            .map(|path| {
+                let m = read_manifest(path)
+                    .with_context(|| format!("Failed to read manifest at {}", path))?;
+                Ok((path.clone(), m))
+            })
+            .collect::<Result<_>>()?;
+
+        // Identify unique workspace roots among the provided manifests
         let workspace_roots: HashSet<Utf8PathBuf> =
             manifests.keys().filter_map(parent_workspace).collect();
+
         if workspace_roots.len() > 1 {
             bail!("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces: {}", workspace_roots.iter().map(|wr| wr.to_string()).collect::<Vec<_>>().join(", "));
         }
 
         if let Some((path, manifest)) = workspace_roots
-            .iter()
+            .into_iter()
             .next()
-            .and_then(|path| manifests.get_key_value(path))
+            .and_then(|path| manifests.get_key_value(&path))
         {
             if manifests.len() > 1 {
                 eprintln!("Only the workspace's Cargo.toml is required in the `manifests` attribute; the rest can be removed");
             }
             Ok(Self::Workspace {
-                path,
-                manifest,
+                workspace_dir,
+                path: path.clone(),
+                manifest: manifest.clone(),
                 splicing_manifest,
             })
         } else if manifests.len() == 1 {
-            let (path, manifest) = manifests.iter().last().unwrap();
+            let (path, manifest) = manifests.into_iter().last().unwrap();
             Ok(Self::Package {
+                workspace_dir,
                 path,
                 manifest,
                 splicing_manifest,
             })
         } else {
             Ok(Self::MultiPackage {
+                workspace_dir,
                 manifests,
                 splicing_manifest,
             })
@@ -95,19 +114,22 @@ impl<'a> SplicerKind<'a> {
 
     /// Performs splicing based on the current variant.
     #[tracing::instrument(skip_all)]
-    pub(crate) fn splice(&self, workspace_dir: &Utf8Path) -> Result<SplicedManifest> {
+    pub(crate) fn splice(&self) -> Result<SplicedManifest> {
         match self {
-            SplicerKind::Workspace {
+            Splicer::Workspace {
+                workspace_dir,
                 path,
                 manifest,
                 splicing_manifest,
             } => Self::splice_workspace(workspace_dir, path, manifest, splicing_manifest),
-            SplicerKind::Package {
+            Splicer::Package {
+                workspace_dir,
                 path,
                 manifest,
                 splicing_manifest,
             } => Self::splice_package(workspace_dir, path, manifest, splicing_manifest),
-            SplicerKind::MultiPackage {
+            Splicer::MultiPackage {
+                workspace_dir,
                 manifests,
                 splicing_manifest,
             } => Self::splice_multi_package(workspace_dir, manifests, splicing_manifest),
@@ -118,9 +140,9 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_workspace(
         workspace_dir: &Utf8Path,
-        path: &&Utf8PathBuf,
-        manifest: &&Manifest,
-        splicing_manifest: &&SplicingManifest,
+        path: &Utf8PathBuf,
+        manifest: &Manifest,
+        splicing_manifest: &SplicingManifest,
     ) -> Result<SplicedManifest> {
         let mut manifest = (*manifest).clone();
         let manifest_dir = path
@@ -143,7 +165,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
-        let member_manifests = BTreeMap::from([(*path, String::new())]);
+        let member_manifests = BTreeMap::from([(path, String::new())]);
 
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, member_manifests)?;
@@ -159,9 +181,9 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_package(
         workspace_dir: &Utf8Path,
-        path: &&Utf8PathBuf,
-        manifest: &&Manifest,
-        splicing_manifest: &&SplicingManifest,
+        path: &Utf8PathBuf,
+        manifest: &Manifest,
+        splicing_manifest: &SplicingManifest,
     ) -> Result<SplicedManifest> {
         let manifest_dir = path
             .parent()
@@ -190,7 +212,7 @@ impl<'a> SplicerKind<'a> {
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
-        let member_manifests = BTreeMap::from([(*path, String::new())]);
+        let member_manifests = BTreeMap::from([(path, String::new())]);
 
         // Write the generated metadata to the manifest
         let workspace_metadata = WorkspaceMetadata::new(splicing_manifest, member_manifests)?;
@@ -206,8 +228,8 @@ impl<'a> SplicerKind<'a> {
     #[tracing::instrument(skip_all)]
     fn splice_multi_package(
         workspace_dir: &Utf8Path,
-        manifests: &&BTreeMap<Utf8PathBuf, Manifest>,
-        splicing_manifest: &&SplicingManifest,
+        manifests: &BTreeMap<Utf8PathBuf, Manifest>,
+        splicing_manifest: &SplicingManifest,
     ) -> Result<SplicedManifest> {
         let mut manifest = default_cargo_workspace_manifest(&splicing_manifest.resolver_version);
 
@@ -446,44 +468,6 @@ impl<'a> SplicerKind<'a> {
     }
 }
 
-pub(crate) struct Splicer {
-    workspace_dir: Utf8PathBuf,
-    manifests: BTreeMap<Utf8PathBuf, Manifest>,
-    splicing_manifest: SplicingManifest,
-}
-
-impl Splicer {
-    pub(crate) fn new(
-        workspace_dir: Utf8PathBuf,
-        splicing_manifest: SplicingManifest,
-    ) -> Result<Self> {
-        // Load all manifests
-        let manifests = splicing_manifest
-            .manifests
-            .keys()
-            .map(|path| {
-                let m = read_manifest(path)
-                    .with_context(|| format!("Failed to read manifest at {}", path))?;
-                Ok((path.clone(), m))
-            })
-            .collect::<Result<BTreeMap<Utf8PathBuf, Manifest>>>()?;
-
-        Ok(Self {
-            workspace_dir,
-            manifests,
-            splicing_manifest,
-        })
-    }
-
-    /// Build a new workspace root
-    pub(crate) fn splice_workspace(&self) -> Result<SplicedManifest> {
-        SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
-    }
-
-    pub(crate) fn prepare(&self) -> Result<SplicerKind> {
-        SplicerKind::new(&self.manifests, &self.splicing_manifest)
-    }
-}
 const DEFAULT_SPLICING_PACKAGE_NAME: &str = "direct-cargo-bazel-deps";
 const DEFAULT_SPLICING_PACKAGE_VERSION: &str = "0.0.1";
 
@@ -953,7 +937,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Locate cargo
@@ -996,7 +980,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Locate cargo
@@ -1086,7 +1070,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace();
+                .splice();
 
         assert!(workspace_manifest.is_err());
 
@@ -1123,7 +1107,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1148,7 +1132,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Locate cargo
@@ -1185,7 +1169,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Check the default resolver version
@@ -1235,7 +1219,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Check the specified resolver version
@@ -1295,7 +1279,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Check the default resolver version
@@ -1337,7 +1321,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1400,7 +1384,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1451,7 +1435,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice()
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1493,7 +1477,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         let result = Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace();
+            .splice();
 
         // Confirm conflicting patches have been detected
         assert!(result.is_err());
@@ -1515,7 +1499,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace()
+            .splice()
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1548,7 +1532,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace()
+            .splice()
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1575,7 +1559,7 @@ mod test {
         let workspace_root = tempdir_utf8pathbuf(&temp_dir).join("workspace_root");
         let splicing_result = Splicer::new(workspace_root.clone(), splicing_manifest)
             .unwrap()
-            .splice_workspace();
+            .splice();
 
         // Ensure cargo config files in parent directories lead to errors
         assert!(splicing_result.is_err());
