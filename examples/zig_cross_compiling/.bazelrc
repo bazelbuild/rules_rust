@@ -1,4 +1,4 @@
 build --incompatible_enable_cc_toolchain_resolution
 
-# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
+# This isn't currently the default in Bazel, but we enable it to test we'll be ready if/when it flips.
 build --incompatible_disallow_empty_glob

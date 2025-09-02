@@ -27,7 +27,7 @@ build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build --incompatible_enable_cc_toolchain_resolution=true
 
 # Require Platform Transitions
-## This works by setting the targte platform to an invalid platform
+## This works by setting the target platform to an invalid platform
 ## and each `x_binary()` and `x_library()` rule unfortunately needs
 ## to tag itself with `platform_missing` to get excluded from glob
 ## builds like `build //...` but still have a way to include them

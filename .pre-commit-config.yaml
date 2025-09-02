@@ -17,8 +17,7 @@ repos:
       - id: typos
         exclude: |
           (?x)^(
-            crate_universe/test_data|
-            examples
+            crate_universe/test_data
           )
         exclude_types:
           - diff
