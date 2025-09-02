@@ -480,7 +480,7 @@ impl Splicer {
         SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
     }
 
-    pub(crate) fn prepare(&self) -> Result<SplicerKind> {
+    pub(crate) fn prepare(&self) -> Result<SplicerKind<'_>> {
         SplicerKind::new(&self.manifests, &self.splicing_manifest)
     }
 }
