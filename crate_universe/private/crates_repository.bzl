@@ -76,6 +76,8 @@ def _crates_repository_impl(repository_ctx):
         repin_instructions = repository_ctx.attr.repin_instructions,
     )
 
+    nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root
+
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
     if repin:
@@ -91,6 +93,11 @@ def _crates_repository_impl(repository_ctx):
             output_dir = repository_ctx.path("splicing-output"),
             repository_name = repository_ctx.name,
         )
+
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # We can only watch paths in our workspace.
+            if path_to_track.startswith(str(nonhermetic_root_bazel_workspace_dir)):
+                repository_ctx.watch(path_to_track)
 
         kwargs.update({
             "metadata": splice_outputs.metadata,
@@ -109,7 +116,7 @@ def _crates_repository_impl(repository_ctx):
         lockfile_path = lockfiles.bazel,
         cargo_lockfile_path = lockfiles.cargo,
         repository_dir = repository_ctx.path("."),
-        nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root,
+        nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
         skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,

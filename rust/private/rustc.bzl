@@ -1891,6 +1891,7 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
     build_env_file = None
     build_flags_files = []
 
+    # We include the direct dep build_info because crates which use cargo build scripts may need to e.g. include_str! a generated file.
     if build_info:
         if build_info.out_dir:
             out_dir = build_info.out_dir.path
@@ -1903,6 +1904,12 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
             input_files.append(build_info.linker_flags)
 
         input_depsets.append(build_info.compile_data)
+
+    # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
+    # This should probably only actually be exposed to actions which link.
+    for dep_build_info in dep_info.transitive_build_infos.to_list():
+        if dep_build_info.out_dir:
+            input_files.append(dep_build_info.out_dir)
 
     out_dir_compile_inputs = depset(
         input_files,

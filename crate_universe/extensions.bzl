@@ -628,6 +628,9 @@ def _generate_hub_and_spokes(
         splicing_manifest = splicing_manifest,
     )
 
+    # The workspace root when one is explicitly provided.
+    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
     if repin:
@@ -658,8 +661,10 @@ def _generate_hub_and_spokes(
             "metadata": splice_outputs.metadata,
         })
 
-    # The workspace root when one is explicitly provided.
-    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # We can only watch paths in our workspace.
+            if path_to_track.startswith(str(nonhermetic_root_bazel_workspace_dir)):
+                module_ctx.watch(path_to_track)
 
     paths_to_track_file = tag_path.get_child("paths_to_track.json")
     warnings_output_file = tag_path.get_child("warnings_output.json")

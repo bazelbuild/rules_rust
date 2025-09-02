@@ -70,6 +70,24 @@ def _startswith(list, prefix):
             return False
     return True
 
+def assert_list_contains(env, list, expected_element):
+    """Assert that list contains the expected element.
+
+    Args:
+          env: env from analysistest.begin(ctx).
+          list: list supposed to contain expected_element.
+          expected_element: element to be found inside list.
+    """
+    if expected_element in list:
+        return
+    unittest.fail(
+        env,
+        "Expected the to find '{expected_element}' within '{list}'".format(
+            expected_element = expected_element,
+            list = list,
+        ),
+    )
+
 def assert_list_contains_adjacent_elements(env, list_under_test, adjacent_elements):
     """Assert that list_under_test contains given adjacent flags.
 
