@@ -9,7 +9,7 @@ local_path_override(
     path = "../../..",
 )
 
-bazel_dep(name = "rules_cc", version = "0.2.1")
+bazel_dep(name = "rules_cc", version = "0.2.2")
 bazel_dep(name = "platforms", version = "1.0.0")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
