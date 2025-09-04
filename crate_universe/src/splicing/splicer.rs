@@ -386,8 +386,12 @@ impl<'a> SplicerKind<'a> {
                 let dot_file = dot_cargo_dir.join(dot_file_toml);
                 let dest = format!("{}/{}", cargo_home, dot_file_toml);
                 let dest_path = Path::new(&dest);
-                tracing::debug!("Dest is {:?}", dest);
-                tracing::debug!("Dot file is {:?}", dot_file);
+                if dest_path.exists() {
+                    tracing::debug!("Dest is {:?}", dest_path);
+                }
+                if dot_file.exists() {
+                    tracing::debug!("Dot file is {:?}", dot_file);
+                }
                 let _ = symlink(&dot_file, dest_path).unwrap();
             }
         }
