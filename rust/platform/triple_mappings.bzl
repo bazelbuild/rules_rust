@@ -55,12 +55,16 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
+    "wasm32-unknown-emscripten": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
     "wasm32-wasip1": _support(std = True, host_tools = False),
+    "wasm32-wasip1-threads": _support(std = True, host_tools = False),
+    "wasm32-wasip2": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
@@ -138,7 +142,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "dragonfly": None,
     "eabi": "none",
     "eabihf": "none",
-    "emscripten": None,
+    "emscripten": "emscripten",
     "freebsd": "freebsd",
     "fuchsia": "fuchsia",
     "ios": "ios",
@@ -155,6 +159,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "unknown": None,
     "wasi": None,
     "wasip1": None,
+    "wasip2": None,
     "windows": "windows",
 }
 
@@ -179,6 +184,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "unknown": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
+    "wasip2": ".wasm",
     "windows": ".exe",
 }
 
@@ -200,6 +206,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "unknown": "",
     "wasi": "",
     "wasip1": "",
+    "wasip2": "",
     "windows": ".lib",
 }
 
@@ -221,6 +228,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "unknown": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
+    "wasip2": ".wasm",
     "windows": ".dll",
 }
 
@@ -270,11 +278,12 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "uwp": ["ws2_32.lib"],
     "wasi": [],
     "wasip1": [],
+    "wasip2": [],
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
 def cpu_arch_to_constraints(cpu_arch, *, system = None):
-    """Returns a list of contraint values which represents a triple's CPU.
+    """Returns a list of constraint values which represents a triple's CPU.
 
     Args:
         cpu_arch (str): The architecture to match constraints for
@@ -407,20 +416,39 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple in "wasm32-wasi":
+    if target_triple == "wasm32-wasi":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
         ]
     if target_triple == "wasm32-wasip1":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
+        ]
+    if target_triple == "wasm32-wasip2":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_2",
+        ]
+    if target_triple == "wasm32-unknown-emscripten":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:emscripten",
         ]
     if target_triple == "wasm32-unknown-unknown":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:none",
+        ]
+    if target_triple == "wasm32-wasip1-threads":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
         ]
     if target_triple == "wasm64-unknown-unknown":
         return [

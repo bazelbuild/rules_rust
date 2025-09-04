@@ -52,7 +52,7 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, car
         dict: A dictionary representation of a `cargo_bazel::splicing::SplicingManifest`
     """
 
-    # Deserialize information about direct packges
+    # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
         pkg: kebab_case_keys(dict(json.decode(data)))
@@ -71,7 +71,7 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, car
     return splicing_config | splicing_manifest_content
 
 def _no_at_label(label):
-    """Strips leading '@'s for stringified labels in the main repository for backwards-comaptibility reasons."""
+    """Strips leading '@'s for stringified labels in the main repository for backwards-compatibility reasons."""
     s = str(label)
     if s.startswith("@@//"):
         return s[2:]
@@ -134,6 +134,7 @@ def splice_workspace_manifest(
         splicing_manifest,
         config_path,
         output_dir,
+        repository_name,
         debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
@@ -144,6 +145,7 @@ def splice_workspace_manifest(
         splicing_manifest (path): The path to a splicing manifest.
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
+        repository_name (str): Name of the repository being generated.
         debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
@@ -159,6 +161,8 @@ def splice_workspace_manifest(
         splicing_manifest,
         "--config",
         config_path,
+        "--repository-name",
+        repository_name,
     ]
 
     if cargo_lockfile:
@@ -196,7 +200,14 @@ def splice_workspace_manifest(
     if not spliced_metadata.exists:
         fail("Metadata file does not exist: " + str(spliced_metadata))
 
+    extra_paths_to_track_path = repository_ctx.path(output_dir.get_child("extra_paths_to_track"))
+    if extra_paths_to_track_path.exists:
+        extra_paths_to_track = repository_ctx.read(extra_paths_to_track_path).split("\n")
+    else:
+        extra_paths_to_track = []
+
     return struct(
         metadata = spliced_metadata,
         cargo_lock = spliced_lockfile,
+        extra_paths_to_track = extra_paths_to_track,
     )

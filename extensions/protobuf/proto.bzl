@@ -20,7 +20,16 @@ load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:utils.bzl", "can_build_metadata", "compute_crate_name", "determine_output_hash", "find_toolchain", "transform_deps")
+load(
+    "@rules_rust//rust/private:utils.bzl",
+    "can_build_metadata",
+    "can_use_metadata_for_pipelining",
+    "compute_crate_name",
+    "determine_output_hash",
+    "find_toolchain",
+    "generate_output_diagnostics",
+    "transform_deps",
+)
 load(
     "//:toolchain.bzl",
     _generate_proto = "rust_generate_proto",
@@ -83,7 +92,7 @@ def _rust_proto_aspect_impl(target, ctx):
         ctx (ctx): The rule context which the targetis created from
 
     Returns:
-        list: A list containg a `RustProtoInfo` provider
+        list: A list containing a `RustProtoInfo` provider
     """
     if ProtoInfo not in target:
         return None
@@ -194,12 +203,16 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         output_hash,
     ))
     rust_metadata = None
+    rustc_rmeta_output = None
+    metadata_supports_pipelining = False
     if can_build_metadata(toolchain, ctx, "rlib"):
         rust_metadata = ctx.actions.declare_file("%s/lib%s-%s.rmeta" % (
             output_dir,
             crate_name,
             output_hash,
         ))
+        rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+        metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     # Gather all dependencies for compilation
     compile_action_deps = depset(
@@ -223,6 +236,8 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             aliases = {},
             output = rust_lib,
             metadata = rust_metadata,
+            metadata_supports_pipelining = metadata_supports_pipelining,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = proto_toolchain.edition,
             rustc_env = {},
             is_test = False,
@@ -310,6 +325,9 @@ rust_proto_library = rule(
                 `$rootpath`. This expansion is useful if you wish to pass a generated
                 file of arguments to rustc: `@$(location //package:target)`.
             """,
+        ),
+        "_always_enable_metadata_output_groups": attr.label(
+            default = Label("@rules_rust//rust/settings:always_enable_metadata_output_groups"),
         ),
         "_optional_output_wrapper": attr.label(
             executable = True,

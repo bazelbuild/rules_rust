@@ -158,7 +158,12 @@ impl Runfiles {
         let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
             Self::create_manifest_based(Path::new(&manifest_file))?
         } else {
-            Mode::DirectoryBased(find_runfiles_dir()?)
+            let dir = find_runfiles_dir()?;
+            let manifest_path = dir.join("MANIFEST");
+            match manifest_path.exists() {
+                true => Self::create_manifest_based(&manifest_path)?,
+                false => Mode::DirectoryBased(dir),
+            }
         };
 
         let repo_mapping = raw_rlocation(&mode, "_repo_mapping")
@@ -347,7 +352,7 @@ mod test {
     /// A mutex used to guard
     static GLOBAL_MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
-    /// Mock out environment variables for a given body fo work. Very similar to
+    /// Mock out environment variables for a given body to work. Very similar to
     /// [temp-env](https://crates.io/crates/temp-env).
     fn with_mock_env<K, V, F, R>(kvs: impl AsRef<[(K, Option<V>)]>, closure: F) -> R
     where

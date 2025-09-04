@@ -18,7 +18,12 @@ load("@rules_rust//rust/private:rust_analyzer.bzl", "write_rust_analyzer_spec_fi
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:utils.bzl", "can_build_metadata")
+load(
+    "@rules_rust//rust/private:utils.bzl",
+    "can_build_metadata",
+    "can_use_metadata_for_pipelining",
+    "generate_output_diagnostics",
+)
 load("//:providers.bzl", "ProstProtoInfo")
 load(":prost_transform.bzl", "ProstTransformInfo")
 
@@ -181,6 +186,8 @@ def _compile_rust(
 
     lib = ctx.actions.declare_file(lib_name)
     rmeta = None
+    rustc_rmeta_output = None
+    metadata_supports_pipelining = False
 
     if can_build_metadata(toolchain, ctx, "rlib"):
         rmeta_name = "{prefix}{name}-{lib_hash}{extension}".format(
@@ -190,6 +197,8 @@ def _compile_rust(
             extension = ".rmeta",
         )
         rmeta = ctx.actions.declare_file(rmeta_name)
+        rustc_rmeta_output = generate_output_diagnostics(ctx, rmeta)
+        metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     providers = rustc_compile_action(
         ctx = ctx,
@@ -205,6 +214,8 @@ def _compile_rust(
             aliases = {},
             output = lib,
             metadata = rmeta,
+            metadata_supports_pipelining = metadata_supports_pipelining,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = edition,
             is_test = False,
             rustc_env = {},
@@ -278,10 +289,18 @@ def _rust_prost_aspect_impl(target, ctx):
             transform_infos.append(data_target[ProstTransformInfo])
 
     rust_deps = runtime_deps + direct_deps
+    crate_name_overrides = []
     for transform_info in transform_infos:
         rust_deps.extend(transform_info.deps)
+        if transform_info.crate_name:
+            crate_name_overrides.append(transform_info.crate_name)
 
-    crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
+    if len(crate_name_overrides) > 1:
+        fail("Multiple crate name overrides detected. Only one override is allowed. Please check your rust_prost_transform targets.")
+    elif len(crate_name_overrides) == 1:
+        crate_name = crate_name_overrides[0]
+    else:
+        crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
 
     proto_info = target[ProtoInfo]
 
@@ -365,7 +384,12 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//private:protoc_wrapper"),
         ),
-    } | RUSTC_ATTRS,
+    } | RUSTC_ATTRS | {
+        # Need to override this attribute to explicitly set the workspace.
+        "_always_enable_metadata_output_groups": attr.label(
+            default = Label("@rules_rust//rust/settings:always_enable_metadata_output_groups"),
+        ),
+    },
     fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,

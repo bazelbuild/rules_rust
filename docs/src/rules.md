@@ -17,7 +17,3 @@
 - [rust_prost](rust_prost.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs using [prost](https://github.com/tokio-rs/prost).
 - [rust_protobuf](rust_protobuf.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs with [rust-protobuf](https://github.com/stepancheg/rust-protobuf/)
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
-
-## Full API
-
-You can also browse the [full API in one page](flatten.md).

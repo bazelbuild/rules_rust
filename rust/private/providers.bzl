@@ -25,6 +25,8 @@ CrateInfo = provider(
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
+        "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
+                                        "usable for pipelined compilation.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -74,7 +76,7 @@ BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
-        "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
+        "dep_env": "Optional[File]: extra build script environment variables to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
         "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
         "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",
@@ -95,6 +97,17 @@ DepVariantInfo = provider(
         "crate_group_info": "CrateGroupInfo: The CrateGroupInfo of a Rust crate group dependency",
         "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
         "dep_info": "DepInfo: The DepInfo of a Rust dependency",
+    },
+)
+
+AlwaysEnableMetadataOutputGroupsInfo = provider(
+    doc = (
+        "Enable the 'metadata' and 'rustc_rmeta_output' groups for all targets, " +
+        "even if not a library or if pipelining is disabled"
+    ),
+    fields = {
+        "always_enable_metadata_output_groups": ("bool: Whether or not to always enable " +
+                                                 "metadata-related output groups"),
     },
 )
 
@@ -133,6 +146,11 @@ StdLibInfo = provider(
 CaptureClippyOutputInfo = provider(
     doc = "Value of the `capture_clippy_output` build setting",
     fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
+)
+
+ClippyOutputDiagnosticsInfo = provider(
+    doc = "Value of the `clippy_output_diagnostics` build setting",
+    fields = {"output_diagnostics": "Value of the `clippy_output_diagnostics` build setting"},
 )
 
 ClippyInfo = provider(
@@ -186,5 +204,23 @@ LintsInfo = provider(
         "rustc_lint_flags": "List[String]: rustc flags to specify when building rust_* targets.",
         "rustdoc_lint_files": "List[File]: files with rustc args for rustdoc target.",
         "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
+    },
+)
+
+AllocatorLibrariesInfo = provider(
+    doc = "AllocatorLibrariesInfo provides allocator libraries for linking rust code with a non-rust linker.",
+    fields = {
+        "allocator_library": "Optional[CcInfo]: used when the default rust allocator is used",
+        "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
+        "libstd_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used",
+        "libstd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used",
+        "nostd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when nostd with a global rust allocator is used",
+    },
+)
+
+AllocatorLibrariesImplInfo = provider(
+    doc = "AllocatorLibrariesImplInfo provides the rust-generated linker input for linking rust code with a non-rust linker.",
+    fields = {
+        "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
     },
 )

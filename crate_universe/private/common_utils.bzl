@@ -9,6 +9,7 @@ get_host_triple = _get_host_triple
 CARGO_BAZEL_ISOLATED = "CARGO_BAZEL_ISOLATED"
 CARGO_BAZEL_REPIN = "CARGO_BAZEL_REPIN"
 CARGO_BAZEL_DEBUG = "CARGO_BAZEL_DEBUG"
+CARGO_BAZEL_TIMEOUT = "CARGO_BAZEL_TIMEOUT"
 REPIN = "REPIN"
 
 CARGO_BAZEL_REPIN_ONLY = "CARGO_BAZEL_REPIN_ONLY"
@@ -29,7 +30,7 @@ STDERR ------------------------------------------------------------------------
 """
 
 def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
-    """A heler macro for executing some arguments and displaying nicely formatted errors
+    """A helper macro for executing some arguments and displaying nicely formatted errors
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
@@ -45,10 +46,15 @@ def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
     if repository_ctx.os.environ.get(CARGO_BAZEL_DEBUG, None):
         quiet = False
 
+    exec_kwargs = dict(environment = env, quiet = quiet)
+
+    timeout = repository_ctx.os.environ.get(CARGO_BAZEL_TIMEOUT, None)
+    if timeout:
+        exec_kwargs.update(timeout = int(timeout))
+
     result = repository_ctx.execute(
         args,
-        environment = env,
-        quiet = quiet,
+        **exec_kwargs
     )
 
     if result.return_code and not allow_fail:
@@ -115,24 +121,6 @@ def get_rust_tools(repository_ctx, host_triple):
     Returns:
         struct: A struct containing the expected rust tools
     """
-
-    # This is a bit hidden but to ensure Cargo behaves consistently based
-    # on the user provided config file, the config file is installed into
-    # the `CARGO_HOME` path. This is done so here since fetching tools
-    # is expected to always occur before any subcommands are run.
-    if repository_ctx.attr.isolated and repository_ctx.attr.cargo_config:
-        cargo_home = _cargo_home_path(repository_ctx)
-        cargo_home_config = repository_ctx.path("{}/config.toml".format(cargo_home))
-        cargo_config = repository_ctx.path(repository_ctx.attr.cargo_config)
-        repository_ctx.symlink(cargo_config, cargo_home_config)
-
-    # Workspace backwards compat for cargo credentia
-    if repository_ctx.attr.isolated and repository_ctx.attr.cargo_creds:
-        cargo_home = _cargo_home_path(repository_ctx)
-        cargo_home_config = repository_ctx.path("{}/credentials.toml".format(cargo_home))
-        cargo_creds = repository_ctx.path(repository_ctx.attr.cargo_creds)
-        repository_ctx.symlink(cargo_creds, cargo_home_config)
-
     if repository_ctx.attr.rust_version.startswith(("beta", "nightly")):
         channel, _, version = repository_ctx.attr.rust_version.partition("/")
     else:
@@ -160,7 +148,7 @@ def _cargo_home_path(repository_ctx):
     return repository_ctx.path(".cargo_home")
 
 def cargo_environ(repository_ctx, isolated = True):
-    """Define Cargo environment varables for use with `cargo-bazel`
+    """Define Cargo environment variables for use with `cargo-bazel`
 
     Args:
         repository_ctx (repository_ctx): The rules context object

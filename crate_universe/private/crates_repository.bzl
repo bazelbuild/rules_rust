@@ -76,6 +76,8 @@ def _crates_repository_impl(repository_ctx):
         repin_instructions = repository_ctx.attr.repin_instructions,
     )
 
+    nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root
+
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
     if repin:
@@ -89,7 +91,13 @@ def _crates_repository_impl(repository_ctx):
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             output_dir = repository_ctx.path("splicing-output"),
+            repository_name = repository_ctx.name,
         )
+
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # We can only watch paths in our workspace.
+            if path_to_track.startswith(str(nonhermetic_root_bazel_workspace_dir)):
+                repository_ctx.watch(path_to_track)
 
         kwargs.update({
             "metadata": splice_outputs.metadata,
@@ -108,18 +116,17 @@ def _crates_repository_impl(repository_ctx):
         lockfile_path = lockfiles.bazel,
         cargo_lockfile_path = lockfiles.cargo,
         repository_dir = repository_ctx.path("."),
-        nonhermetic_root_bazel_workspace_dir = repository_ctx.workspace_root,
+        nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
+        skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
         # sysroot = tools.sysroot,
         **kwargs
     )
 
     paths_to_track = json.decode(repository_ctx.read(paths_to_track_file))
     for path in paths_to_track:
-        # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
-        # Ideally we'd use repository_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
-        repository_ctx.read(path)
+        repository_ctx.watch(path)
 
     warnings_output_file = json.decode(repository_ctx.read(warnings_output_file))
     for warning in warnings_output_file:
@@ -159,6 +166,7 @@ Environment Variables:
 | `CARGO_BAZEL_ISOLATED` | An authoritative flag as to whether or not the `CARGO_HOME` environment variable should be isolated from the host configuration |
 | `CARGO_BAZEL_REPIN` | An indicator that the dependencies represented by the rule should be regenerated. `REPIN` may also be used. See [Repinning / Updating Dependencies](#repinning--updating-dependencies) for more details. |
 | `CARGO_BAZEL_REPIN_ONLY` | A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them. |
+| `CARGO_BAZEL_TIMEOUT` | An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds. |
 
 Example:
 
@@ -216,7 +224,7 @@ CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
 
 This will result in all dependencies being updated for a project. The `CARGO_BAZEL_REPIN` environment variable
 can also be used to customize how dependencies are updated. The following table shows translations from environment
-variable values to the equivilant [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
+variable values to the equivalent [cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html) command
 that is called behind the scenes to update dependencies.
 
 | Value | Cargo command |
@@ -260,7 +268,7 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             mandatory = True,
         ),
         "compressed_windows_toolchain_names": attr.bool(
-            doc = "Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+            doc = "Whether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
             default = True,
         ),
         "generate_binaries": attr.bool(
@@ -304,14 +312,16 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
                 "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
                 "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-                "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+                "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
             ),
             default = True,
         ),
         "lockfile": attr.label(
             doc = (
                 "The path to a file to use for reproducible renderings. " +
-                "If set, this file must exist within the workspace (but can be empty) before this rule will work."
+                "If set, this file must exist within the workspace (but can be empty) before this rule will work." +
+                "If you already have a `MODULE.bazel.lock` file, you don't need this." +
+                "If you don't have a `MODULE.bazel.lock` file, the `lockfile` will save you generation time."
             ),
         ),
         "manifests": attr.label_list(
@@ -354,6 +364,14 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
         "rust_version": attr.string(
             doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
             default = rust_common.default_version,
+        ),
+        "skip_cargo_lockfile_overwrite": attr.bool(
+            doc = (
+                "Whether to skip writing the cargo lockfile back after resolving. " +
+                "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
+                "But you probably don't want to set this."
+            ),
+            default = False,
         ),
         "splicing_config": attr.string(
             doc = (

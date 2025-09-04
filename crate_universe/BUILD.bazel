@@ -70,7 +70,7 @@ rust_library(
     # This target embeds additional, stamping related information (see
     # https://docs.bazel.build/versions/main/user-manual.html#workspace_status
     # for more information). Set stamp = -1 to indicate that it should respect
-    # the value of the --stamp comandline flag.
+    # the value of the --stamp commandline flag.
     stamp = -1,
     version = VERSION,
     visibility = ["//visibility:public"],

@@ -12,7 +12,7 @@ And the build target:
 ## Setup
 
 For the setup,
-you need to add the skylib in addition to the rust rules to your MODUE.bazel.
+you need to add the skylib in addition to the rust rules to your MODULE.bazel.
 
 ```starlark
 module(
@@ -23,7 +23,7 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/bazel-skylib/releases/
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
 bazel_dep(name = "rules_rust", version = "0.59.0")
@@ -120,7 +120,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 rust_binary(
     name = "hello_sys",
     srcs = ["src/main.rs"],
-    # Note the `crate_unvierse` dependencies here need to have been loaded
+    # Note the `crate_universe` dependencies here need to have been loaded
     # in the WORKSPACE file. See `//:sys_deps.bzl` for more details.
     deps = ["//basic/3rdparty/crates:bzip2"],
     visibility = ["//visibility:public"],
@@ -141,7 +141,7 @@ def sys_deps():
 
     Commonly `*-sys` crates are built on top of some existing library and
     will have a number of dependencies. The examples here use
-    [crate_universe](https://bazelbuild.github.io/rules_rust/crate_universe.html)
+    [crate_universe workspace](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html)
     to gather these dependencies and make them available in the workspace.
     """
 
@@ -171,7 +171,7 @@ To fix this error, make sure to have the following entry in your MODULE.bazel fi
 ```starlark
 # ...
 # https://github.com/bazelbuild/bazel-skylib/releases/
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
 # ....
 ```
 

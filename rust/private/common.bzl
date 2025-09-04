@@ -31,9 +31,9 @@ load(":providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo
 #
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if
 # you remove it or change its format, you will also need to update that code.
-DEFAULT_RUST_VERSION = "1.85.1"
+DEFAULT_RUST_VERSION = "1.86.0"
 
-DEFAULT_NIGHTLY_ISO_DATE = "2025-03-18"
+DEFAULT_NIGHTLY_ISO_DATE = "2025-04-03"
 
 def _create_crate_info(**kwargs):
     """A constructor for a `CrateInfo` provider
@@ -42,7 +42,7 @@ def _create_crate_info(**kwargs):
     provider to improve API stability.
 
     Args:
-        **kwargs: An inital set of keyword arguments.
+        **kwargs: An initial set of keyword arguments.
 
     Returns:
         CrateInfo: A provider
@@ -51,6 +51,8 @@ def _create_crate_info(**kwargs):
         kwargs.update({"wrapped_crate_type": None})
     if not "metadata" in kwargs:
         kwargs.update({"metadata": None})
+    if not "metadata_supports_pipelining" in kwargs:
+        kwargs.update({"metadata_supports_pipelining": False})
     if not "rustc_rmeta_output" in kwargs:
         kwargs.update({"rustc_rmeta_output": None})
     if not "rustc_output" in kwargs:

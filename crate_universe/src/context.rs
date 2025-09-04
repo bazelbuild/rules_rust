@@ -225,7 +225,37 @@ impl Context {
             .collect()
     }
 
-    pub(crate) fn has_duplicate_workspace_member_dep(&self, dep: &CrateDependency) -> bool {
+    /// Returns if there are any dependencies that have the same crate name and crate version.
+    ///
+    /// For example, this would return true if you have the following in your workspace:
+    ///
+    /// ```ignore
+    /// itertools = "0.11.24"
+    /// itertools_alias = { version = "0.11.24", package = "itertools" }
+    /// ```
+    pub(crate) fn has_duplicate_workspace_member_dep_by_version(
+        &self,
+        dep: &CrateDependency,
+    ) -> bool {
+        1 < self
+            .workspace_member_deps()
+            .into_iter()
+            .filter(|check| check.id.name == dep.id.name && check.id.version == dep.id.version)
+            .count()
+    }
+
+    /// Returns if there are any dependencies that have the same crate name and alias.
+    ///
+    /// For example, this would return true if you have the following in your workspace:
+    ///
+    /// ```ignore
+    /// itertools = "0.11.24"
+    /// itertools = "0.12.1"
+    /// ```
+    pub(crate) fn has_duplicate_workspace_member_dep_by_alias(
+        &self,
+        dep: &CrateDependency,
+    ) -> bool {
         1 < self
             .workspace_member_deps()
             .into_iter()
@@ -316,7 +346,7 @@ mod test {
         assert_eq! {
             workspace_member_deps
                 .iter()
-                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep_by_alias(dep)))
                 .collect::<Vec<_>>(),
             [
                 (&CrateId::new("bitflags".to_owned(), Version::new(1, 3, 2)), false),
@@ -333,7 +363,7 @@ mod test {
         assert_eq! {
             workspace_member_deps
                 .iter()
-                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep_by_alias(dep)))
                 .collect::<Vec<_>>(),
             [
                 (&CrateId::new("log".to_owned(), Version::new(0, 3, 9)), false),
@@ -354,7 +384,7 @@ mod test {
         assert_eq! {
             workspace_member_deps
                 .iter()
-                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep(dep)))
+                .map(|dep| (&dep.id, context.has_duplicate_workspace_member_dep_by_alias(dep)))
                 .collect::<Vec<_>>(),
             [
                 (&CrateId::new("child".to_owned(), Version::new(0, 1, 0)), false),

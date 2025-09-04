@@ -1,4 +1,4 @@
-"""Utilties for testing forwarding Make variables from toolchains."""
+"""Utilities for testing forwarding Make variables from toolchains."""
 
 def _dummy_env_var_toolchain_impl(_ctx):
     make_variables = platform_common.TemplateVariableInfo({

@@ -221,6 +221,11 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
+
+    rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
+    if "--rust-edition " not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+        args.add("--rust-edition=%s" % rust_toolchain.default_edition)
+
     args.add(header)
     args.add("--output", output)
 
@@ -230,7 +235,7 @@ def _rust_bindgen_impl(ctx):
     if wrap_static_fns:
         if "--wrap-static-fns" in ctx.attr.bindgen_flags:
             fail("Do not pass `--wrap-static-fns` to `bindgen_flags, it's added automatically." +
-                 "The generated C file is accesible in the `bindgen_c_thunks` output group.")
+                 "The generated C file is accessible in the `bindgen_c_thunks` output group.")
         c_output = ctx.actions.declare_file(ctx.label.name + ".bindgen_c_thunks.c")
         args.add("--experimental")
         args.add("--wrap-static-fns")

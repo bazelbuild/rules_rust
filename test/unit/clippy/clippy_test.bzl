@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_clippy_aspect")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements")
+load("//test/unit:common.bzl", "assert_argv_contains", "assert_argv_contains_prefix_suffix", "assert_list_contains_adjacent_elements")
 
 def _find_clippy_action(actions):
     for action in actions:
@@ -10,7 +10,7 @@ def _find_clippy_action(actions):
             return action
     fail("Failed to find Clippy action")
 
-def _clippy_aspect_action_has_flag_impl(ctx, flags):
+def _clippy_aspect_action_has_flag_impl(ctx, flags, *, prefix_suffix_flags = []):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
@@ -23,6 +23,8 @@ def _clippy_aspect_action_has_flag_impl(ctx, flags):
             clippy_action,
             flag,
         )
+    for (prefix, suffix) in prefix_suffix_flags:
+        assert_argv_contains_prefix_suffix(env, clippy_action, prefix, suffix)
 
     clippy_checks = target[OutputGroupInfo].clippy_checks.to_list()
     if len(clippy_checks) != 1:
@@ -99,6 +101,41 @@ clippy_aspect_with_explicit_flags_test = make_clippy_aspect_unittest(
     },
 )
 
+clippy_aspect_without_clippy_error_format_test = make_clippy_aspect_unittest(
+    lambda ctx: _clippy_aspect_action_has_flag_impl(
+        ctx,
+        ["--error-format=short"],
+    ),
+    config_settings = {
+        str(Label("//rust/settings:error_format")): "short",
+        str(Label("//rust/settings:clippy_error_format")): "json",
+        str(Label("//rust/settings:incompatible_change_clippy_error_format")): False,
+    },
+)
+
+clippy_aspect_with_clippy_error_format_test = make_clippy_aspect_unittest(
+    lambda ctx: _clippy_aspect_action_has_flag_impl(
+        ctx,
+        ["--error-format=json"],
+    ),
+    config_settings = {
+        str(Label("//rust/settings:error_format")): "short",
+        str(Label("//rust/settings:clippy_error_format")): "json",
+        str(Label("//rust/settings:incompatible_change_clippy_error_format")): True,
+    },
+)
+
+clippy_aspect_with_output_diagnostics_test = make_clippy_aspect_unittest(
+    lambda ctx: _clippy_aspect_action_has_flag_impl(
+        ctx,
+        ["--error-format=json", "--output-file"],
+        prefix_suffix_flags = [("", "/ok_library.clippy.diagnostics")],
+    ),
+    config_settings = {
+        str(Label("//rust/settings:clippy_output_diagnostics")): True,
+    },
+)
+
 def clippy_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -118,6 +155,7 @@ def clippy_test_suite(name):
         name = "test_clippy_aspect_action_has_warnings_flag_test",
         target_under_test = Label("//test/clippy:ok_test"),
     )
+
     clippy_aspect_with_explicit_flags_test(
         name = "binary_clippy_aspect_with_explicit_flags_test",
         target_under_test = Label("//test/clippy:ok_binary"),
@@ -131,6 +169,20 @@ def clippy_test_suite(name):
         target_under_test = Label("//test/clippy:ok_test"),
     )
 
+    clippy_aspect_without_clippy_error_format_test(
+        name = "clippy_aspect_without_clippy_error_format_test",
+        target_under_test = Label("//test/clippy:ok_library"),
+    )
+    clippy_aspect_with_clippy_error_format_test(
+        name = "clippy_aspect_with_clippy_error_format_test",
+        target_under_test = Label("//test/clippy:ok_library"),
+    )
+
+    clippy_aspect_with_output_diagnostics_test(
+        name = "clippy_aspect_with_output_diagnostics_test",
+        target_under_test = Label("//test/clippy:ok_library"),
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -140,5 +192,8 @@ def clippy_test_suite(name):
             ":binary_clippy_aspect_with_explicit_flags_test",
             ":library_clippy_aspect_with_explicit_flags_test",
             ":test_clippy_aspect_with_explicit_flags_test",
+            ":clippy_aspect_without_clippy_error_format_test",
+            ":clippy_aspect_with_clippy_error_format_test",
+            ":clippy_aspect_with_output_diagnostics_test",
         ],
     )

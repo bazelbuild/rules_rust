@@ -258,7 +258,7 @@ impl WorkspaceMetadata {
             })
             .collect();
 
-        // It is invald for toml maps to use empty strings as keys. In the case
+        // It is invalid for toml maps to use empty strings as keys. In the case
         // the empty key is expected to be the root package. If the root package
         // has a prefix, then all other packages will as well (even if no other
         // manifest represents them). The value is then saved as a separate value
@@ -502,7 +502,7 @@ pub(crate) fn generate_lockfile(
 
     let root_lockfile_path = manifest_dir.join("Cargo.lock");
 
-    // Remove the file so it's not overwitten if it happens to be a symlink.
+    // Remove the file so it's not overwritten if it happens to be a symlink.
     if root_lockfile_path.exists() {
         fs::remove_file(&root_lockfile_path)?;
     }

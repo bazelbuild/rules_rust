@@ -210,16 +210,31 @@ impl Renderer {
                 .unwrap_or(&self.config.default_alias_rule);
 
             if let Some(library_target_name) = &krate.library_target_name {
-                dependencies.push(Alias {
-                    rule: alias_rule.rule(),
-                    name: format!("{}-{}", krate.name, krate.version),
-                    actual: self.crate_label(
-                        &krate.name,
-                        &krate.version.to_string(),
-                        library_target_name,
-                    ),
-                    tags: BTreeSet::from(["manual".to_owned()]),
-                });
+                // Avoid adding the <crate_name>-<version> alias if there are
+                // more than 1 dependency referencing the same crate at the
+                // same version, but one of them is aliased.
+                //
+                // Without this check we would add duplicate aliases in
+                // scenarios like the following:
+                //
+                // itertools = "0.11.24"
+                // itertools_other = { version = "0.11.24", package = "itertools" }
+                //
+                let add_primary_alias = dep.alias.is_none()
+                    || !context.has_duplicate_workspace_member_dep_by_version(&dep);
+
+                if add_primary_alias {
+                    dependencies.push(Alias {
+                        rule: alias_rule.rule(),
+                        name: format!("{}-{}", krate.name, krate.version),
+                        actual: self.crate_label(
+                            &krate.name,
+                            &krate.version.to_string(),
+                            library_target_name,
+                        ),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                }
 
                 let shorthand = if let Some(rename) = dep.alias.as_ref() {
                     // when the alias is the same as the crate name, don't create the alias
@@ -243,7 +258,7 @@ impl Renderer {
                 // Add a shorthand for crate names as long as there isn't a duplicate
                 // entry. Shorthands for duplicate entries would lead to ambiguous
                 // dependencies.
-                if !context.has_duplicate_workspace_member_dep(&dep) {
+                if !context.has_duplicate_workspace_member_dep_by_alias(&dep) {
                     dependencies.push(Alias {
                         rule: alias_rule.rule(),
                         name: shorthand.clone(),
@@ -2075,6 +2090,151 @@ mod test {
             alias(
                 name = "mock_crate",
                 actual = "@test_rendering__mock_crate-0.1.0//:library_name",
+                tags = ["manual"],
+            )
+        "#};
+        assert!(build_file_content
+            .replace(' ', "")
+            .contains(&expected.replace(' ', "")));
+    }
+
+    /// Tests a situation where there are two dependencies referencing the same
+    /// crate at the same version, but with different aliases.
+    #[test]
+    fn crate_with_ambiguous_alias_dependencies() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(crate_id.clone(), "mock_crate".into());
+
+        let dependency_id = CrateId::new("my_dependency".to_owned(), VERSION_ZERO_ONE_ZERO);
+
+        context.crates.insert(
+            dependency_id.clone(),
+            CrateContext {
+                name: dependency_id.name.clone(),
+                version: dependency_id.version.clone(),
+                package_url: Some("http://www.my_dependency.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("my_dependency".into()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name.clone(),
+                version: crate_id.version.clone(),
+                package_url: Some("http://www.mock_crate.com/".to_owned()),
+                license_ids: BTreeSet::from(["Apache-2.0".to_owned(), "MIT".to_owned()]),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("library_name".into()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([
+                        // These two dependencies are identical, except one is aliased.
+                        CrateDependency {
+                            id: dependency_id.clone(),
+                            target: "my_dependency".into(),
+                            alias: None,
+                            local_path: None,
+                        },
+                        CrateDependency {
+                            id: dependency_id,
+                            target: "my_dependency".into(),
+                            alias: Some("my_dependency_other".into()),
+                            local_path: None,
+                        },
+                    ])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let mut render_config = mock_render_config(None);
+        Arc::get_mut(&mut render_config)
+            .unwrap()
+            .generate_rules_license_metadata = true;
+        let renderer = Renderer::new(render_config, mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        println!("{build_file_content}");
+        let expected = indoc! {r#"
+            ###############################################################################
+            # @generated
+            # DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To
+            # regenerate this file, run the following:
+            #
+            #     cargo_bazel_regen_command
+            ###############################################################################
+
+            package(default_visibility = ["//visibility:public"])
+
+            exports_files(
+                [
+                    "cargo-bazel.json",
+                    "defs.bzl",
+                ] + glob(
+                    allow_empty = True,
+                    include = ["*.bazel"],
+                ),
+            )
+
+            filegroup(
+                name = "srcs",
+                srcs = glob(
+                    allow_empty = True,
+                    include = [
+                        "*.bazel",
+                        "*.bzl",
+                    ],
+                ),
+            )
+
+            # Workspace Member Dependencies
+            alias(
+                name = "my_dependency-0.1.0",
+                actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                tags = ["manual"],
+            )
+
+            alias(
+                name = "my_dependency",
+                actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                tags = ["manual"],
+            )
+
+            alias(
+                name = "my_dependency_other-0.1.0",
+                actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
+                tags = ["manual"],
+            )
+
+            alias(
+                name = "my_dependency_other",
+                actual = "@test_rendering__my_dependency-0.1.0//:my_dependency",
                 tags = ["manual"],
             )
         "#};

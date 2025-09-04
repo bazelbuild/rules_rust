@@ -1,5 +1,5 @@
 {
-  "checksum": "eb03fc481a75bac47d4da71c31faba7d3cc808e809090c30b805d9d7a0aa6b21",
+  "checksum": "0fc87d34c8d2889e853dd140c59abe606155a30c71c09c1daa141af1214f3e31",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",

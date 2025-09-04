@@ -6,18 +6,18 @@ load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 _UNIX_WRAPPER = """\
-#!/usr/bin/env bash
+        #!/usr/bin/env bash
 
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
 set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
 # shellcheck disable=SC1090
 source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || \\
-    source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || \
-    source "$0.runfiles/$f" 2>/dev/null || \\
-    source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-    source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-    {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
+        source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || \
+        source "$0.runfiles/$f" 2>/dev/null || \\
+        source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+        source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+        {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
 # --- end runfiles.bash initialization v3 ---
 
 set -euo pipefail
@@ -39,21 +39,24 @@ if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
     _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
 fi
 
+# Pass on CARGO_REGISTRIES_* and CARGO_REGISTRY*
+while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_REGISTR)
+
 # The path needs to be preserved to prevent bazel from starting with different
 # startup options (requiring a restart of bazel).
 # If you provide an empty path, bazel starts itself with
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
 exec env - \\
-"${{_ENVIRON[@]}}" \\
-    "${{_BIN}}" \\
-    {args} \\
-    --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
-    "$@"
+        "${{_ENVIRON[@]}}" \\
+        "${{_BIN}}" \\
+        {args} \\
+        --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
+        "$@"
 """
 
 _WINDOWS_WRAPPER = """\
-@ECHO OFF
+        @ECHO OFF
 
 SETLOCAL ENABLEEXTENSIONS
 SETLOCAL ENABLEDELAYEDEXPANSION
@@ -289,18 +292,18 @@ def _write_config_file(ctx):
     return args, env, runfiles
 
 def generate_config_file(
-        ctx,
-        mode,
-        annotations,
-        generate_binaries,
-        generate_build_scripts,
-        generate_target_compatible_with,
-        supported_platform_triples,
-        repository_name,
-        output_pkg,
-        workspace_name,
-        render_config,
-        repository_ctx = None):
+    ctx,
+    mode,
+    annotations,
+    generate_binaries,
+    generate_build_scripts,
+    generate_target_compatible_with,
+    supported_platform_triples,
+    repository_name,
+    output_pkg,
+    workspace_name,
+    render_config,
+repository_ctx = None):
     """Writes the rendering config to cargo-bazel-config.json.
 
     Args:
@@ -454,6 +457,12 @@ def _crates_vendor_impl(ctx):
         args.extend(["--bazel", _expand_env("BAZEL_REAL", is_windows)])
         cargo_bazel_runfiles.append(ctx.executable.bazel)
 
+    # Optionally write the rendering lockfile.
+    if ctx.attr.lockfile:
+        environ.append(_sys_runfile_env(ctx, "BAZEL_LOCK", ctx.file.lockfile, is_windows))
+        args.extend(["--lockfile", _expand_env("BAZEL_LOCK", is_windows)])
+        cargo_bazel_runfiles.extend([ctx.file.lockfile])
+
     # Determine platform specific settings
     if is_windows:
         extension = ".bat"
@@ -554,6 +563,13 @@ CRATES_VENDOR_ATTRS = {
             "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
         ),
         default = True,
+    "lockfile": attr.label(
+        doc = (
+            "The path to a file to write rendering information. It contains the same information as the " +
+            "lockfile attribute of crates_repository. It is not used by crates_vendor but may be useful " +
+            "for code generators like gazelle."
+        ),
+        allow_single_file = True,
     ),
     "manifests": attr.label_list(
         doc = "A list of Cargo manifests (`Cargo.toml` files).",
