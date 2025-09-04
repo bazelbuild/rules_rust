@@ -516,6 +516,26 @@ impl Splicer {
         })
     }
 
+    pub(crate) fn symlink_dot_files(&self) {
+        if self.splicing_manifest.isolated {
+            if let Some(ref cargo_creds) = self.splicing_manifest.cargo_creds {
+                if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+                    let path = Path::new(&cargo_home);
+                    tracing::debug!("Isolated and symlinking cargo creds");
+                    let cargo_creds = Path::new(&cargo_creds);
+                    let _ = symlink(cargo_creds, path);
+                }
+            }
+            if let Some(ref cargo_config) = self.splicing_manifest.cargo_config {
+                if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+                    let path = Path::new(&cargo_home);
+                    tracing::debug!("Isolated and symlinking cargo creds");
+                    let cargo_config = Path::new(&cargo_config);
+                    let _ = symlink(cargo_config, path);
+                }
+            }
+        }
+    }
     /// Build a new workspace root
     pub(crate) fn splice_workspace(&self) -> Result<SplicedManifest> {
         SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
