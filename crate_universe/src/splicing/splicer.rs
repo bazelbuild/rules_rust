@@ -133,16 +133,17 @@ impl<'a> SplicerKind<'a> {
             workspace_dir.as_std_path(),
             Some(IGNORE_LIST),
         )?;
-
         Self::setup_cargo_dot_files(
             &splicing_manifest.cargo_config,
             workspace_dir.as_std_path(),
             "config",
+            splicing_manifest.isolated,
         )?;
         Self::setup_cargo_dot_files(
             &splicing_manifest.cargo_creds,
             workspace_dir.as_std_path(),
             "credentials",
+            splicing_manifest.isolated,
         )?;
 
         // Add any additional dependencies to the root package
@@ -187,11 +188,13 @@ impl<'a> SplicerKind<'a> {
             &splicing_manifest.cargo_config,
             workspace_dir.as_std_path(),
             "config",
+            splicing_manifest.isolated,
         )?;
         Self::setup_cargo_dot_files(
             &splicing_manifest.cargo_creds,
             workspace_dir.as_std_path(),
             "credentials",
+            splicing_manifest.isolated,
         )?;
 
         // Ensure the root package manifest has a populated `workspace` member
@@ -233,11 +236,13 @@ impl<'a> SplicerKind<'a> {
             &splicing_manifest.cargo_config,
             workspace_dir.as_std_path(),
             "config",
+            splicing_manifest.isolated,
         )?;
         Self::setup_cargo_dot_files(
             &splicing_manifest.cargo_creds,
             workspace_dir.as_std_path(),
             "credentials",
+            splicing_manifest.isolated,
         )?;
 
         let installations =
@@ -278,6 +283,7 @@ impl<'a> SplicerKind<'a> {
         cargo_config_path: &Option<Utf8PathBuf>,
         workspace_dir: &Path,
         dot_file_root: &str,
+        isolated: bool,
     ) -> Result<()> {
         // If the `.cargo` dir is a symlink, we'll need to relink it and ensure
         // a Cargo config file is omitted
@@ -374,6 +380,15 @@ impl<'a> SplicerKind<'a> {
             fs::copy(cargo_config_path, dot_cargo_dir.join(dot_file_toml))?;
         }
 
+        // symlink to cargo home
+        if isolated {
+            if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+                let dot_file = dot_cargo_dir.join(dot_file_toml);
+                let dest = format!("{}/{}", cargo_home, dot_file_toml);
+                let dest_path = Path::new(&dest);
+                let _ = symlink(&dot_file, dest_path).unwrap();
+            }
+        }
         Ok(())
     }
 
@@ -516,30 +531,6 @@ impl Splicer {
         })
     }
 
-    pub(crate) fn symlink_dot_files(&self) {
-        if self.splicing_manifest.isolated {
-            if let Some(ref cargo_creds) = self.splicing_manifest.cargo_creds {
-                if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-                    let path_str = format!("{}/credentials.toml", cargo_home);
-                    let path = Path::new(&path_str);
-                    tracing::debug!("Isolated and symlinking cargo creds");
-                    let cargo_creds = Path::new(&cargo_creds);
-                    tracing::debug!("Cargo Creds path {:?}", cargo_creds);
-                    tracing::debug!("Destination is {:?}", path);
-                    let _ = symlink(cargo_creds, path).unwrap();
-                }
-            }
-            if let Some(ref cargo_config) = self.splicing_manifest.cargo_config {
-                if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-                    let path_str = format!("{}/config.toml", cargo_home);
-                    let path = Path::new(&path_str);
-                    tracing::debug!("Isolated and symlinking cargo config");
-                    let cargo_config = Path::new(&cargo_config);
-                    let _ = symlink(cargo_config, path).unwrap();
-                }
-            }
-        }
-    }
     /// Build a new workspace root
     pub(crate) fn splice_workspace(&self) -> Result<SplicedManifest> {
         SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
