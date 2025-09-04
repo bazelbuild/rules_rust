@@ -292,18 +292,18 @@ def _write_config_file(ctx):
     return args, env, runfiles
 
 def generate_config_file(
-    ctx,
-    mode,
-    annotations,
-    generate_binaries,
-    generate_build_scripts,
-    generate_target_compatible_with,
-    supported_platform_triples,
-    repository_name,
-    output_pkg,
-    workspace_name,
-    render_config,
-repository_ctx = None):
+        ctx,
+        mode,
+        annotations,
+        generate_binaries,
+        generate_build_scripts,
+        generate_target_compatible_with,
+        supported_platform_triples,
+        repository_name,
+        output_pkg,
+        workspace_name,
+        render_config,
+        repository_ctx = None):
     """Writes the rendering config to cargo-bazel-config.json.
 
     Args:
@@ -563,6 +563,7 @@ CRATES_VENDOR_ATTRS = {
             "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
         ),
         default = True,
+    ),
     "lockfile": attr.label(
         doc = (
             "The path to a file to write rendering information. It contains the same information as the " +
