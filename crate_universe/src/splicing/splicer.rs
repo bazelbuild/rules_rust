@@ -282,7 +282,11 @@ impl<'a> SplicerKind<'a> {
         // If the `.cargo` dir is a symlink, we'll need to relink it and ensure
         // a Cargo config file is omitted
         let dot_cargo_dir = workspace_dir.join(".cargo");
-        let dot_file_toml = &format!("{}.toml", dot_file_root);
+        let dot_file_toml = if dot_file_root.endswith(".toml") {
+            dot_file_root
+        } else {
+            &format!("{}.toml", dot_file_root)
+        };
 
         if dot_cargo_dir.exists() {
             let is_symlink = dot_cargo_dir
@@ -362,7 +366,10 @@ impl<'a> SplicerKind<'a> {
             if !dot_cargo_dir.exists() {
                 fs::create_dir_all(&dot_cargo_dir)?;
             }
-            debug!("Using Cargo dot file: {}", cargo_config_path);
+            debug!(
+                "Copying cargo dot file {} to {}",
+                cargo_config_path, dot_cargo_dir
+            );
             fs::copy(cargo_config_path, dot_cargo_dir.join(dot_file_toml))?;
         }
 
