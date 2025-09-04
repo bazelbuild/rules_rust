@@ -560,7 +560,7 @@ CRATES_VENDOR_ATTRS = {
             "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
             "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
             "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-            "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+            "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
         ),
         default = True,
     "lockfile": attr.label(
