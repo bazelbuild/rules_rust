@@ -646,6 +646,11 @@ pub(crate) fn symlink_roots(
 
         let link_src = source.join(&basename);
         let link_dest = dest.join(&basename);
+        tracing::debug!(
+            "Symlinking {} -> {}",
+            link_src.display(),
+            link_dest.display()
+        );
         symlink(&link_src, &link_dest).context(format!(
             "Failed to create symlink: {} -> {}",
             link_src.display(),
