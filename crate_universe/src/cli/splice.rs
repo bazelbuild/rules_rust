@@ -100,7 +100,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     // Check to see if we need to symlink to CARGO_HOME if isolated
     // Somehow cargo config is getting symlinked.  We need to find out how this
     // is happening and we can get rid of alot of this
-    splicer.symlink_creds();
+    splicer.symlink_dot_files();
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
