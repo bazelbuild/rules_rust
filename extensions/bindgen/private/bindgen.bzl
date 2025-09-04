@@ -322,8 +322,20 @@ def _rust_bindgen_impl(ctx):
         "-nostdlib++",
         "-nostdlibinc",
     )
+
+    # Some forks of Clang, such as Apple's, define additional `-Xclang` flags that upstream Clang
+    # (as used by bindgen) does not understand, so we want to strip them out. We list them here.
+    xclang_flags_to_strip = (
+        "-fexperimental-optimized-noescape",
+    )
+
     open_arg = False
-    for arg in compile_flags:
+    skip_next = False
+    for idx, arg in enumerate(compile_flags):
+        if skip_next:
+            skip_next = False
+            continue
+
         if open_arg:
             args.add(arg)
             open_arg = False
@@ -335,6 +347,10 @@ def _rust_bindgen_impl(ctx):
             continue
 
         if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
+            continue
+
+        if arg == "-Xclang" and idx + 1 < len(compile_flags) and compile_flags[idx + 1] in xclang_flags_to_strip:
+            skip_next = True
             continue
 
         args.add(arg)
