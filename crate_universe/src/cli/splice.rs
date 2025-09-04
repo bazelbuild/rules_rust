@@ -64,6 +64,12 @@ pub struct SpliceOptions {
     /// The name of the repository being generated.
     #[clap(long)]
     pub repository_name: String,
+
+    /// Whether to skip writing the cargo lockfile back after resolving.
+    /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+    /// But you probably don't want to set this.
+    #[clap(long)]
+    pub skip_cargo_lockfile_overwrite: bool,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -94,14 +100,22 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .splice(&splicing_dir)
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
-    // Generate a lockfile
-    let cargo_lockfile = generate_lockfile(
-        &manifest_path,
-        &opt.cargo_lockfile,
-        cargo.clone(),
-        &opt.repin,
-    )
-    .context("Failed to generate lockfile")?;
+    // Use the existing lockfile if possible, otherwise generate a new one.
+    let cargo_lockfile = if opt.cargo_lockfile.is_some() && opt.skip_cargo_lockfile_overwrite {
+        let cargo_lockfile_path = opt.cargo_lockfile.unwrap();
+        cargo_lock::Lockfile::load(&cargo_lockfile_path).context(format!(
+            "Failed to load lockfile: {}",
+            cargo_lockfile_path.display()
+        ))?
+    } else {
+        generate_lockfile(
+            &manifest_path,
+            &opt.cargo_lockfile,
+            cargo.clone(),
+            &opt.repin,
+        )
+        .context("Failed to generate lockfile")?
+    };
 
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
