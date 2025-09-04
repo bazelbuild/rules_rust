@@ -524,6 +524,8 @@ impl Splicer {
                     let path = Path::new(&path_str);
                     tracing::debug!("Isolated and symlinking cargo creds");
                     let cargo_creds = Path::new(&cargo_creds);
+                    tracing::debug!("Cargo Creds path {:?}", cargo_creds);
+                    tracing::Debug!("Destination is {:?}", path);
                     let _ = symlink(cargo_creds, path).unwrap();
                 }
             }
