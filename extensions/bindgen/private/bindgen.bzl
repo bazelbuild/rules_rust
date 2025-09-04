@@ -14,6 +14,7 @@
 
 """Rust Bindgen rules"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_COMPILE_ACTION_NAME",
@@ -187,6 +188,23 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         rustc_env = None,
     )
 
+def _get_resource_dir(cc_toolchain):
+    """Returns the resource directory for the given cc_toolchain."""
+
+    # We use a bit of a hack to find the resource directory: We know that the builtin header
+    # stdbool.h (chosen relatively arbitrarily) needs to appear in `cc_toolchain.all_files`, so we
+    # search for it and use the directory above the include directory as the resource directory.
+    # This isn't ideal, but mboehme@google.com believes there is no more direct way of doing this.
+    for f in cc_toolchain.all_files.to_list():
+        if f.basename == "stdbool.h":
+            path = f.path
+            for _ in range(path.count("/") + 1):
+                if paths.basename(path) == "include":
+                    return paths.dirname(path)
+                path = paths.dirname(path)
+
+    return None
+
 def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
@@ -253,6 +271,10 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Clang Arguments
     args.add("--")
+
+    resource_dir = _get_resource_dir(cc_toolchain)
+    if resource_dir:
+        args.add("-resource-dir=%s" % resource_dir)
 
     compile_variables = cc_common.create_compile_variables(
         cc_toolchain = cc_toolchain,
