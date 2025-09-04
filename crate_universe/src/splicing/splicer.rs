@@ -523,7 +523,7 @@ impl Splicer {
                     let path = Path::new(&cargo_home);
                     tracing::debug!("Isolated and symlinking cargo creds");
                     let cargo_creds = Path::new(&cargo_creds);
-                    let _ = symlink(cargo_creds, path);
+                    let _ = symlink(cargo_creds, path).unwrap();
                 }
             }
             if let Some(ref cargo_config) = self.splicing_manifest.cargo_config {
@@ -531,7 +531,7 @@ impl Splicer {
                     let path = Path::new(&cargo_home);
                     tracing::debug!("Isolated and symlinking cargo creds");
                     let cargo_config = Path::new(&cargo_config);
-                    let _ = symlink(cargo_config, path);
+                    let _ = symlink(cargo_config, path).unwrap();
                 }
             }
         }
@@ -666,11 +666,6 @@ pub(crate) fn symlink_roots(
 
         let link_src = source.join(&basename);
         let link_dest = dest.join(&basename);
-        tracing::debug!(
-            "Symlinking {} -> {}",
-            link_src.display(),
-            link_dest.display()
-        );
         symlink(&link_src, &link_dest).context(format!(
             "Failed to create symlink: {} -> {}",
             link_src.display(),
