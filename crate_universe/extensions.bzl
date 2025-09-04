@@ -645,6 +645,7 @@ def _generate_hub_and_spokes(
             config_path = config_file,
             output_dir = tag_path.get_child("splicing-output"),
             debug_workspace_dir = tag_path.get_child("splicing-workspace"),
+            skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
             repository_name = cfg.name,
         )
 

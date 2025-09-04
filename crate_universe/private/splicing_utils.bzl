@@ -123,6 +123,7 @@ def splice_workspace_manifest(
         config_path,
         output_dir,
         repository_name,
+        skip_cargo_lockfile_overwrite,
         debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
@@ -134,6 +135,9 @@ def splice_workspace_manifest(
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
         repository_name (str): Name of the repository being generated.
+        skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
+            You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+            But you probably don't want to set this.
         debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
@@ -158,6 +162,9 @@ def splice_workspace_manifest(
             "--cargo-lockfile",
             cargo_lockfile,
         ])
+
+    if skip_cargo_lockfile_overwrite:
+        arguments.append("--skip-cargo-lockfile-overwrite")
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.

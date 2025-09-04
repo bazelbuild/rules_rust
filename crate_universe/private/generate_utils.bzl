@@ -497,9 +497,7 @@ def execute_generator(
         ])
 
     if skip_cargo_lockfile_overwrite:
-        args.extend([
-            "--skip-cargo-lockfile-overwrite",
-        ])
+        args.append("--skip-cargo-lockfile-overwrite")
 
     # Some components are not required unless re-pinning is enabled
     if metadata:
