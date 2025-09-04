@@ -527,11 +527,11 @@ impl Splicer {
                     let _ = symlink(cargo_creds, path).unwrap();
                 }
             }
-            if let Some(ref cargo_creds) = self.splicing_manifest.cargo_config {
+            if let Some(ref cargo_config) = self.splicing_manifest.cargo_config {
                 if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
                     let path_str = format!("{}/config.toml", cargo_home);
                     let path = Path::new(&path_str);
-                    tracing::debug!("Isolated and symlinking cargo creds");
+                    tracing::debug!("Isolated and symlinking cargo config");
                     let cargo_config = Path::new(&cargo_config);
                     let _ = symlink(cargo_config, path).unwrap();
                 }
