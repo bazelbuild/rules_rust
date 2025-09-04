@@ -88,8 +88,6 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Generate a splicer for creating a Cargo workspace manifest
     let splicer = Splicer::new(splicing_dir.clone(), splicing_manifest)?;
-    // Check to see if we need to symlink to CARGO_HOME if isolated
-    splicer.symlink_dot_files();
     let prepared_splicer = splicer.prepare()?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
@@ -98,6 +96,9 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     let manifest_path = prepared_splicer
         .splice(&splicing_dir)
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
+
+    // Check to see if we need to symlink to CARGO_HOME if isolated
+    splicer.symlink_dot_files();
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(
