@@ -98,7 +98,9 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
     // Check to see if we need to symlink to CARGO_HOME if isolated
-    splicer.symlink_dot_files();
+    // Somehow cargo config is getting symlinked.  We need to find out how this
+    // is happening and we can get rid of alot of this
+    splicer.symlink_creds();
 
     // Generate a lockfile
     let cargo_lockfile = generate_lockfile(

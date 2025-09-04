@@ -516,7 +516,7 @@ impl Splicer {
         })
     }
 
-    pub(crate) fn symlink_dot_files(&self) {
+    pub(crate) fn symlink_creds(&self) {
         if self.splicing_manifest.isolated {
             if let Some(ref cargo_creds) = self.splicing_manifest.cargo_creds {
                 if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
@@ -524,14 +524,6 @@ impl Splicer {
                     tracing::debug!("Isolated and symlinking cargo creds");
                     let cargo_creds = Path::new(&cargo_creds);
                     let _ = symlink(cargo_creds, path).unwrap();
-                }
-            }
-            if let Some(ref cargo_config) = self.splicing_manifest.cargo_config {
-                if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-                    let path = Path::new(&cargo_home);
-                    tracing::debug!("Isolated and symlinking cargo creds");
-                    let cargo_config = Path::new(&cargo_config);
-                    let _ = symlink(cargo_config, path).unwrap();
                 }
             }
         }
