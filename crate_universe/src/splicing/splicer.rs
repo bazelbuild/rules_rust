@@ -384,10 +384,13 @@ impl<'a> SplicerKind<'a> {
         if isolated {
             if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
                 let dot_file = dot_cargo_dir.join(dot_file_toml);
+                let cargo_home_dir = Path::new(&cargo_home);
                 let dest = format!("{}/{}", cargo_home, dot_file_toml);
                 let dest_path = Path::new(&dest);
-                if dest_path.exists() {
-                    tracing::debug!("Dest is {:?}", dest_path);
+                if cargo_home_dir.exists() {
+                    tracing::debug!("Dest is {:?}", cargo_home_dir);
+                } else {
+                    fs::create_dir_all(&cargo_home_dir)?;
                 }
                 if dot_file.exists() {
                     tracing::debug!("Dot file is {:?}", dot_file);
