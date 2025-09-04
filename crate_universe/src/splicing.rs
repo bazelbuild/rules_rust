@@ -65,6 +65,7 @@ impl SplicingManifest {
     }
 
     pub(crate) fn resolve(self, workspace_dir: &Path, output_base: &Path) -> Self {
+        tracing::debug!("Beginning to resolve");
         let Self {
             manifests,
             cargo_config,
@@ -99,7 +100,7 @@ impl SplicingManifest {
                 // find the isolated cargo home
                 if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
                     let path = Path::new(&cargo_home);
-                    tracing::debug!("Isoalted and symlinking cargo creds");
+                    tracing::debug!("Isolated and symlinking cargo creds");
                     let cargo_config = Path::new(&resolved_path);
                     splicer::symlink_roots(cargo_config, path, None).unwrap_or_default();
                 }
