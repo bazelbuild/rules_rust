@@ -17,6 +17,8 @@ register_toolchains(
     "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
 )
 
+load("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
 local_repository(
     name = "rules_rust",
     path = "../..",
