@@ -114,6 +114,7 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         output_dir: scratch.path().join("out"),
         dry_run: false,
         cargo_config: None,
+        cargo_creds: None,
         config,
         cargo,
         rustc,

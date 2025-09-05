@@ -383,7 +383,7 @@ impl<'a> SplicerKind<'a> {
                 let dest_path = Path::new(&dest);
                 // create CARGO_HOME directory if it doesnt exist
                 if !cargo_home_dir.exists() {
-                    fs::create_dir_all(&cargo_home_dir)?;
+                    fs::create_dir_all(cargo_home_dir)?;
                 }
                 let _ = symlink(&dot_file, dest_path)?;
             }
