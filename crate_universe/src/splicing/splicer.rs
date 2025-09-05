@@ -7,7 +7,6 @@ use std::path::Path;
 use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_toml::Manifest;
-use tracing::debug;
 
 use crate::config::CrateId;
 use crate::splicing::{SplicedManifest, SplicingManifest};
@@ -372,11 +371,6 @@ impl<'a> SplicerKind<'a> {
             if !dot_cargo_dir.exists() {
                 fs::create_dir_all(&dot_cargo_dir)?;
             }
-            debug!(
-                "Copying cargo dot file {} to {}",
-                cargo_config_path,
-                dot_cargo_dir.display()
-            );
             fs::copy(cargo_config_path, dot_cargo_dir.join(dot_file_toml))?;
         }
 
@@ -387,15 +381,11 @@ impl<'a> SplicerKind<'a> {
                 let cargo_home_dir = Path::new(&cargo_home);
                 let dest = format!("{}/{}", cargo_home, dot_file_toml);
                 let dest_path = Path::new(&dest);
-                if cargo_home_dir.exists() {
-                    tracing::debug!("Dest is {:?}", cargo_home_dir);
-                } else {
+                // create CARGO_HOME directory if it doesnt exist
+                if !cargo_home_dir.exists() {
                     fs::create_dir_all(&cargo_home_dir)?;
                 }
-                if dot_file.exists() {
-                    tracing::debug!("Dot file is {:?}", dot_file);
-                }
-                let _ = symlink(&dot_file, dest_path).unwrap();
+                let _ = symlink(&dot_file, dest_path)?;
             }
         }
         Ok(())
