@@ -385,7 +385,9 @@ impl<'a> SplicerKind<'a> {
                 if !cargo_home_dir.exists() {
                     fs::create_dir_all(cargo_home_dir)?;
                 }
-                let _ = symlink(&dot_file, dest_path)?;
+                if !dest_path.exists() {
+                    let _ = symlink(&dot_file, dest_path)?;
+                }
             }
         }
         Ok(())
