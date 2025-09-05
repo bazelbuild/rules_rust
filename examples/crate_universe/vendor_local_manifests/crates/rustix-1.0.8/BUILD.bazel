@@ -202,7 +202,7 @@ rust_library(
     }),
     version = "1.0.8",
     deps = [
-        "//vendor_local_manifests/crates/bitflags-2.9.2:bitflags",
+        "//vendor_local_manifests/crates/bitflags-2.9.3:bitflags",
         "//vendor_local_manifests/crates/rustix-1.0.8:build_script_build",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [
