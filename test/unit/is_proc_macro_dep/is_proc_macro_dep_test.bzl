@@ -65,7 +65,7 @@ is_proc_macro_dep_is_not_in_env_for_top_level_action_test = analysistest.make(_i
 def _is_proc_macro_dep_is_false_for_proc_macro(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    proc_macro_dep_action = [a for a in tut[DepActionsInfo].actions if str(a) == "action 'Compiling Rust proc-macro proc_macro_crate (1 files)'"][0]
+    proc_macro_dep_action = [a for a in tut[DepActionsInfo].actions if str(a) == "action 'Compiling Rust proc-macro proc_macro_crate (1 files) [for tool]'"][0]
     asserts.equals(env, proc_macro_dep_action.env["BAZEL_RULES_RUST_IS_PROC_MACRO_DEP"], "0")
     return analysistest.end(env)
 
@@ -83,7 +83,7 @@ is_proc_macro_dep_is_false_for_top_level_library_test = analysistest.make(_is_pr
 def _is_proc_macro_dep_is_true_for_proc_macro_dep(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    proc_macro_dep_action = [a for a in tut[DepActionsInfo].actions if str(a) == "action 'Compiling Rust rlib proc_macro_dep (1 files)'"][0]
+    proc_macro_dep_action = [a for a in tut[DepActionsInfo].actions if str(a) == "action 'Compiling Rust rlib proc_macro_dep (1 files) [for tool]'"][0]
     asserts.equals(env, proc_macro_dep_action.env["BAZEL_RULES_RUST_IS_PROC_MACRO_DEP"], "1")
     return analysistest.end(env)
 
