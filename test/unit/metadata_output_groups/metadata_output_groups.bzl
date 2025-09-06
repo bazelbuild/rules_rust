@@ -1,7 +1,8 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 
 def _metadata_output_groups_present_test_impl(ctx):
     env = analysistest.begin(ctx)

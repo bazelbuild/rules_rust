@@ -1,7 +1,8 @@
 """Unittest to verify proc-macro targets"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
-load("//rust:defs.bzl", "rust_proc_macro", "rust_test")
+load("//rust:defs.bzl", "rust_test")
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",

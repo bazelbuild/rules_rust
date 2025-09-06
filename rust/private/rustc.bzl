@@ -228,8 +228,8 @@ def collect_deps(
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
-        deps (list): The deps from ctx.attr.deps.
-        proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
+        deps (list): The deps from partition_deps(ctx)
+        proc_macro_deps (list): The proc_macro_deps from partition_deps(ctx).
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
 
     Returns:

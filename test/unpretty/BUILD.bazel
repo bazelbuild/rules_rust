@@ -2,11 +2,11 @@ load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load(
     "//rust:defs.bzl",
     "rust_library",
-    "rust_proc_macro",
     "rust_shared_library",
     "rust_test",
     "rust_unpretty",
 )
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 
 rust_proc_macro(
     name = "proc_macro",

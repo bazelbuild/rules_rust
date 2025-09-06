@@ -14,9 +14,11 @@ rust_binary(
         "//crate_universe/private:urls.bzl",
     ],
     edition = "2021",
-    proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
         "MODULE_ROOT_PATH": "$(rootpath //crate_universe/private:urls.bzl)",
     },
-    deps = all_crate_deps(normal = True),
+    deps = all_crate_deps(
+        normal = True,
+        proc_macro = True,
+    ),
 )
