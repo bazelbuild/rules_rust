@@ -39,6 +39,7 @@ load(
     "generate_output_diagnostics",
     "get_edition",
     "get_import_macro_deps",
+    "partition_deps",
     "transform_deps",
     "transform_sources",
 )
@@ -53,31 +54,6 @@ def _assert_no_deprecated_attributes(_ctx):
     """
     pass
 
-def _assert_correct_dep_mapping(ctx):
-    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
-
-    Args:
-        ctx (ctx): The current rule's context object
-    """
-    for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
-                fail(
-                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
-                        ctx.label,
-                        dep.label,
-                    ),
-                )
-    for dep in ctx.attr.proc_macro_deps:
-        type = dep[rust_common.crate_info].type
-        if type != "proc-macro":
-            fail(
-                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                    ctx.label,
-                    dep.label,
-                    type,
-                ),
-            )
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -148,7 +124,7 @@ def _rust_library_common(ctx, crate_type):
         list: A list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
@@ -195,8 +171,8 @@ def _rust_library_common(ctx, crate_type):
             not ctx.attr.disable_pipelining
         )
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -238,7 +214,7 @@ def _rust_binary_impl(ctx):
     """
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     if ctx.attr.binary_name:
         output_filename = ctx.attr.binary_name
@@ -246,8 +222,8 @@ def _rust_binary_impl(ctx):
         output_filename = ctx.label.name
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
@@ -327,13 +303,13 @@ def _rust_test_impl(ctx):
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
@@ -1072,6 +1048,21 @@ rust_shared_library = rule(
         """),
 )
 
+def _exec_transition_impl(_settings, attr):
+    return {
+        "//command_line_option:is exec configuration": not attr.internal_doctest_transition_override,
+        "//command_line_option:stamp": False,
+    }
+
+_exec_transition = transition(
+    inputs = [],
+    outputs = [
+        "//command_line_option:is exec configuration",
+        "//command_line_option:stamp",
+    ],
+    implementation = _exec_transition_impl,
+)
+
 def _proc_macro_dep_transition_impl(settings, _attr):
     if settings["//rust/private:is_proc_macro_dep_enabled"]:
         return {"//rust/private:is_proc_macro_dep": True}
@@ -1105,7 +1096,11 @@ rust_proc_macro = rule(
             """),
             cfg = _proc_macro_dep_transition,
         ),
+        internal_doctest_transition_override = attr.bool(
+            doc = "Used for internal testing; do not set",
+        ),
     ),
+    cfg = _exec_transition,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),

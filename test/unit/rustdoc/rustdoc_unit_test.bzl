@@ -190,8 +190,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = []
     rust_doc_test(
         name = "{}_doctest".format(name),
         crate = ":{}".format(name),
-        deps = rustdoc_deps,
-        proc_macro_deps = rustdoc_proc_macro_deps,
+        deps = rustdoc_deps + rustdoc_proc_macro_deps,
         target_compatible_with = NOT_WINDOWS,
     )
 
@@ -241,6 +240,7 @@ def _define_targets():
         rust_proc_macro,
         name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
+        internal_doctest_transition_override = True,
     )
 
     _target_maker(
