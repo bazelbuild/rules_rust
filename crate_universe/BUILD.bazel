@@ -66,7 +66,6 @@ rust_library(
     aliases = aliases(),
     compile_data = [":rust_data"],
     edition = "2021",
-    proc_macro_deps = all_crate_deps(proc_macro = True),
     # This target embeds additional, stamping related information (see
     # https://docs.bazel.build/versions/main/user-manual.html#workspace_status
     # for more information). Set stamp = -1 to indicate that it should respect
@@ -74,7 +73,10 @@ rust_library(
     stamp = -1,
     version = VERSION,
     visibility = ["//visibility:public"],
-    deps = all_crate_deps(normal = True),
+    deps = all_crate_deps(
+        normal = True,
+        proc_macro = True,
+    ),
 )
 
 rust_binary(

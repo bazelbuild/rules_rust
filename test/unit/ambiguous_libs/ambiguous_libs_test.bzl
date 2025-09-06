@@ -6,10 +6,10 @@ load(
     "rust_binary",
     "rust_common",
     "rust_library",
-    "rust_proc_macro",
     "rust_shared_library",
     "rust_static_library",
 )
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 
 def _get_crate_info(target):
     return target[rust_common.crate_info] if rust_common.crate_info in target else target[rust_common.test_crate_info].crate

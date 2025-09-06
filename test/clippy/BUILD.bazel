@@ -1,14 +1,14 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(
-    "@rules_rust//rust:defs.bzl",
+    "//rust:defs.bzl",
     "rust_binary",
     "rust_clippy",
     "rust_library",
-    "rust_proc_macro",
     "rust_shared_library",
     "rust_static_library",
     "rust_test",
 )
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//test/unit/clippy:__pkg__"])
 

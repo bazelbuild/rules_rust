@@ -7,10 +7,10 @@ load(
     "rust_binary",
     "rust_common",
     "rust_library",
-    "rust_proc_macro",
     "rust_shared_library",
     "rust_static_library",
 )
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 load("//test/unit:common.bzl", "assert_action_mnemonic")
 
 def _get_crate_info(target):

@@ -2,7 +2,8 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_shared_library", "rust_static_library")
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 load(
     "//test/unit:common.bzl",
     "assert_argv_contains",
