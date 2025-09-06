@@ -7,16 +7,20 @@ rust_library(
     srcs = glob(["**/*.rs"]),
     aliases = aliases(),
     edition = "2018",
-    proc_macro_deps = all_crate_deps(proc_macro = True),
-    deps = all_crate_deps(normal = True),
+    deps = all_crate_deps(
+        normal = True,
+        proc_macro = True,
+    ),
 )
 
 rust_test(
     name = "unit_test",
     aliases = aliases(),
     crate = ":aliases",
-    proc_macro_deps = all_crate_deps(proc_macro_dev = True),
-    deps = all_crate_deps(normal_dev = True),
+    deps = all_crate_deps(
+        normal_dev = True,
+        proc_macro_dev = True,
+    ),
 )
 
 # Ensures that Bazel aliases from the crates_repository are actually usable.

@@ -141,7 +141,7 @@ def lto_test_suite(name):
 
     _lto_proc_macro_test(
         name = "lto_proc_macro_test",
-        target_under_test = ":proc_macro",
+        target_under_test = ":proc_macro_inner",
     )
 
     native.test_suite(

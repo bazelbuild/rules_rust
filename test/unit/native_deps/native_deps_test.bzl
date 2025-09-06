@@ -337,7 +337,7 @@ def _native_dep_test():
     )
     proc_macro_has_native_libs_test(
         name = "proc_macro_has_native_libs_test",
-        target_under_test = ":proc_macro_has_native_dep",
+        target_under_test = ":proc_macro_has_native_dep_inner",
     )
     bin_has_native_libs_test(
         name = "bin_has_native_libs_test",

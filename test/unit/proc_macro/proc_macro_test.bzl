@@ -76,11 +76,11 @@ def _proc_macro_test():
 
     extern_flag_not_passed_when_compiling_macro_2015_test(
         name = "extern_flag_not_passed_when_compiling_macro_2015",
-        target_under_test = ":proc_macro_2015",
+        target_under_test = ":proc_macro_2015_inner",
     )
     extern_flag_passed_when_compiling_macro_2018_test(
         name = "extern_flag_passed_when_compiling_macro_2018",
-        target_under_test = ":proc_macro_2018",
+        target_under_test = ":proc_macro_2018_inner",
     )
     extern_flag_not_passed_when_compiling_macro_wrapper_rule_2015_test(
         name = "extern_flag_not_passed_when_compiling_macro_wrapper_rule_2015",

@@ -101,7 +101,7 @@ def _create_test_targets():
     )
     ambiguous_deps_test(
         name = "proc_macro_with_ambiguous_deps_test",
-        target_under_test = ":proc_macro",
+        target_under_test = ":proc_macro_inner",
     )
     ambiguous_deps_test(
         name = "cdylib_with_ambiguous_deps_test",

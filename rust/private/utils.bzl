@@ -18,6 +18,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
 load(
     ":providers.bzl",
@@ -497,6 +498,28 @@ def is_exec_configuration(ctx):
 
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec") != -1
+
+def partition_deps(ctx):
+    """Split deps into normal deps and proc_macro_deps.
+
+    Args:
+        ctx (ctx): The current rule's context object
+
+    Returns:
+        deps and proc_macro_deps
+    """
+    if ctx.attr.proc_macro_deps:
+        print("`proc_macro_deps` attribute is deprecated; all deps can go in `deps`")  # buildifier: disable=print
+
+    deps = []
+    proc_macro_deps = []
+    for dep in ctx.attr.deps + ctx.attr.proc_macro_deps:
+        if rust_common.crate_info in dep and dep[rust_common.crate_info].type == "proc-macro":
+            proc_macro_deps.append(dep)
+        else:
+            deps.append(dep)
+
+    return deps, proc_macro_deps
 
 def transform_deps(deps):
     """Transforms a [Target] into [DepVariantInfo].

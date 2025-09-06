@@ -39,6 +39,7 @@ load(
     "generate_output_diagnostics",
     "get_edition",
     "get_import_macro_deps",
+    "partition_deps",
     "transform_deps",
     "transform_sources",
 )
@@ -53,32 +54,6 @@ def _assert_no_deprecated_attributes(_ctx):
     """
     pass
 
-def _assert_correct_dep_mapping(ctx):
-    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
-
-    Args:
-        ctx (ctx): The current rule's context object
-    """
-    for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
-                fail(
-                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
-                        ctx.label,
-                        dep.label,
-                    ),
-                )
-    for dep in ctx.attr.proc_macro_deps:
-        type = dep[rust_common.crate_info].type
-        if type != "proc-macro":
-            fail(
-                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                    ctx.label,
-                    dep.label,
-                    type,
-                ),
-            )
-
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
 
@@ -92,7 +67,7 @@ def _rust_library_impl(ctx):
     Returns:
         list: A list of providers.
     """
-    return _rust_library_common(ctx, "rlib")
+    return rust_library_common(ctx, "rlib")
 
 def _rust_static_library_impl(ctx):
     """The implementation of the `rust_static_library` rule.
@@ -106,7 +81,7 @@ def _rust_static_library_impl(ctx):
     Returns:
         list: A list of providers.
     """
-    return _rust_library_common(ctx, "staticlib")
+    return rust_library_common(ctx, "staticlib")
 
 def _rust_shared_library_impl(ctx):
     """The implementation of the `rust_shared_library` rule.
@@ -124,20 +99,9 @@ def _rust_shared_library_impl(ctx):
     Returns:
         list: A list of providers.
     """
-    return _rust_library_common(ctx, "cdylib")
+    return rust_library_common(ctx, "cdylib")
 
-def _rust_proc_macro_impl(ctx):
-    """The implementation of the `rust_proc_macro` rule.
-
-    Args:
-        ctx (ctx): The rule's context object
-
-    Returns:
-        list: A list of providers.
-    """
-    return _rust_library_common(ctx, "proc-macro")
-
-def _rust_library_common(ctx, crate_type):
+def rust_library_common(ctx, crate_type):
     """The common implementation of the library-like rules.
 
     Args:
@@ -148,7 +112,7 @@ def _rust_library_common(ctx, crate_type):
         list: A list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
@@ -195,8 +159,8 @@ def _rust_library_common(ctx, crate_type):
             not ctx.attr.disable_pipelining
         )
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -238,7 +202,7 @@ def _rust_binary_impl(ctx):
     """
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     if ctx.attr.binary_name:
         output_filename = ctx.attr.binary_name
@@ -246,8 +210,8 @@ def _rust_binary_impl(ctx):
         output_filename = ctx.label.name
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
@@ -327,13 +291,13 @@ def _rust_test_impl(ctx):
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = partition_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
@@ -639,7 +603,7 @@ _rustc_allocator_libraries_attrs = {
     ),
 }
 
-_common_attrs = {
+common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
             Remap crates to a new name or moniker for linkage to this target
@@ -892,7 +856,7 @@ _rust_test_attrs = {
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | {
+    attrs = common_attrs | {
         "disable_pipelining": attr.bool(
             default = False,
             doc = dedent("""\
@@ -990,7 +954,7 @@ _rust_static_library_transition = transition(
 
 rust_static_library = rule(
     implementation = _rust_static_library_impl,
-    attrs = _common_attrs | {
+    attrs = common_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the static library to.",
             default = None,
@@ -1039,7 +1003,7 @@ _rust_shared_library_transition = transition(
 
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = _common_attrs | _experimental_use_cc_common_link_attrs | {
+    attrs = common_attrs | _experimental_use_cc_common_link_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the shared library to.",
             default = None,
@@ -1070,50 +1034,6 @@ rust_shared_library = rule(
 
         When building the whole binary in Bazel, use `rust_library` instead.
         """),
-)
-
-def _proc_macro_dep_transition_impl(settings, _attr):
-    if settings["//rust/private:is_proc_macro_dep_enabled"]:
-        return {"//rust/private:is_proc_macro_dep": True}
-    else:
-        return []
-
-_proc_macro_dep_transition = transition(
-    inputs = ["//rust/private:is_proc_macro_dep_enabled"],
-    outputs = ["//rust/private:is_proc_macro_dep"],
-    implementation = _proc_macro_dep_transition_impl,
-)
-
-rust_proc_macro = rule(
-    implementation = _rust_proc_macro_impl,
-    provides = COMMON_PROVIDERS,
-    # Start by copying the common attributes, then override the `deps` attribute
-    # to apply `_proc_macro_dep_transition`. To add this transition we additionally
-    # need to declare `_allowlist_function_transition`, see
-    # https://docs.bazel.build/versions/main/skylark/config.html#user-defined-transitions.
-    attrs = dict(
-        _common_attrs.items(),
-        _allowlist_function_transition = attr.label(
-            default = Label("//tools/allowlists/function_transition_allowlist"),
-        ),
-        deps = attr.label_list(
-            doc = dedent("""\
-                List of other libraries to be linked to this library target.
-
-                These can be either other `rust_library` targets or `cc_library` targets if
-                linking a native library.
-            """),
-            cfg = _proc_macro_dep_transition,
-        ),
-    ),
-    fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    doc = dedent("""\
-        Builds a Rust proc-macro crate.
-    """),
 )
 
 _rust_binary_attrs = {
@@ -1180,7 +1100,7 @@ _rust_binary_transition = transition(
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | _rust_binary_attrs | {
+    attrs = common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1286,7 +1206,8 @@ rust_binary = rule(
 """),
 )
 
-def _common_attrs_for_binary_without_process_wrapper(attrs):
+# buildifier: disable=function-docstring
+def common_attrs_for_binary_without_process_wrapper(attrs):
     new_attr = dict(attrs)
 
     # use a fake process wrapper
@@ -1322,7 +1243,7 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
+    attrs = common_attrs_for_binary_without_process_wrapper(common_attrs | _rust_binary_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the binary to.",
             default = None,
@@ -1343,7 +1264,7 @@ rust_binary_without_process_wrapper = rule(
 rust_library_without_process_wrapper = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
-    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
+    attrs = dict(common_attrs_for_binary_without_process_wrapper(common_attrs).items()),
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
@@ -1369,7 +1290,7 @@ _rust_test_transition = transition(
 rust_test = rule(
     implementation = _rust_test_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs | _rust_test_attrs | {
+    attrs = common_attrs | _rust_test_attrs | {
         "platform": attr.label(
             doc = "Optional platform to transition the test to.",
             default = None,

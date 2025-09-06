@@ -177,7 +177,7 @@ def _clippy_aspect_impl(target, ctx):
         out_dir = out_dir,
         build_env_files = build_env_files,
         build_flags_files = build_flags_files,
-        emit = ["dep-info", "metadata"],
+        emit = ["metadata"],
         skip_expanding_rustc_env = True,
         use_json_output = bool(clippy_diagnostics),
         error_format = error_format,

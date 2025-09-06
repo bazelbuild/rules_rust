@@ -1,7 +1,10 @@
 """Unittests for the is_proc_macro_dep setting."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
+load("//rust:defs.bzl", "rust_library")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust_proc_macro_inner.bzl", "rust_proc_macro")
 
 DepActionsInfo = provider(
     "Contains information about dependencies actions.",

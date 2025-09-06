@@ -152,7 +152,7 @@ def _native_action_inputs_test():
 
     native_action_inputs_present_test(
         name = "native_action_inputs_proc_macro_test",
-        target_under_test = ":foo_proc_macro",
+        target_under_test = ":foo_proc_macro_inner",
     )
 
 def native_action_inputs_test_suite(name):

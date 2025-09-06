@@ -169,7 +169,7 @@ rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error
     str(Label("//rust/settings:error_format")): "json",
 })
 
-def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
+def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], rustdoc_crate = None, **kwargs):
     rule_fn(
         name = name,
         edition = "2018",
@@ -189,7 +189,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = []
 
     rust_doc_test(
         name = "{}_doctest".format(name),
-        crate = ":{}".format(name),
+        crate = rustdoc_crate or name,
         deps = rustdoc_deps,
         proc_macro_deps = rustdoc_proc_macro_deps,
         target_compatible_with = NOT_WINDOWS,
@@ -241,6 +241,7 @@ def _define_targets():
         rust_proc_macro,
         name = "rustdoc_proc_macro",
         srcs = ["rustdoc_proc_macro.rs"],
+        rustdoc_crate = "rustdoc_proc_macro_inner",
     )
 
     _target_maker(

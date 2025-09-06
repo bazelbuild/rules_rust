@@ -89,8 +89,6 @@ rust_library(
     aliases = aliases(),
     deps = all_crate_deps(
         normal = True,
-    ),
-    proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
 )
@@ -104,8 +102,6 @@ rust_test(
     ),
     deps = all_crate_deps(
         normal_dev = True,
-    ),
-    proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
 )
