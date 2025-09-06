@@ -582,11 +582,19 @@ impl Renderer {
                 attrs.map(|attrs| attrs.data.clone()).unwrap_or_default(),
             ),
             deps: SelectSet::new(
-                self.make_deps(
-                    attrs.map(|attrs| attrs.deps.clone()).unwrap_or_default(),
-                    attrs
-                        .map(|attrs| attrs.extra_deps.clone())
-                        .unwrap_or_default(),
+                Select::merge(
+                    self.make_deps(
+                        attrs.map(|attrs| attrs.deps.clone()).unwrap_or_default(),
+                        attrs
+                            .map(|attrs| attrs.extra_deps.clone())
+                            .unwrap_or_default(),
+                    ),
+                    self.make_deps(
+                        attrs.map(|attrs| attrs.proc_macro_deps.clone()).unwrap_or_default(),
+                        attrs
+                            .map(|attrs| attrs.extra_proc_macro_deps.clone())
+                            .unwrap_or_default(),
+                    ),
                 ),
                 platforms,
             ),
@@ -605,17 +613,6 @@ impl Renderer {
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
             pkg_name: Some(krate.name.clone()),
-            proc_macro_deps: SelectSet::new(
-                self.make_deps(
-                    attrs
-                        .map(|attrs| attrs.proc_macro_deps.clone())
-                        .unwrap_or_default(),
-                    attrs
-                        .map(|attrs| attrs.extra_proc_macro_deps.clone())
-                        .unwrap_or_default(),
-                ),
-                platforms,
-            ),
             rundir: SelectScalar::new(
                 attrs.map(|attrs| attrs.rundir.clone()).unwrap_or_default(),
                 platforms,
@@ -674,16 +671,15 @@ impl Renderer {
         Ok(RustProcMacro {
             name: target.crate_name.clone(),
             deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.deps.clone(),
-                    krate.common_attrs.extra_deps.clone(),
-                ),
-                platforms,
-            ),
-            proc_macro_deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.proc_macro_deps.clone(),
-                    krate.common_attrs.extra_proc_macro_deps.clone(),
+                Select::merge(
+                    self.make_deps(
+                        krate.common_attrs.deps.clone(),
+                        krate.common_attrs.extra_deps.clone(),
+                    ),
+                    self.make_deps(
+                        krate.common_attrs.proc_macro_deps.clone(),
+                        krate.common_attrs.extra_proc_macro_deps.clone(),
+                    ),
                 ),
                 platforms,
             ),
@@ -701,16 +697,15 @@ impl Renderer {
         Ok(RustLibrary {
             name: target.crate_name.clone(),
             deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.deps.clone(),
-                    krate.common_attrs.extra_deps.clone(),
-                ),
-                platforms,
-            ),
-            proc_macro_deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.proc_macro_deps.clone(),
-                    krate.common_attrs.extra_proc_macro_deps.clone(),
+                Select::merge(
+                    self.make_deps(
+                        krate.common_attrs.deps.clone(),
+                        krate.common_attrs.extra_deps.clone(),
+                    ),
+                    self.make_deps(
+                        krate.common_attrs.proc_macro_deps.clone(),
+                        krate.common_attrs.extra_proc_macro_deps.clone(),
+                    ),
                 ),
                 platforms,
             ),
@@ -729,9 +724,15 @@ impl Renderer {
         Ok(RustBinary {
             name: format!("{}__bin", target.crate_name),
             deps: {
-                let mut deps = self.make_deps(
-                    krate.common_attrs.deps.clone(),
-                    krate.common_attrs.extra_deps.clone(),
+                let mut deps = Select::merge(
+                    self.make_deps(
+                        krate.common_attrs.deps.clone(),
+                        krate.common_attrs.extra_deps.clone(),
+                    ),
+                    self.make_deps(
+                        krate.common_attrs.proc_macro_deps.clone(),
+                        krate.common_attrs.extra_proc_macro_deps.clone(),
+                    ),
                 );
                 if let Some(library_target_name) = &krate.library_target_name {
                     deps.insert(
@@ -741,13 +742,6 @@ impl Renderer {
                 }
                 SelectSet::new(deps, platforms)
             },
-            proc_macro_deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.proc_macro_deps.clone(),
-                    krate.common_attrs.extra_proc_macro_deps.clone(),
-                ),
-                platforms,
-            ),
             aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
