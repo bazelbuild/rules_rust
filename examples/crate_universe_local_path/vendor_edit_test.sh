@@ -5,11 +5,12 @@ set -x
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-if [[ "$#" -ne 1 ]]; then
-  echo >&2 "Usage: $0 //:vendor_target"
+if [[ "$#" -ne 2 ]]; then
+  echo >&2 "Usage: $0 //targets/to:test //:vendor_target"
   exit 1
 fi
-vendor_target="$1"
+targets_to_test="$1"
+vendor_target="$2"
 
 echo >&2 "Patching lazy_static dependency"
 
@@ -17,7 +18,7 @@ vendored_lazy_static_dir="$(bazel run "${vendor_target}" | awk '$0 ~ /Copied to/
 echo >&2 "Vendored lazy_static to ${vendored_lazy_static_dir}"
 
 echo >&2 "Running test which is expected to pass, now that patch is applied"
-bazel test ...
+bazel test "${targets_to_test}"
 
 echo >&2 "Changing the version of the vendored crate, so that the patch no longer applies"
 sed_i=(sed -i)
@@ -29,7 +30,7 @@ fi
 echo >&2 "Running build which is expected to fail, as the patch no longer applies"
 
 set +e
-output="$(bazel build ... 2>&1)"
+output="$(bazel build "${targets_to_test}" 2>&1)"
 exit_code=$?
 set -e
 
@@ -50,6 +51,6 @@ echo >&2 "Build failed as expected, making patch re-apply"
 "${sed_i[@]}" -e 's#^version = "2\.0\.0"$#version = "1.5.0"#' "${vendored_lazy_static_dir}/Cargo.toml"
 
 echo >&2 "Running test which is expected to pass, now that patch is re-applied"
-bazel test ...
+bazel test "${targets_to_test}"
 
 echo >&2 "Test passed as expected"
