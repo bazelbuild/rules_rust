@@ -95,22 +95,43 @@ impl<'a> SplicerKind<'a> {
 
     /// Performs splicing based on the current variant.
     #[tracing::instrument(skip_all)]
-    pub(crate) fn splice(&self, workspace_dir: &Utf8Path) -> Result<SplicedManifest> {
+    pub(crate) fn splice(
+        &self,
+        workspace_dir: &Utf8Path,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
+    ) -> Result<SplicedManifest> {
         match self {
             SplicerKind::Workspace {
                 path,
                 manifest,
                 splicing_manifest,
-            } => Self::splice_workspace(workspace_dir, path, manifest, splicing_manifest),
+            } => Self::splice_workspace(
+                workspace_dir,
+                path,
+                manifest,
+                splicing_manifest,
+                nonhermetic_root_bazel_workspace_dir,
+            ),
             SplicerKind::Package {
                 path,
                 manifest,
                 splicing_manifest,
-            } => Self::splice_package(workspace_dir, path, manifest, splicing_manifest),
+            } => Self::splice_package(
+                workspace_dir,
+                path,
+                manifest,
+                splicing_manifest,
+                nonhermetic_root_bazel_workspace_dir,
+            ),
             SplicerKind::MultiPackage {
                 manifests,
                 splicing_manifest,
-            } => Self::splice_multi_package(workspace_dir, manifests, splicing_manifest),
+            } => Self::splice_multi_package(
+                workspace_dir,
+                manifests,
+                splicing_manifest,
+                nonhermetic_root_bazel_workspace_dir,
+            ),
         }
     }
 
@@ -121,6 +142,7 @@ impl<'a> SplicerKind<'a> {
         path: &&Utf8PathBuf,
         manifest: &&Manifest,
         splicing_manifest: &&SplicingManifest,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<SplicedManifest> {
         let mut manifest = (*manifest).clone();
         let manifest_dir = path
@@ -139,7 +161,11 @@ impl<'a> SplicerKind<'a> {
 
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
-            Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
+            Self::inject_direct_packages(
+                &mut manifest,
+                &splicing_manifest.direct_packages,
+                nonhermetic_root_bazel_workspace_dir,
+            )?;
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
@@ -162,6 +188,7 @@ impl<'a> SplicerKind<'a> {
         path: &&Utf8PathBuf,
         manifest: &&Manifest,
         splicing_manifest: &&SplicingManifest,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<SplicedManifest> {
         let manifest_dir = path
             .parent()
@@ -186,7 +213,11 @@ impl<'a> SplicerKind<'a> {
 
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
-            Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
+            Self::inject_direct_packages(
+                &mut manifest,
+                &splicing_manifest.direct_packages,
+                nonhermetic_root_bazel_workspace_dir,
+            )?;
         }
 
         let root_manifest_path = workspace_dir.join("Cargo.toml");
@@ -208,6 +239,7 @@ impl<'a> SplicerKind<'a> {
         workspace_dir: &Utf8Path,
         manifests: &&BTreeMap<Utf8PathBuf, Manifest>,
         splicing_manifest: &&SplicingManifest,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<SplicedManifest> {
         let mut manifest = default_cargo_workspace_manifest(&splicing_manifest.resolver_version);
 
@@ -236,7 +268,11 @@ impl<'a> SplicerKind<'a> {
 
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
-            Self::inject_direct_packages(&mut manifest, &splicing_manifest.direct_packages)?;
+            Self::inject_direct_packages(
+                &mut manifest,
+                &splicing_manifest.direct_packages,
+                nonhermetic_root_bazel_workspace_dir,
+            )?;
         }
 
         // Write the root manifest
@@ -380,6 +416,7 @@ impl<'a> SplicerKind<'a> {
     fn inject_direct_packages(
         manifest: &mut Manifest,
         direct_packages_manifest: &DirectPackageManifest,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
     ) -> Result<()> {
         // Ensure there's a root package to satisfy Cargo requirements
         if manifest.package.is_none() {
@@ -405,9 +442,13 @@ impl<'a> SplicerKind<'a> {
 
         // Add the dependencies
         for (name, details) in direct_packages_manifest.iter() {
+            let mut details = details.clone();
+            details.path = details
+                .path
+                .map(|path| nonhermetic_root_bazel_workspace_dir.join(path).to_string());
             manifest.dependencies.insert(
                 name.clone(),
-                cargo_toml::Dependency::Detailed(Box::new(details.clone())),
+                cargo_toml::Dependency::Detailed(Box::new(details)),
             );
         }
 
@@ -476,8 +517,12 @@ impl Splicer {
     }
 
     /// Build a new workspace root
-    pub(crate) fn splice_workspace(&self) -> Result<SplicedManifest> {
-        SplicerKind::new(&self.manifests, &self.splicing_manifest)?.splice(&self.workspace_dir)
+    pub(crate) fn splice_workspace(
+        &self,
+        nonhermetic_root_bazel_workspace_dir: &Utf8Path,
+    ) -> Result<SplicedManifest> {
+        SplicerKind::new(&self.manifests, &self.splicing_manifest)?
+            .splice(&self.workspace_dir, nonhermetic_root_bazel_workspace_dir)
     }
 
     pub(crate) fn prepare(&self) -> Result<SplicerKind<'_>> {
@@ -953,7 +998,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Locate cargo
@@ -996,7 +1041,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Locate cargo
@@ -1086,7 +1131,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace();
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"));
 
         assert!(workspace_manifest.is_err());
 
@@ -1123,7 +1168,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         let metadata = generate_metadata(workspace_manifest.as_path_buf());
@@ -1148,7 +1193,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Locate cargo
@@ -1185,7 +1230,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Check the default resolver version
@@ -1235,7 +1280,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Check the specified resolver version
@@ -1295,7 +1340,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Check the default resolver version
@@ -1306,6 +1351,69 @@ mod test {
 
         // Due to the addition of direct deps for splicing, this package should have been added to the root manifest.
         assert!(cargo_manifest.package.unwrap().name == DEFAULT_SPLICING_PACKAGE_NAME);
+    }
+
+    #[test]
+    fn splice_multi_package_with_direct_path_deps() {
+        if should_skip_network_test() {
+            return;
+        }
+
+        let (mut splicing_manifest, _cache_dir) = mock_splicing_manifest_with_multi_package();
+
+        // Add a "direct dependency" entry
+        splicing_manifest.direct_packages.insert(
+            "syn".to_owned(),
+            cargo_toml::DependencyDetail {
+                path: Some("local/vendor/copy/of/syn".to_string()),
+                ..cargo_toml::DependencyDetail::default()
+            },
+        );
+        splicing_manifest.direct_packages.insert(
+            "quote".to_owned(),
+            cargo_toml::DependencyDetail {
+                path: Some("/absolute/vendor/copy/of/quote".to_string()),
+                ..cargo_toml::DependencyDetail::default()
+            },
+        );
+
+        // Splice the workspace
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
+                .unwrap()
+                .splice_workspace(Utf8Path::new("/doesnotexist/repo/root"))
+                .unwrap();
+
+        // Check the default resolver version
+        let cargo_manifest = cargo_toml::Manifest::from_str(
+            &fs::read_to_string(workspace_manifest.as_path_buf()).unwrap(),
+        )
+        .unwrap();
+
+        // Due to the addition of direct deps for splicing, this package should have been added to the root manifest.
+        assert!(
+            cargo_manifest
+                .dependencies
+                .get("syn")
+                .unwrap()
+                .detail()
+                .unwrap()
+                .path
+                .as_deref()
+                == Some("/doesnotexist/repo/root/local/vendor/copy/of/syn")
+        );
+        assert!(
+            cargo_manifest
+                .dependencies
+                .get("quote")
+                .unwrap()
+                .detail()
+                .unwrap()
+                .path
+                .as_deref()
+                == Some("/absolute/vendor/copy/of/quote")
+        );
     }
 
     #[test]
@@ -1337,7 +1445,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1400,7 +1508,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1451,7 +1559,7 @@ mod test {
         let workspace_manifest =
             Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
                 .unwrap()
-                .splice_workspace()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
                 .unwrap();
 
         // Ensure the patches match the expected value
@@ -1493,7 +1601,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         let result = Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace();
+            .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"));
 
         // Confirm conflicting patches have been detected
         assert!(result.is_err());
@@ -1515,7 +1623,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace()
+            .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1548,7 +1656,7 @@ mod test {
         let workspace_root = tempfile::tempdir().unwrap();
         Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
             .unwrap()
-            .splice_workspace()
+            .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"))
             .unwrap();
 
         let cargo_config = workspace_root.as_ref().join(".cargo").join("config.toml");
@@ -1575,7 +1683,7 @@ mod test {
         let workspace_root = tempdir_utf8pathbuf(&temp_dir).join("workspace_root");
         let splicing_result = Splicer::new(workspace_root.clone(), splicing_manifest)
             .unwrap()
-            .splice_workspace();
+            .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"));
 
         // Ensure cargo config files in parent directories lead to errors
         assert!(splicing_result.is_err());

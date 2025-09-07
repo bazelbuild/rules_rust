@@ -70,6 +70,13 @@ pub struct SpliceOptions {
     /// But you probably don't want to set this.
     #[clap(long)]
     pub skip_cargo_lockfile_overwrite: bool,
+
+    /// The path to the Bazel root workspace (i.e. the directory containing the WORKSPACE.bazel file or similar).
+    /// BE CAREFUL with this value. We never want to include it in a lockfile hash (to keep lockfiles portable),
+    /// which means you also should not use it anywhere that _should_ be guarded by a lockfile hash.
+    /// You basically never want to use this value.
+    #[clap(long)]
+    pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -97,7 +104,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
 
     // Splice together the manifest
     let manifest_path = prepared_splicer
-        .splice(&splicing_dir)
+        .splice(&splicing_dir, &opt.nonhermetic_root_bazel_workspace_dir)
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
     // Use the existing lockfile if possible, otherwise generate a new one.

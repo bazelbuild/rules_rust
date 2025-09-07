@@ -863,9 +863,8 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| match dep.local_path {
-                Some(path) => Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap(),
-                _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
+            deps.map(|dep| {
+                self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target)
             }),
             extra_deps,
         )
