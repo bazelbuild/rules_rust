@@ -46,6 +46,10 @@ CrateInfo = provider(
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"
         ),
+        "cfgs": (
+            "List[str]: The set of enabled cfgs for this crate. Note that this field is populated only " +
+            "when @rules_rust//rust/settings:collect_cfgs is set."
+        ),
     },
 )
 
