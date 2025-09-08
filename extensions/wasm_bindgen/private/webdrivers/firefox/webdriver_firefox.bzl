@@ -123,7 +123,6 @@ def firefox_deps():
         maybe(
             webdriver_repository,
             name = name,
-            original_name = name,
             urls = ["https://github.com/mozilla/geckodriver/releases/download/v{version}/geckodriver-v{version}-{platform}.{archive}".format(
                 version = geckodriver_version,
                 platform = platform,
@@ -145,21 +144,32 @@ def firefox_deps():
     for platform, integrity in {
         "linux-aarch64": "sha256-vveh8MLGr9pl8cHtvj4T/dk1wzaxYkMMfTUTkidAgAo=",
         "linux-x86_64": "sha256-UiL1HKrPzK8PDPeVEX8K03Qi/p1BPvGPLBceFiK5RVo=",
+        "mac": "sha256-B4VZozSRt8XvXc3mL+PIEoNarpi2On4ys79+M8sz/Mg=",
     }.items():
         archive = "tar.xz"
+        firefox_name = "firefox"
+        dash = "-"
+        strip_prefix = "firefox"
         tool = "firefox"
+        if "mac" in platform:
+            archive = "dmg"
+            firefox_name = "Firefox"
+            dash = "%20"
+            strip_prefix = ""
+            tool = "Firefox.app/Contents/MacOS/firefox"
         name = "firefox_{}".format(platform.replace("-", "_"))
         direct_deps.append(struct(repo = name))
         maybe(
             webdriver_repository,
             name = name,
-            original_name = name,
-            urls = ["https://ftp.mozilla.org/pub/firefox/releases/{version}/{platform}/en-US/firefox-{version}.{archive}".format(
+            urls = ["https://ftp.mozilla.org/pub/firefox/releases/{version}/{platform}/en-US/{name}{dash}{version}.{archive}".format(
+                name = firefox_name,
+                dash = dash,
                 version = firefox_version,
                 platform = platform,
                 archive = archive,
             )],
-            strip_prefix = "firefox",
+            strip_prefix = strip_prefix,
             integrity = integrity,
             tool = tool,
         )
