@@ -163,8 +163,8 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
             })?;
         let contents = metadata
             .packages
-            .iter()
-            .map(|package| package.manifest_path.clone())
+            .into_iter()
+            .map(|package| package.manifest_path)
             .join("\n");
         std::fs::write(opt.output_dir.join("extra_paths_to_track"), contents)?;
     }
