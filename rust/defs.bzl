@@ -78,25 +78,37 @@ load(
     _rust_unpretty_aspect = "rust_unpretty_aspect",
 )
 
-rust_library = _rust_library
+def _rule_wrapper(rule):
+    def _wrapped(name, deps = [], proc_macro_deps = [], **kwargs):
+        rule(
+            name = name,
+            deps = deps + proc_macro_deps,
+            # TODO(zbarsky): This attribute would ideally be called `exec_configured_deps` or similar.
+            proc_macro_deps = deps + proc_macro_deps,
+            **kwargs
+        )
+
+    return _wrapped
+
+rust_library = _rule_wrapper(_rust_library)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_static_library = _rust_static_library
+rust_static_library = _rule_wrapper(_rust_static_library)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_shared_library = _rust_shared_library
+rust_shared_library = _rule_wrapper(_rust_shared_library)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_proc_macro = _rust_proc_macro
+rust_proc_macro = _rule_wrapper(_rust_proc_macro)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_binary = _rust_binary
+rust_binary = _rule_wrapper(_rust_binary)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_library_group = _rust_library_group
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_test = _rust_test
+rust_test = _rule_wrapper(_rust_test)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_test_suite = _rust_test_suite
@@ -105,7 +117,7 @@ rust_test_suite = _rust_test_suite
 rust_doc = _rust_doc
 # See @rules_rust//rust/private:rustdoc.bzl for a complete description.
 
-rust_doc_test = _rust_doc_test
+rust_doc_test = _rule_wrapper(_rust_doc_test)
 # See @rules_rust//rust/private:rustdoc_test.bzl for a complete description.
 
 clippy_flag = _clippy_flag

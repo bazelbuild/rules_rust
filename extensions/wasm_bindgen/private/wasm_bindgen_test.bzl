@@ -13,6 +13,7 @@ load(
     "@rules_rust//rust/private:utils.bzl",
     "determine_output_hash",
     "expand_dict_value_locations",
+    "filter_deps",
     "find_toolchain",
     "generate_output_diagnostics",
     "transform_deps",
@@ -60,8 +61,9 @@ def _rust_wasm_bindgen_test_binary_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
-    deps = transform_deps(ctx.attr.deps + [wb_toolchain.wasm_bindgen_test])
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+    deps, proc_macro_deps = filter_deps(ctx)
+    deps = transform_deps(deps + [wb_toolchain.wasm_bindgen_test])
+    proc_macro_deps = transform_deps(proc_macro_deps)
 
     # Target is building the crate in `test` config
     if WasmBindgenTestCrateInfo in ctx.attr.wasm:
