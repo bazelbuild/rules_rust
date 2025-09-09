@@ -12,6 +12,8 @@ let each rule file supply only what actually differs (the provider type
 and the output-group names it collects).
 """
 
+load(":providers.bzl", "CrateInfo")
+
 def rlocationpath(file, workspace_name):
     """Compute the runfile rlocationpath for a `File`.
 
@@ -87,10 +89,12 @@ def lint_test_aspect_impl(target, ctx, info_provider, output_group_names):
     direct = depset(transitive = direct_depsets)
 
     transitive = [direct]
-    for attr_name in ("deps", "proc_macro_deps"):
-        for dep in getattr(ctx.rule.attr, attr_name, []):
-            if info_provider in dep:
-                transitive.append(dep[info_provider].checks)
+    for dep in getattr(ctx.rule.attr, "deps", []):
+        if info_provider in dep and (CrateInfo not in dep or dep[CrateInfo].type != "proc-macro"):
+            transitive.append(dep[info_provider].checks)
+    for dep in getattr(ctx.rule.attr, "proc_macro_deps", []):
+        if info_provider in dep and CrateInfo in dep and dep[CrateInfo].type == "proc-macro":
+            transitive.append(dep[info_provider].checks)
     crate_dep = getattr(ctx.rule.attr, "crate", None)
     if crate_dep and info_provider in crate_dep:
         transitive.append(crate_dep[info_provider].checks)
