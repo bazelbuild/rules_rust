@@ -1115,6 +1115,17 @@ def _get_toolchain_repositories(
 
     return toolchain_repos.values()
 
+def _get_flags_for_triple(name, flags, target_triple):
+    """Infer toolchain-specific flags depending on the type (list, dict, optional)."""
+    if flags == None:
+        return None
+    elif type(flags) == "list":
+        return flags
+    elif type(flags) == "dict":
+        return flags.get(target_triple)
+    else:
+        fail(name + " should be a list or a dict")
+
 def rust_repository_set(
         *,
         name,
@@ -1162,7 +1173,7 @@ def rust_repository_set(
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly".
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
-        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
         opt_level (dict, dict, optional): Dictionary of target triples to optimization config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
@@ -1196,15 +1207,16 @@ def rust_repository_set(
         aliases = aliases,
         compact_windows_names = compact_windows_names,
     ):
-        # Infer toolchain-specific rustc flags depending on the type (list, dict, optional) of extra_rustc_flags
-        if extra_rustc_flags == None:
-            toolchain_extra_rustc_flags = []
-        elif type(extra_rustc_flags) == "list":
-            toolchain_extra_rustc_flags = extra_rustc_flags
-        elif type(extra_rustc_flags) == "dict":
-            toolchain_extra_rustc_flags = extra_rustc_flags.get(toolchain.target_triple)
-        else:
-            fail("extra_rustc_flags should be a list or a dict")
+        toolchain_extra_exec_rustc_flags = _get_flags_for_triple(
+            "extra_exec_rustc_flags",
+            extra_exec_rustc_flags,
+            toolchain.target_triple,
+        )
+        toolchain_extra_rustc_flags = _get_flags_for_triple(
+            "extra_rustc_flags",
+            extra_rustc_flags,
+            toolchain.target_triple,
+        )
 
         toolchain_info = rust_toolchain_repository(
             name = toolchain.name,
@@ -1217,7 +1229,7 @@ def rust_repository_set(
             dev_components = dev_components,
             edition = edition,
             exec_triple = exec_triple,
-            extra_exec_rustc_flags = extra_exec_rustc_flags,
+            extra_exec_rustc_flags = toolchain_extra_exec_rustc_flags,
             extra_rustc_flags = toolchain_extra_rustc_flags,
             opt_level = opt_level.get(toolchain.target_triple) if opt_level != None else None,
             strip_level = strip_level.get(toolchain.target_triple) if strip_level != None else None,
