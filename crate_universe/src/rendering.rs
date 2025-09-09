@@ -590,7 +590,9 @@ impl Renderer {
                             .unwrap_or_default(),
                     ),
                     self.make_deps(
-                        attrs.map(|attrs| attrs.proc_macro_deps.clone()).unwrap_or_default(),
+                        attrs
+                            .map(|attrs| attrs.proc_macro_deps.clone())
+                            .unwrap_or_default(),
                         attrs
                             .map(|attrs| attrs.extra_proc_macro_deps.clone())
                             .unwrap_or_default(),

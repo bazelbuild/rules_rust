@@ -70,8 +70,8 @@ rust_test(
     crate = ":mylib",
     edition = "2018",
     deps = [
+        ":extra_proc_macro_dep",
         ":extra_test_dep",
-        ":extra_proc_macro_dep"
     ],
 )
 

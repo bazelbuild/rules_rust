@@ -73,7 +73,10 @@ rust_library(
     stamp = -1,
     version = VERSION,
     visibility = ["//visibility:public"],
-    deps = all_crate_deps(normal = True, proc_macro = True),
+    deps = all_crate_deps(
+        normal = True,
+        proc_macro = True,
+    ),
 )
 
 rust_binary(

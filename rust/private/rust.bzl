@@ -22,8 +22,8 @@ load(
     "AllocatorLibrariesImplInfo",
     "AllocatorLibrariesInfo",
     "BuildInfo",
-    "CrateInfo",
     "CrateGroupInfo",
+    "CrateInfo",
     "DepInfo",
     "LintsInfo",
 )
@@ -1544,6 +1544,8 @@ def rust_test_suite(name, srcs, shared_srcs = [], deps = [], proc_macro_deps = [
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
         shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
+        deps (list): Deps and proc_macro_deps for underlying test.
+        proc_macro_deps (list): Deprecated; do not use.
         **kwargs (dict): Additional keyword arguments for the underlying [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """

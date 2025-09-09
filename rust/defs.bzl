@@ -79,7 +79,7 @@ load(
 def _rule_wrapper(rule):
     def _wrapped(name, deps = [], proc_macro_deps = [], **kwargs):
         if proc_macro_deps:
-            print("proc_macros can now be passed directly to `deps`, no need to use `proc_macro_deps` in " + native.package_relative_label(name))
+            print("proc_macros can now be passed directly to `deps`, no need to use `proc_macro_deps` in %s" % native.package_relative_label(name))  # buildifier: disable=print
 
         rule(
             name = name,
