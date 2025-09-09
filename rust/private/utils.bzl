@@ -511,14 +511,38 @@ def is_exec_configuration(ctx):
     # TODO(djmarcin): Is there any better way to determine cfg=exec?
     return ctx.genfiles_dir.path.find("-exec") != -1
 
+def filter_deps(ctx):
+    """Filters the provided (combined) deps into normal deps and proc_macro deps.
+
+    Args:
+        ctx (ctx): The current rule's context object
+
+    Returns:
+        deps and proc_macro_deps
+    """
+    if len(ctx.attr.deps) != len(ctx.attr.proc_macro_deps) and not getattr(ctx.attr, "_skip_deps_verification", False):
+        fail("All deps should be passed to both `deps` and `proc_macro_deps`; please use the macros in //rust:defs.bzl")
+
+    deps = []
+    for dep in ctx.attr.deps:
+        if CrateInfo not in dep or dep[CrateInfo].type != "proc-macro":
+            deps.append(dep)
+
+    proc_macro_deps = []
+    for dep in ctx.attr.proc_macro_deps:
+        if CrateInfo in dep and dep[CrateInfo].type == "proc-macro":
+            proc_macro_deps.append(dep)
+
+    return deps, proc_macro_deps
+
 def transform_deps(deps):
     """Transforms a [Target] into [DepVariantInfo].
 
-    This helper function is used to transform ctx.attr.deps and ctx.attr.proc_macro_deps into
+    This helper function is used to transform deps and .proc_macro_deps coming from `filter_deps` into
     [DepVariantInfo].
 
     Args:
-        deps (list of Targets): Dependencies coming from ctx.attr.deps or ctx.attr.proc_macro_deps
+        deps (list of Targets): Dependencies coming from `filter_deps`
 
     Returns:
         list of DepVariantInfos.

@@ -23,6 +23,7 @@ load(
     "BuildInfo",
     "CrateGroupInfo",
     "CrateInfo",
+    "DepInfo",
     "LintsInfo",
 )
 load(
@@ -46,6 +47,7 @@ load(
     "determine_lib_name",
     "determine_output_hash",
     "expand_dict_value_locations",
+    "filter_deps",
     "find_toolchain",
     "generate_output_diagnostics",
     "get_edition",
@@ -63,41 +65,6 @@ def _assert_no_deprecated_attributes(_ctx):
         _ctx (ctx): The current rule's context object
     """
     pass
-
-def _assert_correct_dep_mapping(ctx):
-    """Forces a failure if proc_macro_deps and deps are mixed inappropriately
-
-    Args:
-        ctx (ctx): The current rule's context object
-    """
-    for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            if dep[rust_common.crate_info].type == "proc-macro":
-                fail(
-                    "{} listed {} in its deps, but it is a proc-macro. It should instead be in the bazel property proc_macro_deps.".format(
-                        ctx.label,
-                        dep.label,
-                    ),
-                )
-    for dep in ctx.attr.proc_macro_deps:
-        if CrateInfo in dep:
-            types = [dep[CrateInfo].type]
-        else:
-            types = [
-                dep_variant_info.crate_info.type
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
-                if dep_variant_info.crate_info
-            ]
-
-        for type in types:
-            if type != "proc-macro":
-                fail(
-                    "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                        ctx.label,
-                        dep.label,
-                        type,
-                    ),
-                )
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -168,7 +135,7 @@ def _rust_library_common(ctx, crate_type):
         list: A list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = filter_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
@@ -215,8 +182,8 @@ def _rust_library_common(ctx, crate_type):
             not ctx.attr.disable_pipelining
         )
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     return rustc_compile_action(
         ctx = ctx,
@@ -259,7 +226,7 @@ def _rust_binary_impl(ctx):
     """
     toolchain = find_toolchain(ctx)
     crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = filter_deps(ctx)
 
     if ctx.attr.binary_name:
         output_filename = ctx.attr.binary_name
@@ -267,8 +234,8 @@ def _rust_binary_impl(ctx):
         output_filename = ctx.label.name
     output = ctx.actions.declare_file(output_filename + toolchain.binary_ext)
 
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
@@ -349,13 +316,13 @@ def _rust_test_impl(ctx):
         list: The list of providers. See `rustc_compile_action`
     """
     _assert_no_deprecated_attributes(ctx)
-    _assert_correct_dep_mapping(ctx)
+    deps, proc_macro_deps = filter_deps(ctx)
 
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps + get_import_macro_deps(ctx))
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
@@ -557,16 +524,16 @@ def _rust_library_group_impl(ctx):
     runfiles = []
 
     for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
+        if CrateInfo in dep:
             dep_variant_infos.append(rust_common.dep_variant_info(
-                crate_info = dep[rust_common.crate_info] if rust_common.crate_info in dep else None,
-                dep_info = dep[rust_common.dep_info] if rust_common.crate_info in dep else None,
+                crate_info = dep[CrateInfo] if CrateInfo in dep else None,
+                dep_info = dep[DepInfo] if DepInfo in dep else None,
                 build_info = dep[BuildInfo] if BuildInfo in dep else None,
                 cc_info = dep[CcInfo] if CcInfo in dep else None,
                 crate_group_info = None,
             ))
-        elif rust_common.crate_group_info in dep:
-            dep_variant_transitive_infos.append(dep[rust_common.crate_group_info].dep_variant_infos)
+        elif CrateGroupInfo in dep:
+            dep_variant_transitive_infos.append(dep[CrateGroupInfo].dep_variant_infos)
         else:
             fail("crate_group_info targets can only depend on rust_library or rust_library_group targets.")
 
@@ -742,10 +709,12 @@ _common_attrs = {
     # `@local_config_platform//:exec` exposed.
     "proc_macro_deps": attr.label_list(
         doc = dedent("""\
-            List of `rust_proc_macro` targets used to help build this library target.
+            Copy of deps in exec configuration. This should really be called `exec_configured_deps`.
+
+            Rule implementations use this to select exec-configured `rust_proc_macro` targets.
+            User code should pass all deps to `deps` for the macros loaded from `defs.bzl`.
         """),
         cfg = "exec",
-        providers = [[CrateInfo], [CrateGroupInfo]],
     ),
     "require_explicit_unstable_features": attr.int(
         doc = (
@@ -1361,7 +1330,9 @@ rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_without_process_wrapper_impl,
     doc = "A variant of `rust_binary` that uses a minimal process wrapper for `Rustc` actions.",
     provides = COMMON_PROVIDERS + [_RustBuiltWithoutProcessWrapperInfo],
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
+        "_skip_deps_verification": attr.bool(default = True),
+    }),
     executable = True,
     fragments = ["cpp"],
     toolchains = [
@@ -1605,7 +1576,7 @@ rust_test = rule(
 """),
 )
 
-def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
+def rust_test_suite(name, srcs, shared_srcs = [], deps = [], proc_macro_deps = [], **kwargs):
     """A rule for creating a test suite for a set of `rust_test` targets.
 
     This rule can be used for setting up typical rust [integration tests][it]. Given the following
@@ -1658,6 +1629,8 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
         name (str): The name of the `test_suite`.
         srcs (list): All test sources, typically `glob(["tests/**/*.rs"])`.
         shared_srcs (list): Optional argument for sources shared among tests, typically helper functions.
+        deps (list): Deps and proc_macro_deps for underlying test.
+        proc_macro_deps (list): Deprecated; do not use.
         **kwargs (dict): Additional keyword arguments for the underlying [rust_test](#rust_test) targets. The
             `tags` argument is also passed to the generated `test_suite` target.
     """
@@ -1688,6 +1661,8 @@ def rust_test_suite(name, srcs, shared_srcs = [], **kwargs):
             srcs = [src] + shared_srcs,
             tags = tags,
             crate_name = crate_name,
+            deps = deps + proc_macro_deps,
+            proc_macro_deps = deps + proc_macro_deps,
             **kwargs
         )
         tests.append(test_name)
