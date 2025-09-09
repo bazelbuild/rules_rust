@@ -226,7 +226,7 @@ def collect_deps(
 
     Args:
         deps (list): The deps from ctx.attr.deps.
-        proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
+        proc_macro_deps (list): The proc_macro deps from `filter_deps(ctx)`.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
 
     Returns:
