@@ -15,6 +15,7 @@
 """Rust rule implementations"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
@@ -24,7 +25,7 @@ load(
     "BuildInfo",
     "LintsInfo",
 )
-load("//rust/private:rustc.bzl", "rustc_compile_action")
+load("//rust/private:rustc.bzl", "collect_extra_rustc_flags", "is_no_std", "rustc_compile_action")
 load(
     "//rust/private:utils.bzl",
     "can_build_metadata",
@@ -224,6 +225,7 @@ def _rust_library_common(ctx, crate_type):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = False),
         ),
     )
 
@@ -287,6 +289,7 @@ def _rust_binary_impl(ctx):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            cfgs = _collect_cfgs(ctx, toolchain, crate_root, ctx.attr.crate_type, crate_is_test = False),
         ),
     )
 
@@ -413,6 +416,7 @@ def _rust_test_impl(ctx):
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
+            cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = True),
         )
     else:
         crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
@@ -475,6 +479,7 @@ def _rust_test_impl(ctx):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = True),
         )
 
     providers = rustc_compile_action(
@@ -797,6 +802,10 @@ _common_attrs = {
     "_stamp_flag": attr.label(
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
+    ),
+    "_collect_cfgs": attr.label(
+        doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
+        default = Label("//rust/settings:collect_cfgs"),
     ),
 } | RUSTC_ATTRS | _rustc_allocator_libraries_attrs
 
@@ -1706,3 +1715,38 @@ def _replace_illlegal_chars(name):
     for illegal_char in ["-", "/", "."]:
         name = name.replace(illegal_char, "_")
     return name
+
+def _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test):
+    """Collect all cfg flags for a crate but only when @rules_rust//rust/settings:collect_cfgs is set.
+
+    Cfgs are gathered from the target's own attributes (e.g., rustc_flags, crate_featues, etc.), as
+    well as from the toolchain (e.g., toolchain.extra_rustc_flags).
+
+    Args:
+        ctx (ctx): The current rule's context object.
+        toolchain (rust_toolchain): The current Rust toolchain.
+        crate_root (File): The root file of the crate.
+        crate_type (str): The crate type.
+        crate_is_test (bool): Whether the crate is a test target or not.
+
+    Returns:
+        List[str]: All cfg flags for the target (or empty list if build setting is unset).
+    """
+
+    if not (hasattr(ctx.attr, "_collect_cfgs") and ctx.attr._collect_cfgs[BuildSettingInfo].value):
+        return []
+
+    cfgs = set()
+
+    cfgs.update(['feature="{}"'.format(feature) for feature in getattr(ctx.attr, "crate_features", [])])
+
+    if is_no_std(ctx, toolchain, crate_is_test):
+        cfgs.add('feature="no_std"')
+
+    rustc_flags = getattr(ctx.attr, "rustc_flags", []) + collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type)
+    cfgs.update(
+        [flag.removeprefix("--cfg=") for flag in rustc_flags if flag.startswith("--cfg=")],
+        [value for (flag, value) in zip(rustc_flags[:-1], rustc_flags[1:]) if flag == "--cfg"],
+    )
+
+    return list(cfgs)
