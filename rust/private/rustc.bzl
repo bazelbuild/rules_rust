@@ -481,6 +481,17 @@ def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rp
         feature_configuration = feature_configuration,
         action_name = action_name,
     )
+    if "LIB" in link_env:
+        # Needed to ensure that link.exe will use msvcrt.lib from the cc_toolchain,
+        # and not a non-hermetic system version.
+        # https://github.com/bazelbuild/rules_rust/issues/3256
+        # I don't see a good way to stop rustc from adding the non-hermetic library search path,
+        # so put our cc_toolchain library search path on the command line where it has
+        # precedence over the non-hermetic path injected by rustc.
+        link_args = link_args + [
+            "-LIBPATH:" + element
+            for element in link_env["LIB"].split(";")
+        ]
 
     return ld, link_args, link_env
 
