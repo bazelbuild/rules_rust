@@ -29,6 +29,12 @@ cp -r "lazy_static_1.5.0_copy/"* "${copy_to}/"
 echo "pub const VENDORED_BY: &'static str = \"rules_rust\";" >> "${copy_to}/src/lib.rs"
 
 cargo_toml_to_update="crates_from_workspace/Cargo.toml"
+workspace_bazel_to_update="WORKSPACE.bazel"
+module_bazel_to_update="MODULE.bazel"
 echo "lazy_static = { path = \"${path_dep_path}\" }" >> "${cargo_toml_to_update}"
+sed -i -e "s|\"lazy_static\": crate.spec(version = \"1.5.0\")|\"lazy_static\": crate.spec(path = \"${copy_to}\")|" "${workspace_bazel_to_update}"
+sed -i -e "s|version = \"1.5.0\",  # lazy_static|path = \"${copy_to}\",  # lazy_static|" "${module_bazel_to_update}"
 
-echo "Copied to ${copy_to} and updated ${cargo_toml_to_update}"
+echo "Copied to ${copy_to}, updated ${cargo_toml_to_update}, updated ${workspace_bazel_to_update}, and updated ${module_bazel_to_update}"
+
+echo "VENDOR_EDIT_TEST: ${copy_to}"
