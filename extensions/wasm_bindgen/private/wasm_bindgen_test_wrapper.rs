@@ -135,7 +135,7 @@ fn main() {
 
     let updated_webdriver_json = undeclared_test_outputs.join("webdriver.json");
     env.insert(
-        "WASM_BINDGEN_WEBDRIVER_JSON".to_string(),
+        "WASM_BINDGEN_TEST_WEBDRIVER_JSON".to_string(),
         updated_webdriver_json.to_string_lossy().to_string(),
     );
 
