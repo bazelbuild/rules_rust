@@ -248,7 +248,7 @@ def _define_targets():
         name = "lib_with_proc_macro",
         srcs = ["rustdoc_lib.rs"],
         rustdoc_deps = [":adder"],
-        proc_macro_deps = [":rustdoc_proc_macro"],
+        deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
     )
 
@@ -256,7 +256,7 @@ def _define_targets():
         rust_library,
         name = "lib_with_proc_macro_in_docs",
         srcs = ["procmacro_in_rustdoc.rs"],
-        proc_macro_deps = [":rustdoc_proc_macro"],
+        deps = [":rustdoc_proc_macro"],
     )
 
     _target_maker(
@@ -270,7 +270,7 @@ def _define_targets():
         rust_library,
         name = "lib_nodep_with_proc_macro",
         srcs = ["rustdoc_nodep_lib.rs"],
-        proc_macro_deps = [":rustdoc_proc_macro"],
+        deps = [":rustdoc_proc_macro"],
         crate_features = ["with_proc_macro"],
     )
 
@@ -278,8 +278,10 @@ def _define_targets():
         rust_binary,
         name = "bin_with_transitive_proc_macro",
         srcs = ["rustdoc_bin.rs"],
-        deps = [":lib_with_proc_macro"],
-        proc_macro_deps = [":rustdoc_proc_macro"],
+        deps = [
+            ":lib_with_proc_macro",
+            ":rustdoc_proc_macro",
+        ],
         crate_features = ["with_proc_macro"],
     )
 

@@ -18,7 +18,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "CrateInfo")
 load("//rust/private:rustdoc.bzl", "rustdoc_compile_action")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain", "transform_deps")
+load("//rust/private:utils.bzl", "dedent", "filter_deps", "find_toolchain", "transform_deps")
 
 def _construct_writer_arguments(ctx, test_runner, opt_test_params, action, crate_info):
     """Construct arguments and environment variables specific to `rustdoc_test_writer`.
@@ -110,8 +110,10 @@ def _rust_doc_test_impl(ctx):
     toolchain = find_toolchain(ctx)
 
     crate = ctx.attr.crate[rust_common.crate_info]
-    deps = transform_deps(ctx.attr.deps)
-    proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps)
+
+    deps, proc_macro_deps = filter_deps(ctx)
+    deps = transform_deps(deps)
+    proc_macro_deps = transform_deps(proc_macro_deps)
 
     crate_info = rust_common.create_crate_info(
         name = crate.name,

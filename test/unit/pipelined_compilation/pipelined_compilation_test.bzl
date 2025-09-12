@@ -99,8 +99,10 @@ def _pipelined_compilation_test():
         name = "second",
         edition = "2021",
         srcs = ["second.rs"],
-        deps = [":first"],
-        proc_macro_deps = [":my_macro"],
+        deps = [
+            ":first",
+            ":my_macro",
+        ],
     )
 
     rust_binary(

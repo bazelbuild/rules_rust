@@ -56,8 +56,10 @@ def _transitive_link_search_paths_test():
         name = "dep",
         srcs = ["dep.rs"],
         edition = "2018",
-        proc_macro_deps = [":proc_macro"],
-        deps = [":dep_build_script"],
+        deps = [
+            ":dep_build_script",
+            ":proc_macro",
+        ],
     )
 
     rust_binary(
