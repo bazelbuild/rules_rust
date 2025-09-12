@@ -123,6 +123,7 @@ def splice_workspace_manifest(
         config_path,
         output_dir,
         repository_name,
+        nonhermetic_root_bazel_workspace_dir,
         debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
@@ -134,6 +135,7 @@ def splice_workspace_manifest(
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
         repository_name (str): Name of the repository being generated.
+        nonhermetic_root_bazel_workspace_dir (path): The path to the current workspace root
         debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
@@ -151,6 +153,8 @@ def splice_workspace_manifest(
         config_path,
         "--repository-name",
         repository_name,
+        "--nonhermetic-root-bazel-workspace-dir",
+        nonhermetic_root_bazel_workspace_dir,
     ]
 
     if cargo_lockfile:
