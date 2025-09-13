@@ -3,6 +3,7 @@ load(
     ":settings.bzl",
     "always_enable_metadata_output_groups",
     "capture_clippy_output",
+    "clippy_aspect_traverse_deps",
     "clippy_error_format",
     "clippy_flag",
     "clippy_flags",
@@ -67,6 +68,8 @@ clippy_flags()
 clippy_output_diagnostics()
 
 clippy_toml()
+
+clippy_aspect_traverse_deps()
 
 codegen_units()
 

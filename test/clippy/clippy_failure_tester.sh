@@ -28,10 +28,11 @@ NEW_WORKSPACE="${TEMP_DIR}/rules_rust_test_clippy"
 function check_build_result() {
   local ret=0
   echo -n "Testing ${2}... "
+
   (bazel build ${@:3} //test/clippy:"${2}" &> /dev/null) || ret="$?" && true
   if [[ "${ret}" -ne "${1}" ]]; then
     >&2 echo "FAIL: Unexpected return code [saw: ${ret}, want: ${1}] building target //test/clippy:${2}"
-    >&2 echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
+    >&2 echo "  Run \"bazel build //test/clippy:${2} ${@:3}\" to see the output"
     exit 1
   elif [[ $# -ge 3 ]] && [[ "${@:3}" == *"capture_clippy_output"* ]]; then
     # Make sure that content was written to the output file
@@ -43,7 +44,8 @@ function check_build_result() {
     if [[ $(stat ${STATOPTS[@]} "${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out") == 0 ]]; then
       >&2 echo "FAIL: Output wasn't written to out file building target //test/clippy:${2}"
       >&2 echo "  Output file: ${NEW_WORKSPACE}/bazel-bin/test/clippy/${2%_clippy}.clippy.out"
-      >&2 echo "  Run \"bazel build //test/clippy:${2}\" to see the output"
+      >&2 echo "  Run \"bazel build //test/clippy:${2} ${@:3}\" to see the output"
+
       exit 1
     else
       echo "OK"
@@ -58,6 +60,7 @@ function test_all() {
   local -r BUILD_FAILED=1
   local -r CAPTURE_OUTPUT="--@rules_rust//rust/settings:capture_clippy_output=True --@rules_rust//rust/settings:error_format=json"
   local -r BAD_CLIPPY_TOML="--@rules_rust//rust/settings:clippy.toml=//too_many_args:clippy.toml"
+  local -r TRAVERSE_DEPS="--@rules_rust//rust/settings:experimental_clippy_aspect_traverse_deps=True"
 
   mkdir -p "${NEW_WORKSPACE}/test/clippy" && \
   cp -r test/clippy/* "${NEW_WORKSPACE}/test/clippy/" && \
@@ -105,6 +108,8 @@ EOF
   check_build_result $BUILD_OK ok_proc_macro_clippy
   check_build_result $BUILD_FAILED bad_binary_clippy
   check_build_result $BUILD_FAILED bad_library_clippy
+  check_build_result $BUILD_OK bad_dep_clippy
+  check_build_result $BUILD_FAILED bad_dep_clippy $TRAVERSE_DEPS
   check_build_result $BUILD_FAILED bad_shared_library_clippy
   check_build_result $BUILD_FAILED bad_static_library_clippy
   check_build_result $BUILD_FAILED bad_test_clippy
@@ -114,6 +119,8 @@ EOF
   # should succeed.
   check_build_result $BUILD_OK bad_binary_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_library_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_dep_clippy $CAPTURE_OUTPUT
+  check_build_result $BUILD_OK bad_dep_clippy $CAPTURE_OUTPUT $TRAVERSE_DEPS
   check_build_result $BUILD_OK bad_shared_library_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_static_library_clippy $CAPTURE_OUTPUT
   check_build_result $BUILD_OK bad_test_clippy $CAPTURE_OUTPUT
