@@ -66,7 +66,7 @@ clippy_flags = rule(
     build_setting = config.string_list(flag = True),
 )
 
-def _get_clippy_ready_crate_info(target, aspect_ctx = None):
+def get_clippy_ready_crate_info(target, aspect_ctx = None):
     """Check that a target is suitable for clippy and extract the `CrateInfo` provider from it.
 
     Args:
@@ -101,17 +101,25 @@ def _get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def _clippy_aspect_impl(target, ctx):
-    # Exit early if a target already has a clippy output group. This
-    # can be useful for rules which always want to inhibit clippy.
-    if OutputGroupInfo in target:
-        if hasattr(target[OutputGroupInfo], "clippy_checks"):
-            return []
+def run_clippy(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+    """Run clippy with the specified parameters.
 
-    crate_info = _get_clippy_ready_crate_info(target, ctx)
-    if not crate_info:
-        return [ClippyInfo(output = depset([]))]
+    Args:
+        ctx (ctx): The aspect's context object. This function should not read ctx.attr, but it might read ctx.rule.attr
+        clippy_executable (File): The clippy executable to run
+        process_wrapper (File): An executable process wrapper that can run clippy, usually @rules_rust//utils/process_wrapper
+        crate_info (CrateInfo): The source crate information
+        config (File): The clippy configuration file. Reference: https://doc.rust-lang.org/clippy/configuration.html#configuring-clippy
+        output (File): The output file for clippy stdout/stderr. If None, no output will be captured
+        success_marker (File): A file that will be written if clippy succeeds
+        cap_at_warnings (bool): If set, it will cap all reports as warnings, allowing the build to continue even with clippy failures
+        extra_clippy_flags (List[str]): A list of extra options to pass to clippy. If not set, every warnings will be turned into errors
+        error_format (str): Which error format to use. Must be acceptable by rustc: https://doc.rust-lang.org/beta/rustc/command-line-arguments.html#--error-format-control-how-errors-are-produced
+        clippy_diagnostics_file (File): File to output diagnostics to. If None, no diagnostics will be written
 
+    Returns:
+        None
+    """
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -147,17 +155,9 @@ def _clippy_aspect_impl(target, ctx):
         lint_files,
     )
 
-    use_clippy_error_format = ctx.attr._incompatible_change_clippy_error_format[IncompatibleFlagInfo].enabled
-    error_format = get_error_format(
-        ctx.attr,
-        "_clippy_error_format" if use_clippy_error_format else "_error_format",
-    )
-
-    clippy_diagnostics = None
-    if ctx.attr._clippy_output_diagnostics[ClippyOutputDiagnosticsInfo].output_diagnostics:
-        clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
+    if clippy_diagnostics_file:
         crate_info_dict = structs.to_dict(crate_info)
-        crate_info_dict["rustc_output"] = clippy_diagnostics
+        crate_info_dict["rustc_output"] = clippy_diagnostics_file
         crate_info = rust_common.create_crate_info(**crate_info_dict)
 
     args, env = construct_arguments(
@@ -165,7 +165,7 @@ def _clippy_aspect_impl(target, ctx):
         attr = ctx.rule.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.clippy_driver.path,
+        tool_path = clippy_executable.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -179,7 +179,7 @@ def _clippy_aspect_impl(target, ctx):
         build_flags_files = build_flags_files,
         emit = ["dep-info", "metadata"],
         skip_expanding_rustc_env = True,
-        use_json_output = bool(clippy_diagnostics),
+        use_json_output = bool(clippy_diagnostics_file),
         error_format = error_format,
     )
 
@@ -188,60 +188,109 @@ def _clippy_aspect_impl(target, ctx):
 
     # Then append the clippy flags specified from the command line, so they override what is
     # specified on the library.
-    clippy_flags = clippy_flags + ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+    clippy_flags += extra_clippy_flags
 
-    if hasattr(ctx.attr, "_clippy_flag"):
-        clippy_flags = clippy_flags + ctx.attr._clippy_flag[ClippyFlagsInfo].clippy_flags
+    outputs = []
 
-    # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
-    # or rustc may fail to create intermediate output files because the directory does not exist.
-    if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
-        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--stderr-file", clippy_out)
+    if output != None:
+        args.process_wrapper_flags.add("--stderr-file", output)
+        outputs.append(output)
 
-        if clippy_flags or lint_files:
-            args.rustc_flags.add_all(clippy_flags)
+    if success_marker != None:
+        args.process_wrapper_flags.add("--touch-file", success_marker)
+        outputs.append(success_marker)
 
+    if clippy_flags or lint_files:
+        args.rustc_flags.add_all(clippy_flags)
+    else:
+        # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
+
+        # Turn any warnings from clippy or rustc into an error, as otherwise
+        # Bazel will consider the execution result of the aspect to be "success",
+        # and Clippy won't be re-triggered unless the source file is modified.
+        args.rustc_flags.add("-Dwarnings")
+
+    if cap_at_warnings:
         # If we are capturing the output, we want the build system to be able to keep going
         # and consume the output. Some clippy lints are denials, so we cap everything at warn.
         args.rustc_flags.add("--cap-lints=warn")
-    else:
-        # A marker file indicating clippy has executed successfully.
-        # This file is necessary because "ctx.actions.run" mandates an output.
-        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
-        args.process_wrapper_flags.add("--touch-file", clippy_out)
-
-        if clippy_flags or lint_files:
-            args.rustc_flags.add_all(clippy_flags)
-        else:
-            # The user didn't provide any clippy flags explicitly so we apply conservative defaults.
-
-            # Turn any warnings from clippy or rustc into an error, as otherwise
-            # Bazel will consider the execution result of the aspect to be "success",
-            # and Clippy won't be re-triggered unless the source file is modified.
-            args.rustc_flags.add("-Dwarnings")
 
     # Upstream clippy requires one of these two filenames or it silently uses
     # the default config. Enforce the naming so users are not confused.
     valid_config_file_names = [".clippy.toml", "clippy.toml"]
-    if ctx.file._config.basename not in valid_config_file_names:
+    if config.basename not in valid_config_file_names:
         fail("The clippy config file must be named one of: {}".format(valid_config_file_names))
-    env["CLIPPY_CONF_DIR"] = "${{pwd}}/{}".format(ctx.file._config.dirname)
-    compile_inputs = depset([ctx.file._config], transitive = [compile_inputs])
+    env["CLIPPY_CONF_DIR"] = "${{pwd}}/{}".format(config.dirname)
+    compile_inputs = depset([config], transitive = [compile_inputs])
 
     ctx.actions.run(
-        executable = ctx.executable._process_wrapper,
+        executable = process_wrapper,
         inputs = compile_inputs,
-        outputs = [clippy_out] + [x for x in [clippy_diagnostics] if x],
+        outputs = outputs + [x for x in [clippy_diagnostics_file] if x],
         env = env,
-        tools = [toolchain.clippy_driver],
+        tools = [clippy_executable],
         arguments = args.all,
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 
-    output_group_info = {"clippy_checks": depset([clippy_out])}
+def _clippy_aspect_impl(target, ctx):
+    # Exit early if a target already has a clippy output group. This
+    # can be useful for rules which always want to inhibit clippy.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "clippy_checks"):
+            return []
+
+    crate_info = get_clippy_ready_crate_info(target, ctx)
+    if not crate_info:
+        return [ClippyInfo(output = depset([]))]
+
+    toolchain = find_toolchain(ctx)
+
+    # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
+    # or rustc may fail to create intermediate output files because the directory does not exist.
+    if ctx.attr._capture_output[CaptureClippyOutputInfo].capture_output:
+        clippy_out = ctx.actions.declare_file(ctx.label.name + ".clippy.out", sibling = crate_info.output)
+        clippy_success_marker = None
+    else:
+        # A marker file indicating clippy has executed successfully.
+        # This file is necessary because "ctx.actions.run" mandates an output.
+        clippy_success_marker = ctx.actions.declare_file(ctx.label.name + ".clippy.ok", sibling = crate_info.output)
+        clippy_out = None
+
+    use_clippy_error_format = ctx.attr._incompatible_change_clippy_error_format[IncompatibleFlagInfo].enabled
+    error_format = get_error_format(
+        ctx.attr,
+        "_clippy_error_format" if use_clippy_error_format else "_error_format",
+    )
+
+    clippy_flags = ctx.attr._clippy_flags[ClippyFlagsInfo].clippy_flags
+
+    if hasattr(ctx.attr, "_clippy_flag"):
+        clippy_flags = clippy_flags + ctx.attr._clippy_flag[ClippyFlagsInfo].clippy_flags
+
+    clippy_diagnostics = None
+    if ctx.attr._clippy_output_diagnostics[ClippyOutputDiagnosticsInfo].output_diagnostics:
+        clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
+
+    # Run clippy using the extracted function
+    run_clippy(
+        ctx = ctx,
+        clippy_executable = toolchain.clippy_driver,
+        process_wrapper = ctx.executable._process_wrapper,
+        crate_info = crate_info,
+        config = ctx.file._config,
+        output = clippy_out,
+        cap_at_warnings = clippy_out != None,  # If we're capturing output, we want the build to continue.
+        success_marker = clippy_success_marker,
+        extra_clippy_flags = clippy_flags,
+        error_format = error_format,
+        clippy_diagnostics_file = clippy_diagnostics,
+    )
+
+    clippy_checks = [file for file in [clippy_out, clippy_success_marker] if file != None]
+    output_group_info = {"clippy_checks": depset(clippy_checks)}
     if clippy_diagnostics:
         output_group_info["clippy_output"] = depset([clippy_diagnostics])
 
