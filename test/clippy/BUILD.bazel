@@ -99,6 +99,14 @@ rust_library(
     tags = ["noclippy"],
 )
 
+rust_binary(
+    name = "bad_dep",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+    deps = [":bad_library"],
+)
+
 rust_library(
     name = "bad_shared_library",
     srcs = ["bad_src/lib.rs"],
@@ -142,8 +150,13 @@ rust_clippy(
 )
 
 rust_clippy(
-    name = "bad_shared_library_clippy",
+    name = "bad_dep_clippy",
     tags = ["manual"],
+    deps = [":bad_dep"],
+)
+
+rust_clippy(
+    name = "bad_shared_library_clippy",
     deps = [":bad_shared_library"],
 )
 

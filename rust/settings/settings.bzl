@@ -246,6 +246,15 @@ def clippy_toml():
     )
 
 # buildifier: disable=unnamed-macro
+def clippy_aspect_traverse_deps():
+    """This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html
+    """
+    bool_flag(
+        name = "experimental_clippy_aspect_traverse_deps",
+        build_setting_default = False,
+    )
+
+# buildifier: disable=unnamed-macro
 def rustfmt_toml():
     """This setting is used by the rustfmt rules. See https://bazelbuild.github.io/rules_rust/rust_fmt.html
 
