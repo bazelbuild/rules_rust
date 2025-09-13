@@ -5,8 +5,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "CrateInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -103,7 +102,7 @@ https://github.com/bazelbuild/bazel/issues/15486
             doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             mandatory = True,
-            providers = [rust_common.crate_info],
+            providers = [CrateInfo],
             cfg = "exec",
         ),
         "tools": attr.label_list(
@@ -360,15 +359,13 @@ def _cargo_build_script_impl(ctx):
         extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
-    pkg_name = ctx.attr.pkg_name
-    if pkg_name == "":
-        pkg_name = name_to_pkg_name(ctx.label.name)
+    pkg_name = ctx.attr.pkg_name or name_to_pkg_name(ctx.label.name)
 
     toolchain_tools = [toolchain.all_files]
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    env = dict({})
+    env = {}
 
     if ctx.attr.use_default_shell_env == -1:
         use_default_shell_env = ctx.attr._default_use_default_shell_env[BuildSettingInfo].value
@@ -383,9 +380,7 @@ def _cargo_build_script_impl(ctx):
         env.update(ctx.configuration.default_shell_env)
 
     if toolchain.cargo:
-        env.update({
-            "CARGO": "${{pwd}}/{}".format(toolchain.cargo.path),
-        })
+        env["CARGO"] = "${{pwd}}/{}".format(toolchain.cargo.path)
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -536,17 +531,20 @@ def _cargo_build_script_impl(ctx):
 
     build_script_inputs = []
 
-    for dep in ctx.attr.link_deps:
-        if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
-            dep_env_file = dep[rust_common.dep_info].dep_env
-            args.add(dep_env_file.path, format = "--input_dep_env_path=%s")
-            build_script_inputs.append(dep_env_file)
-            for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
-                build_script_inputs.append(dep_build_info.out_dir)
+    for dep in ctx.attr.deps + ctx.attr.link_deps:
+        dep_info = dep[DepInfo]
 
-    for dep in ctx.attr.deps:
-        for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
+        # TODO(zbarsky): We could have an extra provider field for transitive_out_dirs to avoid flattening.
+        for dep_build_info in dep_info.transitive_build_infos.to_list():
             build_script_inputs.append(dep_build_info.out_dir)
+
+        dep_env = dep_info.dep_env
+        if dep_env:
+            if ctx.attr.link_deps and dep not in ctx.attr.link_deps:
+                print("Skipping dep_env collections for %s because `link_deps` were explicitly provided" % dep.label)
+            else:
+                args.add(dep_env, format = "--input_dep_env_path=%s")
+                build_script_inputs.append(dep_env)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -608,7 +606,7 @@ cargo_build_script = rule(
         ),
         "deps": attr.label_list(
             doc = "The Rust build-dependencies of the crate",
-            providers = [rust_common.dep_info],
+            providers = [DepInfo],
             cfg = "exec",
         ),
         "link_deps": attr.label_list(
@@ -616,8 +614,12 @@ cargo_build_script = rule(
                 The subset of the Rust (normal) dependencies of the crate that
                 have the links attribute and therefore provide environment
                 variables to this build script.
+
+                Deprecated! It's not longer necessary to pass this explicitly, it will be inferred from `deps`.
+                If you do pass it, the rule will warn if there are any deps providing env vars that are not in `link_deps`,
+                and they will be skipped, matching the previous behavior.
             """),
-            providers = [rust_common.dep_info],
+            providers = [DepInfo],
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
