@@ -1736,17 +1736,13 @@ def _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test):
     if not (hasattr(ctx.attr, "_collect_cfgs") and ctx.attr._collect_cfgs[BuildSettingInfo].value):
         return []
 
-    cfgs = set()
-
-    cfgs.update(['feature="{}"'.format(feature) for feature in getattr(ctx.attr, "crate_features", [])])
+    cfgs = {'feature="{}"'.format(feature): True for feature in getattr(ctx.attr, "crate_features", [])}
 
     if is_no_std(ctx, toolchain, crate_is_test):
-        cfgs.add('feature="no_std"')
+        cfgs['feature="no_std"'] = True
 
     rustc_flags = getattr(ctx.attr, "rustc_flags", []) + collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type)
-    cfgs.update(
-        [flag.removeprefix("--cfg=") for flag in rustc_flags if flag.startswith("--cfg=")],
-        [value for (flag, value) in zip(rustc_flags[:-1], rustc_flags[1:]) if flag == "--cfg"],
-    )
+    cfgs |= {flag.removeprefix("--cfg="): True for flag in rustc_flags if flag.startswith("--cfg=")}
+    cfgs |= {value: True for (flag, value) in zip(rustc_flags[:-1], rustc_flags[1:]) if flag == "--cfg"}
 
     return list(cfgs)
