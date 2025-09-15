@@ -1694,6 +1694,12 @@ clippy equivalent of <code>rustc_output_diagnostics</code>.</p>
 <p>Note that any value 0 or less will prevent this flag from being passed by Bazel and allow rustc to
 perform it's default behavior.</p>
 <p>https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units</p>
+<p><a id="collect_cfgs"></a></p>
+<h2 id="collect_cfgs"><a class="header" href="#collect_cfgs">collect_cfgs</a></h2>
+<pre>
+--@rules_rust//rust/settings:collect_cfgs
+</pre>
+<p>Enable collection of cfg flags with results stored in CrateInfo.cfgs.</p>
 <p><a id="error_format"></a></p>
 <h2 id="error_format"><a class="header" href="#error_format">error_format</a></h2>
 <pre>
