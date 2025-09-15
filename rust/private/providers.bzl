@@ -17,7 +17,7 @@
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
-        "aliases": "Dict[Label, String]: Renamed and aliased crates",
+        "aliases": "Dict[Target, String]: Renamed and aliased crates.",
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
