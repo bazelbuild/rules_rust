@@ -63,11 +63,9 @@ def _proc_macro_does_not_leak_deps_test():
         srcs = ["leaks_deps/proc_macro_user.rs"],
         edition = "2018",
         deps = [
-            "//test/unit/proc_macro/leaks_deps/native",
-        ],
-        proc_macro_deps = [
             ":proc_macro_definition",
             ":proc_macro_with_native_dep",
+            "//test/unit/proc_macro/leaks_deps/native",
         ],
     )
 
@@ -123,7 +121,7 @@ def _proc_macro_does_not_leak_lib_deps_test():
         name = "a",
         srcs = ["leaks_deps/lib/a.rs"],
         edition = "2018",
-        proc_macro_deps = [
+        deps = [
             ":my_macro",
         ],
     )

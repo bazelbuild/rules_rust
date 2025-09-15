@@ -6,11 +6,9 @@ rust_test(
     name = "proc_macro_data_test",
     srcs = ["rust_test.rs"],
     edition = "2021",
-    proc_macro_deps = [
-        ":rust_proc_macro",
-    ],
     deps = [
         ":nonmacro_library",
+        ":rust_proc_macro",
     ],
 )
 
@@ -19,7 +17,7 @@ rust_library(
     name = "nonmacro_library",
     srcs = ["nonmacro_library.rs"],
     edition = "2021",
-    proc_macro_deps = [
+    deps = [
         ":rust_proc_macro",
     ],
 )

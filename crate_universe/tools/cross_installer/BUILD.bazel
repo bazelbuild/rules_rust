@@ -21,13 +21,15 @@ rust_binary(
         "@rules_rust//rust/toolchain:current_cargo_files",
     ],
     edition = "2021",
-    proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
         "CARGO": "$(rlocationpath @rules_rust//rust/toolchain:current_cargo_files)",
         "CROSS_BIN": "$(rlocationpath :cross)",
         "CROSS_CONFIG_RLOCATION": "$(rlocationpath :Cross.toml)",
     },
-    deps = all_crate_deps(normal = True) + ["@rules_rust//rust/runfiles"],
+    deps = all_crate_deps(
+        normal = True,
+        proc_macro = True,
+    ) + ["@rules_rust//rust/runfiles"],
 )
 
 filegroup(

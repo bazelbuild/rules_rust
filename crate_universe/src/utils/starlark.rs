@@ -118,8 +118,6 @@ pub(crate) struct CargoBuildScript {
     pub(crate) links: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) pkg_name: Option<String>,
-    #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub(crate) proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectScalar::is_empty")]
     pub(crate) rundir: SelectScalar<String>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
@@ -153,8 +151,6 @@ pub(crate) struct RustProcMacro {
     pub(crate) name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) deps: SelectSet<Label>,
-    #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub(crate) proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
@@ -166,8 +162,6 @@ pub(crate) struct RustLibrary {
     pub(crate) name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) deps: SelectSet<Label>,
-    #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub(crate) proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
@@ -181,8 +175,6 @@ pub(crate) struct RustBinary {
     pub(crate) name: String,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) deps: SelectSet<Label>,
-    #[serde(skip_serializing_if = "SelectSet::is_empty")]
-    pub(crate) proc_macro_deps: SelectSet<Label>,
     #[serde(skip_serializing_if = "SelectDict::is_empty")]
     pub(crate) aliases: SelectDict<Label, String>,
     #[serde(flatten)]
