@@ -117,29 +117,34 @@ def collect_cfgs_test_suite(name):
     rust_library(
         name = "lib",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_proc_macro(
         name = "proc_macro",
         srcs = ["lib.rs"],
+        edition = "2018",
     )
 
     rust_library(
         name = "lib_with_proc_macro_dep",
         srcs = ["lib.rs"],
         proc_macro_deps = [":proc_macro"],
+        edition = "2018",
     )
 
     rust_library(
         name = "lib_with_crate_features",
         srcs = ["lib.rs"],
         crate_features = ["foo", "bar"],
+        edition = "2018",
     )
 
     rust_library(
         name = "lib_with_rustc_flags",
         srcs = ["lib.rs"],
         rustc_flags = ["--cfg=baz"],
+        edition = "2018",
     )
 
     collect_cfgs_test(
