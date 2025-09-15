@@ -5,8 +5,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "CrateInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -103,7 +102,7 @@ https://github.com/bazelbuild/bazel/issues/15486
             doc = "The binary script to run, generally a `rust_binary` target.",
             executable = True,
             mandatory = True,
-            providers = [rust_common.crate_info],
+            providers = [CrateInfo],
             cfg = "exec",
         ),
         "tools": attr.label_list(
@@ -537,15 +536,15 @@ def _cargo_build_script_impl(ctx):
     build_script_inputs = []
 
     for dep in ctx.attr.link_deps:
-        if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
-            dep_env_file = dep[rust_common.dep_info].dep_env
-            args.add(dep_env_file.path, format = "--input_dep_env_path=%s")
+        if DepInfo in dep and dep[DepInfo].dep_env:
+            dep_env_file = dep[DepInfo].dep_env
+            args.add(dep_env_file, format = "--input_dep_env_path=%s")
             build_script_inputs.append(dep_env_file)
-            for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
+            for dep_build_info in dep[DepInfo].transitive_build_infos.to_list():
                 build_script_inputs.append(dep_build_info.out_dir)
 
     for dep in ctx.attr.deps:
-        for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
+        for dep_build_info in dep[DepInfo].transitive_build_infos.to_list():
             build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
@@ -608,7 +607,7 @@ cargo_build_script = rule(
         ),
         "deps": attr.label_list(
             doc = "The Rust build-dependencies of the crate",
-            providers = [rust_common.dep_info],
+            providers = [DepInfo],
             cfg = "exec",
         ),
         "link_deps": attr.label_list(
@@ -617,7 +616,6 @@ cargo_build_script = rule(
                 have the links attribute and therefore provide environment
                 variables to this build script.
             """),
-            providers = [rust_common.dep_info],
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",

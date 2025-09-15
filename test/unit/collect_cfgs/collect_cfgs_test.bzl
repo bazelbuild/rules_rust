@@ -1,3 +1,5 @@
+"""Collect cfg tests"""
+
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
 load("//rust:rust_common.bzl", "CrateInfo")
@@ -114,6 +116,8 @@ collect_cfgs_extra_exec_rustc_flags_test = analysistest.make(
 )
 
 def collect_cfgs_test_suite(name):
+    """Collect cfg tests"""
+
     rust_library(
         name = "lib",
         srcs = ["lib.rs"],

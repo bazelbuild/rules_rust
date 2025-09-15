@@ -799,13 +799,13 @@ _common_attrs = {
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
     ),
-    "_stamp_flag": attr.label(
-        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
-        default = Label("//rust/private:stamp"),
-    ),
     "_collect_cfgs": attr.label(
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
         default = Label("//rust/settings:collect_cfgs"),
+    ),
+    "_stamp_flag": attr.label(
+        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
+        default = Label("//rust/private:stamp"),
     ),
 } | RUSTC_ATTRS | _rustc_allocator_libraries_attrs
 
@@ -1719,7 +1719,7 @@ def _replace_illlegal_chars(name):
 def _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test):
     """Collect all cfg flags for a crate but only when @rules_rust//rust/settings:collect_cfgs is set.
 
-    Cfgs are gathered from the target's own attributes (e.g., rustc_flags, crate_featues, etc.), as
+    Cfgs are gathered from the target's own attributes (e.g., rustc_flags, crate_features, etc.), as
     well as from the toolchain (e.g., toolchain.extra_rustc_flags).
 
     Args:
