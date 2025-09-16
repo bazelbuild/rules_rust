@@ -18,6 +18,10 @@ CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
         "aliases": "Dict[Label, String]: Renamed and aliased crates",
+        "cfgs": (
+            "List[str]: The set of enabled cfgs for this crate. Note that this field is populated only " +
+            "when @rules_rust//rust/settings:collect_cfgs is set."
+        ),
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
@@ -45,10 +49,6 @@ CrateInfo = provider(
         "wrapped_crate_type": (
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"
-        ),
-        "cfgs": (
-            "List[str]: The set of enabled cfgs for this crate. Note that this field is populated only " +
-            "when @rules_rust//rust/settings:collect_cfgs is set."
         ),
     },
 )
