@@ -10,6 +10,7 @@ load(
     "clippy_output_diagnostics",
     "clippy_toml",
     "codegen_units",
+    "collect_cfgs",
     "error_format",
     "experimental_link_std_dylib",
     "experimental_per_crate_rustc_flag",
@@ -72,6 +73,8 @@ clippy_toml()
 clippy_aspect_traverse_deps()
 
 codegen_units()
+
+collect_cfgs()
 
 error_format()
 

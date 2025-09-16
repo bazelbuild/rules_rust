@@ -499,3 +499,12 @@ def codegen_units():
         name = "codegen_units",
         build_setting_default = -1,
     )
+
+# buildifier: disable=unnamed-macro
+def collect_cfgs():
+    """Enable collection of cfg flags with results stored in CrateInfo.cfgs.
+    """
+    bool_flag(
+        name = "collect_cfgs",
+        build_setting_default = False,
+    )
