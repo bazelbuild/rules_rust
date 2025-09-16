@@ -144,7 +144,7 @@ def render_config(
             keys are [`{triple}`].
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
-        generate_rules_license_metadata (bool, optional): Whether to generate rules license metedata
+        generate_rules_license_metadata (bool, optional): Whether to generate rules license metadata
 
     Returns:
         string: A json encoded struct to match the Rust `config::RenderConfig` struct

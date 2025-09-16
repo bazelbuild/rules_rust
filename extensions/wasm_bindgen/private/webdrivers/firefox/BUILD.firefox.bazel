@@ -1,6 +1,9 @@
 alias(
     name = "firefox_macos",
-    actual = "@firefox_local//:firefox",
+    actual = select({
+        "@platforms//cpu:aarch64": "@firefox_mac",
+        "//conditions:default": "@firefox_local//:firefox",
+    }),
     target_compatible_with = ["@platforms//os:macos"],
 )
 

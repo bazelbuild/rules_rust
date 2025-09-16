@@ -1,8 +1,7 @@
 use std::fmt::{self, Display};
-use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use camino::Utf8Path;
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -186,79 +185,6 @@ impl Display for Label {
     }
 }
 
-impl Label {
-    /// Generates a label appropriate for the passed Path by walking the filesystem to identify its
-    /// workspace and package.
-    pub(crate) fn from_absolute_path(p: &Path) -> Result<Self, anyhow::Error> {
-        let mut workspace_root = None;
-        let mut package_root = None;
-        for ancestor in p.ancestors().skip(1) {
-            if package_root.is_none()
-                && (ancestor.join("BUILD").exists() || ancestor.join("BUILD.bazel").exists())
-            {
-                package_root = Some(ancestor);
-            }
-            if workspace_root.is_none()
-                && (ancestor.join("WORKSPACE").exists()
-                    || ancestor.join("WORKSPACE.bazel").exists()
-                    || ancestor.join("MODULE.bazel").exists())
-            {
-                workspace_root = Some(ancestor);
-                break;
-            }
-        }
-        match (workspace_root, package_root) {
-            (Some(workspace_root), Some(package_root)) => {
-                // These unwraps are safe by construction of the ancestors and prefix calls which set up these paths.
-                let target = p.strip_prefix(package_root).unwrap();
-                let workspace_relative = p.strip_prefix(workspace_root).unwrap();
-                let mut package_path = workspace_relative.to_path_buf();
-                for _ in target.components() {
-                    package_path.pop();
-                }
-
-                let package = if package_path.components().count() > 0 {
-                    path_to_label_part(&package_path)?
-                } else {
-                    String::new()
-                };
-                let target = path_to_label_part(target)?;
-
-                Ok(Label::Absolute {
-                    repository: Repository::Local,
-                    package,
-                    target,
-                })
-            }
-            (Some(_workspace_root), None) => {
-                bail!(
-                    "Could not identify package for path {}. Maybe you need to add a BUILD.bazel file.",
-                    p.display()
-                );
-            }
-            _ => {
-                bail!("Could not identify workspace for path {}", p.display());
-            }
-        }
-    }
-}
-
-/// Converts a path to a forward-slash-delimited label-appropriate path string.
-fn path_to_label_part(path: &Path) -> Result<String, anyhow::Error> {
-    let components: Result<Vec<_>, _> = path
-        .components()
-        .map(|c| {
-            c.as_os_str().to_str().ok_or_else(|| {
-                anyhow!(
-                    "Found non-UTF8 component turning path into label: {}",
-                    path.display()
-                )
-            })
-        })
-        .collect();
-    Ok(components?.join("/"))
-}
-
 impl Serialize for Label {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -302,8 +228,6 @@ impl Label {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::fs::{create_dir_all, File};
-    use tempfile::tempdir;
 
     #[test]
     fn relative() {
@@ -508,66 +432,5 @@ mod test {
     #[test]
     fn invalid_triple_at() {
         Label::from_str("@@@repo//pkg:target").unwrap_err();
-    }
-
-    #[test]
-    fn from_absolute_path_exists() {
-        let dir = tempdir().unwrap();
-        let workspace = dir.path().join("WORKSPACE.bazel");
-        let build_file = dir.path().join("parent").join("child").join("BUILD.bazel");
-        let subdir = dir.path().join("parent").join("child").join("grandchild");
-        let actual_file = subdir.join("greatgrandchild");
-        create_dir_all(subdir).unwrap();
-        {
-            File::create(workspace).unwrap();
-            File::create(build_file).unwrap();
-            File::create(&actual_file).unwrap();
-        }
-        let label = Label::from_absolute_path(&actual_file).unwrap();
-        assert_eq!(
-            label.to_string(),
-            "//parent/child:grandchild/greatgrandchild"
-        );
-        assert!(label.is_absolute());
-        assert_eq!(label.repository(), Some(&Repository::Local));
-        assert_eq!(label.package(), Some("parent/child"));
-        assert_eq!(label.target(), "grandchild/greatgrandchild");
-    }
-
-    #[test]
-    fn from_absolute_path_no_workspace() {
-        let dir = tempdir().unwrap();
-        let build_file = dir.path().join("parent").join("child").join("BUILD.bazel");
-        let subdir = dir.path().join("parent").join("child").join("grandchild");
-        let actual_file = subdir.join("greatgrandchild");
-        create_dir_all(subdir).unwrap();
-        {
-            File::create(build_file).unwrap();
-            File::create(&actual_file).unwrap();
-        }
-        let err = Label::from_absolute_path(&actual_file)
-            .unwrap_err()
-            .to_string();
-        assert!(err.contains("Could not identify workspace"));
-        assert!(err.contains(format!("{}", actual_file.display()).as_str()));
-    }
-
-    #[test]
-    fn from_absolute_path_no_build_file() {
-        let dir = tempdir().unwrap();
-        let workspace = dir.path().join("WORKSPACE.bazel");
-        let subdir = dir.path().join("parent").join("child").join("grandchild");
-        let actual_file = subdir.join("greatgrandchild");
-        create_dir_all(subdir).unwrap();
-        {
-            File::create(workspace).unwrap();
-            File::create(&actual_file).unwrap();
-        }
-        let err = Label::from_absolute_path(&actual_file)
-            .unwrap_err()
-            .to_string();
-        assert!(err.contains("Could not identify package"));
-        assert!(err.contains("Maybe you need to add a BUILD.bazel file"));
-        assert!(err.contains(format!("{}", actual_file.display()).as_str()));
     }
 }

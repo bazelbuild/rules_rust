@@ -30,7 +30,7 @@ STDERR ------------------------------------------------------------------------
 """
 
 def execute(repository_ctx, args, env = {}, allow_fail = False, quiet = True):
-    """A heler macro for executing some arguments and displaying nicely formatted errors
+    """A helper macro for executing some arguments and displaying nicely formatted errors
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
@@ -159,7 +159,7 @@ def _cargo_home_path(repository_ctx):
     return repository_ctx.path(".cargo_home")
 
 def cargo_environ(repository_ctx, isolated = True):
-    """Define Cargo environment varables for use with `cargo-bazel`
+    """Define Cargo environment variables for use with `cargo-bazel`
 
     Args:
         repository_ctx (repository_ctx): The rules context object

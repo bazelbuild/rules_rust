@@ -228,7 +228,7 @@ impl WorkspaceMetadata {
             })
             .collect();
 
-        // It is invald for toml maps to use empty strings as keys. In the case
+        // It is invalid for toml maps to use empty strings as keys. In the case
         // the empty key is expected to be the root package. If the root package
         // has a prefix, then all other packages will as well (even if no other
         // manifest represents them). The value is then saved as a separate value
@@ -263,7 +263,7 @@ impl WorkspaceMetadata {
     ) -> Result<()> {
         let mut manifest = read_manifest(input_manifest_path)?;
 
-        let mut workspace_metaata = WorkspaceMetadata::try_from(
+        let mut workspace_metadata = WorkspaceMetadata::try_from(
             manifest
                 .workspace
                 .as_ref()
@@ -326,43 +326,61 @@ impl WorkspaceMetadata {
                 let index = if cargo.use_sparse_registries_for_crates_io()?
                     && index_url == utils::CRATES_IO_INDEX_URL
                 {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url_with_hash_kind(
+                    let index = crates_index::SparseIndex::from_url_with_hash_kind(
                         "sparse+https://index.crates.io/",
                         &crate_index_hash_kind,
-                    )?)
+                    )?;
+                    let index_config = index
+                        .index_config()
+                        .context("Failed to get crate index config")?;
+                    CrateIndexLookup::Http {
+                        index,
+                        index_config,
+                    }
                 } else if index_url.starts_with("sparse+") {
-                    CrateIndexLookup::Http(crates_index::SparseIndex::from_url_with_hash_kind(
+                    let index = crates_index::SparseIndex::from_url_with_hash_kind(
                         index_url,
                         &crate_index_hash_kind,
-                    )?)
+                    )?;
+                    let index_config = index
+                        .index_config()
+                        .context("Failed to get crate index config")?;
+                    CrateIndexLookup::Http {
+                        index,
+                        index_config,
+                    }
                 } else {
                     match source_kind {
                         SourceKind::Registry => {
-                            let index = {
-                                // Load the index for the current url
-                                let index = crates_index::GitIndex::from_url_with_hash_kind(
-                                    index_url,
-                                    &crate_index_hash_kind,
-                                )
-                                .with_context(|| {
-                                    format!("Failed to load index for url: {index_url}")
-                                })?;
+                            let index = crates_index::GitIndex::from_url_with_hash_kind(
+                                index_url,
+                                &crate_index_hash_kind,
+                            )
+                            .with_context(|| {
+                                format!("Failed to load index for url: {index_url}")
+                            })?;
 
-                                // Ensure each index has a valid index config
-                                index.index_config().with_context(|| {
-                                    format!("`config.json` not found in index: {index_url}")
-                                })?;
-
-                                index
-                            };
-                            CrateIndexLookup::Git(index)
+                            let index_config = index.index_config().with_context(|| {
+                                format!("`config.json` not found in index: {index_url}")
+                            })?;
+                            CrateIndexLookup::Git {
+                                index,
+                                index_config,
+                            }
                         }
-                        SourceKind::SparseRegistry => CrateIndexLookup::Http(
-                            crates_index::SparseIndex::from_url_with_hash_kind(
+                        SourceKind::SparseRegistry => {
+                            let index = crates_index::SparseIndex::from_url_with_hash_kind(
                                 format!("sparse+{}", index_url).as_str(),
                                 &crate_index_hash_kind,
-                            )?,
-                        ),
+                            )?;
+                            let index_config = index
+                                .index_config()
+                                .context("Failed to get crate index config")?;
+                            CrateIndexLookup::Http {
+                                index,
+                                index_config,
+                            }
+                        }
                         unknown => {
                             return Err(anyhow!(
                                 "'{:?}' crate index type is not supported (caused by '{}')",
@@ -398,17 +416,11 @@ impl WorkspaceMetadata {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        workspace_metaata
+        workspace_metadata
             .sources
-            .extend(
-                additional_sources
-                    .into_iter()
-                    .filter_map(|(crate_id, source_info)| {
-                        source_info.map(|source_info| (crate_id, source_info))
-                    }),
-            );
-        workspace_metaata.tree_metadata = resolver_data;
-        workspace_metaata.inject_into(&mut manifest)?;
+            .extend(additional_sources.into_iter());
+        workspace_metadata.tree_metadata = resolver_data;
+        workspace_metadata.inject_into(&mut manifest)?;
 
         write_root_manifest(output_manifest_path.as_std_path(), manifest)?;
 
@@ -472,7 +484,7 @@ pub(crate) fn generate_lockfile(
 
     let root_lockfile_path = manifest_dir.join("Cargo.lock");
 
-    // Remove the file so it's not overwitten if it happens to be a symlink.
+    // Remove the file so it's not overwritten if it happens to be a symlink.
     if root_lockfile_path.exists() {
         fs::remove_file(&root_lockfile_path)?;
     }

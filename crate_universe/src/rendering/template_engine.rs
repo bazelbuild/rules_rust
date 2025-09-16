@@ -180,7 +180,7 @@ impl TemplateEngine {
     }
 }
 
-/// A convienience wrapper for parsing parameters to tera functions
+/// A convenience wrapper for parsing parameters to tera functions
 macro_rules! parse_tera_param {
     ($param:literal, $param_type:ty, $args:ident) => {
         match $args.get($param) {
@@ -188,7 +188,7 @@ macro_rules! parse_tera_param {
                 Ok(v) => v,
                 Err(_) => {
                     return Err(tera::Error::msg(format!(
-                        "The `{}` paramater could not be parsed as a String.",
+                        "The `{}` parameter could not be parsed as a String.",
                         $param
                     )))
                 }

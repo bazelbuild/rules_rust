@@ -137,6 +137,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
                     .values()
                     .filter_map(|crate_context| crate_context.repository.as_ref()),
                 context.unused_patches.iter(),
+                &opt.nonhermetic_root_bazel_workspace_dir,
             )?;
 
             return Ok(());
@@ -193,6 +194,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         splicing_manifest.manifests.keys().cloned(),
         annotations.lockfile.crates.values(),
         cargo_lockfile.patch.unused.iter(),
+        &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
     // Generate renderable contexts for each package
@@ -252,6 +254,7 @@ fn write_paths_to_track<
     manifests: Paths,
     source_annotations: SourceAnnotations,
     unused_patches: UnusedPatches,
+    nonhermetic_root_bazel_workspace_dir: &Utf8PathBuf,
 ) -> Result<()> {
     let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
@@ -266,6 +269,8 @@ fn write_paths_to_track<
         .iter()
         .cloned()
         .chain(manifests)
+        // Paths outside the bazel workspace cannot be `.watch`-ed.
+        .filter(|p| p.starts_with(nonhermetic_root_bazel_workspace_dir))
         .collect();
     std::fs::write(
         output_file,

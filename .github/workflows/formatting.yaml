@@ -14,23 +14,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actionsx/prettier@v2
-        with:
-          args: --config "${{ github.workspace }}/.prettierrc.toml" --write "**/*.{js,mjs,cjs,jsx,ts,tsx}"
-      # Prettier has no diff view so we must make one ourselves
-      # https://github.com/prettier/prettier/issues/6885
-      - run: |
-          git diff
-          if [[ -n "$(git status --porcelain)" ]]; then
-            exit 1
-          fi
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.11
-      - name: Install dependencies
-        run: |
-          pip install pre-commit
-      - name: Run pre-commit
-        run: |
-          pre-commit run --all-files
+      - uses: pre-commit/action@v3.0.1

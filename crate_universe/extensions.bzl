@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.63.0")
+bazel_dep(name = "rules_rust", version = "0.65.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -81,7 +81,7 @@ they return will automatically update BUILD targets. In your BUILD files,
 you use these macros for a Rust library as shown below:
 
 ```python
-load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@crates//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.63.0")
+bazel_dep(name = "rules_rust", version = "0.65.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -628,6 +628,9 @@ def _generate_hub_and_spokes(
         splicing_manifest = splicing_manifest,
     )
 
+    # The workspace root when one is explicitly provided.
+    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
     if repin:
@@ -658,8 +661,10 @@ def _generate_hub_and_spokes(
             "metadata": splice_outputs.metadata,
         })
 
-    # The workspace root when one is explicitly provided.
-    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+        for path_to_track in splice_outputs.extra_paths_to_track:
+            # We can only watch paths in our workspace.
+            if path_to_track.startswith(str(nonhermetic_root_bazel_workspace_dir)):
+                module_ctx.watch(path_to_track)
 
     paths_to_track_file = tag_path.get_child("paths_to_track.json")
     warnings_output_file = tag_path.get_child("warnings_output.json")
@@ -684,9 +689,7 @@ def _generate_hub_and_spokes(
 
     paths_to_track = json.decode(module_ctx.read(paths_to_track_file))
     for path in paths_to_track:
-        # This read triggers watching the file at this path and invalidates the repository_rule which will get re-run.
-        # Ideally we'd use module_ctx.watch, but it doesn't support files outside of the workspace, and we need to support that.
-        module_ctx.read(path)
+        module_ctx.watch(path)
 
     warnings_output_file = json.decode(module_ctx.read(warnings_output_file))
     for warning in warnings_output_file:
@@ -977,6 +980,22 @@ def _crate_impl(module_ctx):
         repo_specific_annotations = {}
         for annotation_tag in mod.tags.annotation:
             annotation_dict = structs.to_dict(annotation_tag)
+            if annotation_dict["build_script_data_select"]:
+                annotation_dict["build_script_data"] = struct(
+                    common = annotation_dict["build_script_data"],
+                    selects = annotation_dict["build_script_data_select"],
+                )
+                annotation_dict.pop("build_script_data_select")
+            if annotation_dict["build_script_env_select"]:
+                annotation_dict["build_script_env"] = struct(
+                    common = annotation_dict["build_script_env"],
+                    selects = {
+                        k: json.decode(v)
+                        for k, v in annotation_dict["build_script_env_select"].items()
+                    },
+                )
+                annotation_dict.pop("build_script_env_select")
+
             repositories = annotation_dict.pop("repositories")
             crate = annotation_dict.pop("crate")
 
@@ -1172,7 +1191,7 @@ _FROM_COMMON_ATTRS = {
             "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
             "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
             "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-            "variable is also controled by `CARGO_BAZEL_ISOLATED` environment variable."
+            "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
         ),
         default = True,
     ),
@@ -1228,11 +1247,17 @@ _annotation = tag_class(
         "build_script_data_glob": attr.string_list(
             doc = "A list of glob patterns to add to a crate's `cargo_build_script::data` attribute",
         ),
+        "build_script_data_select": attr.string_list_dict(
+            doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute. Keys should be the platform triplet. Value should be a list of labels.",
+        ),
         "build_script_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::deps` attribute.",
         ),
         "build_script_env": attr.string_dict(
             doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+        ),
+        "build_script_env_select": attr.string_dict(
+            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute. Key should be the platform triplet. Value should be a JSON encoded dictionary mapping variable names to values, for example `{\"FOO\": \"bar\"}`.",
         ),
         "build_script_link_deps": _relative_label_list(
             doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
@@ -1467,7 +1492,7 @@ can be found below where the supported keys for each template can be found in th
             default = True,
         ),
         "generate_rules_license_metadata": attr.bool(
-            doc = "Whether to generate rules license metedata.",
+            doc = "Whether to generate rules license metadata.",
             default = False,
         ),
         "generate_target_compatible_with": attr.bool(

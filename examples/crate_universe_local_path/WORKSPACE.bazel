@@ -21,7 +21,7 @@ crates_repository(
     name = "crates_from_cargo_workspace",
     cargo_lockfile = "//crates_from_workspace:Cargo.lock",
     # `generator` is not necessary in official releases.
-    # See load satement for `cargo_bazel_bootstrap`.
+    # See load statement for `cargo_bazel_bootstrap`.
     generator = "@cargo_bazel_bootstrap//:cargo-bazel",
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )

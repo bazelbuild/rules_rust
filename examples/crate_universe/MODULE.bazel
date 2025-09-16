@@ -16,7 +16,7 @@ local_path_override(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
@@ -614,8 +614,8 @@ use_repo(
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
     "cvm__serde_yaml-0.9.34-deprecated",
-    "cvm__tempfile-3.20.0",
-    "cvm__tokio-1.46.1",
+    "cvm__tempfile-3.21.0",
+    "cvm__tokio-1.47.1",
     "cvm__tokio-test-0.4.4",
 )
 

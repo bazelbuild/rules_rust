@@ -158,7 +158,7 @@ void test_stderr() { std::cerr << "This is the stderr output"; }
 
 int main(int argc, const char* argv[], const char* envp[]) {
     if (argc < 4) {
-        std::cerr << "error: Invalid number of args exected at least 4 got "
+        std::cerr << "error: Invalid number of args expected at least 4 got "
                   << argc << ".\n";
         return 1;
     }

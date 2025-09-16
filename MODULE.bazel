@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.63.0",
+    version = "0.65.0",
 )
 
 ###############################################################################
@@ -12,10 +12,10 @@ module(
 bazel_dep(name = "bazel_features", version = "1.32.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.4.0")
-bazel_dep(name = "apple_support", version = "1.22.1", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "apple_support", version = "1.23.0", repo_name = "build_bazel_apple_support")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -69,7 +69,7 @@ use_repo(
     "libc",
     "rtra",
     "rtra__serde-1.0.219",
-    "rtra__serde_json-1.0.141",
+    "rtra__serde_json-1.0.143",
     "rules_rust_test_load_arbitrary_tool",
     "rules_rust_toolchain_test_target_json",
 )

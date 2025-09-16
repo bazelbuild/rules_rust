@@ -12,21 +12,15 @@ repos:
       - id: buildifier-lint
         args: [--version, "v8.2.0", --warnings=all]
   - repo: https://github.com/crate-ci/typos
-    rev: v1.33.1
+    rev: v1.35.5
     hooks:
       - id: typos
         exclude: |
           (?x)^(
-            crate_universe|
-            examples|
-            extensions|
-            ffi|
-            nix|
-            rust|
-            test|
-            tools|
-            util
+            crate_universe/test_data
           )
+        exclude_types:
+          - diff
   - repo: https://github.com/psf/black
     rev: 24.10.0
     hooks:
@@ -44,3 +38,8 @@ repos:
         exclude_types:
           - json
           - javascript
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: ".*\\.(js|mjs|cjs|jsx|ts|tsx)$"

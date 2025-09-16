@@ -2,7 +2,8 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//cargo:defs.bzl", "cargo_build_script")
-load("//rust:defs.bzl", "rust_common", "rust_library", "rust_proc_macro")
+load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro")
+load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_list_contains")
 
 def _transitive_link_search_paths_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -17,6 +18,19 @@ def _transitive_link_search_paths_test_impl(ctx):
     return analysistest.end(env)
 
 transitive_link_search_paths_test = analysistest.make(_transitive_link_search_paths_test_impl)
+
+def _transitive_out_dir_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    action = tut.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+    inputs = action.inputs.to_list()
+    input_basenames = [f.basename for f in inputs]
+    assert_list_contains(env, input_basenames, "dep_build_script.out_dir")
+
+    return analysistest.end(env)
+
+transitive_out_dir_test = analysistest.make(_transitive_out_dir_test_impl)
 
 def _transitive_link_search_paths_test():
     cargo_build_script(
@@ -46,9 +60,21 @@ def _transitive_link_search_paths_test():
         deps = [":dep_build_script"],
     )
 
+    rust_binary(
+        name = "bin",
+        srcs = ["bin.rs"],
+        edition = "2018",
+        deps = [":dep"],
+    )
+
     transitive_link_search_paths_test(
         name = "transitive_link_search_paths_test",
         target_under_test = ":dep",
+    )
+
+    transitive_out_dir_test(
+        name = "transitive_out_dir_test",
+        target_under_test = ":bin",
     )
 
 def transitive_link_search_paths_test_suite(name):
@@ -63,5 +89,6 @@ def transitive_link_search_paths_test_suite(name):
         name = name,
         tests = [
             ":transitive_link_search_paths_test",
+            ":transitive_out_dir_test",
         ],
     )

@@ -296,7 +296,7 @@ _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
             "serde": Label("@rtra//:serde-1.0.219"),
-            "serde_json": Label("@rtra//:serde_json-1.0.141"),
+            "serde_json": Label("@rtra//:serde_json-1.0.143"),
         },
     },
 }
@@ -383,8 +383,11 @@ _CONDITIONS = {
     "s390x-unknown-linux-gnu": ["@rules_rust//rust/platform:s390x-unknown-linux-gnu"],
     "thumbv7em-none-eabi": ["@rules_rust//rust/platform:thumbv7em-none-eabi"],
     "thumbv8m.main-none-eabi": ["@rules_rust//rust/platform:thumbv8m.main-none-eabi"],
+    "wasm32-unknown-emscripten": ["@rules_rust//rust/platform:wasm32-unknown-emscripten"],
     "wasm32-unknown-unknown": ["@rules_rust//rust/platform:wasm32-unknown-unknown"],
     "wasm32-wasip1": ["@rules_rust//rust/platform:wasm32-wasip1"],
+    "wasm32-wasip1-threads": ["@rules_rust//rust/platform:wasm32-wasip1-threads"],
+    "wasm32-wasip2": ["@rules_rust//rust/platform:wasm32-wasip2"],
     "x86_64-apple-darwin": ["@rules_rust//rust/platform:x86_64-apple-darwin"],
     "x86_64-apple-ios": ["@rules_rust//rust/platform:x86_64-apple-ios"],
     "x86_64-linux-android": ["@rules_rust//rust/platform:x86_64-linux-android"],
@@ -427,12 +430,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__proc-macro2-1.0.95",
-        sha256 = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778",
+        name = "rtra__proc-macro2-1.0.101",
+        sha256 = "89ae43fd86e4158d6db51ad8e2b80f313af9cc74f5c0e03ccb87de09998732de",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/proc-macro2/1.0.95/download"],
-        strip_prefix = "proc-macro2-1.0.95",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.95.bazel"),
+        urls = ["https://static.crates.io/crates/proc-macro2/1.0.101/download"],
+        strip_prefix = "proc-macro2-1.0.101",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.proc-macro2-1.0.101.bazel"),
     )
 
     maybe(
@@ -477,22 +480,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__serde_json-1.0.141",
-        sha256 = "30b9eff21ebe718216c6ec64e1d9ac57087aad11efc64e32002bce4a0d4c03d3",
+        name = "rtra__serde_json-1.0.143",
+        sha256 = "d401abef1d108fbd9cbaebc3e46611f4b1021f714a0597a71f41ee463f5f4a5a",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/serde_json/1.0.141/download"],
-        strip_prefix = "serde_json-1.0.141",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.141.bazel"),
+        urls = ["https://static.crates.io/crates/serde_json/1.0.143/download"],
+        strip_prefix = "serde_json-1.0.143",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.serde_json-1.0.143.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtra__syn-2.0.104",
-        sha256 = "17b6f705963418cdb9927482fa304bc562ece2fdd4f616084c50b7023b435a40",
+        name = "rtra__syn-2.0.106",
+        sha256 = "ede7c438028d4436d71104916910f5bb611972c5cfd7f89b8300a8186e6fada6",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.104/download"],
-        strip_prefix = "syn-2.0.104",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.104.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.106/download"],
+        strip_prefix = "syn-2.0.106",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.106.bazel"),
     )
 
     maybe(
@@ -507,5 +510,5 @@ def crate_repositories():
 
     return [
         struct(repo = "rtra__serde-1.0.219", is_dev_dep = False),
-        struct(repo = "rtra__serde_json-1.0.141", is_dev_dep = False),
+        struct(repo = "rtra__serde_json-1.0.143", is_dev_dep = False),
     ]

@@ -260,7 +260,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
-    // Generate renderable contexts for earch package
+    // Generate renderable contexts for search package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
     // Render build files

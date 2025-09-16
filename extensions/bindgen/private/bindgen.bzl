@@ -14,6 +14,7 @@
 
 """Rust Bindgen rules"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_COMPILE_ACTION_NAME",
@@ -187,6 +188,23 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         rustc_env = None,
     )
 
+def _get_resource_dir(cc_toolchain):
+    """Returns the resource directory for the given cc_toolchain."""
+
+    # We use a bit of a hack to find the resource directory: We know that the builtin header
+    # stdbool.h (chosen relatively arbitrarily) needs to appear in `cc_toolchain.all_files`, so we
+    # search for it and use the directory above the include directory as the resource directory.
+    # This isn't ideal, but mboehme@google.com believes there is no more direct way of doing this.
+    for f in cc_toolchain.all_files.to_list():
+        if f.basename == "stdbool.h":
+            path = f.path
+            for _ in range(path.count("/") + 1):
+                if paths.basename(path) == "include":
+                    return paths.dirname(path)
+                path = paths.dirname(path)
+
+    return None
+
 def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
@@ -235,7 +253,7 @@ def _rust_bindgen_impl(ctx):
     if wrap_static_fns:
         if "--wrap-static-fns" in ctx.attr.bindgen_flags:
             fail("Do not pass `--wrap-static-fns` to `bindgen_flags, it's added automatically." +
-                 "The generated C file is accesible in the `bindgen_c_thunks` output group.")
+                 "The generated C file is accessible in the `bindgen_c_thunks` output group.")
         c_output = ctx.actions.declare_file(ctx.label.name + ".bindgen_c_thunks.c")
         args.add("--experimental")
         args.add("--wrap-static-fns")
@@ -253,6 +271,10 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Clang Arguments
     args.add("--")
+
+    resource_dir = _get_resource_dir(cc_toolchain)
+    if resource_dir:
+        args.add("-resource-dir=%s" % resource_dir)
 
     compile_variables = cc_common.create_compile_variables(
         cc_toolchain = cc_toolchain,
@@ -300,8 +322,20 @@ def _rust_bindgen_impl(ctx):
         "-nostdlib++",
         "-nostdlibinc",
     )
+
+    # Some forks of Clang, such as Apple's, define additional `-Xclang` flags that upstream Clang
+    # (as used by bindgen) does not understand, so we want to strip them out. We list them here.
+    xclang_flags_to_strip = (
+        "-fexperimental-optimized-noescape",
+    )
+
     open_arg = False
-    for arg in compile_flags:
+    skip_next = False
+    for idx, arg in enumerate(compile_flags):
+        if skip_next:
+            skip_next = False
+            continue
+
         if open_arg:
             args.add(arg)
             open_arg = False
@@ -313,6 +347,10 @@ def _rust_bindgen_impl(ctx):
             continue
 
         if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
+            continue
+
+        if arg == "-Xclang" and idx + 1 < len(compile_flags) and compile_flags[idx + 1] in xclang_flags_to_strip:
+            skip_next = True
             continue
 
         args.add(arg)

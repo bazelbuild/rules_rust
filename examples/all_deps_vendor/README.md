@@ -12,7 +12,7 @@ And the build target:
 ## Setup
 
 For the setup,
-you need to add the skylib in addition to the rust rules to your MODUE.bazel.
+you need to add the skylib in addition to the rust rules to your MODULE.bazel.
 
 ```starlark
 module(
@@ -120,7 +120,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 rust_binary(
     name = "hello_sys",
     srcs = ["src/main.rs"],
-    # Note the `crate_unvierse` dependencies here need to have been loaded
+    # Note the `crate_universe` dependencies here need to have been loaded
     # in the WORKSPACE file. See `//:sys_deps.bzl` for more details.
     deps = ["//basic/3rdparty/crates:bzip2"],
     visibility = ["//visibility:public"],
