@@ -1,13 +1,19 @@
 """Tests for passing configuration to cargo_build_script rules"""
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//cargo:defs.bzl", "cargo_build_script", "cargo_dep_env")
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_library", "rust_library_group", "rust_test")
 load(":dep_env.bzl", "create_dep_dir")
+
+cc_library(
+    name = "ignored",
+)
 
 cargo_build_script(
     name = "set_a_build",
     srcs = ["set_a.rs"],
     edition = "2018",
+    link_deps = [":ignored"],
     links = "X",
 )
 
@@ -24,6 +30,11 @@ rust_library(
     srcs = ["empty.rs"],
     edition = "2018",
     deps = [":set_a_build"],
+)
+
+rust_library_group(
+    name = "set_a_group",
+    deps = [":set_a"],
 )
 
 cargo_dep_env(
@@ -61,6 +72,14 @@ cargo_build_script(
     edition = "2018",
     link_deps = [":set_c"],
     deps = [":set_a"],
+)
+
+cargo_build_script(
+    name = "read_c_group",
+    srcs = ["read_c.rs"],
+    edition = "2018",
+    link_deps = [":set_c"],
+    deps = [":set_a_group"],
 )
 
 cargo_build_script(

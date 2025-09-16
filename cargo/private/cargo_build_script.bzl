@@ -6,7 +6,7 @@ load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -545,8 +545,19 @@ def _cargo_build_script_impl(ctx):
                 build_script_inputs.append(dep_build_info.out_dir)
 
     for dep in ctx.attr.deps:
-        for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
-            build_script_inputs.append(dep_build_info.out_dir)
+        dep_infos = []
+        if DepInfo in dep:
+            dep_infos = [dep[DepInfo]]
+        else:
+            dep_infos = [
+                dep_variant_info.dep_info
+                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
+                if dep_variant_info.dep_info
+            ]
+
+        for dep_info in dep_infos:
+            for dep_build_info in dep_info.transitive_build_infos.to_list():
+                build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -608,7 +619,7 @@ cargo_build_script = rule(
         ),
         "deps": attr.label_list(
             doc = "The Rust build-dependencies of the crate",
-            providers = [rust_common.dep_info],
+            providers = [[DepInfo], [CrateGroupInfo]],
             cfg = "exec",
         ),
         "link_deps": attr.label_list(
@@ -617,7 +628,6 @@ cargo_build_script = rule(
                 have the links attribute and therefore provide environment
                 variables to this build script.
             """),
-            providers = [rust_common.dep_info],
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
