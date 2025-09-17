@@ -1,5 +1,6 @@
 """The `cargo_bootstrap` rule is used for bootstrapping cargo binaries in a repository rule."""
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load("//cargo/private:cargo_utils.bzl", "get_rust_tools")
 load("//rust:defs.bzl", "rust_common")
 load("//rust/platform:triple.bzl", "get_host_triple")
@@ -236,6 +237,11 @@ def _cargo_bootstrap_repository_impl(repository_ctx):
         binary_name = binary_name,
         binary = built_binary,
     ))
+
+    if bazel_features.external_deps.repo_metadata_has_reproducible:
+        return repository_ctx.repo_metadata(reproducible = True)
+
+    return None
 
 cargo_bootstrap_repository = repository_rule(
     doc = "A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)",
