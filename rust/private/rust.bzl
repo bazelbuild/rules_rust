@@ -391,7 +391,7 @@ def _rust_test_impl(ctx):
         # Need to consider all src files together when transforming
         srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
         compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
-        srcs, compile_data, crate_root = transform_sources(ctx, srcs, compile_data, crate_root = None)
+        srcs, compile_data, _ = transform_sources(ctx, srcs, compile_data, crate_root = None)
 
         if crate.compile_data_targets:
             compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
