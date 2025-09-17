@@ -432,7 +432,7 @@ def _rust_test_impl(ctx):
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
-            cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = True),
+            cfgs = _collect_cfgs(ctx, toolchain, crate.root, crate_type, crate_is_test = True),
         )
     else:
         crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
