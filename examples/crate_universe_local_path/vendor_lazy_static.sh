@@ -5,6 +5,11 @@ set -x
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
+sed_i=(sed -i)
+if [[ "$(uname)" == "Darwin" ]]; then
+    sed_i=(sed -i '')
+fi
+
 if [[ "$#" -eq 0 ]]; then
     copy_to="$(mktemp -d)"
     path_dep_path="${copy_to}"
@@ -12,10 +17,6 @@ elif [[ "$#" -eq 1 ]]; then
     path_dep_path="$1"
     copy_to="crates_from_workspace/$1"
     mkdir -p "${copy_to}"
-    sed_i=(sed -i)
-    if [[ "$(uname)" == "Darwin" ]]; then
-      sed_i=(sed -i '')
-    fi
     "${sed_i[@]}" -e 's#manifests = \["//crates_from_workspace:Cargo\.toml"\],#manifests = ["//crates_from_workspace:Cargo.toml", "//crates_from_workspace:'"$1"'/Cargo.toml"],#g' WORKSPACE.bazel
     "${sed_i[@]}" -e 's#manifests = \["//crates_from_workspace:Cargo\.toml"\],#manifests = ["//crates_from_workspace:Cargo.toml", "//crates_from_workspace:'"$1"'/Cargo.toml"],#g' MODULE.bazel
 else
@@ -24,6 +25,7 @@ else
     exit 1
 fi
 
+"${sed_i[@]}" -e 's#version = "=1\.5\.0"#path = "'"$copy_to"'"#g' MODULE.bazel
 cp -r "lazy_static_1.5.0_copy/"* "${copy_to}/"
 
 echo "pub const VENDORED_BY: &'static str = \"rules_rust\";" >> "${copy_to}/src/lib.rs"
