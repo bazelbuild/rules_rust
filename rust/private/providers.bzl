@@ -65,6 +65,7 @@ DepInfo = provider(
         "transitive_data": "depset[File]: Data of all transitive non-macro dependencies.",
         "transitive_metadata_outputs": "depset[File]: All transitive metadata dependencies (.rmeta, for crates that provide them) and all transitive object dependencies (.rlib) for crates that don't provide metadata.",
         "transitive_noncrates": "depset[LinkerInput]: All transitive dependencies that aren't crates.",
+        "transitive_out_dirs": "depset[File]: The out directories of the build scripts of all transitive dependencies",
         "transitive_proc_macro_data": "depset[File]: Data of all transitive proc-macro dependencies, and non-macro dependencies of those macros.",
     },
 )
