@@ -354,6 +354,11 @@ def _rust_test_impl(ctx):
             ctx.label,
         ))
 
+    if ctx.attr.crate and ctx.attr.crate_root:
+        fail("rust_test.crate and rust_test.crate_root are mutually exclusive. Update {} to use only one of these attributes".format(
+            ctx.label,
+        ))
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
@@ -386,7 +391,7 @@ def _rust_test_impl(ctx):
         # Need to consider all src files together when transforming
         srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
         compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
-        srcs, compile_data, crate_root = transform_sources(ctx, srcs, compile_data, getattr(ctx.file, "crate_root", None))
+        srcs, compile_data, _ = transform_sources(ctx, srcs, compile_data, crate_root = None)
 
         if crate.compile_data_targets:
             compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
