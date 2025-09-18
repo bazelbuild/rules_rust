@@ -33,17 +33,20 @@ def kebab_case_keys(data):
         for (key, val) in data.items()
     }
 
-def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, packages):
+def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, cargo_creds_path, packages, isolated):
     """Produce a manifest containing required components for splicing a new Cargo workspace
 
     [cargo_config]: https://doc.rust-lang.org/cargo/reference/config.html
+    [cargo_creds]: https://doc.rust-lang.org/cargo/reference/config.html#credentials
     [cargo_toml]: https://doc.rust-lang.org/cargo/reference/manifest.html
 
     Args:
         splicing_config (dict): A deserialized `splicing_config`
         manifests (dict): A mapping of paths to Bazel labels which represent [Cargo manifests][cargo_toml].
         cargo_config_path (str): The absolute path to a [Cargo config][cargo_config].
+        cargo_creds_path (str): The absolute path to a [Cargo creds File][cargo_creds].
         packages (dict): A set of crates (packages) specifications to depend on
+        isolated (bool): Is the `CARGO_HOME` environment variable should be isolated from the host.
 
     Returns:
         dict: A dictionary representation of a `cargo_bazel::splicing::SplicingManifest`
@@ -59,7 +62,9 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
     # Auto-generated splicer manifest values
     splicing_manifest_content = {
         "cargo_config": cargo_config_path,
+        "cargo_creds": cargo_creds_path,
         "direct_packages": direct_packages_info,
+        "isolated": isolated,
         "manifests": manifests,
     }
 
@@ -91,6 +96,11 @@ def create_splicing_manifest(repository_ctx):
     else:
         cargo_config = None
 
+    if repository_ctx.attr.cargo_creds:
+        cargo_creds = str(repository_ctx.path(repository_ctx.attr.cargo_creds))
+    else:
+        cargo_creds = None
+
     # Load user configurable splicing settings
     config = json.decode(repository_ctx.attr.splicing_config or splicing_config())
 
@@ -100,6 +110,8 @@ def create_splicing_manifest(repository_ctx):
         splicing_config = config,
         manifests = manifests,
         cargo_config_path = cargo_config,
+        cargo_creds_path = cargo_creds,
+        isolated = repository_ctx.attr.isolated,
         packages = repository_ctx.attr.packages,
     )
 
