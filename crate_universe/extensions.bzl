@@ -1051,7 +1051,7 @@ def _crate_impl(module_ctx):
             if repositories:
                 for repo in repositories:
                     _update_annotations(
-                        repo_specific_annotations.get(repo, {}),
+                        repo_specific_annotations.setdefault(repo, {}),
                         crate,
                         version,
                         triples,
