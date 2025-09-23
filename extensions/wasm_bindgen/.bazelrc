@@ -5,9 +5,6 @@
 ## https://bazel.build/docs/best-practices#bazelrc-file
 ###############################################################################
 
-# TODO: https://github.com/bazelbuild/rules_rust/issues/3319
-common --deleted_packages=rules_js,rules_js/test
-
 # An alias for the test browser setting.
 common --flag_alias=test_browser=//settings:test_browser
 

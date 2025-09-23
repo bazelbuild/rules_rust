@@ -29,13 +29,7 @@ toolchains to register in the workspace.
 
 ## Interfacing with Javascript rules
 
-While it's recommended for users to maintain their own , in the
-`@rules_rust_wasm_bindgen` package there exists interface sub-packages for various
-Javascript Bazel rules. E.g. `aspect_rules_js`. The rules defined there are a more
-convenient way to use `rust_wasm_bindgen` with the associated javascript rules due
-to the inclusion of additional providers. Each directory contains a `defs.bzl` file
-that defines the different variants of `rust_wasm_bindgen`. (e.g. `js_rust_wasm_bindgen`
-for the `rules_js` submodule).
+Rules for doing so can be found at [rules_js_rust_wasm_bindgen](https://github.com/UebelAndre/rules_js_rust_wasm_bindgen)
 
 
 [wb]: https://github.com/rustwasm/wasm-bindgen
