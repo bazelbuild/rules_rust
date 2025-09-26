@@ -536,6 +536,9 @@ def _cargo_build_script_impl(ctx):
 
     build_script_inputs = []
 
+    build_script_inputs.extend(ctx.files.build_script_env_files)
+    args.add_all(ctx.files.build_script_env_files, format_each = "--input_dep_env_path=%s")
+
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
             dep_env_file = dep[rust_common.dep_info].dep_env
@@ -613,6 +616,25 @@ cargo_build_script = rule(
     attrs = {
         "build_script_env": attr.string_dict(
             doc = "Environment variables for build scripts.",
+        ),
+        "build_script_env_files": attr.label_list(
+            doc = dedent("""\
+                Files containing additional environment variables to set for rustc.
+
+                These files should  contain a single variable per line, of format
+                `NAME=value`, and newlines may be included in a value by ending a
+                line with a trailing back-slash (`\\\\`).
+
+                The order that these files will be processed is unspecified, so
+                multiple definitions of a particular variable are discouraged.
+
+                Note that the variables here are subject to
+                [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status)
+                stamping should the `stamp` attribute be enabled. Stamp variables
+                should be wrapped in brackets in order to be resolved. E.g.
+                `NAME={WORKSPACE_STATUS_VARIABLE}`.
+            """),
+            allow_files = True,
         ),
         "crate_features": attr.string_list(
             doc = "The list of rust features that the build script should consider activated.",

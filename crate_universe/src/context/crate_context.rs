@@ -230,6 +230,9 @@ pub(crate) struct BuildScriptAttributes {
     pub(crate) build_script_env: Select<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
+    pub(crate) build_script_env_files: Select<BTreeSet<String>>,
+
+    #[serde(skip_serializing_if = "Select::is_empty")]
     pub(crate) rundir: Select<String>,
 
     #[serde(skip_serializing_if = "Select::is_empty")]
@@ -276,6 +279,7 @@ impl Default for BuildScriptAttributes {
             link_deps: Default::default(),
             extra_link_deps: Default::default(),
             build_script_env: Default::default(),
+            build_script_env_files: Default::default(),
             rundir: Default::default(),
             extra_proc_macro_deps: Default::default(),
             proc_macro_deps: Default::default(),
