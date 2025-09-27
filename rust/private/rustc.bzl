@@ -292,14 +292,15 @@ def collect_deps(
                 dep = crate_info,
             ))
 
+            is_proc_macro = _is_proc_macro(crate_info)
             transitive_crates.append(
                 depset(
                     [crate_info],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crates],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_crates],
                 ),
             )
 
-            if _is_proc_macro(crate_info):
+            if is_proc_macro:
                 # This crate's data and its non-macro dependencies' data are proc macro data.
                 transitive_proc_macro_data.append(crate_info.data)
                 transitive_proc_macro_data.append(dep_info.transitive_data)
@@ -324,18 +325,18 @@ def collect_deps(
             transitive_metadata_outputs.append(
                 depset(
                     [depend_on],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_metadata_outputs],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_metadata_outputs],
                 ),
             )
 
             transitive_crate_outputs.append(
                 depset(
                     [crate_info.output],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crate_outputs],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_crate_outputs],
                 ),
             )
 
-            if "proc-macro" not in [crate_info.type, crate_info.wrapped_crate_type]:
+            if not is_proc_macro:
                 transitive_noncrates.append(dep_info.transitive_noncrates)
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
