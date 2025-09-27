@@ -16,7 +16,7 @@ use crate::context::Context;
 use crate::lockfile::{lock_context, write_lockfile};
 use crate::metadata::CargoUpdateRequest;
 use crate::metadata::TreeResolver;
-use crate::metadata::{Annotations, Cargo, Generator, MetadataGenerator, VendorGenerator};
+use crate::metadata::{Annotations, Cargo, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 use crate::utils::normalize_cargo_file_paths;
@@ -246,10 +246,12 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     )?;
 
     // Write metadata to the workspace for future reuse
-    let (cargo_metadata, cargo_lockfile) = Generator::new()
-        .with_cargo(cargo.clone())
-        .with_rustc(opt.rustc.clone())
-        .generate(manifest_path.as_path_buf())?;
+    let cargo_metadata = cargo
+        .metadata_command_with_options(
+            manifest_path.as_path_buf().as_ref(),
+            vec!["--locked".to_owned()],
+        )?
+        .exec()?;
 
     // Annotate metadata
     let annotations = Annotations::new(
