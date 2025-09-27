@@ -179,7 +179,13 @@ should avoid calling <code>rust_wasm_bindgen_register_toolchains</code> and inst
 <a href="#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a> rule to define their own
 toolchains to register in the workspace.</p>
 <h2 id="interfacing-with-javascript-rules"><a class="header" href="#interfacing-with-javascript-rules">Interfacing with Javascript rules</a></h2>
-<p>Rules for doing so can be found at <a href="https://github.com/UebelAndre/rules_js_rust_wasm_bindgen">rules_js_rust_wasm_bindgen</a></p>
+<p>While it's recommended for users to maintain their own , in the
+<code>@rules_rust_wasm_bindgen</code> package there exists interface sub-packages for various
+Javascript Bazel rules. E.g. <code>aspect_rules_js</code>. The rules defined there are a more
+convenient way to use <code>rust_wasm_bindgen</code> with the associated javascript rules due
+to the inclusion of additional providers. Each directory contains a <code>defs.bzl</code> file
+that defines the different variants of <code>rust_wasm_bindgen</code>. (e.g. <code>js_rust_wasm_bindgen</code>
+for the <code>rules_js</code> submodule).</p>
 <p><a id="rust_wasm_bindgen"></a></p>
 <h2 id="rust_wasm_bindgen"><a class="header" href="#rust_wasm_bindgen">rust_wasm_bindgen</a></h2>
 <pre>
