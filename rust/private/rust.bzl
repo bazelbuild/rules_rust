@@ -23,6 +23,8 @@ load(
     "AllocatorLibrariesImplInfo",
     "AllocatorLibrariesInfo",
     "BuildInfo",
+    "CrateGroupInfo",
+    "CrateInfo",
     "LintsInfo",
 )
 load("//rust/private:rustc.bzl", "collect_extra_rustc_flags", "is_no_std", "rustc_compile_action")
@@ -70,15 +72,24 @@ def _assert_correct_dep_mapping(ctx):
                     ),
                 )
     for dep in ctx.attr.proc_macro_deps:
-        type = dep[rust_common.crate_info].type
-        if type != "proc-macro":
-            fail(
-                "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
-                    ctx.label,
-                    dep.label,
-                    type,
-                ),
-            )
+        if CrateInfo in dep:
+            types = [dep[CrateInfo].type]
+        else:
+            types = [
+                dep_variant_info.crate_info.type
+                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
+                if dep_variant_info.crate_info
+            ]
+
+        for type in types:
+            if type != "proc-macro":
+                fail(
+                    "{} listed {} in its proc_macro_deps, but it is not proc-macro, it is a {}. It should probably instead be listed in deps.".format(
+                        ctx.label,
+                        dep.label,
+                        type,
+                    ),
+                )
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -343,6 +354,11 @@ def _rust_test_impl(ctx):
             ctx.label,
         ))
 
+    if ctx.attr.crate and ctx.attr.crate_root:
+        fail("rust_test.crate and rust_test.crate_root are mutually exclusive. Update {} to use only one of these attributes".format(
+            ctx.label,
+        ))
+
     if ctx.attr.crate:
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
@@ -375,7 +391,7 @@ def _rust_test_impl(ctx):
         # Need to consider all src files together when transforming
         srcs = depset(ctx.files.srcs, transitive = [crate.srcs]).to_list()
         compile_data = depset(ctx.files.compile_data, transitive = [crate.compile_data]).to_list()
-        srcs, compile_data, crate_root = transform_sources(ctx, srcs, compile_data, getattr(ctx.file, "crate_root", None))
+        srcs, compile_data, _ = transform_sources(ctx, srcs, compile_data, crate_root = None)
 
         if crate.compile_data_targets:
             compile_data_targets = depset(ctx.attr.compile_data, transitive = [crate.compile_data_targets])
@@ -416,7 +432,7 @@ def _rust_test_impl(ctx):
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
-            cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = True),
+            cfgs = _collect_cfgs(ctx, toolchain, crate.root, crate_type, crate_is_test = True),
         )
     else:
         crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
@@ -732,7 +748,7 @@ _common_attrs = {
             List of `rust_proc_macro` targets used to help build this library target.
         """),
         cfg = "exec",
-        providers = [rust_common.crate_info],
+        providers = [[CrateInfo], [CrateGroupInfo]],
     ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
@@ -799,13 +815,13 @@ _common_attrs = {
         doc = "A version to inject in the cargo environment variable.",
         default = "0.0.0",
     ),
-    "_stamp_flag": attr.label(
-        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
-        default = Label("//rust/private:stamp"),
-    ),
     "_collect_cfgs": attr.label(
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
         default = Label("//rust/settings:collect_cfgs"),
+    ),
+    "_stamp_flag": attr.label(
+        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
+        default = Label("//rust/private:stamp"),
     ),
 } | RUSTC_ATTRS | _rustc_allocator_libraries_attrs
 
@@ -1719,7 +1735,7 @@ def _replace_illlegal_chars(name):
 def _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test):
     """Collect all cfg flags for a crate but only when @rules_rust//rust/settings:collect_cfgs is set.
 
-    Cfgs are gathered from the target's own attributes (e.g., rustc_flags, crate_featues, etc.), as
+    Cfgs are gathered from the target's own attributes (e.g., rustc_flags, crate_features, etc.), as
     well as from the toolchain (e.g., toolchain.extra_rustc_flags).
 
     Args:

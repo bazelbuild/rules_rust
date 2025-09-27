@@ -22,6 +22,7 @@ def cargo_build_script(
         link_deps = [],
         proc_macro_deps = [],
         build_script_env = {},
+        build_script_env_files = [],
         use_default_shell_env = None,
         data = [],
         compile_data = [],
@@ -109,6 +110,8 @@ def cargo_build_script(
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
         build_script_env (dict, optional): Environment variables for build scripts.
+        build_script_env_files (list of label, optional): Files containing additional environment variables to set
+            when running the build script.
         use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
             setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
@@ -209,6 +212,7 @@ def cargo_build_script(
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
+        build_script_env_files = build_script_env_files,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,

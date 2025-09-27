@@ -1,5 +1,8 @@
 """Utilities for webdriver repositories"""
 
+load("@apple_support//tools/http_dmg:http_dmg.bzl", "http_dmg")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 def _build_file_repository_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
         repository_ctx.name,
@@ -37,52 +40,35 @@ filegroup(
 )
 """
 
-def _webdriver_repository_impl(repository_ctx):
-    result = repository_ctx.download_and_extract(
-        repository_ctx.attr.urls,
-        stripPrefix = repository_ctx.attr.strip_prefix,
-        integrity = repository_ctx.attr.integrity,
+def webdriver_repository(
+        *,
+        name,
+        tool,
+        urls,
+        integrity = "",
+        **kwargs):
+    """A repository rule for downloading webdriver tools.
+
+    Args:
+        name (str): The name of the repository
+        tool (str): The name of the webdriver tool being downloaded.
+        urls (list[str]): A list of URLs to a file that will be made available to Bazel.
+        integrity (str): Expected checksum in Subresource Integrity format of the file downloaded.
+        **kwargs (dict): Additional keyword arguments.
+    """
+    impl_rule = http_archive
+    for url in urls:
+        if url.endswith(".dmg"):
+            impl_rule = http_dmg
+            break
+
+    impl_rule(
+        name = name,
+        urls = urls,
+        integrity = integrity,
+        build_file_content = _WEBDRIVER_BUILD_CONTENT.format(
+            name = name,
+            tool = tool,
+        ),
+        **kwargs
     )
-
-    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
-        repository_ctx.attr.original_name,
-    ))
-
-    repository_ctx.file("BUILD.bazel", _WEBDRIVER_BUILD_CONTENT.format(
-        name = repository_ctx.attr.original_name,
-        tool = repository_ctx.attr.tool,
-    ))
-
-    return {
-        "integrity": result.integrity,
-        "name": repository_ctx.name,
-        "original_name": repository_ctx.attr.original_name,
-        "strip_prefix": repository_ctx.attr.strip_prefix,
-        "tool": repository_ctx.attr.tool,
-        "urls": repository_ctx.attr.urls,
-    }
-
-webdriver_repository = repository_rule(
-    doc = "A repository rule for downloading webdriver tools.",
-    implementation = _webdriver_repository_impl,
-    attrs = {
-        "integrity": attr.string(
-            doc = """Expected checksum in Subresource Integrity format of the file downloaded.""",
-        ),
-        # TODO: This can be removed in Bazel 8 and it's use moved to `repository_ctx.original_name`.
-        "original_name": attr.string(
-            doc = "The original name of the repository.",
-        ),
-        "strip_prefix": attr.string(
-            doc = """A directory prefix to strip from the extracted files.""",
-        ),
-        "tool": attr.string(
-            doc = "The name of the webdriver tool being downloaded.",
-            mandatory = True,
-        ),
-        "urls": attr.string_list(
-            doc = "A list of URLs to a file that will be made available to Bazel.",
-            mandatory = True,
-        ),
-    },
-)
