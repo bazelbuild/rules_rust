@@ -790,8 +790,12 @@ impl FromStr for VersionReqString {
     type Err = anyhow::Error;
 
     fn from_str(original: &str) -> Result<Self, Self::Err> {
-        let parsed = VersionReq::parse(original)
-            .context("VersionReqString must be a valid semver requirement")?;
+        let parsed = VersionReq::parse(original).with_context(|| {
+            format!(
+                "VersionReqString must be a valid semver requirement: '{}'",
+                original
+            )
+        })?;
         Ok(VersionReqString {
             original: original.to_owned(),
             parsed,

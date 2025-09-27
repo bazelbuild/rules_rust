@@ -386,6 +386,9 @@ impl Renderer {
                 build_script_attrs
                     .rustc_env_files
                     .insert(":cargo_toml_env_vars".to_owned(), None);
+                build_script_attrs
+                    .build_script_env_files
+                    .insert(":cargo_toml_env_vars".to_owned(), None);
             }
         }
 

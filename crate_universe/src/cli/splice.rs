@@ -1,6 +1,8 @@
 //! The cli entrypoint for the `splice` subcommand
 
+use std::fs::File;
 use std::path::PathBuf;
+use std::process::Stdio;
 
 use anyhow::Context;
 use camino::Utf8PathBuf;
@@ -9,9 +11,7 @@ use itertools::Itertools;
 
 use crate::cli::Result;
 use crate::config::Config;
-use crate::metadata::{
-    write_metadata, Cargo, CargoUpdateRequest, Generator, MetadataGenerator, TreeResolver,
-};
+use crate::metadata::{Cargo, CargoUpdateRequest, TreeResolver};
 use crate::splicing::{
     generate_lockfile, Splicer, SplicerKind, SplicingManifest, WorkspaceMetadata,
 };
@@ -64,6 +64,12 @@ pub struct SpliceOptions {
     /// The name of the repository being generated.
     #[clap(long)]
     pub repository_name: String,
+
+    /// Whether to skip writing the cargo lockfile back after resolving.
+    /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+    /// But you probably don't want to set this.
+    #[clap(long)]
+    pub skip_cargo_lockfile_overwrite: bool,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -94,14 +100,22 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .splice(&splicing_dir)
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
-    // Generate a lockfile
-    let cargo_lockfile = generate_lockfile(
-        &manifest_path,
-        &opt.cargo_lockfile,
-        cargo.clone(),
-        &opt.repin,
-    )
-    .context("Failed to generate lockfile")?;
+    // Use the existing lockfile if possible, otherwise generate a new one.
+    let cargo_lockfile = if opt.cargo_lockfile.is_some() && opt.skip_cargo_lockfile_overwrite {
+        let cargo_lockfile_path = opt.cargo_lockfile.unwrap();
+        cargo_lock::Lockfile::load(&cargo_lockfile_path).context(format!(
+            "Failed to load lockfile: {}",
+            cargo_lockfile_path.display()
+        ))?
+    } else {
+        generate_lockfile(
+            &manifest_path,
+            &opt.cargo_lockfile,
+            cargo.clone(),
+            &opt.repin,
+        )
+        .context("Failed to generate lockfile")?
+    };
 
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
@@ -111,6 +125,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
             &config.supported_platform_triples,
         )
         .context("Failed to generate features")?;
+
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(
         &cargo,
@@ -121,13 +136,26 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     )
     .context("Failed to write registry URLs and feature map")?;
 
-    let output_dir = opt.output_dir.clone();
+    // Generate the consumable outputs of the splicing process
+    std::fs::create_dir_all(&opt.output_dir).with_context(|| {
+        format!(
+            "Failed to create directories for {}",
+            opt.output_dir.display()
+        )
+    })?;
+
+    let metadata_json = File::create(opt.output_dir.join("metadata.json"))?;
 
     // Write metadata to the workspace for future reuse
-    let (cargo_metadata, _) = Generator::new()
-        .with_cargo(cargo.clone())
-        .with_rustc(opt.rustc.clone())
-        .generate(manifest_path.as_path_buf())
+    cargo
+        .metadata_command_with_options(
+            manifest_path.as_path_buf().as_ref(),
+            vec!["--locked".to_owned()],
+        )?
+        .cargo_command()
+        .stdout(Stdio::from(metadata_json))
+        .stderr(Stdio::null())
+        .status()
         .context("Failed to generate cargo metadata")?;
 
     let cargo_lockfile_path = manifest_path
@@ -141,14 +169,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         })?
         .join("Cargo.lock");
 
-    // Generate the consumable outputs of the splicing process
-    std::fs::create_dir_all(&output_dir)
-        .with_context(|| format!("Failed to create directories for {}", &output_dir.display()))?;
-
-    write_metadata(&opt.output_dir.join("metadata.json"), &cargo_metadata)
-        .context("Failed to write metadata")?;
-
-    std::fs::copy(cargo_lockfile_path, output_dir.join("Cargo.lock"))
+    std::fs::copy(cargo_lockfile_path, opt.output_dir.join("Cargo.lock"))
         .context("Failed to copy lockfile")?;
 
     if let SplicerKind::Workspace { path, .. } = prepared_splicer {

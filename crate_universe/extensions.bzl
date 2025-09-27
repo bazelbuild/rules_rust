@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.64.0")
+bazel_dep(name = "rules_rust", version = "0.65.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.64.0")
+bazel_dep(name = "rules_rust", version = "0.65.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -645,6 +645,7 @@ def _generate_hub_and_spokes(
             config_path = config_file,
             output_dir = tag_path.get_child("splicing-output"),
             debug_workspace_dir = tag_path.get_child("splicing-workspace"),
+            skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
             repository_name = cfg.name,
         )
 
@@ -858,6 +859,111 @@ def _get_host_cargo_rustc(module_ctx, host_triple, host_tools_repo):
 
     return cargo_path, rustc_path
 
+def _update_annotations(store, crate, version, triples, annotation_select_dict):
+    """Insert build-script data/env for each target triple if keys exist."""
+    crate_info = store.get(crate)
+    if crate_info == None:
+        _insert_annotation(store, crate, version, {})
+        crate_info = store.get(crate)
+
+    version_info = crate_info.get(version)
+    if version_info == None:
+        _insert_annotation(store, crate, version, {})
+        version_info = crate_info.get(version)
+
+    filtered_annotation_select_dict = _filter_dict(annotation_select_dict)
+
+    for triple in triples:
+        for field, value in filtered_annotation_select_dict.items():
+            _insert_select(
+                crate,
+                version,
+                triple,
+                version_info,
+                field,
+                value,
+            )
+
+def _insert_annotation(store, crate, version, annotation):
+    """Insert `annotation` (dict) into `store[crate][version]`.
+
+    Raises `fail()` if that (crate, version) pair already exists.
+    """
+    crate_map = store.setdefault(crate, {})  # create nested map if needed
+
+    if version in crate_map:
+        fail("Duplicate annotation for crate {} version {}".format(crate, version))
+
+    crate_map[version] = annotation
+
+def _insert_select(crate, version, triple, annotation, field, value):
+    """
+    Add a per-triple override to annotation[field].
+
+    If annotation[field] is in a list or dict, we wrap that into the common field. Then
+
+    On later calls we just update the existing selects.
+    """
+    current = annotation.get(field)
+
+    if type(current) == "struct":
+        if triple in current.selects:
+            fail("Duplicate annotation for crate {} version {} triple {}".format(crate, version, triple))
+
+        current.selects.update({triple: value})
+        return
+
+    # `common` cannot be None
+    if current == None:
+        if type(value) == type(""):
+            current = ""
+        elif type(value) == type([]):
+            current = []
+        elif type(value) == type({}):
+            current = {}
+
+    annotation[field] = struct(
+        common = current,
+        selects = {triple: value},
+    )
+
+def _create_annotation(version, annotation_dict):
+    return _crate_universe_crate.annotation(
+        version = version,
+        **_filter_dict(annotation_dict)
+    )
+
+def _collapse_crate_versions(crates, create = _create_annotation):
+    """{crate: {version: annotation}} -> {crate: [annotation,…]}"""
+    return {
+        crate: [create(version, annotation) for version, annotation in versions.items()]
+        for crate, versions in crates.items()
+    }
+
+def _collapse_versions(repo_specific, module, create = _create_annotation):
+    """
+    Return new (repo_specific, module) dicts with versions collapsed.
+
+    repo_specific: {repo: {crate: {version: annotation}}}
+    module       : {crate: {version: annotation}}
+    """
+    new_repo_specific = {
+        repo: _collapse_crate_versions(crates, create)
+        for repo, crates in repo_specific.items()
+    }
+    new_module = _collapse_crate_versions(module, create)
+    return new_repo_specific, new_module
+
+def _filter_dict(dict):
+    return {
+        k: v
+        for k, v in dict.items()
+        # Tag classes can't take in None, but the function requires None
+        # instead of the empty values in many cases.
+        # https://github.com/bazelbuild/bazel/issues/20744
+        if v != "" and v != [] and v != {}
+    }
+
 def _crate_impl(module_ctx):
     reproducible = True
     host_triple = get_host_triple(module_ctx, abi = {
@@ -877,13 +983,13 @@ def _crate_impl(module_ctx):
         repo_specific_annotations = {}
         for annotation_tag in mod.tags.annotation:
             annotation_dict = structs.to_dict(annotation_tag)
-            if annotation_dict["build_script_data_select"]:
+            if "build_script_data_select" in annotation_dict:
                 annotation_dict["build_script_data"] = struct(
                     common = annotation_dict["build_script_data"],
                     selects = annotation_dict["build_script_data_select"],
                 )
                 annotation_dict.pop("build_script_data_select")
-            if annotation_dict["build_script_env_select"]:
+            if "build_script_env_select" in annotation_dict:
                 annotation_dict["build_script_env"] = struct(
                     common = annotation_dict["build_script_env"],
                     selects = {
@@ -895,6 +1001,7 @@ def _crate_impl(module_ctx):
 
             repositories = annotation_dict.pop("repositories")
             crate = annotation_dict.pop("crate")
+            version = annotation_dict.pop("version")
 
             # The crate.annotation function can take in either a list or a bool.
             # For the tag-based method, because it has type safety, we have to
@@ -927,23 +1034,41 @@ def _crate_impl(module_ctx):
             if replacement:
                 annotation_dict["override_targets"]["bin"] = str(replacement)
 
-            annotation = _crate_universe_crate.annotation(**{
-                k: v
-                for k, v in annotation_dict.items()
-                # Tag classes can't take in None, but the function requires None
-                # instead of the empty values in many cases.
-                # https://github.com/bazelbuild/bazel/issues/20744
-                if v != "" and v != [] and v != {}
-            })
             if not repositories:
-                _get_or_insert(module_annotations, crate, []).append(annotation)
-            for repo in repositories:
-                _get_or_insert(
-                    _get_or_insert(repo_specific_annotations, repo, {}),
-                    crate,
-                    [],
-                ).append(annotation)
+                _insert_annotation(module_annotations, crate, version, annotation_dict)
+            else:
+                for repo in repositories:
+                    # each repo gets its own top-level dict:
+                    repo_map = repo_specific_annotations.setdefault(repo, {})
+                    _insert_annotation(repo_map, crate, version, annotation_dict)
 
+        for annotation_select_tag in mod.tags.annotation_select:
+            annotation_select_dict = structs.to_dict(annotation_select_tag)
+            repositories = annotation_select_dict.pop("repositories")
+            crate = annotation_select_dict.pop("crate")
+            triples = annotation_select_dict.pop("triples")
+            version = annotation_select_dict.pop("version")
+
+            if repositories:
+                for repo in repositories:
+                    _update_annotations(
+                        repo_specific_annotations.get(repo, {}),
+                        crate,
+                        version,
+                        triples,
+                        annotation_select_dict,
+                    )
+            else:
+                _update_annotations(
+                    module_annotations,
+                    crate,
+                    version,
+                    triples,
+                    annotation_select_dict,
+                )
+
+        # Now transform the annotations into a format that the `_generate_hub_and_spokes` function expects.
+        repo_specific_annotations, module_annotations = _collapse_versions(repo_specific_annotations, module_annotations)
         common_specs = []
         repo_specific_specs = {}
         for spec in mod.tags.spec:
@@ -1104,141 +1229,146 @@ _from_cargo = tag_class(
 )
 
 # This should be kept in sync with crate_universe/private/crate.bzl.
+_ANNOTATION_ATTRS = {
+    "crate": attr.string(
+        doc = "The name of the crate the annotation is applied to",
+        mandatory = True,
+    ),
+    "repositories": attr.string_list(
+        doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
+        default = [],
+    ),
+    "version": attr.string(
+        doc = "The versions of the crate the annotation is applied to. Defaults to all versions.",
+        default = "*",
+    ),
+}
+
+_ANNOTATION_NORMAL_ATTRS = {
+    "additive_build_file": attr.label(
+        doc = "A file containing extra contents to write to the bottom of generated BUILD files.",
+    ),
+    "additive_build_file_content": attr.string(
+        doc = "Extra contents to write to the bottom of generated BUILD files.",
+    ),
+    "alias_rule": attr.string(
+        doc = "Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s 'default_alias_rule'.",
+    ),
+    "build_script_data_glob": attr.string_list(
+        doc = "A list of glob patterns to add to a crate's `cargo_build_script::data` attribute",
+    ),
+    "build_script_toolchains": attr.label_list(
+        doc = "A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.",
+    ),
+    "compile_data_glob": attr.string_list(
+        doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",
+    ),
+    "compile_data_glob_excludes": attr.string_list(
+        doc = "A list of glob patterns to be excllued from a crate's `rust_library::compile_data` attribute.",
+    ),
+    "data_glob": attr.string_list(
+        doc = "A list of glob patterns to add to a crate's `rust_library::data` attribute.",
+    ),
+    "disable_pipelining": attr.bool(
+        doc = "If True, disables pipelining for library targets for this crate.",
+    ),
+    "extra_aliased_targets": attr.string_dict(
+        doc = "A list of targets to add to the generated aliases in the root crate_universe repository.",
+    ),
+    "gen_all_binaries": attr.bool(
+        doc = "If true, generates `rust_binary` targets for all of the crates bins",
+    ),
+    "gen_binaries": attr.string_list(
+        doc = "As a list, the subset of the crate's bins that should get `rust_binary` targets produced.",
+    ),
+    "gen_build_script": attr.string(
+        doc = "An authoritative flag to determine whether or not to produce `cargo_build_script` targets for the current crate. Supported values are 'on', 'off', and 'auto'.",
+        values = _OPT_BOOL_VALUES.keys(),
+        default = "auto",
+    ),
+    "override_target_bin": attr.label(
+        doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+    ),
+    "override_target_build_script": attr.label(
+        doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+    ),
+    "override_target_lib": attr.label(
+        doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+    ),
+    "override_target_proc_macro": attr.label(
+        doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
+    ),
+    "patch_args": attr.string_list(
+        doc = "The `patch_args` attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)",
+    ),
+    "patch_tool": attr.string(
+        doc = "The `patch_tool` attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)",
+    ),
+    "patches": attr.label_list(
+        doc = "The `patches` attribute of a Bazel repository rule. See [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)",
+    ),
+    "shallow_since": attr.string(
+        doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
+    ),
+}
+
+_ANNOTATION_SELECT_ATTRS = {
+    "build_script_compile_data": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::compile_data` attribute.",
+    ),
+    "build_script_data": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute.",
+    ),
+    "build_script_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::deps` attribute.",
+    ),
+    "build_script_env": attr.string_dict(
+        doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+    ),
+    "build_script_link_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
+    ),
+    "build_script_proc_macro_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::proc_macro_deps` attribute.",
+    ),
+    "build_script_rundir": attr.string(
+        doc = "An override for the build script's rundir attribute.",
+    ),
+    "build_script_rustc_env": attr.string_dict(
+        doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+    ),
+    "build_script_tools": _relative_label_list(
+        doc = "A list of labels to add to a crate's `cargo_build_script::tools` attribute.",
+    ),
+    "compile_data": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::compile_data` attribute.",
+    ),
+    "crate_features": attr.string_list(
+        doc = "A list of strings to add to a crate's `rust_library::crate_features` attribute.",
+    ),
+    "data": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::data` attribute.",
+    ),
+    "deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::deps` attribute.",
+    ),
+    "proc_macro_deps": _relative_label_list(
+        doc = "A list of labels to add to a crate's `rust_library::proc_macro_deps` attribute.",
+    ),
+    "rustc_env": attr.string_dict(
+        doc = "Additional variables to set on a crate's `rust_library::rustc_env` attribute.",
+    ),
+    "rustc_env_files": _relative_label_list(
+        doc = "A list of labels to set on a crate's `rust_library::rustc_env_files` attribute.",
+    ),
+    "rustc_flags": attr.string_list(
+        doc = "A list of strings to set on a crate's `rust_library::rustc_flags` attribute.",
+    ),
+}
+
 _annotation = tag_class(
     doc = "A collection of extra attributes and settings for a particular crate.",
-    attrs = {
-        "additive_build_file": attr.label(
-            doc = "A file containing extra contents to write to the bottom of generated BUILD files.",
-        ),
-        "additive_build_file_content": attr.string(
-            doc = "Extra contents to write to the bottom of generated BUILD files.",
-        ),
-        "alias_rule": attr.string(
-            doc = "Alias rule to use instead of `native.alias()`.  Overrides [render_config](#render_config)'s 'default_alias_rule'.",
-        ),
-        "build_script_data": _relative_label_list(
-            doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute.",
-        ),
-        "build_script_data_glob": attr.string_list(
-            doc = "A list of glob patterns to add to a crate's `cargo_build_script::data` attribute",
-        ),
-        "build_script_data_select": attr.string_list_dict(
-            doc = "A list of labels to add to a crate's `cargo_build_script::data` attribute. Keys should be the platform triplet. Value should be a list of labels.",
-        ),
-        "build_script_deps": _relative_label_list(
-            doc = "A list of labels to add to a crate's `cargo_build_script::deps` attribute.",
-        ),
-        "build_script_env": attr.string_dict(
-            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
-        ),
-        "build_script_env_select": attr.string_dict(
-            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute. Key should be the platform triplet. Value should be a JSON encoded dictionary mapping variable names to values, for example `{\"FOO\": \"bar\"}`.",
-        ),
-        "build_script_link_deps": _relative_label_list(
-            doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
-        ),
-        "build_script_proc_macro_deps": _relative_label_list(
-            doc = "A list of labels to add to a crate's `cargo_build_script::proc_macro_deps` attribute.",
-        ),
-        "build_script_rundir": attr.string(
-            doc = "An override for the build script's rundir attribute.",
-        ),
-        "build_script_rustc_env": attr.string_dict(
-            doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
-        ),
-        "build_script_toolchains": attr.label_list(
-            doc = "A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.",
-        ),
-        "build_script_tools": _relative_label_list(
-            doc = "A list of labels to add to a crate's `cargo_build_script::tools` attribute.",
-        ),
-        "compile_data": _relative_label_list(
-            doc = "A list of labels to add to a crate's `rust_library::compile_data` attribute.",
-        ),
-        "compile_data_glob": attr.string_list(
-            doc = "A list of glob patterns to add to a crate's `rust_library::compile_data` attribute.",
-        ),
-        "compile_data_glob_excludes": attr.string_list(
-            doc = "A list of glob patterns to be excllued from a crate's `rust_library::compile_data` attribute.",
-        ),
-        "crate": attr.string(
-            doc = "The name of the crate the annotation is applied to",
-            mandatory = True,
-        ),
-        "crate_features": attr.string_list(
-            doc = "A list of strings to add to a crate's `rust_library::crate_features` attribute.",
-        ),
-        "data": _relative_label_list(
-            doc = "A list of labels to add to a crate's `rust_library::data` attribute.",
-        ),
-        "data_glob": attr.string_list(
-            doc = "A list of glob patterns to add to a crate's `rust_library::data` attribute.",
-        ),
-        "deps": _relative_label_list(
-            doc = "A list of labels to add to a crate's `rust_library::deps` attribute.",
-        ),
-        "disable_pipelining": attr.bool(
-            doc = "If True, disables pipelining for library targets for this crate.",
-        ),
-        "extra_aliased_targets": attr.string_dict(
-            doc = "A list of targets to add to the generated aliases in the root crate_universe repository.",
-        ),
-        "gen_all_binaries": attr.bool(
-            doc = "If true, generates `rust_binary` targets for all of the crates bins",
-        ),
-        "gen_binaries": attr.string_list(
-            doc = "As a list, the subset of the crate's bins that should get `rust_binary` targets produced.",
-        ),
-        "gen_build_script": attr.string(
-            doc = "An authoritative flag to determine whether or not to produce `cargo_build_script` targets for the current crate. Supported values are 'on', 'off', and 'auto'.",
-            values = _OPT_BOOL_VALUES.keys(),
-            default = "auto",
-        ),
-        "override_target_bin": attr.label(
-            doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
-        ),
-        "override_target_build_script": attr.label(
-            doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
-        ),
-        "override_target_lib": attr.label(
-            doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
-        ),
-        "override_target_proc_macro": attr.label(
-            doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
-        ),
-        "patch_args": attr.string_list(
-            doc = "The `patch_args` attribute of a Bazel repository rule. See [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)",
-        ),
-        "patch_tool": attr.string(
-            doc = "The `patch_tool` attribute of a Bazel repository rule. See [http_archive.patch_tool](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool)",
-        ),
-        "patches": attr.label_list(
-            doc = "The `patches` attribute of a Bazel repository rule. See [http_archive.patches](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches)",
-        ),
-        "proc_macro_deps": _relative_label_list(
-            doc = "A list of labels to add to a crate's `rust_library::proc_macro_deps` attribute.",
-        ),
-        "repositories": attr.string_list(
-            doc = "A list of repository names specified from `crate.from_cargo(name=...)` that this annotation is applied to. Defaults to all repositories.",
-            default = [],
-        ),
-        "rustc_env": attr.string_dict(
-            doc = "Additional variables to set on a crate's `rust_library::rustc_env` attribute.",
-        ),
-        "rustc_env_files": _relative_label_list(
-            doc = "A list of labels to set on a crate's `rust_library::rustc_env_files` attribute.",
-        ),
-        "rustc_flags": attr.string_list(
-            doc = "A list of strings to set on a crate's `rust_library::rustc_flags` attribute.",
-        ),
-        "shallow_since": attr.string(
-            doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
-        ),
-        "version": attr.string(
-            doc = "The versions of the crate the annotation is applied to. Defaults to all versions.",
-            default = "*",
-        ),
-    },
+    attrs = _ANNOTATION_ATTRS | _ANNOTATION_NORMAL_ATTRS | _ANNOTATION_SELECT_ATTRS,
 )
 
 _from_specs = tag_class(
@@ -1389,6 +1519,16 @@ can be found below where the supported keys for each template can be found in th
     },
 )
 
+_annotation_select = tag_class(
+    doc = "A constructor for a crate dependency with selectable attributes.",
+    attrs = _ANNOTATION_ATTRS | {
+        "triples": attr.string_list(
+            doc = "A list of triples to apply the annotation to.",
+            mandatory = True,
+        ),
+    } | _ANNOTATION_SELECT_ATTRS,
+)
+
 crate = module_extension(
     doc = """\
 Crate universe module extensions.
@@ -1408,6 +1548,7 @@ Environment Variables:
     implementation = _crate_impl,
     tag_classes = {
         "annotation": _annotation,
+        "annotation_select": _annotation_select,
         "from_cargo": _from_cargo,
         "from_specs": _from_specs,
         "render_config": _render_config,

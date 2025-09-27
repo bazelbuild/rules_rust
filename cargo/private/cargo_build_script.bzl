@@ -6,7 +6,7 @@ load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:rust_common.bzl", "BuildInfo")
+load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
 
 # buildifier: disable=bzl-visibility
 load(
@@ -536,6 +536,9 @@ def _cargo_build_script_impl(ctx):
 
     build_script_inputs = []
 
+    build_script_inputs.extend(ctx.files.build_script_env_files)
+    args.add_all(ctx.files.build_script_env_files, format_each = "--input_dep_env_path=%s")
+
     for dep in ctx.attr.link_deps:
         if rust_common.dep_info in dep and dep[rust_common.dep_info].dep_env:
             dep_env_file = dep[rust_common.dep_info].dep_env
@@ -545,8 +548,19 @@ def _cargo_build_script_impl(ctx):
                 build_script_inputs.append(dep_build_info.out_dir)
 
     for dep in ctx.attr.deps:
-        for dep_build_info in dep[rust_common.dep_info].transitive_build_infos.to_list():
-            build_script_inputs.append(dep_build_info.out_dir)
+        dep_infos = []
+        if DepInfo in dep:
+            dep_infos = [dep[DepInfo]]
+        else:
+            dep_infos = [
+                dep_variant_info.dep_info
+                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
+                if dep_variant_info.dep_info
+            ]
+
+        for dep_info in dep_infos:
+            for dep_build_info in dep_info.transitive_build_infos.to_list():
+                build_script_inputs.append(dep_build_info.out_dir)
 
     experimental_symlink_execroot = ctx.attr._experimental_symlink_execroot[BuildSettingInfo].value or \
                                     _feature_enabled(ctx, "symlink-exec-root")
@@ -603,12 +617,31 @@ cargo_build_script = rule(
         "build_script_env": attr.string_dict(
             doc = "Environment variables for build scripts.",
         ),
+        "build_script_env_files": attr.label_list(
+            doc = dedent("""\
+                Files containing additional environment variables to set for rustc.
+
+                These files should  contain a single variable per line, of format
+                `NAME=value`, and newlines may be included in a value by ending a
+                line with a trailing back-slash (`\\\\`).
+
+                The order that these files will be processed is unspecified, so
+                multiple definitions of a particular variable are discouraged.
+
+                Note that the variables here are subject to
+                [workspace status](https://docs.bazel.build/versions/main/user-manual.html#workspace_status)
+                stamping should the `stamp` attribute be enabled. Stamp variables
+                should be wrapped in brackets in order to be resolved. E.g.
+                `NAME={WORKSPACE_STATUS_VARIABLE}`.
+            """),
+            allow_files = True,
+        ),
         "crate_features": attr.string_list(
             doc = "The list of rust features that the build script should consider activated.",
         ),
         "deps": attr.label_list(
             doc = "The Rust build-dependencies of the crate",
-            providers = [rust_common.dep_info],
+            providers = [[DepInfo], [CrateGroupInfo]],
             cfg = "exec",
         ),
         "link_deps": attr.label_list(
@@ -617,7 +650,6 @@ cargo_build_script = rule(
                 have the links attribute and therefore provide environment
                 variables to this build script.
             """),
-            providers = [rust_common.dep_info],
         ),
         "links": attr.string(
             doc = "The name of the native library this crate links against.",
