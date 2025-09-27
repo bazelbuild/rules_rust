@@ -215,11 +215,9 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
         metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     # Gather all dependencies for compilation
-    compile_action_deps = depset(
-        transform_deps(
-            compile_deps +
-            proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
-        ),
+    compile_action_deps = transform_deps(
+        compile_deps +
+        proto_toolchain.grpc_compile_deps if is_grpc else proto_toolchain.proto_compile_deps,
     )
 
     providers = rustc_compile_action(
@@ -232,7 +230,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             root = lib_rs,
             srcs = depset(srcs),
             deps = compile_action_deps,
-            proc_macro_deps = depset([]),
+            proc_macro_deps = [],
             aliases = {},
             output = rust_lib,
             metadata = rust_metadata,

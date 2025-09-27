@@ -252,7 +252,7 @@ def collect_deps(
     transitive_metadata_outputs = []
 
     crate_deps = []
-    for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
+    for dep in deps + proc_macro_deps:
         crate_group = None
 
         if type(dep) == "Target" and rust_common.crate_group_info in dep:
@@ -1222,7 +1222,13 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
-    crate_info = rust_common.create_crate_info(**crate_info_dict)
+    deps = crate_info_dict.pop("deps")
+    proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
+    crate_info = rust_common.create_crate_info(
+        deps = depset(deps),
+        proc_macro_deps = depset(proc_macro_deps),
+        **crate_info_dict
+    )
 
     build_metadata = crate_info_dict.get("metadata", None)
     rustc_output = crate_info_dict.get("rustc_output", None)
@@ -1242,8 +1248,8 @@ def rustc_compile_action(
             experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
 
     dep_info, build_info, linkstamps = collect_deps(
-        deps = crate_info_dict["deps"],
-        proc_macro_deps = crate_info_dict["proc_macro_deps"],
+        deps = deps,
+        proc_macro_deps = proc_macro_deps,
         aliases = crate_info_dict["aliases"],
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
@@ -1615,7 +1621,11 @@ def rustc_compile_action(
         crate_info_dict.update({
             "rustc_env": env,
         })
-        crate_info = rust_common.create_crate_info(**crate_info_dict)
+        crate_info = rust_common.create_crate_info(
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
+            **crate_info_dict
+        )
 
     if crate_info.type in ["staticlib", "cdylib"]:
         # These rules are not supposed to be depended on by other rust targets, and
