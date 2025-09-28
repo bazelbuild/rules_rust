@@ -42,6 +42,7 @@ load(
     "generate_output_diagnostics",
     "get_edition",
     "get_import_macro_deps",
+    "is_exec_configuration",
     "transform_deps",
     "transform_sources",
 )
@@ -1754,10 +1755,12 @@ def _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test):
 
     cfgs = {'feature="{}"'.format(feature): True for feature in getattr(ctx.attr, "crate_features", [])}
 
-    if is_no_std(ctx, toolchain, crate_is_test):
+    is_exec = is_exec_configuration(ctx)
+
+    if is_no_std(is_exec, toolchain, crate_is_test):
         cfgs['feature="no_std"'] = True
 
-    rustc_flags = getattr(ctx.attr, "rustc_flags", []) + collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type)
+    rustc_flags = getattr(ctx.attr, "rustc_flags", []) + collect_extra_rustc_flags(ctx, is_exec, toolchain, crate_root, crate_type)
     cfgs |= {flag.removeprefix("--cfg="): True for flag in rustc_flags if flag.startswith("--cfg=")}
     cfgs |= {value: True for (flag, value) in zip(rustc_flags[:-1], rustc_flags[1:]) if flag == "--cfg"}
 
