@@ -864,12 +864,12 @@ impl Renderer {
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
             deps.map(|dep| {
-                match dep.local_path {
-                    // In vendor mode, we use paths within the the repo.
-                    Some(path) if self.config.vendor_mode.is_some() => {
+                match (dep.local_path, self.config.vendor_mode) {
+                    // In local vendor mode, we use paths within the the repo.
+                    (Some(path), Some(VendorMode::Local)) => {
                         Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap()
                     }
-                    // If we're not vendoring, or don't have a path for the dep, construct the label we expect.
+                    // If we're not vendoring source, or don't have a path for the dep, construct the label we expect.
                     _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
                 }
             }),
