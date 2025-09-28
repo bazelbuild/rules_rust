@@ -19,6 +19,7 @@ load(
 load(
     "//rust/private:utils.bzl",
     "dedent",
+    "deduplicate",
     "expand_dict_value_locations",
     "find_cc_toolchain",
     "find_toolchain",
@@ -485,16 +486,19 @@ def _cargo_build_script_impl(ctx):
             variables = getattr(target[platform_common.TemplateVariableInfo], "variables", depset([]))
             known_variables.update(variables)
 
-    _merge_env_dict(env, expand_dict_value_locations(
-        ctx,
-        ctx.attr.build_script_env,
-        getattr(ctx.attr, "data", []) +
-        getattr(ctx.attr, "compile_data", []) +
-        getattr(ctx.attr, "tools", []) +
-        script_info.data +
-        script_info.tools,
-        known_variables,
-    ))
+    if ctx.attr.build_script_env:
+        _merge_env_dict(env, expand_dict_value_locations(
+            ctx,
+            ctx.attr.build_script_env,
+            deduplicate(
+                getattr(ctx.attr, "data", []) +
+                getattr(ctx.attr, "compile_data", []) +
+                getattr(ctx.attr, "tools", []) +
+                script_info.data +
+                script_info.tools,
+            ),
+            known_variables,
+        ))
 
     tools = depset(
         direct = [

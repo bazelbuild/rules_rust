@@ -35,6 +35,7 @@ load(
     "compute_crate_name",
     "crate_root_src",
     "dedent",
+    "deduplicate",
     "determine_lib_name",
     "determine_output_hash",
     "expand_dict_value_locations",
@@ -401,13 +402,13 @@ def _rust_test_impl(ctx):
 
         # crate.rustc_env is already expanded upstream in rust_library rule implementation
         rustc_env = dict(crate.rustc_env)
-        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
-        rustc_env.update(expand_dict_value_locations(
-            ctx,
-            ctx.attr.rustc_env,
-            data_paths,
-            {},
-        ))
+        if ctx.attr.rustc_env:
+            rustc_env.update(expand_dict_value_locations(
+                ctx,
+                ctx.attr.rustc_env,
+                deduplicate(getattr(ctx.attr, "data", [])),
+                {},
+            ))
         aliases = dict(crate.aliases)
         aliases.update(ctx.attr.aliases)
 
@@ -467,13 +468,15 @@ def _rust_test_impl(ctx):
             )
             rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
 
-        data_paths = depset(direct = getattr(ctx.attr, "data", [])).to_list()
-        rustc_env = expand_dict_value_locations(
-            ctx,
-            ctx.attr.rustc_env,
-            data_paths,
-            {},
-        )
+        if ctx.attr.rustc_env:
+            rustc_env = expand_dict_value_locations(
+                ctx,
+                ctx.attr.rustc_env,
+                deduplicate(getattr(ctx.attr, "data", [])),
+                {},
+            )
+        else:
+            rustc_env = {}
 
         # Target is a standalone crate. Build the test binary as its own crate.
         crate_info_dict = dict(
