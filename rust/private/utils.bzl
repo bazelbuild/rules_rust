@@ -270,6 +270,11 @@ def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
     Returns:
         string: The location-macro expanded version of the string.
     """
+
+    # Fast-path - both location expansions and make vars have a `$` so we can short-circuit everything.
+    if "$" not in env:
+        return env
+
     for directive in ("$(execpath ", "$(location "):
         if directive in env:
             # build script runner will expand pwd to execroot for us
