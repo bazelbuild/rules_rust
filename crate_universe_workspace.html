@@ -561,22 +561,23 @@ crate.select(<a href="#crate.select-common">common</a>, <a href="#crate.select-s
 <pre>
 load("@rules_rust//crate_universe:defs.bzl", "crate")
 
-crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>)
+crate.spec(<a href="#crate.spec-package">package</a>, <a href="#crate.spec-version">version</a>, <a href="#crate.spec-artifact">artifact</a>, <a href="#crate.spec-lib">lib</a>, <a href="#crate.spec-default_features">default_features</a>, <a href="#crate.spec-features">features</a>, <a href="#crate.spec-git">git</a>, <a href="#crate.spec-branch">branch</a>, <a href="#crate.spec-tag">tag</a>, <a href="#crate.spec-rev">rev</a>, <a href="#crate.spec-path">path</a>)
 </pre>
 <p>A constructor for a crate dependency.</p>
 <p>See <a href="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html">specifying dependencies</a> in the Cargo book for more details.</p>
 <p><strong>PARAMETERS</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
 <tr><td style="text-align: left"><a id="crate.spec-package"></a>package</td><td style="text-align: left">The explicit name of the package (used when attempting to alias a crate).</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-version"></a>version</td><td style="text-align: left">The exact version of the crate. Cannot be used with <code>git</code>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="crate.spec-version"></a>version</td><td style="text-align: left">The exact version of the crate. Cannot be used with <code>git</code> or <code>path</code>.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-artifact"></a>artifact</td><td style="text-align: left">Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-lib"></a>lib</td><td style="text-align: left">If using <code>artifact = "bin"</code>, additionally setting <code>lib = True</code> declares a dependency on both the package's library and binary, as opposed to just the binary.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-default_features"></a>default_features</td><td style="text-align: left">Maps to the <code>default-features</code> flag.</td><td style="text-align: left"><code>True</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-features"></a>features</td><td style="text-align: left">A list of features to use for the crate</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-git"></a>git</td><td style="text-align: left">The Git url to use for the crate. Cannot be used with <code>version</code>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="crate.spec-git"></a>git</td><td style="text-align: left">The Git url to use for the crate. Cannot be used with <code>version</code> or <code>path</code>.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-branch"></a>branch</td><td style="text-align: left">The git branch of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified. Specifying <code>rev</code> is recommended for fully-reproducible builds.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-tag"></a>tag</td><td style="text-align: left">The git tag of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified. Specifying <code>rev</code> is recommended for fully-reproducible builds.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.spec-rev"></a>rev</td><td style="text-align: left">The git revision of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="crate.spec-path"></a>path</td><td style="text-align: left">The local path of the remote crate. Cannot be used with <code>version</code> or <code>git</code>.</td><td style="text-align: left"><code>None</code></td></tr>
 </tbody></table>
 </div>
 <p><strong>RETURNS</strong></p>
