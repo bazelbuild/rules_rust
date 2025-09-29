@@ -137,7 +137,7 @@ def _clippy_aspect_impl(target, ctx):
         ctx.rule.file,
         ctx.rule.files,
         # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
-        depset([]),
+        [],
         toolchain,
         cc_toolchain,
         feature_configuration,

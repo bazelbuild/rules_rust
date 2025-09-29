@@ -107,7 +107,7 @@ def rustdoc_compile_action(
         ctx = ctx,
         file = ctx.file,
         files = ctx.files,
-        linkstamps = depset([]),
+        linkstamps = [],
         toolchain = toolchain,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
