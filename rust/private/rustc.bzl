@@ -485,27 +485,6 @@ def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rp
 
     return ld, link_args, link_env
 
-def _process_build_scripts(
-        build_info,
-        dep_info,
-        include_link_flags = True):
-    """Gathers the outputs from a target's `cargo_build_script` action.
-
-    Args:
-        build_info (BuildInfo): The target Build's dependency info.
-        dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
-        include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
-
-    Returns:
-        tuple: A tuple: A tuple of the following items:
-            - (depset[File]): A list of all build info `OUT_DIR` File objects
-            - (str): The `OUT_DIR` of the current build info
-            - (File): An optional path to a generated environment file from a `cargo_build_script` target
-            - (depset[File]): All direct and transitive build flags from the current build info.
-    """
-    extra_inputs, out_dir, build_env_file, build_flags_files = _create_extra_input_args(build_info, dep_info, include_link_flags = include_link_flags)
-    return extra_inputs, out_dir, build_env_file, build_flags_files
-
 def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
@@ -697,7 +676,7 @@ def collect_inputs(
             - (list[File]): Linkstamp outputs
             - (dict[String, File]): Ambiguous libs, see `_disambiguate_libs`.
     """
-    linker_script = getattr(file, "linker_script") if hasattr(file, "linker_script") else None
+    linker_script = getattr(file, "linker_script", None)
 
     # TODO: As of writing this comment Bazel used Java CcToolchainInfo.
     # However there is ongoing work to rewrite provider in Starlark.
@@ -735,29 +714,31 @@ def collect_inputs(
     if _depend_on_metadata(crate_info, force_depend_on_objects):
         transitive_crate_outputs = dep_info.transitive_metadata_outputs
 
-    build_info_inputs = []
+    nolinkstamp_compile_direct_inputs = []
     if build_info:
         if build_info.rustc_env:
-            build_info_inputs.append(build_info.rustc_env)
+            nolinkstamp_compile_direct_inputs.append(build_info.rustc_env)
         if build_info.flags:
-            build_info_inputs.append(build_info.flags)
+            nolinkstamp_compile_direct_inputs.append(build_info.flags)
 
     # The old default behavior was to include data files at compile time.
     # This flag controls whether to include data files in compile_data.
-    data_included_in_inputs = []
     if not toolchain._incompatible_do_not_include_data_in_compile_data:
-        data_included_in_inputs = getattr(files, "data", [])
+        nolinkstamp_compile_direct_inputs += files.data
+
+    if toolchain.target_json:
+        nolinkstamp_compile_direct_inputs.append(toolchain.target_json)
+
+    if linker_script:
+        nolinkstamp_compile_direct_inputs.append(linker_script)
 
     nolinkstamp_compile_inputs = depset(
-        data_included_in_inputs +
-        build_info_inputs +
-        ([toolchain.target_json] if toolchain.target_json else []) +
-        ([] if linker_script == None else [linker_script]),
+        nolinkstamp_compile_direct_inputs +
+        additional_transitive_inputs,
         transitive = [
             linker_depset,
             crate_info.srcs,
             transitive_crate_outputs,
-            depset(additional_transitive_inputs),
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
             toolchain.all_files,
@@ -817,12 +798,16 @@ def collect_inputs(
     # `crate_info.rustc_env_files` is not populated.
     build_env_files = crate_info.rustc_env_files if crate_info.rustc_env_files else getattr(files, "rustc_env_files", [])
     if build_env_file:
-        build_env_files = [f for f in build_env_files] + [build_env_file]
+        build_env_files = list(build_env_files)
+        build_env_files.append(build_env_file)
     compile_inputs = depset(build_env_files + lint_files, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def _will_emit_object_file(emit):
-    return any([e == "obj" or e.startswith("obj=") for e in emit])
+    for e in emit:
+        if e == "obj" or e.startswith("obj="):
+            return True
+    return False
 
 def _remove_codegen_units(flag):
     return None if flag.startswith("-Ccodegen-units") else flag
@@ -1890,23 +1875,26 @@ def add_edition_flags(args, crate):
     if crate.edition != "2015":
         args.add(crate.edition, format = "--edition=%s")
 
-def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
-    """Gather additional input arguments from transitive dependencies
+def _process_build_scripts(
+        build_info,
+        dep_info,
+        include_link_flags = True):
+    """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
-        build_info (BuildInfo): The BuildInfo provider from the target Crate's set of inputs.
+        build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
 
     Returns:
-        tuple: A tuple of the following items:
+        tuple: A tuple: A tuple of the following items:
             - (depset[File]): A list of all build info `OUT_DIR` File objects
             - (str): The `OUT_DIR` of the current build info
-            - (File): An optional generated environment file from a `cargo_build_script` target
-            - (depset[File]): All direct and transitive build flag files from the current build info to be passed to rustc.
+            - (File): An optional path to a generated environment file from a `cargo_build_script` target
+            - (depset[File]): All direct and transitive build flags from the current build info.
     """
-    input_files = []
-    input_depsets = []
+    direct_inputs = []
+    transitive_inputs = [dep_info.link_search_path_files, dep_info.transitive_data]
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -1918,25 +1906,25 @@ def _create_extra_input_args(build_info, dep_info, include_link_flags = True):
     if build_info:
         if build_info.out_dir:
             out_dir = build_info.out_dir.path
-            input_files.append(build_info.out_dir)
+            direct_inputs.append(build_info.out_dir)
         build_env_file = build_info.rustc_env
         if build_info.flags:
             build_flags_files.append(build_info.flags)
         if build_info.linker_flags and include_link_flags:
             build_flags_files.append(build_info.linker_flags)
-            input_files.append(build_info.linker_flags)
+            direct_inputs.append(build_info.linker_flags)
 
-        input_depsets.append(build_info.compile_data)
+        transitive_inputs.append(build_info.compile_data)
 
     # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
     # This should probably only actually be exposed to actions which link.
     for dep_build_info in dep_info.transitive_build_infos.to_list():
         if dep_build_info.out_dir:
-            input_files.append(dep_build_info.out_dir)
+            direct_inputs.append(dep_build_info.out_dir)
 
     out_dir_compile_inputs = depset(
-        input_files,
-        transitive = [dep_info.link_search_path_files, dep_info.transitive_data] + input_depsets,
+        direct_inputs,
+        transitive = transitive_inputs,
     )
 
     return (
