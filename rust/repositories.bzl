@@ -652,7 +652,11 @@ def rust_toolchain_repository(
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly". Defaults to False.
         extra_rustc_flags (list, optional): Extra flags to pass to rustc in non-exec configuration.
+            Subject to Make variable expansion with respect to RUST_SYSROOT,
+            RUST_SYSROOT_SHORT, RUSTC, etc.
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+            Subject to Make variable expansion with respect to RUST_SYSROOT,
+            RUST_SYSROOT_SHORT, RUSTC, etc.
         opt_level (dict, optional): Optimization level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See

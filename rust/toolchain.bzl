@@ -533,10 +533,16 @@ def _generate_sysroot(
 def _experimental_use_cc_common_link(ctx):
     return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
 
-def _expand_flags(ctx, flags, targets):
+def _expand_flags(ctx, attr_name, targets, make_variables):
     expanded_flags = []
+    flags = getattr(ctx.attr, attr_name)
     for flag in flags:
-        expanded_flags.append(dedup_expand_location(ctx, flag, targets))
+        # Fast-path - both location expansions and make vars have a `$` so we
+        # can short-circuit if $ doesn't exist.
+        if "$" in flag:
+            flag = dedup_expand_location(ctx, flag, targets)
+            flag = ctx.expand_make_variables(attr_name, flag, make_variables)
+        expanded_flags.append(flag)
     return expanded_flags
 
 def _rust_toolchain_impl(ctx):
@@ -593,29 +599,6 @@ def _rust_toolchain_impl(ctx):
         llvm_tools = ctx.attr.llvm_tools,
     )
 
-    expanded_stdlib_linkflags = _expand_flags(ctx, ctx.attr.stdlib_linkflags, rust_std[rust_common.stdlib_info].srcs)
-    expanded_extra_rustc_flags = _expand_flags(ctx, ctx.attr.extra_rustc_flags, rust_std[rust_common.stdlib_info].srcs)
-    expanded_extra_exec_rustc_flags = _expand_flags(ctx, ctx.attr.extra_exec_rustc_flags, rust_std[rust_common.stdlib_info].srcs)
-
-    linking_context = cc_common.create_linking_context(
-        linker_inputs = depset([
-            cc_common.create_linker_input(
-                owner = ctx.label,
-                user_link_flags = depset(expanded_stdlib_linkflags),
-            ),
-        ]),
-    )
-
-    # Contains linker flags needed to link Rust standard library.
-    # These need to be added to linker command lines when the linker is not rustc
-    # (rustc does this automatically). Linker flags wrapped in an otherwise empty
-    # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
-    # providing a `CcInfo`.
-    stdlib_linkflags_cc_info = CcInfo(
-        compilation_context = cc_common.create_compilation_context(),
-        linking_context = linking_context,
-    )
-
     # Determine the path and short_path of the sysroot
     sysroot_path = sysroot.sysroot_anchor.dirname
     sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
@@ -640,6 +623,29 @@ def _rust_toolchain_impl(ctx):
         })
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
+
+    expanded_stdlib_linkflags = _expand_flags(ctx, "stdlib_linkflags", rust_std[rust_common.stdlib_info].srcs, make_variables)
+    expanded_extra_rustc_flags = _expand_flags(ctx, "extra_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
+    expanded_extra_exec_rustc_flags = _expand_flags(ctx, "extra_exec_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
+
+    linking_context = cc_common.create_linking_context(
+        linker_inputs = depset([
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                user_link_flags = depset(expanded_stdlib_linkflags),
+            ),
+        ]),
+    )
+
+    # Contains linker flags needed to link Rust standard library.
+    # These need to be added to linker command lines when the linker is not rustc
+    # (rustc does this automatically). Linker flags wrapped in an otherwise empty
+    # `CcInfo` to provide the flags in a way that doesn't duplicate them per target
+    # providing a `CcInfo`.
+    stdlib_linkflags_cc_info = CcInfo(
+        compilation_context = cc_common.create_compilation_context(),
+        linking_context = linking_context,
+    )
 
     exec_triple = triple(ctx.attr.exec_triple)
 
@@ -842,10 +848,10 @@ rust_toolchain = rule(
             doc = "Label to a boolean build setting that controls whether cc_common.link is used to link rust binaries.",
         ),
         "extra_exec_rustc_flags": attr.string_list(
-            doc = "Extra flags to pass to rustc in exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute.",
+            doc = "Extra flags to pass to rustc in exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute. Subject to Make variable expansion with respect to RUST_SYSROOT, RUST_SYSROOT_SHORT, RUSTC, etc.",
         ),
         "extra_rustc_flags": attr.string_list(
-            doc = "Extra flags to pass to rustc in non-exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute.",
+            doc = "Extra flags to pass to rustc in non-exec configuration. Subject to location expansion with respect to the srcs of the `rust_std` attribute. Subject to Make variable expansion with respect to RUST_SYSROOT, RUST_SYSROOT_SHORT, RUSTC, etc.",
         ),
         "extra_rustc_flags_for_crate_types": attr.string_list_dict(
             doc = "Extra flags to pass to rustc based on crate type",
@@ -922,7 +928,8 @@ rust_toolchain = rule(
             doc = (
                 "Additional linker flags to use when Rust standard library is linked by a C++ linker " +
                 "(rustc will deal with these automatically). Subject to location expansion with respect " +
-                "to the srcs of the `rust_std` attribute."
+                "to the srcs of the `rust_std` attribute. Subject to Make variable expansion with respect " +
+                "to RUST_SYSROOT, RUST_SYSROOT_SHORT, RUSTC, etc."
             ),
             mandatory = True,
         ),
