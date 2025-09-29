@@ -22,7 +22,7 @@ use crate::utils::starlark::Label;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -790,8 +790,12 @@ impl FromStr for VersionReqString {
     type Err = anyhow::Error;
 
     fn from_str(original: &str) -> Result<Self, Self::Err> {
-        let parsed = VersionReq::parse(original)
-            .context("VersionReqString must be a valid semver requirement")?;
+        let parsed = VersionReq::parse(original).with_context(|| {
+            format!(
+                "VersionReqString must be a valid semver requirement: '{}'",
+                original
+            )
+        })?;
         Ok(VersionReqString {
             original: original.to_owned(),
             parsed,

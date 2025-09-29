@@ -250,33 +250,38 @@ def get_preferred_artifact(library_to_link, use_pic):
 # We do this to work around a potential crash, see
 # https://github.com/bazelbuild/bazel/issues/16664
 def dedup_expand_location(ctx, input, targets = []):
-    return ctx.expand_location(input, _deduplicate(targets))
+    return ctx.expand_location(input, deduplicate(targets))
 
-def _deduplicate(xs):
+def deduplicate(xs):
     return {x: True for x in xs}.keys()
 
 def concat(xss):
     return [x for xs in xss for x in xs]
 
-def _expand_location_for_build_script_runner(ctx, env, data, known_variables):
+def _expand_location_for_build_script_runner(ctx, v, data, known_variables):
     """A trivial helper for `expand_dict_value_locations` and `expand_list_element_locations`
 
     Args:
         ctx (ctx): The rule's context object
-        env (str): The value possibly containing location macros to expand.
+        v (str): The value possibly containing location macros to expand.
         data (sequence of Targets): See one of the parent functions.
         known_variables (dict): Make variables (probably from toolchains) to substitute in when doing make variable expansion.
 
     Returns:
         string: The location-macro expanded version of the string.
     """
+
+    # Fast-path - both location expansions and make vars have a `$` so we can short-circuit everything.
+    if "$" not in v:
+        return v
+
     for directive in ("$(execpath ", "$(location "):
-        if directive in env:
+        if directive in v:
             # build script runner will expand pwd to execroot for us
-            env = env.replace(directive, "$${pwd}/" + directive)
+            v = v.replace(directive, "$${pwd}/" + directive)
     return ctx.expand_make_variables(
-        env,
-        dedup_expand_location(ctx, env, data),
+        v,
+        ctx.expand_location(v, data),
         known_variables,
     )
 
@@ -310,7 +315,7 @@ def expand_dict_value_locations(ctx, env, data, known_variables):
     Returns:
         dict: A dict of environment variables with expanded location macros
     """
-    return dict([(k, _expand_location_for_build_script_runner(ctx, v, data, known_variables)) for (k, v) in env.items()])
+    return {k: _expand_location_for_build_script_runner(ctx, v, data, known_variables) for (k, v) in env.items()}
 
 def expand_list_element_locations(ctx, args, data, known_variables):
     """Performs location-macro expansion on a list of string values.

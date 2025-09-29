@@ -494,7 +494,7 @@ tasks:
     shell_commands: *no_bzlmod_shell_commands
     working_directory: examples/crate_universe_local_path
     run_targets:
-      - "//:vendor_edit_test_out_of_tree"
+      - "//:vendor_edit_test_out_of_tree_nobzlmod"
   crate_universe_local_path_in_tree_no_bzlmod:
     name: Crate Universe Local Path In Tree (No Bzlmod)
     platform: ubuntu2204
@@ -502,7 +502,7 @@ tasks:
     shell_commands: *no_bzlmod_shell_commands
     working_directory: examples/crate_universe_local_path
     run_targets:
-      - "//:vendor_edit_test_in_tree"
+      - "//:vendor_edit_test_in_tree_nobzlmod"
   example_bindgen_toolchain:
     name: Example custom bindgen toolchain registration
     platform: ubuntu2204

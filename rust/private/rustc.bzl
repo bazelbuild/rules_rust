@@ -252,7 +252,7 @@ def collect_deps(
     transitive_metadata_outputs = []
 
     crate_deps = []
-    for dep in depset(transitive = [deps, proc_macro_deps]).to_list():
+    for dep in deps + proc_macro_deps:
         crate_group = None
 
         if type(dep) == "Target" and rust_common.crate_group_info in dep:
@@ -292,14 +292,15 @@ def collect_deps(
                 dep = crate_info,
             ))
 
+            is_proc_macro = _is_proc_macro(crate_info)
             transitive_crates.append(
                 depset(
                     [crate_info],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crates],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_crates],
                 ),
             )
 
-            if _is_proc_macro(crate_info):
+            if is_proc_macro:
                 # This crate's data and its non-macro dependencies' data are proc macro data.
                 transitive_proc_macro_data.append(crate_info.data)
                 transitive_proc_macro_data.append(dep_info.transitive_data)
@@ -324,18 +325,18 @@ def collect_deps(
             transitive_metadata_outputs.append(
                 depset(
                     [depend_on],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_metadata_outputs],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_metadata_outputs],
                 ),
             )
 
             transitive_crate_outputs.append(
                 depset(
                     [crate_info.output],
-                    transitive = [] if _is_proc_macro(crate_info) else [dep_info.transitive_crate_outputs],
+                    transitive = [] if is_proc_macro else [dep_info.transitive_crate_outputs],
                 ),
             )
 
-            if "proc-macro" not in [crate_info.type, crate_info.wrapped_crate_type]:
+            if not is_proc_macro:
                 transitive_noncrates.append(dep_info.transitive_noncrates)
                 transitive_link_search_paths.append(dep_info.link_search_path_files)
 
@@ -1126,39 +1127,16 @@ def construct_arguments(
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
-    if crate_info.type in toolchain.extra_rustc_flags_for_crate_types.keys():
-        rustc_flags.add_all(toolchain.extra_rustc_flags_for_crate_types[crate_info.type], map_each = map_flag)
-
-    if is_exec_configuration(ctx):
-        rustc_flags.add_all(toolchain.extra_exec_rustc_flags, map_each = map_flag)
-    else:
-        rustc_flags.add_all(toolchain.extra_rustc_flags, map_each = map_flag)
-
     # extra_rustc_env applies to the target configuration, not the exec configuration.
     if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
         env.update(ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env)
 
-    # extra_rustc_flags apply to the target configuration, not the exec configuration.
-    if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
-
-    if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags, map_each = map_flag)
-
-    if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec_configuration(ctx):
-        per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
-        _add_per_crate_rustc_flags(ctx, rustc_flags, map_flag, crate_info, per_crate_rustc_flags)
-
     if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
         env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
-    if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
+    rustc_flags.add_all(collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type), map_each = map_flag)
 
-    if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec_configuration(ctx):
-        rustc_flags.add_all(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags, map_each = map_flag)
-
-    if _is_no_std(ctx, toolchain, crate_info):
+    if is_no_std(ctx, toolchain, crate_info.is_test):
         rustc_flags.add('--cfg=feature="no_std"')
 
     # Add target specific flags last, so they can override previous flags
@@ -1185,6 +1163,45 @@ def construct_arguments(
     )
 
     return args, env
+
+def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
+    """Gather all 'extra' rustc flags from the target's attributes and toolchain.
+
+    Args:
+        ctx (ctx): The current rule's context object.
+        toolchain (rust_toolchain): The current Rust toolchain.
+        crate_root (File): The root file of the crate.
+        crate_type (str): The crate type.
+
+    Returns:
+        List[str]: Extra rustc flags.
+    """
+    flags = []
+
+    if crate_type in toolchain.extra_rustc_flags_for_crate_types.keys():
+        flags.extend(toolchain.extra_rustc_flags_for_crate_types[crate_type])
+
+    is_exec = is_exec_configuration(ctx)
+
+    flags.extend(toolchain.extra_exec_rustc_flags if is_exec else toolchain.extra_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec:
+        flags.extend(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec:
+        flags.extend(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+
+    if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec:
+        per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
+        flags.extend(_collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags))
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec:
+        flags.extend(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
+    if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec:
+        flags.extend(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+
+    return flags
 
 def rustc_compile_action(
         *,
@@ -1217,7 +1234,13 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
-    crate_info = rust_common.create_crate_info(**crate_info_dict)
+    deps = crate_info_dict.pop("deps")
+    proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
+    crate_info = rust_common.create_crate_info(
+        deps = depset(deps),
+        proc_macro_deps = depset(proc_macro_deps),
+        **crate_info_dict
+    )
 
     build_metadata = crate_info_dict.get("metadata", None)
     rustc_output = crate_info_dict.get("rustc_output", None)
@@ -1237,8 +1260,8 @@ def rustc_compile_action(
             experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
 
     dep_info, build_info, linkstamps = collect_deps(
-        deps = crate_info_dict["deps"],
-        proc_macro_deps = crate_info_dict["proc_macro_deps"],
+        deps = deps,
+        proc_macro_deps = proc_macro_deps,
         aliases = crate_info_dict["aliases"],
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
@@ -1610,7 +1633,11 @@ def rustc_compile_action(
         crate_info_dict.update({
             "rustc_env": env,
         })
-        crate_info = rust_common.create_crate_info(**crate_info_dict)
+        crate_info = rust_common.create_crate_info(
+            deps = depset(deps),
+            proc_macro_deps = depset(proc_macro_deps),
+            **crate_info_dict
+        )
 
     if crate_info.type in ["staticlib", "cdylib"]:
         # These rules are not supposed to be depended on by other rust targets, and
@@ -1646,12 +1673,8 @@ def rustc_compile_action(
 
     return providers
 
-def _is_no_std(ctx, toolchain, crate_info):
-    if is_exec_configuration(ctx) or crate_info.is_test:
-        return False
-    if toolchain._no_std == "off":
-        return False
-    return True
+def is_no_std(ctx, toolchain, crate_is_test):
+    return not (is_exec_configuration(ctx) or crate_is_test or toolchain._no_std == "off")
 
 def _should_use_rustc_allocator_libraries(toolchain):
     use_or_default = toolchain._experimental_use_allocator_libraries_with_mangled_symbols
@@ -1686,7 +1709,7 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
             return libs.libstd_and_allocator_ccinfo
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
-        if _is_no_std(ctx, toolchain, crate_info):
+        if is_no_std(ctx, toolchain, crate_info.is_test):
             if attr_global_allocator_library:
                 return libs.nostd_and_global_allocator_ccinfo
             return toolchain.nostd_and_global_allocator_ccinfo
@@ -2296,16 +2319,20 @@ def _get_dirname(file):
     """
     return file.dirname
 
-def _add_per_crate_rustc_flags(ctx, args, map_flag, crate_info, per_crate_rustc_flags):
-    """Adds matching per-crate rustc flags to `args`.
+def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
+    """Return all matching per-crate rustc flags.
 
     Args:
         ctx (ctx): The source rule's context object
-        args (Args): A reference to an Args object
-        map_flag (function): An optional function to use to map added flags
-        crate_info (CrateInfo): A CrateInfo provider
+        crate_root (File): The root file of the crate
         per_crate_rustc_flags (list): A list of per_crate_rustc_flag values
+
+    Returns:
+        List[str]: matching per-crate rustc flags
     """
+
+    flags = []
+
     for per_crate_rustc_flag in per_crate_rustc_flags:
         at_index = per_crate_rustc_flag.find("@")
         if at_index == -1:
@@ -2323,13 +2350,12 @@ def _add_per_crate_rustc_flags(ctx, args, map_flag, crate_info, per_crate_rustc_
             label = label_string[2:]
         else:
             label = label_string
-        execution_path = crate_info.root.path
+        execution_path = crate_root.path
 
         if label.startswith(prefix_filter) or execution_path.startswith(prefix_filter):
-            if map_flag:
-                flag = map_flag(flag)
-            if flag:
-                args.add(flag)
+            flags.append(flag)
+
+    return flags
 
 def _error_format_impl(ctx):
     """Implementation of the `error_format` rule

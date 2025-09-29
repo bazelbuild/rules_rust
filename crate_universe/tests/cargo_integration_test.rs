@@ -10,6 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{ensure, Context, Result};
+use camino::Utf8PathBuf;
 use cargo_bazel::cli::{splice, SpliceOptions};
 use serde_json::{json, Value};
 
@@ -117,6 +118,8 @@ fn run(repository_name: &str, manifests: HashMap<String, String>, lockfile: &str
         cargo,
         rustc,
         repository_name: String::from("crates_index"),
+        skip_cargo_lockfile_overwrite: false,
+        nonhermetic_root_bazel_workspace_dir: Utf8PathBuf::from("/doesnotexist/unused/repo/root"),
     })
     .unwrap();
 

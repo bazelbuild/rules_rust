@@ -1,0 +1,7 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    deps = ["@crates_from_specs//:lazy_static"],
+)

@@ -18,7 +18,7 @@ load(
 load(
     "//rust/private:utils.bzl",
     "dedent",
-    "dedup_expand_location",
+    "deduplicate",
     "find_cc_toolchain",
     "is_exec_configuration",
     "is_std_dylib",
@@ -534,9 +534,10 @@ def _experimental_use_cc_common_link(ctx):
     return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
 
 def _expand_flags(ctx, flags, targets):
+    targets = deduplicate(targets)
     expanded_flags = []
     for flag in flags:
-        expanded_flags.append(dedup_expand_location(ctx, flag, targets))
+        expanded_flags.append(ctx.expand_location(flag, targets))
     return expanded_flags
 
 def _rust_toolchain_impl(ctx):

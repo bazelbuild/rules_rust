@@ -386,6 +386,9 @@ impl Renderer {
                 build_script_attrs
                     .rustc_env_files
                     .insert(":cargo_toml_env_vars".to_owned(), None);
+                build_script_attrs
+                    .build_script_env_files
+                    .insert(":cargo_toml_env_vars".to_owned(), None);
             }
         }
 
@@ -860,9 +863,15 @@ impl Renderer {
         extra_deps: Select<BTreeSet<Label>>,
     ) -> Select<BTreeSet<Label>> {
         Select::merge(
-            deps.map(|dep| match dep.local_path {
-                Some(path) => Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap(),
-                _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
+            deps.map(|dep| {
+                match (dep.local_path, self.config.vendor_mode) {
+                    // In local vendor mode, we use paths within the the repo.
+                    (Some(path), Some(VendorMode::Local)) => {
+                        Label::from_str(&format!("//{}:{}", path, &dep.target)).unwrap()
+                    }
+                    // If we're not vendoring source, or don't have a path for the dep, construct the label we expect.
+                    _ => self.crate_label(&dep.id.name, &dep.id.version.to_string(), &dep.target),
+                }
             }),
             extra_deps,
         )

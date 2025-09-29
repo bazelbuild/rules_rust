@@ -91,6 +91,8 @@ def _crates_repository_impl(repository_ctx):
             splicing_manifest = splicing_manifest,
             config_path = config_path,
             output_dir = repository_ctx.path("splicing-output"),
+            skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
+            nonhermetic_root_bazel_workspace_dir = nonhermetic_root_bazel_workspace_dir,
             repository_name = repository_ctx.name,
         )
 
