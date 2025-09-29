@@ -17,7 +17,7 @@
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
-        "aliases": "Dict[Target, String]: Renamed and aliased crates",
+        "aliases": "Dict[Label, String]: Renamed and aliased crates",
         "cfgs": (
             "List[str]: The set of enabled cfgs for this crate. Note that this field is populated only " +
             "when @rules_rust//rust/settings:collect_cfgs is set."

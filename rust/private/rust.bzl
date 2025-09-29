@@ -222,7 +222,7 @@ def _rust_library_common(ctx, crate_type):
             srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
-            aliases = ctx.attr.aliases,
+            aliases = {k.label: v for (k, v) in ctx.attr.aliases.items()},
             output = rust_lib,
             rustc_output = generate_output_diagnostics(ctx, rust_lib),
             metadata = rust_metadata,
@@ -287,7 +287,7 @@ def _rust_binary_impl(ctx):
             srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
-            aliases = ctx.attr.aliases,
+            aliases = {k.label: v for k, v in ctx.attr.aliases.items()},
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             metadata = rust_metadata,
@@ -409,7 +409,7 @@ def _rust_test_impl(ctx):
             {},
         ))
         aliases = dict(crate.aliases)
-        aliases.update(ctx.attr.aliases)
+        aliases.update({k.label: v for k, v in ctx.attr.aliases.items()})
 
         # Build the test binary using the dependency's srcs.
         crate_info_dict = dict(
@@ -483,7 +483,7 @@ def _rust_test_impl(ctx):
             srcs = depset(srcs),
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
-            aliases = ctx.attr.aliases,
+            aliases = {k.label: v for k, v in ctx.attr.aliases.items()},
             output = output,
             rustc_output = generate_output_diagnostics(ctx, output),
             metadata = rust_metadata,

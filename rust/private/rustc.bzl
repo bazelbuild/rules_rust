@@ -230,7 +230,7 @@ def collect_deps(
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
-        aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        aliases (dict[Label, str]): A dict mapping aliased targets to their actual Crate information.
 
     Returns:
         tuple: Returns a tuple of:
@@ -270,7 +270,6 @@ def collect_deps(
                     cc_info = dep_variant_info.cc_info,
                 ))
 
-    aliases = {k.label: v for k, v in aliases.items()}
     for dep in crate_deps:
         (crate_info, dep_info) = _get_crate_and_dep_info(dep)
         cc_info = _get_cc_info(dep)
