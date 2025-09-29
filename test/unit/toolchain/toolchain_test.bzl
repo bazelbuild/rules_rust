@@ -46,7 +46,7 @@ def _toolchain_location_expands_linkflags_impl(ctx):
     )
     asserts.equals(
         env,
-        "test:" + toolchain_info.sysroot,
+        "test:sysroot=" + toolchain_info.sysroot,
         toolchain_info.stdlib_linkflags.linking_context.linker_inputs.to_list()[0].user_link_flags[1],
     )
 
@@ -63,7 +63,7 @@ def _toolchain_location_expands_extra_rustc_flags_impl(ctx):
     )
     asserts.equals(
         env,
-        "extra_rustc_flags:" + toolchain_info.sysroot,
+        "extra_rustc_flags:sysroot=" + toolchain_info.sysroot,
         toolchain_info.extra_rustc_flags[1],
     )
 
@@ -183,8 +183,8 @@ def _define_test_targets():
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
         staticlib_ext = ".a",
-        stdlib_linkflags = ["test:$(location :stdlib_srcs)", "test:$(RUST_SYSROOT)"],
-        extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)", "extra_rustc_flags:$(RUST_SYSROOT)"],
+        stdlib_linkflags = ["test:$(location :stdlib_srcs)", "test:sysroot=$(RUST_SYSROOT)"],
+        extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)", "extra_rustc_flags:sysroot=$(RUST_SYSROOT)"],
         target_json = encoded_target_json,
     )
 
