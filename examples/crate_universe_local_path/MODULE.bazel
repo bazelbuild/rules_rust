@@ -25,3 +25,13 @@ crate.from_cargo(
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
 use_repo(crate, "crates_from_cargo_workspace")
+
+crate.from_specs(
+    name = "crates_from_specs",
+)
+crate.spec(
+    package = "lazy_static",
+    repositories = ["crates_from_specs"],
+    version = "=1.5.0",
+)
+use_repo(crate, "crates_from_specs")

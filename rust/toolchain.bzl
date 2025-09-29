@@ -18,7 +18,7 @@ load(
 load(
     "//rust/private:utils.bzl",
     "dedent",
-    "dedup_expand_location",
+    "deduplicate",
     "find_cc_toolchain",
     "is_exec_configuration",
     "is_std_dylib",
@@ -534,6 +534,7 @@ def _experimental_use_cc_common_link(ctx):
     return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
 
 def _expand_flags(ctx, attr_name, targets, make_variables):
+    targets = deduplicate(targets)
     expanded_flags = []
     flags = getattr(ctx.attr, attr_name)
     for flag in flags:
@@ -543,7 +544,7 @@ def _expand_flags(ctx, attr_name, targets, make_variables):
             # The ordering here matters. If we expand Make variables first, then
             # "$(location //foo)" would have to be written as "$$(location //foo)",
             # which is inconsistent with how Bazel builtin rules work.
-            flag = dedup_expand_location(ctx, flag, targets)
+            flag = ctx.expand_location(flag, targets)
             flag = ctx.expand_make_variables(attr_name, flag, make_variables)
         expanded_flags.append(flag)
     return expanded_flags

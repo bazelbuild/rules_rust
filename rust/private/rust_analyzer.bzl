@@ -28,7 +28,7 @@ load(
     "//rust/private:utils.bzl",
     "concat",
     "dedent",
-    "dedup_expand_location",
+    "deduplicate",
     "find_toolchain",
 )
 
@@ -270,9 +270,9 @@ def _create_single_crate(ctx, attrs, info):
 
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
     # macro like include_bytes!. Other use cases might exist that require more complex logic.
-    expand_targets = concat([getattr(attrs, attr, []) for attr in ["data", "compile_data"]])
+    expand_targets = deduplicate(concat([getattr(attrs, attr, []) for attr in ["data", "compile_data"]]))
 
-    crate["env"].update({k: dedup_expand_location(ctx, v, expand_targets) for k, v in info.env.items()})
+    crate["env"].update({k: ctx.expand_location(v, expand_targets) for k, v in info.env.items()})
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     # It can happen a single source file is present in multiple crates - there can

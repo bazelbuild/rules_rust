@@ -98,8 +98,8 @@ def rustdoc_compile_action(
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, _ = collect_deps(
-        deps = crate_info.deps,
-        proc_macro_deps = crate_info.proc_macro_deps,
+        deps = crate_info.deps.to_list(),
+        proc_macro_deps = crate_info.proc_macro_deps.to_list(),
         aliases = crate_info.aliases,
     )
 
