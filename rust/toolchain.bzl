@@ -540,6 +540,9 @@ def _expand_flags(ctx, attr_name, targets, make_variables):
         # Fast-path - both location expansions and make vars have a `$` so we
         # can short-circuit if $ doesn't exist.
         if "$" in flag:
+            # The ordering here matters. If we expand Make variables first, then
+            # "$(location //foo)" would have to be written as "$$(location //foo)",
+            # which is inconsistent with how Bazel builtin rules work.
             flag = dedup_expand_location(ctx, flag, targets)
             flag = ctx.expand_make_variables(attr_name, flag, make_variables)
         expanded_flags.append(flag)
