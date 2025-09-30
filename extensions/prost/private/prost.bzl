@@ -3,10 +3,10 @@
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("@rules_proto//proto:proto_common.bzl", proto_toolchains = "toolchains")
-load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect", "rust_common")
+load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:providers.bzl", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
+load("@rules_rust//rust/private:providers.bzl", "CrateGroupInfo", "CrateInfo", "DepInfo", "DepVariantInfo", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS")
@@ -230,7 +230,7 @@ def _compile_rust(
     dep_info = _get_dep_info(providers)
     cc_info = _get_cc_info(providers)
 
-    return rust_common.dep_variant_info(
+    return DepVariantInfo(
         crate_info = crate_info,
         dep_info = dep_info,
         cc_info = cc_info,
@@ -252,13 +252,13 @@ def _rust_prost_aspect_impl(target, ctx):
     for prost_runtime in runtimes:
         if not prost_runtime:
             continue
-        if rust_common.crate_group_info in prost_runtime:
-            crate_group_info = prost_runtime[rust_common.crate_group_info]
-            runtime_deps.extend(crate_group_info.dep_variant_infos.to_list())
+        if CrateGroupInfo in prost_runtime:
+            crate_group_info = prost_runtime[CrateGroupInfo]
+            runtime_deps.extend(crate_group_info.dep_variant_infos)
         else:
-            runtime_deps.append(rust_common.dep_variant_info(
-                crate_info = prost_runtime[rust_common.crate_info] if rust_common.crate_info in prost_runtime else None,
-                dep_info = prost_runtime[rust_common.dep_info] if rust_common.dep_info in prost_runtime else None,
+            runtime_deps.append(DepVariantInfo(
+                crate_info = prost_runtime[CrateInfo] if CrateInfo in prost_runtime else None,
+                dep_info = prost_runtime[DepInfo] if DepInfo in prost_runtime else None,
                 cc_info = prost_runtime[CcInfo] if CcInfo in prost_runtime else None,
                 build_info = None,
             ))
@@ -269,26 +269,24 @@ def _rust_prost_aspect_impl(target, ctx):
 
     proto_deps = getattr(ctx.rule.attr, "deps", [])
 
-    direct_deps = []
-    transitive_deps = [depset(runtime_deps)]
+    direct_deps = list(runtime_deps)
+    transitive_deps = []
     for proto_dep in proto_deps:
         proto_info = proto_dep[ProstProtoInfo]
 
         direct_deps.append(proto_info.dep_variant_info)
-        transitive_deps.append(depset(
-            [proto_info.dep_variant_info],
-            transitive = [proto_info.transitive_dep_infos],
-        ))
+        transitive_deps.append(proto_info.transitive_dep_infos)
 
         if RustAnalyzerInfo in proto_dep:
             rust_analyzer_deps.append(proto_dep[RustAnalyzerInfo])
 
-    transform_infos = []
-    for data_target in getattr(ctx.rule.attr, "data", []):
-        if ProstTransformInfo in data_target:
-            transform_infos.append(data_target[ProstTransformInfo])
+    transform_infos = [
+        data_target[ProstTransformInfo]
+        for data_target in getattr(ctx.rule.attr, "data", [])
+        if ProstTransformInfo in data_target
+    ]
 
-    rust_deps = runtime_deps + direct_deps
+    rust_deps = list(direct_deps)
     crate_name_overrides = []
     for transform_info in transform_infos:
         rust_deps.extend(transform_info.deps)
@@ -352,7 +350,7 @@ def _rust_prost_aspect_impl(target, ctx):
     return [
         ProstProtoInfo(
             dep_variant_info = dep_variant_info,
-            transitive_dep_infos = depset(transitive = transitive_deps),
+            transitive_dep_infos = depset(direct_deps, transitive = transitive_deps),
             package_info = package_info_file,
         ),
         rust_analyzer_info,
@@ -408,18 +406,14 @@ def _rust_prost_library_impl(ctx):
 
     prost_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
 
-    transitive = []
+    dep_variant_infos = [dep_variant_info]
+
     if prost_toolchain.include_transitive_deps:
-        transitive = [rust_proto_info.transitive_dep_infos]
+        dep_variant_infos = depset(dep_variant_infos, transitive = [rust_proto_info.transitive_dep_infos]).to_list()
 
     return [
         DefaultInfo(files = depset([dep_variant_info.crate_info.output])),
-        rust_common.crate_group_info(
-            dep_variant_infos = depset(
-                [dep_variant_info],
-                transitive = transitive,
-            ),
-        ),
+        CrateGroupInfo(dep_variant_infos = dep_variant_infos),
         OutputGroupInfo(
             rust_generated_srcs = rust_generated_srcs,
             proto_descriptor_set = proto_descriptor_set,
@@ -444,7 +438,7 @@ rust_prost_library = rule(
         ),
     },
     provides = [
-        rust_common.crate_group_info,
+        CrateGroupInfo,
     ],
     toolchains = [
         TOOLCHAIN_TYPE,
@@ -513,13 +507,13 @@ rust_prost_toolchain = rule(
         ),
         "prost_runtime": attr.label(
             doc = "The Prost runtime crates to use.",
-            providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
+            providers = [[CrateInfo], [CrateGroupInfo]],
             mandatory = True,
             aspects = [rust_analyzer_aspect],
         ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
-            providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
+            providers = [[CrateInfo], [CrateGroupInfo]],
             mandatory = True,
         ),
         "proto_compiler": attr.label(
@@ -541,7 +535,7 @@ rust_prost_toolchain = rule(
         ),
         "tonic_runtime": attr.label(
             doc = "The Tonic runtime crates to use.",
-            providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
+            providers = [[CrateInfo], [CrateGroupInfo]],
             aspects = [rust_analyzer_aspect],
         ),
     }, **proto_toolchains.if_legacy_toolchain({
@@ -555,27 +549,24 @@ rust_prost_toolchain = rule(
 def _current_prost_runtime_impl(ctx):
     toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
 
-    runtime_deps = []
+    dep_variant_infos = []
 
     for target in [toolchain.prost_runtime, toolchain.prost_types]:
-        if rust_common.crate_group_info in target:
-            crate_group_info = target[rust_common.crate_group_info]
-            runtime_deps.extend(crate_group_info.dep_variant_infos.to_list())
+        if CrateGroupInfo in target:
+            dep_variant_infos.extend(target[CrateGroupInfo].dep_variant_infos)
         else:
-            runtime_deps.append(rust_common.dep_variant_info(
-                crate_info = target[rust_common.crate_info] if rust_common.crate_info in target else None,
-                dep_info = target[rust_common.dep_info] if rust_common.dep_info in target else None,
+            dep_variant_infos.append(DepVariantInfo(
+                crate_info = target[CrateInfo] if CrateInfo in target else None,
+                dep_info = target[DepInfo] if DepInfo in target else None,
                 cc_info = target[CcInfo] if CcInfo in target else None,
                 build_info = None,
             ))
 
-    return [rust_common.crate_group_info(
-        dep_variant_infos = depset(runtime_deps),
-    )]
+    return [CrateGroupInfo(dep_variant_infos = dep_variant_infos)]
 
 current_prost_runtime = rule(
     doc = "A rule for accessing the current Prost toolchain components needed by the process wrapper.",
-    provides = [rust_common.crate_group_info],
+    provides = [CrateGroupInfo],
     implementation = _current_prost_runtime_impl,
     toolchains = [TOOLCHAIN_TYPE],
 )

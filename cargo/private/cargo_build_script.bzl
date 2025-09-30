@@ -558,7 +558,7 @@ def _cargo_build_script_impl(ctx):
         else:
             dep_infos = [
                 dep_variant_info.dep_info
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
+                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos
                 if dep_variant_info.dep_info
             ]
 
