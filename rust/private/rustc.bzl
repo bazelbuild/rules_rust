@@ -265,28 +265,18 @@ def collect_deps(
 
     crate_deps = []
     for dep in deps + proc_macro_deps:
-        crate_group = None
-
-        if type(dep) == "Target" and rust_common.crate_group_info in dep:
-            crate_group = dep[rust_common.crate_group_info]
-        elif type(dep) == "struct" and hasattr(dep, "crate_group_info") and dep.crate_group_info != None:
-            crate_group = dep.crate_group_info
+        crate_group = getattr(dep, "crate_group_info", None)
+        if crate_group:
+            crate_deps.extend(crate_group.dep_variant_infos.to_list())
         else:
             crate_deps.append(dep)
 
-        if crate_group:
-            for dep_variant_info in crate_group.dep_variant_infos.to_list():
-                crate_deps.append(struct(
-                    crate_info = dep_variant_info.crate_info,
-                    dep_info = dep_variant_info.dep_info,
-                    cc_info = dep_variant_info.cc_info,
-                ))
-
     aliases = {k.label: v for k, v in aliases.items()}
     for dep in crate_deps:
-        (crate_info, dep_info) = _get_crate_and_dep_info(dep)
-        cc_info = _get_cc_info(dep)
-        dep_build_info = _get_build_info(dep)
+        crate_info = dep.crate_info
+        dep_info = dep.dep_info
+        cc_info = dep.cc_info
+        dep_build_info = dep.build_info
 
         if cc_info:
             for li in cc_info.linking_context.linker_inputs.to_list():
@@ -294,13 +284,8 @@ def collect_deps(
 
         if crate_info:
             # This dependency is a rust_library
-
-            # When crate_info.owner is set, we use it. When the dep type is Target we get the
-            # label from dep.label
-            owner = getattr(crate_info, "owner", dep.label if type(dep) == "Target" else None)
-
             direct_deps.append(AliasableDepInfo(
-                name = aliases.get(owner, crate_info.name),
+                name = aliases.get(crate_info.owner, crate_info.name),
                 dep = crate_info,
             ))
 
@@ -409,27 +394,6 @@ def _collect_libs_from_linker_inputs(linker_inputs, use_pic):
         for li in linker_inputs
         for lib in li.libraries
     ]
-
-def _get_crate_and_dep_info(dep):
-    if type(dep) == "Target" and rust_common.crate_info in dep:
-        return (dep[rust_common.crate_info], dep[rust_common.dep_info])
-    elif type(dep) == "struct" and hasattr(dep, "crate_info"):
-        return (dep.crate_info, dep.dep_info)
-    return (None, None)
-
-def _get_cc_info(dep):
-    if type(dep) == "Target" and CcInfo in dep:
-        return dep[CcInfo]
-    elif type(dep) == "struct" and hasattr(dep, "cc_info"):
-        return dep.cc_info
-    return None
-
-def _get_build_info(dep):
-    if type(dep) == "Target" and BuildInfo in dep:
-        return dep[BuildInfo]
-    elif type(dep) == "struct" and hasattr(dep, "build_info"):
-        return dep.build_info
-    return None
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags

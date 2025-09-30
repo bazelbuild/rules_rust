@@ -182,6 +182,7 @@ def _rust_cc_injection_impl(ctx):
         cc_info = ctx.attr.cc_dep[CcInfo],
         crate_info = None,
         dep_info = None,
+        build_info = None,
     )
     return [
         rust_common.crate_group_info(
