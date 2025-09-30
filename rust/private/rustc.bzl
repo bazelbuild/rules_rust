@@ -239,16 +239,28 @@ def collect_deps(
             linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries when applicable.
 
     """
+    direct_deps = []
+
     direct_crates = []
     transitive_crates = []
+
     transitive_data = []
     transitive_proc_macro_data = []
     transitive_noncrates = []
+
+    direct_build_infos = []
     transitive_build_infos = []
+
+    direct_link_search_paths = []
     transitive_link_search_paths = []
+
     build_info = None
     linkstamps = []
+
+    direct_crate_outputs = []
     transitive_crate_outputs = []
+
+    direct_metadata_outputs = []
     transitive_metadata_outputs = []
 
     crate_deps = []
@@ -287,18 +299,16 @@ def collect_deps(
             # label from dep.label
             owner = getattr(crate_info, "owner", dep.label if type(dep) == "Target" else None)
 
-            direct_crates.append(AliasableDepInfo(
+            direct_deps.append(AliasableDepInfo(
                 name = aliases.get(owner, crate_info.name),
                 dep = crate_info,
             ))
 
             is_proc_macro = _is_proc_macro(crate_info)
-            transitive_crates.append(
-                depset(
-                    [crate_info],
-                    transitive = [] if is_proc_macro else [dep_info.transitive_crates],
-                ),
-            )
+
+            direct_crates.append(crate_info)
+            if not is_proc_macro:
+                transitive_crates.append(dep_info.transitive_crates)
 
             if is_proc_macro:
                 # This crate's data and its non-macro dependencies' data are proc macro data.
@@ -322,19 +332,13 @@ def collect_deps(
             # If this dependency is a proc_macro, it still can be used for lib crates
             # that produce metadata.
             # In that case, we don't depend on its metadata dependencies.
-            transitive_metadata_outputs.append(
-                depset(
-                    [depend_on],
-                    transitive = [] if is_proc_macro else [dep_info.transitive_metadata_outputs],
-                ),
-            )
+            direct_metadata_outputs.append(depend_on)
+            if not is_proc_macro:
+                transitive_metadata_outputs.append(dep_info.transitive_metadata_outputs)
 
-            transitive_crate_outputs.append(
-                depset(
-                    [crate_info.output],
-                    transitive = [] if is_proc_macro else [dep_info.transitive_crate_outputs],
-                ),
-            )
+            direct_crate_outputs.append(crate_info.output)
+            if not is_proc_macro:
+                transitive_crate_outputs.append(dep_info.transitive_crate_outputs)
 
             if not is_proc_macro:
                 transitive_noncrates.append(dep_info.transitive_noncrates)
@@ -351,32 +355,47 @@ def collect_deps(
                     fail("Several deps are providing build information, " +
                          "only one is allowed in the dependencies")
                 build_info = dep_build_info
-                transitive_build_infos.append(depset([build_info]))
+                direct_build_infos.append(build_info)
                 if build_info.link_search_paths:
-                    transitive_link_search_paths.append(depset([build_info.link_search_paths]))
+                    direct_link_search_paths.append(build_info.link_search_paths)
                 transitive_data.append(build_info.compile_data)
         else:
             fail("rust targets can only depend on rust_library, rust_*_library or cc_library " +
                  "targets.")
 
-    transitive_crates_depset = depset(transitive = transitive_crates)
-    transitive_data_depset = depset(transitive = transitive_data)
-    transitive_proc_macro_data_depset = depset(transitive = transitive_proc_macro_data)
-
     return (
         rust_common.dep_info(
-            direct_crates = depset(direct_crates),
-            transitive_crates = transitive_crates_depset,
-            transitive_data = transitive_data_depset,
-            transitive_proc_macro_data = transitive_proc_macro_data_depset,
+            direct_crates = depset(direct_deps),
+            transitive_crates = depset(
+                direct_crates,
+                transitive = transitive_crates,
+            ),
+            transitive_data = depset(
+                transitive = transitive_data,
+            ),
+            transitive_proc_macro_data = depset(
+                transitive = transitive_proc_macro_data,
+            ),
             transitive_noncrates = depset(
                 transitive = transitive_noncrates,
                 order = "topological",  # dylib link flag ordering matters.
             ),
-            transitive_crate_outputs = depset(transitive = transitive_crate_outputs),
-            transitive_metadata_outputs = depset(transitive = transitive_metadata_outputs),
-            transitive_build_infos = depset(transitive = transitive_build_infos),
-            link_search_path_files = depset(transitive = transitive_link_search_paths),
+            transitive_crate_outputs = depset(
+                direct_crate_outputs,
+                transitive = transitive_crate_outputs,
+            ),
+            transitive_metadata_outputs = depset(
+                direct_metadata_outputs,
+                transitive = transitive_metadata_outputs,
+            ),
+            transitive_build_infos = depset(
+                direct_build_infos,
+                transitive = transitive_build_infos,
+            ),
+            link_search_path_files = depset(
+                direct_link_search_paths,
+                transitive = transitive_link_search_paths,
+            ),
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
