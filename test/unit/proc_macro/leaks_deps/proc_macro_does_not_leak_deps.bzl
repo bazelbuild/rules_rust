@@ -29,13 +29,10 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
     # Our test target depends on proc_macro_dep:native directly, as well as transitively through the
     # proc_macro. The proc_macro should not leak its dependency, so we should only get the "native"
     # library once on the command line.
-    if toolchain.target_os == "windows":
-        if toolchain.target_triple.abi == "msvc":
-            native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=native.lib"]
-        else:
-            native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative.lib"]
+    if toolchain.target_os == "windows" and toolchain.target_triple.abi == "msvc":
+        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=native.lib"]
     else:
-        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative"]
+        native_deps = [arg for arg in rustc_action.argv if arg.endswith("test/unit/proc_macro/leaks_deps/native/libnative.a")]
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)

@@ -19,17 +19,16 @@ def _ambiguous_deps_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     rustc_action = [action for action in tut.actions if action.mnemonic == "Rustc"][0]
 
+    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
+    pic_suffix = _get_pic_suffix(ctx, for_shared_library)
+
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
-    # in the form of "-lstatic=native-dep-{hash} "-lstatic=native-dep-{hash}.pic.
-    link_args = [arg for arg in rustc_action.argv if arg.startswith("-lstatic=native_dep-")]
+    # in the form of "-Clink-arg=${pwd}/bazel-out/darwin_arm64-fastbuild/bin/test/unit/ambiguous_libs/first_dep/libnative_dep.a"
+    for arg in rustc_action.argv:
+        print("_ambiguous_deps_test_impl", arg)
+    link_args = [arg for arg in rustc_action.argv if arg.endswith("libnative_dep{}.a".format(pic_suffix))]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
-
-    for_shared_library = _get_crate_info(tut).type in ("dylib", "cdylib", "proc-macro")
-    extension = _get_pic_suffix(ctx, for_shared_library)
-
-    asserts.true(env, link_args[0].endswith(extension))
-    asserts.true(env, link_args[1].endswith(extension))
 
     return analysistest.end(env)
 

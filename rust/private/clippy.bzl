@@ -132,7 +132,7 @@ def _clippy_aspect_impl(target, ctx):
                      ctx.rule.attr.lint_config[LintsInfo].clippy_lint_files + \
                      ctx.rule.attr.lint_config[LintsInfo].rustc_lint_files
 
-    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
+    compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs = collect_inputs(
         ctx,
         ctx.rule.file,
         ctx.rule.files,
@@ -171,7 +171,6 @@ def _clippy_aspect_impl(target, ctx):
         crate_info = crate_info,
         dep_info = dep_info,
         linkstamp_outs = linkstamp_outs,
-        ambiguous_libs = ambiguous_libs,
         output_hash = determine_output_hash(crate_info.root, ctx.label),
         rust_flags = [],
         out_dir = out_dir,
