@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:version.bzl", "VERSION")
+
+rust_test(
+    name = "bzl_version_test",
+    srcs = ["bzl_version_test.rs"],
+    data = [
+        "//:MODULE.bazel",
+    ],
+    edition = "2021",
+    env = {
+        "MODULE_BAZEL": "$(rlocationpath //:MODULE.bazel)",
+        "VERSION": VERSION,
+    },
+    deps = [
+        "@rules_rust//tools/runfiles",
+    ],
+)

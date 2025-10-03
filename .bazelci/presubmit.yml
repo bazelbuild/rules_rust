@@ -1101,6 +1101,49 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  extensions_pyo3_linux:
+    platform: ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_macos:
+    platform: macos_arm64
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_windows:
+    platform: windows
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   extensions_wasm_bindgen_linux:
     platform: ubuntu2204
     name: Extensions wasm-bindgen

@@ -16,4 +16,5 @@
 - [rust_bindgen](rust_bindgen.md): rules for generating C++ bindings.
 - [rust_prost](rust_prost.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs using [prost](https://github.com/tokio-rs/prost).
 - [rust_protobuf](rust_protobuf.md): rules for generating [protobuf](https://developers.google.com/protocol-buffers) and [gRPC](https://grpc.io) stubs with [rust-protobuf](https://github.com/stepancheg/rust-protobuf/)
+- [rust_pyo3](rust_pyo3.md): Bazel rules for [PyO3](https://pyo3.rs/v0.23.4/).
 - [rust_wasm_bindgen](rust_wasm_bindgen.md): rules for generating [WebAssembly](https://www.rust-lang.org/what/wasm) bindings.
