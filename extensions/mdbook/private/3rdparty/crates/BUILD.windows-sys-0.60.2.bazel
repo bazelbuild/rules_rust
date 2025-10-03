@@ -43,7 +43,6 @@ rust_library(
         "Win32_System",
         "Win32_System_Console",
         "Win32_System_IO",
-        "Win32_System_SystemInformation",
         "Win32_System_Threading",
         "Win32_System_WindowsProgramming",
         "default",
@@ -84,6 +83,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -107,6 +107,6 @@ rust_library(
     }),
     version = "0.60.2",
     deps = [
-        "@rmdbi__windows-targets-0.53.3//:windows_targets",
+        "@rmdbi__windows-targets-0.53.4//:windows_targets",
     ],
 )

@@ -77,6 +77,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -102,6 +103,6 @@ rust_library(
     deps = [
         "@rtra__proc-macro2-1.0.101//:proc_macro2",
         "@rtra__quote-1.0.40//:quote",
-        "@rtra__unicode-ident-1.0.18//:unicode_ident",
+        "@rtra__unicode-ident-1.0.19//:unicode_ident",
     ],
 )

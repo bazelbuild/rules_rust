@@ -74,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -97,7 +98,7 @@ rust_library(
     }),
     version = "0.2.0",
     deps = [
-        "//vendor_local_pkgs/crates/log-0.4.27:log",
+        "//vendor_local_pkgs/crates/log-0.4.28:log",
         "//vendor_local_pkgs/crates/once_cell-1.21.3:once_cell",
         "//vendor_local_pkgs/crates/tracing-core-0.1.34:tracing_core",
     ],

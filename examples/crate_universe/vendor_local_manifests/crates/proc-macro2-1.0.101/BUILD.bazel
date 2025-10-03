@@ -78,6 +78,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -102,7 +103,7 @@ rust_library(
     version = "1.0.101",
     deps = [
         "//vendor_local_manifests/crates/proc-macro2-1.0.101:build_script_build",
-        "//vendor_local_manifests/crates/unicode-ident-1.0.18:unicode_ident",
+        "//vendor_local_manifests/crates/unicode-ident-1.0.19:unicode_ident",
     ],
 )
 

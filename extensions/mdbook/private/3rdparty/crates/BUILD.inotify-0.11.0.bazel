@@ -70,6 +70,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -93,8 +94,8 @@ rust_library(
     }),
     version = "0.11.0",
     deps = [
-        "@rmdbi__bitflags-2.9.2//:bitflags",
+        "@rmdbi__bitflags-2.9.4//:bitflags",
         "@rmdbi__inotify-sys-0.1.5//:inotify_sys",
-        "@rmdbi__libc-0.2.175//:libc",
+        "@rmdbi__libc-0.2.176//:libc",
     ],
 )

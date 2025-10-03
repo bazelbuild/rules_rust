@@ -74,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -99,8 +100,8 @@ rust_library(
     deps = [
         "@rmdbi__aho-corasick-1.1.3//:aho_corasick",
         "@rmdbi__bstr-1.12.0//:bstr",
-        "@rmdbi__log-0.4.27//:log",
-        "@rmdbi__regex-automata-0.4.9//:regex_automata",
-        "@rmdbi__regex-syntax-0.8.5//:regex_syntax",
+        "@rmdbi__log-0.4.28//:log",
+        "@rmdbi__regex-automata-0.4.11//:regex_automata",
+        "@rmdbi__regex-syntax-0.8.6//:regex_syntax",
     ],
 )

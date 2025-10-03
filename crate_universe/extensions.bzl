@@ -588,7 +588,7 @@ def _generate_hub_and_spokes(
         executable = False,
         content = generate_config_file(
             module_ctx,
-            mode = "remote",
+            mode = None,
             annotations = annotations,
             generate_build_scripts = cfg.generate_build_scripts,
             supported_platform_triples = cfg.supported_platform_triples,

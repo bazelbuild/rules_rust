@@ -303,7 +303,7 @@ def generate_config_file(
 
     Args:
         ctx: The rule's context.
-        mode (str): The vendoring mode.
+        mode (str, optional): The vendoring mode.
         annotations: Any annotations provided.
         generate_binaries (bool): Whether to generate binaries for the crates.
         generate_build_scripts (bool): Whether to generate BUILD.bazel files.

@@ -106,6 +106,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -227,6 +228,11 @@ rust_library(
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@crates_vendor_pkgs__socket2-0.5.8//:socket2",  # riscv32imc-unknown-none-elf
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "@crates_vendor_pkgs__libc-0.2.169//:libc",  # riscv64gc-unknown-linux-gnu
+            "@crates_vendor_pkgs__signal-hook-registry-1.4.2//:signal_hook_registry",  # riscv64gc-unknown-linux-gnu
+            "@crates_vendor_pkgs__socket2-0.5.8//:socket2",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
             "@crates_vendor_pkgs__socket2-0.5.8//:socket2",  # riscv64gc-unknown-none-elf
