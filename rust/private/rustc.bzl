@@ -224,19 +224,21 @@ def _is_proc_macro(crate_info):
 def collect_deps(
         deps,
         proc_macro_deps,
-        aliases):
+        aliases,
+        collect_linkstamps = False):
     """Walks through dependencies and collects the transitive dependencies.
 
     Args:
         deps (list): The deps from ctx.attr.deps.
         proc_macro_deps (list): The proc_macro deps from ctx.attr.proc_macro_deps.
         aliases (dict): A dict mapping aliased targets to their actual Crate information.
+        collect_linkstamps(bool): Whether to collect linkstamps from the deps' CcInfo.
 
     Returns:
         tuple: Returns a tuple of:
             DepInfo,
             BuildInfo,
-            linkstamps (depset[CcLinkstamp]): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries when applicable.
+            linkstamps (list[CcLinkstamp]): A list of CcLinkstamps that need to be compiled and linked into all linked binaries when applicable.
 
     """
     direct_deps = []
@@ -278,7 +280,12 @@ def collect_deps(
         cc_info = dep.cc_info
         dep_build_info = dep.build_info
 
-        if cc_info:
+        # These linkstamps will be used to register an action, and there is no other way
+        # to register an action for each member of a depset than flattening the depset as of 2021-10-12.
+        # Luckily, usually there is only one linkstamp in a build, and we only flatten the list on
+        # binary targets that perform transitive linking, so it's extremely unlikely that this call
+        # to `to_list()` will ever be a performance problem.
+        if collect_linkstamps and cc_info:
             for li in cc_info.linking_context.linker_inputs.to_list():
                 linkstamps.extend(li.linkstamps)
 
@@ -384,7 +391,7 @@ def collect_deps(
             dep_env = build_info.dep_env if build_info else None,
         ),
         build_info,
-        depset(linkstamps),
+        linkstamps,
     )
 
 def _collect_libs_from_linker_inputs(linker_inputs, use_pic):
@@ -645,7 +652,7 @@ def collect_inputs(
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         files (list): A list of all inputs (`ctx.files`).
-        linkstamps (depset): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
+        linkstamps (list): A list of CcLinkstamps that need to be compiled and linked into all linked binaries.
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
@@ -739,34 +746,28 @@ def collect_inputs(
         ],
     )
 
-    # Register linkstamps when linking with rustc (when linking with
-    # cc_common.link linkstamps are handled by cc_common.link itself).
-    if not experimental_use_cc_common_link and crate_info.type in ("bin", "cdylib"):
-        # There is no other way to register an action for each member of a depset than
-        # flattening the depset as of 2021-10-12. Luckily, usually there is only one linkstamp
-        # in a build, and we only flatten the list on binary targets that perform transitive linking,
-        # so it's extremely unlikely that this call to `to_list()` will ever be a performance
-        # problem.
-        for linkstamp in linkstamps.to_list():
-            # The linkstamp output path is based on the binary crate
-            # name and the input linkstamp path. This is to disambiguate
-            # the linkstamp outputs produced by multiple binary crates
-            # that depend on the same linkstamp. We use the same pattern
-            # for the output name as the one used by native cc rules.
-            out_name = "_objs/" + crate_info.output.basename + "/" + linkstamp.file().path[:-len(linkstamp.file().extension)] + "o"
-            linkstamp_out = ctx.actions.declare_file(out_name)
-            linkstamp_outs.append(linkstamp_out)
-            cc_common.register_linkstamp_compile_action(
-                actions = ctx.actions,
-                cc_toolchain = cc_toolchain,
-                feature_configuration = feature_configuration,
-                source_file = linkstamp.file(),
-                output_file = linkstamp_out,
-                compilation_inputs = linkstamp.hdrs(),
-                inputs_for_validation = nolinkstamp_compile_inputs,
-                label_replacement = str(ctx.label),
-                output_replacement = crate_info.output.path,
-            )
+    # TODO(zbarsky): It might be a bit clearer to collect the CcInfos in `collect_deps` and perform the expansion here.
+    for linkstamp in linkstamps:
+        # The linkstamp output path is based on the binary crate
+        # name and the input linkstamp path. This is to disambiguate
+        # the linkstamp outputs produced by multiple binary crates
+        # that depend on the same linkstamp. We use the same pattern
+        # for the output name as the one used by native cc rules.
+        file = linkstamp.file()
+        out_name = "_objs/" + crate_info.output.basename + "/" + file.path[:-len(file.extension)] + "o"
+        linkstamp_out = ctx.actions.declare_file(out_name)
+        linkstamp_outs.append(linkstamp_out)
+        cc_common.register_linkstamp_compile_action(
+            actions = ctx.actions,
+            cc_toolchain = cc_toolchain,
+            feature_configuration = feature_configuration,
+            source_file = file,
+            output_file = linkstamp_out,
+            compilation_inputs = linkstamp.hdrs(),
+            inputs_for_validation = nolinkstamp_compile_inputs,
+            label_replacement = str(ctx.label),
+            output_replacement = crate_info.output.path,
+        )
 
     # If stamping is enabled include the volatile and stable status info file
     stamp_info = [ctx.version_file, ctx.info_file] if stamp else []
@@ -1231,6 +1232,9 @@ def rustc_compile_action(
         deps = deps,
         proc_macro_deps = proc_macro_deps,
         aliases = crate_info_dict["aliases"],
+        # Collect linkstamps to register when linking with rustc (when linking with
+        # cc_common.link linkstamps are handled by cc_common.link itself).
+        collect_linkstamps = not experimental_use_cc_common_link and crate_info.type in ("bin", "cdylib"),
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
@@ -1241,7 +1245,7 @@ def rustc_compile_action(
         feature_configuration = feature_configuration,
         has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
     ):
-        linkstamps = depset([])
+        linkstamps = []
 
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
