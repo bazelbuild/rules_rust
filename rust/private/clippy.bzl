@@ -15,6 +15,7 @@
 """A module defining clippy rules"""
 
 load("@bazel_skylib//lib:structs.bzl", "structs")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//rust/private:common.bzl", "rust_common")
 load(
     "//rust/private:providers.bzl",
@@ -241,9 +242,26 @@ def _clippy_aspect_impl(target, ctx):
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 
-    output_group_info = {"clippy_checks": depset([clippy_out])}
+    traverse_deps = ctx.attr._clippy_aspect_traverse_deps[BuildSettingInfo].value
+
+    dep_infos = []
+    if traverse_deps:
+        dep_infos = [
+            dep[ClippyInfo].output
+            for dep in ctx.rule.attr.deps
+            if ClippyInfo in dep
+        ]
+
+    output_group_info = {"clippy_checks": depset([clippy_out], transitive = dep_infos)}
     if clippy_diagnostics:
-        output_group_info["clippy_output"] = depset([clippy_diagnostics])
+        dep_diagnostics = []
+        if traverse_deps:
+            dep_diagnostics = [
+                dep[OutputGroupInfo]["clippy_output"]
+                for dep in ctx.rule.attr.deps
+                if OutputGroupInfo in dep and "clippy_output" in dep[OutputGroupInfo]
+            ]
+        output_group_info["clippy_output"] = depset([clippy_diagnostics], transitive = dep_diagnostics)
 
     return [
         OutputGroupInfo(**output_group_info),
@@ -256,6 +274,7 @@ def _clippy_aspect_impl(target, ctx):
 #               //...
 rust_clippy_aspect = aspect(
     fragments = ["cpp"],
+    attr_aspects = ["deps"],  # We traverse along the `deps` edges, but we only request the relevant files iff the _clippy_aspect_traverse_deps attr is True.
     attrs = {
         "_capture_output": attr.label(
             doc = "Value of the `capture_clippy_output` build setting",
@@ -277,6 +296,10 @@ rust_clippy_aspect = aspect(
         "_clippy_output_diagnostics": attr.label(
             doc = "Value of the `clippy_output_diagnostics` build setting",
             default = "//rust/settings:clippy_output_diagnostics",
+        ),
+        "_clippy_aspect_traverse_deps": attr.label(
+            doc = "Whether the clippy aspect should traverse dependencies.",
+            default = "//rust/settings:experimental_clippy_aspect_traverse_deps",
         ),
         "_config": attr.label(
             doc = "The `clippy.toml` file used for configuration",
