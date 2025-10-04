@@ -151,18 +151,21 @@ pub struct Runfiles {
 }
 
 impl Runfiles {
-    /// Creates a manifest based Runfiles object when
-    /// RUNFILES_MANIFEST_FILE environment variable is present,
-    /// or a directory based Runfiles object otherwise.
+    /// Creates a manifest based Runfiles object when RUNFILES_MANIFEST_FILE
+    /// environment variable is present, with an non-empty value, or a directory
+    /// based Runfiles object otherwise.
     pub fn create() -> Result<Self> {
-        let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-            Self::create_manifest_based(Path::new(&manifest_file))?
-        } else {
-            let dir = find_runfiles_dir()?;
-            let manifest_path = dir.join("MANIFEST");
-            match manifest_path.exists() {
-                true => Self::create_manifest_based(&manifest_path)?,
-                false => Mode::DirectoryBased(dir),
+        let mode = match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+            Some(manifest_file) if !manifest_file.is_empty() => {
+                Self::create_manifest_based(Path::new(&manifest_file))?
+            }
+            _ => {
+                let dir = find_runfiles_dir()?;
+                let manifest_path = dir.join("MANIFEST");
+                match manifest_path.exists() {
+                    true => Self::create_manifest_based(&manifest_path)?,
+                    false => Mode::DirectoryBased(dir),
+                }
             }
         };
 
@@ -267,7 +270,7 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
     assert!(
-        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none(),
+        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none_or(|file| file.is_empty()),
         "Unexpected call when {} exists",
         MANIFEST_FILE_ENV_VAR
     );
@@ -459,6 +462,35 @@ mod test {
         with_mock_env(
             [
                 (MANIFEST_FILE_ENV_VAR, None::<&str>),
+                (RUNFILES_DIR_ENV_VAR, Some(runfiles_dir.as_str())),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+
+                let d = rlocation!(r, "rules_rust").unwrap();
+                let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+                assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
+
+                let mut f = File::open(&f)
+                    .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer).unwrap();
+
+                assert_eq!("Example Text!", buffer);
+            },
+        );
+    }
+
+    /// Tests when MANIFEST_FILE is set to an empty string, RUNFILES_DIR is preferred.
+    #[test]
+    fn test_runfiles_manifest_file_empty() {
+        let runfiles_dir = make_runfiles_like_dir("test_runfiles_manifest_file_empty");
+
+        with_mock_env(
+            [
+                (MANIFEST_FILE_ENV_VAR, Some("")),
                 (RUNFILES_DIR_ENV_VAR, Some(runfiles_dir.as_str())),
                 (TEST_SRCDIR_ENV_VAR, None::<&str>),
             ],
