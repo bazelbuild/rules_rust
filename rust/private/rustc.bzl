@@ -1946,7 +1946,7 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
+def _portable_link_flags(lib, use_pic, for_darwin = False):
     artifact = get_preferred_artifact(lib, use_pic)
     if lib.static_library or lib.pic_static_library:
         # To ensure appropriate linker library argument order, in the presence
@@ -1984,20 +1984,8 @@ def _portable_link_flags(lib, use_pic, get_lib_name, for_windows = False, for_da
         ):
             return [] if for_darwin else ["-Clink-arg=%s" % artifact.path]
 
-        if for_windows:
-            if flavor_msvc:
-                return [
-                    "-lstatic=%s" % get_lib_name(artifact),
-                    "-Clink-arg={}".format(artifact.basename),
-                ]
-            else:
-                return [
-                    "-Clink-arg=%s" % artifact.path,
-                ]
-        else:
-            return [
-                "-Clink-arg=%s" % artifact.path,
-            ]
+        return ["-Clink-arg=%s" % artifact.path]
+
     elif _is_dylib(lib):
         return [
             "-Clink-arg=%s" % artifact.path,
@@ -2022,7 +2010,7 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
                     "-Clink-arg=-Wl,--no-whole-archive",
                 ])
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
+            ret.extend(_portable_link_flags(lib, use_pic))
     _add_user_link_flags(ret, linker_input)
     return ret
 
@@ -2039,7 +2027,7 @@ def _make_link_flags_darwin(make_link_flags_args):
         if lib.alwayslink:
             ret.append("-Clink-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path)
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, get_lib_name_default, for_darwin = True))
+            ret.extend(_portable_link_flags(lib, use_pic, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
     return ret
 
@@ -2054,7 +2042,7 @@ def _make_link_flags_default(make_link_flags_args):
                 "-Clink-arg=-Wl,--no-whole-archive",
             ])
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, get_lib_name_default))
+            ret.extend(_portable_link_flags(lib, use_pic))
     _add_user_link_flags(ret, linker_input)
     return ret
 

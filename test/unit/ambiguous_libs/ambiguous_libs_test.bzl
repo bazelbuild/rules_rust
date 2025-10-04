@@ -24,9 +24,14 @@ def _ambiguous_deps_test_impl(ctx):
 
     # We depend on two C++ libraries named "native_dep", which we need to pass to the command line
     # in the form of "-Clink-arg=${pwd}/bazel-out/darwin_arm64-fastbuild/bin/test/unit/ambiguous_libs/first_dep/libnative_dep.a"
-    for arg in rustc_action.argv:
-        print("_ambiguous_deps_test_impl", arg)
-    link_args = [arg for arg in rustc_action.argv if arg.endswith("libnative_dep{}.a".format(pic_suffix))]
+    if ctx.target_platform_has_constraint(
+        ctx.attr._windows_constraint[platform_common.ConstraintValueInfo],
+    ):
+        lib_name = "native_dep{}.lib".format(pic_suffix)
+    else:
+        lib_name = "libnative_dep{}.a".format(pic_suffix)
+    
+    link_args = [arg for arg in rustc_action.argv if arg.endswith(lib_name)]
     asserts.equals(env, 2, len(link_args))
     asserts.false(env, link_args[0] == link_args[1])
 
