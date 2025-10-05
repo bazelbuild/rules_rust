@@ -369,7 +369,7 @@ def _cargo_build_script_impl(ctx):
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    env = dict({})
+    env = {}
 
     if ctx.attr.use_default_shell_env == -1:
         use_default_shell_env = ctx.attr._default_use_default_shell_env[BuildSettingInfo].value
@@ -384,9 +384,7 @@ def _cargo_build_script_impl(ctx):
         env.update(ctx.configuration.default_shell_env)
 
     if toolchain.cargo:
-        env.update({
-            "CARGO": "${{pwd}}/{}".format(toolchain.cargo.path),
-        })
+        env["CARGO"] = "${pwd}/%s" % toolchain.cargo.path
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -396,6 +394,7 @@ def _cargo_build_script_impl(ctx):
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
         "RUSTC": toolchain.rustc.path,
+        "RUSTDOC": toolchain.rust_doc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
