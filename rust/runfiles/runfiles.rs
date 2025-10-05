@@ -269,11 +269,13 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
-    assert!(
-        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none_or(|value| value.is_empty()),
-        "Unexpected call when {} exists",
-        MANIFEST_FILE_ENV_VAR
-    );
+    if let Some(value) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+        assert!(
+            value.is_empty(),
+            "Unexpected call when {} exists",
+            MANIFEST_FILE_ENV_VAR
+        );
+    }
 
     // If Bazel told us about the runfiles dir, use that without looking further.
     if let Some(runfiles_dir) = std::env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
