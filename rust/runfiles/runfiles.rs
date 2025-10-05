@@ -270,7 +270,7 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
     assert!(
-        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none_or(|file| file.is_empty()),
+        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none_or(|value| value.is_empty()),
         "Unexpected call when {} exists",
         MANIFEST_FILE_ENV_VAR
     );
