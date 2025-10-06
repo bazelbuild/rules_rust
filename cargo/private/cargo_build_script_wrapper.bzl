@@ -145,8 +145,6 @@ def cargo_build_script(
         pkg_name = name_to_pkg_name(name)
 
     rustc_env = dict(rustc_env)
-    if "CARGO_PKG_NAME" not in rustc_env:
-        rustc_env["CARGO_PKG_NAME"] = pkg_name
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(name_to_pkg_name(name))
 
