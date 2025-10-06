@@ -1,0 +1,318 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>pyo3 - rules_rust</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">rules_rust</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/bazelbuild/rules_rust" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rules_rust_pyo3"><a class="header" href="#rules_rust_pyo3">rules_rust_pyo3</a></h1>
+<p><a id="pyo3_toolchain"></a></p>
+<h2 id="pyo3_toolchain"><a class="header" href="#pyo3_toolchain">pyo3_toolchain</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "pyo3_toolchain")
+
+pyo3_toolchain(<a href="#pyo3_toolchain-name">name</a>)
+</pre>
+<p>Define a toolchain which generates config data for the PyO3 for producing extension modules on any target platform.</p>
+<p>Note that this toolchain expects the <code>pyo3</code> crate to be built with the following features:</p>
+<ul>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#abi3"><code>abi3</code></a></li>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#the-abi3-pyxy-features"><code>abi3-py3*</code></a> (e.g <code>abi3-py311</code>)</li>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#extension-module"><code>extension-module</code></a></li>
+</ul>
+<p>When using <a href="https://bazelbuild.github.io/rules_rust/crate_universe.html">rules_rust's crate_universe</a>, this data can be plubmed into the target using the following snippet.</p>
+<pre><code class="language-python">annotations = {
+    "pyo3-build-config": [
+        crate.annotation(
+            build_script_data = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+            build_script_env = {
+                "PYO3_CROSS": "$(PYO3_CROSS)",
+                "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                "PYO3_PYTHON": "$(PYO3_PYTHON)",
+            },
+            build_script_toolchains = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+        ),
+    ],
+    "pyo3-ffi": [
+        crate.annotation(
+            build_script_data = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+            build_script_env = {
+                "PYO3_CROSS": "$(PYO3_CROSS)",
+                "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                "PYO3_PYTHON": "$(PYO3_PYTHON)",
+            },
+            build_script_toolchains = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+        ),
+    ],
+},
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="pyo3_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_pyo3_toolchain"></a></p>
+<h2 id="rust_pyo3_toolchain"><a class="header" href="#rust_pyo3_toolchain">rust_pyo3_toolchain</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "rust_pyo3_toolchain")
+
+rust_pyo3_toolchain(<a href="#rust_pyo3_toolchain-name">name</a>, <a href="#rust_pyo3_toolchain-pyo3">pyo3</a>, <a href="#rust_pyo3_toolchain-pyo3_introspection">pyo3_introspection</a>)
+</pre>
+<p>Define a toolchain for PyO3 Rust dependencies which power internal rules.</p>
+<p>This toolchain is how the rules know which version of <code>pyo3</code> to link against.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-pyo3"></a>pyo3</td><td style="text-align: left">The PyO3 library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-pyo3_introspection"></a>pyo3_introspection</td><td style="text-align: left">The PyO3 introspection library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+</tbody></table>
+</div>
+<p><a id="pyo3_extension"></a></p>
+<h2 id="pyo3_extension"><a class="header" href="#pyo3_extension">pyo3_extension</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(*, <a href="#pyo3_extension-name">name</a>, <a href="#pyo3_extension-srcs">srcs</a>, <a href="#pyo3_extension-aliases">aliases</a>, <a href="#pyo3_extension-compile_data">compile_data</a>, <a href="#pyo3_extension-crate_features">crate_features</a>, <a href="#pyo3_extension-crate_root">crate_root</a>, <a href="#pyo3_extension-data">data</a>, <a href="#pyo3_extension-deps">deps</a>,
+               <a href="#pyo3_extension-edition">edition</a>, <a href="#pyo3_extension-imports">imports</a>, <a href="#pyo3_extension-proc_macro_deps">proc_macro_deps</a>, <a href="#pyo3_extension-rustc_env">rustc_env</a>, <a href="#pyo3_extension-rustc_env_files">rustc_env_files</a>, <a href="#pyo3_extension-rustc_flags">rustc_flags</a>, <a href="#pyo3_extension-stubs">stubs</a>,
+               <a href="#pyo3_extension-version">version</a>, <a href="#pyo3_extension-compilation_mode">compilation_mode</a>, <a href="#pyo3_extension-kwargs">**kwargs</a>)
+</pre>
+<p>Define a PyO3 python extension module.</p>
+<p>This target is consumed just as a <code>py_library</code> would be.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="pyo3_extension-name"></a>name</td><td style="text-align: left">The name of the target.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-srcs"></a>srcs</td><td style="text-align: left">List of Rust <code>.rs</code> source files used to build the library. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-aliases"></a>aliases</td><td style="text-align: left">Remap crates to a new name or moniker for linkage to this target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-compile_data"></a>compile_data</td><td style="text-align: left">List of files used by this rule at compile time. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-crate_features"></a>crate_features</td><td style="text-align: left">List of features to enable for this crate. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-crate_root"></a>crate_root</td><td style="text-align: left">The file that will be passed to <code>rustc</code> to be used for building this crate. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-data"></a>data</td><td style="text-align: left">List of files used by this rule at compile time and runtime. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-deps"></a>deps</td><td style="text-align: left">List of other libraries to be linked to this library target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-edition"></a>edition</td><td style="text-align: left">The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-imports"></a>imports</td><td style="text-align: left">List of import directories to be added to the <code>PYTHONPATH</code>. For more details see <a href="https://bazel.build/reference/be/python#py_binary.imports">py_library.imports</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of <code>rust_proc_macro</code> targets used to help build this library target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_env"></a>rustc_env</td><td style="text-align: left">Dictionary of additional <code>"key": "value"</code> environment variables to set for rustc. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_env_files"></a>rustc_env_files</td><td style="text-align: left">Files containing additional environment variables to set for rustc. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-stubs"></a>stubs</td><td style="text-align: left">Whether or not to generate stubs (<code>.pyi</code> file) for the module.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-version"></a>version</td><td style="text-align: left">A version to inject in the cargo environment variable. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-compilation_mode"></a>compilation_mode</td><td style="text-align: left">The <a href="https://bazel.build/reference/command-line-reference#flag--compilation_mode">compilation_mode</a> value to build the extension for. If set to <code>"current"</code>, the current configuration will be used.</td><td style="text-align: left"><code>"opt"</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-kwargs"></a>kwargs</td><td style="text-align: left">Additional keyword arguments.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="rust_protobuf.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="rust_wasm_bindgen.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="rust_protobuf.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="rust_wasm_bindgen.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

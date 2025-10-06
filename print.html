@@ -255,6 +255,7 @@ also be set either in the command line or in the project's <code>.bazelrc</code>
 <li><a href="rust_bindgen.html">rust_bindgen</a>: rules for generating C++ bindings.</li>
 <li><a href="rust_prost.html">rust_prost</a>: rules for generating <a href="https://developers.google.com/protocol-buffers">protobuf</a> and <a href="https://grpc.io">gRPC</a> stubs using <a href="https://github.com/tokio-rs/prost">prost</a>.</li>
 <li><a href="rust_protobuf.html">rust_protobuf</a>: rules for generating <a href="https://developers.google.com/protocol-buffers">protobuf</a> and <a href="https://grpc.io">gRPC</a> stubs with <a href="https://github.com/stepancheg/rust-protobuf/">rust-protobuf</a></li>
+<li><a href="rust_pyo3.html">rust_pyo3</a>: Bazel rules for <a href="https://pyo3.rs/v0.23.4/">PyO3</a>.</li>
 <li><a href="rust_wasm_bindgen.html">rust_wasm_bindgen</a>: rules for generating <a href="https://www.rust-lang.org/what/wasm">WebAssembly</a> bindings.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
@@ -4125,6 +4126,115 @@ rust_binary(
 <tr><td style="text-align: left"><a id="rust_proto_library-crate_name"></a>crate_name</td><td style="text-align: left">Crate name to use for this target.<br><br>This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores. Defaults to the target name, with any hyphens replaced by underscores.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_proto_library-rust_deps"></a>rust_deps</td><td style="text-align: left">The crates the generated library depends on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_proto_library-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
+<h1 id="rules_rust_pyo3"><a class="header" href="#rules_rust_pyo3">rules_rust_pyo3</a></h1>
+<p><a id="pyo3_toolchain"></a></p>
+<h2 id="pyo3_toolchain"><a class="header" href="#pyo3_toolchain">pyo3_toolchain</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "pyo3_toolchain")
+
+pyo3_toolchain(<a href="rust_pyo3.html#pyo3_toolchain-name">name</a>)
+</pre>
+<p>Define a toolchain which generates config data for the PyO3 for producing extension modules on any target platform.</p>
+<p>Note that this toolchain expects the <code>pyo3</code> crate to be built with the following features:</p>
+<ul>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#abi3"><code>abi3</code></a></li>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#the-abi3-pyxy-features"><code>abi3-py3*</code></a> (e.g <code>abi3-py311</code>)</li>
+<li><a href="https://pyo3.rs/v0.26.0/features.html?highlight=abi3#extension-module"><code>extension-module</code></a></li>
+</ul>
+<p>When using <a href="https://bazelbuild.github.io/rules_rust/crate_universe.html">rules_rust's crate_universe</a>, this data can be plubmed into the target using the following snippet.</p>
+<pre><code class="language-python">annotations = {
+    "pyo3-build-config": [
+        crate.annotation(
+            build_script_data = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+            build_script_env = {
+                "PYO3_CROSS": "$(PYO3_CROSS)",
+                "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                "PYO3_PYTHON": "$(PYO3_PYTHON)",
+            },
+            build_script_toolchains = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+        ),
+    ],
+    "pyo3-ffi": [
+        crate.annotation(
+            build_script_data = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+            build_script_env = {
+                "PYO3_CROSS": "$(PYO3_CROSS)",
+                "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                "PYO3_PYTHON": "$(PYO3_PYTHON)",
+            },
+            build_script_toolchains = [
+                "@rules_rust_pyo3//:current_pyo3_toolchain",
+            ],
+        ),
+    ],
+},
+</code></pre>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="pyo3_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+</tbody></table>
+</div>
+<p><a id="rust_pyo3_toolchain"></a></p>
+<h2 id="rust_pyo3_toolchain"><a class="header" href="#rust_pyo3_toolchain">rust_pyo3_toolchain</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "rust_pyo3_toolchain")
+
+rust_pyo3_toolchain(<a href="rust_pyo3.html#rust_pyo3_toolchain-name">name</a>, <a href="rust_pyo3.html#rust_pyo3_toolchain-pyo3">pyo3</a>, <a href="rust_pyo3.html#rust_pyo3_toolchain-pyo3_introspection">pyo3_introspection</a>)
+</pre>
+<p>Define a toolchain for PyO3 Rust dependencies which power internal rules.</p>
+<p>This toolchain is how the rules know which version of <code>pyo3</code> to link against.</p>
+<p><strong>ATTRIBUTES</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-pyo3"></a>pyo3</td><td style="text-align: left">The PyO3 library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+<tr><td style="text-align: left"><a id="rust_pyo3_toolchain-pyo3_introspection"></a>pyo3_introspection</td><td style="text-align: left">The PyO3 introspection library.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
+</tbody></table>
+</div>
+<p><a id="pyo3_extension"></a></p>
+<h2 id="pyo3_extension"><a class="header" href="#pyo3_extension">pyo3_extension</a></h2>
+<pre>
+load("@rules_rust_pyo3//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(*, <a href="rust_pyo3.html#pyo3_extension-name">name</a>, <a href="rust_pyo3.html#pyo3_extension-srcs">srcs</a>, <a href="rust_pyo3.html#pyo3_extension-aliases">aliases</a>, <a href="rust_pyo3.html#pyo3_extension-compile_data">compile_data</a>, <a href="rust_pyo3.html#pyo3_extension-crate_features">crate_features</a>, <a href="rust_pyo3.html#pyo3_extension-crate_root">crate_root</a>, <a href="rust_pyo3.html#pyo3_extension-data">data</a>, <a href="rust_pyo3.html#pyo3_extension-deps">deps</a>,
+               <a href="rust_pyo3.html#pyo3_extension-edition">edition</a>, <a href="rust_pyo3.html#pyo3_extension-imports">imports</a>, <a href="rust_pyo3.html#pyo3_extension-proc_macro_deps">proc_macro_deps</a>, <a href="rust_pyo3.html#pyo3_extension-rustc_env">rustc_env</a>, <a href="rust_pyo3.html#pyo3_extension-rustc_env_files">rustc_env_files</a>, <a href="rust_pyo3.html#pyo3_extension-rustc_flags">rustc_flags</a>, <a href="rust_pyo3.html#pyo3_extension-stubs">stubs</a>,
+               <a href="rust_pyo3.html#pyo3_extension-version">version</a>, <a href="rust_pyo3.html#pyo3_extension-compilation_mode">compilation_mode</a>, <a href="rust_pyo3.html#pyo3_extension-kwargs">**kwargs</a>)
+</pre>
+<p>Define a PyO3 python extension module.</p>
+<p>This target is consumed just as a <code>py_library</code> would be.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="pyo3_extension-name"></a>name</td><td style="text-align: left">The name of the target.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-srcs"></a>srcs</td><td style="text-align: left">List of Rust <code>.rs</code> source files used to build the library. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-aliases"></a>aliases</td><td style="text-align: left">Remap crates to a new name or moniker for linkage to this target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-compile_data"></a>compile_data</td><td style="text-align: left">List of files used by this rule at compile time. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-crate_features"></a>crate_features</td><td style="text-align: left">List of features to enable for this crate. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-crate_root"></a>crate_root</td><td style="text-align: left">The file that will be passed to <code>rustc</code> to be used for building this crate. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-data"></a>data</td><td style="text-align: left">List of files used by this rule at compile time and runtime. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-deps"></a>deps</td><td style="text-align: left">List of other libraries to be linked to this library target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-edition"></a>edition</td><td style="text-align: left">The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-imports"></a>imports</td><td style="text-align: left">List of import directories to be added to the <code>PYTHONPATH</code>. For more details see <a href="https://bazel.build/reference/be/python#py_binary.imports">py_library.imports</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">List of <code>rust_proc_macro</code> targets used to help build this library target. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_env"></a>rustc_env</td><td style="text-align: left">Dictionary of additional <code>"key": "value"</code> environment variables to set for rustc. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_env_files"></a>rustc_env_files</td><td style="text-align: left">Files containing additional environment variables to set for rustc. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>[]</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-stubs"></a>stubs</td><td style="text-align: left">Whether or not to generate stubs (<code>.pyi</code> file) for the module.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-version"></a>version</td><td style="text-align: left">A version to inject in the cargo environment variable. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-compilation_mode"></a>compilation_mode</td><td style="text-align: left">The <a href="https://bazel.build/reference/command-line-reference#flag--compilation_mode">compilation_mode</a> value to build the extension for. If set to <code>"current"</code>, the current configuration will be used.</td><td style="text-align: left"><code>"opt"</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-kwargs"></a>kwargs</td><td style="text-align: left">Additional keyword arguments.</td><td style="text-align: left">none</td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_wasm_bindgen"><a class="header" href="#rules_rust_wasm_bindgen">rules_rust_wasm_bindgen</a></h1>
