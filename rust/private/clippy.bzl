@@ -101,7 +101,7 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def run_clippy(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
     """Run clippy with the specified parameters.
 
     Args:
@@ -275,7 +275,7 @@ def _clippy_aspect_impl(target, ctx):
         clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
 
     # Run clippy using the extracted function
-    run_clippy(
+    rust_clippy_action(
         ctx = ctx,
         clippy_executable = toolchain.clippy_driver,
         process_wrapper = ctx.executable._process_wrapper,

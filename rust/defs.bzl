@@ -25,7 +25,7 @@ load(
     _clippy_flags = "clippy_flags",
     _get_clippy_ready_crate_info = "get_clippy_ready_crate_info",
     _rust_clippy = "rust_clippy",
-    _rust_clippy_action = "run_clippy",
+    _rust_clippy_action = "rust_clippy_action",
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
