@@ -1,7 +1,12 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@cui//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_test")
-load("//crate_universe:version.bzl", "VERSION")
+load("//cargo:defs.bzl", "cargo_toml_env_vars")
+
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
 
 exports_files(
     glob([
@@ -72,7 +77,7 @@ rust_library(
     # for more information). Set stamp = -1 to indicate that it should respect
     # the value of the --stamp commandline flag.
     stamp = -1,
-    version = VERSION,
+    rustc_env_files = [":cargo_toml_env_vars"],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(normal = True),
 )
@@ -81,7 +86,6 @@ rust_binary(
     name = "cargo_bazel_bin",
     srcs = ["src/main.rs"],
     edition = "2021",
-    version = VERSION,
     visibility = ["//visibility:public"],
     deps = [":cargo_bazel"],
 )
@@ -156,6 +160,8 @@ rust_test(
     ),
 )
 
+# TODO(zbarsky): At this point version.bzl only exists to trigger `cargo_bazel_release` GH workflow.
+# Consider swapping that to the main repo's `version.bzl` and remove this.
 rust_test(
     name = "versions_test",
     srcs = ["tests/version_test.rs"],

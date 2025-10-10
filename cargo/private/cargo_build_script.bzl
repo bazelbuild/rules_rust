@@ -389,7 +389,6 @@ def _cargo_build_script_impl(ctx):
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
         "CARGO_MANIFEST_DIR": manifest_dir,
-        "CARGO_PKG_NAME": pkg_name,
         "HOST": toolchain.exec_triple.str,
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
@@ -404,15 +403,6 @@ def _cargo_build_script_impl(ctx):
         "DEBUG": {"dbg": "true", "fastbuild": "true", "opt": "false"}.get(ctx.var["COMPILATION_MODE"], "true"),
         "PROFILE": {"dbg": "debug", "fastbuild": "debug", "opt": "release"}.get(ctx.var["COMPILATION_MODE"], "unknown"),
     })
-
-    if ctx.attr.version:
-        version = ctx.attr.version.split("+")[0].split(".")
-        patch = version[2].split("-") if len(version) > 2 else [""]
-        env["CARGO_PKG_VERSION_MAJOR"] = version[0]
-        env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
-        env["CARGO_PKG_VERSION_PATCH"] = patch[0]
-        env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
-        env["CARGO_PKG_VERSION"] = ctx.attr.version
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
