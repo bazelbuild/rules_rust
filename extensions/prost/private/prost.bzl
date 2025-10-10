@@ -263,7 +263,7 @@ def _rust_prost_aspect_impl(target, ctx):
                 build_info = None,
             ))
         if RustAnalyzerInfo in prost_runtime:
-            rust_analyzer_deps.append(prost_runtime[RustAnalyzerInfo].deps)
+            rust_analyzer_deps.append(prost_runtime[RustAnalyzerInfo])
         if RustAnalyzerGroupInfo in prost_runtime:
             rust_analyzer_deps.extend(prost_runtime[RustAnalyzerGroupInfo].deps)
 
