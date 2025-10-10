@@ -100,7 +100,7 @@ rust_library(
     }),
     version = "0.39.0",
     deps = [
-        "@cvm__bitflags-2.9.2//:bitflags",
+        "@cvm__bitflags-2.9.3//:bitflags",
         "@cvm__wit-bindgen-rt-0.39.0//:build_script_build",
     ],
 )

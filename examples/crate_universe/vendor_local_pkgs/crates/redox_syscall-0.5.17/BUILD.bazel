@@ -93,6 +93,6 @@ rust_library(
     }),
     version = "0.5.17",
     deps = [
-        "//vendor_local_pkgs/crates/bitflags-2.9.2:bitflags",
+        "//vendor_local_pkgs/crates/bitflags-2.9.3:bitflags",
     ],
 )
