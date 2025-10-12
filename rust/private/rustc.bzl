@@ -212,7 +212,7 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
     # - For shared libraries - we use `pic`. This covers `dylib`, `cdylib` and `proc-macro` crate types.
     # - In `fastbuild` and `dbg` mode we use `pic` by default.
     # - In `opt` mode we use `nopic` outputs to build binaries.
-    if crate_type in ("cdylib", "dylib", "proc-macro"):
+    if cc_toolchain and crate_type in ("cdylib", "dylib", "proc-macro"):
         return cc_toolchain.needs_pic_for_dynamic_libraries(feature_configuration = feature_configuration)
     elif compilation_mode in ("fastbuild", "dbg"):
         return True
@@ -406,12 +406,13 @@ def get_cc_user_link_flags(ctx):
     """
     return ctx.fragments.cpp.linkopts
 
-def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
+def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = False):
     """Gathers cc_common linker information
 
     Args:
         ctx (ctx): The current target's context object
         crate_type (str): The target crate's type (i.e. "bin", "proc-macro", etc.).
+        toolchain (rust_toolchain): The current Rust toolchain.
         cc_toolchain (CcToolchain): cc_toolchain for which we are creating build variables.
         feature_configuration (FeatureConfiguration): Feature configuration to be queried.
         rpaths (depset): Depset of directories where loader will look for libraries at runtime.
@@ -426,45 +427,57 @@ def get_linker_and_args(ctx, crate_type, cc_toolchain, feature_configuration, rp
     """
     user_link_flags = get_cc_user_link_flags(ctx)
 
-    if crate_type in ("bin") or add_flags_for_binary:
-        is_linking_dynamic_library = False
-        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
-    elif crate_type in ("dylib"):
-        is_linking_dynamic_library = True
-        action_name = CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME
-    elif crate_type in ("staticlib"):
-        is_linking_dynamic_library = False
-        action_name = CPP_LINK_STATIC_LIBRARY_ACTION_NAME
-    elif crate_type in ("cdylib", "proc-macro"):
-        # Proc macros get compiled as shared libraries to be loaded by the compiler.
-        is_linking_dynamic_library = True
-        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
-    elif crate_type in ("lib", "rlib"):
-        fail("Invalid `crate_type` for linking action: {}".format(crate_type))
-    else:
-        fail("Unknown `crate_type`: {}".format(crate_type))
+    ld = None
+    link_args = []
+    link_env = {}
 
-    link_variables = cc_common.create_link_variables(
-        feature_configuration = feature_configuration,
-        cc_toolchain = cc_toolchain,
-        is_linking_dynamic_library = is_linking_dynamic_library,
-        runtime_library_search_directories = rpaths,
-        user_link_flags = user_link_flags,
-    )
-    link_args = cc_common.get_memory_inefficient_command_line(
-        feature_configuration = feature_configuration,
-        action_name = action_name,
-        variables = link_variables,
-    )
-    link_env = cc_common.get_environment_variables(
-        feature_configuration = feature_configuration,
-        action_name = action_name,
-        variables = link_variables,
-    )
-    ld = cc_common.get_tool_for_action(
-        feature_configuration = feature_configuration,
-        action_name = action_name,
-    )
+    if cc_toolchain and toolchain.linker_preference != "rust":
+        if crate_type in ("bin") or add_flags_for_binary:
+            is_linking_dynamic_library = False
+            action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
+        elif crate_type in ("dylib"):
+            is_linking_dynamic_library = True
+            action_name = CPP_LINK_NODEPS_DYNAMIC_LIBRARY_ACTION_NAME
+        elif crate_type in ("staticlib"):
+            is_linking_dynamic_library = False
+            action_name = CPP_LINK_STATIC_LIBRARY_ACTION_NAME
+        elif crate_type in ("cdylib", "proc-macro"):
+            # Proc macros get compiled as shared libraries to be loaded by the compiler.
+            is_linking_dynamic_library = True
+            action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME
+        elif crate_type in ("lib", "rlib"):
+            fail("Invalid `crate_type` for linking action: {}".format(crate_type))
+        else:
+            fail("Unknown `crate_type`: {}".format(crate_type))
+
+        link_variables = cc_common.create_link_variables(
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            is_linking_dynamic_library = is_linking_dynamic_library,
+            runtime_library_search_directories = rpaths,
+            user_link_flags = user_link_flags,
+        )
+        link_args = cc_common.get_memory_inefficient_command_line(
+            feature_configuration = feature_configuration,
+            action_name = action_name,
+            variables = link_variables,
+        )
+        link_env = cc_common.get_environment_variables(
+            feature_configuration = feature_configuration,
+            action_name = action_name,
+            variables = link_variables,
+        )
+        ld = cc_common.get_tool_for_action(
+            feature_configuration = feature_configuration,
+            action_name = action_name,
+        )
+
+    if not ld and toolchain.linker:
+        ld = toolchain.linker.path
+
+    if not ld:
+        fail("No linker available for rustc. Either `rust_toolchain.linker` must be set or a `cc_toolchain` configured for the current configuration.")
+
     if "LIB" in link_env:
         # Needed to ensure that link.exe will use msvcrt.lib from the cc_toolchain,
         # and not a non-hermetic system version.
@@ -678,7 +691,9 @@ def collect_inputs(
     # rules_rust is not coupled with Bazel release. Remove conditional and change to
     # _linker_files once Starlark CcToolchainInfo is visible to Bazel.
     # https://github.com/bazelbuild/rules_rust/issues/2425
-    if hasattr(cc_toolchain, "_linker_files"):
+    if not cc_toolchain:
+        linker_depset = depset()
+    elif hasattr(cc_toolchain, "_linker_files"):
         linker_depset = cc_toolchain._linker_files
     else:
         linker_depset = cc_toolchain.linker_files()
@@ -1038,7 +1053,15 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(ctx, crate_info.type, cc_toolchain, feature_configuration, rpaths, add_flags_for_binary = add_flags_for_binary)
+            ld, link_args, link_env = get_linker_and_args(
+                ctx,
+                crate_info.type,
+                toolchain,
+                cc_toolchain,
+                feature_configuration,
+                rpaths,
+                add_flags_for_binary = add_flags_for_binary,
+            )
 
             env.update(link_env)
             rustc_flags.add(ld, format = "--codegen=linker=%s")
@@ -1047,7 +1070,18 @@ def construct_arguments(
             # Additional context: https://github.com/rust-lang/rust/pull/36574
             rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
 
-        _add_native_link_flags(rustc_flags, dep_info, linkstamp_outs, ambiguous_libs, crate_info.type, toolchain, cc_toolchain, feature_configuration, compilation_mode, include_link_flags = include_link_flags)
+        _add_native_link_flags(
+            rustc_flags,
+            dep_info,
+            linkstamp_outs,
+            ambiguous_libs,
+            crate_info.type,
+            toolchain,
+            cc_toolchain,
+            feature_configuration,
+            compilation_mode,
+            include_link_flags = include_link_flags,
+        )
 
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
@@ -1238,7 +1272,7 @@ def rustc_compile_action(
         # One or more of the transitive deps is a cc_library / cc_import
         extra_disabled_features = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
-    if not _are_linkstamps_supported(
+    if not cc_toolchain or not _are_linkstamps_supported(
         feature_configuration = feature_configuration,
         has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
     ):
@@ -1763,8 +1797,8 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         interface_library (File): Optional interface library for cdylib crates on Windows.
 
     Returns:
-        list: A list containing the CcInfo provider and optionally AllocatorLibrariesImplInfo provider used when this crate is used as the rust allocator library implementation.
-
+        list: A list containing the `CcInfo` provider and optionally `AllocatorLibrariesImplInfo`
+            provider used when this crate is used as the rust allocator library implementation.
     """
 
     # A test will not need to produce CcInfo as nothing can depend on test targets
@@ -1781,47 +1815,51 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
         return []
 
     dot_a = None
+    library_to_link = None
 
     if crate_info.type == "staticlib":
-        library_to_link = cc_common.create_library_to_link(
-            actions = ctx.actions,
-            feature_configuration = feature_configuration,
-            cc_toolchain = cc_toolchain,
-            static_library = crate_info.output,
-            # TODO(hlopko): handle PIC/NOPIC correctly
-            pic_static_library = crate_info.output,
-            alwayslink = getattr(attr, "alwayslink", False),
-        )
+        if cc_toolchain:
+            library_to_link = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = crate_info.output,
+                # TODO(hlopko): handle PIC/NOPIC correctly
+                pic_static_library = crate_info.output,
+                alwayslink = getattr(attr, "alwayslink", False),
+            )
     elif crate_info.type in ("rlib", "lib"):
         # bazel hard-codes a check for endswith((".a", ".pic.a",
         # ".lib")) in create_library_to_link, so we work around that
         # by creating a symlink to the .rlib with a .a extension.
         dot_a = make_static_lib_symlink(ctx.label.package, ctx.actions, crate_info.output)
 
-        # TODO(hlopko): handle PIC/NOPIC correctly
-        library_to_link = cc_common.create_library_to_link(
-            actions = ctx.actions,
-            feature_configuration = feature_configuration,
-            cc_toolchain = cc_toolchain,
-            static_library = dot_a,
+        if cc_toolchain:
             # TODO(hlopko): handle PIC/NOPIC correctly
-            pic_static_library = dot_a,
-            alwayslink = getattr(attr, "alwayslink", False),
-        )
+            library_to_link = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                static_library = dot_a,
+                # TODO(hlopko): handle PIC/NOPIC correctly
+                pic_static_library = dot_a,
+                alwayslink = getattr(attr, "alwayslink", False),
+            )
     elif crate_info.type == "cdylib":
-        library_to_link = cc_common.create_library_to_link(
-            actions = ctx.actions,
-            feature_configuration = feature_configuration,
-            cc_toolchain = cc_toolchain,
-            dynamic_library = crate_info.output,
-            interface_library = interface_library,
-        )
+        if cc_toolchain:
+            library_to_link = cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                dynamic_library = crate_info.output,
+                interface_library = interface_library,
+            )
     else:
         fail("Unexpected case")
 
     link_input = cc_common.create_linker_input(
         owner = ctx.label,
-        libraries = depset([library_to_link]),
+        libraries = depset([library_to_link]) if library_to_link else depset(),
     )
 
     linking_context = cc_common.create_linking_context(
@@ -2143,7 +2181,7 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
 def _add_user_link_flags(ret, linker_input):
     ret.extend(["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags])
 
-def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
+def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
     for lib in linker_input.libraries:
@@ -2151,56 +2189,114 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc):
             if flavor_msvc:
                 ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
             else:
+                prefix = "" if use_direct_driver else "-Wl,"
                 ret.extend([
                     "-C",
-                    "link-arg=-Wl,--whole-archive",
+                    ("link-arg=%s--whole-archive" % prefix),
                     "-C",
                     ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
                     "-C",
-                    "link-arg=-Wl,--no-whole-archive",
+                    ("link-arg=%s--no-whole-archive" % prefix),
                 ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
     _add_user_link_flags(ret, linker_input)
     return ret
 
-def _make_link_flags_windows_msvc(make_link_flags_args):
-    return _make_link_flags_windows(make_link_flags_args, flavor_msvc = True)
+def _make_link_flags_windows_msvc(make_link_flags_args, use_direct_driver):
+    return _make_link_flags_windows(make_link_flags_args, flavor_msvc = True, use_direct_driver = use_direct_driver)
 
-def _make_link_flags_windows_gnu(make_link_flags_args):
-    return _make_link_flags_windows(make_link_flags_args, flavor_msvc = False)
+def _make_link_flags_windows_gnu(make_link_flags_args, use_direct_driver):
+    return _make_link_flags_windows(make_link_flags_args, flavor_msvc = False, use_direct_driver = use_direct_driver)
 
-def _make_link_flags_darwin(make_link_flags_args):
+def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
+            prefix = "" if use_direct_driver else "-Wl,"
             ret.extend([
                 "-C",
-                ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
+                ("link-arg=%s-force_load,%s" % (prefix, get_preferred_artifact(lib, use_pic).path)),
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
     return ret
 
-def _make_link_flags_default(make_link_flags_args):
+def _make_link_flags_default(make_link_flags_args, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
+            prefix = "" if use_direct_driver else "-Wl,"
             ret.extend([
                 "-C",
-                "link-arg=-Wl,--whole-archive",
+                ("link-arg=%s--whole-archive" % prefix),
                 "-C",
                 ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
                 "-C",
-                "link-arg=-Wl,--no-whole-archive",
+                ("link-arg=%s--no-whole-archive" % prefix),
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
     _add_user_link_flags(ret, linker_input)
     return ret
+
+def _make_link_flags_default_indirect(make_link_flags_args):
+    return _make_link_flags_default(make_link_flags_args, False)
+
+def _make_link_flags_default_direct(make_link_flags_args):
+    return _make_link_flags_default(make_link_flags_args, True)
+
+def _make_link_flags_darwin_indirect(make_link_flags_args):
+    return _make_link_flags_darwin(make_link_flags_args, False)
+
+def _make_link_flags_darwin_direct(make_link_flags_args):
+    return _make_link_flags_darwin(make_link_flags_args, True)
+
+def _make_link_flags_windows_msvc_indirect(make_link_flags_args):
+    return _make_link_flags_windows_msvc(make_link_flags_args, False)
+
+def _make_link_flags_windows_msvc_direct(make_link_flags_args):
+    return _make_link_flags_windows_msvc(make_link_flags_args, True)
+
+def _make_link_flags_windows_gnu_indirect(make_link_flags_args):
+    return _make_link_flags_windows_gnu(make_link_flags_args, False)
+
+def _make_link_flags_windows_gnu_direct(make_link_flags_args):
+    return _make_link_flags_windows_gnu(make_link_flags_args, True)
+
+def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
+    """Select the appropriate functions for producing link arguments and library names.
+
+    Args:
+        target_os (str): The target platform triple system component.
+        target_abi (str): The target platform triple abi component.
+        use_direct_link_driver (bool): Whether or not linking is done directly via
+            a link driver (`rust-lld`, `lld`, `lld-link.exe`, etc) vs indirectly via
+            a compiler (`gcc`, `clang`, `clang-cl.exe`, etc)
+
+    Returns:
+        tuple:
+            - callable: The function for producing link args.
+            - callable: The function for formatting link library names.
+    """
+    if target_os == "windows":
+        make_link_flags_windows_msvc = _make_link_flags_windows_msvc_direct if use_direct_link_driver else _make_link_flags_windows_msvc_indirect
+        make_link_flags_windows_gnu = _make_link_flags_windows_gnu_direct if use_direct_link_driver else _make_link_flags_windows_gnu_indirect
+        make_link_flags = make_link_flags_windows_msvc if target_abi == "msvc" else make_link_flags_windows_gnu
+        get_lib_name = get_lib_name_for_windows
+    elif target_os.startswith(("mac", "darwin", "ios")):
+        make_link_flags_darwin = _make_link_flags_darwin_direct if use_direct_link_driver else _make_link_flags_darwin_indirect
+        make_link_flags = make_link_flags_darwin
+        get_lib_name = get_lib_name_default
+    else:
+        make_link_flags_default = _make_link_flags_default_direct if use_direct_link_driver else _make_link_flags_default_indirect
+        make_link_flags = make_link_flags_default
+        get_lib_name = get_lib_name_default
+
+    return (make_link_flags, get_lib_name)
 
 def _libraries_dirnames(make_link_flags_args):
     link_input, use_pic, _, _ = make_link_flags_args
@@ -2208,7 +2304,17 @@ def _libraries_dirnames(make_link_flags_args):
     # De-duplicate names.
     return depset([get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]).to_list()
 
-def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate_type, toolchain, cc_toolchain, feature_configuration, compilation_mode, include_link_flags = True):
+def _add_native_link_flags(
+        args,
+        dep_info,
+        linkstamp_outs,
+        ambiguous_libs,
+        crate_type,
+        toolchain,
+        cc_toolchain,
+        feature_configuration,
+        compilation_mode,
+        include_link_flags = True):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
@@ -2228,15 +2334,27 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
 
-    if toolchain.target_os == "windows":
-        make_link_flags = _make_link_flags_windows_msvc if toolchain.target_triple.abi == "msvc" else _make_link_flags_windows_gnu
-        get_lib_name = get_lib_name_for_windows
-    elif toolchain.target_os.startswith(("mac", "darwin", "ios")):
-        make_link_flags = _make_link_flags_darwin
-        get_lib_name = get_lib_name_default
-    else:
-        make_link_flags = _make_link_flags_default
-        get_lib_name = get_lib_name_default
+    # Use linker_type to determine whether to use direct or indirect linker invocation
+    # If linker_type is not explicitly set, infer from which linker is actually being used
+    use_direct_link_driver = False
+    if toolchain.linker_type:
+        # Explicit linker_type takes precedence
+        use_direct_link_driver = toolchain.linker_type == "direct"
+    elif toolchain.linker_preference == "rust":
+        # If rust linker is preferred, use direct invocation
+        use_direct_link_driver = True
+    elif toolchain.linker_preference == "cc" or (cc_toolchain and toolchain.linker_preference != "rust"):
+        # If cc linker is preferred or being used, use indirect invocation
+        use_direct_link_driver = False
+    elif toolchain.linker:
+        # If we have a rust linker available and no cc_toolchain, use direct invocation
+        use_direct_link_driver = True
+
+    make_link_flags, get_lib_name = _get_make_link_flag_funcs(
+        target_os = toolchain.target_os,
+        target_abi = toolchain.target_abi,
+        use_direct_link_driver = use_direct_link_driver,
+    )
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
     make_link_flags_args = [(arg, use_pic, ambiguous_libs, include_link_flags) for arg in dep_info.transitive_noncrates.to_list()]
@@ -2251,34 +2369,35 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
 
-    if crate_type in ["dylib", "cdylib"]:
-        # For shared libraries we want to link C++ runtime library dynamically
-        # (for example libstdc++.so or libc++.so).
-        args.add_all(
-            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
-        if include_link_flags:
+    if cc_toolchain:
+        if crate_type in ["dylib", "cdylib"]:
+            # For shared libraries we want to link C++ runtime library dynamically
+            # (for example libstdc++.so or libc++.so).
             args.add_all(
                 cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-ldylib=%s",
+                map_each = _get_dirname,
+                format_each = "-Lnative=%s",
             )
-    else:
-        # For all other crate types we want to link C++ runtime library statically
-        # (for example libstdc++.a or libc++.a).
-        args.add_all(
-            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
-        if include_link_flags:
+            if include_link_flags:
+                args.add_all(
+                    cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+                    map_each = get_lib_name,
+                    format_each = "-ldylib=%s",
+                )
+        else:
+            # For all other crate types we want to link C++ runtime library statically
+            # (for example libstdc++.a or libc++.a).
             args.add_all(
                 cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-lstatic=%s",
+                map_each = _get_dirname,
+                format_each = "-Lnative=%s",
             )
+            if include_link_flags:
+                args.add_all(
+                    cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+                    map_each = get_lib_name,
+                    format_each = "-lstatic=%s",
+                )
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.

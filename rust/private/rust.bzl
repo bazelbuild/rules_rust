@@ -17,19 +17,26 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
+load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
-    "//rust/private:providers.bzl",
-    "AllocatorLibrariesImplInfo",
-    "AllocatorLibrariesInfo",
+    ":providers.bzl",
     "BuildInfo",
     "CrateGroupInfo",
     "CrateInfo",
     "LintsInfo",
 )
-load("//rust/private:rustc.bzl", "collect_extra_rustc_flags", "is_no_std", "rustc_compile_action")
 load(
-    "//rust/private:utils.bzl",
+    ":rust_allocator_libraries.bzl",
+    "RUSTC_ALLOCATOR_LIBRARIES_ATTRS",
+)
+load(
+    ":rustc.bzl",
+    "collect_extra_rustc_flags",
+    "is_no_std",
+    "rustc_compile_action",
+)
+load(
+    ":utils.bzl",
     "can_build_metadata",
     "can_use_metadata_for_pipelining",
     "compute_crate_name",
@@ -650,19 +657,6 @@ RUSTC_ATTRS = {
     ),
 }
 
-# Attributes for rust-based allocator library support.
-# Can't add it directly to RUSTC_ATTRS above, as those are used as
-# aspect parameters and only support simple types ('bool', 'int' or 'string').
-_rustc_allocator_libraries_attrs = {
-    # This is really internal. Not prefixed with `_` since we need to adapt this
-    # in bootstrapping situations, e.g., when building the process wrapper
-    # or allocator libraries themselves.
-    "allocator_libraries": attr.label(
-        default = "//ffi/rs:default_allocator_libraries",
-        providers = [AllocatorLibrariesInfo],
-    ),
-}
-
 _common_attrs = {
     "aliases": attr.label_keyed_string_dict(
         doc = dedent("""\
@@ -826,7 +820,7 @@ _common_attrs = {
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
     ),
-} | RUSTC_ATTRS | _rustc_allocator_libraries_attrs
+} | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS
 
 _coverage_attrs = {
     "_collect_cc_coverage": attr.label(
@@ -933,7 +927,7 @@ rust_library = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust library crate.
@@ -1031,7 +1025,7 @@ rust_static_library = rule(
     cfg = _rust_static_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     provides = [
         CcInfo,
@@ -1081,7 +1075,7 @@ rust_shared_library = rule(
     cfg = _rust_shared_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     provides = [
         CcInfo,
@@ -1137,7 +1131,7 @@ rust_proc_macro = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust proc-macro crate.
@@ -1222,7 +1216,7 @@ rust_binary = rule(
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust binary crate.
@@ -1364,7 +1358,7 @@ rust_binary_without_process_wrapper = rule(
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 
@@ -1375,7 +1369,7 @@ rust_library_without_process_wrapper = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 
@@ -1412,7 +1406,7 @@ rust_test = rule(
     test = True,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust test crate.
@@ -1674,47 +1668,6 @@ rust_library_group = rule(
         )
         ```
     """),
-)
-
-def _rust_allocator_libraries_impl(ctx):
-    toolchain = find_toolchain(ctx)
-    allocator_library = ctx.attr.allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.allocator_library else None
-    global_allocator_library = ctx.attr.global_allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.global_allocator_library else None
-
-    make_ccinfo = lambda info, std: toolchain.make_libstd_and_allocator_ccinfo(
-        ctx.label,
-        ctx.actions,
-        struct(allocator_libraries_impl_info = info),
-        std,
-    )
-
-    providers = [AllocatorLibrariesInfo(
-        allocator_library = allocator_library,
-        global_allocator_library = global_allocator_library,
-        libstd_and_allocator_ccinfo = make_ccinfo(allocator_library, "std"),
-        libstd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "std"),
-        nostd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "no_std_with_alloc"),
-    )]
-
-    return providers
-
-rust_allocator_libraries = rule(
-    implementation = _rust_allocator_libraries_impl,
-    provides = [AllocatorLibrariesInfo],
-    attrs = {
-        "allocator_library": attr.label(
-            doc = "An optional library to provide when a default rust allocator is used.",
-            providers = [AllocatorLibrariesImplInfo],
-        ),
-        "global_allocator_library": attr.label(
-            doc = "An optional library to provide when a default rust allocator is used.",
-            providers = [AllocatorLibrariesImplInfo],
-        ),
-    },
-    toolchains = [
-        str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
 )
 
 def _replace_illlegal_chars(name):
