@@ -431,6 +431,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     link_args = []
     link_env = {}
 
+    print(ctx.label, toolchain.linker_preference)
     if cc_toolchain and toolchain.linker_preference != "rust":
         if crate_type in ("bin") or add_flags_for_binary:
             is_linking_dynamic_library = False
@@ -462,7 +463,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             action_name = action_name,
             variables = link_variables,
         )
-        print(link_args)
+        print(ctx.label, link_args)
         link_env = cc_common.get_environment_variables(
             feature_configuration = feature_configuration,
             action_name = action_name,
@@ -474,6 +475,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         )
 
     if not ld and toolchain.linker:
+        print(ctx.label, "No ld, setting rust-lld")
         ld = toolchain.linker.path
 
     if not ld:
@@ -2185,12 +2187,12 @@ def _add_user_link_flags(ret, linker_input):
 def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
+    prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
         if lib.alwayslink:
             if flavor_msvc:
                 ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
             else:
-                prefix = "" if use_direct_driver else "-Wl,"
                 ret.extend([
                     "-C",
                     ("link-arg=%s--whole-archive" % prefix),
@@ -2237,9 +2239,9 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
 def _make_link_flags_default(make_link_flags_args, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
+    prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
         if lib.alwayslink:
-            prefix = "" if use_direct_driver else "-Wl,"
             ret.extend([
                 "-C",
                 ("link-arg=%s--whole-archive" % prefix),
