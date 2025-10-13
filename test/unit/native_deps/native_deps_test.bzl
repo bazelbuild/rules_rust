@@ -32,6 +32,54 @@ def _get_bin_dir_from_action(action):
         bin_dir = bin_dir.split("/bin/")[0] + "/bin"
     return bin_dir
 
+def _get_darwin_component(arg):
+    """Extract darwin component from a path.
+
+    Args:
+        arg: Path like "path/to/darwin_x86_64-fastbuild-ST-abc123/package"
+
+    Returns:
+        Darwin component like "darwin" (ignoring arch and compilation mode)
+    """
+
+    # path/to/darwin_x86_64-fastbuild-ST-abc123/package -> darwin_x86_64-fastbuild-ST-abc123
+    darwin_component = [x for x in arg.split("/") if x.startswith("darwin")][0]
+
+    # darwin_x86_64-fastbuild-ST-abc123 -> darwin
+    return darwin_component.split("-")[0]
+
+def _assert_bin_dir_structure(env, ctx, bin_dir, toolchain):
+    """Validate bin_dir structure, ignoring ST-{hash} suffix from config transitions.
+
+    Args:
+        env: The analysis test environment
+        ctx: The test context
+        bin_dir: The bin directory path to validate
+        toolchain: The toolchain info
+    """
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+
+    # bin_dir should be like: bazel-out/{platform}-{mode}[-ST-{hash}]/bin
+    asserts.true(env, bin_dir.startswith("bazel-out/"), "bin_dir should start with bazel-out/")
+    asserts.true(env, bin_dir.endswith("/bin"), "bin_dir should end with /bin")
+
+    # Validate it contains compilation mode (ignoring potential ST-{hash})
+    bin_dir_components = bin_dir.split("/")[1]  # Get the platform-mode component
+    asserts.true(
+        env,
+        compilation_mode in bin_dir_components,
+        "bin_dir should contain compilation mode: expected '{}' in '{}'".format(compilation_mode, bin_dir_components),
+    )
+
+    # For Darwin platforms, validate darwin component
+    if toolchain.target_os in ["macos", "darwin"] and "darwin" in bin_dir:
+        darwin_component = _get_darwin_component(bin_dir)
+        asserts.true(
+            env,
+            darwin_component.startswith("darwin"),
+            "darwin component should start with 'darwin', got '{}'".format(darwin_component),
+        )
+
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -138,7 +186,7 @@ def _extract_linker_args(argv):
         )
     ]
 
-def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
+def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
@@ -147,8 +195,9 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     link_args = _extract_linker_args(action.argv)
     bin_dir = _get_bin_dir_from_action(action)
 
-    # Use the explicit test attribute to determine expected behavior
-    use_cc_linker = ctx.attr._use_cc_linker
+    # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
+    _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
+
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
             # When using CC linker, args are passed with -Wl, prefix as separate arguments
@@ -216,7 +265,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     assert_list_contains_adjacent_elements(env, link_args, want)
     return analysistest.end(env)
 
-def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
+def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     toolchain = _get_toolchain(ctx)
 
     env = analysistest.begin(ctx)
@@ -226,11 +275,12 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     linker_args = _extract_linker_args(action.argv)
     bin_dir = _get_bin_dir_from_action(action)
 
+    # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
+    _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
+
     compilation_mode = ctx.var["COMPILATION_MODE"]
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
 
-    # Use the explicit test attribute to determine expected behavior
-    use_cc_linker = ctx.attr._use_cc_linker
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
             # When using CC linker, args are passed with -Wl, prefix as separate arguments
@@ -319,48 +369,57 @@ bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, att
     "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
     "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
+
+def _bin_has_native_dep_and_alwayslink_rust_linker_test_impl(ctx):
+    return _bin_has_native_dep_and_alwayslink_test_impl(ctx, False)
+
 bin_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
-    _bin_has_native_dep_and_alwayslink_test_impl,
+    _bin_has_native_dep_and_alwayslink_rust_linker_test_impl,
     attrs = {
         "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-        "_use_cc_linker": attr.bool(default = False, doc = "Whether to expect CC linker flags (vs rust-lld)"),
     },
     config_settings = {
         str(Label("//rust/settings:toolchain_linker_preference")): "rust",
     },
 )
 
+def _bin_has_native_dep_and_alwayslink_cc_linker_test_impl(ctx):
+    return _bin_has_native_dep_and_alwayslink_test_impl(ctx, True)
+
 bin_has_native_dep_and_alwayslink_cc_linker_test = analysistest.make(
-    _bin_has_native_dep_and_alwayslink_test_impl,
+    _bin_has_native_dep_and_alwayslink_cc_linker_test_impl,
     attrs = {
         "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-        "_use_cc_linker": attr.bool(default = True, doc = "Whether to expect CC linker flags (vs rust-lld)"),
     },
     config_settings = {
         str(Label("//rust/settings:toolchain_linker_preference")): "cc",
     },
 )
 
+def _cdylib_has_native_dep_and_alwayslink_rust_linker_test_impl(ctx):
+    return _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, False)
+
 cdylib_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
-    _cdylib_has_native_dep_and_alwayslink_test_impl,
+    _cdylib_has_native_dep_and_alwayslink_rust_linker_test_impl,
     attrs = {
         "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-        "_use_cc_linker": attr.bool(default = False, doc = "Whether to expect CC linker flags (vs rust-lld)"),
     },
     config_settings = {
         str(Label("//rust/settings:toolchain_linker_preference")): "rust",
     },
 )
 
+def _cdylib_has_native_dep_and_alwayslink_cc_linker_test_impl(ctx):
+    return _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, True)
+
 cdylib_has_native_dep_and_alwayslink_cc_linker_test = analysistest.make(
-    _cdylib_has_native_dep_and_alwayslink_test_impl,
+    _cdylib_has_native_dep_and_alwayslink_cc_linker_test_impl,
     attrs = {
         "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-        "_use_cc_linker": attr.bool(default = True, doc = "Whether to expect CC linker flags (vs rust-lld)"),
     },
     config_settings = {
         str(Label("//rust/settings:toolchain_linker_preference")): "cc",

@@ -422,12 +422,14 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     Returns:
         tuple: A tuple of the following items:
             - (str): The tool path for given action.
+            - (bool): Whether or not the linker is a direct driver (e.g. `ld`) vs a wrapper (e.g. `gcc`).
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
     """
     user_link_flags = get_cc_user_link_flags(ctx)
 
     ld = None
+    ld_is_direct_driver = False
     link_args = []
     link_env = {}
 
@@ -471,9 +473,11 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             feature_configuration = feature_configuration,
             action_name = action_name,
         )
+        ld_is_direct_driver = False
 
     if not ld and toolchain.linker:
         ld = toolchain.linker.path
+        ld_is_direct_driver = toolchain.linker_type == "direct"
 
     if not ld:
         fail("No linker available for rustc. Either `rust_toolchain.linker` must be set or a `cc_toolchain` configured for the current configuration.")
@@ -490,7 +494,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             for element in link_env["LIB"].split(";")
         ])
 
-    return ld, link_args, link_env
+    return ld, ld_is_direct_driver, link_args, link_env
 
 def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -1041,6 +1045,10 @@ def construct_arguments(
     _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
     _add_codegen_units_flags(toolchain, emit, rustc_flags)
 
+    # Use linker_type to determine whether to use direct or indirect linker invocation
+    # If linker_type is not explicitly set, infer from which linker is actually being used
+    ld_is_direct_driver = False
+
     # Link!
     if ("link" in emit and crate_info.type not in ["rlib", "lib"]) or add_flags_for_binary:
         # Rust's built-in linker can handle linking wasm files. We don't want to attempt to use the cc
@@ -1053,7 +1061,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, link_args, link_env = get_linker_and_args(
+            ld, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
                 ctx,
                 crate_info.type,
                 toolchain,
@@ -1080,6 +1088,7 @@ def construct_arguments(
             cc_toolchain,
             feature_configuration,
             compilation_mode,
+            ld_is_direct_driver,
             include_link_flags = include_link_flags,
         )
 
@@ -2308,6 +2317,7 @@ def _add_native_link_flags(
         cc_toolchain,
         feature_configuration,
         compilation_mode,
+        use_direct_link_driver,
         include_link_flags = True):
     """Adds linker flags for all dependencies of the current target.
 
@@ -2321,28 +2331,13 @@ def _add_native_link_flags(
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`
         feature_configuration (FeatureConfiguration): feature configuration to use with cc_toolchain
         compilation_mode (bool): The compilation mode for this build.
+        use_direct_link_driver (bool): Whether the linker is a direct driver (e.g. `ld`, `wasm-ld`) vs a wrapper (e.g. `clang`, `gcc`).
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
     """
     if crate_type in ["lib", "rlib"]:
         return
 
     use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
-
-    # Use linker_type to determine whether to use direct or indirect linker invocation
-    # If linker_type is not explicitly set, infer from which linker is actually being used
-    use_direct_link_driver = False
-    if toolchain.linker_type:
-        # Explicit linker_type takes precedence
-        use_direct_link_driver = toolchain.linker_type == "direct"
-    elif toolchain.linker_preference == "rust":
-        # If rust linker is preferred, use direct invocation
-        use_direct_link_driver = True
-    elif toolchain.linker_preference == "cc" or (cc_toolchain and toolchain.linker_preference != "rust"):
-        # If cc linker is preferred or being used, use indirect invocation
-        use_direct_link_driver = False
-    elif toolchain.linker:
-        # If we have a rust linker available and no cc_toolchain, use direct invocation
-        use_direct_link_driver = True
 
     make_link_flags, get_lib_name = _get_make_link_flag_funcs(
         target_os = toolchain.target_os,
