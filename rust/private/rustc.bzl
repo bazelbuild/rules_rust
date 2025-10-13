@@ -433,7 +433,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     link_args = []
     link_env = {}
 
-    if cc_toolchain and toolchain.linker_preference != "rust":
+    if cc_toolchain:
         if crate_type in ("bin") or add_flags_for_binary:
             is_linking_dynamic_library = False
             action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
@@ -475,9 +475,57 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         )
         ld_is_direct_driver = False
 
-    if not ld and toolchain.linker:
+    if not ld or toolchain.linker_preference == "rust":
         ld = toolchain.linker.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
+
+        # When using rust-lld directly, we still need library search paths from cc_toolchain
+        # to find system libraries that rustc's stdlib depends on (like -lgcc_s, -lutil, etc.)
+        # Filter link_args to only include flags that help locate libraries.
+        if cc_toolchain and link_args:
+            filtered_args = []
+            skip_next = False
+            for i, arg in enumerate(link_args):
+                if skip_next:
+                    skip_next = False
+                    continue
+
+                # Strip -Wl, prefix if using direct driver (it's only for compiler drivers)
+                processed_arg = arg
+                if ld_is_direct_driver and arg.startswith("-Wl,"):
+                    # Remove -Wl, prefix and split on commas (e.g., "-Wl,-rpath,/path" -> ["-rpath", "/path"])
+                    # For now, we'll handle common cases; complex -Wl, args might need more sophisticated handling
+                    processed_arg = arg[4:]  # Strip "-Wl,"
+
+                # Handle macOS version flag: convert -mmacos-version-min=X.Y to -macos_version_min X.Y
+                if processed_arg.startswith("-mmacos-version-min="):
+                    version = processed_arg.split("=", 1)[1]
+                    filtered_args.append("-macos_version_min")
+                    filtered_args.append(version)
+                    # Keep library search path flags
+
+                elif processed_arg.startswith("-L"):
+                    filtered_args.append(processed_arg)
+                    # Keep sysroot flags (as single or two-part arguments)
+
+                elif processed_arg == "--sysroot" or processed_arg.startswith("--sysroot="):
+                    filtered_args.append(processed_arg)
+                    if processed_arg == "--sysroot" and i + 1 < len(link_args):
+                        # Two-part argument, keep the next arg too
+                        filtered_args.append(link_args[i + 1])
+                        skip_next = True
+
+                    # Keep dynamic linker flags
+                elif processed_arg.startswith("--dynamic-linker") or processed_arg == "--dynamic-linker":
+                    filtered_args.append(processed_arg)
+                    if processed_arg == "--dynamic-linker" and i + 1 < len(link_args):
+                        filtered_args.append(link_args[i + 1])
+                        skip_next = True
+
+                    # Keep rpath-related flags
+                elif processed_arg.startswith("-rpath") or processed_arg.startswith("--rpath"):
+                    filtered_args.append(processed_arg)
+            link_args = filtered_args
 
     if not ld:
         fail("No linker available for rustc. Either `rust_toolchain.linker` must be set or a `cc_toolchain` configured for the current configuration.")
