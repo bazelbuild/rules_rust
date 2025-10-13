@@ -520,10 +520,14 @@ def _rust_toolchain_impl(ctx):
     # Validate linker_preference configuration
     if linker_preference == "rust":
         if not ctx.attr.linker:
-            fail("When `rust_toolchain.linker_preference == \"rust\"`, a `rust_toolchain.linker` must be provided.")
+            fail("When `rust_toolchain.linker_preference == \"rust\"`, a `rust_toolchain.linker` must be provided. Please update: {}".format(
+                ctx.label,
+            ))
     elif linker_preference == "cc":
         if not cc_toolchain:
-            fail("When `rust_toolchain.linker_preference == \"cc\"`, a `cc_toolchain` must be configured.")
+            fail("When `rust_toolchain.linker_preference == \"cc\"`, a `cc_toolchain` must be configured. Please update: {}".format(
+                ctx.label,
+            ))
 
     experimental_link_std_dylib = _experimental_link_std_dylib(ctx)
 
