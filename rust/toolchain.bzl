@@ -443,6 +443,7 @@ def _rust_toolchain_impl(ctx):
     expanded_extra_rustc_flags = _expand_flags(ctx, "extra_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
     expanded_extra_exec_rustc_flags = _expand_flags(ctx, "extra_exec_rustc_flags", rust_std[rust_common.stdlib_info].srcs, make_variables)
 
+    print(ctx.label, expanded_stdlib_linkflags)
     linking_context = cc_common.create_linking_context(
         linker_inputs = depset([
             cc_common.create_linker_input(
