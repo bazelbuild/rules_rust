@@ -160,7 +160,9 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             want = [
                 "-lstatic=native_dep",
                 "-lnative_dep",
-                "-force_load,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "--whole-archive",
+                "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "--no-whole-archive",
             ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
@@ -236,9 +238,11 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
             ]
         else:
             want = [
-                "-lstatic=native_dep{}".format(pic_suffix),
-                "-lnative_dep{}".format(pic_suffix),
-                "-force_load,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+                "-lstatic=native_dep",
+                "-lnative_dep",
+                "--whole-archive",
+                "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+                "--no-whole-archive",
             ]
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":

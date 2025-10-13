@@ -432,7 +432,6 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     link_env = {}
 
     if cc_toolchain and toolchain.linker_preference != "rust":
-        print(cc_toolchain.sysroot)
         if crate_type in ("bin") or add_flags_for_binary:
             is_linking_dynamic_library = False
             action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
@@ -463,6 +462,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             action_name = action_name,
             variables = link_variables,
         )
+        print(link_args)
         link_env = cc_common.get_environment_variables(
             feature_configuration = feature_configuration,
             action_name = action_name,
@@ -2215,11 +2215,20 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
     ret = []
     for lib in linker_input.libraries:
         if lib.alwayslink:
-            prefix = "" if use_direct_driver else "-Wl,"
-            ret.extend([
-                "-C",
-                ("link-arg=%s-force_load,%s" % (prefix, get_preferred_artifact(lib, use_pic).path)),
-            ])
+            if use_direct_driver:
+                ret.extend([
+                    "-C",
+                    "link-arg=--whole-archive",
+                    "-C",
+                    ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
+                    "-C",
+                    "link-arg=--no-whole-archive",
+                ])
+            else:
+                ret.extend([
+                    "-C",
+                    ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
+                ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
