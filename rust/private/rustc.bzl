@@ -458,11 +458,11 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             runtime_library_search_directories = rpaths,
             user_link_flags = user_link_flags,
         )
-        link_args = cc_common.get_memory_inefficient_command_line(
+        link_args.extend(cc_common.get_memory_inefficient_command_line(
             feature_configuration = feature_configuration,
             action_name = action_name,
             variables = link_variables,
-        )
+        ))
         print(ctx.label, link_args)
         link_env = cc_common.get_environment_variables(
             feature_configuration = feature_configuration,
