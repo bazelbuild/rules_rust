@@ -1338,24 +1338,29 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 
     return new_attr
 
+def _rust_without_process_wrapper_transition_impl(_settings, _attr):
+    return {
+        str(Label("//rust/settings:toolchain_linker_preference")): "rust",
+    }
+
+_rust_without_process_wrapper_transition = transition(
+    implementation = _rust_without_process_wrapper_transition_impl,
+    inputs = [],
+    outputs = [
+        str(Label("//rust/settings:toolchain_linker_preference")),
+    ],
+)
+
 # Provides an internal rust_{binary,library} to use that we can use to build the process
 # wrapper, this breaks the dependency of rust_* on the process wrapper by
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
-        "platform": attr.label(
-            doc = "Optional platform to transition the binary to.",
-            default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    }),
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs),
+    cfg = _rust_without_process_wrapper_transition,
     executable = True,
     fragments = ["cpp"],
-    cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
@@ -1366,6 +1371,7 @@ rust_library_without_process_wrapper = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
+    cfg = _rust_without_process_wrapper_transition,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
