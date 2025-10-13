@@ -151,18 +151,20 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     use_cc_linker = ctx.attr._use_cc_linker
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
+            # When using CC linker, args are passed with -Wl, prefix as separate arguments
             want = [
                 "-lstatic=native_dep",
                 "-lnative_dep",
-                "-Wl,-force_load,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+                "-Wl,-force_load",
+                "-Wl,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
             ]
         else:
+            # When using rust-lld directly, args are passed without prefix as separate arguments
             want = [
                 "-lstatic=native_dep",
                 "-lnative_dep",
-                "--whole-archive",
+                "-force_load",
                 "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
-                "--no-whole-archive",
             ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
@@ -231,18 +233,20 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     use_cc_linker = ctx.attr._use_cc_linker
     if toolchain.target_os in ["macos", "darwin"]:
         if use_cc_linker:
+            # When using CC linker, args are passed with -Wl, prefix as separate arguments
             want = [
                 "-lstatic=native_dep{}".format(pic_suffix),
                 "-lnative_dep{}".format(pic_suffix),
-                "-Wl,-force_load,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+                "-Wl,-force_load",
+                "-Wl,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             ]
         else:
+            # When using rust-lld directly, args are passed without prefix as separate arguments
             want = [
-                "-lstatic=native_dep",
-                "-lnative_dep",
-                "--whole-archive",
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
+                "-force_load",
                 "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
-                "--no-whole-archive",
             ]
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":

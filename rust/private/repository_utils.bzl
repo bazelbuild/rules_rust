@@ -89,6 +89,7 @@ filegroup(
 #     data = glob(
 #         include = [
 #             "lib/rustlib/{target_triple}/bin/*-ld{binary_ext}",
+#             "lib/rustlib/{target_triple}/bin/*-lld{binary_ext}",
 #         ],
 #         allow_empty = True,
 #     ),

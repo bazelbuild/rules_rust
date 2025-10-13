@@ -488,10 +488,10 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         # I don't see a good way to stop rustc from adding the non-hermetic library search path,
         # so put our cc_toolchain library search path on the command line where it has
         # precedence over the non-hermetic path injected by rustc.
-        link_args = link_args + [
+        link_args.extend([
             "-LIBPATH:" + element
             for element in link_env["LIB"].split(";")
-        ]
+        ])
 
     return ld, link_args, link_env
 
@@ -2191,15 +2191,12 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
     for lib in linker_input.libraries:
         if lib.alwayslink:
             if flavor_msvc:
-                ret.extend(["-C", "link-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path])
+                ret.append("-Clink-arg=/WHOLEARCHIVE:%s" % get_preferred_artifact(lib, use_pic).path)
             else:
                 ret.extend([
-                    "-C",
-                    ("link-arg=%s--whole-archive" % prefix),
-                    "-C",
-                    ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
-                    "-C",
-                    ("link-arg=%s--no-whole-archive" % prefix),
+                    ("-Clink-arg=%s--whole-archive" % prefix),
+                    ("-Clink-arg=%s" % get_preferred_artifact(lib, use_pic).path),
+                    ("-Clink-arg=%s--no-whole-archive" % prefix),
                 ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
@@ -2215,22 +2212,13 @@ def _make_link_flags_windows_gnu(make_link_flags_args, use_direct_driver):
 def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
     linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
     ret = []
+    prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
         if lib.alwayslink:
-            if use_direct_driver:
-                ret.extend([
-                    "-C",
-                    "link-arg=--whole-archive",
-                    "-C",
-                    ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
-                    "-C",
-                    "link-arg=--no-whole-archive",
-                ])
-            else:
-                ret.extend([
-                    "-C",
-                    ("link-arg=-Wl,-force_load,%s" % get_preferred_artifact(lib, use_pic).path),
-                ])
+            ret.extend([
+                ("-Clink-arg=%s-force_load" % (prefix)),
+                ("-Clink-arg=%s%s" % (prefix, get_preferred_artifact(lib, use_pic).path)),
+            ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
@@ -2243,12 +2231,9 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
     for lib in linker_input.libraries:
         if lib.alwayslink:
             ret.extend([
-                "-C",
-                ("link-arg=%s--whole-archive" % prefix),
-                "-C",
-                ("link-arg=%s" % get_preferred_artifact(lib, use_pic).path),
-                "-C",
-                ("link-arg=%s--no-whole-archive" % prefix),
+                ("-Clink-arg=%s--whole-archive" % prefix),
+                ("-Clink-arg=%s" % get_preferred_artifact(lib, use_pic).path),
+                ("-Clink-arg=%s--no-whole-archive" % prefix),
             ])
         elif include_link_flags:
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
@@ -2380,6 +2365,7 @@ def _add_native_link_flags(
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
     args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
+    args.add("-Clink-args=--verbose")
 
     if cc_toolchain:
         if crate_type in ["dylib", "cdylib"]:
