@@ -432,6 +432,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     link_env = {}
 
     if cc_toolchain and toolchain.linker_preference != "rust":
+        print(cc_toolchain.sysroot)
         if crate_type in ("bin") or add_flags_for_binary:
             is_linking_dynamic_library = False
             action_name = CPP_LINK_EXECUTABLE_ACTION_NAME
