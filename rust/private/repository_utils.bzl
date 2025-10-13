@@ -77,26 +77,6 @@ filegroup(
 )
 """
 
-# _build_file_for_linker_template = """\
-# filegroup(
-#     name = "rust-lld",
-#     srcs = select({{
-#         "@platforms//os:windows": ["lib/rustlib/{target_triple}/bin/gcc-ld/lld-link{binary_ext}"],
-#         "@platforms//os:macos": ["lib/rustlib/{target_triple}/bin/gcc-ld/ld64.lld{binary_ext}"],
-#         "@platforms//os:none": ["lib/rustlib/{target_triple}/bin/gcc-ld/wasm-ld{binary_ext}"],
-#         "//conditions:default": ["lib/rustlib/{target_triple}/bin/gcc-ld/ld.lld{binary_ext}"],
-#     }}),
-#     data = glob(
-#         include = [
-#             "lib/rustlib/{target_triple}/bin/*-ld{binary_ext}",
-#             "lib/rustlib/{target_triple}/bin/*-lld{binary_ext}",
-#         ],
-#         allow_empty = True,
-#     ),
-#     visibility = ["//visibility:public"],
-# )
-# """
-
 def BUILD_for_compiler(target_triple, include_linker = False):
     """Emits a BUILD file the compiler archive.
 
@@ -309,6 +289,7 @@ rust_toolchain(
     rust_std = "//:rust_std-{target_triple}",
     rustc = "//:rustc",
     linker = {linker_label},
+    linker_type = {linker_type},
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
@@ -398,8 +379,10 @@ def BUILD_for_rust_toolchain(
         global_allocator_library_label = "\"{global_allocator_library}\"".format(global_allocator_library = global_allocator_library)
 
     linker_label = "None"
+    linker_type = "None"
     if include_linker:
         linker_label = "\"//:rust-lld\""
+        linker_type = "\"direct\""
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
@@ -417,6 +400,7 @@ def BUILD_for_rust_toolchain(
         llvm_profdata_label = llvm_profdata_label,
         llvm_lib_label = llvm_lib_label,
         linker_label = linker_label,
+        linker_type = linker_type,
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
