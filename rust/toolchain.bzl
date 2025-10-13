@@ -712,7 +712,6 @@ rust_toolchain = rule(
         ),
         "linker": attr.label(
             doc = "The label to an explicit linker to use (e.g. `rust-lld`, `ld`, `link-ld.exe`, etc...)",
-            executable = True,
             # `target` cfg is used so a linker can be chose based on the target
             # platform. Linker binaries are still required to be runnable in the
             # `exec` configuration.
