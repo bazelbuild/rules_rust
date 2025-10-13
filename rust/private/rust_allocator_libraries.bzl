@@ -67,8 +67,6 @@ def make_libstd_and_allocator_ccinfo(
     Returns:
         A CcInfo object for the required libraries, or None if no such libraries are available.
     """
-
-    # cc_common functions accept None for cc_toolchain and feature_configuration
     cc_infos = []
     if not type(allocator_library) == "struct":
         fail("Unexpected type of allocator_library, it must be a struct.")
@@ -89,29 +87,19 @@ def make_libstd_and_allocator_ccinfo(
             objects = depset(rust_stdlib_info.self_contained_files),
         )
 
-        # Create linking context manually since we may not have a cc_toolchain
-        libraries = []
-        for obj in compilation_outputs.objects.to_list():
-            libraries.append(cc_common.create_library_to_link(
-                actions = actions,
-                feature_configuration = feature_configuration,
-                cc_toolchain = cc_toolchain,
-                static_library = obj,
-            ))
+        # Include C++ toolchain files as additional inputs for cross-compilation scenarios
+        additional_inputs = []
+        if cc_toolchain and cc_toolchain.all_files:
+            additional_inputs = cc_toolchain.all_files.to_list()
 
-        # Only create a linker_input if we have libraries
-        if libraries:
-            linker_input = cc_common.create_linker_input(
-                owner = Label("@rules_rust//rust:rust_allocator_libraries"),
-                libraries = depset(libraries),
-            )
-            linking_context = cc_common.create_linking_context(
-                linker_inputs = depset([linker_input]),
-            )
-        else:
-            linking_context = cc_common.create_linking_context(
-                linker_inputs = depset([]),
-            )
+        linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
+            name = label.name,
+            actions = actions,
+            feature_configuration = feature_configuration,
+            cc_toolchain = cc_toolchain,
+            compilation_outputs = compilation_outputs,
+            additional_inputs = additional_inputs,
+        )
 
         cc_infos.append(CcInfo(
             linking_context = linking_context,
