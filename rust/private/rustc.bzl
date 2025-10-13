@@ -431,7 +431,6 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     link_args = []
     link_env = {}
 
-    print(ctx.label, toolchain.linker_preference)
     if cc_toolchain and toolchain.linker_preference != "rust":
         if crate_type in ("bin") or add_flags_for_binary:
             is_linking_dynamic_library = False
@@ -463,7 +462,6 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             action_name = action_name,
             variables = link_variables,
         ))
-        print(ctx.label, link_args)
         link_env = cc_common.get_environment_variables(
             feature_configuration = feature_configuration,
             action_name = action_name,
@@ -475,7 +473,6 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         )
 
     if not ld and toolchain.linker:
-        print(ctx.label, "No ld, setting rust-lld")
         ld = toolchain.linker.path
 
     if not ld:
@@ -2365,7 +2362,6 @@ def _add_native_link_flags(
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
     args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
-    args.add("-Clink-args=--verbose")
 
     if cc_toolchain:
         if crate_type in ["dylib", "cdylib"]:
