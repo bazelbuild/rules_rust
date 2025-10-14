@@ -101,7 +101,9 @@ fn process_line(
     // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
     // like these (or to convert them to JSON), but for now we convert them to JSON
     // ourselves.
-    if line.contains("is not a recognized feature for this target (ignoring feature)") {
+    if line.contains("is not a recognized feature for this target (ignoring feature)")
+        || line.starts_with(" WARN ")
+    {
         if let Ok(json_str) = json_warning(&line).stringify() {
             line = json_str;
         } else {
@@ -292,33 +294,37 @@ mod test {
     }
 
     #[test]
-    fn test_process_line_llvm_feature_warning() -> Result<(), String> {
+    fn test_process_line_noise() -> Result<(), String> {
         let mut metadata_emitted = false;
-        let LineOutput::Message(msg) = process_line(
-            "'+zaamo' is not a recognized feature for this target (ignoring feature)".to_string(),
-            /*quit_on_rmeta=*/ false,
-            ErrorFormat::Json,
-            &mut metadata_emitted,
-        )?
-        else {
-            return Err("Expected a LineOutput::Message".to_string());
-        };
-        assert_eq!(
-            parse_json(&msg)?,
-            parse_json(
-                r#"
-                {
-                    "$message_type": "diagnostic",
-                    "message": "'+zaamo' is not a recognized feature for this target (ignoring feature)",
-                    "code": null,
-                    "level": "warning",
-                    "spans": [],
-                    "children": [],
-                    "rendered": "'+zaamo' is not a recognized feature for this target (ignoring feature)"
-                }
-            "#
+        for text in [
+            "'+zaamo' is not a recognized feature for this target (ignoring feature)",
+            " WARN rustc_errors::emitter Invalid span...",
+        ] {
+            let LineOutput::Message(msg) = process_line(
+                text.to_string(),
+                /*quit_on_rmeta=*/ false,
+                ErrorFormat::Json,
+                &mut metadata_emitted,
             )?
-        );
+            else {
+                return Err("Expected a LineOutput::Message".to_string());
+            };
+            assert_eq!(
+                parse_json(&msg)?,
+                parse_json(&format!(
+                    r#"{{
+                        "$message_type": "diagnostic",
+                        "message": "{0}",
+                        "code": null,
+                        "level": "warning",
+                        "spans": [],
+                        "children": [],
+                        "rendered": "{0}"
+                    }}"#,
+                    text
+                ))?
+            );
+        }
         Ok(())
     }
 
