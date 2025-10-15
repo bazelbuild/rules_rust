@@ -1,13 +1,13 @@
-#[[
-## Overview
+# Rust Analyzer
 
 For [non-Cargo projects](https://rust-analyzer.github.io/manual.html#non-cargo-based-projects),
-[rust-analyzer](https://rust-analyzer.github.io/) depends on either a `rust-project.json` file 
-at the root of the project that describes its structure or on build system specific 
+[rust-analyzer](https://rust-analyzer.github.io/) depends on either a `rust-project.json` file
+at the root of the project that describes its structure or on build system specific
 [project auto-discovery](https://rust-analyzer.github.io/manual.html#rust-analyzer.workspace.discoverConfig).
 The `rust_analyzer` rules facilitate both approaches.
 
 ## rust-project.json approach
+
 ### Setup
 
 #### Bzlmod
@@ -95,7 +95,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
             "runOptions": {
                 "runOn": "folderOpen"
             }
-        },
+        }
     ]
 }
 ```
@@ -103,6 +103,7 @@ to ensure a `rust-project.json` file is created and up to date when the editor i
 #### Alternative vscode option (prototype)
 
 Add the following to your bazelrc:
+
 ```
 build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups=+rust_lib_rustc_output,+rust_metadata_rustc_output
 ```
@@ -110,11 +111,12 @@ build --@rules_rust//rust/settings:rustc_output_diagnostics=true --output_groups
 Then you can use a prototype [rust-analyzer plugin](https://marketplace.visualstudio.com/items?itemName=MattStark.bazel-rust-analyzer) that automatically collects the outputs whenever you recompile.
 
 ## Project auto-discovery
+
 ### Setup
 
 Auto-discovery makes `rust-analyzer` behave in a Bazel project in a similar fashion to how it does
-in a Cargo project. This is achieved by generating a structure similar to what `rust-project.json` 
-contains but, instead of writing that to a file, the data gets piped to `rust-analyzer` directly 
+in a Cargo project. This is achieved by generating a structure similar to what `rust-project.json`
+contains but, instead of writing that to a file, the data gets piped to `rust-analyzer` directly
 through `stdout`. To use auto-discovery the `rust-analyzer` IDE settings must be configured similar to:
 
 ```json
@@ -130,7 +132,7 @@ through `stdout`. To use auto-discovery the `rust-analyzer` IDE settings must be
 ```
 
 The shell script passed to `discoverConfig.command` is typically meant to wrap the bazel rule invocation,
-primarily for muting `stderr` (because `rust-analyzer` will consider that an error has occurred if anything 
+primarily for muting `stderr` (because `rust-analyzer` will consider that an error has occurred if anything
 is passed through `stderr`) and, additionally, for specifying rule arguments. E.g:
 
 ```shell
@@ -150,7 +152,7 @@ enabled. The script path should be either absolute or relative to the project ro
 ### Workspace splitting
 
 The above configuration treats the entire project as a single workspace. However, large codebases might be
-too much to handle for `rust-analyzer` all at once. This can be addressed by splitting the codebase in 
+too much to handle for `rust-analyzer` all at once. This can be addressed by splitting the codebase in
 multiple workspaces by extending the `discoverConfig.command` setting:
 
 ```json
@@ -169,11 +171,9 @@ multiple workspaces by extending the `discoverConfig.command` setting:
 that gets opened.
 
 The root of the workspace will, in this configuration, be the package the crate currently being worked on
-belongs to. This means that only that package and its dependencies get built and indexed by `rust-analyzer`, 
-thus allowing for a smaller footprint. 
+belongs to. This means that only that package and its dependencies get built and indexed by `rust-analyzer`,
+thus allowing for a smaller footprint.
 
 `rust-analyzer` will switch workspaces whenever an out-of-tree file gets opened, essentially indexing that
-crate and its dependencies separately. A caveat of this is that *dependents* of the crate currently being 
+crate and its dependencies separately. A caveat of this is that _dependents_ of the crate currently being
 worked on are not indexed and won't be tracked by `rust-analyzer`.
-
-]]#
