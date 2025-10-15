@@ -40,6 +40,24 @@ rust_binary(
     ],
 )
 
+rust_binary(
+    name = "validate",
+    srcs = ["bin/validate.rs"],
+    data = [
+        "//rust/toolchain:current_rust_analyzer_toolchain",
+    ],
+    edition = "2021",
+    rustc_env = {
+        "RUST_ANALYZER_RLOCATIONPATH": "$(RUST_ANALYZER_RLOCATIONPATH)",
+    },
+    toolchains = ["//rust/toolchain:current_rust_analyzer_toolchain"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust/runfiles",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+    ],
+)
+
 rust_library(
     name = "gen_rust_project_lib",
     srcs = glob(
