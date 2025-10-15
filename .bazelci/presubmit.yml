@@ -777,6 +777,17 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  example_runfiles:
+    name: Runfiles example
+    platform: ubuntu2204
+    working_directory: examples/runfiles
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    run_targets:
+      - "//pkg_a:pkg_a_binary"
+      - "//pkg_b:pkg_b_binary"
   ubuntu2204_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2204
