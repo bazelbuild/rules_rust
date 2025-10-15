@@ -450,6 +450,23 @@ tasks:
     run_targets:
       - "//tools/rust_analyzer:gen_rust_project"
       - "//tools/rust_analyzer:discover_bazel_rust_project"
+  ide_integration_vscode_tests_linux:
+    name: IDE VSCode Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_macos:
+    name: IDE VSCode Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_windows:
+    name: IDE VSCode Tests
+    platform: windows
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
   crate_universe_examples_ubuntu2204:
     name: Crate Universe Examples
     platform: ubuntu2204
