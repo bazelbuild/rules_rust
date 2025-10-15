@@ -55,6 +55,8 @@ rust_binary(
     deps = [
         "//rust/runfiles",
         "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
     ],
 )
 
