@@ -32,18 +32,6 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "autocfg-1.5.0",
-    actual = "@rules_rust_ctve__autocfg-1.5.0//:autocfg",
-    tags = ["manual"],
-)
-
-alias(
-    name = "autocfg",
-    actual = "@rules_rust_ctve__autocfg-1.5.0//:autocfg",
-    tags = ["manual"],
-)
-
-alias(
     name = "cargo-util-schemas-0.3.1",
     actual = "@rules_rust_ctve__cargo-util-schemas-0.3.1//:cargo_util_schemas",
     tags = ["manual"],

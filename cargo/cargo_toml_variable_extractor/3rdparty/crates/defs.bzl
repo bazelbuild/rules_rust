@@ -295,7 +295,6 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "autocfg": Label("@rules_rust_ctve//:autocfg-1.5.0"),
             "cargo-util-schemas": Label("@rules_rust_ctve//:cargo-util-schemas-0.3.1"),
             "pathdiff": Label("@rules_rust_ctve//:pathdiff-0.1.0"),
             "semver": Label("@rules_rust_ctve//:semver-1.0.25"),
@@ -413,12 +412,12 @@ def crate_repositories():
     """
     maybe(
         http_archive,
-        name = "rules_rust_ctve__autocfg-1.5.0",
-        sha256 = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8",
+        name = "rules_rust_ctve__autocfg-1.4.0",
+        sha256 = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/autocfg/1.5.0/download"],
-        strip_prefix = "autocfg-1.5.0",
-        build_file = Label("//cargo/cargo_toml_variable_extractor/3rdparty/crates:BUILD.autocfg-1.5.0.bazel"),
+        urls = ["https://static.crates.io/crates/autocfg/1.4.0/download"],
+        strip_prefix = "autocfg-1.4.0",
+        build_file = Label("//cargo/cargo_toml_variable_extractor/3rdparty/crates:BUILD.autocfg-1.4.0.bazel"),
     )
 
     maybe(
@@ -1002,7 +1001,6 @@ def crate_repositories():
     )
 
     return [
-        struct(repo = "rules_rust_ctve__autocfg-1.5.0", is_dev_dep = False),
         struct(repo = "rules_rust_ctve__cargo-util-schemas-0.3.1", is_dev_dep = False),
         struct(repo = "rules_rust_ctve__pathdiff-0.1.0", is_dev_dep = False),
         struct(repo = "rules_rust_ctve__semver-1.0.25", is_dev_dep = False),

@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "autocfg"
-version = "1.5.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
+checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "cargo-util-schemas"
@@ -28,7 +28,6 @@ dependencies = [
 name = "direct-cargo-bazel-deps"
 version = "0.0.1"
 dependencies = [
- "autocfg",
  "cargo-util-schemas",
  "pathdiff",
  "semver",
