@@ -8,6 +8,11 @@
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
 
+# Enable Rust-based allocator library with mangled symbols for Rust 1.89.0+
+# This is required when using recent Rust versions that mangle allocator symbols
+# and when rustc is not used as the final linker (e.g., Android apps)
+build --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=true
+
 # Enable the only currently supported report type
 # https://bazel.build/reference/command-line-reference#flag--combined_report
 coverage --combined_report=lcov

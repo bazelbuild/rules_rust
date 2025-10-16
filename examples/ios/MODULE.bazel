@@ -25,6 +25,7 @@ bazel_dep(name = "rules_cc", version = "0.2.4")
 # Rust toolchain
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
+    allocator_library = "@rules_rust//ffi/rs/allocator_library",
     extra_target_triples = [
         "aarch64-apple-ios-sim",
         "x86_64-apple-ios",
