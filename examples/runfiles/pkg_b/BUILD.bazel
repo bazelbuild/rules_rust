@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+rust_library(
+    name = "pkg_b_library",
+    srcs = ["src/lib.rs"],
+    data = [
+        "//pkg_a:pkg_a_binary",
+        "//pkg_a:say_hello",
+    ],
+    rustc_env = {
+        "PKG_A_BINARY_BIN": "$(rlocationpath //pkg_a:pkg_a_binary)",
+        "SAY_HELLO_BIN": "$(rlocationpath //pkg_a:say_hello)",
+    },
+    deps = [
+        "//pkg_a:pkg_a_library",
+        "@rules_rust//rust/runfiles",
+    ],
+)
+
+rust_binary(
+    name = "pkg_b_binary",
+    srcs = ["src/main.rs"],
+    deps = [
+        ":pkg_b_library",
+        "//pkg_a:pkg_a_library",
+    ],
+)
+
+rust_test(
+    name = "pkg_b_test",
+    srcs = ["src/test.rs"],
+    deps = [
+        ":pkg_b_library",
+        "//pkg_a:pkg_a_library",
+    ],
+)
