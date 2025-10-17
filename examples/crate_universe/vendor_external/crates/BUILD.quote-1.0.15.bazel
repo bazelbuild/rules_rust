@@ -67,6 +67,10 @@ rust_library(
             "default",  # powerpc-unknown-linux-gnu
             "proc-macro",  # powerpc-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "default",  # riscv64gc-unknown-linux-gnu
+            "proc-macro",  # riscv64gc-unknown-linux-gnu
+        ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "default",  # s390x-unknown-linux-gnu
             "proc-macro",  # s390x-unknown-linux-gnu
@@ -129,6 +133,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],

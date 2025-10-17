@@ -75,6 +75,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -102,6 +103,6 @@ rust_library(
         "@rmdbi__futures-core-0.3.31//:futures_core",
         "@rmdbi__futures-sink-0.3.31//:futures_sink",
         "@rmdbi__pin-project-lite-0.2.16//:pin_project_lite",
-        "@rmdbi__tokio-1.47.1//:tokio",
+        "@rmdbi__tokio-1.48.0//:tokio",
     ],
 )

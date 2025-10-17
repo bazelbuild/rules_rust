@@ -77,6 +77,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -101,7 +102,7 @@ rust_library(
     version = "2.0.0",
     deps = [
         "@rmdbi__icu_locale_core-2.0.0//:icu_locale_core",
-        "@rmdbi__stable_deref_trait-1.2.0//:stable_deref_trait",
+        "@rmdbi__stable_deref_trait-1.2.1//:stable_deref_trait",
         "@rmdbi__tinystr-0.8.1//:tinystr",
         "@rmdbi__writeable-0.6.1//:writeable",
         "@rmdbi__yoke-0.8.0//:yoke",

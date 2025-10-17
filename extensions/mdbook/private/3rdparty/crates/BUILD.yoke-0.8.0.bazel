@@ -78,6 +78,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -101,7 +102,7 @@ rust_library(
     }),
     version = "0.8.0",
     deps = [
-        "@rmdbi__stable_deref_trait-1.2.0//:stable_deref_trait",
+        "@rmdbi__stable_deref_trait-1.2.1//:stable_deref_trait",
         "@rmdbi__zerofrom-0.1.6//:zerofrom",
     ],
 )
