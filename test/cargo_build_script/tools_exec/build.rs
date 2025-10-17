@@ -48,11 +48,12 @@ fn main() {
     for env_var in &["CARGO", "CC", "CXX", "LD", "RUSTC"] {
         let path = std::env::var(env_var)
             .unwrap_or_else(|err| panic!("Error getting {}: {}", env_var, err));
-        std::process::Command::new(path).status().unwrap();
+        std::process::Command::new(&path).status()
+            .unwrap_or_else(|err| panic!("Error executing {}: {}", path, err));
     }
 
     // Assert that some env variables are set.
-    for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS"] {
+    for env_var in &["CFLAGS", "CXXFLAGS", "LDFLAGS", "RUSTDOC"] {
         assert!(std::env::var(env_var).is_ok());
     }
 

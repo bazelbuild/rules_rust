@@ -644,7 +644,8 @@ def collect_inputs(
     Args:
         ctx (ctx): The rule's context object.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
-        files (list): A list of all inputs (`ctx.files`).
+        files (struct): A struct of all inputs (`ctx.files`). When aspects are involved, the rule context
+            may not correspond to a rust target, so check that files attributes are present before accessing them.
         linkstamps (depset): A depset of CcLinkstamps that need to be compiled and linked into all linked binaries.
         toolchain (rust_toolchain): The current `rust_toolchain`.
         cc_toolchain (CcToolchainInfo): The current `cc_toolchain`.
@@ -717,7 +718,7 @@ def collect_inputs(
 
     # The old default behavior was to include data files at compile time.
     # This flag controls whether to include data files in compile_data.
-    if not toolchain._incompatible_do_not_include_data_in_compile_data:
+    if not toolchain._incompatible_do_not_include_data_in_compile_data and hasattr(files, "data"):
         nolinkstamp_compile_direct_inputs += files.data
 
     if toolchain.target_json:

@@ -243,6 +243,13 @@ stardoc(
 )
 
 stardoc(
+    name = "rust_pyo3",
+    out = "src/rust_pyo3.md",
+    input = "@rules_rust_pyo3//:defs.bzl",
+    deps = ["@rules_rust_pyo3//:bzl_lib"],
+)
+
+stardoc(
     name = "rust_wasm_bindgen",
     out = "src/rust_wasm_bindgen.md",
     input = "@rules_rust_wasm_bindgen//:defs.bzl",
@@ -283,6 +290,7 @@ mdbook(
         ":rust_mdbook",
         ":rust_prost",
         ":rust_protobuf",
+        ":rust_pyo3",
         ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",
