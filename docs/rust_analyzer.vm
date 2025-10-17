@@ -139,7 +139,7 @@ is passed through `stderr`) and, additionally, for specifying rule arguments. E.
 bazel \
     run \
     @rules_rust//tools/rust_analyzer:discover_bazel_rust_project -- \
-    --bazel_startup_option=--output_base=~/ide_bazel \
+    --bazel_startup_option=--output_user_root=~/.cache/bazel_ra \
     --bazel_arg=--watchfs \
     ${1:+"$1"} 2>/dev/null
 ```
