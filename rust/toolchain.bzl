@@ -760,6 +760,7 @@ def _rust_toolchain_impl(ctx):
         _incompatible_change_rust_test_compilation_output_directory = ctx.attr._incompatible_change_rust_test_compilation_output_directory[IncompatibleFlagInfo].enabled,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
+        _incompatible_do_not_inject_degenerate_version_to_rustc_env = ctx.attr._incompatible_do_not_inject_degenerate_version_to_rustc_env[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
         _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
@@ -985,6 +986,10 @@ rust_toolchain = rule(
         "_incompatible_do_not_include_data_in_compile_data": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
             doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
+        ),
+        "_incompatible_do_not_inject_degenerate_version_to_rustc_env": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_inject_degenerate_version_to_rustc_env"),
+            doc = "Label to a boolean build setting that controls whether to set rustc env vars based on a crate version of '0.0.0' if one is not explicitly provided. ",
         ),
         "_no_std": attr.label(
             default = Label("//rust/settings:no_std"),

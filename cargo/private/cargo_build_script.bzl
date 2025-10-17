@@ -11,6 +11,7 @@ load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
 # buildifier: disable=bzl-visibility
 load(
     "//rust/private:rustc.bzl",
+    "env_vars_from_version",
     "get_compilation_mode_opts",
     "get_linker_and_args",
 )
@@ -407,13 +408,7 @@ def _cargo_build_script_impl(ctx):
     })
 
     if ctx.attr.version:
-        version = ctx.attr.version.split("+")[0].split(".")
-        patch = version[2].split("-") if len(version) > 2 else [""]
-        env["CARGO_PKG_VERSION_MAJOR"] = version[0]
-        env["CARGO_PKG_VERSION_MINOR"] = version[1] if len(version) > 1 else ""
-        env["CARGO_PKG_VERSION_PATCH"] = patch[0]
-        env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
-        env["CARGO_PKG_VERSION"] = ctx.attr.version
+        env.update(env_vars_from_version(ctx.attr.version))
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
