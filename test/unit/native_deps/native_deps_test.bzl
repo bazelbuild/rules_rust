@@ -6,10 +6,10 @@ load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_
 load(
     "//test/unit:common.bzl",
     "assert_argv_contains",
-    "assert_argv_contains_not",
     "assert_argv_contains_prefix",
     "assert_argv_contains_prefix_not",
     "assert_argv_contains_prefix_suffix",
+    "assert_argv_contains_prefix_suffix_not",
     "assert_list_contains_adjacent_elements",
 )
 
@@ -28,8 +28,7 @@ def _rlib_has_no_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     assert_argv_contains(env, action, "--crate-type=rlib")
-    assert_argv_contains_not(env, action, "-lstatic=native_dep")
-    assert_argv_contains_not(env, action, "-ldylib=native_dep")
+    assert_argv_contains_prefix_suffix_not(env, action, "-Clink-arg=bazel-out/", "test/unit/native_deps/libnative_dep.a")
     assert_argv_contains_prefix_not(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -40,17 +39,15 @@ def _cdylib_has_native_libs_test_impl(ctx):
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=cdylib")
-    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
-    if toolchain.target_os == "windows":
-        if toolchain.target_triple.abi == "msvc":
-            native_link_arg = "-Clink-arg=native_dep.lib"
-        else:
-            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+
+    if toolchain.target_os == "windows" and toolchain.target_triple.abi == "msvc":
+        assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
+        assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
+        assert_argv_contains(env, action, "-Clink-arg=native_dep.lib")
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
-    assert_argv_contains(env, action, native_link_arg)
+        assert_argv_contains_prefix_suffix(env, action, "-Clink-arg=bazel-out/", "test/unit/native_deps/libnative_dep{}.a".format(pic_suffix))
+
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -59,17 +56,14 @@ def _staticlib_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains(env, action, "--crate-type=staticlib")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
-    if toolchain.target_os == "windows":
-        if toolchain.target_triple.abi == "msvc":
-            native_link_arg = "-Clink-arg=native_dep.lib"
-        else:
-            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+
+    if toolchain.target_os == "windows" and toolchain.target_triple.abi == "msvc":
+        assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
+        assert_argv_contains(env, action, "-lstatic=native_dep")
+        assert_argv_contains(env, action, "-Clink-arg=native_dep.lib")
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
-    assert_argv_contains(env, action, native_link_arg)
+        assert_argv_contains_prefix_suffix(env, action, "-Clink-arg=bazel-out/", "test/unit/native_deps/libnative_dep.a")
+
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -80,17 +74,15 @@ def _proc_macro_has_native_libs_test_impl(ctx):
     toolchain = _get_toolchain(ctx)
     compilation_mode = ctx.var["COMPILATION_MODE"]
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
     assert_argv_contains(env, action, "--crate-type=proc-macro")
-    assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
-    if toolchain.target_os == "windows":
-        if toolchain.target_triple.abi == "msvc":
-            native_link_arg = "-Clink-arg=native_dep.lib"
-        else:
-            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+
+    if toolchain.target_os == "windows" and toolchain.target_triple.abi == "msvc":
+        assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
+        assert_argv_contains(env, action, "-lstatic=native_dep{}".format(pic_suffix))
+        assert_argv_contains(env, action, "-Clink-arg=native_dep.lib")
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep{}".format(pic_suffix)
-    assert_argv_contains(env, action, native_link_arg)
+        assert_argv_contains_prefix_suffix(env, action, "-Clink-arg=bazel-out/", "test/unit/native_deps/libnative_dep{}.a".format(pic_suffix))
+
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -99,16 +91,11 @@ def _bin_has_native_libs_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
     toolchain = _get_toolchain(ctx)
-    assert_argv_contains_prefix_suffix(env, action, "-Lnative=", "/native_deps")
-    assert_argv_contains(env, action, "-lstatic=native_dep")
-    if toolchain.target_os == "windows":
-        if toolchain.target_triple.abi == "msvc":
-            native_link_arg = "-Clink-arg=native_dep.lib"
-        else:
-            native_link_arg = "-Clink-arg=-lnative_dep.lib"
+    if toolchain.target_os == "windows" and toolchain.target_triple.abi == "msvc":
+        assert_argv_contains(env, action, "-lstatic=native_dep")
+        assert_argv_contains(env, action, "-Clink-arg=native_dep.lib")
     else:
-        native_link_arg = "-Clink-arg=-lnative_dep"
-    assert_argv_contains(env, action, native_link_arg)
+        assert_argv_contains_prefix_suffix(env, action, "-Clink-arg=bazel-out/", "test/unit/native_deps/libnative_dep.a")
     assert_argv_contains_prefix(env, action, "--codegen=linker=")
     return analysistest.end(env)
 
@@ -144,8 +131,7 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
     if toolchain.target_os in ["macos", "darwin"]:
         darwin_component = _get_darwin_component(link_args[-1])
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "bazel-out/{}-{}/bin/{}test/unit/native_deps/libnative_dep.a".format(darwin_component, compilation_mode, workspace_prefix),
             "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
         ]
         assert_list_contains_adjacent_elements(env, link_args, want)
@@ -158,23 +144,21 @@ def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
             ]
         else:
             want = [
-                "-lstatic=native_dep",
-                "native_dep.lib",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/libnative_dep.a".format(compilation_mode, workspace_prefix),
                 "-Wl,--whole-archive",
                 "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
-            "-lstatic=native_dep",
+            "bazel-out/s390x-{}/bin/{}test/unit/native_deps/libnative_dep.a".format(compilation_mode, workspace_prefix),
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     else:
         want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libnative_dep.a".format(compilation_mode, workspace_prefix),
             "-Wl,--whole-archive",
             "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
             "-Wl,--no-whole-archive",
@@ -198,8 +182,7 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     if toolchain.target_os in ["macos", "darwin"]:
         darwin_component = _get_darwin_component(linker_args[-1])
         want = [
-            "-lstatic=native_dep{}".format(pic_suffix),
-            "-lnative_dep{}".format(pic_suffix),
+            "bazel-out/{}-{}/bin/{}test/unit/native_deps/libnative_dep{}.a".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
             "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
         ]
     elif toolchain.target_os == "windows":
@@ -211,23 +194,21 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
             ]
         else:
             want = [
-                "-lstatic=native_dep",
-                "native_dep.lib",
+                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/libnative_dep{}.a".format(compilation_mode, workspace_prefix, pic_suffix),
                 "-Wl,--whole-archive",
                 "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
                 "-Wl,--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
-            "-lstatic=native_dep{}".format(pic_suffix),
+            "bazel-out/s390x-{}/bin/{}test/unit/native_deps/libnative_dep{}.a".format(compilation_mode, workspace_prefix, pic_suffix),
             "link-arg=-Wl,--whole-archive",
             "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
     else:
         want = [
-            "-lstatic=native_dep{}".format(pic_suffix),
-            "-lnative_dep{}".format(pic_suffix),
+            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libnative_dep{}.a".format(compilation_mode, workspace_prefix, pic_suffix),
             "-Wl,--whole-archive",
             "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
             "-Wl,--no-whole-archive",

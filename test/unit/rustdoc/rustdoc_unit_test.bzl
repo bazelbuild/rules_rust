@@ -294,9 +294,6 @@ def _define_targets():
         hdrs = ["rustdoc.h"],
         srcs = ["rustdoc.cc"],
         deps = [":cc_lib"],
-        # This is not needed for :cc_lib, but it is needed in other
-        # circumstances to link in system libraries.
-        linkopts = ["-lcc_lib"],
         linkstatic = True,
     )
 
