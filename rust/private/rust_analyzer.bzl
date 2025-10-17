@@ -293,15 +293,31 @@ def _create_single_crate(ctx, attrs, info):
         crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib.path
     return crate
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _rust_analyzer_toolchain_impl(ctx):
+    make_variable_info = platform_common.TemplateVariableInfo({
+        "RUST_ANALYZER": ctx.file.rust_analyzer.path,
+        "RUST_ANALYZER_RLOCATIONPATH": _rlocationpath(ctx.file.rust_analyzer, ctx.workspace_name),
+    })
+
     toolchain = platform_common.ToolchainInfo(
         proc_macro_srv = ctx.executable.proc_macro_srv,
+        rust_analyzer = ctx.executable.rust_analyzer,
         rustc = ctx.executable.rustc,
         rustc_srcs = ctx.attr.rustc_srcs,
         rustc_srcs_path = ctx.attr.rustc_srcs_path,
+        make_variables = make_variable_info,
     )
 
-    return [toolchain]
+    return [
+        make_variable_info,
+        toolchain,
+    ]
 
 rust_analyzer_toolchain = rule(
     implementation = _rust_analyzer_toolchain_impl,
@@ -309,6 +325,12 @@ rust_analyzer_toolchain = rule(
     attrs = {
         "proc_macro_srv": attr.label(
             doc = "The path to a `rust_analyzer_proc_macro_srv` binary.",
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+        ),
+        "rust_analyzer": attr.label(
+            doc = "The path to a `rust-analyzer` binary.",
             cfg = "exec",
             executable = True,
             allow_single_file = True,
@@ -329,6 +351,33 @@ rust_analyzer_toolchain = rule(
             default = "library",
         ),
     },
+)
+
+def _current_rust_analyzer_toolchain_impl(ctx):
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust/rust_analyzer:toolchain_type"))]
+
+    files = []
+    if toolchain.rust_analyzer:
+        files.append(toolchain.rust_analyzer)
+    if toolchain.proc_macro_srv:
+        files.append(toolchain.proc_macro_srv)
+    if toolchain.rustc:
+        files.append(toolchain.rustc)
+
+    return [
+        toolchain,
+        toolchain.make_variables,
+        DefaultInfo(
+            files = depset(files),
+        ),
+    ]
+
+current_rust_analyzer_toolchain = rule(
+    doc = "A rule for exposing the current registered `rust_analyzer_toolchain`.",
+    implementation = _current_rust_analyzer_toolchain_impl,
+    toolchains = [
+        str(Label("@rules_rust//rust/rust_analyzer:toolchain_type")),
+    ],
 )
 
 def _rust_analyzer_detect_sysroot_impl(ctx):

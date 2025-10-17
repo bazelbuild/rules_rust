@@ -25,6 +25,7 @@ load(
     "load_cargo",
     "load_clippy",
     "load_llvm_tools",
+    "load_rust_analyzer",
     "load_rust_compiler",
     "load_rust_src",
     "load_rust_stdlib",
@@ -786,10 +787,24 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple))
         proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
 
+    # Load rust-analyzer binary from official Rust distribution
+    rust_analyzer = None
+    rust_analyzer_content, rust_analyzer_sha256 = load_rust_analyzer(
+        ctx = repository_ctx,
+        target_triple = host_triple,
+        version = version,
+        iso_date = iso_date,
+    )
+    if rust_analyzer_content:
+        build_contents.append(rust_analyzer_content)
+        sha256s.update(rust_analyzer_sha256)
+        rust_analyzer = "//:rust_analyzer"
+
     build_contents.append(BUILD_for_rust_analyzer_toolchain(
         name = "rust_analyzer_toolchain",
         rustc = rustc,
         proc_macro_srv = proc_macro_srv,
+        rust_analyzer = rust_analyzer,
     ))
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_contents))

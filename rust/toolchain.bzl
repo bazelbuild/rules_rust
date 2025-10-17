@@ -9,7 +9,11 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust/platform:triple.bzl", "triple")
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:lto.bzl", "RustLtoInfo")
-load("//rust/private:rust_analyzer.bzl", _rust_analyzer_toolchain = "rust_analyzer_toolchain")
+load(
+    "//rust/private:rust_analyzer.bzl",
+    _current_rust_analyzer_toolchain = "current_rust_analyzer_toolchain",
+    _rust_analyzer_toolchain = "rust_analyzer_toolchain",
+)
 load(
     "//rust/private:rustfmt.bzl",
     _current_rustfmt_toolchain = "current_rustfmt_toolchain",
@@ -27,6 +31,7 @@ load(
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
 
 rust_analyzer_toolchain = _rust_analyzer_toolchain
+current_rust_analyzer_toolchain = _current_rust_analyzer_toolchain
 rustfmt_toolchain = _rustfmt_toolchain
 current_rustfmt_toolchain = _current_rustfmt_toolchain
 

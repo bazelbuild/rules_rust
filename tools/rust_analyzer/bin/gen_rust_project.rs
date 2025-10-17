@@ -50,7 +50,7 @@ fn write_rust_project() -> anyhow::Result<()> {
         .with_context(|| format!("could not open: {rust_project_path}"))
         .map(BufWriter::new)?;
 
-    serde_json::to_writer(file, &rust_project)?;
+    serde_json::to_writer_pretty(file, &rust_project)?;
     Ok(())
 }
 
