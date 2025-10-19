@@ -200,7 +200,7 @@ impl LaunchConfigGenerator {
                     continue;
                 }
 
-                result.insert(label.to_string(), line.to_string());
+                result.insert(label.to_string(), kind.to_string());
             }
         }
 
