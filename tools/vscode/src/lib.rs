@@ -160,15 +160,6 @@ impl LaunchConfigGenerator {
         Ok(results)
     }
 
-    /// Query information about a specific target.
-    pub fn query_target_info(&mut self, target: &str) -> Result<TargetInfo> {
-        let results = self.query_targets_batch(&[target.to_string()])?;
-        results
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Failed to query target {}", target))
-    }
-
     /// Batch query target kinds for multiple targets at once.
     fn batch_query_target_kinds(&self, targets: &[String]) -> Result<BTreeMap<String, String>> {
         let target_pattern = targets.join(" + ");
