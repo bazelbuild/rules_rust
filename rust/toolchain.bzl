@@ -446,7 +446,7 @@ def _generate_sysroot(
 
     # Rustc
     sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
-    direct_files.extend([sysroot_rustc])
+    direct_files.append(sysroot_rustc)
 
     # Rustc dependencies
     sysroot_rustc_lib = None
@@ -456,43 +456,43 @@ def _generate_sysroot(
 
     # Rustdoc
     sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
-    direct_files.extend([sysroot_rustdoc])
+    direct_files.append(sysroot_rustdoc)
 
     # Clippy
     sysroot_clippy = None
     if clippy:
         sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
-        direct_files.extend([sysroot_clippy])
+        direct_files.append(sysroot_clippy)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
-        direct_files.extend([sysroot_cargo])
+        direct_files.append(sysroot_cargo)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
         sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
-        direct_files.extend([sysroot_cargo_clippy])
+        direct_files.append(sysroot_cargo_clippy)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
         sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
-        direct_files.extend([sysroot_rustfmt])
+        direct_files.append(sysroot_rustfmt)
 
     # Llvm tools
     sysroot_llvm_tools = None
     if llvm_tools:
         sysroot_llvm_tools = _symlink_sysroot_tree(ctx, name, llvm_tools)
-        transitive_file_sets.extend([sysroot_llvm_tools])
+        transitive_file_sets.append(sysroot_llvm_tools)
 
     # Rust standard library
     sysroot_rust_std = None
     if rust_std:
         sysroot_rust_std = _symlink_sysroot_tree(ctx, name, rust_std)
-        transitive_file_sets.extend([sysroot_rust_std])
+        transitive_file_sets.append(sysroot_rust_std)
 
         # Made available to support $(location) expansion in stdlib_linkflags and extra_rustc_flags.
         transitive_file_sets.append(depset(ctx.files.rust_std))
@@ -617,14 +617,10 @@ def _rust_toolchain_impl(ctx):
     }
 
     if sysroot.cargo:
-        make_variables.update({
-            "CARGO": sysroot.cargo.path,
-        })
+        make_variables["CARGO"] = sysroot.cargo.path
 
     if sysroot.rustfmt:
-        make_variables.update({
-            "RUSTFMT": sysroot.rustfmt.path,
-        })
+        make_variables["RUSTFMT"] = sysroot.rustfmt.path
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
@@ -704,13 +700,17 @@ def _rust_toolchain_impl(ctx):
     )
 
     # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
-    cc_toolchain, _ = find_cc_toolchain(ctx)
-    all_files_depsets = [sysroot.all_files]
-    if cc_toolchain and cc_toolchain.all_files:
-        all_files_depsets.append(cc_toolchain.all_files)
+    if ctx.attr._incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files[IncompatibleFlagInfo].enabled:
+        all_files = sysroot.all_files
+    else:
+        cc_toolchain, _ = find_cc_toolchain(ctx)
+        all_files_depsets = [sysroot.all_files]
+        if cc_toolchain and cc_toolchain.all_files:
+            all_files_depsets.append(cc_toolchain.all_files)
+        all_files = depset(transitive = all_files_depsets)
 
     toolchain = platform_common.ToolchainInfo(
-        all_files = depset(transitive = all_files_depsets),
+        all_files = all_files,
         binary_ext = ctx.attr.binary_ext,
         cargo = sysroot.cargo,
         clippy_driver = sysroot.clippy,
@@ -981,6 +981,9 @@ rust_toolchain = rule(
         ),
         "_incompatible_change_rust_test_compilation_output_directory": attr.label(
             default = Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory"),
+        ),
+        "_incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files"),
         ),
         "_incompatible_do_not_include_data_in_compile_data": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
