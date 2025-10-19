@@ -60,7 +60,7 @@ register_toolchains("@llvm_toolchain//:all")
 # Rust toolchain
 RUST_EDITION = "2021"
 
-RUST_VERSION = "1.79.0"
+RUST_VERSION = "1.90.0"
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -132,5 +132,7 @@ crate.spec(
     package = "tokio",
     version = "1.38",
 )
-crate.from_specs()
+crate.from_specs(
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+)
 use_repo(crate, "crates")
