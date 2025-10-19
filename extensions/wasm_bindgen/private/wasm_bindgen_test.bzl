@@ -121,7 +121,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
         name = crate.name,
         type = crate_type,
         root = crate.root,
-        srcs = depset(srcs, transitive = [crate.srcs]),
+        srcs = depset(srcs, transitive = [crate.srcs]).to_list(),
         deps = depset(deps, transitive = [crate.deps]).to_list(),
         proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
         aliases = {},

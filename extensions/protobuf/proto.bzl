@@ -228,7 +228,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             name = crate_name,
             type = "rlib",
             root = lib_rs,
-            srcs = depset(srcs),
+            srcs = srcs,
             deps = compile_action_deps,
             proc_macro_deps = [],
             aliases = {},
