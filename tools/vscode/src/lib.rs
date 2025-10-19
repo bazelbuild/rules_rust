@@ -352,7 +352,7 @@ impl LaunchConfigGenerator {
         );
 
         // Rust-specific
-        env.insert("RUST_BACKTRACE".to_string(), "1".to_string());
+        env.insert("RUST_BACKTRACE".to_string(), "all".to_string());
 
         env
     }
