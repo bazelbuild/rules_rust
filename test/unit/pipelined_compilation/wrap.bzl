@@ -67,7 +67,7 @@ def _wrap_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = rs_file,
-            srcs = depset([rs_file]),
+            srcs = [rs_file],
             deps = deps,
             proc_macro_deps = [],
             aliases = {},
