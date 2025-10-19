@@ -52,7 +52,7 @@ impl BazelInfo {
                 .clone(),
             workspace: info_map
                 .get("workspace")
-                .context("Failed to query `bazel info output_base`")?
+                .context("Failed to query `bazel info workspace`")?
                 .clone(),
         })
     }
