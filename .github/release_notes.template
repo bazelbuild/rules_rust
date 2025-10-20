@@ -103,6 +103,11 @@ http_archive(
 
 ```python
 bazel_dep(name = "rules_rust_protobuf", version = "{version}")
+
+register_toolchains(
+    "@rules_rust_pyo3//toolchains:toolchain",
+    "@rules_rust_pyo3//toolchains:rust_toolchain",
+)
 ```
 
 #### WORKSPACE
@@ -115,6 +120,16 @@ http_archive(
     strip_prefix = "extensions/protobuf",
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-{version}.tar.gz"],
 )
+```
+
+</details>
+
+### PyO3
+
+<details>
+
+```python
+bazel_dep(name = "rules_rust_pyo3", version = "{version}")
 ```
 
 </details>
