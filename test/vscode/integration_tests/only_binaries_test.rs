@@ -58,7 +58,7 @@ fn test_only_binaries() {
             Some("custom"),
             "All configurations should have request=custom"
         );
-        
+
         // Check sourceLanguages contains rust
         let source_languages = config["sourceLanguages"]
             .as_array()

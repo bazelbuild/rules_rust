@@ -74,7 +74,7 @@ fn test_only_tests() {
         let env = config["env"]
             .as_object()
             .expect("Test configurations should have env object");
-        
+
         assert!(
             env.contains_key("BAZEL_TEST"),
             "Test configurations should have BAZEL_TEST env var. Config: {}",

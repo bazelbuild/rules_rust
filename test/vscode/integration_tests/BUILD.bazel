@@ -4,43 +4,43 @@ rust_test(
     name = "only_binaries_test",
     srcs = ["only_binaries_test.rs"],
     edition = "2021",
-    deps = [
-        "//test/vscode/3rdparty/crates:serde",
-        "//test/vscode/3rdparty/crates:serde_json",
-    ],
     # LAUNCH_JSON env var will be set by the test runner script
     # This target is tagged as manual since it's not expected to pass in
     # contexts outside of `//test/vscode:vscode_test`. Run
     # that target to execute this test.
     tags = ["manual"],
+    deps = [
+        "//test/vscode/3rdparty/crates:serde",
+        "//test/vscode/3rdparty/crates:serde_json",
+    ],
 )
 
 rust_test(
     name = "only_tests_test",
     srcs = ["only_tests_test.rs"],
     edition = "2021",
-    deps = [
-        "//test/vscode/3rdparty/crates:serde",
-        "//test/vscode/3rdparty/crates:serde_json",
-    ],
     # LAUNCH_JSON env var will be set by the test runner script
     # This target is tagged as manual since it's not expected to pass in
     # contexts outside of `//test/vscode:vscode_test`. Run
     # that target to execute this test.
     tags = ["manual"],
+    deps = [
+        "//test/vscode/3rdparty/crates:serde",
+        "//test/vscode/3rdparty/crates:serde_json",
+    ],
 )
 
 rust_test(
     name = "binaries_and_tests_test",
     srcs = ["binaries_and_tests_test.rs"],
     edition = "2021",
-    deps = [
-        "//test/vscode/3rdparty/crates:serde",
-        "//test/vscode/3rdparty/crates:serde_json",
-    ],
     # LAUNCH_JSON env var will be set by the test runner script
     # This target is tagged as manual since it's not expected to pass in
     # contexts outside of `//test/vscode:vscode_test`. Run
     # that target to execute this test.
     tags = ["manual"],
+    deps = [
+        "//test/vscode/3rdparty/crates:serde",
+        "//test/vscode/3rdparty/crates:serde_json",
+    ],
 )
