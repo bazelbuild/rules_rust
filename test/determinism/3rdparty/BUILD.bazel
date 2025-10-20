@@ -1,0 +1,34 @@
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "anyhow": crate.spec(version = "1.0.97"),
+        "blake3": crate.spec(version = "1.6.1"),
+        "clap": crate.spec(
+            features = [
+                "derive",
+                "env",
+            ],
+            version = "4.5.32",
+        ),
+        "serde": crate.spec(
+            features = ["derive"],
+            version = "1.0.219",
+        ),
+        "serde_json": crate.spec(version = "1.0.140"),
+        "tempfile": crate.spec(version = "3.19.0"),
+        "tokio": crate.spec(
+            features = ["full"],
+            version = "1.44.1",
+        ),
+        "tracing": crate.spec(version = "0.1.41"),
+        "tracing-subscriber": crate.spec(version = "0.3.19"),
+        "walkdir": crate.spec(version = "2.5.0"),
+    },
+    # `rrtd` == `rules_rust_test_determinism`
+    repository_name = "rrtd",
+    tags = ["manual"],
+)
