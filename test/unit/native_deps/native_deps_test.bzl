@@ -380,6 +380,8 @@ bin_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
     },
     config_settings = {
+        str(Label("//rust/settings:experimental_use_platform_abi_settings")): True,
+        str(Label("//rust/settings:platform_linux_musl")): True,
         str(Label("//rust/settings:toolchain_linker_preference")): "rust",
     },
 )
@@ -408,6 +410,8 @@ cdylib_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
         "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
     },
     config_settings = {
+        str(Label("//rust/settings:experimental_use_platform_abi_settings")): True,
+        str(Label("//rust/settings:platform_linux_musl")): True,
         str(Label("//rust/settings:toolchain_linker_preference")): "rust",
     },
 )
