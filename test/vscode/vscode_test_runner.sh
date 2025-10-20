@@ -42,7 +42,14 @@ bazel_dep(
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
+
+vscode_test = use_extension("//test/vscode/3rdparty:extensions.bzl", "vscode_test", dev_dependency = True)
+use_repo(
+    vscode_test,
 EOF
+
+    grep -hr "rtvsc" "${BUILD_WORKSPACE_DIRECTORY}/MODULE.bazel" >> "${new_workspace}/MODULE.bazel"
+    echo ")" >> "${new_workspace}/MODULE.bazel"
 
     cat <<EOF >"${new_workspace}/.bazelrc"
 build --keep_going
@@ -53,7 +60,7 @@ EOF
         cp "${workspace_root}/.bazelversion" "${new_workspace}/.bazelversion"
     fi
 
-    # Copy all test directories and integration_tests
+    # Copy test directories to the root of temp workspace
     for test_dir in "${workspace_root}/${package_dir}"/*_test; do
         if [[ -d "${test_dir}" ]]; then
             local test_name="$(basename "${test_dir}")"
@@ -62,9 +69,10 @@ EOF
         fi
     done
 
-    # Copy integration_tests directory
-    mkdir -p "${new_workspace}/integration_tests"
-    cp -r "${workspace_root}/${package_dir}/integration_tests"/* "${new_workspace}/integration_tests/"
+    # Copy integration_tests and 3rdparty to test/vscode/
+    mkdir -p "${new_workspace}/${package_dir}"
+    cp -r "${workspace_root}/${package_dir}/integration_tests" "${new_workspace}/${package_dir}/"
+    cp -r "${workspace_root}/${package_dir}/3rdparty" "${new_workspace}/${package_dir}/"
 
     echo "${new_workspace}"
 }
@@ -90,7 +98,7 @@ function run_vscode_tests() {
         return 1
     fi
     echo "Running integration test for only_binaries_test..."
-    LAUNCH_JSON="$(pwd)/only_binaries_test/.vscode/launch.json" bazel test //integration_tests:only_binaries_test --test_env=LAUNCH_JSON
+    LAUNCH_JSON="$(pwd)/only_binaries_test/.vscode/launch.json" bazel test //test/vscode/integration_tests:only_binaries_test --test_env=LAUNCH_JSON
 
     # Test 2: only_tests_test
     echo "Testing only_tests_test..."
@@ -104,7 +112,7 @@ function run_vscode_tests() {
         return 1
     fi
     echo "Running integration test for only_tests_test..."
-    LAUNCH_JSON="$(pwd)/only_tests_test/.vscode/launch.json" bazel test //integration_tests:only_tests_test --test_env=LAUNCH_JSON
+    LAUNCH_JSON="$(pwd)/only_tests_test/.vscode/launch.json" bazel test //test/vscode/integration_tests:only_tests_test --test_env=LAUNCH_JSON
 
     # Test 3: no_targets_test (should fail)
     echo "Testing no_targets_test (expecting error)..."
@@ -131,7 +139,7 @@ function run_vscode_tests() {
         return 1
     fi
     echo "Running integration test for binaries_and_tests_test..."
-    LAUNCH_JSON="$(pwd)/binaries_and_tests_test/.vscode/launch.json" bazel test //integration_tests:binaries_and_tests_test --test_env=LAUNCH_JSON
+    LAUNCH_JSON="$(pwd)/binaries_and_tests_test/.vscode/launch.json" bazel test //test/vscode/integration_tests:binaries_and_tests_test --test_env=LAUNCH_JSON
 
     popd &>/dev/null
     echo "All tests passed!"

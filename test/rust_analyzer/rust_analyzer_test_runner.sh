@@ -36,7 +36,7 @@ local_path_override(
 
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.7.1",
+    version = "1.8.2",
 )
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
@@ -102,13 +102,13 @@ function rust_analyzer_test() {
     else
         RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
     fi
-    
+
     echo "Validating rust-project.json..."
     bazel run "@rules_rust//tools/rust_analyzer:validate" -- rust-project.json
-    
+
     echo "Generating auto-discovery.json..."
     RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
-    
+
     echo "Building..."
     bazel build //...
     echo "Testing..."
