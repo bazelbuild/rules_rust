@@ -383,6 +383,7 @@ bin_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
         str(Label("//rust/settings:experimental_use_platform_abi_settings")): True,
         str(Label("//rust/settings:platform_linux_musl")): True,
         str(Label("//rust/settings:toolchain_linker_preference")): "rust",
+        # Coverage is not supported on musl so it should be disabled for these targets.
         "//command_line_option:collect_code_coverage": False,
     },
 )
