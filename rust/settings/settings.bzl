@@ -234,6 +234,102 @@ def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
         build_setting_default = False,
     )
 
+def toolchain_linker_preference():
+    """A flag to control which linker is preferred for linking Rust binaries.
+
+    Accepts three values:
+    - "rust": Use `rust_toolchain.linker` always.
+    - "cc": Use the linker provided by the configured `cc_toolchain`
+    - "none": Default to `cc` being the preference and falling back to `rust`.
+    """
+    string_flag(
+        name = "toolchain_linker_preference",
+        build_setting_default = "none",
+        values = ["rust", "cc", "none"],
+    )
+
+# buildifier: disable=unnamed-macro
+def experimental_use_platform_abi_settings():
+    """An experimental flag to enable platform ABI-based toolchain selection.
+
+    When enabled, this enables the use of platform_linux_musl and platform_windows_gnu
+    settings for toolchain selection. This is particularly useful for the process wrapper
+    bootstrap transition, which will select musl-based toolchains on Linux when this
+    experimental flag is enabled.
+
+    Note: The individual platform flags (platform_linux_musl, platform_windows_gnu) can
+    still be set manually regardless of this experimental flag.
+    """
+    bool_flag(
+        name = "experimental_use_platform_abi_settings",
+        build_setting_default = True,
+    )
+
+    # Config setting used in select() statements for conditional target_settings.
+    native.config_setting(
+        name = "experimental_use_platform_abi_settings_enabled",
+        flag_values = {
+            ":experimental_use_platform_abi_settings": "True",
+        },
+    )
+
+# buildifier: disable=unnamed-macro
+def platform_linux_musl():
+    """A flag to select Linux musl toolchains.
+
+    When enabled, this will select Rust toolchains targeting Linux with musl libc.
+    This is primarily used by the process wrapper bootstrap transition to ensure
+    static linking on Linux for better portability.
+    """
+    bool_flag(
+        name = "platform_linux_musl",
+        build_setting_default = False,
+    )
+
+    # Config setting that checks if platform_linux_musl is enabled.
+    # Used in toolchain target_settings (wrapped in select() based on experimental flag).
+    native.config_setting(
+        name = "platform_linux_musl_enabled",
+        flag_values = {
+            ":platform_linux_musl": "True",
+        },
+    )
+
+    native.config_setting(
+        name = "platform_linux_musl_disabled",
+        flag_values = {
+            ":platform_linux_musl": "False",
+        },
+    )
+
+# buildifier: disable=unnamed-macro
+def platform_windows_gnu():
+    """A flag to select Windows GNU toolchains.
+
+    When enabled, this will select Rust toolchains targeting Windows with GNU ABI
+    (MinGW) instead of MSVC.
+    """
+    bool_flag(
+        name = "platform_windows_gnu",
+        build_setting_default = False,
+    )
+
+    # Config setting that checks if platform_windows_gnu is enabled.
+    # Used in toolchain target_settings (wrapped in select() based on experimental flag).
+    native.config_setting(
+        name = "platform_windows_gnu_enabled",
+        flag_values = {
+            ":platform_windows_gnu": "True",
+        },
+    )
+
+    native.config_setting(
+        name = "platform_windows_gnu_disabled",
+        flag_values = {
+            ":platform_windows_gnu": "False",
+        },
+    )
+
 # buildifier: disable=unnamed-macro
 def clippy_toml():
     """This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html

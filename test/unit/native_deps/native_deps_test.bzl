@@ -16,12 +16,69 @@ load(
 def _get_toolchain(ctx):
     return ctx.attr._toolchain[platform_common.ToolchainInfo]
 
+def _get_bin_dir_from_action(action):
+    """Extract the bin directory from an action's outputs.
+
+    This handles config transitions that add suffixes like -ST-<hash>.
+
+    Args:
+        action: The action to extract the bin directory from.
+
+    Returns:
+        The bin directory path as a string.
+    """
+    bin_dir = action.outputs.to_list()[0].dirname
+    if "/bin/" in bin_dir:
+        bin_dir = bin_dir.split("/bin/")[0] + "/bin"
+    return bin_dir
+
 def _get_darwin_component(arg):
-    # path/to/darwin_x86_64-fastbuild-fastbuild/package -> darwin_x86_64-fastbuild
+    """Extract darwin component from a path.
+
+    Args:
+        arg: Path like "path/to/darwin_x86_64-fastbuild-ST-abc123/package"
+
+    Returns:
+        Darwin component like "darwin" (ignoring arch and compilation mode)
+    """
+
+    # path/to/darwin_x86_64-fastbuild-ST-abc123/package -> darwin_x86_64-fastbuild-ST-abc123
     darwin_component = [x for x in arg.split("/") if x.startswith("darwin")][0]
 
-    # darwin_x86_64-fastbuild -> darwin
+    # darwin_x86_64-fastbuild-ST-abc123 -> darwin
     return darwin_component.split("-")[0]
+
+def _assert_bin_dir_structure(env, ctx, bin_dir, toolchain):
+    """Validate bin_dir structure, ignoring ST-{hash} suffix from config transitions.
+
+    Args:
+        env: The analysis test environment
+        ctx: The test context
+        bin_dir: The bin directory path to validate
+        toolchain: The toolchain info
+    """
+    compilation_mode = ctx.var["COMPILATION_MODE"]
+
+    # bin_dir should be like: bazel-out/{platform}-{mode}[-ST-{hash}]/bin
+    asserts.true(env, bin_dir.startswith("bazel-out/"), "bin_dir should start with bazel-out/")
+    asserts.true(env, bin_dir.endswith("/bin"), "bin_dir should end with /bin")
+
+    # Validate it contains compilation mode (ignoring potential ST-{hash})
+    bin_dir_components = bin_dir.split("/")[1]  # Get the platform-mode component
+    asserts.true(
+        env,
+        compilation_mode in bin_dir_components,
+        "bin_dir should contain compilation mode: expected '{}' in '{}'".format(compilation_mode, bin_dir_components),
+    )
+
+    # For Darwin platforms, validate darwin component
+    if toolchain.target_os in ["macos", "darwin"] and "darwin" in bin_dir:
+        darwin_component = _get_darwin_component(bin_dir)
+        asserts.true(
+            env,
+            darwin_component.startswith("darwin"),
+            "darwin component should start with 'darwin', got '{}'".format(darwin_component),
+        )
 
 def _rlib_has_no_native_libs_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -129,60 +186,86 @@ def _extract_linker_args(argv):
         )
     ]
 
-def _get_workspace_prefix(ctx):
-    return "" if ctx.workspace_name in ["rules_rust", "_main"] else "external/rules_rust/"
-
-def _bin_has_native_dep_and_alwayslink_test_impl(ctx):
+def _bin_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut.actions[0]
 
     toolchain = _get_toolchain(ctx)
-    compilation_mode = ctx.var["COMPILATION_MODE"]
-    workspace_prefix = _get_workspace_prefix(ctx)
     link_args = _extract_linker_args(action.argv)
+    bin_dir = _get_bin_dir_from_action(action)
+
+    # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
+    _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
+
     if toolchain.target_os in ["macos", "darwin"]:
-        darwin_component = _get_darwin_component(link_args[-1])
-        want = [
-            "-lstatic=native_dep",
-            "-lnative_dep",
-            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(darwin_component, compilation_mode, workspace_prefix),
-        ]
+        if use_cc_linker:
+            # When using CC linker, args are passed with -Wl, prefix as separate arguments
+            want = [
+                "-lstatic=native_dep",
+                "-lnative_dep",
+                "-Wl,-force_load",
+                "-Wl,{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            ]
+        else:
+            # When using rust-lld directly, args are passed without prefix as separate arguments
+            want = [
+                "-lstatic=native_dep",
+                "-lnative_dep",
+                "-force_load",
+                "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            ]
         assert_list_contains_adjacent_elements(env, link_args, want)
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "/WHOLEARCHIVE:{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+            ]
+        elif use_cc_linker:
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+                "-Wl,--no-whole-archive",
             ]
         else:
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "-Wl,--whole-archive",
-                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-                "-Wl,--no-whole-archive",
+                "--whole-archive",
+                "{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+                "--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
             "-lstatic=native_dep",
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
+            "link-arg={}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
             "link-arg=-Wl,--no-whole-archive",
+        ]
+    elif use_cc_linker:
+        want = [
+            "-lstatic=native_dep",
+            "-lnative_dep",
+            "-Wl,--whole-archive",
+            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "-Wl,--no-whole-archive",
         ]
     else:
         want = [
             "-lstatic=native_dep",
             "-lnative_dep",
-            "-Wl,--whole-archive",
-            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink.lo".format(compilation_mode, workspace_prefix),
-            "-Wl,--no-whole-archive",
+            "--whole-archive",
+            "{}/test/unit/native_deps/libalwayslink.lo".format(bin_dir),
+            "--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, link_args, want)
     return analysistest.end(env)
 
-def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
+def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, use_cc_linker):
     toolchain = _get_toolchain(ctx)
 
     env = analysistest.begin(ctx)
@@ -190,47 +273,78 @@ def _cdylib_has_native_dep_and_alwayslink_test_impl(ctx):
     action = tut.actions[0]
 
     linker_args = _extract_linker_args(action.argv)
+    bin_dir = _get_bin_dir_from_action(action)
 
-    toolchain = _get_toolchain(ctx)
+    # Validate bin_dir structure (ignoring ST-{hash} suffix from config transitions)
+    _assert_bin_dir_structure(env, ctx, bin_dir, toolchain)
+
     compilation_mode = ctx.var["COMPILATION_MODE"]
-    workspace_prefix = _get_workspace_prefix(ctx)
     pic_suffix = _get_pic_suffix(ctx, compilation_mode)
+
     if toolchain.target_os in ["macos", "darwin"]:
-        darwin_component = _get_darwin_component(linker_args[-1])
-        want = [
-            "-lstatic=native_dep{}".format(pic_suffix),
-            "-lnative_dep{}".format(pic_suffix),
-            "-Wl,-force_load,bazel-out/{}-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(darwin_component, compilation_mode, workspace_prefix, pic_suffix),
-        ]
+        if use_cc_linker:
+            # When using CC linker, args are passed with -Wl, prefix as separate arguments
+            want = [
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
+                "-Wl,-force_load",
+                "-Wl,{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+            ]
+        else:
+            # When using rust-lld directly, args are passed without prefix as separate arguments
+            want = [
+                "-lstatic=native_dep{}".format(pic_suffix),
+                "-lnative_dep{}".format(pic_suffix),
+                "-force_load",
+                "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+            ]
     elif toolchain.target_os == "windows":
         if toolchain.target_triple.abi == "msvc":
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "/WHOLEARCHIVE:bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
+                "/WHOLEARCHIVE:{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+            ]
+        elif use_cc_linker:
+            want = [
+                "-lstatic=native_dep",
+                "native_dep.lib",
+                "-Wl,--whole-archive",
+                "{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+                "-Wl,--no-whole-archive",
             ]
         else:
             want = [
                 "-lstatic=native_dep",
                 "native_dep.lib",
-                "-Wl,--whole-archive",
-                "bazel-out/x64_windows-{}/bin/{}test/unit/native_deps/alwayslink.lo.lib".format(compilation_mode, workspace_prefix),
-                "-Wl,--no-whole-archive",
+                "--whole-archive",
+                "{}/test/unit/native_deps/alwayslink.lo.lib".format(bin_dir),
+                "--no-whole-archive",
             ]
     elif toolchain.target_arch == "s390x":
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
             "link-arg=-Wl,--whole-archive",
-            "link-arg=bazel-out/s390x-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "link-arg={}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "link-arg=-Wl,--no-whole-archive",
         ]
-    else:
+    elif use_cc_linker:
+        # CC linker uses -Wl, prefix but arguments are separate
         want = [
             "-lstatic=native_dep{}".format(pic_suffix),
             "-lnative_dep{}".format(pic_suffix),
             "-Wl,--whole-archive",
-            "bazel-out/k8-{}/bin/{}test/unit/native_deps/libalwayslink{}.lo".format(compilation_mode, workspace_prefix, pic_suffix),
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
             "-Wl,--no-whole-archive",
+        ]
+    else:
+        # rust-lld doesn't use -Wl, prefix, so flags and path are separate
+        want = [
+            "-lstatic=native_dep{}".format(pic_suffix),
+            "-lnative_dep{}".format(pic_suffix),
+            "--whole-archive",
+            "{}/test/unit/native_deps/libalwayslink{}.lo".format(bin_dir, pic_suffix),
+            "--no-whole-archive",
         ]
     assert_list_contains_adjacent_elements(env, linker_args, want)
     return analysistest.end(env)
@@ -252,14 +366,65 @@ proc_macro_has_native_libs_test = analysistest.make(_proc_macro_has_native_libs_
     "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
 bin_has_native_libs_test = analysistest.make(_bin_has_native_libs_test_impl, attrs = {
+    "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
     "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
 })
-bin_has_native_dep_and_alwayslink_test = analysistest.make(_bin_has_native_dep_and_alwayslink_test_impl, attrs = {
-    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-})
-cdylib_has_native_dep_and_alwayslink_test = analysistest.make(_cdylib_has_native_dep_and_alwayslink_test_impl, attrs = {
-    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
-})
+
+def _bin_has_native_dep_and_alwayslink_rust_linker_test_impl(ctx):
+    return _bin_has_native_dep_and_alwayslink_test_impl(ctx, False)
+
+bin_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
+    _bin_has_native_dep_and_alwayslink_rust_linker_test_impl,
+    attrs = {
+        "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
+        "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+    },
+    config_settings = {
+        str(Label("//rust/settings:toolchain_linker_preference")): "rust",
+    },
+)
+
+def _bin_has_native_dep_and_alwayslink_cc_linker_test_impl(ctx):
+    return _bin_has_native_dep_and_alwayslink_test_impl(ctx, True)
+
+bin_has_native_dep_and_alwayslink_cc_linker_test = analysistest.make(
+    _bin_has_native_dep_and_alwayslink_cc_linker_test_impl,
+    attrs = {
+        "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
+        "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+    },
+    config_settings = {
+        str(Label("//rust/settings:toolchain_linker_preference")): "cc",
+    },
+)
+
+def _cdylib_has_native_dep_and_alwayslink_rust_linker_test_impl(ctx):
+    return _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, False)
+
+cdylib_has_native_dep_and_alwayslink_rust_linker_test = analysistest.make(
+    _cdylib_has_native_dep_and_alwayslink_rust_linker_test_impl,
+    attrs = {
+        "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
+        "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+    },
+    config_settings = {
+        str(Label("//rust/settings:toolchain_linker_preference")): "rust",
+    },
+)
+
+def _cdylib_has_native_dep_and_alwayslink_cc_linker_test_impl(ctx):
+    return _cdylib_has_native_dep_and_alwayslink_test_impl(ctx, True)
+
+cdylib_has_native_dep_and_alwayslink_cc_linker_test = analysistest.make(
+    _cdylib_has_native_dep_and_alwayslink_cc_linker_test_impl,
+    attrs = {
+        "_linker_preference": attr.label(default = Label("//rust/settings:toolchain_linker_preference")),
+        "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+    },
+    config_settings = {
+        str(Label("//rust/settings:toolchain_linker_preference")): "cc",
+    },
+)
 
 def _native_dep_test():
     rust_library(
@@ -323,6 +488,9 @@ def _native_dep_test():
         deps = [":native_dep", ":alwayslink"],
     )
 
+    # Note: cdylib tests use the same target but we'll force the setting via config_setting
+    # The test will check the _linker_preference build setting to determine expected behavior
+
     rlib_has_no_native_libs_test(
         name = "rlib_has_no_native_libs_test",
         target_under_test = ":rlib_has_no_native_dep",
@@ -343,12 +511,20 @@ def _native_dep_test():
         name = "bin_has_native_libs_test",
         target_under_test = ":bin_has_native_dep",
     )
-    bin_has_native_dep_and_alwayslink_test(
-        name = "bin_has_native_dep_and_alwayslink_test",
+    bin_has_native_dep_and_alwayslink_rust_linker_test(
+        name = "bin_has_native_dep_and_alwayslink_rust_linker_test",
         target_under_test = ":bin_has_native_dep_and_alwayslink",
     )
-    cdylib_has_native_dep_and_alwayslink_test(
-        name = "cdylib_has_native_dep_and_alwayslink_test",
+    bin_has_native_dep_and_alwayslink_cc_linker_test(
+        name = "bin_has_native_dep_and_alwayslink_cc_linker_test",
+        target_under_test = ":bin_has_native_dep_and_alwayslink",
+    )
+    cdylib_has_native_dep_and_alwayslink_rust_linker_test(
+        name = "cdylib_has_native_dep_and_alwayslink_rust_linker_test",
+        target_under_test = ":cdylib_has_native_dep_and_alwayslink",
+    )
+    cdylib_has_native_dep_and_alwayslink_cc_linker_test(
+        name = "cdylib_has_native_dep_and_alwayslink_cc_linker_test",
         target_under_test = ":cdylib_has_native_dep_and_alwayslink",
     )
 
@@ -473,10 +649,12 @@ def native_deps_test_suite(name):
         name = name,
         tests = [
             ":bin_has_additional_deps_test",
-            ":bin_has_native_dep_and_alwayslink_test",
+            ":bin_has_native_dep_and_alwayslink_rust_linker_test",
+            ":bin_has_native_dep_and_alwayslink_cc_linker_test",
             ":bin_has_native_libs_test",
             ":cdylib_has_additional_deps_test",
-            ":cdylib_has_native_dep_and_alwayslink_test",
+            ":cdylib_has_native_dep_and_alwayslink_rust_linker_test",
+            ":cdylib_has_native_dep_and_alwayslink_cc_linker_test",
             ":cdylib_has_native_libs_test",
             ":lib_has_no_additional_deps_test",
             ":native_linkopts_propagate_test",
