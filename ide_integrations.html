@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Extensions - rules_rust</title>
+        <title>IDE Integrations - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -155,17 +155,32 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="extensions"><a class="header" href="#extensions">Extensions</a></h1>
+                        <h1 id="ide-integrations"><a class="header" href="#ide-integrations">IDE Integrations</a></h1>
+<h2 id="vscode"><a class="header" href="#vscode">VSCode</a></h2>
+<h3 id="intellisense"><a class="header" href="#intellisense">Intellisense</a></h3>
+<p>The best intellisense integrations to date are documented for <a href="./rust_analyzer.html">rust-analyzer</a>. Please refer to this documentation for setup instructions.</p>
+<h3 id="debugging"><a class="header" href="#debugging">Debugging</a></h3>
+<p><code>rules_rust</code> offers tooling to generate VSCode targets for running <code>rust_binary</code> and <code>rust_test</code> targets with a debugger in VSCode.</p>
+<h4 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h4>
+<p>Install <a href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb">CodeLLDB</a> extension in VSCode.</p>
+<h4 id="generate-launch-configurations"><a class="header" href="#generate-launch-configurations">Generate Launch Configurations</a></h4>
+<p>Generate VSCode <code>launch.json</code> for debugging all Rust targets in the current workspace:</p>
+<pre><code class="language-bash">bazel run @rules_rust//tools/vscode:gen_launch_json
+</code></pre>
+<p>To scope debug generated <code>launch.json</code> targets, query patterns can be passed:</p>
+<pre><code class="language-bash">bazel run @rules_rust//tools/vscode:gen_launch_json -- //path/to/...
+</code></pre>
+<p>Bazel targets should now be available for debugging via the "Run and Debug" menu.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="ide_integrations.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="upstream_tooling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="rust_bindgen.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="extensions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -175,11 +190,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="ide_integrations.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="upstream_tooling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="rust_bindgen.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="extensions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
