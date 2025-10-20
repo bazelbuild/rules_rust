@@ -1205,15 +1205,18 @@ def rustc_compile_action(
     """
     deps = crate_info_dict.pop("deps")
     proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
+    srcs = crate_info_dict.pop("srcs")
+
     crate_info = rust_common.create_crate_info(
         deps = depset(deps),
         proc_macro_deps = depset(proc_macro_deps),
+        srcs = depset(srcs),
         **crate_info_dict
     )
 
-    build_metadata = crate_info_dict.get("metadata", None)
-    rustc_output = crate_info_dict.get("rustc_output", None)
-    rustc_rmeta_output = crate_info_dict.get("rustc_rmeta_output", None)
+    build_metadata = crate_info.metadata
+    rustc_output = crate_info.rustc_output
+    rustc_rmeta_output = crate_info.rustc_rmeta_output
 
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
@@ -1231,7 +1234,7 @@ def rustc_compile_action(
     dep_info, build_info, linkstamps = collect_deps(
         deps = deps,
         proc_macro_deps = proc_macro_deps,
-        aliases = crate_info_dict["aliases"],
+        aliases = crate_info.aliases,
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
@@ -1400,7 +1403,7 @@ def rustc_compile_action(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
-                len(crate_info.srcs.to_list()),
+                len(srcs),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
@@ -1417,7 +1420,7 @@ def rustc_compile_action(
                     crate_info.type,
                     ctx.label.name,
                     formatted_version,
-                    len(crate_info.srcs.to_list()),
+                    len(srcs),
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
@@ -1436,7 +1439,7 @@ def rustc_compile_action(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
-                len(crate_info.srcs.to_list()),
+                len(srcs),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
@@ -1605,6 +1608,7 @@ def rustc_compile_action(
         crate_info = rust_common.create_crate_info(
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
+            srcs = depset(srcs),
             **crate_info_dict
         )
 

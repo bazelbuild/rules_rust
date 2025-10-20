@@ -103,6 +103,9 @@ function rust_analyzer_test() {
         RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:gen_rust_project"
     fi
     
+    echo "Validating rust-project.json..."
+    bazel run "@rules_rust//tools/rust_analyzer:validate" -- rust-project.json
+    
     echo "Generating auto-discovery.json..."
     RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
     

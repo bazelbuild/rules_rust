@@ -6,9 +6,9 @@ rust_binary(
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [
-        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:cargo-util-schemas",
-        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:pathdiff",
-        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:semver",
-        "//cargo/cargo_toml_variable_extractor/3rdparty/crates:toml",
+        "//cargo/3rdparty/crates:cargo-util-schemas",
+        "//cargo/3rdparty/crates:pathdiff",
+        "//cargo/3rdparty/crates:semver",
+        "//cargo/3rdparty/crates:toml",
     ],
 )

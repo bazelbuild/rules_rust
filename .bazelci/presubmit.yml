@@ -430,12 +430,26 @@ tasks:
     platform: ubuntu2204
     run_targets:
       - "//test/rustfmt:rustfmt_failure_tester"
-  rust_analyzer_tests:
-    name: Rust-Analyzer Tests
+  rust_analyzer_tests_linux:
+    name: Rust-Analyzer Linux Tests
     platform: ubuntu2204
     run_targets:
       - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_macos:
+    name: Rust-Analyzer Macos Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_windows:
+    name: Rust-Analyzer Windows Tests
+    platform: windows
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
   crate_universe_examples_ubuntu2204:
     name: Crate Universe Examples
     platform: ubuntu2204
@@ -777,6 +791,17 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  example_runfiles:
+    name: Runfiles example
+    platform: ubuntu2204
+    working_directory: examples/runfiles
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    run_targets:
+      - "//pkg_a:pkg_a_binary"
+      - "//pkg_b:pkg_b_binary"
   ubuntu2204_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2204
