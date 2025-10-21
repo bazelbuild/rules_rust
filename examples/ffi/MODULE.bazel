@@ -38,7 +38,7 @@ register_toolchains("@rust_toolchains//:all")
 # F F I   T A R G E T   D E P S
 ###############################################################################
 
-bazel_dep(name = "rules_java", version = "8.6.3")
+bazel_dep(name = "rules_java", version = "8.13.0")
 bazel_dep(name = "rules_jvm_external", version = "6.6")
 
 java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
