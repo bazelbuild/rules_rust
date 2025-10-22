@@ -80,6 +80,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "bpfeb-unknown-none": _support(std = False, host_tools = False),
+    "bpfel-unknown-none": _support(std = False, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
 }
 
@@ -115,6 +117,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "armv7": "armv7",
     "armv7s": None,
     "asmjs": None,
+    "bpfeb": "bpfeb",
+    "bpfel": "bpfel",
     "i386": "i386",
     "i586": None,
     "i686": "x86_32",
