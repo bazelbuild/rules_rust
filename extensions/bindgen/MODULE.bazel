@@ -7,10 +7,10 @@ module(
 
 bazel_dep(name = "rules_rust", version = "0.66.0")
 bazel_dep(name = "bazel_features", version = "1.32.0")
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.4")
-bazel_dep(name = "llvm-project", version = "17.0.3.bcr.2")
+bazel_dep(name = "llvm-project", version = "17.0.3.bcr.4")
 
 rust_ext = use_extension("//:extensions.bzl", "rust_ext")
 use_repo(

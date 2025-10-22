@@ -14,7 +14,8 @@ load(
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
 )
-load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
+load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
+load(":semver.bzl", "semver")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
@@ -550,9 +551,13 @@ def includes_rust_analyzer_proc_macro_srv(version, iso_date):
 
     if version == "nightly":
         return iso_date >= "2022-09-21"
-    elif version == "beta":
+
+    if version == "beta":
         return False
-    elif version >= "1.64.0":
+
+    # version >= 1.64.0
+    version_semver = semver(version)
+    if version_semver.major >= 1 and version_semver.minor >= 64:
         return True
 
     return False

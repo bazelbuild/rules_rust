@@ -35,6 +35,7 @@ load(
     "toolchain_repository_hub",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
+load("//rust/private:semver.bzl", "semver")
 
 # Re-export `load_arbitrary_tool` as it's historically been used in external repositories.
 load_arbitrary_tool = _load_arbitrary_tool
@@ -422,6 +423,19 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
 }
 
+def _include_llvm_tools(version, iso_date):
+    """Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib"""
+    if version in ("nightly", "beta"):
+        if iso_date > "2020-05-22":
+            return True
+        return False
+
+    version_semver = semver(version)
+    if version_semver.major >= 1 and version_semver.minor >= 45:
+        return True
+
+    return False
+
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
     sha256s = dict(ctx.attr.sha256s)
@@ -483,8 +497,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         build_components.append(rustfmt_content)
         sha256s.update(rustfmt_sha256)
 
-    # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    include_llvm_tools = version >= "1.45.0" or (version == "nightly" and iso_date > "2020-05-22")
+    include_llvm_tools = _include_llvm_tools(version, iso_date)
     if include_llvm_tools:
         llvm_tools_content, llvm_tools_sha256 = load_llvm_tools(
             ctx = ctx,
