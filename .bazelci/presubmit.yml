@@ -62,7 +62,7 @@ default_rbe_targets: &default_rbe_targets
   - "//..."
   # These require the upstream tools wrapper to include a stdlib, which doesn't currently work on RBE.
   # We should fix this. See https://github.com/bazelbuild/rules_rust/issues/3252
-  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
+  - "-//cargo/private/cargo_toml_variable_extractor/testdata/..."
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."

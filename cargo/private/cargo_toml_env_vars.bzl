@@ -39,7 +39,7 @@ cargo_toml_env_vars = rule(
         "_cargo_toml_variable_extractor": attr.label(
             allow_single_file = True,
             executable = True,
-            default = Label("//cargo/cargo_toml_variable_extractor"),
+            default = Label("//cargo/private/cargo_toml_variable_extractor"),
             cfg = "exec",
         ),
     },

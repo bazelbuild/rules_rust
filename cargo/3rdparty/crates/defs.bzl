@@ -293,7 +293,12 @@ def aliases(
 ###############################################################################
 
 _NORMAL_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
+    "cargo/private/cargo_toml_info": {
+        _COMMON_CONDITION: {
+            "cargo_toml": Label("@rrc//:cargo_toml-0.20.5"),
+        },
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
         _COMMON_CONDITION: {
             "cargo-util-schemas": Label("@rrc//:cargo-util-schemas-0.3.1"),
             "pathdiff": Label("@rrc//:pathdiff-0.1.0"),
@@ -301,91 +306,86 @@ _NORMAL_DEPENDENCIES = {
             "toml": Label("@rrc//:toml-0.8.20"),
         },
     },
-    "cargo/private/cargo_toml_info": {
-        _COMMON_CONDITION: {
-            "cargo_toml": Label("@rrc//:cargo_toml-0.20.5"),
-        },
-    },
 }
 
 _NORMAL_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
+    "cargo/private/cargo_toml_info": {
         _COMMON_CONDITION: {
         },
     },
-    "cargo/private/cargo_toml_info": {
+    "cargo/private/cargo_toml_variable_extractor": {
         _COMMON_CONDITION: {
         },
     },
 }
 
 _NORMAL_DEV_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _NORMAL_DEV_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _PROC_MACRO_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _PROC_MACRO_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _PROC_MACRO_DEV_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _PROC_MACRO_DEV_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _BUILD_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _BUILD_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _BUILD_PROC_MACRO_DEPENDENCIES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
 _BUILD_PROC_MACRO_ALIASES = {
-    "cargo/cargo_toml_variable_extractor": {
-    },
     "cargo/private/cargo_toml_info": {
+    },
+    "cargo/private/cargo_toml_variable_extractor": {
     },
 }
 
