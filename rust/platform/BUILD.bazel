@@ -6,6 +6,8 @@ package(default_visibility = ["//visibility:public"])
 declare_config_settings()
 
 # WASI Preview version constraint settings
+#
+# TODO(https://github.com/bazelbuild/platforms/pull/123): Replace with upstream.
 constraint_setting(
     name = "wasi_version",
     default_constraint_value = ":wasi_preview_1",
@@ -19,6 +21,23 @@ constraint_value(
 constraint_value(
     name = "wasi_preview_2",
     constraint_setting = ":wasi_version",
+)
+
+# BPF execution constraints
+#
+# TODO(https://github.com/bazelbuild/platforms/pull/131): Replace with upstream.
+constraint_setting(
+    name = "bpf_arch",
+)
+
+constraint_value(
+    name = "bpfeb",
+    constraint_setting = ":bpf_arch",
+)
+
+constraint_value(
+    name = "bpfel",
+    constraint_setting = ":bpf_arch",
 )
 
 package_group(
