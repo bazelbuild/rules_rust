@@ -102,6 +102,14 @@ pub struct GenerateOptions {
     /// But you probably don't want to set this.
     #[clap(long)]
     pub skip_cargo_lockfile_overwrite: bool,
+
+    /// Whether to strip internal dependencies from the cargo lockfile.
+    /// You may want to use this if you want to maintain a cargo lockfile for bazel only.
+    /// Bazel only requires external dependencies to be present in the lockfile.
+    /// By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
+    /// in other lockfiles where the cargo lockfile's sha is stored.
+    #[clap(long)]
+    pub strip_internal_dependencies_from_cargo_lockfile: bool,
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
@@ -222,7 +230,12 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     }
 
     if !opt.skip_cargo_lockfile_overwrite {
-        update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile)?;
+        let cargo_lockfile_to_write = if opt.strip_internal_dependencies_from_cargo_lockfile {
+            remove_internal_dependencies_from_cargo_lockfile(cargo_lockfile)
+        } else {
+            cargo_lockfile
+        };
+        update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile_to_write)?;
     }
 
     Ok(())
