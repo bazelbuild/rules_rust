@@ -23,6 +23,7 @@ def crate_repositories():
     maybe(
         crates_vendor_remote_repository,
         name = "{{ repository_name }}",
+        alias_rules_module = Label("{{ crates_module_label(file="alias_rules.bzl") }}"),
         build_file = Label("{{ crates_module_label(file="BUILD.bazel") }}"),
         defs_module = Label("{{ crates_module_label(file="defs.bzl") }}"),
     )
