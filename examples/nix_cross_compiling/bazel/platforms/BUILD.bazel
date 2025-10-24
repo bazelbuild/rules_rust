@@ -4,7 +4,7 @@ package(default_visibility = ["//visibility:public"])
 platform(
     name = "host",
     constraint_values = ["@platforms//os:nixos"],
-    parents = ["@local_config_platform//:host"],
+    parents = ["@platforms//host"],
 )
 
 # Platforms
