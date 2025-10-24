@@ -49,7 +49,7 @@ write_file(
         },
         packages = {
             "cargo_toml": crate.spec(
-                git = "https://gitlab.com/crates.rs/cargo_toml.git",
+                git = "https://gitlab.com/lib.rs/cargo_toml.git",
                 tag = "v0.15.2",
             ),
             "cfg-if": crate.spec(
