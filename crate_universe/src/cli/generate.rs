@@ -327,14 +327,22 @@ mod tests {
     use crate::test;
 
     #[test]
-    fn test_remove_internal_dependencies_from_cargo_lockfile_workspace_build_scripts_deps_should_remove_internal_dependencies() {
+    fn test_remove_internal_dependencies_from_cargo_lockfile_workspace_build_scripts_deps_should_remove_internal_dependencies(
+    ) {
         let original_lockfile = test::lockfile::workspace_build_scripts_deps();
 
-        let filtered_lockfile = remove_internal_dependencies_from_cargo_lockfile(original_lockfile.clone());
+        let filtered_lockfile =
+            remove_internal_dependencies_from_cargo_lockfile(original_lockfile.clone());
 
         assert!(filtered_lockfile.packages.len() < original_lockfile.packages.len());
 
-        assert!(original_lockfile.packages.iter().any(|pkg| pkg.name.as_str() == "child"));
-        assert!(!filtered_lockfile.packages.iter().any(|pkg| pkg.name.as_str() == "child"));
+        assert!(original_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "child"));
+        assert!(!filtered_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "child"));
     }
 }
