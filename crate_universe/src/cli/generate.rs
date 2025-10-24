@@ -228,6 +228,20 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     Ok(())
 }
 
+fn remove_internal_dependencies_from_cargo_lockfile(cargo_lockfile: Lockfile) -> Lockfile {
+    let filtered_packages: Vec<_> = cargo_lockfile
+        .packages
+        .into_iter()
+        // Filter packages to only keep external dependencies (those with a source)
+        .filter(|pkg| pkg.source.is_some())
+        .collect();
+
+    Lockfile {
+        packages: filtered_packages,
+        ..cargo_lockfile
+    }
+}
+
 fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
     let old_contents = fs::read_to_string(path).ok();
     let new_contents = cargo_lockfile.to_string();
@@ -292,4 +306,22 @@ fn write_paths_to_track<
     )
     .context("Failed to write warnings file")?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test;
+
+    #[test]
+    fn test_remove_internal_dependencies_from_cargo_lockfile_workspace_build_scripts_deps_should_remove_internal_dependencies() {
+        let original_lockfile = test::lockfile::workspace_build_scripts_deps();
+
+        let filtered_lockfile = remove_internal_dependencies_from_cargo_lockfile(original_lockfile.clone());
+
+        assert!(filtered_lockfile.packages.len() < original_lockfile.packages.len());
+
+        assert!(original_lockfile.packages.iter().any(|pkg| pkg.name.as_str() == "child"));
+        assert!(!filtered_lockfile.packages.iter().any(|pkg| pkg.name.as_str() == "child"));
+    }
 }
