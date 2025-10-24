@@ -267,7 +267,7 @@ def collect_deps(
     for dep in deps + proc_macro_deps:
         crate_group = getattr(dep, "crate_group_info", None)
         if crate_group:
-            crate_deps.extend(crate_group.dep_variant_infos.to_list())
+            crate_deps.extend(crate_group.dep_variant_infos)
         else:
             crate_deps.append(dep)
 

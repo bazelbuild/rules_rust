@@ -25,6 +25,8 @@ load(
     "BuildInfo",
     "CrateGroupInfo",
     "CrateInfo",
+    "DepInfo",
+    "DepVariantInfo",
     "LintsInfo",
 )
 load("//rust/private:rustc.bzl", "collect_extra_rustc_flags", "is_no_std", "rustc_compile_action")
@@ -78,7 +80,7 @@ def _assert_correct_dep_mapping(ctx):
         else:
             types = [
                 dep_variant_info.crate_info.type
-                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos.to_list()
+                for dep_variant_info in dep[CrateGroupInfo].dep_variant_infos
                 if dep_variant_info.crate_info
             ]
 
@@ -546,20 +548,19 @@ def _rust_test_impl(ctx):
 
 def _rust_library_group_impl(ctx):
     dep_variant_infos = []
-    dep_variant_transitive_infos = []
     runfiles = []
 
     for dep in ctx.attr.deps:
-        if rust_common.crate_info in dep:
-            dep_variant_infos.append(rust_common.dep_variant_info(
-                crate_info = dep[rust_common.crate_info] if rust_common.crate_info in dep else None,
-                dep_info = dep[rust_common.dep_info] if rust_common.crate_info in dep else None,
+        if CrateInfo in dep:
+            dep_variant_infos.append(DepVariantInfo(
+                crate_info = dep[CrateInfo] if CrateInfo in dep else None,
+                dep_info = dep[DepInfo] if DepInfo in dep else None,
                 build_info = dep[BuildInfo] if BuildInfo in dep else None,
                 cc_info = dep[CcInfo] if CcInfo in dep else None,
                 crate_group_info = None,
             ))
-        elif rust_common.crate_group_info in dep:
-            dep_variant_transitive_infos.append(dep[rust_common.crate_group_info].dep_variant_infos)
+        elif CrateGroupInfo in dep:
+            dep_variant_infos.extend(dep[CrateGroupInfo].dep_variant_infos)
         else:
             fail("crate_group_info targets can only depend on rust_library or rust_library_group targets.")
 
@@ -567,9 +568,7 @@ def _rust_library_group_impl(ctx):
             runfiles.append(dep[DefaultInfo].default_runfiles)
 
     return [
-        rust_common.crate_group_info(
-            dep_variant_infos = depset(dep_variant_infos, transitive = dep_variant_transitive_infos),
-        ),
+        CrateGroupInfo(dep_variant_infos = dep_variant_infos),
         DefaultInfo(runfiles = ctx.runfiles().merge_all(runfiles)),
         coverage_common.instrumented_files_info(
             ctx,
