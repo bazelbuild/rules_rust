@@ -349,18 +349,19 @@ def _cargo_build_script_impl(ctx):
     incompatible_runfiles_cargo_manifest_dir = ctx.attr._incompatible_runfiles_cargo_manifest_dir[BuildSettingInfo].value
     if not incompatible_runfiles_cargo_manifest_dir:
         script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
-        manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
+        manifest_dir_components = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package).split("/")
     else:
         runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
             ctx = ctx,
             script = ctx.attr.script,
             retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
         )
-        manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
+        manifest_dir_components = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package).split("/")
         extra_args.append(runfiles_args)
         extra_inputs.append(runfiles_inputs)
         extra_output = [runfiles_dir]
 
+    manifest_dir = "/".join([c for c in manifest_dir_components if c])
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
