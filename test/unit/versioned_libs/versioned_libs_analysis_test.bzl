@@ -7,15 +7,28 @@ load("//rust:defs.bzl", "rust_shared_library")
 
 LIBNAMES = ["sterling", "cheryl", "lana", "pam", "malory", "cyril"]
 
-def _is_in_argv(argv, version = None):
-    return any(["-ldylib={}{}".format(name, version or "") in argv for name in LIBNAMES])
+def _is_in_argv(ctx, argv, version = ""):
+    toolchain = ctx.attr._toolchain[platform_common.ToolchainInfo]
+    if toolchain.target_os in ["macos", "darwin"]:
+        prefix = "lib"
+        suffix = "dylib"
+    elif toolchain.target_os == "windows":
+        prefix = ""
+        suffix = "lib"
+    else:
+        prefix = "lib"
+        suffix = "so"
+
+    print(argv)
+    pattern = prefix + "{}" + version + "." + suffix
+    return any([arg.endswith(pattern.format(name)) for arg in argv for name in LIBNAMES])
 
 def _no_version_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     argv = tut.actions[0].argv
 
-    asserts.true(env, _is_in_argv(argv))
+    asserts.true(env, _is_in_argv(ctx, argv))
 
     return analysistest.end(env)
 
@@ -24,7 +37,7 @@ def _prefix_version_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     argv = tut.actions[0].argv
 
-    asserts.true(env, _is_in_argv(argv, "3.8"))
+    asserts.true(env, _is_in_argv(ctx, argv, "3.8"))
 
     return analysistest.end(env)
 
@@ -33,13 +46,19 @@ def _suffix_version_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     argv = tut.actions[0].argv
 
-    asserts.true(env, _is_in_argv(argv))
+    asserts.true(env, _is_in_argv(ctx, argv))
 
     return analysistest.end(env)
 
-no_version_test = analysistest.make(_no_version_test_impl)
-prefix_version_test = analysistest.make(_prefix_version_test_impl)
-suffix_version_test = analysistest.make(_suffix_version_test_impl)
+no_version_test = analysistest.make(_no_version_test_impl, attrs = {
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+})
+prefix_version_test = analysistest.make(_prefix_version_test_impl, attrs = {
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+})
+suffix_version_test = analysistest.make(_suffix_version_test_impl, attrs = {
+    "_toolchain": attr.label(default = Label("//rust/toolchain:current_rust_toolchain")),
+})
 
 def _test_linux():
     rust_shared_library(
