@@ -218,6 +218,16 @@ def incompatible_change_rust_test_compilation_output_directory():
         issue = "https://github.com/bazelbuild/rules_rust/issues/2827",
     )
 
+# buildifier: disable=unnamed-macro
+def incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files():
+    """A flag to omit the cc_toolchain's all_files from the rust toolchain's all_files depset.
+    """
+    incompatible_flag(
+        name = "incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files",
+        build_setting_default = False,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3680",
+    )
+
 def experimental_link_std_dylib():
     """A flag to control whether to link libstd dynamically."""
     bool_flag(

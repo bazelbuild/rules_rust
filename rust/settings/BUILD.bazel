@@ -26,6 +26,7 @@ load(
     "extra_rustc_flags",
     "incompatible_change_clippy_error_format",
     "incompatible_change_rust_test_compilation_output_directory",
+    "incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files",
     "incompatible_do_not_include_data_in_compile_data",
     "lto",
     "no_std",
@@ -108,6 +109,8 @@ extra_rustc_flags()
 incompatible_change_clippy_error_format()
 
 incompatible_change_rust_test_compilation_output_directory()
+
+incompatible_do_not_include_cc_toolchain_files_in_rust_toolchain_all_files()
 
 incompatible_do_not_include_data_in_compile_data()
 
