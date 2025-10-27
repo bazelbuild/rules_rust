@@ -74,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -97,7 +98,7 @@ rust_library(
     }),
     version = "0.14.5",
     deps = [
-        "@rrwbd__ahash-0.8.11//:ahash",
-        "@rrwbd__serde-1.0.217//:serde",
+        "@rrwbd__ahash-0.8.12//:ahash",
+        "@rrwbd__serde-1.0.228//:serde",
     ],
 )

@@ -8,33 +8,21 @@ exports_files([
 
 crates_vendor(
     name = "crates_vendor",
-    annotations = {
-        "log": [crate.annotation(
-            rustc_flags = [
-                "--cfg=atomic_cas",
-                "--cfg=use_std",
-            ],
-            version = "<5",
-        )],
-        "proc-macro2": [crate.annotation(
-            rustc_flags = ["--cfg=use_proc_macro"],
-        )],
-        "unicase": [crate.annotation(
-            rustc_flags = [
-                "--cfg=__unicase__iter_cmp",
-                "--cfg=__unicase__defauler_hasher",
-            ],
-        )],
-    },
     cargo_lockfile = "Cargo.Bazel.lock",
-    manifests = ["@rules_rust_wasm_bindgen_cli//:Cargo.toml"],
+    generate_binaries = True,
     mode = "remote",
     packages = {
+        "serde_json": crate.spec(
+            version = "1.0.145",
+        ),
         "wasm-bindgen": crate.spec(
             version = WASM_BINDGEN_VERSION,
         ),
+        "wasm-bindgen-cli": crate.spec(
+            version = WASM_BINDGEN_VERSION,
+        ),
         "wasm-bindgen-test": crate.spec(
-            version = "0.3.37",
+            version = "0.3.55",
         ),
     },
     # Shorten the repository name to avoid MAX_PATH issues on Windows
@@ -45,14 +33,14 @@ crates_vendor(
 
 alias(
     name = "wasm_bindgen_cli",
-    actual = "@rules_rust_wasm_bindgen_cli",
+    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen",
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "wasm_bindgen_test_runner",
-    actual = "@rules_rust_wasm_bindgen_cli//:test_runner",
+    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen-test-runner",
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
