@@ -121,20 +121,9 @@ fn run_buildrs() -> Result<(), String> {
         }
     }
 
-    for tool_env_var in &["CC", "CXX", "LD"] {
+    for tool_env_var in &["CC", "CXX", "LD", "AR"] {
         if let Some(tool_path) = env::var_os(tool_env_var) {
             command.env(tool_env_var, exec_root.join(tool_path));
-        }
-    }
-
-    if let Some(ar_path) = env::var_os("AR") {
-        // The default OSX toolchain uses libtool as ar_executable not ar.
-        // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
-        // /usr/bin/ar which is probably good enough.
-        if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
-            command.env_remove("AR");
-        } else {
-            command.env("AR", exec_root.join(ar_path));
         }
     }
 
