@@ -1,0 +1,17 @@
+load("@crate_index_remove_internal_deps//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "printer",
+    srcs = ["src/lib.rs"],
+    deps = [
+        "//remove_internal_deps/rng",
+    ] + all_crate_deps(),
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":printer",
+)
