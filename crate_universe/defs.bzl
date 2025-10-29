@@ -99,7 +99,7 @@ rust_test(
 
 ### Direct Packages
 
-In cases where Rust targets have heavy interractions with other Bazel targets ([Cc][cc], [Proto][proto], etc.),
+In cases where Rust targets have heavy interactions with other Bazel targets ([Cc][cc], [Proto][proto], etc.),
 maintaining `Cargo.toml` files may have deminishing returns as things like [rust-analyzer][ra] begin to be confused
 about missing targets or environment variables defined only in Bazel. In workspaces like this, it may be desirable
 to have a "Cargo free" setup. `crates_repository` supports this through the `packages` attribute.
