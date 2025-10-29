@@ -239,6 +239,7 @@ def _rust_library_common(ctx, crate_type):
             owner = ctx.label,
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = False),
         ),
+        include_coverage = ctx.configuration.coverage_enabled,
     )
 
 def _rust_binary_impl(ctx):
@@ -303,6 +304,7 @@ def _rust_binary_impl(ctx):
             owner = ctx.label,
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, ctx.attr.crate_type, crate_is_test = False),
         ),
+        include_coverage = ctx.configuration.coverage_enabled,
     )
 
     providers.append(RunEnvironmentInfo(
@@ -508,6 +510,7 @@ def _rust_test_impl(ctx):
         crate_info_dict = crate_info_dict,
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
+        include_coverage = ctx.configuration.coverage_enabled,
     )
     data = getattr(ctx.attr, "data", [])
 
