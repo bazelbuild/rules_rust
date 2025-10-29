@@ -17,6 +17,7 @@ load(
     "experimental_use_cc_common_link",
     "experimental_use_coverage_metadata_files",
     "experimental_use_global_allocator",
+    "experimental_use_platform_abi_settings",
     "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
     "extra_exec_rustc_env",
     "extra_exec_rustc_flag",
@@ -30,11 +31,14 @@ load(
     "lto",
     "no_std",
     "pipelined_compilation",
+    "platform_linux_musl",
+    "platform_windows_gnu",
     "rename_first_party_crates",
     "rustc_output_diagnostics",
     "rustfmt_toml",
     "third_party_dir",
     "toolchain_generated_sysroot",
+    "toolchain_linker_preference",
     "unpretty",
     "use_real_import_macro",
 )
@@ -91,6 +95,8 @@ experimental_use_allocator_libraries_with_mangled_symbols(
     name = "experimental_use_allocator_libraries_with_mangled_symbols",
 )
 
+experimental_use_platform_abi_settings()
+
 experimental_use_sh_toolchain_for_bootstrap_process_wrapper()
 
 extra_exec_rustc_env()
@@ -117,6 +123,10 @@ no_std()
 
 pipelined_compilation()
 
+platform_linux_musl()
+
+platform_windows_gnu()
+
 rename_first_party_crates()
 
 rustc_output_diagnostics()
@@ -126,6 +136,8 @@ rustfmt_toml()
 third_party_dir()
 
 toolchain_generated_sysroot()
+
+toolchain_linker_preference()
 
 unpretty()
 
