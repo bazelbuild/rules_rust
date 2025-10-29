@@ -8,11 +8,17 @@ To verify the processed cargo cc_args, we use cc_args_and_env_analysis_test().
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("@rules_cc//cc:action_names.bzl", "ACTION_NAME_GROUPS")
-load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "feature", "flag_group", "flag_set")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES", "ACTION_NAME_GROUPS")
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "feature", "flag_group", "flag_set", "tool", "tool_path")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//cargo:defs.bzl", "cargo_build_script")
+
+_EXPECTED_CC_TOOLCHAIN_TOOLS = {
+    "AR": "/usr/fake/ar",
+    "CC": "/usr/fake/gcc",
+    "CXX": "/usr/fake/g++",
+}
 
 def _test_cc_config_impl(ctx):
     features = [
@@ -30,9 +36,96 @@ def _test_cc_config_impl(ctx):
                 ),
             ],
         ),
+        feature(
+            name = "default_cpp_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = ACTION_NAME_GROUPS.all_cpp_compile_actions,
+                    flag_groups = ([
+                        flag_group(
+                            flags = ctx.attr.extra_cxx_compile_flags,
+                        ),
+                    ]),
+                ),
+            ],
+        ),
+        feature(
+            name = "default_ar_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = [ACTION_NAMES.cpp_link_static_library],
+                    flag_groups = ([
+                        flag_group(
+                            flags = ctx.attr.extra_ar_flags,
+                        ),
+                    ]),
+                ),
+            ],
+        ),
     ]
+
+    tool_paths = []
+    action_configs = []
+    if ctx.attr.legacy_cc_toolchain:
+        tool_paths = [
+            tool_path(
+                name = "gcc",
+                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"],
+            ),
+            tool_path(
+                name = "cpp",
+                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CXX"],
+            ),
+            tool_path(
+                name = "ar",
+                path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"],
+            ),
+            # These need to be set to something to create a toolchain, but
+            # is not tested here.
+            tool_path(
+                name = "ld",
+                path = "/usr/ignored/false",
+            ),
+            tool_path(
+                name = "nm",
+                path = "/usr/ignored/false",
+            ),
+            tool_path(
+                name = "objdump",
+                path = "/usr/ignored/false",
+            ),
+            tool_path(
+                name = "strip",
+                path = "/usr/ignored/false",
+            ),
+        ]
+    else:
+        action_configs = (
+            action_config(
+                action_name = ACTION_NAMES.c_compile,
+                tools = [
+                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"]),
+                ],
+            ),
+            action_config(
+                action_name = ACTION_NAMES.cpp_compile,
+                tools = [
+                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CXX"]),
+                ],
+            ),
+            action_config(
+                action_name = ACTION_NAMES.cpp_link_static_library,
+                tools = [
+                    tool(path = _EXPECTED_CC_TOOLCHAIN_TOOLS["AR"]),
+                ],
+            ),
+        )
+
     config_info = cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
+        action_configs = action_configs,
         toolchain_identifier = "test-cc-toolchain",
         host_system_name = "unknown",
         target_system_name = "unknown",
@@ -42,13 +135,17 @@ def _test_cc_config_impl(ctx):
         abi_version = "unknown",
         abi_libc_version = "unknown",
         features = features,
+        tool_paths = tool_paths,
     )
     return config_info
 
 test_cc_config = rule(
     implementation = _test_cc_config_impl,
     attrs = {
+        "extra_ar_flags": attr.string_list(),
         "extra_cc_compile_flags": attr.string_list(),
+        "extra_cxx_compile_flags": attr.string_list(),
+        "legacy_cc_toolchain": attr.bool(default = False),
     },
     provides = [CcToolchainConfigInfo],
 )
@@ -84,13 +181,45 @@ def _cc_args_and_env_analysis_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     cargo_action = tut[DepActionsInfo].actions[0]
-    cflags = cargo_action.env["CFLAGS"].split(" ")
-    for flag in ctx.attr.expected_cflags:
-        asserts.true(
+
+    for env_var, expected_path in _EXPECTED_CC_TOOLCHAIN_TOOLS.items():
+        if ctx.attr.legacy_cc_toolchain and env_var == "CXX":
+            # When using the legacy tool_path toolchain configuration approach,
+            # the CXX tool is forced to be the same as the the CC tool.
+            # See: https://github.com/bazelbuild/bazel/blob/14840856986f21b54330e352b83d687825648889/src/main/starlark/builtins_bzl/common/cc/toolchain_config/legacy_features.bzl#L1296-L1304
+            expected_path = _EXPECTED_CC_TOOLCHAIN_TOOLS["CC"]
+
+        actual_path = cargo_action.env.get(env_var)
+        asserts.false(
             env,
-            flag in cflags,
-            "error: expected '{}' to be in cargo CFLAGS: '{}'".format(flag, cflags),
+            actual_path == None,
+            "error: '{}' tool unset".format(env_var),
         )
+        asserts.equals(
+            env,
+            expected_path,
+            actual_path,
+            "error: '{}' tool path '{}' does not match expected '{}'".format(
+                env_var,
+                actual_path,
+                expected_path,
+            ),
+        )
+
+    _ENV_VAR_TO_EXPECTED_ARGS = {
+        "ARFLAGS": ctx.attr.expected_arflags,
+        "CFLAGS": ctx.attr.expected_cflags,
+        "CXXFLAGS": ctx.attr.expected_cxxflags,
+    }
+
+    for env_var, expected_flags in _ENV_VAR_TO_EXPECTED_ARGS.items():
+        actual_flags = cargo_action.env[env_var].split(" ")
+        for flag in expected_flags:
+            asserts.true(
+                env,
+                flag in actual_flags,
+                "error: expected '{}' to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
+            )
 
     return analysistest.end(env)
 
@@ -98,13 +227,20 @@ cc_args_and_env_analysis_test = analysistest.make(
     impl = _cc_args_and_env_analysis_test_impl,
     doc = """An analysistest to examine the custom cargo flags of an cargo_build_script target.""",
     attrs = {
-        "expected_cflags": attr.string_list(),
+        "expected_arflags": attr.string_list(default = ["-x"]),
+        "expected_cflags": attr.string_list(default = ["-Wall"]),
+        "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
+        "legacy_cc_toolchain": attr.bool(default = False),
     },
 )
 
 def cargo_build_script_with_extra_cc_compile_flags(
+        *,
         name,
-        extra_cc_compile_flags):
+        extra_cc_compile_flags = ["-Wall"],
+        extra_cxx_compile_flags = ["-fno-rtti"],
+        extra_ar_flags = ["-x"],
+        legacy_cc_toolchain = False):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
     This is achieved by creating a cascade of targets:
@@ -115,12 +251,19 @@ def cargo_build_script_with_extra_cc_compile_flags(
 
     Args:
       name: The name of the test target.
-      extra_cc_compile_flags: Extra args for the cc_toolchain.
+      extra_cc_compile_flags: Extra C/C++ args for the cc_toolchain.
+      extra_cxx_compile_flags: Extra C++-specific args for the cc_toolchain.
+      extra_ar_flags: Extra archiver args for the cc_toolchain.
+      legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
+        cc toolchain.
     """
 
     test_cc_config(
         name = "%s/cc_toolchain_config" % name,
         extra_cc_compile_flags = extra_cc_compile_flags,
+        extra_cxx_compile_flags = extra_cxx_compile_flags,
+        extra_ar_flags = extra_ar_flags,
+        legacy_cc_toolchain = legacy_cc_toolchain,
     )
     cc_toolchain(
         name = "%s/test_cc_toolchain_impl" % name,
@@ -249,4 +392,26 @@ def fsanitize_ignorelist_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["-fsanitize-ignorelist=/test/absolute/path"],
+    )
+
+def ar_flags_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_ar_flags = ["-static"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_arflags = ["-static"],
+    )
+
+def legacy_cc_toolchain_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        legacy_cc_toolchain = True,
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        legacy_cc_toolchain = True,
     )
