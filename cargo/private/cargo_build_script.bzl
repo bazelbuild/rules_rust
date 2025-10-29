@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
-load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
@@ -367,8 +366,6 @@ def _cargo_build_script_impl(ctx):
 
     toolchain_tools = [toolchain.all_files]
 
-    cc_toolchain = find_cpp_toolchain(ctx)
-
     env = {}
 
     if ctx.attr.use_default_shell_env == -1:
@@ -414,41 +411,42 @@ def _cargo_build_script_impl(ctx):
         env["CARGO_PKG_VERSION_PRE"] = patch[1] if len(patch) > 1 else ""
         env["CARGO_PKG_VERSION"] = ctx.attr.version
 
-    # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
-    # We hope that the linker env is sufficient for the whole cc_toolchain.
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
-    env.update(**linker_env)
-    env["LD"] = linker
-    env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
+    if ctx.attr.add_cc_toolchain:
+        # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
+        # We hope that the linker env is sufficient for the whole cc_toolchain.
+        cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+        linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
+        env.update(linker_env)
+        env["LD"] = linker
+        env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
-    # MSVC requires INCLUDE to be set
-    cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
-    include = cc_env.get("INCLUDE")
-    if include:
-        env["INCLUDE"] = include
+        # MSVC requires INCLUDE to be set
+        cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
+        include = cc_env.get("INCLUDE")
+        if include:
+            env["INCLUDE"] = include
 
-    if cc_toolchain:
-        toolchain_tools.append(cc_toolchain.all_files)
+        if cc_toolchain:
+            toolchain_tools.append(cc_toolchain.all_files)
 
-        env["CC"] = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = ACTION_NAMES.c_compile,
-        )
-        env["CXX"] = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = ACTION_NAMES.cpp_compile,
-        )
-        env["AR"] = cc_common.get_tool_for_action(
-            feature_configuration = feature_configuration,
-            action_name = ACTION_NAMES.cpp_link_static_library,
-        )
+            env["CC"] = cc_common.get_tool_for_action(
+                feature_configuration = feature_configuration,
+                action_name = ACTION_NAMES.c_compile,
+            )
+            env["CXX"] = cc_common.get_tool_for_action(
+                feature_configuration = feature_configuration,
+                action_name = ACTION_NAMES.cpp_compile,
+            )
+            env["AR"] = cc_common.get_tool_for_action(
+                feature_configuration = feature_configuration,
+                action_name = ACTION_NAMES.cpp_link_static_library,
+            )
 
-        # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
-        # to determine the deployment target when building for apple platforms (`macosx-version-min`
-        # for example, itself derived from the `macos_minimum_os` Bazel argument).
-        env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
-        env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+            # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
+            # to determine the deployment target when building for apple platforms (`macosx-version-min`
+            # for example, itself derived from the `macos_minimum_os` Bazel argument).
+            env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
+            env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
@@ -617,6 +615,7 @@ cargo_build_script = rule(
     ),
     implementation = _cargo_build_script_impl,
     attrs = {
+        "add_cc_toolchain": attr.bool(default = True),
         "build_script_env": attr.string_dict(
             doc = "Environment variables for build scripts.",
         ),
