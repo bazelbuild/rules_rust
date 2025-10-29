@@ -32,253 +32,104 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "anyhow-1.0.95",
-    actual = "@rrwbd__anyhow-1.0.95//:anyhow",
-    tags = ["manual"],
-)
-
-alias(
-    name = "anyhow",
-    actual = "@rrwbd__anyhow-1.0.95//:anyhow",
-    tags = ["manual"],
-)
-
-alias(
-    name = "assert_cmd-2.0.16",
-    actual = "@rrwbd__assert_cmd-2.0.16//:assert_cmd",
-    tags = ["manual"],
-)
-
-alias(
-    name = "assert_cmd",
-    actual = "@rrwbd__assert_cmd-2.0.16//:assert_cmd",
-    tags = ["manual"],
-)
-
-alias(
-    name = "clap-4.5.29",
-    actual = "@rrwbd__clap-4.5.29//:clap",
-    tags = ["manual"],
-)
-
-alias(
-    name = "clap",
-    actual = "@rrwbd__clap-4.5.29//:clap",
-    tags = ["manual"],
-)
-
-alias(
-    name = "diff-0.1.13",
-    actual = "@rrwbd__diff-0.1.13//:diff",
-    tags = ["manual"],
-)
-
-alias(
-    name = "diff",
-    actual = "@rrwbd__diff-0.1.13//:diff",
-    tags = ["manual"],
-)
-
-alias(
-    name = "env_logger-0.11.6",
-    actual = "@rrwbd__env_logger-0.11.6//:env_logger",
-    tags = ["manual"],
-)
-
-alias(
-    name = "env_logger",
-    actual = "@rrwbd__env_logger-0.11.6//:env_logger",
-    tags = ["manual"],
-)
-
-alias(
-    name = "log-0.4.22",
-    actual = "@rrwbd__log-0.4.22//:log",
-    tags = ["manual"],
-)
-
-alias(
-    name = "log",
-    actual = "@rrwbd__log-0.4.22//:log",
-    tags = ["manual"],
-)
-
-alias(
-    name = "predicates-3.1.3",
-    actual = "@rrwbd__predicates-3.1.3//:predicates",
-    tags = ["manual"],
-)
-
-alias(
-    name = "predicates",
-    actual = "@rrwbd__predicates-3.1.3//:predicates",
-    tags = ["manual"],
-)
-
-alias(
-    name = "rayon-1.10.0",
-    actual = "@rrwbd__rayon-1.10.0//:rayon",
-    tags = ["manual"],
-)
-
-alias(
-    name = "rayon",
-    actual = "@rrwbd__rayon-1.10.0//:rayon",
-    tags = ["manual"],
-)
-
-alias(
-    name = "rouille-3.6.2",
-    actual = "@rrwbd__rouille-3.6.2//:rouille",
-    tags = ["manual"],
-)
-
-alias(
-    name = "rouille",
-    actual = "@rrwbd__rouille-3.6.2//:rouille",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde-1.0.217",
-    actual = "@rrwbd__serde-1.0.217//:serde",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde",
-    actual = "@rrwbd__serde-1.0.217//:serde",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde_derive-1.0.217",
-    actual = "@rrwbd__serde_derive-1.0.217//:serde_derive",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde_derive",
-    actual = "@rrwbd__serde_derive-1.0.217//:serde_derive",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde_json-1.0.135",
-    actual = "@rrwbd__serde_json-1.0.135//:serde_json",
+    name = "serde_json-1.0.145",
+    actual = "@rrwbd__serde_json-1.0.145//:serde_json",
     tags = ["manual"],
 )
 
 alias(
     name = "serde_json",
-    actual = "@rrwbd__serde_json-1.0.135//:serde_json",
+    actual = "@rrwbd__serde_json-1.0.145//:serde_json",
     tags = ["manual"],
 )
 
 alias(
-    name = "tempfile-3.15.0",
-    actual = "@rrwbd__tempfile-3.15.0//:tempfile",
-    tags = ["manual"],
-)
-
-alias(
-    name = "tempfile",
-    actual = "@rrwbd__tempfile-3.15.0//:tempfile",
-    tags = ["manual"],
-)
-
-alias(
-    name = "ureq-2.12.1",
-    actual = "@rrwbd__ureq-2.12.1//:ureq",
-    tags = ["manual"],
-)
-
-alias(
-    name = "ureq",
-    actual = "@rrwbd__ureq-2.12.1//:ureq",
-    tags = ["manual"],
-)
-
-alias(
-    name = "walrus-0.23.3",
-    actual = "@rrwbd__walrus-0.23.3//:walrus",
-    tags = ["manual"],
-)
-
-alias(
-    name = "walrus",
-    actual = "@rrwbd__walrus-0.23.3//:walrus",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wasm-bindgen-0.2.100",
-    actual = "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",
+    name = "wasm-bindgen-0.2.105",
+    actual = "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen",
-    actual = "@rrwbd__wasm-bindgen-0.2.100//:wasm_bindgen",
+    actual = "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasm-bindgen-cli-support-0.2.100",
-    actual = "@rrwbd__wasm-bindgen-cli-support-0.2.100//:wasm_bindgen_cli_support",
+    name = "wasm-bindgen-cli-0.2.105",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasm-bindgen-cli-support",
-    actual = "@rrwbd__wasm-bindgen-cli-support-0.2.100//:wasm_bindgen_cli_support",
+    name = "wasm-bindgen-cli",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasm-bindgen-shared-0.2.100",
-    actual = "@rrwbd__wasm-bindgen-shared-0.2.100//:wasm_bindgen_shared",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wasm-bindgen-shared",
-    actual = "@rrwbd__wasm-bindgen-shared-0.2.100//:wasm_bindgen_shared",
-    tags = ["manual"],
-)
-
-alias(
-    name = "wasm-bindgen-test-0.3.50",
-    actual = "@rrwbd__wasm-bindgen-test-0.3.50//:wasm_bindgen_test",
+    name = "wasm-bindgen-test-0.3.55",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
     tags = ["manual"],
 )
 
 alias(
     name = "wasm-bindgen-test",
-    actual = "@rrwbd__wasm-bindgen-test-0.3.50//:wasm_bindgen_test",
+    actual = "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
+    tags = ["manual"],
+)
+
+# Binaries
+alias(
+    name = "alloc-no-stdlib__example",
+    actual = "@rrwbd__alloc-no-stdlib-2.0.4//:example__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasmparser-0.214.0",
-    actual = "@rrwbd__wasmparser-0.214.0//:wasmparser",
+    name = "alloc-stdlib__example",
+    actual = "@rrwbd__alloc-stdlib-0.2.2//:example__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasmparser",
-    actual = "@rrwbd__wasmparser-0.214.0//:wasmparser",
+    name = "brotli-decompressor__brotli-decompressor",
+    actual = "@rrwbd__brotli-decompressor-4.0.3//:brotli-decompressor__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasmprinter-0.214.0",
-    actual = "@rrwbd__wasmprinter-0.214.0//:wasmprinter",
+    name = "clap__stdio-fixture",
+    actual = "@rrwbd__clap-4.5.50//:stdio-fixture__bin",
     tags = ["manual"],
 )
 
 alias(
-    name = "wasmprinter",
-    actual = "@rrwbd__wasmprinter-0.214.0//:wasmprinter",
+    name = "leb128__leb128-repl",
+    actual = "@rrwbd__leb128-0.2.5//:leb128-repl__bin",
+    tags = ["manual"],
+)
+
+alias(
+    name = "multipart__form_test",
+    actual = "@rrwbd__multipart-0.18.0//:form_test__bin",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-cli__wasm-bindgen",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm-bindgen__bin",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-cli__wasm-bindgen-test-runner",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm-bindgen-test-runner__bin",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm-bindgen-cli__wasm2es6js",
+    actual = "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm2es6js__bin",
     tags = ["manual"],
 )
