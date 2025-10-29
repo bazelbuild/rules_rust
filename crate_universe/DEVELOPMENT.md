@@ -38,5 +38,5 @@ A lot of crates are vendored into this repo, e.g. in examples and tests. To
 re-vendor them all, a bash script is provided:
 
 ```sh
-bazel run //crate_universe/tools:vendor
+bazel run //crate_universe/3rdparty:crates_vendor
 ```
