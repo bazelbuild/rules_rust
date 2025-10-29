@@ -753,6 +753,16 @@ _common_attrs = {
         cfg = "exec",
         providers = [[CrateInfo], [CrateGroupInfo]],
     ),
+    "require_explicit_unstable_features": attr.int(
+        doc = (
+            "Whether to require all unstable features to be explicitly opted in to using " +
+            "`-Zallow-features=...`. Possible values: [-1, 0, 1]. -1 means delegate to the " +
+            "toolchain.require_explicit_unstable_features boolean build setting; 0 means False; " +
+            "1 means True."
+        ),
+        values = [-1, 0, 1],
+        default = -1,
+    ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
