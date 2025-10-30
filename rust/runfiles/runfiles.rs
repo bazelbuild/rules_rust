@@ -30,7 +30,7 @@
 //! // ...
 //! ```
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs;
 use std::io;
@@ -146,50 +146,39 @@ type RepoMappingKey = (String, String);
 
 /// The mapping of keys to "target canonical directory" (the bzlmod-generated workspace name).
 #[derive(Debug, PartialEq, Eq)]
-enum RepoMapping {
-    /// Implements `--incompatible_compact_repo_mapping_manifest`.
-    /// <https://github.com/bazelbuild/bazel/issues/26262>
-    ///
-    /// Uses a HashMap for fast exact lookups, and a Vec for prefix-based fallback matching.
-    Compact {
-        exact: HashMap<RepoMappingKey, String>,
-        prefixes: Vec<(RepoMappingKey, String)>,
-    },
+struct RepoMapping {
+    exact: HashMap<RepoMappingKey, String>,
 
-    /// The canonical repo mapping file.
-    Verbose(HashMap<RepoMappingKey, String>),
+    /// Used for `--incompatible_compact_repo_mapping_manifest`.
+    /// <https://github.com/bazelbuild/bazel/issues/26262>
+    prefixes: BTreeMap<RepoMappingKey, String>,
 }
 
 impl RepoMapping {
     pub fn new() -> Self {
-        RepoMapping::Compact {
+        RepoMapping {
             exact: HashMap::new(),
-            prefixes: Vec::new(),
+            prefixes: BTreeMap::new(),
         }
     }
 
     pub fn get(&self, key: &RepoMappingKey) -> Option<&String> {
-        match self {
-            RepoMapping::Compact { exact, prefixes } => {
-                // First try exact match with O(1) hash lookup
-                if let Some(value) = exact.get(key) {
-                    return Some(value);
-                }
-
-                // Then try prefix match with O(n) iteration
-                // In compact mode, entries with wildcards are stored with just the prefix.
-                // We need to check if the lookup key's source_repo starts with any stored prefix.
-                let (source_repo, apparent_name) = key;
-                for ((stored_source, stored_apparent), value) in prefixes {
-                    if source_repo.starts_with(stored_source) && apparent_name == stored_apparent {
-                        return Some(value);
-                    }
-                }
-
-                None
-            }
-            RepoMapping::Verbose(hash_map) => hash_map.get(key),
+        // First try exact match with O(1) hash lookup
+        if let Some(value) = self.exact.get(key) {
+            return Some(value);
         }
+
+        // Then try prefix match with O(n) iteration
+        // In compact mode, entries with wildcards are stored with just the prefix.
+        // We need to check if the lookup key's source_repo starts with any stored prefix.
+        let (source_repo, apparent_name) = key;
+        for ((stored_source, stored_apparent), value) in self.prefixes.iter() {
+            if source_repo.starts_with(stored_source) && apparent_name == stored_apparent {
+                return Some(value);
+            }
+        }
+
+        None
     }
 }
 
@@ -308,7 +297,7 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
 
 fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
     let mut exact = HashMap::new();
-    let mut prefixes = Vec::new();
+    let mut prefixes = BTreeMap::new();
 
     for line in std::fs::read_to_string(path)
         .map_err(RunfilesError::RepoMappingIoError)?
@@ -326,10 +315,10 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
         // Check if this is a prefix entry (ends with '*')
         // The '*' character is terminal and marks a prefix match entry
         if let Some(prefix) = source_repo.strip_suffix('*') {
-            prefixes.push((
+            prefixes.insert(
                 (prefix.to_owned(), apparent_name.to_owned()),
                 target_repo.to_owned(),
-            ));
+            );
         } else {
             exact.insert(
                 (source_repo.to_owned(), apparent_name.to_owned()),
@@ -338,11 +327,7 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
         }
     }
 
-    Ok(if !prefixes.is_empty() {
-        RepoMapping::Compact { exact, prefixes }
-    } else {
-        RepoMapping::Verbose(exact)
-    })
+    Ok(RepoMapping { exact, prefixes })
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
@@ -703,43 +688,46 @@ mod test {
 
         assert_eq!(
             parse_repo_mapping(valid),
-            Ok(RepoMapping::Verbose(HashMap::from([
-                (
-                    ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("platforms".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
+            Ok(RepoMapping {
+                prefixes: BTreeMap::new(),
+                exact: HashMap::from([
                     (
-                        "rust_darwin_aarch64__aarch64-apple-darwin__stable_tools".to_owned(),
+                        ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
                         "rules_rust".to_owned()
                     ),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("rules_rust_tinyjson".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("local_config_sh".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("bazel_tools".to_owned(), "__main__".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("local_config_cc".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                )
-            ])))
+                    (
+                        ("platforms".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        (
+                            "rust_darwin_aarch64__aarch64-apple-darwin__stable_tools".to_owned(),
+                            "rules_rust".to_owned()
+                        ),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("rules_rust_tinyjson".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("local_config_sh".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("bazel_tools".to_owned(), "__main__".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("local_config_cc".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    )
+                ])
+            })
         );
     }
 
@@ -785,9 +773,6 @@ mod test {
 
         let repo_mapping = parse_repo_mapping(mapping_file).unwrap();
 
-        // Verify it's compact mode (because wildcards were detected)
-        assert!(matches!(repo_mapping, RepoMapping::Compact { .. }));
-
         // Check exact match for non-wildcard entry
         assert_eq!(
             repo_mapping.get(&("+other+exact".to_owned(), "foo".to_owned())),
@@ -825,15 +810,15 @@ mod test {
 
         let r = Runfiles {
             mode: Mode::DirectoryBased(runfiles_dir.clone()),
-            repo_mapping: RepoMapping::Compact {
+            repo_mapping: RepoMapping {
                 exact: HashMap::new(),
-                prefixes: vec![
+                prefixes: BTreeMap::from([
                     (("+deps+".to_owned(), "aaa".to_owned()), "_main".to_owned()),
                     (
                         ("+deps+".to_owned(), "dep".to_owned()),
                         "+deps+dep1".to_owned(),
                     ),
-                ],
+                ]),
             },
         };
 
