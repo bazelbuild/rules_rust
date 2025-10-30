@@ -4,12 +4,12 @@
 //!
 //! 1. Depend on this runfiles library from your build rule:
 //! ```python
-//!   rust_binary(
-//!       name = "my_binary",
-//!       ...
-//!       data = ["//path/to/my/data.txt"],
-//!       deps = ["@rules_rust//rust/runfiles"],
-//!   )
+//! rust_binary(
+//!     name = "my_binary",
+//!     ...
+//!     data = ["//path/to/my/data.txt"],
+//!     deps = ["@rules_rust//rust/runfiles"],
+//! )
 //! ```
 //!
 //! 2. Import the runfiles library.
@@ -140,8 +140,64 @@ enum Mode {
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+/// A pair of "source" (the workspace the mapping affects) and "target apparent name" (the
+/// non-bzlmod-generated/pretty name of a dependent workspace).
 type RepoMappingKey = (String, String);
-type RepoMapping = HashMap<RepoMappingKey, String>;
+
+/// The mapping of keys to "target canonical directory" (the bzlmod-generated workspace name).
+#[derive(Debug, PartialEq, Eq)]
+enum RepoMapping {
+    /// Implements `--incompatible_compact_repo_mapping_manifest`.
+    /// <https://github.com/bazelbuild/bazel/issues/26262>
+    ///
+    /// Uses a HashMap for fast exact lookups, and a Vec for prefix-based fallback matching.
+    Compact {
+        exact: HashMap<RepoMappingKey, String>,
+        prefixes: Vec<(RepoMappingKey, String)>,
+    },
+
+    /// The canonical repo mapping file.
+    Verbose(HashMap<RepoMappingKey, String>),
+}
+
+impl RepoMapping {
+    pub fn new() -> Self {
+        RepoMapping::Compact {
+            exact: HashMap::new(),
+            prefixes: Vec::new(),
+        }
+    }
+
+    pub fn get(&self, key: &RepoMappingKey) -> Option<&String> {
+        match self {
+            RepoMapping::Compact { exact, prefixes } => {
+                // First try exact match with O(1) hash lookup
+                if let Some(value) = exact.get(key) {
+                    return Some(value);
+                }
+
+                // Then try prefix match with O(n) iteration
+                // In compact mode, entries with wildcards are stored with just the prefix.
+                // We need to check if the lookup key's source_repo starts with any stored prefix.
+                let (source_repo, apparent_name) = key;
+                for ((stored_source, stored_apparent), value) in prefixes {
+                    if source_repo.starts_with(stored_source) && apparent_name == stored_apparent {
+                        return Some(value);
+                    }
+                }
+
+                None
+            }
+            RepoMapping::Verbose(hash_map) => hash_map.get(key),
+        }
+    }
+}
+
+impl Default for RepoMapping {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// An interface for accessing to [Bazel runfiles](https://bazel.build/extending/rules#runfiles).
 #[derive(Debug)]
@@ -251,7 +307,8 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
 }
 
 fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
-    let mut repo_mapping = RepoMapping::new();
+    let mut exact = HashMap::new();
+    let mut prefixes = Vec::new();
 
     for line in std::fs::read_to_string(path)
         .map_err(RunfilesError::RepoMappingIoError)?
@@ -261,10 +318,31 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
         if parts.len() < 3 {
             return Err(RunfilesError::RepoMappingInvalidFormat);
         }
-        repo_mapping.insert((parts[0].into(), parts[1].into()), parts[2].into());
+
+        let source_repo = parts[0];
+        let apparent_name = parts[1];
+        let target_repo = parts[2];
+
+        // Check if this is a prefix entry (ends with '*')
+        // The '*' character is terminal and marks a prefix match entry
+        if let Some(prefix) = source_repo.strip_suffix('*') {
+            prefixes.push((
+                (prefix.to_owned(), apparent_name.to_owned()),
+                target_repo.to_owned(),
+            ));
+        } else {
+            exact.insert(
+                (source_repo.to_owned(), apparent_name.to_owned()),
+                target_repo.to_owned(),
+            );
+        }
     }
 
-    Ok(repo_mapping)
+    Ok(if !prefixes.is_empty() {
+        RepoMapping::Compact { exact, prefixes }
+    } else {
+        RepoMapping::Verbose(exact)
+    })
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
@@ -625,7 +703,7 @@ mod test {
 
         assert_eq!(
             parse_repo_mapping(valid),
-            Ok(RepoMapping::from([
+            Ok(RepoMapping::Verbose(HashMap::from([
                 (
                     ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
                     "rules_rust".to_owned()
@@ -661,7 +739,7 @@ mod test {
                     ("".to_owned(), "rules_rust".to_owned()),
                     "rules_rust".to_owned()
                 )
-            ]))
+            ])))
         );
     }
 
@@ -683,5 +761,97 @@ mod test {
             parse_repo_mapping(invalid),
             Err(RunfilesError::RepoMappingInvalidFormat),
         );
+    }
+
+    #[test]
+    fn test_parse_repo_mapping_with_wildcard() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let mapping_file = temp_dir.join("test_parse_repo_mapping_with_wildcard.txt");
+        std::fs::write(
+            &mapping_file,
+            dedent(
+                r#"+deps+*,aaa,_main
++deps+*,dep,+deps+dep1
++deps+*,dep1,+deps+dep1
++deps+*,dep2,+deps+dep2
++deps+*,dep3,+deps+dep3
++other+exact,foo,bar
+"#,
+            ),
+        )
+        .unwrap();
+
+        let repo_mapping = parse_repo_mapping(mapping_file).unwrap();
+
+        // Verify it's compact mode (because wildcards were detected)
+        assert!(matches!(repo_mapping, RepoMapping::Compact { .. }));
+
+        // Check exact match for non-wildcard entry
+        assert_eq!(
+            repo_mapping.get(&("+other+exact".to_owned(), "foo".to_owned())),
+            Some(&"bar".to_owned())
+        );
+
+        // Check prefix matches work correctly
+        // When looking up with +deps+dep1 as source_repo, it should match entries with +deps+ prefix
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep1".to_owned(), "aaa".to_owned())),
+            Some(&"_main".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep1".to_owned(), "dep".to_owned())),
+            Some(&"+deps+dep1".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep2".to_owned(), "dep2".to_owned())),
+            Some(&"+deps+dep2".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep3".to_owned(), "dep3".to_owned())),
+            Some(&"+deps+dep3".to_owned())
+        );
+    }
+
+    #[test]
+    fn test_rlocation_from_with_wildcard() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        // Create a mock runfiles directory
+        let runfiles_dir = temp_dir.join("test_rlocation_from_with_wildcard.runfiles");
+        std::fs::create_dir_all(&runfiles_dir).unwrap();
+
+        let r = Runfiles {
+            mode: Mode::DirectoryBased(runfiles_dir.clone()),
+            repo_mapping: RepoMapping::Compact {
+                exact: HashMap::new(),
+                prefixes: vec![
+                    (("+deps+".to_owned(), "aaa".to_owned()), "_main".to_owned()),
+                    (
+                        ("+deps+".to_owned(), "dep".to_owned()),
+                        "+deps+dep1".to_owned(),
+                    ),
+                ],
+            },
+        };
+
+        // Test prefix matching for +deps+dep1
+        let result = r.rlocation_from("aaa/some/path", "+deps+dep1");
+        assert_eq!(result, Some(runfiles_dir.join("_main/some/path")));
+
+        // Test prefix matching for +deps+dep2
+        let result = r.rlocation_from("aaa/other/path", "+deps+dep2");
+        assert_eq!(result, Some(runfiles_dir.join("_main/other/path")));
+
+        // Test prefix matching with different apparent name
+        let result = r.rlocation_from("dep/foo/bar", "+deps+dep3");
+        assert_eq!(result, Some(runfiles_dir.join("+deps+dep1/foo/bar")));
+
+        // Test non-matching source repo (doesn't start with +deps+)
+        let result = r.rlocation_from("aaa/path", "+other+repo");
+        // Should fall back to the path as-is
+        assert_eq!(result, Some(runfiles_dir.join("aaa/path")));
     }
 }
