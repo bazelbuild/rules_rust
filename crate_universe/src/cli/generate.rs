@@ -344,5 +344,10 @@ mod tests {
             .packages
             .iter()
             .any(|pkg| pkg.name.as_str() == "child"));
+
+        assert!(filtered_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "anyhow"));
     }
 }
