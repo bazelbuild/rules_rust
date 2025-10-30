@@ -579,7 +579,7 @@ mod test {
         assert_eq!(
             package,
             &cargo_toml::DependencyDetail {
-                git: Some("https://gitlab.com/crates.rs/cargo_toml.git".to_owned()),
+                git: Some("https://gitlab.com/lib.rs/cargo_toml.git".to_owned()),
                 tag: Some("v0.15.2".to_owned()),
                 default_features: true,
                 ..Default::default()

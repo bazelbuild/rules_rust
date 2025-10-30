@@ -338,12 +338,7 @@ crate_index_cargo_workspace.from_cargo(
     cargo_config = "//cargo_workspace:.cargo/config.toml",
     cargo_lockfile = "//cargo_workspace:Cargo.Bazel.lock",
     lockfile = "//cargo_workspace:cargo-bazel-lock.json",
-    manifests = [
-        "//cargo_workspace:Cargo.toml",
-        "//cargo_workspace/num_printer:Cargo.toml",
-        "//cargo_workspace/printer:Cargo.toml",
-        "//cargo_workspace/rng:Cargo.toml",
-    ],
+    manifests = ["//cargo_workspace:Cargo.toml"],
 )
 use_repo(
     crate_index_cargo_workspace,

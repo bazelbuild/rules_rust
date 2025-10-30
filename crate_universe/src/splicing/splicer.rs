@@ -71,7 +71,16 @@ impl<'a> SplicerKind<'a> {
             .and_then(|path| manifests.get_key_value(path))
         {
             if manifests.len() > 1 {
-                eprintln!("Only the workspace's Cargo.toml is required in the `manifests` attribute; the rest can be removed");
+                let workspace_name = manifest
+                    .package
+                    .as_ref()
+                    .map(|p| p.name.as_str())
+                    .unwrap_or_else(|| {
+                        path.parent()
+                            .and_then(|p| p.file_name())
+                            .unwrap_or_else(|| path.file_name().unwrap_or("unknown"))
+                    });
+                eprintln!("INFO: Only the workspace's Cargo.toml is required in the `manifests` attribute of workspace `{workspace_name}`; the rest can be removed");
             }
             Ok(Self::Workspace {
                 path,

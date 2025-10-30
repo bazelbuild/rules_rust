@@ -40,7 +40,7 @@ if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
 fi
 
 # Pass on CARGO_REGISTRIES_* and CARGO_REGISTRY*
-while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_REGISTR)
+while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_REGISTER)
 
 # The path needs to be preserved to prevent bazel from starting with different
 # startup options (requiring a restart of bazel).
@@ -65,7 +65,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 @REM        call :rlocation <runfile_path> <abs_path>
 @REM        The rlocation function maps the given <runfile_path> to its absolute
 @REM        path and stores the result in a variable named <abs_path>.
-@REM        This function fails if the <runfile_path> doesn't exist in mainifest
+@REM        This function fails if the <runfile_path> doesn't exist in manifest
 @REM        file.
 :: Start of rlocation
 goto :rlocation_end
