@@ -31,6 +31,7 @@ load(
     "no_std",
     "pipelined_compilation",
     "rename_first_party_crates",
+    "require_explicit_unstable_features",
     "rustc_output_diagnostics",
     "rustfmt_toml",
     "third_party_dir",
@@ -118,6 +119,8 @@ no_std()
 pipelined_compilation()
 
 rename_first_party_crates()
+
+require_explicit_unstable_features()
 
 rustc_output_diagnostics()
 

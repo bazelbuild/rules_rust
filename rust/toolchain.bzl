@@ -538,6 +538,9 @@ def _generate_sysroot(
 def _experimental_use_cc_common_link(ctx):
     return ctx.attr.experimental_use_cc_common_link[BuildSettingInfo].value
 
+def _require_explicit_unstable_features(ctx):
+    return ctx.attr.require_explicit_unstable_features[BuildSettingInfo].value
+
 def _expand_flags(ctx, attr_name, targets, make_variables):
     targets = deduplicate(targets)
     expanded_flags = []
@@ -753,6 +756,7 @@ def _rust_toolchain_impl(ctx):
         target_json = target_json,
         target_os = target_os,
         target_triple = target_triple,
+        require_explicit_unstable_features = _require_explicit_unstable_features(ctx),
 
         # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
@@ -903,6 +907,13 @@ rust_toolchain = rule(
         ),
         "per_crate_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "require_explicit_unstable_features": attr.label(
+            default = Label(
+                "//rust/settings:require_explicit_unstable_features",
+            ),
+            doc = ("Label to a boolean build setting that controls whether all uses of unstable " +
+                   "Rust features must be explicitly opted in to using `-Zallow-features=...`."),
         ),
         "rust_doc": attr.label(
             doc = "The location of the `rustdoc` binary. Can be a direct source or a filegroup containing one item.",

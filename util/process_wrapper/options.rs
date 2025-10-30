@@ -67,6 +67,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
+    let mut require_explicit_unstable_features = None;
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
     flags.define_flag("--stable-status-file", "", &mut stable_status_file_raw);
     flags.define_flag("--volatile-status-file", "", &mut volatile_status_file_raw);
@@ -113,6 +114,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         'rendered' will extract the rendered message and print that.\n\
         Default: `rendered`",
         &mut rustc_output_format_raw,
+    );
+    flags.define_flag(
+        "--require-explicit-unstable-features",
+        "If set, an empty -Zallow-features= will be added to the rustc command line whenever no \
+         other -Zallow-features= is present in the rustc flags.",
+        &mut require_explicit_unstable_features,
     );
 
     let mut child_args = match flags
@@ -191,9 +198,17 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         &volatile_stamp_mappings,
         &subst_mappings,
     );
+
+    let require_explicit_unstable_features =
+        require_explicit_unstable_features.is_some_and(|s| s == "true");
+
     // Append all the arguments fetched from files to those provided via command line.
     child_args.append(&mut file_arguments);
-    let child_args = prepare_args(child_args, &subst_mappings)?;
+    let child_args = prepare_args(
+        child_args,
+        &subst_mappings,
+        require_explicit_unstable_features,
+    )?;
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
@@ -243,6 +258,10 @@ fn env_from_files(paths: Vec<String>) -> Result<HashMap<String, String>, OptionE
     Ok(env_vars)
 }
 
+fn is_allow_features_flag(arg: &str) -> bool {
+    arg.starts_with("-Zallow-features=") || arg.starts_with("allow-features=")
+}
+
 fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     for (f, replace_with) in subst_mappings {
         let from = format!("${{{f}}}");
@@ -251,11 +270,12 @@ fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     arg
 }
 
-/// Apply substitutions to the given param file. Returns the new filename.
+/// Apply substitutions to the given param file. Returns the new filename and whether any
+/// allow-features flags were found.
 fn prepare_param_file(
     filename: &str,
     subst_mappings: &[(String, String)],
-) -> Result<String, OptionError> {
+) -> Result<(String, bool), OptionError> {
     let expanded_file = format!("{filename}.expanded");
     let format_err = |err: io::Error| {
         OptionError::Generic(format!(
@@ -271,38 +291,48 @@ fn prepare_param_file(
         out: &mut io::BufWriter<File>,
         subst_mappings: &[(String, String)],
         format_err: &impl Fn(io::Error) -> OptionError,
-    ) -> Result<(), OptionError> {
+    ) -> Result<bool, OptionError> {
+        let mut has_allow_features_flag = false;
         for arg in read_file_to_array(filename).map_err(OptionError::Generic)? {
             let arg = prepare_arg(arg, subst_mappings);
+            has_allow_features_flag |= is_allow_features_flag(&arg);
             if let Some(arg_file) = arg.strip_prefix('@') {
-                process_file(arg_file, out, subst_mappings, format_err)?;
+                has_allow_features_flag |= process_file(arg_file, out, subst_mappings, format_err)?;
             } else {
                 writeln!(out, "{arg}").map_err(format_err)?;
             }
         }
-        Ok(())
+        Ok(has_allow_features_flag)
     }
-    process_file(filename, &mut out, subst_mappings, &format_err)?;
-    Ok(expanded_file)
+    let has_allow_features_flag = process_file(filename, &mut out, subst_mappings, &format_err)?;
+    Ok((expanded_file, has_allow_features_flag))
 }
 
 /// Apply substitutions to the provided arguments, recursing into param files.
 fn prepare_args(
     args: Vec<String>,
     subst_mappings: &[(String, String)],
+    require_explicit_unstable_features: bool,
 ) -> Result<Vec<String>, OptionError> {
-    args.into_iter()
-        .map(|arg| {
-            let arg = prepare_arg(arg, subst_mappings);
-            if let Some(param_file) = arg.strip_prefix('@') {
-                // Note that substitutions may also apply to the param file path!
-                prepare_param_file(param_file, subst_mappings)
-                    .map(|filename| format!("@{filename}"))
-            } else {
-                Ok(arg)
-            }
-        })
-        .collect()
+    let mut allowed_features = false;
+    let mut processed_args = Vec::<String>::new();
+    for arg in args.into_iter() {
+        let arg = prepare_arg(arg, subst_mappings);
+        if let Some(param_file) = arg.strip_prefix('@') {
+            // Note that substitutions may also apply to the param file path!
+            let (file, allowed) = prepare_param_file(param_file, subst_mappings)
+                .map(|(filename, af)| (format!("@{filename}"), af))?;
+            allowed_features |= allowed;
+            processed_args.push(file);
+        } else {
+            allowed_features |= is_allow_features_flag(&arg);
+            processed_args.push(arg);
+        }
+    }
+    if !allowed_features && require_explicit_unstable_features {
+        processed_args.push("-Zallow-features=".to_string());
+    }
+    Ok(processed_args)
 }
 
 fn environment_block(
@@ -333,4 +363,37 @@ fn environment_block(
         }
     }
     environment_variables
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_enforce_allow_features_flag_user_didnt_say() {
+        let args = vec!["rustc".to_string()];
+        let subst_mappings: Vec<(String, String)> = vec![];
+        let args = prepare_args(args, &subst_mappings).unwrap();
+        assert_eq!(
+            args,
+            vec!["rustc".to_string(), "-Zallow-features=".to_string(),]
+        );
+    }
+
+    #[test]
+    fn test_enforce_allow_features_flag_user_requested_something() {
+        let args = vec![
+            "rustc".to_string(),
+            "-Zallow-features=whitespace_instead_of_curly_braces".to_string(),
+        ];
+        let subst_mappings: Vec<(String, String)> = vec![];
+        let args = prepare_args(args, &subst_mappings).unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "rustc".to_string(),
+                "-Zallow-features=whitespace_instead_of_curly_braces".to_string(),
+            ]
+        );
+    }
 }
