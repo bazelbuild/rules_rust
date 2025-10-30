@@ -441,6 +441,7 @@ def execute_generator(
         paths_to_track_file,
         warnings_output_file,
         skip_cargo_lockfile_overwrite,
+        strip_internal_dependencies_from_cargo_lockfile,
         metadata = None,
         generator_label = None):
     """Execute the `cargo-bazel` binary to produce `BUILD` and `.bzl` files.
@@ -458,6 +459,11 @@ def execute_generator(
         skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
             You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
             But you probably don't want to set this.
+        strip_internal_dependencies_from_cargo_lockfile (bool): Whether to strip internal dependencies from the cargo lockfile.
+            You may want to use this if you want to maintain a cargo lockfile for bazel only.
+            Bazel only requires external dependencies to be present in the lockfile.
+            By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
+            in other lockfiles where the cargo lockfile's sha is stored.
         generator_label (Label): The label of the `generator` parameter.
         metadata (path, optional): The path to a Cargo metadata json file. If this is set, it indicates to
             the generator that repinning is required. This file must be adjacent to a `Cargo.toml` and
@@ -498,6 +504,9 @@ def execute_generator(
 
     if skip_cargo_lockfile_overwrite:
         args.append("--skip-cargo-lockfile-overwrite")
+
+    if strip_internal_dependencies_from_cargo_lockfile:
+        args.append("--strip-internal-dependencies-from-cargo-lockfile")
 
     # Some components are not required unless re-pinning is enabled
     if metadata:

@@ -1,0 +1,12 @@
+load("@crate_index_remove_internal_deps//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "number_printer",
+    srcs = ["src/main.rs"],
+    deps = [
+        "//remove_internal_deps/printer",
+    ] + all_crate_deps(),
+)
