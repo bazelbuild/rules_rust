@@ -692,6 +692,11 @@ impl<'de> Visitor<'de> for GenBinariesVisitor {
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Config {
+    /// The name of a package to be the root of the crate graph.
+    /// If not specified, the workspace members will be used.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) package_name: Option<String>,
+
     /// Whether to generate `rust_binary` targets for all bins by default
     pub(crate) generate_binaries: bool,
 

@@ -112,6 +112,7 @@ impl TreeResolver {
         host_triples: &BTreeSet<TargetTriple>,
         target_triples: &BTreeSet<TargetTriple>,
         rustc_wrapper: &Path,
+        package_name: &Option<String>,
     ) -> Result<BTreeMap<TargetTriple, BTreeMap<TargetTriple, Vec<u8>>>> {
         // A collection of all stdout logs from each process
         let mut stdouts: BTreeMap<TargetTriple, BTreeMap<TargetTriple, Vec<u8>>> = BTreeMap::new();
@@ -169,16 +170,12 @@ impl TreeResolver {
             let manifest_path = manifest_path.to_owned();
             let rustc_wrapper = rustc_wrapper.to_owned();
             let cargo_bin = self.cargo_bin.clone();
+            let package_name = package_name.clone();
 
             in_flight.push(thread::spawn(
                 move || -> anyhow::Result<(String, String, Output)> {
-                    // We use `cargo tree` here because `cargo metadata` doesn't report
-                    // back target-specific features (enabled with `resolver = "2"`).
-                    // This is unfortunately a bit of a hack. See:
-                    // - https://github.com/rust-lang/cargo/issues/9863
-                    // - https://github.com/bazelbuild/rules_rust/issues/1662
-                    let child = cargo_bin
-                        .command()?
+                    let mut cargo_bin = cargo_bin.command()?;
+                    cargo_bin
                         // These next two environment variables are used to hack cargo into using a custom
                         // host triple instead of the host triple detected by rustc.
                         .env("RUSTC_WRAPPER", &rustc_wrapper)
@@ -199,9 +196,22 @@ impl TreeResolver {
                         .arg("--format=;{p};{f};")
                         .arg("--color=never")
                         .arg("--charset=ascii")
-                        .arg("--workspace")
                         .arg("--target")
-                        .arg(&cargo_target)
+                        .arg(&cargo_target);
+
+                    // If a package name is given, use it. 
+                    if let Some(package) = package_name.as_ref().filter(|p| !p.is_empty()) {
+                        cargo_bin.arg("--package").arg(package);
+                    } else { // Otherwise, assume a workspace.
+                        cargo_bin.arg("--workspace");
+                    }
+
+                    // We use `cargo tree` here because `cargo metadata` doesn't report
+                    // back target-specific features (enabled with `resolver = "2"`).
+                    // This is unfortunately a bit of a hack. See:
+                    // - https://github.com/rust-lang/cargo/issues/9863
+                    // - https://github.com/bazelbuild/rules_rust/issues/1662
+                    let child = cargo_bin
                         .stdout(std::process::Stdio::piped())
                         .stderr(std::process::Stdio::piped())
                         .spawn()
@@ -353,6 +363,7 @@ impl TreeResolver {
         &self,
         pristine_manifest_path: &Utf8Path,
         target_triples: &BTreeSet<TargetTriple>,
+        package_name: &Option<String>,
     ) -> Result<TreeResolverMetadata> {
         debug!(
             "Generating features for manifest {}",
@@ -387,6 +398,7 @@ impl TreeResolver {
                 &host_triples,
                 target_triples,
                 &rustc_wrapper,
+                package_name,
             )?;
 
         let mut metadata: BTreeMap<CrateId, BTreeMap<TargetTriple, CargoTreeEntry>> =

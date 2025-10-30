@@ -276,6 +276,7 @@ def _write_config_file(ctx):
             repository_name = ctx.attr.repository_name,
             output_pkg = _get_output_package(ctx),
             workspace_name = workspace_name,
+            package_name = ctx.attr.package_name,
             render_config = dict(json.decode(ctx.attr.render_config)) if ctx.attr.render_config else None,
         ),
     )
@@ -297,6 +298,7 @@ def generate_config_file(
         repository_name,
         output_pkg,
         workspace_name,
+        package_name,
         render_config,
         repository_ctx = None):
     """Writes the rendering config to cargo-bazel-config.json.
@@ -313,6 +315,7 @@ def generate_config_file(
         repository_name (str): The name of the repository to generate.
         output_pkg: The path to the package containing the build files.
         workspace_name (str): The name of the workspace.
+        package_name (str): The name of the package.
         render_config: The render config to use.
         repository_ctx (repository_ctx, optional): A repository context object
             used for enabling certain functionality.
@@ -389,6 +392,7 @@ def generate_config_file(
         render_config = render_config,
         supported_platform_triples = supported_platform_triples,
         repository_name = repository_name or ctx.label.name,
+        package_name = package_name,
         repository_ctx = repository_ctx,
     )
 
@@ -568,6 +572,9 @@ CRATES_VENDOR_ATTRS = {
             "remote",
         ],
         default = "remote",
+    ),
+    "package_name": attr.string(
+        doc = "The name of the package being generated",
     ),
     "packages": attr.string_dict(
         doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",

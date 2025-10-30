@@ -284,6 +284,10 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
             ),
             default = True,
         ),
+        "package_name": attr.string(
+            doc = "The name of the package being generated",
+            mandatory = False,            
+        ),
         "generate_target_compatible_with": attr.bool(
             doc = "DEPRECATED: Moved to `render_config`.",
             default = True,

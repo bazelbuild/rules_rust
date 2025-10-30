@@ -234,6 +234,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     let resolver_data = TreeResolver::new(cargo.clone()).generate(
         manifest_path.as_path_buf(),
         &config.supported_platform_triples,
+        &config.package_name,
     )?;
 
     // Write the registry url info to the manifest now that a lockfile has been generated

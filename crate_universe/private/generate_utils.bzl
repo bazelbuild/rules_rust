@@ -249,6 +249,7 @@ def compile_config(
         render_config,
         supported_platform_triples,
         repository_name,
+        package_name = None,
         repository_ctx = None):
     """Create a config file for generating crate targets
 
@@ -264,6 +265,7 @@ def compile_config(
         render_config (dict): The deserialized dict of the `render_config` function.
         supported_platform_triples (list): A list of platform triples
         repository_name (str): The name of the repository being generated
+        package_name (str, optional): The name of the package being generated.
         repository_ctx (repository_ctx, optional): A repository context object used for enabling
             certain functionality.
 
@@ -305,6 +307,7 @@ def compile_config(
             repository_name = repository_name,
         ),
         supported_platform_triples = supported_platform_triples,
+        package_name = package_name,
     )
 
     return config
@@ -328,6 +331,7 @@ def generate_config(repository_ctx):
         render_config = _get_render_config(repository_ctx),
         supported_platform_triples = repository_ctx.attr.supported_platform_triples,
         repository_name = repository_ctx.name,
+        package_name = repository_ctx.attr.package_name,
         repository_ctx = repository_ctx,
     )
 
