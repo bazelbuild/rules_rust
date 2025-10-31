@@ -48,7 +48,8 @@ fn main() {
     for env_var in &["CARGO", "CC", "CXX", "LD", "RUSTC"] {
         let path = std::env::var(env_var)
             .unwrap_or_else(|err| panic!("Error getting {}: {}", env_var, err));
-        std::process::Command::new(&path).status()
+        std::process::Command::new(&path)
+            .status()
             .unwrap_or_else(|err| panic!("Error executing {}: {}", path, err));
     }
 
