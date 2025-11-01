@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
-load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
@@ -21,8 +20,7 @@ load(
     "dedent",
     "deduplicate",
     "expand_dict_value_locations",
-    "find_cc_toolchain",
-    "find_toolchain",
+    "get_feature_configuration",
     _name_to_crate_name = "name_to_crate_name",
 )
 
@@ -316,7 +314,7 @@ def _cargo_build_script_impl(ctx):
     """
     script = ctx.executable.script
     script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
-    toolchain = find_toolchain(ctx)
+    toolchain = ctx.exec_groups["build_script_run"].toolchains["//rust:toolchain_type"]
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     dep_env_out = ctx.actions.declare_file(ctx.label.name + ".depenv")
@@ -367,8 +365,6 @@ def _cargo_build_script_impl(ctx):
 
     toolchain_tools = [toolchain.all_files]
 
-    cc_toolchain = find_cpp_toolchain(ctx)
-
     env = dict({})
 
     if ctx.attr.use_default_shell_env == -1:
@@ -417,7 +413,8 @@ def _cargo_build_script_impl(ctx):
 
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
-    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    cc_toolchain = ctx.exec_groups["build_script_run"].toolchains["@bazel_tools//tools/cpp:toolchain_type"].cc
+    feature_configuration = get_feature_configuration(ctx, cc_toolchain)
     linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
@@ -588,7 +585,7 @@ def _cargo_build_script_impl(ctx):
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
-        toolchain = None,
+        exec_group = "build_script_run",
         use_default_shell_env = use_default_shell_env,
     )
 
@@ -730,11 +727,15 @@ cargo_build_script = rule(
             default = Label("//cargo/settings:incompatible_runfiles_cargo_manifest_dir"),
         ),
     },
+    exec_groups = {
+        "build_script_run": exec_group(
+            toolchains = [
+                "//rust:toolchain_type",
+                "@bazel_tools//tools/cpp:toolchain_type",
+            ],
+        ),
+    },
     fragments = ["cpp"],
-    toolchains = [
-        str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
 )
 
 def _merge_env_dict(prefix_dict, suffix_dict):

@@ -81,15 +81,16 @@ def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
     """
     cc_toolchain = find_rules_cc_toolchain(ctx)
+    return cc_toolchain, get_feature_configuration(ctx, cc_toolchain, extra_unsupported_features)
 
-    feature_configuration = cc_common.configure_features(
+def get_feature_configuration(ctx, cc_toolchain, extra_unsupported_features = tuple()):
+    return cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = UNSUPPORTED_FEATURES + ctx.disabled_features +
                                list(extra_unsupported_features),
     )
-    return cc_toolchain, feature_configuration
 
 # TODO: Replace with bazel-skylib's `path.dirname`. This requires addressing some
 # dependency issues or generating docs will break.
