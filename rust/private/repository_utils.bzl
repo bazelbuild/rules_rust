@@ -19,7 +19,19 @@ load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
 DEFAULT_NIGHTLY_VERSION = "nightly/{}".format(DEFAULT_NIGHTLY_ISO_DATE)
-DEFAULT_EXTRA_TARGET_TRIPLES = ["wasm32-unknown-unknown", "wasm32-wasip1", "wasm32-wasip2"]
+
+# Toolchains are cheap to declare so we can add common target platforms here
+# to make cross-compilation likelier to work out of the box.
+# TODO(zbarsky): Should we register even more?
+DEFAULT_EXTRA_TARGET_TRIPLES = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "wasm32-unknown-unknown",
+    "wasm32-wasip1",
+    "wasm32-wasip2",
+]
 
 TINYJSON_KWARGS = dict(
     name = "rules_rust_tinyjson",
