@@ -1,0 +1,8 @@
+[package]
+name = "lttng_ust_rs"
+
+[dependencies]
+lttng-ust = "0.1.0"
+
+[build-dependencies]
+lttng-ust-generate = "0.1.0"

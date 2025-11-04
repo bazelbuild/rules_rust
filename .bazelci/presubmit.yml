@@ -819,6 +819,14 @@ tasks:
     run_targets:
       - "//pkg_a:pkg_a_binary"
       - "//pkg_b:pkg_b_binary"
+  example_lttng_ust_rs:
+    name: LTTng UST RS example
+    platform: ubuntu2204
+    working_directory: examples/lttng_ust_rs
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
   ubuntu2204_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2204
