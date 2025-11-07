@@ -69,6 +69,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "x86_64-unknown-linux-musl": _support(std = True, host_tools = True),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
     "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }

@@ -43,14 +43,18 @@ load_arbitrary_tool = _load_arbitrary_tool
 # Note: Code in `.github/workflows/crate_universe.yaml` looks for this line, if you remove it or change its format, you will also need to update that code.
 DEFAULT_TOOLCHAIN_TRIPLES = {
     "aarch64-apple-darwin": "rust_macos_aarch64",
+    # "aarch64-pc-windows-gnu": "rust_windows_aarch64_gnu",
     "aarch64-pc-windows-msvc": "rust_windows_aarch64",
     "aarch64-unknown-linux-gnu": "rust_linux_aarch64",
+    # "aarch64-unknown-linux-musl": "rust_linux_aarch64_gnu",
     "powerpc64le-unknown-linux-gnu": "rust_linux_powerpc64le",
     "s390x-unknown-linux-gnu": "rust_linux_s390x",
     "x86_64-apple-darwin": "rust_macos_x86_64",
+    # "x86_64-pc-windows-gnu": "rust_windows_x86_64_gnu",
     "x86_64-pc-windows-msvc": "rust_windows_x86_64",
     "x86_64-unknown-freebsd": "rust_freebsd_x86_64",
     "x86_64-unknown-linux-gnu": "rust_linux_x86_64",
+    # "x86_64-unknown-linux-musl": "rust_linux_x86_64_musl",
 }
 
 _COMPACT_WINDOWS_NAMES = True
@@ -234,6 +238,7 @@ def rust_register_toolchains(
     toolchain_names = []
     toolchain_labels = {}
     toolchain_target_settings = {}
+    toolchain_target_settings_select = {}
     toolchain_types = {}
     exec_compatible_with_by_toolchain = {}
     target_compatible_with_by_toolchain = {}
@@ -295,6 +300,7 @@ def rust_register_toolchains(
             target_compatible_with_by_toolchain[toolchain.name] = toolchain.target_constraints
             toolchain_types[toolchain.name] = "@rules_rust//rust:toolchain"
             toolchain_target_settings[toolchain.name] = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)] + target_settings
+            toolchain_target_settings_select[toolchain.name] = _get_abi_target_settings_select(toolchain.target_triple)
 
     for exec_triple, name in rustfmt_toolchain_triples.items():
         rustfmt_repo_name = "rustfmt_{}__{}".format(rustfmt_version.replace("/", "-"), exec_triple)
@@ -319,6 +325,7 @@ def rust_register_toolchains(
         toolchain_labels[rustfmt_repo_name] = "@{}_tools//:rustfmt_toolchain".format(rustfmt_repo_name)
         exec_compatible_with_by_toolchain[rustfmt_repo_name] = triple_to_constraint_set(exec_triple)
         target_compatible_with_by_toolchain[rustfmt_repo_name] = []
+        toolchain_target_settings_select[rustfmt_repo_name] = {}
         toolchain_types[rustfmt_repo_name] = "@rules_rust//rust/rustfmt:toolchain_type"
 
     if aliases:
@@ -332,6 +339,7 @@ def rust_register_toolchains(
                 exec_compatible_with_by_toolchain[name] = info["exec_compatible_with"]
                 target_compatible_with_by_toolchain[name] = info["target_compatible_with"]
                 toolchain_target_settings[name] = info["target_settings"]
+                toolchain_target_settings_select[name] = info["target_settings_select"]
                 toolchain_types[name] = info["toolchain_type"]
 
         toolchain_repository_hub(
@@ -340,6 +348,7 @@ def rust_register_toolchains(
             toolchain_labels = toolchain_labels,
             toolchain_types = toolchain_types,
             target_settings = toolchain_target_settings,
+            target_settings_select = json.encode(toolchain_target_settings_select),
             exec_compatible_with = exec_compatible_with_by_toolchain,
             target_compatible_with = target_compatible_with_by_toolchain,
         )
@@ -450,11 +459,14 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     exec_triple = triple(ctx.attr.exec_triple)
 
+    include_linker = True
+
     rustc_content, rustc_sha256 = load_rust_compiler(
         ctx = ctx,
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
+        include_linker = include_linker,
     )
     clippy_content, clippy_sha256 = load_clippy(
         ctx = ctx,
@@ -532,6 +544,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
+        include_linker = include_linker,
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
@@ -586,6 +599,7 @@ def _toolchain_repository_proxy_impl(repository_ctx):
         name = "toolchain",
         toolchain = repository_ctx.attr.toolchain,
         target_settings = repository_ctx.attr.target_settings,
+        target_settings_select = repository_ctx.attr.target_settings_select,
         toolchain_type = repository_ctx.attr.toolchain_type,
         target_compatible_with = repository_ctx.attr.target_compatible_with,
         exec_compatible_with = repository_ctx.attr.exec_compatible_with,
@@ -606,6 +620,9 @@ toolchain_repository_proxy = repository_rule(
         "target_settings": attr.string_list(
             doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
+        "target_settings_select": attr.string_list_dict(
+            doc = "A dictionary mapping config_setting labels to lists of additional target_settings, used to generate a select() statement. If empty, no select() is generated.",
+        ),
         "toolchain": attr.string(
             doc = "The name of the toolchain implementation target.",
             mandatory = True,
@@ -620,6 +637,42 @@ toolchain_repository_proxy = repository_rule(
 
 # For legacy support
 rust_toolchain_repository_proxy = toolchain_repository_proxy
+
+def _get_abi_target_settings_select(target_triple):
+    """Returns the ABI-specific config_settings for use in a select() statement.
+
+    Args:
+        target_triple (str): The target triple to check
+
+    Returns:
+        dict: A dictionary mapping config_setting labels to lists of target_settings,
+              for use in a select() statement. Empty dict if no ABI-specific settings apply.
+    """
+    triple_struct = triple(target_triple)
+
+    # Check for linux + musl combination
+    if triple_struct.system == "linux":
+        return {
+            "@rules_rust//rust/settings:experimental_use_platform_abi_settings_enabled": [
+                "@rules_rust//rust/settings:platform_linux_musl_{}".format(
+                    "enabled" if triple_struct.abi == "musl" else "disabled",
+                ),
+            ],
+            "//conditions:default": [],
+        }
+
+    # Check for windows + gnu combination
+    if triple_struct.system == "windows":
+        return {
+            "@rules_rust//rust/settings:experimental_use_platform_abi_settings_enabled": [
+                "@rules_rust//rust/settings:platform_windows_gnu_{}".format(
+                    "enabled" if triple_struct.abi == "gnu" else "disabled",
+                ),
+            ],
+            "//conditions:default": [],
+        }
+
+    return {}
 
 # N.B. A "proxy repository" is needed to allow for registering the toolchain (with constraints)
 # without actually downloading the toolchain.
@@ -714,6 +767,7 @@ def rust_toolchain_repository(
     )
 
     channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
+    abi_target_settings_select = _get_abi_target_settings_select(target_triple)
 
     tools_toolchain_label = "@{}//:rust_toolchain".format(tools_repo_name)
 
@@ -723,6 +777,7 @@ def rust_toolchain_repository(
         name = name,
         toolchain = tools_toolchain_label,
         target_settings = channel_target_settings + target_settings,
+        target_settings_select = abi_target_settings_select,
         toolchain_type = toolchain_type,
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
@@ -732,7 +787,8 @@ def rust_toolchain_repository(
         "exec_compatible_with": exec_compatible_with,
         "name": name,
         "target_compatible_with": target_compatible_with,
-        "target_settings": target_settings,
+        "target_settings": channel_target_settings + target_settings,
+        "target_settings_select": abi_target_settings_select,
         "toolchain_label": "@{name}//:toolchain".format(name = name),
         "toolchain_type": toolchain_type,
         "tools_toolchain_label": tools_toolchain_label,
@@ -766,6 +822,7 @@ _RUST_ANALYZER_TOOLCHAIN_TOOLS_REPOSITORY_ATTRS = {
 
 def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
     sha256s = dict(repository_ctx.attr.sha256s)
+    include_linker = True
 
     iso_date = None
     version = repository_ctx.attr.version
@@ -790,6 +847,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         iso_date = iso_date,
         target_triple = host_triple,
         version = version,
+        include_linker = include_linker,
     )
     build_contents = [rustc_content]
     sha256s.update(rustc_sha256)
@@ -924,6 +982,8 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         repository_ctx.name,
     ))
 
+    include_linker = True
+
     iso_date = None
     version = repository_ctx.attr.version
     version_array = version.split("/")
@@ -942,6 +1002,7 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
+        include_linker = include_linker,
     )
     rustfmt_content, rustfmt_sha256 = load_rustfmt(
         ctx = repository_ctx,

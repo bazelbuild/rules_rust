@@ -21,6 +21,22 @@ constraint_value(
     constraint_setting = ":wasi_version",
 )
 
+# ABI constraint settings
+constraint_setting(
+    name = "abi",
+    default_constraint_value = ":gnu",
+)
+
+constraint_value(
+    name = "gnu",
+    constraint_setting = ":abi",
+)
+
+constraint_value(
+    name = "musl",
+    constraint_setting = ":abi",
+)
+
 package_group(
     name = "function_transition_allowlist",
     packages = [
