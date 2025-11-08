@@ -49,6 +49,8 @@ pub(crate) struct Options {
     pub(crate) rustc_quit_on_rmeta: bool,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
+    // If set, move any produced .dwo files into the named directory.
+    pub(crate) kludge_move_dwo_to: Option<String>,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -67,6 +69,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
+    let mut kludge_move_dwo_to = None;
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
     flags.define_flag("--stable-status-file", "", &mut stable_status_file_raw);
     flags.define_flag("--volatile-status-file", "", &mut volatile_status_file_raw);
@@ -113,6 +116,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         'rendered' will extract the rendered message and print that.\n\
         Default: `rendered`",
         &mut rustc_output_format_raw,
+    );
+    flags.define_flag(
+        "--kludge-move-dwo-to",
+        "If set, move all produced .dwo files to the specified directory.",
+        &mut kludge_move_dwo_to,
     );
 
     let mut child_args = match flags
@@ -212,6 +220,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         output_file,
         rustc_quit_on_rmeta,
         rustc_output_format,
+        kludge_move_dwo_to,
     })
 }
 
