@@ -25,6 +25,7 @@ load(
     "load_cargo",
     "load_clippy",
     "load_llvm_tools",
+    "load_rust_analyzer",
     "load_rust_compiler",
     "load_rust_src",
     "load_rust_stdlib",
@@ -34,6 +35,7 @@ load(
     "toolchain_repository_hub",
     _load_arbitrary_tool = "load_arbitrary_tool",
 )
+load("//rust/private:semver.bzl", "semver")
 
 # Re-export `load_arbitrary_tool` as it's historically been used in external repositories.
 load_arbitrary_tool = _load_arbitrary_tool
@@ -421,6 +423,19 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     ),
 }
 
+def _include_llvm_tools(version, iso_date):
+    """Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib"""
+    if version in ("nightly", "beta"):
+        if iso_date > "2020-05-22":
+            return True
+        return False
+
+    version_semver = semver(version)
+    if version_semver.major >= 1 and version_semver.minor >= 45:
+        return True
+
+    return False
+
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
     sha256s = dict(ctx.attr.sha256s)
@@ -482,8 +497,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         build_components.append(rustfmt_content)
         sha256s.update(rustfmt_sha256)
 
-    # Rust 1.45.0 and nightly builds after 2020-05-22 need the llvm-tools gzip to get the libLLVM dylib
-    include_llvm_tools = version >= "1.45.0" or (version == "nightly" and iso_date > "2020-05-22")
+    include_llvm_tools = _include_llvm_tools(version, iso_date)
     if include_llvm_tools:
         llvm_tools_content, llvm_tools_sha256 = load_llvm_tools(
             ctx = ctx,
@@ -786,10 +800,24 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple))
         proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
 
+    # Load rust-analyzer binary from official Rust distribution
+    rust_analyzer = None
+    rust_analyzer_content, rust_analyzer_sha256 = load_rust_analyzer(
+        ctx = repository_ctx,
+        target_triple = host_triple,
+        version = version,
+        iso_date = iso_date,
+    )
+    if rust_analyzer_content:
+        build_contents.append(rust_analyzer_content)
+        sha256s.update(rust_analyzer_sha256)
+        rust_analyzer = "//:rust_analyzer"
+
     build_contents.append(BUILD_for_rust_analyzer_toolchain(
         name = "rust_analyzer_toolchain",
         rustc = rustc,
         proc_macro_srv = proc_macro_srv,
+        rust_analyzer = rust_analyzer,
     ))
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_contents))

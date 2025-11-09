@@ -62,7 +62,7 @@ default_rbe_targets: &default_rbe_targets
   - "//..."
   # These require the upstream tools wrapper to include a stdlib, which doesn't currently work on RBE.
   # We should fix this. See https://github.com/bazelbuild/rules_rust/issues/3252
-  - "-//cargo/cargo_toml_variable_extractor/testdata/..."
+  - "-//cargo/private/cargo_toml_variable_extractor/testdata/..."
 default_macos_targets: &default_macos_targets
   - "--"
   - "//..."
@@ -430,12 +430,43 @@ tasks:
     platform: ubuntu2204
     run_targets:
       - "//test/rustfmt:rustfmt_failure_tester"
-  rust_analyzer_tests:
-    name: Rust-Analyzer Tests
+  rust_analyzer_tests_linux:
+    name: Rust-Analyzer Linux Tests
     platform: ubuntu2204
     run_targets:
       - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
       - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_macos:
+    name: Rust-Analyzer Macos Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_windows:
+    name: Rust-Analyzer Windows Tests
+    platform: windows
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+  ide_integration_vscode_tests_linux:
+    name: IDE VSCode Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_macos:
+    name: IDE VSCode Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_windows:
+    name: IDE VSCode Tests
+    platform: windows
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
   crate_universe_examples_ubuntu2204:
     name: Crate Universe Examples
     platform: ubuntu2204
@@ -777,6 +808,17 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  example_runfiles:
+    name: Runfiles example
+    platform: ubuntu2204
+    working_directory: examples/runfiles
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    run_targets:
+      - "//pkg_a:pkg_a_binary"
+      - "//pkg_b:pkg_b_binary"
   ubuntu2204_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2204
@@ -1095,6 +1137,49 @@ tasks:
     platform: windows
     name: Extensions Protobuf
     working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_linux:
+    platform: ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_macos:
+    platform: macos_arm64
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_windows:
+    platform: windows
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:

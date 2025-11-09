@@ -362,7 +362,7 @@ def determine_repin(
         config,
         splicing_manifest,
         repin_instructions = None):
-    """Use the `cargo-bazel` binary to determine whether or not dpeendencies need to be re-pinned
+    """Use the `cargo-bazel` binary to determine whether or not dependencies need to be re-pinned
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.

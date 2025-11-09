@@ -102,18 +102,6 @@ stardoc(
 )
 
 stardoc(
-    name = "rust_analyzer",
-    out = "src/rust_analyzer.md",
-    header_template = ":rust_analyzer.vm",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_analyzer_aspect",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
-    deps = [":all_docs"],
-)
-
-stardoc(
     name = "rust_clippy",
     out = "src/rust_clippy.md",
     header_template = ":rust_clippy.vm",
@@ -243,6 +231,13 @@ stardoc(
 )
 
 stardoc(
+    name = "rust_pyo3",
+    out = "src/rust_pyo3.md",
+    input = "@rules_rust_pyo3//:defs.bzl",
+    deps = ["@rules_rust_pyo3//:bzl_lib"],
+)
+
+stardoc(
     name = "rust_wasm_bindgen",
     out = "src/rust_wasm_bindgen.md",
     input = "@rules_rust_wasm_bindgen//:defs.bzl",
@@ -274,7 +269,6 @@ mdbook(
         ":crate_universe_workspace",
         ":providers",
         ":rust",
-        ":rust_analyzer",
         ":rust_bindgen",
         ":rust_bzlmod",
         ":rust_clippy",
@@ -283,6 +277,7 @@ mdbook(
         ":rust_mdbook",
         ":rust_prost",
         ":rust_protobuf",
+        ":rust_pyo3",
         ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",

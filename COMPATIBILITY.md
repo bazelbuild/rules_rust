@@ -66,24 +66,31 @@ Process for moving a best effort platform to a supported platform is consensus-b
 
 ## What are the stable APIs of `rules_rust`?
 
-`//rust:defs.bzl` is subject to the backwards compatibility policy. That means
-that anything directly accessible from this file is considered stable.
+`//**/private/...` (any `private` directory and it's contents) is not subject to the backwards
+compatibility policy. All starlark symbols and targets is an implementation detail.
 
-`//rust/private/…` is not subject to the backwards compatibility policy. Content
-of this package is an implementation detail.
+`//rust` is subject to the backwards compatibility policy. That means that anything directly
+accessible from this file is considered stable.
 
-`//cargo/...` is subject to the backwards compatibility policy.
+`//cargo` is subject to the backwards compatibility policy.
 
-`//util`, `//tools`, `//test`, `//examples`, `//extensions`, `//ffi`, `//nix` and any packages
-not mentioned by this document are by default not subject to the backwards compatibility
-policy.
+`//crate_universe`, `//examples`, `//extensions`, `//ffi`, `//nix`, `//test`, `//tools`, `//util`
+and any packages not mentioned by this document are by default not subject to the backwards
+compatibility policy.
 
 Experimental build settings are not subject to the backward compatibility
-policy. They should be added to `//rust:experimental.bzl`.
+policy.
 
 Incompatible build settings are subject to the backward compatibility policy,
 meaning the behavior of the flag cannot change in a backwards incompatible way.
-They should be added to `//rust:incompatible.bzl`.
+
+Experimental and incompatible flags should be added to `settings.bzl` files based on the scope
+of the change.
+
+| scope         | file to update                  |
+| ------------- | ------------------------------- |
+| `//rust/...`  | `//rust/settings:settings.bzl`  |
+| `//cargo/...` | `//cargo/settings:settings.bzl` |
 
 Bug fixes are not a breaking change by default. We'll use Common Sense (and we
 will pull in more maintainers and the community to discuss) if we see a certain

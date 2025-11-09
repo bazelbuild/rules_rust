@@ -1,0 +1,39 @@
+"""rules_rust_pyo3"""
+
+module(
+    name = "rules_rust_pyo3",
+    version = "0.67.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.67.0")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+rust_ext = use_extension("//private:internal_extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rpyo3c",
+    "rpyo3c__pyo3-0.26.0",
+    "rpyo3c__pyo3-ffi-0.26.0",
+    "rpyo3c__pyo3-introspection-0.26.0",
+)
+
+register_toolchains(
+    "//toolchains:toolchain",
+    "//toolchains:rust_toolchain",
+    dev_dependency = True,
+)
+
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
+bazel_dep(name = "rules_cc", version = "0.2.4", dev_dependency = True)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions_dev.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

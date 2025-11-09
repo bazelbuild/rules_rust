@@ -136,7 +136,7 @@ rust_binary(
         "{binary}",
     ],
     srcs = [
-        "@rules_rust//cargo/bootstrap:bootstrap_installer.rs"
+        "@rules_rust//cargo/private/bootstrap:bootstrap_installer.rs"
     ],
 )
 """

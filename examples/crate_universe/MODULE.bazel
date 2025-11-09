@@ -9,7 +9,7 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.46.0")
+bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../..",
@@ -17,7 +17,7 @@ local_path_override(
 
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.4")
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
 
@@ -338,12 +338,7 @@ crate_index_cargo_workspace.from_cargo(
     cargo_config = "//cargo_workspace:.cargo/config.toml",
     cargo_lockfile = "//cargo_workspace:Cargo.Bazel.lock",
     lockfile = "//cargo_workspace:cargo-bazel-lock.json",
-    manifests = [
-        "//cargo_workspace:Cargo.toml",
-        "//cargo_workspace/num_printer:Cargo.toml",
-        "//cargo_workspace/printer:Cargo.toml",
-        "//cargo_workspace/rng:Cargo.toml",
-    ],
+    manifests = ["//cargo_workspace:Cargo.toml"],
 )
 use_repo(
     crate_index_cargo_workspace,

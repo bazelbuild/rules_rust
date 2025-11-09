@@ -14,7 +14,8 @@ load(
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
 )
-load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
+load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
+load(":semver.bzl", "semver")
 
 DEFAULT_TOOLCHAIN_NAME_PREFIX = "toolchain_for"
 DEFAULT_STATIC_RUST_URL_TEMPLATES = ["https://static.rust-lang.org/dist/{}.tar.xz"]
@@ -106,6 +107,27 @@ def BUILD_for_cargo(target_triple):
         str: The contents of a BUILD file
     """
     return _build_file_for_cargo_template.format(
+        binary_ext = system_to_binary_ext(target_triple.system),
+    )
+
+_build_file_for_rust_analyzer_template = """\
+filegroup(
+    name = "rust_analyzer",
+    srcs = ["bin/rust-analyzer{binary_ext}"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_rust_analyzer(target_triple):
+    """Emits a BUILD file for the rust-analyzer archive.
+
+    Args:
+        target_triple (str): The triple of the target platform
+
+    Returns:
+        str: The contents of a BUILD file
+    """
+    return _build_file_for_rust_analyzer_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
     )
 
@@ -408,6 +430,30 @@ def BUILD_for_toolchain(
         target_settings = target_settings_value,
     )
 
+def load_rust_analyzer(ctx, target_triple, version, iso_date):
+    """Loads a rust-analyzer binary and yields corresponding BUILD for it
+
+    Args:
+        ctx (repository_ctx): The repository rule's context object.
+        target_triple (struct): The platform triple to download rust-analyzer for.
+        version (str): The version or channel of rust-analyzer.
+        iso_date (str): The date of the tool (or None, if the version is a specific version).
+
+    Returns:
+        Tuple[str, Dict[str, str]]: The BUILD file contents for this rust-analyzer binary and sha256 of its artifact.
+    """
+
+    sha256 = load_arbitrary_tool(
+        ctx,
+        iso_date = iso_date,
+        target_triple = target_triple,
+        tool_name = "rust-analyzer",
+        tool_subdirectories = ["rust-analyzer-preview"],
+        version = version,
+    )
+
+    return BUILD_for_rust_analyzer(target_triple), sha256
+
 def load_rustfmt(ctx, target_triple, version, iso_date):
     """Loads a rustfmt binary and yields corresponding BUILD for it
 
@@ -517,9 +563,13 @@ def includes_rust_analyzer_proc_macro_srv(version, iso_date):
 
     if version == "nightly":
         return iso_date >= "2022-09-21"
-    elif version == "beta":
+
+    if version == "beta":
         return False
-    elif version >= "1.64.0":
+
+    # version >= 1.64.0
+    version_semver = semver(version)
+    if version_semver.major >= 1 and version_semver.minor >= 64:
         return True
 
     return False
@@ -578,17 +628,19 @@ load("@rules_rust//rust:toolchain.bzl", "rust_analyzer_toolchain")
 rust_analyzer_toolchain(
     name = "{name}",
     proc_macro_srv = {proc_macro_srv},
+    rust_analyzer = {rust_analyzer},
     rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv):
+def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, rust_analyzer = None):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
         rustc = rustc,
         proc_macro_srv = repr(proc_macro_srv),
+        rust_analyzer = repr(rust_analyzer) if rust_analyzer else "None",
     )
 
 _build_file_for_rustfmt_toolchain_template = """\
