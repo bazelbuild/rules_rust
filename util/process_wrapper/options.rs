@@ -208,6 +208,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         child_args,
         &subst_mappings,
         require_explicit_unstable_features,
+        None,
+        None,
     )?;
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
@@ -270,58 +272,89 @@ fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     arg
 }
 
-/// Apply substitutions to the given param file. Returns the new filename and whether any
-/// allow-features flags were found.
+/// Apply substitutions to the given param file. Returns true iff any allow-features flags were found.
 fn prepare_param_file(
     filename: &str,
     subst_mappings: &[(String, String)],
-) -> Result<(String, bool), OptionError> {
-    let expanded_file = format!("{filename}.expanded");
-    let format_err = |err: io::Error| {
-        OptionError::Generic(format!(
-            "{} writing path: {:?}, current directory: {:?}",
-            err,
-            expanded_file,
-            std::env::current_dir()
-        ))
-    };
-    let mut out = io::BufWriter::new(File::create(&expanded_file).map_err(format_err)?);
+    read_file: &mut impl FnMut(&str) -> Result<Vec<String>, OptionError>,
+    write_to_file: &mut impl FnMut(&str) -> Result<(), OptionError>,
+) -> Result<bool, OptionError> {
     fn process_file(
         filename: &str,
-        out: &mut io::BufWriter<File>,
         subst_mappings: &[(String, String)],
-        format_err: &impl Fn(io::Error) -> OptionError,
+        read_file: &mut impl FnMut(&str) -> Result<Vec<String>, OptionError>,
+        write_to_file: &mut impl FnMut(&str) -> Result<(), OptionError>,
     ) -> Result<bool, OptionError> {
         let mut has_allow_features_flag = false;
-        for arg in read_file_to_array(filename).map_err(OptionError::Generic)? {
+        for arg in read_file(filename)? {
             let arg = prepare_arg(arg, subst_mappings);
             has_allow_features_flag |= is_allow_features_flag(&arg);
             if let Some(arg_file) = arg.strip_prefix('@') {
-                has_allow_features_flag |= process_file(arg_file, out, subst_mappings, format_err)?;
+                has_allow_features_flag |=
+                    process_file(arg_file, subst_mappings, read_file, write_to_file)?;
             } else {
-                writeln!(out, "{arg}").map_err(format_err)?;
+                write_to_file(&arg)?;
             }
         }
         Ok(has_allow_features_flag)
     }
-    let has_allow_features_flag = process_file(filename, &mut out, subst_mappings, &format_err)?;
-    Ok((expanded_file, has_allow_features_flag))
+    let has_allow_features_flag = process_file(filename, subst_mappings, read_file, write_to_file)?;
+    Ok(has_allow_features_flag)
 }
 
 /// Apply substitutions to the provided arguments, recursing into param files.
+#[allow(clippy::type_complexity)]
 fn prepare_args(
     args: Vec<String>,
     subst_mappings: &[(String, String)],
     require_explicit_unstable_features: bool,
+    read_file: Option<&mut dyn FnMut(&str) -> Result<Vec<String>, OptionError>>,
+    mut write_file: Option<&mut dyn FnMut(&str, &str) -> Result<(), OptionError>>,
 ) -> Result<Vec<String>, OptionError> {
     let mut allowed_features = false;
     let mut processed_args = Vec::<String>::new();
+
+    let mut read_file_wrapper = |s: &str| read_file_to_array(s).map_err(OptionError::Generic);
+    let mut read_file = read_file.unwrap_or(&mut read_file_wrapper);
+
     for arg in args.into_iter() {
         let arg = prepare_arg(arg, subst_mappings);
         if let Some(param_file) = arg.strip_prefix('@') {
+            let expanded_file = format!("{param_file}.expanded");
+            let format_err = |err: io::Error| {
+                OptionError::Generic(format!(
+                    "{} writing path: {:?}, current directory: {:?}",
+                    err,
+                    expanded_file,
+                    std::env::current_dir()
+                ))
+            };
+
+            enum Writer<'f, F: FnMut(&str, &str) -> Result<(), OptionError>> {
+                Function(&'f mut F),
+                BufWriter(io::BufWriter<File>),
+            }
+            let mut out = match write_file {
+                Some(ref mut f) => Writer::Function(f),
+                None => Writer::BufWriter(io::BufWriter::new(
+                    File::create(&expanded_file).map_err(format_err)?,
+                )),
+            };
+            let mut write_to_file = |s: &str| -> Result<(), OptionError> {
+                match out {
+                    Writer::Function(ref mut f) => f(&expanded_file, s),
+                    Writer::BufWriter(ref mut bw) => writeln!(bw, "{s}").map_err(format_err),
+                }
+            };
+
             // Note that substitutions may also apply to the param file path!
-            let (file, allowed) = prepare_param_file(param_file, subst_mappings)
-                .map(|(filename, af)| (format!("@{filename}"), af))?;
+            let (file, allowed) = prepare_param_file(
+                param_file,
+                subst_mappings,
+                &mut read_file,
+                &mut write_to_file,
+            )
+            .map(|af| (format!("@{expanded_file}"), af))?;
             allowed_features |= allowed;
             processed_args.push(file);
         } else {
@@ -373,7 +406,7 @@ mod test {
     fn test_enforce_allow_features_flag_user_didnt_say() {
         let args = vec!["rustc".to_string()];
         let subst_mappings: Vec<(String, String)> = vec![];
-        let args = prepare_args(args, &subst_mappings).unwrap();
+        let args = prepare_args(args, &subst_mappings, true, None, None).unwrap();
         assert_eq!(
             args,
             vec!["rustc".to_string(), "-Zallow-features=".to_string(),]
@@ -387,13 +420,62 @@ mod test {
             "-Zallow-features=whitespace_instead_of_curly_braces".to_string(),
         ];
         let subst_mappings: Vec<(String, String)> = vec![];
-        let args = prepare_args(args, &subst_mappings).unwrap();
+        let args = prepare_args(args, &subst_mappings, true, None, None).unwrap();
         assert_eq!(
             args,
             vec![
                 "rustc".to_string(),
                 "-Zallow-features=whitespace_instead_of_curly_braces".to_string(),
             ]
+        );
+    }
+
+    #[test]
+    fn test_enforce_allow_features_flag_user_requested_something_in_param_file() {
+        let mut written_files = HashMap::<String, String>::new();
+        let mut read_files = HashMap::<String, Vec<String>>::new();
+        read_files.insert(
+            "rustc_params".to_string(),
+            vec!["-Zallow-features=whitespace_instead_of_curly_braces".to_string()],
+        );
+
+        let mut read_file = |filename: &str| -> Result<Vec<String>, OptionError> {
+            read_files
+                .get(filename)
+                .cloned()
+                .ok_or_else(|| OptionError::Generic(format!("file not found: {}", filename)))
+        };
+        let mut write_file = |filename: &str, content: &str| -> Result<(), OptionError> {
+            if let Some(v) = written_files.get_mut(filename) {
+                v.push_str(content);
+            } else {
+                written_files.insert(filename.to_owned(), content.to_owned());
+            }
+            Ok(())
+        };
+
+        let args = vec!["rustc".to_string(), "@rustc_params".to_string()];
+        let subst_mappings: Vec<(String, String)> = vec![];
+
+        let args = prepare_args(
+            args,
+            &subst_mappings,
+            true,
+            Some(&mut read_file),
+            Some(&mut write_file),
+        );
+
+        assert_eq!(
+            args.unwrap(),
+            vec!["rustc".to_string(), "@rustc_params.expanded".to_string(),]
+        );
+
+        assert_eq!(
+            written_files,
+            HashMap::<String, String>::from([(
+                "rustc_params.expanded".to_string(),
+                "-Zallow-features=whitespace_instead_of_curly_braces".to_string()
+            )])
         );
     }
 }
