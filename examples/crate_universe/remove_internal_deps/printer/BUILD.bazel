@@ -20,7 +20,7 @@ package(default_visibility = ["//visibility:public"])
         ),
     ]
     for key, all_crate_deps in {
-        "remove": all_crate_deps_remove,
         "no_strip": all_crate_deps_no_strip,
+        "remove": all_crate_deps_remove,
     }.items()
 ]

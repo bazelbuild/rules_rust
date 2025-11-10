@@ -14,7 +14,7 @@ package(default_visibility = ["//visibility:public"])
         ]),
     )
     for key, deps in {
-        "remove": crate_deps_remove,
         "no_strip": crate_deps_no_strip,
+        "remove": crate_deps_remove,
     }.items()
 ]
