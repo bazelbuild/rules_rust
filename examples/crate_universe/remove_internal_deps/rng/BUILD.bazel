@@ -1,12 +1,20 @@
-load("@crate_index_remove_internal_deps//:defs.bzl", "crate_deps")
+load("@crate_index_no_strip_internal_deps//:defs.bzl", crate_deps_no_strip = "crate_deps")
+load("@crate_index_remove_internal_deps//:defs.bzl", crate_deps_remove = "crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "rng",
-    srcs = ["src/lib.rs"],
-    deps = crate_deps([
-        "rand",
-    ]),
-)
+[
+    rust_library(
+        name = "rng_" + key,
+        srcs = ["src/lib.rs"],
+        crate_name = "rng",
+        deps = deps([
+            "rand",
+        ]),
+    )
+    for key, deps in {
+        "remove": crate_deps_remove,
+        "no_strip": crate_deps_no_strip,
+    }.items()
+]
