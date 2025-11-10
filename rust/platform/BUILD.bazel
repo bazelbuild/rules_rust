@@ -23,6 +23,7 @@ constraint_value(
 
 constraint_setting(
     name = "qnx_version",
+    default_constraint_value = ":qnx7", # For backwards compatibility
 )
 
 constraint_value(
