@@ -410,6 +410,16 @@ it allows library dependencies to be unlocked much sooner, increasing parallelis
 <p>A flag controlling whether to rename first-party crates such that their names     encode the Bazel package and target name, instead of just the target name.</p>
 <p>First-party vs. third-party crates are identified using the value of
 <code>@rules_rust//settings:third_party_dir</code>.</p>
+<p><a id="require_explicit_unstable_features"></a></p>
+<h2 id="require_explicit_unstable_features"><a class="header" href="#require_explicit_unstable_features">require_explicit_unstable_features</a></h2>
+<pre>
+--@rules_rust//rust/settings:require_explicit_unstable_features
+</pre>
+<p>A flag controlling whether unstable features should be disallowed by default</p>
+<p>If true, an empty <code>-Zallow-features=</code> will be added to the rustc command line whenever no other
+<code>-Zallow-features=</code> is present in the rustc flags. The effect is to disallow all unstable
+features by default, with the possibility to explicitly re-enable them selectively using
+<code>-Zallow-features=...</code>.</p>
 <p><a id="rustc_output_diagnostics"></a></p>
 <h2 id="rustc_output_diagnostics"><a class="header" href="#rustc_output_diagnostics">rustc_output_diagnostics</a></h2>
 <pre>
