@@ -1160,8 +1160,20 @@ tasks:
     shell_commands:
       - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--config=no_mypy"
+      - "--config=no_black"
+      - "--config=no_pylint"
+      - "--config=no_isort"
+    test_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--config=no_mypy"
+      - "--config=no_black"
+      - "--config=no_pylint"
+      - "--config=no_isort"
     build_targets:
       - "//..."
     test_targets:

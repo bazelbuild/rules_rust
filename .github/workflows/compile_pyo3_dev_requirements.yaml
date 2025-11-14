@@ -1,0 +1,58 @@
+---
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: compile_pyo3_dev_requirements
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "The py_reqs_compiler target to run"
+        default: "//tools/requirements:update"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux_x86_64
+            runs-on: ubuntu-latest
+          - os: linux_aarch64
+            runs-on: ubuntu-24.04-arm
+          - os: macos_aarch64
+            runs-on: macos-latest
+          - os: windows_x86_64
+            runs-on: windows-latest
+
+    runs-on: ${{ matrix.runs-on }}
+    defaults:
+      run:
+        working-directory: ./extensions/pyo3
+    name: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile requirements
+        if: runner.os == 'Windows'
+        run: |
+          bazel run "$env:TARGET" "--" "--upgrade" "--verbose"
+        env:
+          TARGET: ${{ github.event.inputs.target }}
+      - name: Compile requirements
+        if: runner.os != 'Windows'
+        run: |
+          bazel run "${TARGET}" "--" "--upgrade" "--verbose"
+        env:
+          TARGET: ${{ github.event.inputs.target }}
+      - name: Display results
+        shell: bash
+        run: |
+          set -e
+          echo "<details>" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo '```' >> "${GITHUB_STEP_SUMMARY}"
+          cat "tools/requirements/requirements_${{ matrix.os }}.txt" >> "${GITHUB_STEP_SUMMARY}"
+          echo '```' >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "</details>" >> "${GITHUB_STEP_SUMMARY}"
