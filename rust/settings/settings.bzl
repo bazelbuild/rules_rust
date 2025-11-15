@@ -491,6 +491,16 @@ def incompatible_do_not_include_data_in_compile_data():
         issue = "https://github.com/bazelbuild/rules_rust/issues/2977",
     )
 
+# buildifier: disable=unnamed-macro
+def incompatible_do_not_inject_degenerate_version_to_rustc_env():
+    """A flag to control whether we inject env vars corresponding to version 0.0.0 if version is omitted.
+    """
+    incompatible_flag(
+        name = "incompatible_do_not_inject_degenerate_version_to_rustc_env",
+        build_setting_default = False,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3674",
+    )
+
 def codegen_units():
     """The default value for `--codegen-units` which also affects resource allocation for rustc actions.
 
