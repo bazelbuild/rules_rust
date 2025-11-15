@@ -131,8 +131,13 @@ fn run_buildrs() -> Result<(), String> {
         // The default OSX toolchain uses libtool as ar_executable not ar.
         // This doesn't work when used as $AR, so simply don't set it - tools will probably fall back to
         // /usr/bin/ar which is probably good enough.
-        if Path::new(&ar_path).file_name() == Some("libtool".as_ref()) {
+        let file_name = Path::new(&ar_path)
+            .file_name()
+            .ok_or_else(|| "Failed while getting file name".to_string())?
+            .to_string_lossy();
+        if file_name.contains("libtool") {
             command.env_remove("AR");
+            command.env_remove("ARFLAGS");
         } else {
             command.env("AR", exec_root.join(ar_path));
         }

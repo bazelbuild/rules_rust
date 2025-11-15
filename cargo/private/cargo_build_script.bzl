@@ -130,9 +130,10 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
 
     Returns:
         tuple: A tuple of the following items:
-            - (sequence): A flattened C command line flags for given action.
-            - (sequence): A flattened CXX command line flags for given action.
-            - (dict): C environment variables to be set for given action.
+            - (sequence): A flattened list of C command line flags.
+            - (sequence): A flattened list of CXX command line flags.
+            - (sequence): A flattened list of AR command line flags.
+            - (dict): C environment variables to be set for this configuration.
     """
     compile_variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
@@ -148,12 +149,17 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         action_name = ACTION_NAMES.cpp_compile,
         variables = compile_variables,
     )
+    cc_ar_args = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_link_static_library,
+        variables = compile_variables,
+    )
     cc_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
         variables = compile_variables,
     )
-    return cc_c_args, cc_cxx_args, cc_env
+    return cc_c_args, cc_cxx_args, cc_ar_args, cc_env
 
 def _pwd_flags_sysroot(args):
     """Prefix execroot-relative paths of known arguments with ${pwd}.
@@ -423,7 +429,7 @@ def _cargo_build_script_impl(ctx):
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
     # MSVC requires INCLUDE to be set
-    cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
+    cc_c_args, cc_cxx_args, cc_ar_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
     include = cc_env.get("INCLUDE")
     if include:
         env["INCLUDE"] = include
@@ -444,11 +450,17 @@ def _cargo_build_script_impl(ctx):
             action_name = ACTION_NAMES.cpp_link_static_library,
         )
 
+        # Many C/C++ toolchains are missing an action_config for AR because
+        # one was never included in the unix_cc_toolchain_config.
+        if not env["AR"]:
+            env["AR"] = cc_toolchain.ar_executable
+
         # Populate CFLAGS and CXXFLAGS that cc-rs relies on when building from source, in particular
         # to determine the deployment target when building for apple platforms (`macosx-version-min`
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
         env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
         env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
+        env["ARFLAGS"] = " ".join(_pwd_flags(cc_ar_args))
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600
