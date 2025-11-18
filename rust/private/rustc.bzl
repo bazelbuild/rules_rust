@@ -835,6 +835,7 @@ def construct_arguments(
         build_metadata = False,
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
+        require_explicit_unstable_features = False,
         error_format = None):
     """Builds an Args object containing common rustc flags
 
@@ -867,6 +868,7 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
 
     Returns:
@@ -894,6 +896,9 @@ def construct_arguments(
         process_wrapper_flags.add("--env-file", build_env_file)
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
+
+    if require_explicit_unstable_features:
+        process_wrapper_flags.add("--require-explicit-unstable-features", "true")
 
     # Certain rust build processes expect to find files from the environment
     # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
@@ -1289,6 +1294,16 @@ def rustc_compile_action(
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
+    # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
+    require_explicit_unstable_features = False
+    if hasattr(ctx.attr, "require_explicit_unstable_features"):
+        if ctx.attr.require_explicit_unstable_features == 0:
+            require_explicit_unstable_features = False
+        elif ctx.attr.require_explicit_unstable_features == 1:
+            require_explicit_unstable_features = True
+        elif ctx.attr.require_explicit_unstable_features == -1:
+            require_explicit_unstable_features = toolchain.require_explicit_unstable_features
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1311,6 +1326,7 @@ def rustc_compile_action(
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
+        require_explicit_unstable_features = require_explicit_unstable_features,
     )
 
     args_metadata = None
@@ -1337,6 +1353,7 @@ def rustc_compile_action(
             stamp = stamp,
             use_json_output = True,
             build_metadata = True,
+            require_explicit_unstable_features = require_explicit_unstable_features,
         )
 
     env = dict(ctx.configuration.default_shell_env)

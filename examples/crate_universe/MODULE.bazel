@@ -16,10 +16,11 @@ local_path_override(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "rules_cc", version = "0.2.8")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
+bazel_dep(name = "bazel_lib", version = "3.0.0", dev_dependency = True)
 
 dev = use_extension("//:vendor_extensions.bzl", "dev", dev_dependency = True)
 use_repo(
@@ -343,6 +344,41 @@ crate_index_cargo_workspace.from_cargo(
 use_repo(
     crate_index_cargo_workspace,
     "crate_index_cargo_workspace",
+)
+
+###############################################################################
+# R E M O V E   I N T E R N A L   D E P S
+###############################################################################
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+# Stripping internal dependencies from the cargo lockfile
+crate_index_remove_internal_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_remove_internal_deps.from_cargo(
+    name = "crate_index_remove_internal_deps",
+    cargo_lockfile = "//remove_internal_deps:Cargo.bazel.lock",
+    manifests = [
+        "//remove_internal_deps:Cargo.toml",
+    ],
+    strip_internal_dependencies_from_cargo_lockfile = True,
+)
+use_repo(
+    crate_index_remove_internal_deps,
+    "crate_index_remove_internal_deps",
+)
+
+# https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
+# Not stripping internal dependencies from the cargo lockfile as baseline
+crate_index_no_strip_internal_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate_index_no_strip_internal_deps.from_cargo(
+    name = "crate_index_no_strip_internal_deps",
+    cargo_lockfile = "//remove_internal_deps:Cargo.lock",
+    manifests = [
+        "//remove_internal_deps:Cargo.toml",
+    ],
+)
+use_repo(
+    crate_index_no_strip_internal_deps,
+    "crate_index_no_strip_internal_deps",
 )
 
 ###############################################################################

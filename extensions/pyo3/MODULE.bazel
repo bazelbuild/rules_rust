@@ -37,3 +37,26 @@ use_repo(
     rust_ext_dev,
     "buildkite_config",
 )
+
+bazel_dep(name = "rules_venv", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "rules_req_compile", version = "1.0.0rc38", dev_dependency = True)
+
+requirements = use_extension("@rules_req_compile//extensions:python.bzl", "requirements", dev_dependency = True)
+requirements.parse(
+    name = "pip_deps",
+    requirements_locks = {
+        "//tools/requirements:requirements_linux_aarch64.txt": "@@//tools/requirements:linux_aarch64",
+        "//tools/requirements:requirements_linux_x86_64.txt": "@@//tools/requirements:linux_x86_64",
+        "//tools/requirements:requirements_macos_aarch64.txt": "@@//tools/requirements:macos_aarch64",
+        "//tools/requirements:requirements_windows_x86_64.txt": "@@//tools/requirements:windows_x86_64",
+    },
+)
+use_repo(requirements, "pip_deps")
+
+register_toolchains(
+    "//tools/toolchains:black_toolchain",
+    "//tools/toolchains:isort_toolchain",
+    "//tools/toolchains:mypy_toolchain",
+    "//tools/toolchains:pylint_toolchain",
+    dev_dependency = True,
+)
