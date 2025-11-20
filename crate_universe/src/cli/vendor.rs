@@ -293,7 +293,8 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     }
 
     // make cargo versioned crates compatible with bazel labels
-    let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.workspace_dir);
+    let normalized_outputs =
+        normalize_cargo_file_paths(outputs, &opt.workspace_dir, &config.rendering.vendor_mode);
 
     // buildifier files to check
     let file_names: BTreeSet<PathBuf> = normalized_outputs.keys().cloned().collect();

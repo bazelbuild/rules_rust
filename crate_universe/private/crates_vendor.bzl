@@ -4,6 +4,9 @@ load("//crate_universe/private:generate_utils.bzl", "compile_config", generate_r
 load("//crate_universe/private:splicing_utils.bzl", "kebab_case_keys", generate_splicing_config = "splicing_config")
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
+load(":crates_vendor_repository.bzl", _crates_vendor_remote_repository = "crates_vendor_remote_repository")
+
+crates_vendor_remote_repository = _crates_vendor_remote_repository
 
 _UNIX_WRAPPER = """\
 #!/usr/bin/env bash
@@ -337,16 +340,16 @@ def generate_config_file(
         if workspace_name != "":
             build_file_base_template = "@{}//{}:BUILD.{{name}}-{{version}}.bazel".format(workspace_name, output_pkg)
         crate_label_template = render_config["crate_label_template"]
-        crate_alias_template = "@{{repository}}//:{{name}}-{{version}}".format(
+        crate_alias_template = "@{{repository}}//{{name}}-{{version}}".format(
             output_pkg,
         )
 
     # If `workspace_name` is blank (such as when using modules), the `@{}//{}:{{file}}` template would generate
     # a reference like `Label(@//<stuff>)`. This causes issues if the module doing the `crates_vendor`ing is not the root module.
     # See: https://github.com/bazelbuild/rules_rust/issues/2661
-    crates_module_template_value = "//{}:{{file}}".format(output_pkg)
+    crates_module_template_value = "//{}{{subpackage}}:{{file}}".format(output_pkg)
     if workspace_name != "":
-        crates_module_template_value = "@{}//{}:{{file}}".format(
+        crates_module_template_value = "@{}//{}{{subpackage}}:{{file}}".format(
             workspace_name,
             output_pkg,
         )
@@ -679,30 +682,4 @@ call against the generated workspace. The following table describes how to contr
     attrs = CRATES_VENDOR_ATTRS,
     executable = True,
     toolchains = ["@rules_rust//rust:toolchain_type"],
-)
-
-def _crates_vendor_remote_repository_impl(repository_ctx):
-    build_file = repository_ctx.path(repository_ctx.attr.build_file)
-    defs_module = repository_ctx.path(repository_ctx.attr.defs_module)
-
-    repository_ctx.file("BUILD.bazel", repository_ctx.read(build_file))
-    repository_ctx.file("defs.bzl", repository_ctx.read(defs_module))
-    repository_ctx.file("crates.bzl", "")
-    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
-        repository_ctx.name,
-    ))
-
-crates_vendor_remote_repository = repository_rule(
-    doc = "Creates a repository paired with `crates_vendor` targets using the `remote` vendor mode.",
-    implementation = _crates_vendor_remote_repository_impl,
-    attrs = {
-        "build_file": attr.label(
-            doc = "The BUILD file to use for the root package",
-            mandatory = True,
-        ),
-        "defs_module": attr.label(
-            doc = "The `defs.bzl` file to use in the repository",
-            mandatory = True,
-        ),
-    },
 )

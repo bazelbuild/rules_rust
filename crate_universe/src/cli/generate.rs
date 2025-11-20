@@ -129,7 +129,8 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
             .render(&context, opt.generator)?;
 
             // make file paths compatible with bazel labels
-            let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
+            let normalized_outputs =
+                normalize_cargo_file_paths(outputs, &opt.repository_dir, &None);
 
             // Write the outputs to disk
             write_outputs(normalized_outputs, opt.dry_run)?;
@@ -216,7 +217,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
     .render(&context, opt.generator)?;
 
     // make file paths compatible with bazel labels
-    let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir);
+    let normalized_outputs = normalize_cargo_file_paths(outputs, &opt.repository_dir, &None);
 
     // Write the outputs to disk
     write_outputs(normalized_outputs, opt.dry_run)?;
