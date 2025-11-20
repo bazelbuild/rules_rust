@@ -97,8 +97,8 @@ rust_proc_macro(
     }),
     version = "1.0.228",
     deps = [
-        "@rtvsc__proc-macro2-1.0.101//:proc_macro2",
-        "@rtvsc__quote-1.0.41//:quote",
-        "@rtvsc__syn-2.0.107//:syn",
+        "@rtvsc__proc-macro2-1.0.103//:proc_macro2",
+        "@rtvsc__quote-1.0.42//:quote",
+        "@rtvsc__syn-2.0.110//:syn",
     ],
 )

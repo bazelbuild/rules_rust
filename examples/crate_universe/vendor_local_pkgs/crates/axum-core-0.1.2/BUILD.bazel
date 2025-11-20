@@ -73,6 +73,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -96,7 +97,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.10.1:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.11.0:bytes",
         "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",
