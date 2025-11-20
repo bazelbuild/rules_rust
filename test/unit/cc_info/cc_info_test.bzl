@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
+load("//rust:rust_common.bzl", "CrateGroupInfo", "DepVariantInfo")
 
 def _is_dylib_on_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
@@ -178,16 +179,14 @@ def _build_test(ctx):
 build_test = analysistest.make(_build_test)
 
 def _rust_cc_injection_impl(ctx):
-    dep_variant_info = rust_common.dep_variant_info(
+    dep_variant_info = DepVariantInfo(
         cc_info = ctx.attr.cc_dep[CcInfo],
         crate_info = None,
         dep_info = None,
         build_info = None,
     )
     return [
-        rust_common.crate_group_info(
-            dep_variant_infos = depset([dep_variant_info]),
-        ),
+        CrateGroupInfo(dep_variant_infos = [dep_variant_info]),
     ]
 
 rust_cc_injection = rule(
