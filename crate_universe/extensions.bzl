@@ -604,6 +604,7 @@ def _generate_hub_and_spokes(
             workspace_name = cfg.name,
             generate_binaries = cfg.generate_binaries,
             render_config = render_config,
+            package_name = cfg.package_name,
             repository_ctx = module_ctx,
         ),
     )
@@ -1190,6 +1191,10 @@ _FROM_COMMON_ATTRS = {
     "cargo_lockfile": CRATES_VENDOR_ATTRS["cargo_lockfile"],
     "generate_binaries": CRATES_VENDOR_ATTRS["generate_binaries"],
     "generate_build_scripts": CRATES_VENDOR_ATTRS["generate_build_scripts"],
+    "package_name": attr.string(
+        doc = "The name of the package being generated",
+        mandatory = False,            
+    ),
     "host_tools": attr.label(
         doc = "The `rust_host_tools` repository to use.",
         default = "@rust_host_tools",

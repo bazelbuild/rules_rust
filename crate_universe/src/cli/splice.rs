@@ -130,6 +130,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .generate(
             manifest_path.as_path_buf(),
             &config.supported_platform_triples,
+            &config.package_name,
         )
         .context("Failed to generate features")?;
 
