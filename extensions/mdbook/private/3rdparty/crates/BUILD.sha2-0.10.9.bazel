@@ -34,6 +34,10 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+        "std",
+    ],
     crate_root = "src/lib.rs",
     edition = "2018",
     rustc_env_files = [
@@ -70,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -93,7 +98,7 @@ rust_library(
     }),
     version = "0.10.9",
     deps = [
-        "@rmdbi__cfg-if-1.0.3//:cfg_if",
+        "@rmdbi__cfg-if-1.0.4//:cfg_if",
         "@rmdbi__digest-0.10.7//:digest",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

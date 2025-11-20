@@ -70,6 +70,7 @@ rust_proc_macro(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -95,8 +96,8 @@ rust_proc_macro(
     deps = [
         "@rmdbi__phf_generator-0.11.3//:phf_generator",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
-        "@rmdbi__proc-macro2-1.0.101//:proc_macro2",
-        "@rmdbi__quote-1.0.40//:quote",
-        "@rmdbi__syn-2.0.106//:syn",
+        "@rmdbi__proc-macro2-1.0.103//:proc_macro2",
+        "@rmdbi__quote-1.0.42//:quote",
+        "@rmdbi__syn-2.0.110//:syn",
     ],
 )
