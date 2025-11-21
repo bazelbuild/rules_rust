@@ -1,0 +1,15 @@
+platform(
+    name = "aarch64-apple-darwin",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "wasm32-wasi",
+    constraint_values = [
+        "@platforms//os:wasi",
+        "@platforms//cpu:wasm32",
+    ],
+)
