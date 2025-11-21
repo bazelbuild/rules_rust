@@ -8,6 +8,36 @@ rust_binary(
     visibility = ["//visibility:public"],
 )
 
+rust_binary(
+    name = "no_ar",
+    srcs = ["no_binary.rs"],
+    edition = "2021",
+    rustc_env = {
+        "BINARY_ENV": "AR",
+    },
+    visibility = ["//visibility:public"],
+)
+
+rust_binary(
+    name = "no_cc",
+    srcs = ["no_binary.rs"],
+    edition = "2021",
+    rustc_env = {
+        "BINARY_ENV": "CC",
+    },
+    visibility = ["//visibility:public"],
+)
+
+rust_binary(
+    name = "no_cxx",
+    srcs = ["no_binary.rs"],
+    edition = "2021",
+    rustc_env = {
+        "BINARY_ENV": "CXX",
+    },
+    visibility = ["//visibility:public"],
+)
+
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),

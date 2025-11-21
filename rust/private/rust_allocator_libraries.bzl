@@ -23,8 +23,8 @@ def _ltl(library, actions, cc_toolchain, feature_configuration):
     Args:
         library (File): A rust library file to link.
         actions: The rule's ctx.actions object.
-        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used.
-        feature_configuration (feature_configuration): feature_configuration to be queried.
+        cc_toolchain (CcToolchainInfo): A cc toolchain provider to be used (can be None).
+        feature_configuration (feature_configuration): feature_configuration to be queried (can be None).
 
     Returns:
         LibraryToLink: A provider containing information about libraries to link.
@@ -38,6 +38,7 @@ def _ltl(library, actions, cc_toolchain, feature_configuration):
     )
 
 def make_libstd_and_allocator_ccinfo(
+        *,
         cc_toolchain,
         feature_configuration,
         label,
@@ -257,23 +258,25 @@ RUSTC_ALLOCATOR_LIBRARIES_ATTRS = {
 }
 
 def _rust_allocator_libraries_impl(ctx):
-    toolchain = find_toolchain(ctx)
     allocator_library = ctx.attr.allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.allocator_library else None
     global_allocator_library = ctx.attr.global_allocator_library[AllocatorLibrariesImplInfo] if ctx.attr.global_allocator_library else None
 
-    make_ccinfo = lambda info, std: toolchain.make_libstd_and_allocator_ccinfo(
-        ctx.label,
-        ctx.actions,
-        struct(allocator_libraries_impl_info = info),
-        std,
-    )
+    toolchain = find_toolchain(ctx)
+
+    def make_cc_info(info, std):
+        return toolchain.make_libstd_and_allocator_ccinfo(
+            ctx.label,
+            ctx.actions,
+            struct(allocator_libraries_impl_info = info),
+            std,
+        )
 
     providers = [AllocatorLibrariesInfo(
         allocator_library = allocator_library,
         global_allocator_library = global_allocator_library,
-        libstd_and_allocator_ccinfo = make_ccinfo(allocator_library, "std"),
-        libstd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "std"),
-        nostd_and_global_allocator_ccinfo = make_ccinfo(global_allocator_library, "no_std_with_alloc"),
+        libstd_and_allocator_ccinfo = make_cc_info(allocator_library, "std"),
+        libstd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "std"),
+        nostd_and_global_allocator_ccinfo = make_cc_info(global_allocator_library, "no_std_with_alloc"),
     )]
 
     return providers
@@ -293,6 +296,6 @@ rust_allocator_libraries = rule(
     },
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
