@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
-load("@rules_cc//cc:find_cc_toolchain.bzl", find_cpp_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_common")
 load("//rust:rust_common.bzl", "BuildInfo", "CrateGroupInfo", "DepInfo")
@@ -373,8 +372,6 @@ def _cargo_build_script_impl(ctx):
 
     toolchain_tools = [toolchain.all_files]
 
-    cc_toolchain = find_cpp_toolchain(ctx)
-
     env = {}
 
     if ctx.attr.use_default_shell_env == -1:
@@ -423,18 +420,25 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, link_args, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
+    linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
-    # MSVC requires INCLUDE to be set
-    cc_c_args, cc_cxx_args, cc_ar_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
-    include = cc_env.get("INCLUDE")
-    if include:
-        env["INCLUDE"] = include
+    # Defaults for cxx flags.
+    env["CC"] = "${{pwd}}/{}".format(ctx.executable._fallback_cc.path)
+    env["CXX"] = "${{pwd}}/{}".format(ctx.executable._fallback_cxx.path)
+    env["AR"] = "${{pwd}}/{}".format(ctx.executable._fallback_ar.path)
+    env["CFLAGS"] = ""
+    env["CXXFLAGS"] = ""
 
     if cc_toolchain:
+        # MSVC requires INCLUDE to be set
+        cc_c_args, cc_cxx_args, cc_ar_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
+        include = cc_env.get("INCLUDE")
+        if include:
+            env["INCLUDE"] = include
+
         toolchain_tools.append(cc_toolchain.all_files)
 
         env["CC"] = cc_common.get_tool_for_action(
@@ -515,6 +519,9 @@ def _cargo_build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
+            ctx.executable._fallback_cc,
+            ctx.executable._fallback_cxx,
+            ctx.executable._fallback_ar,
         ] + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + script_tools + toolchain_tools,
     )
@@ -737,6 +744,21 @@ cargo_build_script = rule(
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
         ),
+        "_fallback_ar": attr.label(
+            cfg = "exec",
+            executable = True,
+            default = Label("//cargo/private:no_ar"),
+        ),
+        "_fallback_cc": attr.label(
+            cfg = "exec",
+            executable = True,
+            default = Label("//cargo/private:no_cc"),
+        ),
+        "_fallback_cxx": attr.label(
+            cfg = "exec",
+            executable = True,
+            default = Label("//cargo/private:no_cxx"),
+        ),
         "_incompatible_runfiles_cargo_manifest_dir": attr.label(
             default = Label("//cargo/settings:incompatible_runfiles_cargo_manifest_dir"),
         ),
@@ -744,7 +766,7 @@ cargo_build_script = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 

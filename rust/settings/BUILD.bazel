@@ -36,6 +36,7 @@ load(
     "rustfmt_toml",
     "third_party_dir",
     "toolchain_generated_sysroot",
+    "toolchain_linker_preference",
     "unpretty",
     "use_real_import_macro",
 )
@@ -129,6 +130,8 @@ rustfmt_toml()
 third_party_dir()
 
 toolchain_generated_sysroot()
+
+toolchain_linker_preference()
 
 unpretty()
 

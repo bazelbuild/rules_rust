@@ -1,7 +1,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:rust.bzl", "rust_allocator_libraries")
+load("@rules_rust//rust/private:rust_allocator_libraries.bzl", "rust_allocator_libraries")
 
 rust_allocator_libraries(
     name = "allocator_libraries_with_mangling_support",

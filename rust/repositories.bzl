@@ -450,11 +450,14 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     exec_triple = triple(ctx.attr.exec_triple)
 
+    include_linker = True
+
     rustc_content, rustc_sha256 = load_rust_compiler(
         ctx = ctx,
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
+        include_linker = include_linker,
     )
     clippy_content, clippy_sha256 = load_clippy(
         ctx = ctx,
@@ -532,6 +535,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         default_edition = ctx.attr.edition,
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
+        include_linker = include_linker,
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
@@ -766,6 +770,7 @@ _RUST_ANALYZER_TOOLCHAIN_TOOLS_REPOSITORY_ATTRS = {
 
 def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
     sha256s = dict(repository_ctx.attr.sha256s)
+    include_linker = True
 
     iso_date = None
     version = repository_ctx.attr.version
@@ -790,6 +795,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         iso_date = iso_date,
         target_triple = host_triple,
         version = version,
+        include_linker = include_linker,
     )
     build_contents = [rustc_content]
     sha256s.update(rustc_sha256)
@@ -924,6 +930,8 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         repository_ctx.name,
     ))
 
+    include_linker = True
+
     iso_date = None
     version = repository_ctx.attr.version
     version_array = version.split("/")
@@ -942,6 +950,7 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
+        include_linker = include_linker,
     )
     rustfmt_content, rustfmt_sha256 = load_rustfmt(
         ctx = repository_ctx,
