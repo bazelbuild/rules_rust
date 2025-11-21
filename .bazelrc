@@ -49,6 +49,10 @@ build:unpretty --output_groups=+rust_unpretty
 # https://github.com/rust-lang/rust/issues/43364
 build:unpretty --config=nightly
 
+# Disable cc toolchains to test rust targets can be built without one.
+build:no_cc_toolchain --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build:no_cc_toolchain --repo_env=BAZEL_NO_APPLE_CPP_TOOLCHAIN=1
+
 ###############################################################################
 ## Incompatibility flags
 ###############################################################################
