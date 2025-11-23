@@ -753,6 +753,11 @@ _common_attrs = {
         cfg = "exec",
         providers = [[CrateInfo], [CrateGroupInfo]],
     ),
+    "extra_outdirs": attr.string_list(
+        doc = dedent("""\
+            List of additional output directories which are expected to be written by the compiler.
+        """),
+    ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\
             Dictionary of additional `"key": "value"` environment variables to set for rustc.
