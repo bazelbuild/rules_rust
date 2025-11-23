@@ -228,8 +228,8 @@ impl Runfiles {
     }
 
     fn create_manifest_based(manifest_path: &Path) -> Result<Mode> {
-        let manifest_content = fs::read_to_string(manifest_path)
-            .map_err(RunfilesError::RunfilesManifestIoError)?;
+        let manifest_content =
+            fs::read_to_string(manifest_path).map_err(RunfilesError::RunfilesManifestIoError)?;
         let path_mapping = manifest_content
             .lines()
             .flat_map(|line| {
