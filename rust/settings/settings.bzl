@@ -78,6 +78,19 @@ def rename_first_party_crates():
         build_setting_default = False,
     )
 
+def require_explicit_unstable_features():
+    """A flag controlling whether unstable features should be disallowed by default
+
+    If true, an empty `-Zallow-features=` will be added to the rustc command line whenever no other
+    `-Zallow-features=` is present in the rustc flags. The effect is to disallow all unstable
+    features by default, with the possibility to explicitly re-enable them selectively using
+    `-Zallow-features=...`.
+    """
+    bool_flag(
+        name = "require_explicit_unstable_features",
+        build_setting_default = False,
+    )
+
 def third_party_dir():
     """A flag specifying the location of vendored third-party rust crates within this \
     repository that must not be renamed when `rename_first_party_crates` is enabled.

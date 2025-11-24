@@ -2,6 +2,9 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//private:pyo3_toolchain.bzl", "current_pyo3_toolchain")
 
 exports_files([
+    ".isort.cfg",
+    ".mypy.ini",
+    ".pylintrc.toml",
     "defs.bzl",
     "MODULE.bazel",
     "version.bzl",

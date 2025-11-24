@@ -1,0 +1,26 @@
+load("@crate_index_no_strip_internal_deps//:defs.bzl", all_crate_deps_no_strip = "all_crate_deps")
+load("@crate_index_remove_internal_deps//:defs.bzl", all_crate_deps_remove = "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+[
+    [
+        rust_library(
+            name = "printer_" + key,
+            srcs = ["src/lib.rs"],
+            crate_name = "printer",
+            deps = [
+                "//remove_internal_deps/rng:rng_" + key,
+            ] + all_crate_deps(),
+        ),
+        rust_test(
+            name = "unit_test_" + key,
+            crate = ":printer_" + key,
+        ),
+    ]
+    for key, all_crate_deps in {
+        "no_strip": all_crate_deps_no_strip,
+        "remove": all_crate_deps_remove,
+    }.items()
+]

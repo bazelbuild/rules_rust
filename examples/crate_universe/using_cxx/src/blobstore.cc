@@ -27,7 +27,7 @@ class BlobstoreClient::impl {
 BlobstoreClient::BlobstoreClient() : impl(new class BlobstoreClient::impl) {}
 
 // Upload a new blob and return a blobid that serves as a handle to the blob.
-uint64_t BlobstoreClient::put(MultiBuf &buf) const {
+uint64_t BlobstoreClient::put(MultiBuf& buf) const {
     std::string contents;
 
     // Traverse the caller's chunk iterator.
@@ -39,7 +39,7 @@ uint64_t BlobstoreClient::put(MultiBuf &buf) const {
         if (chunk.size() == 0) {
             break;
         }
-        contents.append(reinterpret_cast<const char *>(chunk.data()),
+        contents.append(reinterpret_cast<const char*>(chunk.data()),
                         chunk.size());
     }
 
@@ -61,7 +61,7 @@ BlobMetadata BlobstoreClient::metadata(uint64_t blobid) const {
     if (blob != impl->blobs.end()) {
         metadata.size = blob->second.data.size();
         std::for_each(blob->second.tags.cbegin(), blob->second.tags.cend(),
-                      [&](auto &t) { metadata.tags.emplace_back(t); });
+                      [&](auto& t) { metadata.tags.emplace_back(t); });
     }
     return metadata;
 }

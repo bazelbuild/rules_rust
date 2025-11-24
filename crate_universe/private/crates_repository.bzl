@@ -122,6 +122,7 @@ def _crates_repository_impl(repository_ctx):
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
         skip_cargo_lockfile_overwrite = repository_ctx.attr.skip_cargo_lockfile_overwrite,
+        strip_internal_dependencies_from_cargo_lockfile = repository_ctx.attr.strip_internal_dependencies_from_cargo_lockfile,
         # sysroot = tools.sysroot,
         **kwargs
     )
@@ -376,6 +377,16 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
                 "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
                 "generate the value for this field. If unset, the defaults defined there will be used."
             ),
+        ),
+        "strip_internal_dependencies_from_cargo_lockfile": attr.bool(
+            doc = (
+                "Whether to strip internal dependencies from the cargo lockfile. " +
+                "You may want to use this if you want to maintain a cargo lockfile for bazel only. " +
+                "Bazel only requires external dependencies to be present in the lockfile. " +
+                "By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts " +
+                "in other lockfiles where the cargo lockfile's sha is stored."
+            ),
+            default = False,
         ),
         "supported_platform_triples": attr.string_list(
             doc = "A set of all platform triples to consider when generating dependencies.",
