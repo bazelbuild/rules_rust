@@ -727,10 +727,18 @@ def collect_inputs(
     if linker_script:
         nolinkstamp_compile_direct_inputs.append(linker_script)
 
+    if crate_info.type in ["dylib", "cdylib"]:
+        # For shared libraries we want to link C++ runtime library dynamically
+        # (for example libstdc++.so or libc++.so).
+        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+    else:
+        runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
         additional_transitive_inputs,
         transitive = [
+            runtime_libs,
             linker_depset,
             crate_info.srcs,
             transitive_crate_outputs,
@@ -2253,36 +2261,22 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
-    args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
+    args.add_all(linkstamp_outs, format_each = "-Clink-args=%s")
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
-        args.add_all(
-            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
+        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+        args.add_all(runtime_libs, map_each = _get_dirname, format_each = "-Lnative=%s")
         if include_link_flags:
-            args.add_all(
-                cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-ldylib=%s",
-            )
+            args.add_all(runtime_libs, map_each = get_lib_name, format_each = "-ldylib=%s")
     else:
         # For all other crate types we want to link C++ runtime library statically
         # (for example libstdc++.a or libc++.a).
-        args.add_all(
-            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
+        runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+        args.add_all(runtime_libs, map_each = _get_dirname, format_each = "-Lnative=%s")
         if include_link_flags:
-            args.add_all(
-                cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-lstatic=%s",
-            )
+            args.add_all(runtime_libs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.
