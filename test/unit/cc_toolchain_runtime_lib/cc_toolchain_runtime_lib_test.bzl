@@ -3,7 +3,7 @@ Tests for handling of cc_toolchain's static_runtime_lib/dynamic_runtime_lib.
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "feature") 
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "feature")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//rust:defs.bzl", "rust_shared_library", "rust_static_library")
@@ -61,6 +61,7 @@ def _inputs_analysis_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     action = tut[DepActionsInfo].actions[0]
+    asserts.equals(env, action.mnemonic, "Rustc")
     inputs = action.inputs.to_list()
     for expected in ctx.attr.expected_inputs:
         asserts.true(
