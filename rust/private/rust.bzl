@@ -757,6 +757,7 @@ _common_attrs = {
         doc = dedent("""\
             List of additional output directories which are expected to be written by the compiler.
         """),
+    ),
     "require_explicit_unstable_features": attr.int(
         doc = (
             "Whether to require all unstable features to be explicitly opted in to using " +
