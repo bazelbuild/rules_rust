@@ -25,12 +25,6 @@ test --verbose_failures
 ## Common configuration
 ###############################################################################
 
-# Enable Bzlmod for every Bazel command
-common --enable_bzlmod
-
-# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
-common --lockfile_mode=off
-
 # Write build outputs in a platform-specific directory;
 # avoid outputs being wiped and rewritten when switching between platforms.
 common --experimental_platform_in_output_dir

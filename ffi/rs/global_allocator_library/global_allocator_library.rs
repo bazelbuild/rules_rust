@@ -35,7 +35,6 @@ fn __rust_alloc_error_handler(size: usize, align: usize) {
     }
 }
 
-
 // New feature as of https://github.com/rust-lang/rust/pull/88098.
 // This symbol is normally emitted by rustc. 0 means OOMs should abort, 1 means OOMs should panic.
 #[linkage = "weak"]

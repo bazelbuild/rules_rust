@@ -129,7 +129,6 @@ rust_test(
     srcs = ["tests/cargo_integration_test.rs"],
     aliases = aliases(),
     data = glob(["test_data/**"]) + [
-        "//crate_universe/test_data/serialized_configs",
         "@rules_rust//rust/toolchain:current_cargo_files",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],

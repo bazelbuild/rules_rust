@@ -23,7 +23,34 @@ build --sandbox_default_allow_network=false
 # registered in the WORKSPACE.
 common --repo_env=BAZEL_DO_NOT_DETECT_PYTHON_TOOLCHAIN=1
 
-# # Enable rustfmt for all targets in the workspace
+###############################################################################
+## Configuration Flags
+###############################################################################
+
+# Enable black for all targets in the workspace
+build --aspects=@rules_venv//python/black:defs.bzl%py_black_aspect
+build:black --output_groups=+py_black_checks
+build:no_black --output_groups=-py_black_checks
+
+# Enable isort for all targets in the workspace
+build --aspects=@rules_venv//python/isort:defs.bzl%py_isort_aspect
+build --@rules_venv//python/isort:config=//:.isort.cfg
+build:isort --output_groups=+py_isort_checks
+build:no_isort --output_groups=-py_isort_checks
+
+# Enable mypy for all targets in the workspace
+build --aspects=@rules_venv//python/mypy:defs.bzl%py_mypy_aspect
+build --@rules_venv//python/mypy:config=//:.mypy.ini
+build:mypy --output_groups=+py_mypy_checks
+build:no_mypy --output_groups=-py_mypy_checks
+
+# Enable pylint for all targets in the workspace
+build --aspects=@rules_venv//python/pylint:defs.bzl%py_pylint_aspect
+build --@rules_venv//python/pylint:config=//:.pylintrc.toml
+build:pylint --output_groups=+py_pylint_checks
+build:no_pylint --output_groups=-py_pylint_checks
+
+# Enable rustfmt for all targets in the workspace
 build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 build:rustfmt --output_groups=+rustfmt_checks
 build:no_rustfmt --output_groups=-rustfmt_checks
@@ -44,8 +71,16 @@ build:unpretty --config=nightly
 # Convenience configs for enabling linting and formatting
 build:strict --config=rustfmt
 build:strict --config=clippy
+build:strict --config=black
+build:strict --config=isort
+build:strict --config=pylint
+build:strict --config=mypy
 build:no_strict --config=no_rustfmt
 build:no_strict --config=no_clippy
+build:no_strict --config=no_black
+build:no_strict --config=no_isort
+build:no_strict --config=no_pylint
+build:no_strict --config=no_mypy
 
 # When running test enable all linters and formatters
 test --config=strict

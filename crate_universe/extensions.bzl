@@ -26,7 +26,7 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.66.0")
+bazel_dep(name = "rules_rust", version = "0.67.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
@@ -240,10 +240,10 @@ module(
 # B A Z E L  C E N T R A L  R E G I S T R Y # https://registry.bazel.build/
 ###############################################################################
 # https://github.com/bazelbuild/bazel-skylib/releases/
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.66.0")
+bazel_dep(name = "rules_rust", version = "0.67.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -559,6 +559,7 @@ def _generate_hub_and_spokes(
         splicing_config,
         lockfile,
         skip_cargo_lockfile_overwrite,
+        strip_internal_dependencies_from_cargo_lockfile,
         cargo_lockfile = None,
         manifests = {},
         packages = {}):
@@ -575,6 +576,11 @@ def _generate_hub_and_spokes(
         skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
             You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
             But you probably don't want to set this.
+        strip_internal_dependencies_from_cargo_lockfile (bool): Whether to strip internal dependencies from the cargo lockfile.
+            You may want to use this if you want to maintain a cargo lockfile for bazel only.
+            Bazel only requires external dependencies to be present in the lockfile.
+            By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
+            in other lockfiles where the cargo lockfile's sha is stored.
         cargo_lockfile (path): Path to Cargo.lock, if we have one.
         manifests (dict): The set of Cargo.toml manifests that apply to this closure, if any, keyed by path.
         packages (dict): The set of extra cargo crate tags that apply to this closure, if any, keyed by package name.
@@ -684,6 +690,7 @@ def _generate_hub_and_spokes(
         paths_to_track_file = paths_to_track_file,
         warnings_output_file = warnings_output_file,
         skip_cargo_lockfile_overwrite = skip_cargo_lockfile_overwrite,
+        strip_internal_dependencies_from_cargo_lockfile = strip_internal_dependencies_from_cargo_lockfile,
         **kwargs
     )
 
@@ -1169,6 +1176,7 @@ def _crate_impl(module_ctx):
                 manifests = manifests,
                 packages = packages,
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
+                strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
             )
 
     metadata_kwargs = {}
@@ -1207,6 +1215,16 @@ _FROM_COMMON_ATTRS = {
             "Whether to skip writing the cargo lockfile back after resolving. " +
             "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
             "But you probably don't want to set this."
+        ),
+        default = False,
+    ),
+    "strip_internal_dependencies_from_cargo_lockfile": attr.bool(
+        doc = (
+            "Whether to strip internal dependencies from the cargo lockfile. " +
+            "You may want to use this if you want to maintain a cargo lockfile for bazel only. " +
+            "Bazel only requires external dependencies to be present in the lockfile. " +
+            "By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts " +
+            "in other lockfiles where the cargo lockfile's sha is stored."
         ),
         default = False,
     ),

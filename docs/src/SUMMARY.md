@@ -22,6 +22,7 @@
     - [crate_universe (bzlmod)](crate_universe_bzlmod.md)
     - [crate_universe (WORKSPACE)](crate_universe_workspace.md)
 - [Upstream Tooling](./upstream_tooling.md)
+- [IDE Integrations](./ide_integrations.md)
 - [Extensions](./extensions.md)
     - [bindgen](./rust_bindgen.md)
     - [mdbook](./rust_mdbook.md)

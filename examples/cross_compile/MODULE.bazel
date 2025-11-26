@@ -18,10 +18,10 @@ local_path_override(
 bazel_dep(name = "platforms", version = "1.0.0")
 
 # https://github.com/bazelbuild/rules_shell/releases
-bazel_dep(name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 
 # https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.2.0", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
 # https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

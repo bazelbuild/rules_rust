@@ -220,7 +220,7 @@ def _rust_library_common(ctx, crate_type):
             name = crate_name,
             type = crate_type,
             root = crate_root,
-            srcs = depset(srcs),
+            srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
             aliases = ctx.attr.aliases,
@@ -285,7 +285,7 @@ def _rust_binary_impl(ctx):
             name = crate_name,
             type = ctx.attr.crate_type,
             root = crate_root,
-            srcs = depset(srcs),
+            srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
             aliases = ctx.attr.aliases,
@@ -417,7 +417,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate.root,
-            srcs = depset(srcs),
+            srcs = srcs,
             deps = depset(deps, transitive = [crate.deps]).to_list(),
             proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
             aliases = aliases,
@@ -483,7 +483,7 @@ def _rust_test_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate_root,
-            srcs = depset(srcs),
+            srcs = srcs,
             deps = deps,
             proc_macro_deps = proc_macro_deps,
             aliases = ctx.attr.aliases,
@@ -757,6 +757,15 @@ _common_attrs = {
         doc = dedent("""\
             List of additional output directories which are expected to be written by the compiler.
         """),
+    "require_explicit_unstable_features": attr.int(
+        doc = (
+            "Whether to require all unstable features to be explicitly opted in to using " +
+            "`-Zallow-features=...`. Possible values: [-1, 0, 1]. -1 means delegate to the " +
+            "toolchain.require_explicit_unstable_features boolean build setting; 0 means False; " +
+            "1 means True."
+        ),
+        values = [-1, 0, 1],
+        default = -1,
     ),
     "rustc_env": attr.string_dict(
         doc = dedent("""\

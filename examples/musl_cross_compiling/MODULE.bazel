@@ -10,8 +10,8 @@ local_path_override(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_shell", version = "0.4.0")
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 RUST_EDITION = "2021"
 

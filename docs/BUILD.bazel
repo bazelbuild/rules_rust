@@ -102,18 +102,6 @@ stardoc(
 )
 
 stardoc(
-    name = "rust_analyzer",
-    out = "src/rust_analyzer.md",
-    header_template = ":rust_analyzer.vm",
-    input = "@rules_rust//rust:defs.bzl",
-    symbol_names = [
-        "rust_analyzer_aspect",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
-    deps = [":all_docs"],
-)
-
-stardoc(
     name = "rust_clippy",
     out = "src/rust_clippy.md",
     header_template = ":rust_clippy.vm",
@@ -281,7 +269,6 @@ mdbook(
         ":crate_universe_workspace",
         ":providers",
         ":rust",
-        ":rust_analyzer",
         ":rust_bindgen",
         ":rust_bzlmod",
         ":rust_clippy",

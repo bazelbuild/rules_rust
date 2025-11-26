@@ -727,10 +727,18 @@ def collect_inputs(
     if linker_script:
         nolinkstamp_compile_direct_inputs.append(linker_script)
 
+    if crate_info.type in ["dylib", "cdylib"]:
+        # For shared libraries we want to link C++ runtime library dynamically
+        # (for example libstdc++.so or libc++.so).
+        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+    else:
+        runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
         additional_transitive_inputs,
         transitive = [
+            runtime_libs,
             linker_depset,
             crate_info.srcs,
             transitive_crate_outputs,
@@ -835,6 +843,7 @@ def construct_arguments(
         build_metadata = False,
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
+        require_explicit_unstable_features = False,
         error_format = None):
     """Builds an Args object containing common rustc flags
 
@@ -867,6 +876,7 @@ def construct_arguments(
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
+        require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
 
     Returns:
@@ -894,6 +904,9 @@ def construct_arguments(
         process_wrapper_flags.add("--env-file", build_env_file)
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
+
+    if require_explicit_unstable_features:
+        process_wrapper_flags.add("--require-explicit-unstable-features", "true")
 
     # Certain rust build processes expect to find files from the environment
     # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
@@ -1205,15 +1218,18 @@ def rustc_compile_action(
     """
     deps = crate_info_dict.pop("deps")
     proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
+    srcs = crate_info_dict.pop("srcs")
+
     crate_info = rust_common.create_crate_info(
         deps = depset(deps),
         proc_macro_deps = depset(proc_macro_deps),
+        srcs = depset(srcs),
         **crate_info_dict
     )
 
-    build_metadata = crate_info_dict.get("metadata", None)
-    rustc_output = crate_info_dict.get("rustc_output", None)
-    rustc_rmeta_output = crate_info_dict.get("rustc_rmeta_output", None)
+    build_metadata = crate_info.metadata
+    rustc_output = crate_info.rustc_output
+    rustc_rmeta_output = crate_info.rustc_rmeta_output
 
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
@@ -1231,7 +1247,7 @@ def rustc_compile_action(
     dep_info, build_info, linkstamps = collect_deps(
         deps = deps,
         proc_macro_deps = proc_macro_deps,
-        aliases = crate_info_dict["aliases"],
+        aliases = crate_info.aliases,
     )
     extra_disabled_features = [RUST_LINK_CC_FEATURE]
     if crate_info.type in ["bin", "cdylib"] and dep_info.transitive_noncrates.to_list():
@@ -1286,6 +1302,16 @@ def rustc_compile_action(
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
+    # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
+    require_explicit_unstable_features = False
+    if hasattr(ctx.attr, "require_explicit_unstable_features"):
+        if ctx.attr.require_explicit_unstable_features == 0:
+            require_explicit_unstable_features = False
+        elif ctx.attr.require_explicit_unstable_features == 1:
+            require_explicit_unstable_features = True
+        elif ctx.attr.require_explicit_unstable_features == -1:
+            require_explicit_unstable_features = toolchain.require_explicit_unstable_features
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1308,6 +1334,7 @@ def rustc_compile_action(
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
+        require_explicit_unstable_features = require_explicit_unstable_features,
     )
 
     args_metadata = None
@@ -1334,6 +1361,7 @@ def rustc_compile_action(
             stamp = stamp,
             use_json_output = True,
             build_metadata = True,
+            require_explicit_unstable_features = require_explicit_unstable_features,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -1403,7 +1431,7 @@ def rustc_compile_action(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
-                len(crate_info.srcs.to_list()),
+                len(srcs),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
@@ -1420,7 +1448,7 @@ def rustc_compile_action(
                     crate_info.type,
                     ctx.label.name,
                     formatted_version,
-                    len(crate_info.srcs.to_list()),
+                    len(srcs),
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
@@ -1439,7 +1467,7 @@ def rustc_compile_action(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
-                len(crate_info.srcs.to_list()),
+                len(srcs),
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
@@ -1608,6 +1636,7 @@ def rustc_compile_action(
         crate_info = rust_common.create_crate_info(
             deps = depset(deps),
             proc_macro_deps = depset(proc_macro_deps),
+            srcs = depset(srcs),
             **crate_info_dict
         )
 
@@ -2252,36 +2281,22 @@ def _add_native_link_flags(args, dep_info, linkstamp_outs, ambiguous_libs, crate
 
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
-    args.add_all(linkstamp_outs, before_each = "-C", format_each = "link-args=%s")
+    args.add_all(linkstamp_outs, format_each = "-Clink-args=%s")
 
     if crate_type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
-        args.add_all(
-            cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
+        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+        args.add_all(runtime_libs, map_each = _get_dirname, format_each = "-Lnative=%s")
         if include_link_flags:
-            args.add_all(
-                cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-ldylib=%s",
-            )
+            args.add_all(runtime_libs, map_each = get_lib_name, format_each = "-ldylib=%s")
     else:
         # For all other crate types we want to link C++ runtime library statically
         # (for example libstdc++.a or libc++.a).
-        args.add_all(
-            cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-            map_each = _get_dirname,
-            format_each = "-Lnative=%s",
-        )
+        runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+        args.add_all(runtime_libs, map_each = _get_dirname, format_each = "-Lnative=%s")
         if include_link_flags:
-            args.add_all(
-                cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
-                map_each = get_lib_name,
-                format_each = "-lstatic=%s",
-            )
+            args.add_all(runtime_libs, map_each = get_lib_name, format_each = "-lstatic=%s")
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.

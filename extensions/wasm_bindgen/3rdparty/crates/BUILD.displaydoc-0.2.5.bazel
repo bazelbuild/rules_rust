@@ -70,6 +70,7 @@ rust_proc_macro(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -93,8 +94,8 @@ rust_proc_macro(
     }),
     version = "0.2.5",
     deps = [
-        "@rrwbd__proc-macro2-1.0.92//:proc_macro2",
-        "@rrwbd__quote-1.0.38//:quote",
-        "@rrwbd__syn-2.0.95//:syn",
+        "@rrwbd__proc-macro2-1.0.103//:proc_macro2",
+        "@rrwbd__quote-1.0.41//:quote",
+        "@rrwbd__syn-2.0.108//:syn",
     ],
 )

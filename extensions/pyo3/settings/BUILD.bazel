@@ -10,7 +10,7 @@ package(default_visibility = ["//visibility:public"])
 # agnostic or incorrect stubs will be generated.
 #
 # The use of this feature requires the `experimental-inspect` feature. For
-# details see: https://pyo3.rs/v0.23.4/features.html#experimental-inspect
+# details see: https://pyo3.rs/v0.26.0/features.html#experimental-inspect
 bool_flag(
     name = "experimental_stubgen",
     build_setting_default = True,

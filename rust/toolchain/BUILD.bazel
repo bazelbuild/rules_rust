@@ -1,3 +1,4 @@
+load("//rust/private:rust_analyzer.bzl", "current_rust_analyzer_toolchain")
 load("//rust/private:rustfmt.bzl", "current_rustfmt_toolchain")
 load("//rust/private:toolchain_utils.bzl", "current_rust_toolchain", "toolchain_files", "toolchain_files_for_target")
 
@@ -44,6 +45,11 @@ current_rust_toolchain(
 
 current_rustfmt_toolchain(
     name = "current_rustfmt_toolchain",
+)
+
+current_rust_analyzer_toolchain(
+    name = "current_rust_analyzer_toolchain",
+    tags = ["manual"],
 )
 
 toolchain_files_for_target(

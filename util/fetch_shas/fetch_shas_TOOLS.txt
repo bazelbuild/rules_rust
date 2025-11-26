@@ -5,3 +5,4 @@ rust
 rust-std
 rustc
 rustfmt
+rust-analyzer
