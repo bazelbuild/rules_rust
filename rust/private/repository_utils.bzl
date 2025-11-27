@@ -395,46 +395,46 @@ def BUILD_for_rust_toolchain(
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(target_triple.system)])
 
-    rustfmt_label = "None"
+    rustfmt_label = None
     if include_rustfmt:
-        rustfmt_label = "\"//:rustfmt_bin\""
-    llvm_cov_label = "None"
-    llvm_profdata_label = "None"
-    llvm_lib_label = "None"
+        rustfmt_label = "//:rustfmt_bin"
+    llvm_cov_label = None
+    llvm_profdata_label = None
+    llvm_lib_label = None
     if include_llvm_tools:
-        llvm_cov_label = "\"//:llvm_cov_bin\""
-        llvm_profdata_label = "\"//:llvm_profdata_bin\""
-        llvm_lib_label = "\"//:llvm_lib\""
-    allocator_library_label = "None"
+        llvm_cov_label = "//:llvm_cov_bin"
+        llvm_profdata_label = "//:llvm_profdata_bin"
+        llvm_lib_label = "//:llvm_lib"
+    allocator_library_label = None
     if allocator_library:
-        allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
-    global_allocator_library_label = "None"
+        allocator_library_label = allocator_library
+    global_allocator_library_label = None
     if global_allocator_library:
-        global_allocator_library_label = "\"{global_allocator_library}\"".format(global_allocator_library = global_allocator_library)
+        global_allocator_library_label = global_allocator_library
 
-    linker_label = "None"
-    linker_type = "None"
+    linker_label = None
+    linker_type = None
     if include_linker:
-        linker_label = "\"//:rust-lld\""
-        linker_type = "\"direct\""
+        linker_label = "//:rust-lld"
+        linker_type = "direct"
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system),
         dylib_ext = system_to_dylib_ext(target_triple.system),
-        allocator_library = allocator_library_label,
-        global_allocator_library = global_allocator_library_label,
+        allocator_library = repr(allocator_library_label),
+        global_allocator_library = repr(global_allocator_library_label),
         stdlib_linkflags = stdlib_linkflags,
         default_edition = default_edition,
         exec_triple = exec_triple.str,
         target_triple = target_triple.str,
-        rustfmt_label = rustfmt_label,
-        llvm_cov_label = llvm_cov_label,
-        llvm_profdata_label = llvm_profdata_label,
-        llvm_lib_label = llvm_lib_label,
-        linker_label = linker_label,
-        linker_type = linker_type,
+        rustfmt_label = repr(rustfmt_label),
+        llvm_cov_label = repr(llvm_cov_label),
+        llvm_profdata_label = repr(llvm_profdata_label),
+        llvm_lib_label = repr(llvm_lib_label),
+        linker_label = repr(linker_label),
+        linker_type = repr(linker_type),
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,

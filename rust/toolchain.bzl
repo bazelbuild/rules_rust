@@ -238,7 +238,7 @@ def _generate_sysroot(
 
     # Rustc
     sysroot_rustc = _symlink_sysroot_bin(ctx, name, "bin", rustc)
-    direct_files.extend([sysroot_rustc])
+    direct_files.append(sysroot_rustc)
 
     # Rustc dependencies
     sysroot_rustc_lib = None
@@ -248,31 +248,31 @@ def _generate_sysroot(
 
     # Rustdoc
     sysroot_rustdoc = _symlink_sysroot_bin(ctx, name, "bin", rustdoc)
-    direct_files.extend([sysroot_rustdoc])
+    direct_files.append(sysroot_rustdoc)
 
     # Clippy
     sysroot_clippy = None
     if clippy:
         sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
-        direct_files.extend([sysroot_clippy])
+        direct_files.append(sysroot_clippy)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
-        direct_files.extend([sysroot_cargo])
+        direct_files.append(sysroot_cargo)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
         sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
-        direct_files.extend([sysroot_cargo_clippy])
+        direct_files.append(sysroot_cargo_clippy)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
         sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
-        direct_files.extend([sysroot_rustfmt])
+        direct_files.append(sysroot_rustfmt)
 
     # Linker
     sysroot_linker = None
@@ -292,8 +292,8 @@ def _generate_sysroot(
 
         sysroot_linker = _symlink_sysroot_bin(ctx, name, dest, linker_bin)
         sysroot_linker_files = _symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files)
-        direct_files.extend([sysroot_linker])
-        transitive_file_sets.extend([sysroot_linker_files])
+        direct_files.append(sysroot_linker)
+        transitive_file_sets.append(sysroot_linker_files)
 
     # Llvm tools
     sysroot_llvm_tools = None
@@ -720,11 +720,8 @@ rust_toolchain = rule(
             default = "@rules_rust//ffi/cc/global_allocator_library",
         ),
         "linker": attr.label(
-            doc = "The label to an explicit linker to use (e.g. `rust-lld`, `ld`, `link-ld.exe`, etc...)",
-            # `target` cfg is used so a linker can be chose based on the target
-            # platform. Linker binaries are still required to be runnable in the
-            # `exec` configuration.
-            cfg = "target",
+            doc = "The label to an explicit linker to use (e.g. rust-lld, ld, link-ld.exe, etc.). Linker binaries must be runnable in the exec configuration, so cfg = \"exec\" is used. To choose a linker based on the target platform, use a select() when providing this attribute. The select() will be evaluated against the target platform before the exec transition is applied, allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.",
+            cfg = "exec",
             allow_single_file = True,
         ),
         "linker_preference": attr.string(
@@ -935,5 +932,22 @@ it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
 See `@rules_rust//rust:repositories.bzl` for examples of defining the `@rust_cpuX` repository \
 with the actual binaries and libraries.
+
+To use a platform-specific linker, you can use a `select()` in the `linker` attribute:
+
+```python
+rust_toolchain(
+    name = "rust_toolchain_impl",
+    # ... other attributes ...
+    linker = select({
+        "@platforms//os:linux": "//tools:rust-lld-linux",
+        "@platforms//os:windows": "//tools:rust-lld-windows",
+        "//conditions:default": "//tools:rust-lld",
+    }),
+)
+```
+
+The `select()` is evaluated against the target platform before the exec transition is applied, \
+allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.
 """,
 )
