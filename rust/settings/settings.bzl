@@ -251,9 +251,12 @@ def toolchain_linker_preference():
     """A flag to control which linker is preferred for linking Rust binaries.
 
     Accepts three values:
-    - "rust": Use `rust_toolchain.linker` always.
-    - "cc": Use the linker provided by the configured `cc_toolchain`
-    - "none": Default to `cc` being the preference and falling back to `rust`.
+    - "rust": Use `rust_toolchain.linker` always (e.g., `rust-lld`). This uses rustc to invoke
+      the linker directly.
+    - "cc": Use the linker provided by the configured `cc_toolchain`. This uses rustc to invoke
+      the C++ toolchain's linker (e.g., `clang`, `gcc`, `link.exe`).
+    - "none": Default to `cc` being the preference and falling back to `rust` if no `cc_toolchain`
+      is available.
     """
     string_flag(
         name = "toolchain_linker_preference",
