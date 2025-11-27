@@ -247,6 +247,23 @@ def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
         build_setting_default = False,
     )
 
+def toolchain_linker_preference():
+    """A flag to control which linker is preferred for linking Rust binaries.
+
+    Accepts three values:
+    - "rust": Use `rust_toolchain.linker` always (e.g., `rust-lld`). This uses rustc to invoke
+      the linker directly.
+    - "cc": Use the linker provided by the configured `cc_toolchain`. This uses rustc to invoke
+      the C++ toolchain's linker (e.g., `clang`, `gcc`, `link.exe`).
+    - "none": Default to `cc` being the preference and falling back to `rust` if no `cc_toolchain`
+      is available.
+    """
+    string_flag(
+        name = "toolchain_linker_preference",
+        build_setting_default = "none",
+        values = ["rust", "cc", "none"],
+    )
+
 # buildifier: disable=unnamed-macro
 def clippy_toml():
     """This setting is used by the clippy rules. See https://bazelbuild.github.io/rules_rust/rust_clippy.html
