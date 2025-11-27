@@ -924,7 +924,6 @@ _rust_test_attrs = {
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
     ),
-    "_use_grep_includes": attr.bool(default = True),
 } | _coverage_attrs | _experimental_use_cc_common_link_attrs
 
 rust_library = rule(
@@ -1085,7 +1084,6 @@ rust_shared_library = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
-        "_use_grep_includes": attr.bool(default = True),
     },
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
@@ -1197,7 +1195,6 @@ _rust_binary_attrs = {
         default = False,
     ),
     "stamp": _stamp_attribute(default_value = -1),
-    "_use_grep_includes": attr.bool(default = True),
 } | _experimental_use_cc_common_link_attrs
 
 def _rust_binary_transition_impl(settings, attr):
