@@ -1424,11 +1424,12 @@ def rustc_compile_action(
             env = env,
             arguments = args.all,
             mnemonic = "Rustc",
-            progress_message = "Compiling Rust {} {}{} ({} files)".format(
+            progress_message = "Compiling Rust {} {}{} ({} file{})".format(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
                 len(srcs),
+                "" if len(srcs) == 1 else "s",
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
@@ -1441,11 +1442,12 @@ def rustc_compile_action(
                 env = env,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
-                progress_message = "Compiling Rust metadata {} {}{} ({} files)".format(
+                progress_message = "Compiling Rust metadata {} {}{} ({} file{})".format(
                     crate_info.type,
                     ctx.label.name,
                     formatted_version,
                     len(srcs),
+                    "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
@@ -1460,11 +1462,12 @@ def rustc_compile_action(
             env = env,
             arguments = [args.rustc_path, args.rustc_flags],
             mnemonic = "Rustc",
-            progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} files)".format(
+            progress_message = "Compiling Rust (without process_wrapper) {} {}{} ({} file{})".format(
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
                 len(srcs),
+                "" if len(srcs) == 1 else "s",
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
