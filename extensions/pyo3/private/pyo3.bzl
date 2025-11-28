@@ -87,12 +87,36 @@ def _py_pyo3_library_impl(ctx):
     is_windows = extension.basename.endswith(".dll")
 
     # https://pyo3.rs/v0.26.0/building-and-distribution#manual-builds
+    #
     # Determine the on-disk and logical Python module layout.
-    module_name = ctx.attr.module if ctx.attr.module else ctx.label.name
+    #
+    # `module` is a full dotted module path (e.g. "foo.bar"). We split on the
+    # last "." such that:
+    #   - module_prefix == "foo"
+    #   - module_name == "bar"
+    #
+    # `module_name` must match the `#[pymodule] fn <name>(...)` in the Rust code
+    # and is also what we pass to the stub generator.
+    module_path = ctx.attr.module if ctx.attr.module else ctx.label.name.replace("/", ".")
 
-    # Convert a dotted prefix (e.g. "foo.bar") into a path ("foo/bar").
-    if ctx.attr.module_prefix:
-        module_prefix_path = ctx.attr.module_prefix.replace(".", "/")
+    if module_path.startswith(".") or module_path.endswith(".") or ".." in module_path:
+        fail("Invalid `module` value '{}': expected a dotted module path like 'foo.bar'.".format(module_path))
+
+    last_dot = module_path.rfind(".")
+    if last_dot == -1:
+        module_prefix = None
+        module_name = module_path
+    else:
+        module_prefix = module_path[:last_dot]
+        module_name = module_path[last_dot + 1:]
+
+    if not module_name:
+        fail("Invalid `module` value '{}': module name may not be empty.".format(module_path))
+
+    # Convert module_prefix (e.g. "foo.bar") into a path ("foo/bar") and place
+    # the extension and stubs in the corresponding directory.
+    if module_prefix:
+        module_prefix_path = module_prefix.replace(".", "/")
         module_relpath = "{}/{}.{}".format(module_prefix_path, module_name, "pyd" if is_windows else "so")
         stub_relpath = "{}/{}.pyi".format(module_prefix_path, module_name)
     else:
@@ -190,10 +214,7 @@ py_pyo3_library = rule(
             doc = "List of import directories to be added to the `PYTHONPATH`.",
         ),
         "module": attr.string(
-            doc = "The Python module name implemented by this extension.",
-        ),
-        "module_prefix": attr.string(
-            doc = "A dotted Python package prefix for the module.",
+            doc = "A full dotted Python module path implemented by this extension (e.g. `foo.bar`).",
         ),
         "stubs": attr.int(
             doc = "Whether or not to generate stubs. `-1` will default to the global config, `0` will never generate, and `1` will always generate stubs.",
@@ -234,7 +255,6 @@ def pyo3_extension(
         version = None,
         compilation_mode = "opt",
         module = None,
-        module_prefix = None,
         **kwargs):
     """Define a PyO3 python extension module.
 
@@ -276,8 +296,7 @@ def pyo3_extension(
             For more details see [rust_shared_library][rsl].
         compilation_mode (str, optional): The [compilation_mode](https://bazel.build/reference/command-line-reference#flag--compilation_mode)
             value to build the extension for. If set to `"current"`, the current configuration will be used.
-        module (str, optional): The Python module name implemented by this extension.
-        module_prefix (str, optional): A dotted Python package prefix for the module.
+        module (str, optional): A full dotted Python module path implemented by this extension (e.g. `foo.bar`).
         **kwargs (dict): Additional keyword arguments.
     """
     tags = kwargs.pop("tags", [])
@@ -338,7 +357,6 @@ def pyo3_extension(
         stubs = stubs_int,
         imports = imports,
         module = module,
-        module_prefix = module_prefix,
         tags = tags,
         visibility = visibility,
         **kwargs
