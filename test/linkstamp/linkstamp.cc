@@ -1,1 +1,3 @@
-int defined_by_linkstamp = 42;
+extern "C" {
+  int defined_by_linkstamp = 42;
+}
