@@ -20,6 +20,6 @@ rust_proc_macro(
 rust_test(
     name = "linkstamp_proc_macro_test",
     srcs = ["linkstamp_proc_macro_test.rs"],
-    proc_macro_deps = [":linkstamp_proc_macro"],
     edition = "2018",
+    proc_macro_deps = [":linkstamp_proc_macro"],
 )
