@@ -184,14 +184,11 @@ def get_compilation_mode_opts(ctx, toolchain):
 
     return toolchain.compilation_mode_opts[comp_mode]
 
-def _are_linkstamps_supported(feature_configuration, has_grep_includes):
+def _are_linkstamps_supported(feature_configuration):
     # Are linkstamps supported by the C++ toolchain?
     return (cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "linkstamps") and
             # Is Bazel recent enough to support Starlark linkstamps?
-            hasattr(cc_common, "register_linkstamp_compile_action") and
-            # The current rule doesn't define _grep_includes attribute; this
-            # attribute is required for compiling linkstamps.
-            has_grep_includes)
+            hasattr(cc_common, "register_linkstamp_compile_action"))
 
 def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode):
     """Whether or not [PIC][pic] should be enabled
@@ -750,7 +747,7 @@ def collect_inputs(
 
     # Register linkstamps when linking with rustc (when linking with
     # cc_common.link linkstamps are handled by cc_common.link itself).
-    if not experimental_use_cc_common_link and crate_info.type in ("bin", "cdylib"):
+    if not experimental_use_cc_common_link and crate_info.type in ("bin", "cdylib", "proc-macro"):
         # There is no other way to register an action for each member of a depset than
         # flattening the depset as of 2021-10-12. Luckily, usually there is only one linkstamp
         # in a build, and we only flatten the list on binary targets that perform transitive linking,
@@ -1254,10 +1251,7 @@ def rustc_compile_action(
         # One or more of the transitive deps is a cc_library / cc_import
         extra_disabled_features = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
-    if not _are_linkstamps_supported(
-        feature_configuration = feature_configuration,
-        has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
-    ):
+    if not _are_linkstamps_supported(feature_configuration = feature_configuration):
         linkstamps = depset([])
 
     # Determine if the build is currently running with --stamp
