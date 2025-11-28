@@ -97,7 +97,7 @@ def _py_pyo3_library_impl(ctx):
     #
     # `module_name` must match the `#[pymodule] fn <name>(...)` in the Rust code
     # and is also what we pass to the stub generator.
-    module_path = ctx.attr.module if ctx.attr.module else ctx.label.name.replace("/", ".")
+    module_path = ctx.attr.module_name if ctx.attr.module_name else ctx.label.name.replace("/", ".")
 
     if module_path.startswith(".") or module_path.endswith(".") or ".." in module_path:
         fail("Invalid `module` value '{}': expected a dotted module path like 'foo.bar'.".format(module_path))
@@ -213,7 +213,7 @@ py_pyo3_library = rule(
         "imports": attr.string_list(
             doc = "List of import directories to be added to the `PYTHONPATH`.",
         ),
-        "module": attr.string(
+        "module_name": attr.string(
             doc = "A full dotted Python module path implemented by this extension (e.g. `foo.bar`).",
         ),
         "stubs": attr.int(
@@ -254,7 +254,7 @@ def pyo3_extension(
         stubs = None,
         version = None,
         compilation_mode = "opt",
-        module = None,
+        module_name = None,
         **kwargs):
     """Define a PyO3 python extension module.
 
@@ -296,7 +296,7 @@ def pyo3_extension(
             For more details see [rust_shared_library][rsl].
         compilation_mode (str, optional): The [compilation_mode](https://bazel.build/reference/command-line-reference#flag--compilation_mode)
             value to build the extension for. If set to `"current"`, the current configuration will be used.
-        module (str, optional): A full dotted Python module path implemented by this extension (e.g. `foo.bar`).
+        module_name (str, optional): A full dotted Python module path implemented by this extension (e.g. `foo.bar`).
         **kwargs (dict): Additional keyword arguments.
     """
     tags = kwargs.pop("tags", [])
@@ -356,7 +356,7 @@ def pyo3_extension(
         compilation_mode = compilation_mode,
         stubs = stubs_int,
         imports = imports,
-        module = module,
+        module_name = module_name,
         tags = tags,
         visibility = visibility,
         **kwargs
