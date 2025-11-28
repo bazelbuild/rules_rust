@@ -50,7 +50,7 @@ pub(crate) fn test_tempdir(prefix: &str) -> (Option<tempfile::TempDir>, PathBuf)
     match std::env::var("TEST_TMPDIR") {
         Ok(t) => {
             let dir = tempfile::TempDir::with_prefix_in(prefix, t).unwrap();
-            (None, dir.into_path())
+            (None, dir.keep())
         }
         Err(_) => {
             let dir = tempfile::TempDir::with_prefix(prefix).unwrap();

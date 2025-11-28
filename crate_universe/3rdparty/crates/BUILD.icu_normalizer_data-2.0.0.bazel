@@ -6,7 +6,11 @@
 #     bazel run @@//crate_universe/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
+load(
+    "@rules_rust//cargo:defs.bzl",
+    "cargo_build_script",
+    "cargo_toml_env_vars",
+)
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -17,7 +21,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "gix_url",
+    name = "icu_normalizer_data",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -44,7 +48,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=gix-url",
+        "crate-name=icu_normalizer_data",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,13 +95,66 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.29.0",
+    version = "2.0.0",
     deps = [
-        "@cui__bstr-1.6.0//:bstr",
-        "@cui__gix-features-0.40.0//:gix_features",
-        "@cui__gix-path-0.10.14//:gix_path",
-        "@cui__percent-encoding-2.3.2//:percent_encoding",
-        "@cui__thiserror-2.0.4//:thiserror",
-        "@cui__url-2.5.7//:url",
+        "@cui__icu_normalizer_data-2.0.0//:build_script_build",
     ],
+)
+
+cargo_build_script(
+    name = "_bs",
+    srcs = glob(
+        include = ["**/*.rs"],
+        allow_empty = True,
+    ),
+    compile_data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            "**/*.rs",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    crate_name = "build_script_build",
+    crate_root = "build.rs",
+    data = glob(
+        include = ["**"],
+        allow_empty = True,
+        exclude = [
+            "**/* *",
+            ".tmp_git_root/**/*",
+            "BUILD",
+            "BUILD.bazel",
+            "WORKSPACE",
+            "WORKSPACE.bazel",
+        ],
+    ),
+    edition = "2021",
+    pkg_name = "icu_normalizer_data",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-bazel",
+        "crate-name=icu_normalizer_data",
+        "manual",
+        "noclippy",
+        "norustfmt",
+    ],
+    version = "2.0.0",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "build_script_build",
+    actual = ":_bs",
+    tags = ["manual"],
 )
