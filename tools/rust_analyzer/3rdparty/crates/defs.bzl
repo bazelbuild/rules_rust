@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,14 +298,14 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "anyhow": Label("@rrra//:anyhow-1.0.71"),
-            "camino": Label("@rrra//:camino-1.1.9"),
-            "clap": Label("@rrra//:clap-4.3.11"),
-            "env_logger": Label("@rrra//:env_logger-0.10.0"),
-            "itertools": Label("@rrra//:itertools-0.11.0"),
-            "log": Label("@rrra//:log-0.4.19"),
-            "serde": Label("@rrra//:serde-1.0.171"),
-            "serde_json": Label("@rrra//:serde_json-1.0.102"),
+            "anyhow": Label("@rrra//anyhow-1.0.71"),
+            "camino": Label("@rrra//camino-1.1.9"),
+            "clap": Label("@rrra//clap-4.3.11"),
+            "env_logger": Label("@rrra//env_logger-0.10.0"),
+            "itertools": Label("@rrra//itertools-0.11.0"),
+            "log": Label("@rrra//log-0.4.19"),
+            "serde": Label("@rrra//serde-1.0.171"),
+            "serde_json": Label("@rrra//serde_json-1.0.102"),
         },
     },
 }
@@ -1001,7 +1004,32 @@ def crate_repositories():
         build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.windows_x86_64_msvc-0.48.0.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rrra",
+        defs_module = Label("//tools/rust_analyzer/3rdparty/crates:defs.bzl"),
+        aliases = {
+            "anyhow": "@rrra__anyhow-1.0.71//:anyhow",
+            "anyhow-1.0.71": "@rrra__anyhow-1.0.71//:anyhow",
+            "camino": "@rrra__camino-1.1.9//:camino",
+            "camino-1.1.9": "@rrra__camino-1.1.9//:camino",
+            "clap": "@rrra__clap-4.3.11//:clap",
+            "clap-4.3.11": "@rrra__clap-4.3.11//:clap",
+            "env_logger": "@rrra__env_logger-0.10.0//:env_logger",
+            "env_logger-0.10.0": "@rrra__env_logger-0.10.0//:env_logger",
+            "itertools": "@rrra__itertools-0.11.0//:itertools",
+            "itertools-0.11.0": "@rrra__itertools-0.11.0//:itertools",
+            "log": "@rrra__log-0.4.19//:log",
+            "log-0.4.19": "@rrra__log-0.4.19//:log",
+            "serde": "@rrra__serde-1.0.171//:serde",
+            "serde-1.0.171": "@rrra__serde-1.0.171//:serde",
+            "serde_json": "@rrra__serde_json-1.0.102//:serde_json",
+            "serde_json-1.0.102": "@rrra__serde_json-1.0.102//:serde_json",
+        },
+    )
+
     return [
+        struct(repo = "rrra", is_dev_dep = False),
         struct(repo = "rrra__anyhow-1.0.71", is_dev_dep = False),
         struct(repo = "rrra__camino-1.1.9", is_dev_dep = False),
         struct(repo = "rrra__clap-4.3.11", is_dev_dep = False),

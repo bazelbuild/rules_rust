@@ -2,7 +2,7 @@ load("//crate_universe:defs.bzl", "crates_vendor", "render_config")
 
 crates_vendor(
     name = "crates_vendor",
-    cargo_lockfile = "Cargo.Bazel.lock",
+    cargo_lockfile = "//cargo:Cargo.lock",
     manifests = [
         "//cargo:Cargo.toml",
     ],

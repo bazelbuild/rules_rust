@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,9 +298,9 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "pyo3": Label("@rpyo3c//:pyo3-0.26.0"),
-            "pyo3-ffi": Label("@rpyo3c//:pyo3-ffi-0.26.0"),
-            "pyo3-introspection": Label("@rpyo3c//:pyo3-introspection-0.26.0"),
+            "pyo3": Label("@rpyo3c//pyo3-0.26.0"),
+            "pyo3-ffi": Label("@rpyo3c//pyo3-ffi-0.26.0"),
+            "pyo3-introspection": Label("@rpyo3c//pyo3-introspection-0.26.0"),
         },
     },
 }
@@ -738,7 +741,22 @@ def crate_repositories():
         build_file = Label("//3rdparty/crates:BUILD.unindent-0.2.4.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rpyo3c",
+        defs_module = Label("//3rdparty/crates:defs.bzl"),
+        aliases = {
+            "pyo3": "@rpyo3c__pyo3-0.26.0//:pyo3",
+            "pyo3-0.26.0": "@rpyo3c__pyo3-0.26.0//:pyo3",
+            "pyo3-ffi": "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
+            "pyo3-ffi-0.26.0": "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
+            "pyo3-introspection": "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
+            "pyo3-introspection-0.26.0": "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
+        },
+    )
+
     return [
+        struct(repo = "rpyo3c", is_dev_dep = False),
         struct(repo = "rpyo3c__pyo3-0.26.0", is_dev_dep = False),
         struct(repo = "rpyo3c__pyo3-ffi-0.26.0", is_dev_dep = False),
         struct(repo = "rpyo3c__pyo3-introspection-0.26.0", is_dev_dep = False),

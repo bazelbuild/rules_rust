@@ -105,7 +105,7 @@ rust_library(
         "@rmdbi__byteorder-1.5.0//:byteorder",
         "@rmdbi__bytes-1.11.0//:bytes",
         "@rmdbi__data-encoding-2.9.0//:data_encoding",
-        "@rmdbi__http-1.3.1//:http",
+        "@rmdbi__http-1.4.0//:http",
         "@rmdbi__httparse-1.10.1//:httparse",
         "@rmdbi__log-0.4.28//:log",
         "@rmdbi__rand-0.8.5//:rand",

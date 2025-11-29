@@ -95,6 +95,6 @@ rust_proc_macro(
     version = "0.6.1",
     deps = [
         "@rmdbi__quote-1.0.42//:quote",
-        "@rmdbi__syn-2.0.110//:syn",
+        "@rmdbi__syn-2.0.111//:syn",
     ],
 )

@@ -117,6 +117,6 @@ rust_library(
         "//vendor_local_pkgs/crates/tokio-util-0.7.17:tokio_util",
         "//vendor_local_pkgs/crates/tower-layer-0.3.3:tower_layer",
         "//vendor_local_pkgs/crates/tower-service-0.3.3:tower_service",
-        "//vendor_local_pkgs/crates/tracing-0.1.41:tracing",
+        "//vendor_local_pkgs/crates/tracing-0.1.43:tracing",
     ],
 )

@@ -11,7 +11,6 @@ package(default_visibility = ["//visibility:public"])
 exports_files(
     [
         "cargo-bazel.json",
-        "crates.bzl",
         "defs.bzl",
     ] + glob(
         include = ["*.bazel"],
@@ -28,11 +27,4 @@ filegroup(
         ],
         allow_empty = True,
     ),
-)
-
-# Workspace Member Dependencies
-alias(
-    name = "bzip2",
-    actual = "@basic_sys__bzip2-0.3.3//:bzip2",
-    tags = ["manual"],
 )

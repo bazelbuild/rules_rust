@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,14 +298,14 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "h2": Label("@rrprd//:h2-0.4.6"),
-            "prost": Label("@rrprd//:prost-0.13.1"),
-            "prost-types": Label("@rrprd//:prost-types-0.13.1"),
-            "protoc-gen-prost": Label("@rrprd//:protoc-gen-prost-0.4.0"),
-            "protoc-gen-tonic": Label("@rrprd//:protoc-gen-tonic-0.4.1"),
-            "tokio": Label("@rrprd//:tokio-1.39.3"),
-            "tokio-stream": Label("@rrprd//:tokio-stream-0.1.15"),
-            "tonic": Label("@rrprd//:tonic-0.12.1"),
+            "h2": Label("@rrprd//h2-0.4.6"),
+            "prost": Label("@rrprd//prost-0.13.1"),
+            "prost-types": Label("@rrprd//prost-types-0.13.1"),
+            "protoc-gen-prost": Label("@rrprd//protoc-gen-prost-0.4.0"),
+            "protoc-gen-tonic": Label("@rrprd//protoc-gen-tonic-0.4.1"),
+            "tokio": Label("@rrprd//tokio-1.39.3"),
+            "tokio-stream": Label("@rrprd//tokio-stream-0.1.15"),
+            "tonic": Label("@rrprd//tonic-0.12.1"),
         },
     },
 }
@@ -1725,7 +1728,32 @@ def crate_repositories():
         build_file = Label("//private/3rdparty/crates:BUILD.zerocopy-derive-0.7.35.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rrprd",
+        defs_module = Label("//private/3rdparty/crates:defs.bzl"),
+        aliases = {
+            "h2": "@rrprd__h2-0.4.6//:h2",
+            "h2-0.4.6": "@rrprd__h2-0.4.6//:h2",
+            "prost": "@rrprd__prost-0.13.1//:prost",
+            "prost-0.13.1": "@rrprd__prost-0.13.1//:prost",
+            "prost-types": "@rrprd__prost-types-0.13.1//:prost_types",
+            "prost-types-0.13.1": "@rrprd__prost-types-0.13.1//:prost_types",
+            "protoc-gen-prost": "@rrprd__protoc-gen-prost-0.4.0//:protoc_gen_prost",
+            "protoc-gen-prost-0.4.0": "@rrprd__protoc-gen-prost-0.4.0//:protoc_gen_prost",
+            "protoc-gen-tonic": "@rrprd__protoc-gen-tonic-0.4.1//:protoc_gen_tonic",
+            "protoc-gen-tonic-0.4.1": "@rrprd__protoc-gen-tonic-0.4.1//:protoc_gen_tonic",
+            "tokio": "@rrprd__tokio-1.39.3//:tokio",
+            "tokio-1.39.3": "@rrprd__tokio-1.39.3//:tokio",
+            "tokio-stream": "@rrprd__tokio-stream-0.1.15//:tokio_stream",
+            "tokio-stream-0.1.15": "@rrprd__tokio-stream-0.1.15//:tokio_stream",
+            "tonic": "@rrprd__tonic-0.12.1//:tonic",
+            "tonic-0.12.1": "@rrprd__tonic-0.12.1//:tonic",
+        },
+    )
+
     return [
+        struct(repo = "rrprd", is_dev_dep = False),
         struct(repo = "rrprd__h2-0.4.6", is_dev_dep = False),
         struct(repo = "rrprd__prost-0.13.1", is_dev_dep = False),
         struct(repo = "rrprd__prost-types-0.13.1", is_dev_dep = False),

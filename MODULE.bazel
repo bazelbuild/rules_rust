@@ -39,8 +39,8 @@ use_repo(
     "rrc__cargo-util-schemas-0.3.1",
     "rrc__cargo_toml-0.20.5",
     "rrc__pathdiff-0.1.0",
-    "rrc__semver-1.0.25",
-    "rrc__toml-0.8.20",
+    "rrc__semver-1.0.27",
+    "rrc__toml-0.8.23",
 )
 
 rust = use_extension("//rust:extensions.bzl", "rust")

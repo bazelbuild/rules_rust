@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,8 +298,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "clap": Label("@crates_vendor//:clap-3.1.5"),
-            "rand": Label("@crates_vendor//:rand-0.8.5"),
+            "clap": Label("@crates_vendor//clap-3.1.5"),
+            "rand": Label("@crates_vendor//rand-0.8.5"),
         },
     },
 }
@@ -311,7 +314,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "version-sync": Label("@crates_vendor//:version-sync-0.9.4"),
+            "version-sync": Label("@crates_vendor//version-sync-0.9.4"),
         },
     },
 }
@@ -932,7 +935,22 @@ def crate_repositories():
         build_file = Label("//vendor_external/crates:BUILD.winapi-x86_64-pc-windows-gnu-0.4.0.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "crates_vendor",
+        defs_module = Label("//vendor_external/crates:defs.bzl"),
+        aliases = {
+            "clap": "@crates_vendor__clap-3.1.5//:clap",
+            "clap-3.1.5": "@crates_vendor__clap-3.1.5//:clap",
+            "rand": "@crates_vendor__rand-0.8.5//:rand",
+            "rand-0.8.5": "@crates_vendor__rand-0.8.5//:rand",
+            "version-sync": "@crates_vendor__version-sync-0.9.4//:version_sync",
+            "version-sync-0.9.4": "@crates_vendor__version-sync-0.9.4//:version_sync",
+        },
+    )
+
     return [
+        struct(repo = "crates_vendor", is_dev_dep = False),
         struct(repo = "crates_vendor__clap-3.1.5", is_dev_dep = False),
         struct(repo = "crates_vendor__rand-0.8.5", is_dev_dep = False),
         struct(repo = "crates_vendor__version-sync-0.9.4", is_dev_dep = True),
