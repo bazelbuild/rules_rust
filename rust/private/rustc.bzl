@@ -129,6 +129,29 @@ is_proc_macro_dep_enabled = rule(
     build_setting = config.bool(flag = True),
 )
 
+def env_vars_from_version(version):
+    """Gathers rustc environment variables corresponding to the version
+
+    Args:
+        version (str): The version of the crate to be compiled
+
+    Returns:
+        dict: Rustc environment variables
+    """
+    major, minor, patch = version.split(".", 2)
+    if "-" in patch:
+        patch, pre = patch.split("-", 1)
+    else:
+        pre = ""
+
+    return {
+        "CARGO_PKG_VERSION": version,
+        "CARGO_PKG_VERSION_MAJOR": major,
+        "CARGO_PKG_VERSION_MINOR": minor,
+        "CARGO_PKG_VERSION_PATCH": patch,
+        "CARGO_PKG_VERSION_PRE": pre,
+    }
+
 def _get_rustc_env(attr, toolchain, crate_name):
     """Gathers rustc environment variables
 
@@ -140,13 +163,6 @@ def _get_rustc_env(attr, toolchain, crate_name):
     Returns:
         dict: Rustc environment variables
     """
-    version = attr.version if hasattr(attr, "version") else "0.0.0"
-    major, minor, patch = version.split(".", 2)
-    if "-" in patch:
-        patch, pre = patch.split("-", 1)
-    else:
-        pre = ""
-
     result = {
         "CARGO_CFG_TARGET_ARCH": "" if toolchain.target_arch == None else toolchain.target_arch,
         "CARGO_CFG_TARGET_OS": "" if toolchain.target_os == None else toolchain.target_os,
@@ -155,12 +171,13 @@ def _get_rustc_env(attr, toolchain, crate_name):
         "CARGO_PKG_DESCRIPTION": "",
         "CARGO_PKG_HOMEPAGE": "",
         "CARGO_PKG_NAME": attr.name,
-        "CARGO_PKG_VERSION": version,
-        "CARGO_PKG_VERSION_MAJOR": major,
-        "CARGO_PKG_VERSION_MINOR": minor,
-        "CARGO_PKG_VERSION_PATCH": patch,
-        "CARGO_PKG_VERSION_PRE": pre,
     }
+
+    version_default = None if toolchain._incompatible_do_not_inject_degenerate_version_to_rustc_env else "0.0.0"
+    version = getattr(attr, "version", version_default)
+    if version:
+        result.update(env_vars_from_version(version))
+
     if hasattr(attr, "_is_proc_macro_dep_enabled") and attr._is_proc_macro_dep_enabled[IsProcMacroDepEnabledInfo].enabled:
         is_proc_macro_dep = "0"
         if hasattr(attr, "_is_proc_macro_dep") and attr._is_proc_macro_dep[IsProcMacroDepInfo].is_proc_macro_dep:
