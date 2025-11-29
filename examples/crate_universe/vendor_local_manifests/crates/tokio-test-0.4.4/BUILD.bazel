@@ -70,6 +70,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -94,9 +95,9 @@ rust_library(
     version = "0.4.4",
     deps = [
         "//vendor_local_manifests/crates/async-stream-0.3.6:async_stream",
-        "//vendor_local_manifests/crates/bytes-1.10.1:bytes",
+        "//vendor_local_manifests/crates/bytes-1.11.0:bytes",
         "//vendor_local_manifests/crates/futures-core-0.3.31:futures_core",
-        "//vendor_local_manifests/crates/tokio-1.47.1:tokio",
+        "//vendor_local_manifests/crates/tokio-1.48.0:tokio",
         "//vendor_local_manifests/crates/tokio-stream-0.1.17:tokio_stream",
     ],
 )

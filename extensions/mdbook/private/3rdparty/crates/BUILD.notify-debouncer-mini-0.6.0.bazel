@@ -74,6 +74,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -97,9 +98,9 @@ rust_library(
     }),
     version = "0.6.0",
     deps = [
-        "@rmdbi__log-0.4.27//:log",
+        "@rmdbi__log-0.4.28//:log",
         "@rmdbi__notify-8.2.0//:notify",
         "@rmdbi__notify-types-2.0.0//:notify_types",
-        "@rmdbi__tempfile-3.21.0//:tempfile",
+        "@rmdbi__tempfile-3.23.0//:tempfile",
     ],
 )
