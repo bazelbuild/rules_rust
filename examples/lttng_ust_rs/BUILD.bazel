@@ -1,0 +1,20 @@
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "lttng_ust_rs",
+    srcs = ["src/main.rs"],
+    deps = [
+        ":build_script",
+        "@crates//:lttng-ust",
+    ],
+)
+
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    deps = [
+        "@crates//:lttng-ust",
+        "@crates//:lttng-ust-generate",
+    ],
+)
