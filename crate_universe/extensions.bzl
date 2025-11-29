@@ -336,7 +336,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 rust_binary(
     name = "hello_sys",
     srcs = ["src/main.rs"],
-    deps = ["//basic/3rdparty/crates:bzip2"],
+    deps = ["//basic/3rdparty/bzip2"],
     visibility = ["//visibility:public"],
 )
 ```

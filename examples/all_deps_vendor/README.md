@@ -122,7 +122,7 @@ rust_binary(
     srcs = ["src/main.rs"],
     # Note the `crate_universe` dependencies here need to have been loaded
     # in the WORKSPACE file. See `//:sys_deps.bzl` for more details.
-    deps = ["//basic/3rdparty/crates:bzip2"],
+    deps = ["//basic/3rdparty/crates/bzip2"],
     visibility = ["//visibility:public"],
 )
 ```

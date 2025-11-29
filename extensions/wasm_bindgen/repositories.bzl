@@ -14,7 +14,7 @@
 
 """Dependency definitions for wasm-bindgen rules"""
 
-load("//3rdparty/crates:crates.bzl", "crate_repositories")
+load("//3rdparty/crates:defs.bzl", "crate_repositories")
 load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
 
 WASM_BINDGEN_VERSION = "0.2.105"

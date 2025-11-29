@@ -43,6 +43,6 @@ rust_test(
     edition = "2021",
     deps = [
         ":nocompile_well_known_types_rs_proto_transitioned",
-        "//private/3rdparty/crates:prost-types",
+        "//private/3rdparty/crates/prost-types",
     ],
 )

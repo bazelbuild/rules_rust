@@ -33,27 +33,27 @@ crates_vendor(
 
 alias(
     name = "wasm_bindgen_cli",
-    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen",
+    actual = "//3rdparty/crates/wasm-bindgen-cli__wasm-bindgen",
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "wasm_bindgen_test_runner",
-    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen-test-runner",
+    actual = "//3rdparty/crates/wasm-bindgen-cli__wasm-bindgen-test-runner",
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "wasm_bindgen",
-    actual = "//3rdparty/crates:wasm-bindgen",
+    actual = "//3rdparty/crates/wasm-bindgen",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "wasm_bindgen_test",
-    actual = "//3rdparty/crates:wasm-bindgen-test",
+    actual = "//3rdparty/crates/wasm-bindgen-test",
     visibility = ["//visibility:public"],
 )
 

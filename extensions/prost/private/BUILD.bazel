@@ -56,7 +56,7 @@ rust_library_group(
         "//:__subpackages__",
     ],
     deps = [
-        "//private/3rdparty/crates:prost",
+        "//private/3rdparty/crates/prost",
     ],
 )
 
@@ -67,7 +67,7 @@ rust_library_group(
     ],
     deps = [
         ":prost_runtime",
-        "//private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates/tonic",
     ],
 )
 
@@ -77,11 +77,11 @@ rust_prost_toolchain(
         ":compile_well_known_types_setting": True,
         "//conditions:default": False,
     }),
-    prost_plugin = "//private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin = "//private/3rdparty/crates/protoc-gen-prost__protoc-gen-prost",
     prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
     prost_runtime = ":prost_runtime",
-    prost_types = "//private/3rdparty/crates:prost-types",
-    tonic_plugin = "//private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    prost_types = "//private/3rdparty/crates/prost-types",
+    tonic_plugin = "//private/3rdparty/crates/protoc-gen-tonic__protoc-gen-tonic",
     tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
     tonic_runtime = ":tonic_runtime",
 )

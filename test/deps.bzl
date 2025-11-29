@@ -4,9 +4,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//test/generated_inputs:external_repo.bzl", "generated_inputs_in_external_repo")
 load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
-load("//test/rust_analyzer/3rdparty/crates:crates.bzl", rust_analyzer_test_crate_repositories = "crate_repositories")
+load("//test/rust_analyzer/3rdparty/crates:defs.bzl", rust_analyzer_test_crate_repositories = "crate_repositories")
 load("//test/unit/toolchain:toolchain_test_utils.bzl", "rules_rust_toolchain_test_target_json_repository")
-load("//test/vscode/3rdparty/crates:crates.bzl", vscode_test_crate_repositories = "crate_repositories")
+load("//test/vscode/3rdparty/crates:defs.bzl", vscode_test_crate_repositories = "crate_repositories")
 
 _LIBC_BUILD_FILE_CONTENT = """\
 load("@rules_rust//rust:defs.bzl", "rust_library")
