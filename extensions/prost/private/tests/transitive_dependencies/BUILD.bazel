@@ -61,11 +61,11 @@ rust_prost_toolchain(
     name = "prost_toolchain_transitive_includes_enabled_impl",
     # This is the important delta from the default toolchain.
     include_transitive_deps = True,
-    prost_plugin = "//private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin = "//private/3rdparty/crates/protoc-gen-prost__protoc-gen-prost",
     prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
     prost_runtime = "//private:prost_runtime",
-    prost_types = "//private/3rdparty/crates:prost-types",
-    tonic_plugin = "//private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    prost_types = "//private/3rdparty/crates/prost-types",
+    tonic_plugin = "//private/3rdparty/crates/protoc-gen-tonic__protoc-gen-tonic",
     tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
     tonic_runtime = "//private:tonic_runtime",
 )

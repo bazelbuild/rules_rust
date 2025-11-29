@@ -92,7 +92,7 @@ def get_generator(repository_ctx, host_triple):
 def render_config(
         build_file_template = "//:BUILD.{name}-{version}.bazel",
         crate_label_template = "@{repository}__{name}-{version}//:{target}",
-        crate_alias_template = "//:{name}-{version}",
+        crate_alias_template = "//{name}-{version}",
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
@@ -102,7 +102,8 @@ def render_config(
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
         vendor_mode = None,
-        generate_rules_license_metadata = False):
+        generate_rules_license_metadata = False,
+        legacy_root_pkg_aliases = True):
     """Various settings used to configure rendered outputs
 
     The template parameters each support a select number of format keys. A description of each key
@@ -127,7 +128,7 @@ def render_config(
         crate_alias_template (str, optional): The template to use when referring to generated aliases within the external
             repository. The available format keys are [`{repository}`, `{name}`, `{version}`].
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
-            file names used for the crates module. The available format keys are [`{file}`].
+            file names used for the crates module. The available format keys are [`{file}`, `{subpackage}`].
         default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
             are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's `compilation_mode`)  or a string
             representing a rule in the form '<label to .bzl>:<rule>' that takes a single label parameter 'actual'.
@@ -145,6 +146,9 @@ def render_config(
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
         generate_rules_license_metadata (bool, optional): Whether to generate rules license metadata
+        legacy_root_pkg_aliases (bool, optional): Whether to generate legacy root package aliases pointing to
+            subpackage aliases. When aliases are rendered into subpackages, this controls whether aliases are also
+            generated in the root package that point to the subpackage locations. Defaults to True.
 
     Returns:
         string: A json encoded struct to match the Rust `config::RenderConfig` struct
@@ -163,6 +167,7 @@ def render_config(
         platforms_template = platforms_template,
         regen_command = regen_command,
         vendor_mode = vendor_mode,
+        legacy_root_pkg_aliases = legacy_root_pkg_aliases,
     ))
 
 def _crate_id(name, version):

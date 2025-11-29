@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,8 +298,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "serde_yaml": Label("@cvm//:serde_yaml-0.9.34+deprecated"),
-            "tokio": Label("@cvm//:tokio-1.48.0"),
+            "serde_yaml": Label("@cvm//serde_yaml-0.9.34+deprecated"),
+            "tokio": Label("@cvm//tokio-1.48.0"),
         },
     },
 }
@@ -311,8 +314,8 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("@cvm//:tempfile-3.23.0"),
-            "tokio-test": Label("@cvm//:tokio-test-0.4.4"),
+            "tempfile": Label("@cvm//tempfile-3.23.0"),
+            "tokio-test": Label("@cvm//tokio-test-0.4.4"),
         },
     },
 }
@@ -548,22 +551,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__hashbrown-0.16.0",
-        sha256 = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d",
+        name = "cvm__hashbrown-0.16.1",
+        sha256 = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/hashbrown/0.16.0/download"],
-        strip_prefix = "hashbrown-0.16.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.hashbrown-0.16.0.bazel"),
+        urls = ["https://static.crates.io/crates/hashbrown/0.16.1/download"],
+        strip_prefix = "hashbrown-0.16.1",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.hashbrown-0.16.1.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__indexmap-2.12.0",
-        sha256 = "6717a8d2a5a929a1a2eb43a12812498ed141a0bcfb7e8f7844fbdbe4303bba9f",
+        name = "cvm__indexmap-2.12.1",
+        sha256 = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/indexmap/2.12.0/download"],
-        strip_prefix = "indexmap-2.12.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.indexmap-2.12.0.bazel"),
+        urls = ["https://static.crates.io/crates/indexmap/2.12.1/download"],
+        strip_prefix = "indexmap-2.12.1",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.indexmap-2.12.1.bazel"),
     )
 
     maybe(
@@ -768,12 +771,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__signal-hook-registry-1.4.6",
-        sha256 = "b2a4719bff48cee6b39d12c020eeb490953ad2443b7055bd0b21fca26bd8c28b",
+        name = "cvm__signal-hook-registry-1.4.7",
+        sha256 = "7664a098b8e616bdfcc2dc0e9ac44eb231eedf41db4e9fe95d8d32ec728dedad",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/signal-hook-registry/1.4.6/download"],
-        strip_prefix = "signal-hook-registry-1.4.6",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.signal-hook-registry-1.4.6.bazel"),
+        urls = ["https://static.crates.io/crates/signal-hook-registry/1.4.7/download"],
+        strip_prefix = "signal-hook-registry-1.4.7",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.signal-hook-registry-1.4.7.bazel"),
     )
 
     maybe(
@@ -798,12 +801,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__syn-2.0.110",
-        sha256 = "a99801b5bd34ede4cf3fc688c5919368fea4e4814a4664359503e6015b280aea",
+        name = "cvm__syn-2.0.111",
+        sha256 = "390cc9a294ab71bdb1aa2e99d13be9c753cd2d7bd6560c77118597410c4d2e87",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.110/download"],
-        strip_prefix = "syn-2.0.110",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.syn-2.0.110.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.111/download"],
+        strip_prefix = "syn-2.0.111",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.syn-2.0.111.bazel"),
     )
 
     maybe(
@@ -1026,7 +1029,24 @@ def crate_repositories():
         build_file = Label("//vendor_remote_manifests/crates:BUILD.wit-bindgen-0.46.0.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "cvm",
+        defs_module = Label("//vendor_remote_manifests/crates:defs.bzl"),
+        aliases = {
+            "serde_yaml": "@cvm__serde_yaml-0.9.34-deprecated//:serde_yaml",
+            "serde_yaml-0.9.34+deprecated": "@cvm__serde_yaml-0.9.34-deprecated//:serde_yaml",
+            "tempfile": "@cvm__tempfile-3.23.0//:tempfile",
+            "tempfile-3.23.0": "@cvm__tempfile-3.23.0//:tempfile",
+            "tokio": "@cvm__tokio-1.48.0//:tokio",
+            "tokio-1.48.0": "@cvm__tokio-1.48.0//:tokio",
+            "tokio-test": "@cvm__tokio-test-0.4.4//:tokio_test",
+            "tokio-test-0.4.4": "@cvm__tokio-test-0.4.4//:tokio_test",
+        },
+    )
+
     return [
+        struct(repo = "cvm", is_dev_dep = False),
         struct(repo = "cvm__serde_yaml-0.9.34-deprecated", is_dev_dep = False),
         struct(repo = "cvm__tokio-1.48.0", is_dev_dep = False),
         struct(repo = "cvm__tempfile-3.23.0", is_dev_dep = True),

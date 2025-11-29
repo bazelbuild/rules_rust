@@ -8,7 +8,7 @@ rust_binary(
     name = "hello_world_from_workspace_transient",
     srcs = ["src/main.rs"],
     deps = [
-        "@crates_in_workspace//:anyhow",
+        "@crates_in_workspace//anyhow",
     ],
 )
 
@@ -16,7 +16,7 @@ rust_binary(
     name = "hello_world_from_workspace_vendored",
     srcs = ["src/main.rs"],
     deps = [
-        "//third-party-in-workspace/crates:anyhow",
+        "//third-party-in-workspace/crates/anyhow",
     ],
 )
 
@@ -24,7 +24,7 @@ rust_binary(
     name = "hello_world_without_workspace_transient",
     srcs = ["src/main.rs"],
     deps = [
-        "@crates_without_workspace//:anyhow",
+        "@crates_without_workspace//anyhow",
     ],
 )
 

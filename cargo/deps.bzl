@@ -3,7 +3,7 @@ The dependencies for running the cargo_toml_info binary.
 """
 
 load(
-    "//cargo/3rdparty/crates:crates.bzl",
+    "//cargo/3rdparty/crates:defs.bzl",
     "crate_repositories",
 )
 

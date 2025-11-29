@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,16 +298,16 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "axum": Label("@crates_vendor_pkgs//:axum-0.4.8"),
-            "hyper": Label("@crates_vendor_pkgs//:hyper-0.14.32"),
-            "mime": Label("@crates_vendor_pkgs//:mime-0.3.17"),
-            "serde_json": Label("@crates_vendor_pkgs//:serde_json-1.0.135"),
-            "socket2": Label("@crates_vendor_pkgs//:socket2-0.4.10"),
-            "tokio": Label("@crates_vendor_pkgs//:tokio-1.43.0"),
-            "tower": Label("@crates_vendor_pkgs//:tower-0.4.13"),
-            "tower-http": Label("@crates_vendor_pkgs//:tower-http-0.2.5"),
-            "tracing": Label("@crates_vendor_pkgs//:tracing-0.1.41"),
-            "tracing-subscriber": Label("@crates_vendor_pkgs//:tracing-subscriber-0.3.19"),
+            "axum": Label("@crates_vendor_pkgs//axum-0.4.8"),
+            "hyper": Label("@crates_vendor_pkgs//hyper-0.14.32"),
+            "mime": Label("@crates_vendor_pkgs//mime-0.3.17"),
+            "serde_json": Label("@crates_vendor_pkgs//serde_json-1.0.135"),
+            "socket2": Label("@crates_vendor_pkgs//socket2-0.4.10"),
+            "tokio": Label("@crates_vendor_pkgs//tokio-1.43.0"),
+            "tower": Label("@crates_vendor_pkgs//tower-0.4.13"),
+            "tower-http": Label("@crates_vendor_pkgs//tower-http-0.2.5"),
+            "tracing": Label("@crates_vendor_pkgs//tracing-0.1.41"),
+            "tracing-subscriber": Label("@crates_vendor_pkgs//tracing-subscriber-0.3.19"),
         },
     },
 }
@@ -1426,7 +1429,36 @@ def crate_repositories():
         build_file = Label("//vendor_remote_pkgs/crates:BUILD.windows_x86_64_msvc-0.52.6.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "crates_vendor_pkgs",
+        defs_module = Label("//vendor_remote_pkgs/crates:defs.bzl"),
+        aliases = {
+            "axum": "@crates_vendor_pkgs__axum-0.4.8//:axum",
+            "axum-0.4.8": "@crates_vendor_pkgs__axum-0.4.8//:axum",
+            "hyper": "@crates_vendor_pkgs__hyper-0.14.32//:hyper",
+            "hyper-0.14.32": "@crates_vendor_pkgs__hyper-0.14.32//:hyper",
+            "mime": "@crates_vendor_pkgs__mime-0.3.17//:mime",
+            "mime-0.3.17": "@crates_vendor_pkgs__mime-0.3.17//:mime",
+            "serde_json": "@crates_vendor_pkgs__serde_json-1.0.135//:serde_json",
+            "serde_json-1.0.135": "@crates_vendor_pkgs__serde_json-1.0.135//:serde_json",
+            "socket2": "@crates_vendor_pkgs__socket2-0.4.10//:socket2",
+            "socket2-0.4.10": "@crates_vendor_pkgs__socket2-0.4.10//:socket2",
+            "tokio": "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
+            "tokio-1.43.0": "@crates_vendor_pkgs__tokio-1.43.0//:tokio",
+            "tower": "@crates_vendor_pkgs__tower-0.4.13//:tower",
+            "tower-0.4.13": "@crates_vendor_pkgs__tower-0.4.13//:tower",
+            "tower-http": "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
+            "tower-http-0.2.5": "@crates_vendor_pkgs__tower-http-0.2.5//:tower_http",
+            "tracing": "@crates_vendor_pkgs__tracing-0.1.41//:tracing",
+            "tracing-0.1.41": "@crates_vendor_pkgs__tracing-0.1.41//:tracing",
+            "tracing-subscriber": "@crates_vendor_pkgs__tracing-subscriber-0.3.19//:tracing_subscriber",
+            "tracing-subscriber-0.3.19": "@crates_vendor_pkgs__tracing-subscriber-0.3.19//:tracing_subscriber",
+        },
+    )
+
     return [
+        struct(repo = "crates_vendor_pkgs", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__axum-0.4.8", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__hyper-0.14.32", is_dev_dep = False),
         struct(repo = "crates_vendor_pkgs__mime-0.3.17", is_dev_dep = False),

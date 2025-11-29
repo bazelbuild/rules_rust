@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,10 +298,10 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde_json": Label("@rrwbd//:serde_json-1.0.145"),
-            "wasm-bindgen": Label("@rrwbd//:wasm-bindgen-0.2.105"),
-            "wasm-bindgen-cli": Label("@rrwbd//:wasm-bindgen-cli-0.2.105"),
-            "wasm-bindgen-test": Label("@rrwbd//:wasm-bindgen-test-0.3.55"),
+            "serde_json": Label("@rrwbd//serde_json-1.0.145"),
+            "wasm-bindgen": Label("@rrwbd//wasm-bindgen-0.2.105"),
+            "wasm-bindgen-cli": Label("@rrwbd//wasm-bindgen-cli-0.2.105"),
+            "wasm-bindgen-test": Label("@rrwbd//wasm-bindgen-test-0.3.55"),
         },
     },
 }
@@ -2614,7 +2617,24 @@ def crate_repositories():
         build_file = Label("//3rdparty/crates:BUILD.zerovec-derive-0.11.1.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rrwbd",
+        defs_module = Label("//3rdparty/crates:defs.bzl"),
+        aliases = {
+            "serde_json": "@rrwbd__serde_json-1.0.145//:serde_json",
+            "serde_json-1.0.145": "@rrwbd__serde_json-1.0.145//:serde_json",
+            "wasm-bindgen": "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
+            "wasm-bindgen-0.2.105": "@rrwbd__wasm-bindgen-0.2.105//:wasm_bindgen",
+            "wasm-bindgen-cli": "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
+            "wasm-bindgen-cli-0.2.105": "@rrwbd__wasm-bindgen-cli-0.2.105//:wasm_bindgen_cli",
+            "wasm-bindgen-test": "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
+            "wasm-bindgen-test-0.3.55": "@rrwbd__wasm-bindgen-test-0.3.55//:wasm_bindgen_test",
+        },
+    )
+
     return [
+        struct(repo = "rrwbd", is_dev_dep = False),
         struct(repo = "rrwbd__serde_json-1.0.145", is_dev_dep = False),
         struct(repo = "rrwbd__wasm-bindgen-0.2.105", is_dev_dep = False),
         struct(repo = "rrwbd__wasm-bindgen-cli-0.2.105", is_dev_dep = False),

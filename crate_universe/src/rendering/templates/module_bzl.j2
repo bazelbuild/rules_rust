@@ -18,7 +18,12 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=bzl-visibility
 load("@rules_rust//crate_universe/private:local_crate_mirror.bzl", "local_crate_mirror")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
 
 ###############################################################################
 # MACROS API
@@ -138,9 +143,9 @@ def crate_deps(deps, package_name = {{ default_package_name }}):
     return crate_targets
 
 def all_crate_deps(
-        normal = False, 
-        normal_dev = False, 
-        proc_macro = False, 
+        normal = False,
+        normal_dev = False,
+        proc_macro = False,
         proc_macro_dev = False,
         build = False,
         build_proc_macro = False,
@@ -354,17 +359,108 @@ def crate_repositories():
 {%- endif %}
 {%- endfor %}
 {%- endfor %}
+
+    maybe(
+        crates_vendor_remote_repository,
+        name = "{{ repository_name }}",
+        defs_module = Label("{{ crates_module_label(file="defs.bzl") }}"),
+        aliases = {
+        {%- for id, path in context.workspace_members %}
+        {%- set workspace_member = context.crates | get(key=id) %}
+        {%- if workspace_member.library_target_name %}
+            {%- for deps_type in ["deps", "deps_dev", "proc_macro_deps", "proc_macro_deps_dev"] %}
+                {%- set deps_set = workspace_member.common_attrs | get(key=deps_type, default=default_select_list) %}
+                {%- if deps_set.common | length %}
+                    {%- for dep in deps_set.common %}
+                        {%- if dep.id not in context.workspace_members %}
+                            {%- set crate = context.crates | get(key=dep.id) %}
+                            {%- if crate.library_target_name %}
+                                "{{ crate.name ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                "{{ crate.name }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                {%- if dep.alias and dep.alias != crate.name %}
+                                "{{ dep.alias ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                "{{ dep.alias }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                {%- endif %}
+                            {%- endif %}
+                        {%- endif %}
+                    {%- endfor %}
+                {%- endif %}
+                {%- if deps_set.selects | length %}
+                    {%- for condition, deps in deps_set.selects %}
+                        {%- for dep in deps %}
+                            {%- if dep.id not in context.workspace_members %}
+                                {%- set crate = context.crates | get(key=dep.id) %}
+                                {%- if crate.library_target_name %}
+                                    "{{ crate.name ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    "{{ crate.name }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    {%- if dep.alias and dep.alias != crate.name %}
+                                    "{{ dep.alias ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    "{{ dep.alias }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    {%- endif %}
+                                {%- endif %}
+                            {%- endif %}
+                        {%- endfor %}
+                    {%- endfor %}
+                {%- endif %}
+            {%- endfor %}
+            {%- if workspace_member.build_script_attrs %}
+                {%- for deps_type in ["deps", "proc_macro_deps"] %}
+                    {%- set deps_set = workspace_member.build_script_attrs | get(key=deps_type, default=default_select_list) %}
+                    {%- if deps_set.common | length %}
+                        {%- for dep in deps_set.common %}
+                            {%- if dep.id not in context.workspace_members %}
+                                {%- set crate = context.crates | get(key=dep.id) %}
+                                {%- if crate.library_target_name %}
+                                    "{{ crate.name ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    "{{ crate.name }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    {%- if dep.alias and dep.alias != crate.name %}
+                                    "{{ dep.alias ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    "{{ dep.alias }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                    {%- endif %}
+                                {%- endif %}
+                            {%- endif %}
+                        {%- endfor %}
+                    {%- endif %}
+                    {%- if deps_set.selects | length %}
+                        {%- for condition, deps in deps_set.selects %}
+                            {%- for dep in deps %}
+                                {%- if dep.id not in context.workspace_members %}
+                                    {%- set crate = context.crates | get(key=dep.id) %}
+                                    {%- if crate.library_target_name %}
+                                        "{{ crate.name ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                        "{{ crate.name }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                        {%- if dep.alias and dep.alias != crate.name %}
+                                        "{{ dep.alias ~ "-" ~ crate.version }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                        "{{ dep.alias }}": "{{ crate_label(name = crate.name, version = crate.version, target = crate.library_target_name) }}",
+                                        {%- endif %}
+                                    {%- endif %}
+                                {%- endif %}
+                            {%- endfor %}
+                        {%- endfor %}
+                    {%- endif %}
+                {%- endfor %}
+            {%- endif %}
+        {%- endif %}
+        {%- endfor %}
+        },
+        {%- if legacy_root_pkg_aliases %}
+        legacy_root_pkg_aliases = True,
+        {%- endif %}
+
+    )
+
     return [
+        struct(repo="{{ repository_name }}", is_dev_dep = False),
         {%- for id in context.direct_deps %}
         {%- set crate = context.crates | get(key=id) %}
         {%- if crate.repository %}
-       struct(repo="{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = False),
+        struct(repo="{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = False),
         {%- endif %}
         {%- endfor %}
         {%- for id in context.direct_dev_deps %}
         {%- set crate = context.crates | get(key=id) %}
         {%- if crate.repository %}
-         struct(repo = "{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = True),
+        struct(repo = "{{ crate_repository(name = crate.name, version = crate.version) }}", is_dev_dep = True),
         {%- endif %}
         {%- endfor %}
     ]

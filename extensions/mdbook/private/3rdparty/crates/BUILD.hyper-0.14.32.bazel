@@ -119,7 +119,7 @@ rust_library(
         "@rmdbi__socket2-0.5.10//:socket2",
         "@rmdbi__tokio-1.48.0//:tokio",
         "@rmdbi__tower-service-0.3.3//:tower_service",
-        "@rmdbi__tracing-0.1.41//:tracing",
+        "@rmdbi__tracing-0.1.43//:tracing",
         "@rmdbi__want-0.3.1//:want",
     ],
 )

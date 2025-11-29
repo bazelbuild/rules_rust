@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,11 +298,11 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "bindgen": Label("@rules_rust_bindgen_deps//:bindgen-0.71.1"),
-            "clang-sys": Label("@rules_rust_bindgen_deps//:clang-sys-1.8.1"),
-            "clap": Label("@rules_rust_bindgen_deps//:clap-4.5.32"),
-            "clap_complete": Label("@rules_rust_bindgen_deps//:clap_complete-4.5.46"),
-            "env_logger": Label("@rules_rust_bindgen_deps//:env_logger-0.10.2"),
+            "bindgen": Label("@rules_rust_bindgen_deps//bindgen-0.71.1"),
+            "clang-sys": Label("@rules_rust_bindgen_deps//clang-sys-1.8.1"),
+            "clap": Label("@rules_rust_bindgen_deps//clap-4.5.32"),
+            "clap_complete": Label("@rules_rust_bindgen_deps//clap_complete-4.5.46"),
+            "env_logger": Label("@rules_rust_bindgen_deps//env_logger-0.10.2"),
         },
     },
 }
@@ -1014,7 +1017,26 @@ def crate_repositories():
         build_file = Label("//3rdparty/crates:BUILD.windows_x86_64_msvc-0.52.6.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rules_rust_bindgen_deps",
+        defs_module = Label("//3rdparty/crates:defs.bzl"),
+        aliases = {
+            "bindgen": "@rules_rust_bindgen_deps__bindgen-0.71.1//:bindgen",
+            "bindgen-0.71.1": "@rules_rust_bindgen_deps__bindgen-0.71.1//:bindgen",
+            "clang-sys": "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
+            "clang-sys-1.8.1": "@rules_rust_bindgen_deps__clang-sys-1.8.1//:clang_sys",
+            "clap": "@rules_rust_bindgen_deps__clap-4.5.32//:clap",
+            "clap-4.5.32": "@rules_rust_bindgen_deps__clap-4.5.32//:clap",
+            "clap_complete": "@rules_rust_bindgen_deps__clap_complete-4.5.46//:clap_complete",
+            "clap_complete-4.5.46": "@rules_rust_bindgen_deps__clap_complete-4.5.46//:clap_complete",
+            "env_logger": "@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger",
+            "env_logger-0.10.2": "@rules_rust_bindgen_deps__env_logger-0.10.2//:env_logger",
+        },
+    )
+
     return [
+        struct(repo = "rules_rust_bindgen_deps", is_dev_dep = False),
         struct(repo = "rules_rust_bindgen_deps__bindgen-0.71.1", is_dev_dep = False),
         struct(repo = "rules_rust_bindgen_deps__clang-sys-1.8.1", is_dev_dep = False),
         struct(repo = "rules_rust_bindgen_deps__clap-4.5.32", is_dev_dep = False),

@@ -121,7 +121,7 @@ rust_library(
         "//vendor_local_pkgs/crates/socket2-0.5.10:socket2",
         "//vendor_local_pkgs/crates/tokio-1.48.0:tokio",
         "//vendor_local_pkgs/crates/tower-service-0.3.3:tower_service",
-        "//vendor_local_pkgs/crates/tracing-0.1.41:tracing",
+        "//vendor_local_pkgs/crates/tracing-0.1.43:tracing",
         "//vendor_local_pkgs/crates/want-0.3.1:want",
     ],
 )

@@ -11,7 +11,6 @@ package(default_visibility = ["//visibility:public"])
 exports_files(
     [
         "cargo-bazel.json",
-        "crates.bzl",
         "defs.bzl",
     ] + glob(
         include = ["*.bazel"],
@@ -28,41 +27,4 @@ filegroup(
         ],
         allow_empty = True,
     ),
-)
-
-# Workspace Member Dependencies
-alias(
-    name = "pyo3-0.26.0",
-    actual = "@rpyo3c__pyo3-0.26.0//:pyo3",
-    tags = ["manual"],
-)
-
-alias(
-    name = "pyo3",
-    actual = "@rpyo3c__pyo3-0.26.0//:pyo3",
-    tags = ["manual"],
-)
-
-alias(
-    name = "pyo3-ffi-0.26.0",
-    actual = "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
-    tags = ["manual"],
-)
-
-alias(
-    name = "pyo3-ffi",
-    actual = "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
-    tags = ["manual"],
-)
-
-alias(
-    name = "pyo3-introspection-0.26.0",
-    actual = "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
-    tags = ["manual"],
-)
-
-alias(
-    name = "pyo3-introspection",
-    actual = "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
-    tags = ["manual"],
 )

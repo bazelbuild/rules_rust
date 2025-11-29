@@ -22,5 +22,5 @@ rust_binary(
     edition = "2018",
     # Note the `crate_universe` dependencies here need to have been loaded
     # in the `MODULE.bazel` file.
-    deps = ["//complex/3rdparty/crates:git2"],
+    deps = ["//complex/3rdparty/crates/git2"],
 )

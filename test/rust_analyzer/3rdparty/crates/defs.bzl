@@ -19,6 +19,9 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# buildifier: disable=bzl-visibility
+load("@rules_rust//crate_universe/private:crates_vendor.bzl", "crates_vendor_remote_repository")
+
 ###############################################################################
 # MACROS API
 ###############################################################################
@@ -295,8 +298,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde": Label("@rtra//:serde-1.0.228"),
-            "serde_json": Label("@rtra//:serde_json-1.0.145"),
+            "serde": Label("@rtra//serde-1.0.228"),
+            "serde_json": Label("@rtra//serde_json-1.0.145"),
         },
     },
 }
@@ -502,12 +505,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtra__syn-2.0.110",
-        sha256 = "a99801b5bd34ede4cf3fc688c5919368fea4e4814a4664359503e6015b280aea",
+        name = "rtra__syn-2.0.111",
+        sha256 = "390cc9a294ab71bdb1aa2e99d13be9c753cd2d7bd6560c77118597410c4d2e87",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.110/download"],
-        strip_prefix = "syn-2.0.110",
-        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.110.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.111/download"],
+        strip_prefix = "syn-2.0.111",
+        build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.syn-2.0.111.bazel"),
     )
 
     maybe(
@@ -520,7 +523,20 @@ def crate_repositories():
         build_file = Label("//test/rust_analyzer/3rdparty/crates:BUILD.unicode-ident-1.0.22.bazel"),
     )
 
+    maybe(
+        crates_vendor_remote_repository,
+        name = "rtra",
+        defs_module = Label("//test/rust_analyzer/3rdparty/crates:defs.bzl"),
+        aliases = {
+            "serde": "@rtra__serde-1.0.228//:serde",
+            "serde-1.0.228": "@rtra__serde-1.0.228//:serde",
+            "serde_json": "@rtra__serde_json-1.0.145//:serde_json",
+            "serde_json-1.0.145": "@rtra__serde_json-1.0.145//:serde_json",
+        },
+    )
+
     return [
+        struct(repo = "rtra", is_dev_dep = False),
         struct(repo = "rtra__serde-1.0.228", is_dev_dep = False),
         struct(repo = "rtra__serde_json-1.0.145", is_dev_dep = False),
     ]

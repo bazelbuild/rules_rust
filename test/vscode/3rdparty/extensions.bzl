@@ -1,6 +1,6 @@
 """Bzlmod test extensions"""
 
-load("//test/vscode/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//test/vscode/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def _vscode_test_impl(module_ctx):
     deps = []

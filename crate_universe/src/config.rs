@@ -107,6 +107,12 @@ pub(crate) struct RenderConfig {
     /// Whether to generate cargo_toml_env_vars targets.
     /// This is expected to always be true except for bootstrapping.
     pub(crate) generate_cargo_toml_env_vars: bool,
+
+    /// Whether to generate legacy root package aliases pointing to subpackage aliases.
+    /// When aliases are rendered into subpackages, this controls whether aliases are also
+    /// generated in the root package that point to the subpackage locations.
+    #[serde(default = "default_legacy_root_pkg_aliases")]
+    pub(crate) legacy_root_pkg_aliases: bool,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -129,6 +135,7 @@ impl Default for RenderConfig {
             regen_command: String::default(),
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
+            legacy_root_pkg_aliases: default_legacy_root_pkg_aliases(),
         }
     }
 }
@@ -144,7 +151,7 @@ fn default_build_file_template() -> String {
 }
 
 fn default_crates_module_template() -> String {
-    "//:{file}".to_owned()
+    "//{subpackage}:{file}".to_owned()
 }
 
 fn default_crate_label_template() -> String {
@@ -152,7 +159,7 @@ fn default_crate_label_template() -> String {
 }
 
 fn default_crate_alias_template() -> String {
-    "//:{name}-{version}".to_owned()
+    "//{name}-{version}".to_owned()
 }
 
 fn default_crate_repository_template() -> String {
@@ -173,6 +180,10 @@ fn default_generate_target_compatible_with() -> bool {
 
 fn default_generate_rules_license_metadata() -> bool {
     false
+}
+
+fn default_legacy_root_pkg_aliases() -> bool {
+    true
 }
 
 /// A representation of some Git identifier used to represent the "revision" or "pin" of a checkout.

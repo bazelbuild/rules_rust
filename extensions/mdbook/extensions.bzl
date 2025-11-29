@@ -2,7 +2,7 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//:repositories.bzl", "mdbook_register_toolchains")
-load("//private/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//private/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def _rust_ext_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines

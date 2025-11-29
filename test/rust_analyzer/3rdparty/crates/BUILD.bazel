@@ -11,7 +11,6 @@ package(default_visibility = ["//visibility:public"])
 exports_files(
     [
         "cargo-bazel.json",
-        "crates.bzl",
         "defs.bzl",
     ] + glob(
         include = ["*.bazel"],
@@ -28,29 +27,4 @@ filegroup(
         ],
         allow_empty = True,
     ),
-)
-
-# Workspace Member Dependencies
-alias(
-    name = "serde-1.0.228",
-    actual = "@rtra__serde-1.0.228//:serde",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde",
-    actual = "@rtra__serde-1.0.228//:serde",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde_json-1.0.145",
-    actual = "@rtra__serde_json-1.0.145//:serde_json",
-    tags = ["manual"],
-)
-
-alias(
-    name = "serde_json",
-    actual = "@rtra__serde_json-1.0.145//:serde_json",
-    tags = ["manual"],
 )

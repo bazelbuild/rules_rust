@@ -22,11 +22,11 @@ rust_binary(
     edition = "2021",
     deps = [
         ":echo_rs_proto",
-        "//private/3rdparty/crates:h2",
-        "//private/3rdparty/crates:prost",
-        "//private/3rdparty/crates:tokio",
-        "//private/3rdparty/crates:tokio-stream",
-        "//private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates/h2",
+        "//private/3rdparty/crates/prost",
+        "//private/3rdparty/crates/tokio",
+        "//private/3rdparty/crates/tokio-stream",
+        "//private/3rdparty/crates/tonic",
     ],
 )
 
@@ -36,10 +36,10 @@ rust_binary(
     edition = "2021",
     deps = [
         ":echo_rs_proto",
-        "//private/3rdparty/crates:h2",
-        "//private/3rdparty/crates:prost",
-        "//private/3rdparty/crates:tokio",
-        "//private/3rdparty/crates:tokio-stream",
-        "//private/3rdparty/crates:tonic",
+        "//private/3rdparty/crates/h2",
+        "//private/3rdparty/crates/prost",
+        "//private/3rdparty/crates/tokio",
+        "//private/3rdparty/crates/tokio-stream",
+        "//private/3rdparty/crates/tonic",
     ],
 )

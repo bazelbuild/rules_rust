@@ -1,7 +1,7 @@
 """Dependencies for Rust Prost rules"""
 
 load("//:repositories.bzl", _rust_prost_dependencies = "rust_prost_dependencies")
-load("//private/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//private/3rdparty/crates:defs.bzl", "crate_repositories")
 
 def rust_prost_dependencies():
     """Prost repository dependencies."""

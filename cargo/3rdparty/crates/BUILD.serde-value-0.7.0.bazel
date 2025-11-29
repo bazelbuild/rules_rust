@@ -86,6 +86,6 @@ rust_library(
     version = "0.7.0",
     deps = [
         "@rrc__ordered-float-2.10.1//:ordered_float",
-        "@rrc__serde-1.0.217//:serde",
+        "@rrc__serde-1.0.228//:serde",
     ],
 )

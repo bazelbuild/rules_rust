@@ -1,8 +1,8 @@
 """Bzlmod module extensions"""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//basic/3rdparty/crates:crates.bzl", basic_crate_repositories = "crate_repositories")
-load("//complex/3rdparty/crates:crates.bzl", complex_crate_repositories = "crate_repositories")
+load("//basic/3rdparty/crates:defs.bzl", basic_crate_repositories = "crate_repositories")
+load("//complex/3rdparty/crates:defs.bzl", complex_crate_repositories = "crate_repositories")
 
 def _rust_example_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines

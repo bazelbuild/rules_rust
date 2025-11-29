@@ -2,15 +2,15 @@
 
 load("@bazel_ci_rules//:rbe_repo.bzl", "rbe_preconfig")
 load(
-    "//vendor_external/crates:crates.bzl",
+    "//vendor_external/crates:defs.bzl",
     crates_vendor_external_repositories = "crate_repositories",
 )
 load(
-    "//vendor_remote_manifests/crates:crates.bzl",
+    "//vendor_remote_manifests/crates:defs.bzl",
     crates_vendor_manifests_repositories = "crate_repositories",
 )
 load(
-    "//vendor_remote_pkgs/crates:crates.bzl",
+    "//vendor_remote_pkgs/crates:defs.bzl",
     crates_vendor_packages_repositories = "crate_repositories",
 )
 

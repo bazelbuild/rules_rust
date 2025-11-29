@@ -20,13 +20,6 @@ def crate_repositories():
     Returns:
       A list of repos visible to the module through the module extension.
     """
-    maybe(
-        crates_vendor_remote_repository,
-        name = "{{ repository_name }}",
-        build_file = Label("{{ crates_module_label(file="BUILD.bazel") }}"),
-        defs_module = Label("{{ crates_module_label(file="defs.bzl") }}"),
-    )
-
-    direct_deps = [struct(repo = "{{ repository_name }}", is_dev_dep = False)]
-    direct_deps.extend(_crate_repositories())
-    return direct_deps
+    # buildifier: disable=print
+    print("DEPRECATED: Instead load `crate_repositories` directly from `{{ crates_module_label(file="defs.bzl") }}`")
+    return _crate_repositories()
