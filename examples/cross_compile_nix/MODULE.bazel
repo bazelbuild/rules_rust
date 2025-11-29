@@ -1,5 +1,5 @@
 module(
-    name = "rules_rust_examples_nix",
+    name = "cross_compile_nix_example",
     version = "0.0.0",
 )
 

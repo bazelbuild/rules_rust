@@ -1,5 +1,5 @@
 module(
-    name = "musl_cross_compiling_example",
+    name = "cross_compile_musl_example",
     version = "0.0.0",
 )
 

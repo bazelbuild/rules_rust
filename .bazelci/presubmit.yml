@@ -703,42 +703,6 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
-  # zig_cross_compiling:
-  #   name: Zig cross compiling test
-  #   platform: ubuntu2204
-  #   working_directory: examples/zig_cross_compiling
-  #   build_targets:
-  #     - "//..."
-  musl_cross_compiling_macos_to_linux:
-    name: Musl cross compiling test from macOS to Linux
-    platform: macos_arm64
-    working_directory: examples/musl_cross_compiling
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  musl_cross_compiling_linux_to_linux:
-    name: Musl cross compiling test from Linux to Linux
-    platform: ubuntu2204
-    working_directory: examples/musl_cross_compiling
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  nix_cross_compiling:
-    name: Nix cross compiling test
-    platform: ubuntu2204
-    working_directory: examples/nix_cross_compiling
-    setup:
-      - curl -L https://nixos.org/nix/install | bash
-      - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
-    build_targets:
-      # Root `build_test` target is called directly to catch missing platforms
-      # that would otherwise be quietly skipped due to `target_compatible_with`.
-      - "//:nix_cross_compiling"
-    test_targets:
-      - "//..."
   bzlmod_all_crate_deps:
     name: Cargo dependencies with bzlmod
     platform: ubuntu2204
@@ -759,18 +723,54 @@ tasks:
     working_directory: examples/compile_opt
     build_targets:
       - "//..."
-  bzlmod_cross_compile:
-    name: Cross compilation with bzlmod
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
+  # cross_compile_zig:
+  #   name: Cross compile example with Zig
+  #   platform: ubuntu2204
+  #   working_directory: examples/cross_compile_zig
+  #   build_targets:
+  #     - "//..."
+  cross_compile_musl_macos_to_linux:
+    name: Cross compile example Musl from macOS to Linux
+    platform: macos_arm64
+    working_directory: examples/cross_compile_musl
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cross_compile_musl_linux_to_linux:
+    name: Cross compile example Musl from Linux to Linux
     platform: ubuntu2204
-    working_directory: examples/cross_compile
+    working_directory: examples/cross_compile_musl
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cross_compile_nix:
+    name: Cross compile example with Nix
+    platform: ubuntu2204
+    working_directory: examples/cross_compile_nix
+    setup:
+      - curl -L https://nixos.org/nix/install | bash
+      - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
+    build_targets:
+      # Root `build_test` target is called directly to catch missing platforms
+      # that would otherwise be quietly skipped due to `target_compatible_with`.
+      - "//:nix_cross_compiling"
+    test_targets:
+      - "//..."
+  cross_compile_llvm_linux:
+    name: Cross compile example with LLVM on Linux
+    platform: ubuntu2204
+    working_directory: examples/cross_compile_llvm
     build_targets:
       - "//:all"
     test_targets:
       - "//..."
-  macos_bzlmod_cross_compile:
-    name: Cross compilation with bzlmod on macOS
+  cross_compile_llvm_macos:
+    name: Cross compile example with LLVM on MacOS
     platform: macos_arm64
-    working_directory: examples/cross_compile
+    working_directory: examples/cross_compile_llvm
     build_targets:
       - "//:all"
     test_targets:

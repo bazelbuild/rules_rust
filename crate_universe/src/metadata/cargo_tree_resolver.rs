@@ -490,7 +490,7 @@ impl TreeResolver {
     // it means we are forced to resolve the dependencies and features for those proc-macros on all platforms we care about,
     // even if they wouldn't be used in some platform when cfg == exec.
     //
-    // This is tested by the "keyring" example in examples/musl_cross_compiling - the keyring crate uses proc-macros only on Linux,
+    // This is tested by the "keyring" example in examples/cross_compile_musl - the keyring crate uses proc-macros only on Linux,
     // and if we don't have this fake root injection, cross-compiling from Darwin to Linux won't work because features don't get correctly resolved for the exec=darwin case.
     fn copy_project_with_explicit_deps_on_all_transitive_proc_macros(
         &self,
