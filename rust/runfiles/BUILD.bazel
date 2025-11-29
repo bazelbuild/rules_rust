@@ -8,6 +8,7 @@ load(
 rust_library(
     name = "runfiles",
     srcs = ["runfiles.rs"],
+    rustc_flags = ["-Dunused-qualifications"],
     edition = "2018",
     visibility = ["//visibility:public"],
 )
@@ -15,6 +16,7 @@ rust_library(
 rust_test(
     name = "runfiles_test",
     crate = ":runfiles",
+    rustc_flags = ["-Dunused-qualifications"],
     data = ["data/sample.txt"],
 )
 

@@ -32,6 +32,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -83,8 +84,8 @@ pub enum RunfilesError {
     RunfileIoError(io::Error),
 }
 
-impl std::fmt::Display for RunfilesError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for RunfilesError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             RunfilesError::RunfilesDirNotFound => write!(f, "RunfilesDirNotFound"),
             RunfilesError::RunfilesDirIoError(err) => write!(f, "RunfilesDirIoError: {:?}", err),
@@ -200,7 +201,7 @@ impl Runfiles {
     /// environment variable is present, with an non-empty value, or a directory
     /// based Runfiles object otherwise.
     pub fn create() -> Result<Self> {
-        let mode = match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+        let mode = match env::var_os(MANIFEST_FILE_ENV_VAR) {
             Some(manifest_file) if !manifest_file.is_empty() => {
                 Self::create_manifest_based(Path::new(&manifest_file))?
             }
@@ -227,8 +228,8 @@ impl Runfiles {
     }
 
     fn create_manifest_based(manifest_path: &Path) -> Result<Mode> {
-        let manifest_content = std::fs::read_to_string(manifest_path)
-            .map_err(RunfilesError::RunfilesManifestIoError)?;
+        let manifest_content =
+            fs::read_to_string(manifest_path).map_err(RunfilesError::RunfilesManifestIoError)?;
         let path_mapping = manifest_content
             .lines()
             .flat_map(|line| {
@@ -299,7 +300,7 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
     let mut exact = HashMap::new();
     let mut prefixes = BTreeMap::new();
 
-    for line in std::fs::read_to_string(path)
+    for line in fs::read_to_string(path)
         .map_err(RunfilesError::RepoMappingIoError)?
         .lines()
     {
@@ -332,7 +333,7 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
-    if let Some(value) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+    if let Some(value) = env::var_os(MANIFEST_FILE_ENV_VAR) {
         assert!(
             value.is_empty(),
             "Unexpected call when {} exists",
@@ -341,19 +342,19 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
     }
 
     // If Bazel told us about the runfiles dir, use that without looking further.
-    if let Some(runfiles_dir) = std::env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
+    if let Some(runfiles_dir) = env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
         if runfiles_dir.is_dir() {
             return Ok(runfiles_dir);
         }
     }
-    if let Some(test_srcdir) = std::env::var_os(TEST_SRCDIR_ENV_VAR).map(PathBuf::from) {
+    if let Some(test_srcdir) = env::var_os(TEST_SRCDIR_ENV_VAR).map(PathBuf::from) {
         if test_srcdir.is_dir() {
             return Ok(test_srcdir);
         }
     }
 
     // Consume the first argument (argv[0])
-    let exec_path = std::env::args().next().expect("arg 0 was not set");
+    let exec_path = env::args().next().expect("arg 0 was not set");
 
     let current_dir =
         env::current_dir().expect("The current working directory is always expected to be set.");
@@ -439,14 +440,14 @@ mod test {
         // Replace or remove requested environment variables.
         for (env, val) in kvs.as_ref() {
             // Track the original state of the variable.
-            match std::env::var_os(env) {
+            match env::var_os(env) {
                 Some(v) => old_env.insert(env, Some(v)),
                 None => old_env.insert(env, None::<OsString>),
             };
 
             match val {
-                Some(v) => std::env::set_var(env, v),
-                None => std::env::remove_var(env),
+                Some(v) => env::set_var(env, v),
+                None => env::remove_var(env),
             }
         }
 
@@ -456,8 +457,8 @@ mod test {
         // Restore original environment
         for (env, val) in old_env {
             match val {
-                Some(v) => std::env::set_var(env, v),
-                None => std::env::remove_var(env),
+                Some(v) => env::set_var(env, v),
+                None => env::remove_var(env),
             }
         }
 
@@ -466,18 +467,18 @@ mod test {
 
     #[test]
     fn test_mock_env() {
-        let original_name = std::env::var("TEST_WORKSPACE").unwrap();
+        let original_name = env::var("TEST_WORKSPACE").unwrap();
         assert!(
             !original_name.is_empty(),
             "In Bazel tests, `TEST_WORKSPACE` is expected to be populated."
         );
 
         let mocked_name = with_mock_env([("TEST_WORKSPACE", Some("foobar"))], || {
-            std::env::var("TEST_WORKSPACE").unwrap()
+            env::var("TEST_WORKSPACE").unwrap()
         });
 
         assert_eq!(mocked_name, "foobar");
-        assert_eq!(original_name, std::env::var("TEST_WORKSPACE").unwrap());
+        assert_eq!(original_name, env::var("TEST_WORKSPACE").unwrap());
     }
 
     /// Create a temp directory to act as a runfiles directory for testing
@@ -489,14 +490,14 @@ mod test {
             let path = "rules_rust/rust/runfiles/data/sample.txt";
             let f = rlocation!(r, path).unwrap();
 
-            let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+            let temp_dir = PathBuf::from(env::var("TEST_TMPDIR").unwrap());
             let runfiles_dir = temp_dir.join(name);
             let test_path = runfiles_dir.join(path);
             if let Some(parent) = test_path.parent() {
-                std::fs::create_dir_all(parent).expect("Failed to create test path parents.");
+                fs::create_dir_all(parent).expect("Failed to create test path parents.");
             }
 
-            std::fs::copy(f, test_path).expect("Failed to copy test file");
+            fs::copy(f, test_path).expect("Failed to copy test file");
 
             runfiles_dir.to_str().unwrap().to_string()
         })
@@ -666,11 +667,11 @@ mod test {
 
     #[test]
     fn test_parse_repo_mapping() {
-        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = PathBuf::from(env::var("TEST_TMPDIR").unwrap());
+        fs::create_dir_all(&temp_dir).unwrap();
 
         let valid = temp_dir.join("test_parse_repo_mapping.txt");
-        std::fs::write(
+        fs::write(
             &valid,
             dedent(
                 r#",rules_rust,rules_rust
@@ -733,8 +734,8 @@ mod test {
 
     #[test]
     fn test_parse_repo_mapping_invalid_file() {
-        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = PathBuf::from(env::var("TEST_TMPDIR").unwrap());
+        fs::create_dir_all(&temp_dir).unwrap();
 
         let invalid = temp_dir.join("test_parse_repo_mapping_invalid_file.txt");
 
@@ -743,7 +744,7 @@ mod test {
             RunfilesError::RepoMappingIoError(_)
         ));
 
-        std::fs::write(&invalid, "invalid").unwrap();
+        fs::write(&invalid, "invalid").unwrap();
 
         assert_eq!(
             parse_repo_mapping(invalid),
@@ -753,11 +754,11 @@ mod test {
 
     #[test]
     fn test_parse_repo_mapping_with_wildcard() {
-        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = PathBuf::from(env::var("TEST_TMPDIR").unwrap());
+        fs::create_dir_all(&temp_dir).unwrap();
 
         let mapping_file = temp_dir.join("test_parse_repo_mapping_with_wildcard.txt");
-        std::fs::write(
+        fs::write(
             &mapping_file,
             dedent(
                 r#"+deps+*,aaa,_main
@@ -801,12 +802,12 @@ mod test {
 
     #[test]
     fn test_rlocation_from_with_wildcard() {
-        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = PathBuf::from(env::var("TEST_TMPDIR").unwrap());
+        fs::create_dir_all(&temp_dir).unwrap();
 
         // Create a mock runfiles directory
         let runfiles_dir = temp_dir.join("test_rlocation_from_with_wildcard.runfiles");
-        std::fs::create_dir_all(&runfiles_dir).unwrap();
+        fs::create_dir_all(&runfiles_dir).unwrap();
 
         let r = Runfiles {
             mode: Mode::DirectoryBased(runfiles_dir.clone()),
