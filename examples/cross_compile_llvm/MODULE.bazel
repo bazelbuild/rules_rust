@@ -1,5 +1,5 @@
 module(
-    name = "hello_cross",
+    name = "cross_compile_llvm_example",
     version = "0.0.0",
 )
 
