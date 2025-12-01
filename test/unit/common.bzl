@@ -29,6 +29,18 @@ def assert_argv_contains_prefix_suffix(env, action, prefix, suffix):
         ),
     )
 
+def assert_argv_contains_prefix_suffix_not(env, action, prefix, suffix):
+    for found_flag in action.argv:
+        if found_flag.startswith(prefix) and found_flag.endswith(suffix):
+            unittest.fail(
+                env,
+                "Expected an arg with prefix '{prefix}' and suffix '{suffix}' to not appear in {args}".format(
+                    prefix = prefix,
+                    suffix = suffix,
+                    args = action.argv,
+                ),
+            )
+
 def assert_argv_contains_prefix(env, action, prefix):
     for found_flag in action.argv:
         if found_flag.startswith(prefix):

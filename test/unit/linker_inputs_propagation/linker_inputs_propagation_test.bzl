@@ -30,7 +30,19 @@ def _dependency_linkopts_are_propagated_test_impl(ctx):
     # Expect a library's own linkopts to come after the flags we create to link them.
     # This is required, because linkopts are ordered and the linker will only apply later ones when resolving symbols required for earlier ones.
     # This means that if one of our transitive deps has a linkopt like `-lfoo`, the dep will see the symbols of foo at link time.
-    _assert_contains_in_order(env, link_action.argv, ["-lstatic=foo_with_linkopts", "-Clink-arg=-lfoo_with_linkopts", "--codegen=link-arg=-L/doesnotexist"])
+    link_flag_index = -1
+    for i, arg in enumerate(link_action.argv):
+        if arg.startswith("-Clink-arg=bazel-out") and arg.endswith("test/linker_inputs_propagation/libfoo_with_linkopts.a"):
+            link_flag_index = i
+            break
+    if link_flag_index == -1:
+        unittest.fail(env, "Link flag not found")
+
+    linkopt_index = link_action.argv.index("--codegen=link-arg=-L/doesnotexist")
+
+    if linkopt_index < link_flag_index:
+        unittest.fail(env, "Flags out of order")
+
     return analysistest.end(env)
 
 def _assert_contains_input(env, inputs, name):
@@ -40,12 +52,6 @@ def _assert_contains_input(env, inputs, name):
         if input.basename.startswith(name):
             return
     unittest.fail(env, "Expected {} to contain a library starting with {}".format(inputs.to_list(), name))
-
-def _assert_contains_in_order(env, haystack, needle):
-    for i in range(len(haystack)):
-        if haystack[i:i + len(needle)] == needle:
-            return
-    unittest.fail(env, "Expected {} to contain {}".format(haystack, needle))
 
 def _get_lib_name(ctx, name):
     if ctx.target_platform_has_constraint(ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]):
