@@ -381,6 +381,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
+    "sanitize_label_injections",
 )
 load("//crate_universe/private:crate.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
@@ -409,13 +410,6 @@ load(
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
-
-# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
-#
-# If I were to write ":foo", with attr.label_list, it would evaluate to
-# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
-# "@@rules_rust~crates~<crate>//:foo".
-_relative_label_list = attr.string_list
 
 _OPT_BOOL_VALUES = {
     "auto": None,
@@ -1015,6 +1009,15 @@ def _crate_impl(module_ctx):
             crate = annotation_dict.pop("crate")
             version = annotation_dict.pop("version")
 
+            # `label_injections` is left on `annotation_dict` so it flows through
+            # to the cargo-bazel config JSON. The Rust side reads it during
+            # config load and substitutes apparent labels for their canonical
+            # form across every string in this annotation, then strips the
+            # field. See `crate_universe/src/config/label_injection.rs`.
+            annotation_dict["label_injections"] = sanitize_label_injections(
+                annotation_dict.pop("label_injections", {}),
+            )
+
             # The crate.annotation function can take in either a list or a bool.
             # For the tag-based method, because it has type safety, we have to
             # split it into two parameters.
@@ -1312,6 +1315,15 @@ _ANNOTATION_NORMAL_ATTRS = {
         values = _OPT_BOOL_VALUES.keys(),
         default = "auto",
     ),
+    "label_injections": attr.label_keyed_string_dict(
+        doc = (
+            "A mapping of canonical repository labels to the apparent repository prefix used in the annotation's strings. This is necessary for cases where a `build_script_data` " +
+            "annotation is given and the new label is used in location expansion via `build_script_env`. E.g. `build_script_data = [\"@xz//:lzma\"]` and `build_script_env = " +
+            "{\"LZMA_BIN\": \"$(execpath @xz//:lzma)\"}`. This example would require `label_injections = {\"@xz\": \"@xz\"}` where the key resolves to a canonical repo and the value is " +
+            "the apparent repo prefix used throughout this annotation. Target portions (`//pkg:target`) on either side are ignored; the cargo-bazel generator rewrites the apparent repo " +
+            "prefix to its canonical form and leaves any user-written target verbatim."
+        ),
+    ),
     "override_target_bin": attr.label(
         doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
     ),
@@ -1337,6 +1349,13 @@ _ANNOTATION_NORMAL_ATTRS = {
         doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
     ),
 }
+
+# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
+#
+# If I were to write ":foo", with attr.label_list, it would evaluate to
+# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
+# "@@rules_rust~crates~<crate>//:foo".
+_relative_label_list = attr.string_list
 
 _ANNOTATION_SELECT_ATTRS = {
     "build_script_compile_data": _relative_label_list(

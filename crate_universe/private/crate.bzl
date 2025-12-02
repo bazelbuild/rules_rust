@@ -122,7 +122,8 @@ def _annotation(
         rustc_env_files = None,
         rustc_flags = None,
         shallow_since = None,
-        override_targets = None):
+        override_targets = None,
+        label_injections = None):
     """A collection of extra attributes and settings for a particular crate
 
     Args:
@@ -182,6 +183,9 @@ def _annotation(
             instead of a crate registry. This flag optimizes fetching the source code.
         override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
             the parent repo to provide its own version of this dependency. Keys can be `proc-macro`, `custom-build`, `lib`, `bin`.
+        label_injections (dict, optional): A mapping of canonical repository prefix to apparent label, applied by the
+            `cargo-bazel` generator to every string in this annotation. Populated by `sanitize_label_injections` in
+            `crate_universe/private/common_utils.bzl`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
@@ -231,6 +235,7 @@ def _annotation(
             rustc_flags = rustc_flags,
             shallow_since = shallow_since,
             override_targets = override_targets,
+            label_injections = label_injections,
         ),
     ))
 

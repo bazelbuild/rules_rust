@@ -36,6 +36,9 @@ crate.annotation(
         "@openssl//:install",
     ],
     crate = "openssl-sys",
+    label_injections = {
+        "@openssl": "@openssl",
+    },
     repositories = ["complicated_dependencies"],
 )
 crate.spec(

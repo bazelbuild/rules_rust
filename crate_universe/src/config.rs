@@ -1,5 +1,7 @@
 //! A module for configuration information
 
+mod label_injection;
+
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Formatter;
@@ -744,7 +746,9 @@ where
 impl Config {
     pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path)?;
-        Ok(serde_json::from_str(&data)?)
+        let mut value: serde_json::Value = serde_json::from_str(&data)?;
+        label_injection::apply(&mut value);
+        Ok(serde_json::from_value(value)?)
     }
 }
 

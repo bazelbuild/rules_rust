@@ -15,6 +15,7 @@ CARGO_BAZEL_SRCS = [
     Label("//crate_universe:src/cli/splice.rs"),
     Label("//crate_universe:src/cli/vendor.rs"),
     Label("//crate_universe:src/config.rs"),
+    Label("//crate_universe:src/config/label_injection.rs"),
     Label("//crate_universe:src/context.rs"),
     Label("//crate_universe:src/context/crate_context.rs"),
     Label("//crate_universe:src/context/platforms.rs"),
