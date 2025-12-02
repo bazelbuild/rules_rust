@@ -122,6 +122,7 @@ def pipelined_compilation():
         build_setting_default = False,
     )
 
+# buildifier: disable=unnamed-macro
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \
     cc_common.link instead of rustc.
@@ -129,6 +130,20 @@ def experimental_use_cc_common_link():
     bool_flag(
         name = "experimental_use_cc_common_link",
         build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "experimental_use_cc_common_link_on",
+        flag_values = {
+            ":experimental_use_cc_common_link": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_cc_common_link_off",
+        flag_values = {
+            ":experimental_use_cc_common_link": "false",
+        },
     )
 
 def experimental_use_global_allocator():

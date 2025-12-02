@@ -723,19 +723,43 @@ tasks:
     working_directory: examples/compile_opt
     build_targets:
       - "//..."
-  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
-  # cross_compile_zig:
-  #   name: Cross compile example with Zig
+  # TODO: This test requires musl or for rustc to provide necessary gnu libraries for
+  # linking gnu libraries.
+  # https://github.com/bazelbuild/rules_rust/issues/390
+  # cross_compile_linux:
+  #   name: Cross compile example on Linux
   #   platform: ubuntu2204
-  #   working_directory: examples/cross_compile_zig
-  #   build_targets:
+  #   working_directory: examples/cross_compile
+  #   shell_commands:
+  #     - sed -i 's/_FORCE_DISABLE_CC_TOOLCHAIN = False/_FORCE_DISABLE_CC_TOOLCHAIN = True/' ../../rust/private/utils.bzl
+  #   test_flags:
+  #     - "--keep_going"
+  #   test_targets:
   #     - "//..."
+  cross_compile_macos:
+    name: Cross compile example on MacOS
+    platform: macos_arm64
+    working_directory: examples/cross_compile
+    shell_commands:
+      - sed -i '' 's/_FORCE_DISABLE_CC_TOOLCHAIN = False/_FORCE_DISABLE_CC_TOOLCHAIN = True/' ../../rust/private/utils.bzl
+    test_flags:
+      - "--keep_going"
+    test_targets:
+      - "//..."
+  cross_compile_windows:
+    name: Cross compile example on Windows
+    platform: windows
+    working_directory: examples/cross_compile
+    batch_commands:
+      - powershell -Command "(Get-Content rust/private/utils.bzl) -replace '_FORCE_DISABLE_CC_TOOLCHAIN = False', '_FORCE_DISABLE_CC_TOOLCHAIN = True' | Set-Content ../../rust/private/utils.bzl"
+    test_flags:
+      - "--keep_going"
+    test_targets:
+      - "//..."
   cross_compile_musl_macos_to_linux:
     name: Cross compile example Musl from macOS to Linux
     platform: macos_arm64
     working_directory: examples/cross_compile_musl
-    build_targets:
-      - "//..."
     test_targets:
       - "//..."
   cross_compile_musl_linux_to_linux:
@@ -775,6 +799,13 @@ tasks:
       - "//:all"
     test_targets:
       - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
+  # cross_compile_zig:
+  #   name: Cross compile example with Zig
+  #   platform: ubuntu2204
+  #   working_directory: examples/cross_compile_zig
+  #   build_targets:
+  #     - "//..."
   example_ffi_linux:
     platform: ubuntu2204
     working_directory: examples/ffi
