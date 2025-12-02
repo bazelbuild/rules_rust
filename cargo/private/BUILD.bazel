@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("//rust:defs.bzl", "rust_binary")
 
 rust_binary(
@@ -9,33 +10,31 @@ rust_binary(
 )
 
 rust_binary(
+    name = "no_binary",
+    srcs = ["no_binary.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
     name = "no_ar",
-    srcs = ["no_binary.rs"],
-    edition = "2021",
-    rustc_env = {
-        "BINARY_ENV": "AR",
-    },
-    visibility = ["//visibility:public"],
+    src = ":no_binary",
+    out = "no_ar.exe",
+    is_executable = True,
 )
 
-rust_binary(
+copy_file(
     name = "no_cc",
-    srcs = ["no_binary.rs"],
-    edition = "2021",
-    rustc_env = {
-        "BINARY_ENV": "CC",
-    },
-    visibility = ["//visibility:public"],
+    src = ":no_binary",
+    out = "no_cc.exe",
+    is_executable = True,
 )
 
-rust_binary(
+copy_file(
     name = "no_cxx",
-    srcs = ["no_binary.rs"],
-    edition = "2021",
-    rustc_env = {
-        "BINARY_ENV": "CXX",
-    },
-    visibility = ["//visibility:public"],
+    src = ":no_binary",
+    out = "no_cxx.exe",
+    is_executable = True,
 )
 
 bzl_library(
