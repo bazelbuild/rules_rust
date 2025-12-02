@@ -146,6 +146,16 @@ def experimental_use_cc_common_link():
         },
     )
 
+# buildifier: disable=unnamed-macro
+def default_allocator_library():
+    """A flag that determines the default allocator library for `rust_toolchain` targets."""
+
+    native.label_flag(
+        name = "default_allocator_library",
+        build_setting_default = Label("//ffi/cc/allocator_library"),
+    )
+
+# buildifier: disable=unnamed-macro
 def experimental_use_global_allocator():
     """A flag to indicate that a global allocator is in use when using `--@rules_rust//rust/settings:experimental_use_cc_common_link`
 
@@ -155,6 +165,20 @@ def experimental_use_global_allocator():
     bool_flag(
         name = "experimental_use_global_allocator",
         build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_on",
+        flag_values = {
+            ":experimental_use_global_allocator": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_off",
+        flag_values = {
+            ":experimental_use_global_allocator": "false",
+        },
     )
 
 def experimental_use_allocator_libraries_with_mangled_symbols(name):

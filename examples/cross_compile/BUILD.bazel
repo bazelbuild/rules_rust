@@ -37,9 +37,9 @@ rust_library(
         name = "cross_compile_{}_infer_test".format(platform),
         file = ":cross_compile_{}".format(platform),
         target_compatible_with = {
-            "x86_64-pc-windows-msvc": ["@platforms//os:windows"],
-            "aarch64-pc-windows-msvc": ["@platforms//os:windows"],
             "aarch64-apple-darwin": ["@platforms//os:macos"],
+            "aarch64-pc-windows-msvc": ["@platforms//os:windows"],
+            "x86_64-pc-windows-msvc": ["@platforms//os:windows"],
         }.get(platform, []),
         type = {
             "aarch64-apple-darwin": "application/x-mach-binary",

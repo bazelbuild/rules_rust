@@ -89,21 +89,22 @@ def make_libstd_and_allocator_ccinfo(
 
         # Include C++ toolchain files as additional inputs for cross-compilation scenarios
         additional_inputs = []
-        if cc_toolchain and cc_toolchain.all_files:
-            additional_inputs = cc_toolchain.all_files.to_list()
+        if cc_toolchain:
+            if cc_toolchain.all_files:
+                additional_inputs = cc_toolchain.all_files.to_list()
 
-        linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
-            name = label.name,
-            actions = actions,
-            feature_configuration = feature_configuration,
-            cc_toolchain = cc_toolchain,
-            compilation_outputs = compilation_outputs,
-            additional_inputs = additional_inputs,
-        )
+            linking_context, _linking_outputs = cc_common.create_linking_context_from_compilation_outputs(
+                name = label.name,
+                actions = actions,
+                feature_configuration = feature_configuration,
+                cc_toolchain = cc_toolchain,
+                compilation_outputs = compilation_outputs,
+                additional_inputs = additional_inputs,
+            )
 
-        cc_infos.append(CcInfo(
-            linking_context = linking_context,
-        ))
+            cc_infos.append(CcInfo(
+                linking_context = linking_context,
+            ))
 
     if rust_stdlib_info.std_rlibs:
         allocator_library_inputs = []

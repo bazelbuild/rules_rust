@@ -20,6 +20,10 @@ coverage --experimental_fetch_all_coverage_outputs
 # https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
 common --experimental_cc_shared_library
 
+# Disable the allocator library by pointing to a unique target which satisfies the `CcInfo`
+# contract but does not require a `cc_toolchain` to produce it.
+common --@rules_rust//rust/settings:default_allocator_library=@rules_rust//ffi/cc/empty
+
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################

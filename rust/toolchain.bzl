@@ -635,8 +635,8 @@ rust_toolchain = rule(
     fragments = ["cpp"],
     attrs = {
         "allocator_library": attr.label(
-            doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
-            default = "@rules_rust//ffi/cc/allocator_library",
+            doc = "Target that provides allocator functions when `rust_library` targets are embedded in a `cc_binary`.",
+            default = Label("//rust/settings:default_allocator_library"),
         ),
         "binary_ext": attr.string(
             doc = "The extension for binaries created from rustc.",
@@ -717,7 +717,7 @@ rust_toolchain = rule(
         ),
         "global_allocator_library": attr.label(
             doc = "Target that provides allocator functions for when a global allocator is present.",
-            default = "@rules_rust//ffi/cc/global_allocator_library",
+            default = Label("//rust/private/cc:global_allocator_library"),
         ),
         "linker": attr.label(
             doc = "The label to an explicit linker to use (e.g. rust-lld, ld, link-ld.exe, etc.). Linker binaries must be runnable in the exec configuration, so cfg = \"exec\" is used. To choose a linker based on the target platform, use a select() when providing this attribute. The select() will be evaluated against the target platform before the exec transition is applied, allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.",

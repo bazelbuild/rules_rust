@@ -791,7 +791,9 @@ def collect_inputs(
     if linker_script:
         nolinkstamp_compile_direct_inputs.append(linker_script)
 
-    if crate_info.type in ["dylib", "cdylib"]:
+    if not cc_toolchain:
+        runtime_libs = depset()
+    elif crate_info.type in ["dylib", "cdylib"]:
         # For shared libraries we want to link C++ runtime library dynamically
         # (for example libstdc++.so or libc++.so).
         runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
@@ -1342,10 +1344,7 @@ def rustc_compile_action(
         # One or more of the transitive deps is a cc_library / cc_import
         extra_disabled_features = []
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx, extra_disabled_features)
-    if not cc_toolchain or not _are_linkstamps_supported(
-        feature_configuration = feature_configuration,
-        has_grep_includes = hasattr(ctx.attr, "_use_grep_includes"),
-    ):
+    if not cc_toolchain or not _are_linkstamps_supported(feature_configuration = feature_configuration):
         linkstamps = depset([])
 
     # Determine if the build is currently running with --stamp

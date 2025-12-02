@@ -132,7 +132,7 @@ def _rust_impl(module_ctx):
     return module_ctx.extension_metadata(**metadata_kwargs)
 
 _COMMON_TAG_DEFAULTS = {
-    "allocator_library": "@rules_rust//ffi/cc/allocator_library",
+    "allocator_library": "",
     "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
     "urls": DEFAULT_STATIC_RUST_URL_TEMPLATES,
 }

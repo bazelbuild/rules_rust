@@ -358,8 +358,7 @@ def rust_repositories(**kwargs):
 
 _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "allocator_library": attr.string(
-        doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
-        default = "@rules_rust//ffi/cc/allocator_library",
+        doc = "Target that provides allocator functions when `rust_library` targets are embedded in a `cc_binary`.",
     ),
     "auth": attr.string_dict(
         doc = (
@@ -391,8 +390,7 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
         doc = "Extra flags to pass to rustc in non-exec configuration",
     ),
     "global_allocator_library": attr.string(
-        doc = "Target that provides allocator functions when a global allocator is used with cc_common.link.",
-        default = "@rules_rust//ffi/cc/global_allocator_library",
+        doc = "Target that provides allocator functions when a global allocator is used with [`cc_common.link`](https://bazel.build/rules/lib/toplevel/cc_common#link).",
     ),
     "netrc": attr.string(
         doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive",
