@@ -211,3 +211,96 @@ def parse_alias_rule(value):
         bzl = str(bzl),
         rule = rule,
     )
+
+def sanitize_label_injections(label_injections):
+    """Load the `label_injections` attribute and sanitize it for use in replacements.
+
+    Args:
+        label_injections (dict[Label, str]): A mapping of labels (canonical) to string labels (apparent).
+
+    Returns:
+        dict[str, str]: A mapping of string
+    """
+    updated = {}
+    for canonical, apparent in label_injections.items():
+        canon_repo, _, _ = str(canonical).partition("//")
+        _, _, target = apparent.partition("//")
+        if target:
+            target = "//" + target
+
+        updated["{}{}".format(canon_repo, target)] = apparent
+
+    return updated
+
+def apply_label_injections(*, label_mapping, attribute):
+    """Apply label_injections to convert canonical labels to apparent labels.
+
+    Args:
+        label_mapping: The mapping of canonical label to apparent label.
+        attribute: The attribute to update.
+
+    Returns:
+        [dict | list | str]: The updated attribute based on `label_mapping`.
+    """
+    if not label_mapping:
+        return attribute
+
+    if not attribute:
+        return attribute
+
+    attr_type = type(attribute)
+
+    if attr_type == "dict":
+        updated = dict(attribute.items())
+        value_type = type(updated.values()[0])
+
+        if value_type == "string":
+            updated = dict(attribute.items())
+            for canonical, apparent in label_mapping.items():
+                updated = {
+                    key.replace(apparent, canonical): value.replace(apparent, canonical)
+                    for key, value in updated.items()
+                }
+            return updated
+
+        if value_type == "list":
+            for canonical, apparent in label_mapping.items():
+                updated = {
+                    key.replace(apparent, canonical): [v.replace(apparent, canonical) for v in value]
+                    for key, value in updated.items()
+                }
+            return updated
+
+        if value_type == "dict":
+            for canonical, apparent in label_mapping.items():
+                updated = {
+                    key.replace(apparent, canonical): {
+                        k.replace(apparent, canonical): v.replace(apparent, canonical)
+                        for k, v in value.items()
+                    }
+                    for key, value in updated.items()
+                }
+            return updated
+
+        fail("Unknown dict value type `{}` for: {}".format(
+            value_type,
+            attribute,
+        ))
+
+    if attr_type == "list":
+        updated = [i for i in attribute]
+        for canonical, apparent in label_mapping.items():
+            updated = [entry.replace(apparent, canonical) for entry in updated]
+        return updated
+
+    if attr_type == "string":
+        updated = str(attribute)
+        for canonical, apparent in label_mapping.items():
+            updated = updated.replace(apparent, canonical)
+
+        return updated
+
+    fail("Unexpected attribute type `{}` for: {}".format(
+        attr_type,
+        attribute,
+    ))
