@@ -185,6 +185,7 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         linker_flags = None,
         link_search_paths = link_search_paths,
         out_dir = None,
+        build_script_crate_root = None,
         rustc_env = None,
     )
 

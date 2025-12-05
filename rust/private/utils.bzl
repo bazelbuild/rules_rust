@@ -756,6 +756,28 @@ def can_use_metadata_for_pipelining(toolchain, crate_type):
     return toolchain._pipelined_compilation and \
            crate_type in ("rlib", "lib")
 
+def crate_root_from_build_scripts(ctx):
+    """
+    Identify the generated crate root that comes from a build script (if any)
+    and return a symlink to it (File).
+
+    Args:
+        ctx: (ctx): The current rule's context object
+    """
+    candidate_filename = None
+    candidate_path = None
+    for dep in ctx.attr.deps:
+        if BuildInfo in dep:
+            if dep[BuildInfo].build_script_crate_root:
+                candidate_filename = dep[BuildInfo].build_script_crate_root
+                candidate_path = dep[BuildInfo].out_dir.path + "/" + candidate_filename
+                break
+    if candidate_path:
+        crate_root = ctx.actions.declare_symlink(candidate_filename)
+        symlink_target = relativize(candidate_path, crate_root.dirname)
+        ctx.actions.symlink(output = crate_root, target_path = symlink_target)
+        return crate_root
+
 def crate_root_src(name, crate_name, srcs, crate_type):
     """Determines the source file for the crate root, should it not be specified in `attr.crate_root`.
 

@@ -33,6 +33,7 @@ load(
     "can_build_metadata",
     "can_use_metadata_for_pipelining",
     "compute_crate_name",
+    "crate_root_from_build_scripts",
     "crate_root_src",
     "dedent",
     "deduplicate",
@@ -169,7 +170,7 @@ def _rust_library_common(ctx, crate_type):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
+        crate_root = crate_root_from_build_scripts(ctx) or crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
     srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     # Determine unique hash for this rlib.
@@ -265,7 +266,7 @@ def _rust_binary_impl(ctx):
 
     crate_root = getattr(ctx.file, "crate_root", None)
     if not crate_root:
-        crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
+        crate_root = crate_root_from_build_scripts(ctx) or crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, ctx.attr.crate_type)
     srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
     rust_metadata = None
