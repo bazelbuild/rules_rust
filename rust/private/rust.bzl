@@ -732,6 +732,11 @@ _common_attrs = {
     "edition": attr.string(
         doc = "The rust edition to use for this crate. Defaults to the edition specified in the rust_toolchain.",
     ),
+    "extra_outdirs": attr.string_list(
+        doc = dedent("""\
+            List of additional output directories which are expected to be written by the compiler.
+        """),
+    ),
     "lint_config": attr.label(
         doc = "Set of lints to apply when building this crate.",
         providers = [LintsInfo],

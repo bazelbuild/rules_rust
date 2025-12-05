@@ -1482,6 +1482,9 @@ def rustc_compile_action(
         interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
         outputs.append(interface_library)
 
+    if hasattr(ctx.attr, "extra_outdirs"):
+        outputs.extend([ctx.actions.declare_directory(outdir) for outdir in ctx.attr.extra_outdirs])
+
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
     if rustc_output:
