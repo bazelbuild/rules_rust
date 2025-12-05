@@ -122,6 +122,7 @@ def pipelined_compilation():
         build_setting_default = False,
     )
 
+# buildifier: disable=unnamed-macro
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \
     cc_common.link instead of rustc.
@@ -131,6 +132,30 @@ def experimental_use_cc_common_link():
         build_setting_default = False,
     )
 
+    native.config_setting(
+        name = "experimental_use_cc_common_link_on",
+        flag_values = {
+            ":experimental_use_cc_common_link": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_cc_common_link_off",
+        flag_values = {
+            ":experimental_use_cc_common_link": "false",
+        },
+    )
+
+# buildifier: disable=unnamed-macro
+def default_allocator_library():
+    """A flag that determines the default allocator library for `rust_toolchain` targets."""
+
+    native.label_flag(
+        name = "default_allocator_library",
+        build_setting_default = Label("//ffi/cc/allocator_library"),
+    )
+
+# buildifier: disable=unnamed-macro
 def experimental_use_global_allocator():
     """A flag to indicate that a global allocator is in use when using `--@rules_rust//rust/settings:experimental_use_cc_common_link`
 
@@ -140,6 +165,20 @@ def experimental_use_global_allocator():
     bool_flag(
         name = "experimental_use_global_allocator",
         build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_on",
+        flag_values = {
+            ":experimental_use_global_allocator": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_off",
+        flag_values = {
+            ":experimental_use_global_allocator": "false",
+        },
     )
 
 def experimental_use_allocator_libraries_with_mangled_symbols(name):
@@ -245,6 +284,23 @@ def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
     bool_flag(
         name = "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
         build_setting_default = False,
+    )
+
+def toolchain_linker_preference():
+    """A flag to control which linker is preferred for linking Rust binaries.
+
+    Accepts three values:
+    - "rust": Use `rust_toolchain.linker` always (e.g., `rust-lld`). This uses rustc to invoke
+      the linker directly.
+    - "cc": Use the linker provided by the configured `cc_toolchain`. This uses rustc to invoke
+      the C++ toolchain's linker (e.g., `clang`, `gcc`, `link.exe`).
+    - "none": Default to `cc` being the preference and falling back to `rust` if no `cc_toolchain`
+      is available.
+    """
+    string_flag(
+        name = "toolchain_linker_preference",
+        build_setting_default = "none",
+        values = ["rust", "cc", "none"],
     )
 
 # buildifier: disable=unnamed-macro

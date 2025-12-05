@@ -1,0 +1,54 @@
+load("@rules_rust//rust:rust_binary.bzl", "rust_binary")
+load("@rules_rust//rust:rust_library.bzl", "rust_library")
+load("//tools:infer_test.bzl", "infer_test")
+
+PLATFORMS = [
+    "aarch64-apple-darwin",
+    "aarch64-pc-windows-msvc",
+    "aarch64-unknown-linux-musl",
+    "wasm32-wasip1",
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-musl",
+]
+
+rust_library(
+    name = "secrets",
+    srcs = ["src/lib.rs"],
+    edition = "2024",
+)
+
+[
+    rust_binary(
+        name = "cross_compile_{}".format(platform),
+        srcs = ["src/main.rs"],
+        edition = "2024",
+        platform = "//platforms:{}".format(platform),
+        # These targets are tagged as manual to allow the `target_compatible_with`
+        # attribute of `infer_test` to determine what should and shouldn't be built
+        # as not all platforms are buildable on all other platforms.
+        tags = ["manual"],
+        deps = [":secrets"],
+    )
+    for platform in PLATFORMS
+]
+
+[
+    infer_test(
+        name = "cross_compile_{}_infer_test".format(platform),
+        file = ":cross_compile_{}".format(platform),
+        target_compatible_with = {
+            "aarch64-apple-darwin": ["@platforms//os:macos"],
+            "aarch64-pc-windows-msvc": ["@platforms//os:windows"],
+            "x86_64-pc-windows-msvc": ["@platforms//os:windows"],
+        }.get(platform, []),
+        type = {
+            "aarch64-apple-darwin": "application/x-mach-binary",
+            "aarch64-pc-windows-msvc": "application/vnd.microsoft.portable-executable",
+            "aarch64-unknown-linux-musl": "application/x-executable",
+            "wasm32-wasip1": "application/wasm",
+            "x86_64-pc-windows-msvc": "application/vnd.microsoft.portable-executable",
+            "x86_64-unknown-linux-musl": "application/x-executable",
+        }.get(platform, platform),
+    )
+    for platform in PLATFORMS
+]

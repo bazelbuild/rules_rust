@@ -10,6 +10,7 @@ load(
     "clippy_toml",
     "codegen_units",
     "collect_cfgs",
+    "default_allocator_library",
     "error_format",
     "experimental_link_std_dylib",
     "experimental_per_crate_rustc_flag",
@@ -36,6 +37,7 @@ load(
     "rustfmt_toml",
     "third_party_dir",
     "toolchain_generated_sysroot",
+    "toolchain_linker_preference",
     "unpretty",
     "use_real_import_macro",
 )
@@ -73,6 +75,8 @@ clippy_toml()
 codegen_units()
 
 collect_cfgs()
+
+default_allocator_library()
 
 error_format()
 
@@ -129,6 +133,8 @@ rustfmt_toml()
 third_party_dir()
 
 toolchain_generated_sysroot()
+
+toolchain_linker_preference()
 
 unpretty()
 

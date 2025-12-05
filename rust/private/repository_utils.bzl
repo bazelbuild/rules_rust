@@ -57,8 +57,6 @@ filegroup(
             "bin/*{dylib_ext}",
             "lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/codegen-backends/*{dylib_ext}",
-            "lib/rustlib/{target_triple}/bin/gcc-ld/*",
-            "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/lib/*.rmeta",
         ],
@@ -74,21 +72,52 @@ filegroup(
 )
 """
 
-def BUILD_for_compiler(target_triple):
+_build_file_for_linker_template = """\
+filegroup(
+    name = "rust-lld",
+    srcs = ["lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}"],
+    data = glob(
+        include = [
+            "lib/rustlib/{target_triple}/bin/*-ld{binary_ext}",
+            "lib/rustlib/{target_triple}/bin/gcc-ld/*",
+        ],
+        exclude = [
+            "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_compiler(target_triple, include_linker = False):
     """Emits a BUILD file the compiler archive.
 
     Args:
         target_triple (str): The triple of the target platform
+        include_linker (bool): Whether to generate targets for linkers.
 
     Returns:
         str: The contents of a BUILD file
     """
-    return _build_file_for_compiler_template.format(
+    content = [_build_file_for_compiler_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system),
         dylib_ext = system_to_dylib_ext(target_triple.system),
         target_triple = target_triple.str,
-    )
+    )]
+
+    if include_linker:
+        content.append(
+            _build_file_for_linker_template.format(
+                binary_ext = system_to_binary_ext(target_triple.system),
+                staticlib_ext = system_to_staticlib_ext(target_triple.system),
+                dylib_ext = system_to_dylib_ext(target_triple.system),
+                target_triple = target_triple.str,
+            ),
+        )
+
+    return "\n".join(content)
 
 _build_file_for_cargo_template = """\
 filegroup(
@@ -293,6 +322,8 @@ rust_toolchain(
     rust_doc = "//:rustdoc",
     rust_std = "//:rust_std-{target_triple}",
     rustc = "//:rustc",
+    linker = {linker_label},
+    linker_type = {linker_type},
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
@@ -329,6 +360,7 @@ def BUILD_for_rust_toolchain(
         default_edition,
         include_rustfmt,
         include_llvm_tools,
+        include_linker,
         stdlib_linkflags = None,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
@@ -348,6 +380,7 @@ def BUILD_for_rust_toolchain(
         default_edition (str): Default Rust edition.
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
+        include_linker (bool): Whether a linker is available in the toolchain.
         stdlib_linkflags (list, optional): Overridden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -362,38 +395,46 @@ def BUILD_for_rust_toolchain(
     if stdlib_linkflags == None:
         stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(target_triple.system)])
 
-    rustfmt_label = "None"
+    rustfmt_label = None
     if include_rustfmt:
-        rustfmt_label = "\"//:rustfmt_bin\""
-    llvm_cov_label = "None"
-    llvm_profdata_label = "None"
-    llvm_lib_label = "None"
+        rustfmt_label = "//:rustfmt_bin"
+    llvm_cov_label = None
+    llvm_profdata_label = None
+    llvm_lib_label = None
     if include_llvm_tools:
-        llvm_cov_label = "\"//:llvm_cov_bin\""
-        llvm_profdata_label = "\"//:llvm_profdata_bin\""
-        llvm_lib_label = "\"//:llvm_lib\""
-    allocator_library_label = "None"
+        llvm_cov_label = "//:llvm_cov_bin"
+        llvm_profdata_label = "//:llvm_profdata_bin"
+        llvm_lib_label = "//:llvm_lib"
+    allocator_library_label = None
     if allocator_library:
-        allocator_library_label = "\"{allocator_library}\"".format(allocator_library = allocator_library)
-    global_allocator_library_label = "None"
+        allocator_library_label = allocator_library
+    global_allocator_library_label = None
     if global_allocator_library:
-        global_allocator_library_label = "\"{global_allocator_library}\"".format(global_allocator_library = global_allocator_library)
+        global_allocator_library_label = global_allocator_library
+
+    linker_label = None
+    linker_type = None
+    if include_linker:
+        linker_label = "//:rust-lld"
+        linker_type = "direct"
 
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         binary_ext = system_to_binary_ext(target_triple.system),
         staticlib_ext = system_to_staticlib_ext(target_triple.system),
         dylib_ext = system_to_dylib_ext(target_triple.system),
-        allocator_library = allocator_library_label,
-        global_allocator_library = global_allocator_library_label,
+        allocator_library = repr(allocator_library_label),
+        global_allocator_library = repr(global_allocator_library_label),
         stdlib_linkflags = stdlib_linkflags,
         default_edition = default_edition,
         exec_triple = exec_triple.str,
         target_triple = target_triple.str,
-        rustfmt_label = rustfmt_label,
-        llvm_cov_label = llvm_cov_label,
-        llvm_profdata_label = llvm_profdata_label,
-        llvm_lib_label = llvm_lib_label,
+        rustfmt_label = repr(rustfmt_label),
+        llvm_cov_label = repr(llvm_cov_label),
+        llvm_profdata_label = repr(llvm_profdata_label),
+        llvm_lib_label = repr(llvm_lib_label),
+        linker_label = repr(linker_label),
+        linker_type = repr(linker_type),
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
@@ -478,7 +519,7 @@ def load_rustfmt(ctx, target_triple, version, iso_date):
 
     return BUILD_for_rustfmt(target_triple), sha256
 
-def load_rust_compiler(ctx, iso_date, target_triple, version):
+def load_rust_compiler(ctx, iso_date, target_triple, version, include_linker = False):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
@@ -486,6 +527,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
         iso_date (str): The date of the tool (or None, if the version is a specific version).
         target_triple (struct): The Rust-style target that this compiler runs on.
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
+        include_linker (bool): Whether to include linker targets in the output BUILD contents.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD file contents for this compiler and compiler library
@@ -501,7 +543,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version):
         version = version,
     )
 
-    return BUILD_for_compiler(target_triple), sha256
+    return BUILD_for_compiler(target_triple, include_linker), sha256
 
 def load_clippy(ctx, iso_date, target_triple, version):
     """Loads Clippy and yields corresponding BUILD for it
@@ -1000,18 +1042,6 @@ def select_rust_version(versions):
 
     return current
 
-_build_file_for_toolchain_hub_template = """
-toolchain(
-    name = "{name}",
-    exec_compatible_with = {exec_constraint_sets_serialized},
-    target_compatible_with = {target_constraint_sets_serialized},
-    target_settings = {target_settings_serialized},
-    toolchain = "{toolchain}",
-    toolchain_type = "{toolchain_type}",
-    visibility = ["//visibility:public"],
-)
-"""
-
 def BUILD_for_toolchain_hub(
         toolchain_names,
         toolchain_labels,
@@ -1019,14 +1049,33 @@ def BUILD_for_toolchain_hub(
         target_settings,
         target_compatible_with,
         exec_compatible_with):
-    return "\n".join([_build_file_for_toolchain_hub_template.format(
-        name = toolchain_name,
-        exec_constraint_sets_serialized = json.encode(exec_compatible_with[toolchain_name]),
-        target_constraint_sets_serialized = json.encode(target_compatible_with[toolchain_name]),
-        target_settings_serialized = json.encode(target_settings[toolchain_name]) if toolchain_name in target_settings else "None",
-        toolchain = toolchain_labels[toolchain_name],
-        toolchain_type = toolchain_types[toolchain_name],
-    ) for toolchain_name in toolchain_names])
+    """Generates BUILD file content for a toolchain hub repository.
+
+    Uses BUILD_for_toolchain to generate each toolchain declaration with proper
+    target_settings handling.
+
+    Args:
+        toolchain_names (list): List of toolchain names.
+        toolchain_labels (dict): Map of toolchain name to toolchain label.
+        toolchain_types (dict): Map of toolchain name to toolchain type.
+        target_settings (dict): Map of toolchain name to target_settings list.
+        target_compatible_with (dict): Map of toolchain name to target constraints.
+        exec_compatible_with (dict): Map of toolchain name to exec constraints.
+
+    Returns:
+        str: The generated BUILD file content.
+    """
+    return "\n".join([
+        BUILD_for_toolchain(
+            name = toolchain_name,
+            toolchain = toolchain_labels[toolchain_name],
+            toolchain_type = toolchain_types[toolchain_name],
+            target_settings = target_settings.get(toolchain_name, []),
+            target_compatible_with = target_compatible_with[toolchain_name],
+            exec_compatible_with = exec_compatible_with[toolchain_name],
+        )
+        for toolchain_name in toolchain_names
+    ])
 
 def _toolchain_repository_hub_impl(repository_ctx):
     repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(
@@ -1057,7 +1106,7 @@ toolchain_repository_hub = repository_rule(
             mandatory = True,
         ),
         "target_settings": attr.string_list_dict(
-            doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
+            doc = "A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution, keyed by toolchain name.",
             mandatory = True,
         ),
         "toolchain_labels": attr.string_dict(

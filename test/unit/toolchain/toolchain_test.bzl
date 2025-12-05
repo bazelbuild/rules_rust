@@ -119,6 +119,13 @@ def _define_test_targets():
     )
 
     write_file(
+        name = "mock_rust_lld",
+        out = "mock_rust_lld.exe",
+        content = [],
+        is_executable = True,
+    )
+
+    write_file(
         name = "mock_rustdoc",
         out = "mock_rustdoc.exe",
         content = [],
@@ -133,6 +140,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_triple = "toolchain-test-triple",
@@ -148,6 +156,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = encoded_target_json,
@@ -161,6 +170,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = json.encode(
@@ -182,6 +192,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = ["test:$(location :stdlib_srcs)", "test:sysroot=$(RUST_SYSROOT)"],
         extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)", "extra_rustc_flags:sysroot=$(RUST_SYSROOT)"],

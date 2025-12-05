@@ -17,17 +17,26 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("//rust/private:common.bzl", "COMMON_PROVIDERS", "rust_common")
+load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
-    "//rust/private:providers.bzl",
+    ":providers.bzl",
     "BuildInfo",
     "CrateGroupInfo",
     "CrateInfo",
     "LintsInfo",
 )
-load("//rust/private:rustc.bzl", "collect_extra_rustc_flags", "is_no_std", "rustc_compile_action")
 load(
-    "//rust/private:utils.bzl",
+    ":rust_allocator_libraries.bzl",
+    "RUSTC_ALLOCATOR_LIBRARIES_ATTRS",
+)
+load(
+    ":rustc.bzl",
+    "collect_extra_rustc_flags",
+    "is_no_std",
+    "rustc_compile_action",
+)
+load(
+    ":utils.bzl",
     "can_build_metadata",
     "can_use_metadata_for_pipelining",
     "compute_crate_name",
@@ -43,10 +52,6 @@ load(
     "get_import_macro_deps",
     "transform_deps",
     "transform_sources",
-)
-load(
-    ":rust_allocator_libraries.bzl",
-    "RUSTC_ALLOCATOR_LIBRARIES_ATTRS",
 )
 
 # TODO(marco): Separate each rule into its own file.
@@ -863,11 +868,11 @@ _experimental_use_cc_common_link_attrs = {
         default = -1,
     ),
     "malloc": attr.label(
-        default = Label("@bazel_tools//tools/cpp:malloc"),
+        default = Label("//rust/private/cc:malloc"),
         doc = """Override the default dependency on `malloc`.
 
 By default, Rust binaries linked with cc_common.link are linked against
-`@bazel_tools//tools/cpp:malloc"`, which is an empty library and the resulting binary will use
+`//rust/private/cc:malloc"`, which is an empty library and the resulting binary will use
 libc's `malloc`. This label must refer to a `cc_library` rule.
 """,
         mandatory = False,
@@ -931,7 +936,7 @@ rust_library = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust library crate.
@@ -1029,7 +1034,7 @@ rust_static_library = rule(
     cfg = _rust_static_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     provides = [
         CcInfo,
@@ -1078,7 +1083,7 @@ rust_shared_library = rule(
     cfg = _rust_shared_library_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     provides = [
         CcInfo,
@@ -1134,7 +1139,7 @@ rust_proc_macro = rule(
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust proc-macro crate.
@@ -1218,7 +1223,7 @@ rust_binary = rule(
     cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust binary crate.
@@ -1340,38 +1345,84 @@ def _common_attrs_for_binary_without_process_wrapper(attrs):
 
     return new_attr
 
+_RustBuiltWithoutProcessWrapperInfo = provider(
+    doc = "A provider identifying the target having been built using a `*_without_process_wrapper` rule variant.",
+    fields = {},
+)
+
+def _rust_binary_without_process_wrapper_impl(ctx):
+    providers = _rust_binary_impl(ctx)
+    return providers + [_RustBuiltWithoutProcessWrapperInfo()]
+
 # Provides an internal rust_{binary,library} to use that we can use to build the process
 # wrapper, this breaks the dependency of rust_* on the process wrapper by
 # setting it to None, which the functions in rustc detect and build accordingly.
 rust_binary_without_process_wrapper = rule(
-    implementation = _rust_binary_impl,
-    provides = COMMON_PROVIDERS,
-    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs | {
-        "platform": attr.label(
-            doc = "Optional platform to transition the binary to.",
-            default = None,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    }),
+    implementation = _rust_binary_without_process_wrapper_impl,
+    doc = "A variant of `rust_binary` that uses a minimal process wrapper for `Rustc` actions.",
+    provides = COMMON_PROVIDERS + [_RustBuiltWithoutProcessWrapperInfo],
+    attrs = _common_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_binary_attrs),
     executable = True,
     fragments = ["cpp"],
-    cfg = _rust_binary_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 
+def _rust_library_without_process_wrapper_impl(ctx):
+    providers = _rust_library_impl(ctx)
+    return providers + [_RustBuiltWithoutProcessWrapperInfo()]
+
 rust_library_without_process_wrapper = rule(
-    implementation = _rust_library_impl,
-    provides = COMMON_PROVIDERS,
+    implementation = _rust_library_without_process_wrapper_impl,
+    doc = "A variant of `rust_library` that uses a minimal process wrapper for `Rustc` actions.",
+    provides = COMMON_PROVIDERS + [_RustBuiltWithoutProcessWrapperInfo],
     attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+)
+
+def _test_attrs_for_binary_without_process_wrapper(attrs):
+    new_attrs = {}
+    new_attrs.update(attrs)
+
+    # Require that `crate` has the correct internal provider.
+    new_attrs["crate"] = attr.label(
+        mandatory = False,
+        providers = [_RustBuiltWithoutProcessWrapperInfo],
+        doc = dedent("""\
+            Target inline tests declared in the given crate
+
+            These tests are typically those that would be held out under
+            `#[cfg(test)]` declarations.
+        """),
+    )
+
+    return new_attrs
+
+def _rust_test_without_process_wrapper_test_impl(ctx):
+    if ctx.attr.srcs:
+        fail("`rust_test_without_process_wrapper_test.srcs` is not allowed. Remove it from {}".format(
+            ctx.label,
+        ))
+    providers = _rust_test_impl(ctx)
+    return providers
+
+rust_test_without_process_wrapper_test = rule(
+    implementation = _rust_test_without_process_wrapper_test_impl,
+    doc = "Unlike other `*_without_process_wrapper` rules, this rule does use the process wrapper but requires it's dependencies were not built with one.",
+    provides = COMMON_PROVIDERS,
+    attrs = _test_attrs_for_binary_without_process_wrapper(_common_attrs | _rust_test_attrs),
+    executable = True,
+    fragments = ["cpp"],
+    test = True,
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
 
@@ -1408,7 +1459,7 @@ rust_test = rule(
     test = True,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Builds a Rust test crate.
