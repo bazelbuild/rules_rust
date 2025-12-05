@@ -727,7 +727,7 @@ tasks:
   # linking gnu libraries.
   # https://github.com/bazelbuild/rules_rust/issues/390
   # cross_compile_linux:
-  #   name: Cross compile example on Linux
+  #   name: Cross compile example on Linux without cc_toolchain
   #   platform: ubuntu2204
   #   working_directory: examples/cross_compile
   #   shell_commands:
@@ -737,7 +737,7 @@ tasks:
   #   test_targets:
   #     - "//..."
   cross_compile_macos:
-    name: Cross compile example on MacOS
+    name: Cross compile example on MacOS without cc_toolchain
     platform: macos_arm64
     working_directory: examples/cross_compile
     shell_commands:
@@ -747,7 +747,7 @@ tasks:
     test_targets:
       - "//..."
   cross_compile_windows:
-    name: Cross compile example on Windows
+    name: Cross compile example on Windows without cc_toolchain
     platform: windows
     working_directory: examples/cross_compile
     batch_commands:
