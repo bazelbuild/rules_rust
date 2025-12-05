@@ -1160,7 +1160,7 @@ def _crate_impl(module_ctx):
                 manifests = {str(module_ctx.path(m)): str(m) for m in cfg.manifests}
 
             packages = {
-                p.package: _package_to_json(p)
+                p.package_alias or p.package: _package_to_json(p)
                 for p in common_specs + repo_specific_specs.get(cfg.name, [])
             }
 
@@ -1426,6 +1426,9 @@ _spec = tag_class(
         "package": attr.string(
             doc = "The explicit name of the package.",
             mandatory = True,
+        ),
+        "package_alias": attr.string(
+            doc = "Alias for the package.",
         ),
         "path": attr.string(
             doc = "The local path of the remote crate. Cannot be used with `version` or `git`.",
