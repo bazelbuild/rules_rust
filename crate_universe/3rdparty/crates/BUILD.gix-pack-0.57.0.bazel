@@ -76,6 +76,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -171,6 +172,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv32imc-unknown-none-elf
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv64gc-unknown-none-elf

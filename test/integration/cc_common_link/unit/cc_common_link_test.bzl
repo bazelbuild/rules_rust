@@ -315,6 +315,10 @@ def _codegen_units_test_targets():
         name = "mock_rustdoc",
         out = "mock_rustdoc.exe",
     )
+    write_file(
+        name = "mock_rust-lld",
+        out = "mock_rust-lld.exe",
+    )
     rust_toolchain(
         name = "codegen_units_toolchain_impl",
         binary_ext = "",
@@ -324,6 +328,8 @@ def _codegen_units_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust-lld",
+        linker_type = "direct",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         extra_rustc_flags = ["-Ccodegen-units=%s" % _TOOLCHAIN_EXTRA_RUSTC_FLAGS_CODEGEN_UNITS],

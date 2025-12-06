@@ -2,7 +2,7 @@
 
 module(
     name = "rules_rust",
-    version = "0.67.0",
+    version = "0.68.0",
 )
 
 ###############################################################################
@@ -67,8 +67,8 @@ use_repo(
     "generated_inputs_in_external_repo",
     "libc",
     "rtra",
-    "rtra__serde-1.0.219",
-    "rtra__serde_json-1.0.143",
+    "rtra__serde-1.0.228",
+    "rtra__serde_json-1.0.145",
     "rtvsc",
     "rtvsc__serde-1.0.228",
     "rtvsc__serde_json-1.0.145",

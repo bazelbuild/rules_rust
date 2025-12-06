@@ -9,9 +9,6 @@ load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS", "get_rust_test_flags")
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-# load("@rules_rust//rust/private:toolchain_utils.bzl", "get_coverage_env")
-
-# buildifier: disable=bzl-visibility
 load(
     "@rules_rust//rust/private:utils.bzl",
     "determine_output_hash",
@@ -334,7 +331,7 @@ rust_wasm_bindgen_test = rule(
     toolchains = [
         str(Label("//:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     test = True,
 )

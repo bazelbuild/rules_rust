@@ -70,17 +70,25 @@ def find_toolchain(ctx):
     """
     return ctx.toolchains[Label("//rust:toolchain_type")]
 
+# A global kill switch to test without a cc toolchain present.
+_FORCE_DISABLE_CC_TOOLCHAIN = False
+
 def find_cc_toolchain(ctx, extra_unsupported_features = tuple()):
     """Extracts a CcToolchain from the current target's context
 
     Args:
         ctx (ctx): The current target's rule context object
-        extra_unsupported_features (sequence of str): Extra featrures to disable
+        extra_unsupported_features (sequence of str): Extra features to disable
 
     Returns:
         tuple: A tuple of (CcToolchain, FeatureConfiguration)
     """
-    cc_toolchain = find_rules_cc_toolchain(ctx)
+    if _FORCE_DISABLE_CC_TOOLCHAIN:
+        return None, None
+
+    cc_toolchain = find_rules_cc_toolchain(ctx, mandatory = False)
+    if not cc_toolchain:
+        return None, None
 
     feature_configuration = cc_common.configure_features(
         ctx = ctx,

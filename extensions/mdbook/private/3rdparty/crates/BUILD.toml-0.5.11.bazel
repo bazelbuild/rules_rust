@@ -73,6 +73,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -96,6 +97,6 @@ rust_library(
     }),
     version = "0.5.11",
     deps = [
-        "@rmdbi__serde-1.0.219//:serde",
+        "@rmdbi__serde-1.0.228//:serde",
     ],
 )

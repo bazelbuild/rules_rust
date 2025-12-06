@@ -92,6 +92,12 @@ rust_library(
             "derive",  # powerpc-unknown-linux-gnu
             "proc-macro",  # powerpc-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "clone-impls",  # riscv64gc-unknown-linux-gnu
+            "default",  # riscv64gc-unknown-linux-gnu
+            "derive",  # riscv64gc-unknown-linux-gnu
+            "proc-macro",  # riscv64gc-unknown-linux-gnu
+        ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "clone-impls",  # s390x-unknown-linux-gnu
             "default",  # s390x-unknown-linux-gnu
@@ -166,6 +172,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -268,6 +275,12 @@ cargo_build_script(
             "default",  # powerpc-unknown-linux-gnu
             "derive",  # powerpc-unknown-linux-gnu
             "proc-macro",  # powerpc-unknown-linux-gnu
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "clone-impls",  # riscv64gc-unknown-linux-gnu
+            "default",  # riscv64gc-unknown-linux-gnu
+            "derive",  # riscv64gc-unknown-linux-gnu
+            "proc-macro",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "clone-impls",  # s390x-unknown-linux-gnu
