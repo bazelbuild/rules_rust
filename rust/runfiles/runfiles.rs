@@ -1,3 +1,4 @@
+#![deny(unused_qualifications)]
 //! Runfiles lookup library for Bazel-built Rust binaries and tests.
 //!
 //! USAGE:
