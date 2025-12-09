@@ -131,7 +131,6 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         tuple: A tuple of the following items:
             - (sequence): A flattened list of C command line flags.
             - (sequence): A flattened list of CXX command line flags.
-            - (sequence): A flattened list of AR command line flags.
             - (dict): C environment variables to be set for this configuration.
     """
     compile_variables = cc_common.create_compile_variables(
@@ -148,17 +147,12 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
         action_name = ACTION_NAMES.cpp_compile,
         variables = compile_variables,
     )
-    cc_ar_args = cc_common.get_memory_inefficient_command_line(
-        feature_configuration = feature_configuration,
-        action_name = ACTION_NAMES.cpp_link_static_library,
-        variables = compile_variables,
-    )
     cc_env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
         variables = compile_variables,
     )
-    return cc_c_args, cc_cxx_args, cc_ar_args, cc_env
+    return cc_c_args, cc_cxx_args, cc_env
 
 def _pwd_flags_sysroot(args):
     """Prefix execroot-relative paths of known arguments with ${pwd}.
@@ -429,12 +423,13 @@ def _cargo_build_script_impl(ctx):
     env["CC"] = "${{pwd}}/{}".format(ctx.executable._fallback_cc.path)
     env["CXX"] = "${{pwd}}/{}".format(ctx.executable._fallback_cxx.path)
     env["AR"] = "${{pwd}}/{}".format(ctx.executable._fallback_ar.path)
+    env["ARFLAGS"] = ""
     env["CFLAGS"] = ""
     env["CXXFLAGS"] = ""
 
     if cc_toolchain:
         # MSVC requires INCLUDE to be set
-        cc_c_args, cc_cxx_args, cc_ar_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
+        cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
         include = cc_env.get("INCLUDE")
         if include:
             env["INCLUDE"] = include
@@ -464,7 +459,9 @@ def _cargo_build_script_impl(ctx):
         # for example, itself derived from the `macos_minimum_os` Bazel argument).
         env["CFLAGS"] = " ".join(_pwd_flags(cc_c_args))
         env["CXXFLAGS"] = " ".join(_pwd_flags(cc_cxx_args))
-        env["ARFLAGS"] = " ".join(_pwd_flags(cc_ar_args))
+        # It may be tempting to forward ARFLAGS, but cc-rs is opinionated enough
+        # that doing so is more likely to hurt than help. If you need to change
+        # ARFLAGS, make changes to cc-rs.
 
     # Inform build scripts of rustc flags
     # https://github.com/rust-lang/cargo/issues/9600

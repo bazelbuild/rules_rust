@@ -58,6 +58,16 @@ def _test_cc_config_impl(ctx):
                     actions = [ACTION_NAMES.cpp_link_static_library],
                     flag_groups = ([
                         flag_group(
+                            # Simulate a case where a toolchain always passes
+                            # rcsD to `ar`.
+                            flags = ["rcsD"],
+                        ),
+                    ]),
+                ),
+                flag_set(
+                    actions = [ACTION_NAMES.cpp_link_static_library],
+                    flag_groups = ([
+                        flag_group(
                             flags = ctx.attr.extra_ar_flags,
                         ),
                     ]),
@@ -207,7 +217,6 @@ def _cc_args_and_env_analysis_test_impl(ctx):
         )
 
     _ENV_VAR_TO_EXPECTED_ARGS = {
-        "ARFLAGS": ctx.attr.expected_arflags,
         "CFLAGS": ctx.attr.expected_cflags,
         "CXXFLAGS": ctx.attr.expected_cxxflags,
     }
@@ -221,13 +230,22 @@ def _cc_args_and_env_analysis_test_impl(ctx):
                 "error: expected '{}' to be in cargo {}: '{}'".format(flag, env_var, actual_flags),
             )
 
+    arflags = cargo_action.env["ARFLAGS"]
+    asserts.equals(
+        env,
+        [],
+        arflags.split(" ") if arflags else [],
+        "ARFLAGS is intentionally always empty. cc-rs tightly controls the " +
+        "archiver flags in such a way that forwarding standard flags as " +
+        "set up by most Bazel C/C++ toolchains is extremely error-prone.",
+    )
+
     return analysistest.end(env)
 
 cc_args_and_env_analysis_test = analysistest.make(
     impl = _cc_args_and_env_analysis_test_impl,
     doc = """An analysistest to examine the custom cargo flags of an cargo_build_script target.""",
     attrs = {
-        "expected_arflags": attr.string_list(default = ["-x"]),
         "expected_cflags": attr.string_list(default = ["-Wall"]),
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
         "legacy_cc_toolchain": attr.bool(default = False),
@@ -392,17 +410,6 @@ def fsanitize_ignorelist_absolute_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         expected_cflags = ["-fsanitize-ignorelist=/test/absolute/path"],
-    )
-
-def ar_flags_test(name):
-    cargo_build_script_with_extra_cc_compile_flags(
-        name = "%s/cargo_build_script" % name,
-        extra_ar_flags = ["-static"],
-    )
-    cc_args_and_env_analysis_test(
-        name = name,
-        target_under_test = "%s/cargo_build_script" % name,
-        expected_arflags = ["-static"],
     )
 
 def legacy_cc_toolchain_test(name):
