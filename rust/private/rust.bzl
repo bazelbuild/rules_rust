@@ -516,14 +516,15 @@ def _rust_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
-    data = getattr(ctx.attr, "data", [])
 
-    env = expand_dict_value_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        data,
-        {},
-    )
+    env = {
+        key: ctx.expand_make_variables(
+            "env",
+            ctx.expand_location(value, ctx.attr.data, short_paths = True),
+            {},
+        )
+        for key, value in ctx.attr.env.items()
+    }
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
