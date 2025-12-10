@@ -5,7 +5,6 @@ pyo3_extension(
     name = "module_prefix",
     srcs = ["bar.rs"],
     edition = "2021",
-    imports = ["."],
     module_name = "foo.bar",
 )
 
