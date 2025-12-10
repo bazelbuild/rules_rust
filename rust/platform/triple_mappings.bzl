@@ -75,6 +75,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "aarch64-unknown-nto-qnx800": _support(std = True, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
 }
 
