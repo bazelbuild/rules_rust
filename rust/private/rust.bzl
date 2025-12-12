@@ -516,6 +516,55 @@ def _rust_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
+
+    # If sharding is enabled and we're using libtest harness, wrap the test binary
+    # with a script that handles test enumeration and shard partitioning
+    if ctx.attr.experimental_enable_sharding and ctx.attr.use_libtest_harness:
+        # Find DefaultInfo and CrateInfo in the providers list
+        # DefaultInfo is first, CrateInfo follows (or TestCrateInfo for staticlib/cdylib)
+        default_info = providers[0]
+        default_info_index = 0
+
+        # Get the test binary from CrateInfo - it's the output of the compiled test
+        crate_info_provider = None
+        for p in providers:
+            if hasattr(p, "output") and hasattr(p, "is_test"):
+                crate_info_provider = p
+                break
+
+        if crate_info_provider:
+            test_binary = crate_info_provider.output
+
+            # Select the appropriate wrapper template based on target OS
+            if toolchain.target_os == "windows":
+                wrapper = ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.bat")
+                wrapper_template = ctx.file._test_sharding_wrapper_windows
+            else:
+                wrapper = ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.sh")
+                wrapper_template = ctx.file._test_sharding_wrapper_unix
+
+            # Generate wrapper script with test binary path substituted
+            ctx.actions.expand_template(
+                template = wrapper_template,
+                output = wrapper,
+                substitutions = {
+                    "{{TEST_BINARY}}": test_binary.short_path,
+                },
+                is_executable = True,
+            )
+
+            # Update runfiles to include both wrapper and test binary
+            new_runfiles = default_info.default_runfiles.merge(
+                ctx.runfiles(files = [test_binary]),
+            )
+
+            # Replace DefaultInfo with wrapper as executable
+            providers[default_info_index] = DefaultInfo(
+                files = default_info.files,
+                runfiles = new_runfiles,
+                executable = wrapper,
+            )
+
     data = getattr(ctx.attr, "data", [])
 
     env = expand_dict_value_locations(
@@ -916,6 +965,22 @@ _rust_test_attrs = {
             Whether to use `libtest`. For targets using this flag, individual tests can be run by using the
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
+        """),
+    ),
+    "experimental_enable_sharding": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            If True, enable support for Bazel test sharding (shard_count attribute).
+
+            When enabled, tests are executed via a wrapper script that:
+            1. Enumerates tests using libtest's --list flag
+            2. Partitions tests across shards based on TEST_SHARD_INDEX/TEST_TOTAL_SHARDS
+            3. Runs only the tests assigned to the current shard
+
+            This attribute only has an effect when use_libtest_harness is True.
+
+            This is experimental and may change in future releases.
         """),
     ),
 } | _coverage_attrs | _experimental_use_cc_common_link_attrs
@@ -1451,6 +1516,14 @@ rust_test = rule(
         ),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+        "_test_sharding_wrapper_unix": attr.label(
+            default = Label("//rust/private:test_sharding_wrapper.sh"),
+            allow_single_file = True,
+        ),
+        "_test_sharding_wrapper_windows": attr.label(
+            default = Label("//rust/private:test_sharding_wrapper.bat"),
+            allow_single_file = True,
         ),
     },
     executable = True,
