@@ -315,3 +315,10 @@ jobs:
           asset_name: cargo-bazel-aarch64-unknown-linux-musl
           asset_path: ${{ github.workspace }}/artifacts/aarch64-unknown-linux-musl/cargo-bazel
           asset_content_type: application/octet-stream
+  publish:
+    needs: [archive, release]
+    uses: ./.github/workflows/publish.yaml
+    with:
+      release_version: ${{ needs.archive.outputs.release_version }}
+    secrets:
+      BCR_PUBLISH_TOKEN: ${{ secrets.BCR_PUBLISH_TOKEN }}
