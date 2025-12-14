@@ -1,0 +1,8 @@
+---
+source: "../test.rs"
+expression: "(\"moo\", \"moooooooo!\")"
+---
+(
+    "moo",
+    "moooooooo!",
+)

@@ -850,6 +850,18 @@ tasks:
     run_targets:
       - "//pkg_a:pkg_a_binary"
       - "//pkg_b:pkg_b_binary"
+
+  example_snapshot_test:
+    name: Snapshot test example
+    platform: ubuntu2204
+    working_directory: examples/snapshot_test
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    run_targets:
+      - "//:test_update_snapshots"
+
   ubuntu2204_bzlmod_bcr:
     name: bzlmod BCR presubmit
     platform: ubuntu2204

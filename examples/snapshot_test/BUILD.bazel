@@ -1,0 +1,11 @@
+load("//:defs.bzl", "rust_snapshot_test")
+
+rust_snapshot_test(
+    name = "test",
+    srcs = ["test.rs"],
+    crate_root = "test.rs",
+    snapshots_dir = "snapshots",
+    deps = [
+        "@crate_index//:insta",
+    ],
+)

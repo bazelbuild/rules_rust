@@ -1,0 +1,12 @@
+[package]
+name = "snapshot_test"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[[test]]
+name = "test"
+path = "test.rs"
+
+[dependencies]
+insta = "1.44.3"
