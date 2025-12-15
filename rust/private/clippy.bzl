@@ -117,7 +117,20 @@ _RUST_CLIPPY_ACTION_MACRO_ARGS = """
         clippy_diagnostics_file (File): File to output diagnostics to. If None, no diagnostics will be written
 """
 
-def rust_create_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, exit_code_file = None, forward_clippy_exit_code = True, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_create_clippy_action(
+        ctx,
+        clippy_executable,
+        process_wrapper,
+        crate_info,
+        config,
+        output = None,
+        success_marker = None,
+        exit_code_file = None,
+        forward_clippy_exit_code = True,
+        cap_at_warnings = False,
+        extra_clippy_flags = [],
+        error_format = None,
+        clippy_diagnostics_file = None):
     """Calculate inputs and arguments to run clippy with the specified parameters.
 
     Args: {args}
@@ -125,6 +138,7 @@ def rust_create_clippy_action(ctx, clippy_executable, process_wrapper, crate_inf
     Returns:
         A struct indicating how to run clippy. The fields of the struct match the fields of `ctx.action.run`.
     """.format(args = _RUST_CLIPPY_ACTION_MACRO_ARGS)
+    print("BL: first line flags ={}".format(extra_clippy_flags))
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -191,6 +205,8 @@ def rust_create_clippy_action(ctx, clippy_executable, process_wrapper, crate_inf
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
+    print("BL: inside flags ={}".format(extra_clippy_flags))
+
     # Then append the clippy flags specified from the command line, so they override what is
     # specified on the library.
     clippy_flags += extra_clippy_flags
@@ -247,7 +263,20 @@ def rust_create_clippy_action(ctx, clippy_executable, process_wrapper, crate_inf
         toolchain = "@rules_rust//rust:toolchain_type",
     )
 
-def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(
+        ctx,
+        clippy_executable,
+        process_wrapper,
+        crate_info,
+        config,
+        output = None,
+        success_marker = None,
+        exit_code_file = None,
+        forward_clippy_exit_code = True,
+        cap_at_warnings = False,
+        extra_clippy_flags = [],
+        error_format = None,
+        clippy_diagnostics_file = None):
     """Run clippy with the specified parameters.
 
     Args: {args}
@@ -255,18 +284,21 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     Returns:
         None
     """.format(args = _RUST_CLIPPY_ACTION_MACRO_ARGS)
+    print("BL: flags ={}".format(extra_clippy_flags))
     clippy_action = rust_create_clippy_action(
-        ctx,
-        clippy_executable,
-        process_wrapper,
-        crate_info,
-        config,
-        output,
-        success_marker,
-        cap_at_warnings,
-        extra_clippy_flags,
-        error_format,
-        clippy_diagnostics_file,
+        ctx = ctx,
+        clippy_executable = clippy_executable,
+        process_wrapper = process_wrapper,
+        crate_info = crate_info,
+        config = config,
+        output = output,
+        success_marker = success_marker,
+        exit_code_file = exit_code_file,
+        forward_clippy_exit_code = forward_clippy_exit_code,
+        cap_at_warnings = cap_at_warnings,
+        extra_clippy_flags = extra_clippy_flags,
+        error_format = error_format,
+        clippy_diagnostics_file = clippy_diagnostics_file,
     )
 
     ctx.actions.run(
