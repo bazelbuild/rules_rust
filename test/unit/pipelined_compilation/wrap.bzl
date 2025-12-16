@@ -59,7 +59,7 @@ def _wrap_impl(ctx):
     rust_metadata = None
     if ctx.attr.generate_metadata:
         rust_metadata = ctx.actions.declare_file(rust_metadata_name)
-    return rustc_compile_action(
+    return list(rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -83,7 +83,7 @@ def _wrap_impl(ctx):
             is_test = False,
         ),
         output_hash = output_hash,
-    )
+    ).values())
 
 wrap = rule(
     implementation = _wrap_impl,

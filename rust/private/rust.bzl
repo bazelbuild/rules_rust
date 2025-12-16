@@ -218,7 +218,7 @@ def _rust_library_common(ctx, crate_type):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    return rustc_compile_action(
+    return list(rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -246,7 +246,7 @@ def _rust_library_common(ctx, crate_type):
             owner = ctx.label,
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = False),
         ),
-    )
+    ).values())
 
 def _rust_binary_impl(ctx):
     """The implementation of the `rust_binary` rule
@@ -312,16 +312,16 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-    providers.append(RunEnvironmentInfo(
+    providers["RunEnvironmentInfo"] = RunEnvironmentInfo(
         environment = expand_dict_value_locations(
             ctx,
             ctx.attr.env,
             ctx.attr.data,
             {},
         ),
-    ))
+    )
 
-    return providers
+    return list(providers.values())
 
 def get_rust_test_flags(attr):
     """Determine the desired rustc flags for test targets.
@@ -520,19 +520,14 @@ def _rust_test_impl(ctx):
     # If sharding is enabled and we're using libtest harness, wrap the test binary
     # with a script that handles test enumeration and shard partitioning
     if ctx.attr.experimental_enable_sharding and ctx.attr.use_libtest_harness:
-        # Find DefaultInfo and CrateInfo in the providers list
-        # DefaultInfo is first, CrateInfo follows (or TestCrateInfo for staticlib/cdylib)
-        default_info = providers[0]
-        default_info_index = 0
+        default_info = providers["DefaultInfo"]
 
-        # Get the test binary from CrateInfo - it's the output of the compiled test
-        crate_info_provider = None
-        for p in providers:
-            if hasattr(p, "output") and hasattr(p, "is_test"):
-                crate_info_provider = p
-                break
-
+        # Get the test binary from CrateInfo (or TestCrateInfo for staticlib/cdylib)
+        crate_info_provider = providers.get("crate_info") or providers.get("test_crate_info")
         if crate_info_provider:
+            # TestCrateInfo wraps the actual CrateInfo
+            if hasattr(crate_info_provider, "crate"):
+                crate_info_provider = crate_info_provider.crate
             test_binary = crate_info_provider.output
 
             # Select the appropriate wrapper template based on target OS
@@ -559,7 +554,7 @@ def _rust_test_impl(ctx):
             )
 
             # Replace DefaultInfo with wrapper as executable
-            providers[default_info_index] = DefaultInfo(
+            providers["DefaultInfo"] = DefaultInfo(
                 files = default_info.files,
                 runfiles = new_runfiles,
                 executable = wrapper,
@@ -593,12 +588,12 @@ def _rust_test_impl(ctx):
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-    providers.append(RunEnvironmentInfo(
+    providers["RunEnvironmentInfo"] = RunEnvironmentInfo(
         environment = env,
         inherited_environment = ctx.attr.env_inherit,
-    ))
+    )
 
-    return providers
+    return list(providers.values())
 
 def _rust_library_group_impl(ctx):
     dep_variant_infos = []
