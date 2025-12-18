@@ -1639,6 +1639,7 @@ def rustc_compile_action(
             compilation_outputs = compilation_outputs,
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
+            main_output = crate_info.output,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
             additional_outputs = additional_linker_outputs,
         )
