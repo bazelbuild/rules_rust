@@ -1502,10 +1502,12 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
-    if ctx.executable._process_wrapper:
+    process_wrapper = toolchain.process_wrapper
+
+    if process_wrapper:
         # Run as normal
         ctx.actions.run(
-            executable = ctx.executable._process_wrapper,
+            executable = process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
@@ -1523,7 +1525,7 @@ def rustc_compile_action(
         )
         if args_metadata:
             ctx.actions.run(
-                executable = ctx.executable._process_wrapper,
+                executable = process_wrapper,
                 inputs = compile_inputs,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
@@ -1538,12 +1540,12 @@ def rustc_compile_action(
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
             )
-    elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
+    else:
         # Run without process_wrapper
         if build_env_files or build_flags_files or stamp or build_metadata:
             fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
         ctx.actions.run(
-            executable = ctx.executable._bootstrap_process_wrapper,
+            executable = toolchain.bootstrap_process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
@@ -1559,8 +1561,6 @@ def rustc_compile_action(
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
         )
-    else:
-        fail("No process wrapper was defined for {}".format(ctx.label))
 
     if experimental_use_cc_common_link:
         # Wrap the main `.o` file into a compilation output suitable for
