@@ -97,12 +97,6 @@ wrap = rule(
         "_error_format": attr.label(
             default = Label("//rust/settings:error_format"),
         ),
-        "_process_wrapper": attr.label(
-            default = Label("//util/process_wrapper"),
-            executable = True,
-            allow_single_file = True,
-            cfg = "exec",
-        ),
     },
     toolchains = [
         "@rules_rust//rust:toolchain",

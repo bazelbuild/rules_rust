@@ -1795,7 +1795,7 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
-        always_use_param_file = not ctx.executable._process_wrapper,
+        always_use_param_file = toolchain._bootstrapping,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
     )
 
@@ -1877,10 +1877,14 @@ def rustc_compile_action(
     if use_split_debuginfo:
         action_outputs.append(dwo_outputs)  # buildifier: disable=uninitialized
 
-    if ctx.executable._process_wrapper:
+    process_wrapper = toolchain.process_wrapper
+    if not process_wrapper:
+        fail("No process wrapper was defined for {}".format(ctx.label))
+
+    if not toolchain._bootstrapping:
         # Run as normal
         ctx.actions.run(
-            executable = ctx.executable._process_wrapper,
+            executable = process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
@@ -1898,7 +1902,7 @@ def rustc_compile_action(
         )
         if args_metadata:
             ctx.actions.run(
-                executable = ctx.executable._process_wrapper,
+                executable = process_wrapper,
                 inputs = compile_inputs_metadata,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
@@ -1913,12 +1917,12 @@ def rustc_compile_action(
                 toolchain = "@rules_rust//rust:toolchain_type",
                 execution_requirements = {"supports-path-mapping": ""} if args_metadata.supports_path_mapping else None,
             )
-    elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
+    else:
         # Run without process_wrapper
         if build_env_files or build_flags_files or stamp or build_metadata:
             fail("build_env_files, build_flags_files, stamp, build_metadata are not supported when building without process_wrapper")
         ctx.actions.run(
-            executable = ctx.executable._bootstrap_process_wrapper,
+            executable = process_wrapper,
             inputs = compile_inputs,
             outputs = action_outputs,
             env = env,
@@ -1934,8 +1938,6 @@ def rustc_compile_action(
             resource_set = get_rustc_resource_set(toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
-    else:
-        fail("No process wrapper was defined for {}".format(ctx.label))
 
     cco_args = {}
     if experimental_use_cc_common_link:

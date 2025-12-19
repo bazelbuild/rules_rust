@@ -328,6 +328,7 @@ def _codegen_units_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        process_wrapper = "@rules_rust//util/process_wrapper",
         linker = ":mock_rust-lld",
         linker_type = "direct",
         staticlib_ext = ".a",

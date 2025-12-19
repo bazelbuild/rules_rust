@@ -65,6 +65,7 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
     return srcs
 
 def _perform_check(edition, srcs, ctx):
+    rust_toolchain = ctx.toolchains[Label("//rust:toolchain_type")]
     rustfmt_toolchain = ctx.toolchains[Label("//rust/rustfmt:toolchain_type")]
 
     config = ctx.file._config
@@ -81,7 +82,7 @@ def _perform_check(edition, srcs, ctx):
     args.add_all(srcs)
 
     ctx.actions.run(
-        executable = ctx.executable._process_wrapper,
+        executable = rust_toolchain.process_wrapper,
         inputs = srcs + [config],
         outputs = [marker],
         tools = [rustfmt_toolchain.all_files],
@@ -173,12 +174,6 @@ generated source files are also ignored by this aspect.
             allow_single_file = True,
             default = Label("//rust/settings:rustfmt.toml"),
         ),
-        "_process_wrapper": attr.label(
-            doc = "A process wrapper for running rustfmt on all platforms",
-            cfg = "exec",
-            executable = True,
-            default = Label("//util/process_wrapper"),
-        ),
     },
     required_providers = [
         [rust_common.crate_info],
@@ -187,6 +182,7 @@ generated source files are also ignored by this aspect.
     requires = [rustfmt_srcs_aspect],
     fragments = ["cpp"],
     toolchains = [
+        str(Label("//rust:toolchain_type")),
         str(Label("//rust/rustfmt:toolchain_type")),
     ],
 )
