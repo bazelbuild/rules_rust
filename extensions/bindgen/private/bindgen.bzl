@@ -472,12 +472,6 @@ rust_bindgen = rule(
             doc = "Whether to create a separate .c file for static fns. Requires nightly toolchain, and a header that actually needs this feature (otherwise bindgen won't generate the file and Bazel complains).",
             default = False,
         ),
-        "_process_wrapper": attr.label(
-            default = Label("@rules_rust//util/process_wrapper"),
-            executable = True,
-            allow_single_file = True,
-            cfg = "exec",
-        ),
     },
     outputs = {"out": "%{name}.rs"},
     fragments = ["cpp"],
