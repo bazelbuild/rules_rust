@@ -216,8 +216,8 @@ def _rust_bindgen_impl(ctx):
     toolchain = ctx.toolchains[Label("//:toolchain_type")]
     bindgen_bin = toolchain.bindgen
     clang_bin = toolchain.clang
-    libclang = toolchain.libclang
-    libstdcxx = toolchain.libstdcxx
+    libclang = getattr(toolchain, "libclang", None)
+    libstdcxx = getattr(toolchain, "libstdcxx", None)
 
     output = ctx.outputs.out
 
@@ -225,13 +225,15 @@ def _rust_bindgen_impl(ctx):
 
     tools = depset(([clang_bin] if clang_bin else []), transitive = [cc_toolchain.all_files])
 
-    # libclang should only have 1 output file
-    libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
-
     env = {
-        "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+
+    if libclang:
+        # libclang should only have 1 output file
+        libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
+        env["LIBCLANG_PATH"] = libclang_dir
+
     if clang_bin:
         env["CLANG_PATH"] = clang_bin.path
 
@@ -378,8 +380,9 @@ def _rust_bindgen_impl(ctx):
             [header],
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
-                _get_libs_for_static_executable(libclang),
             ] + ([
+                _get_libs_for_static_executable(libclang),
+            ] if libclang else []) + ([
                 _get_libs_for_static_executable(libstdcxx),
             ] if libstdcxx else []),
         ),
@@ -529,6 +532,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             cfg = "exec",
             providers = [CcInfo],
             allow_files = True,
+            mandatory = False,
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",
