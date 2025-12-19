@@ -211,7 +211,7 @@ def _rust_proto_compile(protos, descriptor_sets, imports, crate_name, ctx, is_gr
             crate_name,
             output_hash,
         ))
-        rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+        rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rust_metadata)
         metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     # Gather all dependencies for compilation

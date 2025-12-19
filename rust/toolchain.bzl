@@ -393,6 +393,11 @@ def _rust_toolchain_impl(ctx):
     no_std = ctx.attr._no_std[BuildSettingInfo].value
     lto = ctx.attr.lto[RustLtoInfo]
 
+    if not ctx.attr.process_wrapper:
+        fail("rust_toolchain.process_wrapper must be set. Please update {}".format(
+            ctx.label,
+        ))
+
     experimental_use_global_allocator = ctx.attr._experimental_use_global_allocator[BuildSettingInfo].value
     if _experimental_use_cc_common_link(ctx):
         if experimental_use_global_allocator and not ctx.attr.global_allocator_library:
@@ -598,6 +603,7 @@ def _rust_toolchain_impl(ctx):
         extra_rustc_flags = expanded_extra_rustc_flags,
         extra_rustc_flags_for_crate_types = ctx.attr.extra_rustc_flags_for_crate_types,
         extra_exec_rustc_flags = expanded_extra_exec_rustc_flags,
+        process_wrapper = ctx.executable.process_wrapper if ctx.attr.process_wrapper else None,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
@@ -621,6 +627,7 @@ def _rust_toolchain_impl(ctx):
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
+        _bootstrapping = ctx.attr.bootstrapping,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
         _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
         _experimental_use_allocator_libraries_with_mangled_symbols_setting = ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols_setting[BuildSettingInfo].value,
@@ -641,6 +648,9 @@ rust_toolchain = rule(
         "binary_ext": attr.string(
             doc = "The extension for binaries created from rustc.",
             mandatory = True,
+        ),
+        "bootstrapping": attr.bool(
+            doc = "Internal attribute, set when bootstrapping process_wrapper. Do not use.",
         ),
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
@@ -766,6 +776,13 @@ rust_toolchain = rule(
         ),
         "per_crate_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
+        ),
+        "process_wrapper": attr.label(
+            doc = "A process wrapper for running rustc on all platforms.",
+            executable = True,
+            allow_single_file = True,
+            cfg = "exec",
+            mandatory = True,
         ),
         "require_explicit_unstable_features": attr.label(
             default = Label(
@@ -907,6 +924,7 @@ rust_toolchain(
     rust_doc = "@rust_cpuX//:rustdoc",
     rust_std = "@rust_cpuX//:rust_std",
     rustc = "@rust_cpuX//:rustc",
+    process_wrapper = "@rules_rust//util/process_wrapper",
     rustc_lib = "@rust_cpuX//:rustc_lib",
     staticlib_ext = ".a",
     stdlib_linkflags = ["-lpthread", "-ldl"],
@@ -939,6 +957,7 @@ To use a platform-specific linker, you can use a `select()` in the `linker` attr
 rust_toolchain(
     name = "rust_toolchain_impl",
     # ... other attributes ...
+    process_wrapper = "@rules_rust//util/process_wrapper",
     linker = select({
         "@platforms//os:linux": "//tools:rust-lld-linux",
         "@platforms//os:windows": "//tools:rust-lld-windows",

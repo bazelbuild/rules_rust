@@ -196,7 +196,7 @@ def _compile_rust(
             extension = ".rmeta",
         )
         rmeta = ctx.actions.declare_file(rmeta_name)
-        rustc_rmeta_output = generate_output_diagnostics(ctx, rmeta)
+        rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rmeta)
         metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     providers = rustc_compile_action(

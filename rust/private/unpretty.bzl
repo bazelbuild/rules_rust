@@ -213,7 +213,7 @@ def _rust_unpretty_aspect_impl(target, ctx):
         args.rustc_flags.add("-Zunpretty={}".format(mode))
 
         ctx.actions.run(
-            executable = ctx.executable._process_wrapper,
+            executable = toolchain.process_wrapper,
             inputs = compile_inputs,
             outputs = [unpretty_out],
             env = env,

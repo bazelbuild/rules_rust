@@ -123,7 +123,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
         proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
         aliases = {},
         output = output,
-        rustc_output = generate_output_diagnostics(ctx, output),
+        rustc_output = generate_output_diagnostics(ctx, toolchain, output),
         edition = crate.edition,
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,
