@@ -18,6 +18,7 @@ rust_toolchain(
     extra_rustc_flags = [
         "-Clinker-flavor=ld64.lld",
     ],
+    process_wrapper = "@rules_rust//util/process_wrapper",
     rust_doc = "@nix_rust//:rustdoc",
     rust_std = "@nix_rust//:rust_std-aarch64-apple-ios",
     rustc = "@nix_rust//:rustc",

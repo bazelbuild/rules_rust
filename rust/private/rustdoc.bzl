@@ -164,7 +164,7 @@ def rustdoc_compile_action(
     all_inputs = depset([crate_info.output], transitive = [compile_inputs, depset(html_input_files)])
 
     return struct(
-        executable = ctx.executable._process_wrapper,
+        executable = toolchain.process_wrapper,
         inputs = all_inputs,
         env = env,
         arguments = args.all,
@@ -364,13 +364,6 @@ rust_doc = rule(
         ),
         "_error_format": attr.label(
             default = Label("//rust/settings:error_format"),
-        ),
-        "_process_wrapper": attr.label(
-            doc = "A process wrapper for running rustdoc on all platforms",
-            default = Label("@rules_rust//util/process_wrapper"),
-            executable = True,
-            allow_single_file = True,
-            cfg = "exec",
         ),
         "_zipper": attr.label(
             doc = "A Bazel provided tool for creating archives",

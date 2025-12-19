@@ -101,13 +101,12 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(ctx, clippy_executable, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
     """Run clippy with the specified parameters.
 
     Args:
         ctx (ctx): The aspect's context object. This function should not read ctx.attr, but it might read ctx.rule.attr
         clippy_executable (File): The clippy executable to run
-        process_wrapper (File): An executable process wrapper that can run clippy, usually @rules_rust//utils/process_wrapper
         crate_info (CrateInfo): The source crate information
         config (File): The clippy configuration file. Reference: https://doc.rust-lang.org/clippy/configuration.html#configuring-clippy
         output (File): The output file for clippy stdout/stderr. If None, no output will be captured
@@ -224,7 +223,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     compile_inputs = depset([config], transitive = [compile_inputs])
 
     ctx.actions.run(
-        executable = process_wrapper,
+        executable = toolchain.process_wrapper,
         inputs = compile_inputs,
         outputs = outputs + [x for x in [clippy_diagnostics_file] if x],
         env = env,
@@ -279,7 +278,6 @@ def _clippy_aspect_impl(target, ctx):
     rust_clippy_action(
         ctx = ctx,
         clippy_executable = toolchain.clippy_driver,
-        process_wrapper = ctx.executable._process_wrapper,
         crate_info = crate_info,
         config = ctx.file._config,
         output = clippy_out,
@@ -346,12 +344,6 @@ rust_clippy_aspect = aspect(
         ),
         "_per_crate_rustc_flag": attr.label(
             default = Label("//rust/settings:experimental_per_crate_rustc_flag"),
-        ),
-        "_process_wrapper": attr.label(
-            doc = "A process wrapper for running clippy on all platforms",
-            default = Label("//util/process_wrapper"),
-            executable = True,
-            cfg = "exec",
         ),
     },
     provides = [ClippyInfo],
