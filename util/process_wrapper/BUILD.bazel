@@ -1,8 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("//rust:defs.bzl", "rust_test")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
+load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper", "rust_test_without_process_wrapper_test")
 load("//util/process_wrapper/private:bootstrap_process_wrapper.bzl", "bootstrap_process_wrapper")
 
 config_setting(
@@ -50,7 +49,7 @@ rust_binary_without_process_wrapper(
     ],
 )
 
-rust_test(
+rust_test_without_process_wrapper_test(
     name = "process_wrapper_test",
     crate = ":process_wrapper",
     edition = "2018",

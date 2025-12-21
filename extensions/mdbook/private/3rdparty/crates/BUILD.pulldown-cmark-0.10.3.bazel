@@ -78,6 +78,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -101,8 +102,8 @@ rust_library(
     }),
     version = "0.10.3",
     deps = [
-        "@rmdbi__bitflags-2.9.2//:bitflags",
-        "@rmdbi__memchr-2.7.5//:memchr",
+        "@rmdbi__bitflags-2.10.0//:bitflags",
+        "@rmdbi__memchr-2.7.6//:memchr",
         "@rmdbi__pulldown-cmark-0.10.3//:build_script_build",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
         "@rmdbi__unicase-2.8.1//:unicase",

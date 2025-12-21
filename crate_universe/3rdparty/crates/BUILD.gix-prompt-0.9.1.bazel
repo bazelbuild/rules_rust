@@ -70,6 +70,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -158,6 +159,10 @@ rust_library(
             "@cui__rustix-0.38.41//:rustix",  # cfg(unix)
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
+            "@cui__parking_lot-0.12.1//:parking_lot",  # cfg(unix)
+            "@cui__rustix-0.38.41//:rustix",  # cfg(unix)
+        ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
             "@cui__parking_lot-0.12.1//:parking_lot",  # cfg(unix)
             "@cui__rustix-0.38.41//:rustix",  # cfg(unix)
         ],

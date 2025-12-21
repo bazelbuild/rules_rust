@@ -1,4 +1,2 @@
 /bazel-*
-.DS_Store
-target-bzl
 user.bazelrc

@@ -172,6 +172,12 @@ def _define_targets():
         content = [],
         is_executable = True,
     )
+    write_file(
+        name = "mock_rust_lld",
+        out = "mock_rust_lld.exe",
+        content = [],
+        is_executable = True,
+    )
 
     rust_toolchain(
         name = "rust_extra_flags_toolchain",
@@ -182,6 +188,7 @@ def _define_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         extra_rustc_flags = [TOOLCHAIN_FLAG],

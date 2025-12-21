@@ -75,6 +75,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
@@ -99,9 +100,9 @@ rust_library(
     version = "0.8.9",
     deps = [
         "@rmdbi__new_debug_unreachable-1.0.6//:debug_unreachable",
-        "@rmdbi__parking_lot-0.12.4//:parking_lot",
+        "@rmdbi__parking_lot-0.12.5//:parking_lot",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
         "@rmdbi__precomputed-hash-0.1.1//:precomputed_hash",
-        "@rmdbi__serde-1.0.219//:serde",
+        "@rmdbi__serde-1.0.228//:serde",
     ],
 )

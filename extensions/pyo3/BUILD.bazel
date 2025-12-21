@@ -7,7 +7,6 @@ exports_files([
     ".pylintrc.toml",
     "defs.bzl",
     "MODULE.bazel",
-    "version.bzl",
 ])
 
 toolchain_type(

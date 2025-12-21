@@ -75,6 +75,10 @@ rust_library(
             "extra-traits",  # powerpc-unknown-linux-gnu
             "visit-mut",  # powerpc-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "extra-traits",  # riscv64gc-unknown-linux-gnu
+            "visit-mut",  # riscv64gc-unknown-linux-gnu
+        ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "extra-traits",  # s390x-unknown-linux-gnu
             "visit-mut",  # s390x-unknown-linux-gnu
@@ -137,6 +141,7 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
