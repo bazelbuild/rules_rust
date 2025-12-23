@@ -1,0 +1,3 @@
+load(":windows_stdlib_test.bzl", "windows_stdlib_test_suite")
+
+windows_stdlib_test_suite(name = "windows_stdlib_test_suite")
