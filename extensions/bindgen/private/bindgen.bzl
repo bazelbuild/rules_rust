@@ -528,7 +528,7 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             default = True,
         ),
         "libclang": attr.label(
-            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            doc = "A cc_library providing bindgen's runtime dependency on libclang. This attribute is required for hermeticity when bindgen is dynamically linked. If None, bindgen must be statically linked; else, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             allow_files = True,
