@@ -60,7 +60,7 @@ jobs:
           - os: ubuntu-22.04
             env:
               TARGET: "s390x-unknown-linux-gnu"
-          - os: macOS-13
+          - os: macos-15-intel
             env:
               TARGET: "x86_64-apple-darwin"
           - os: ubuntu-22.04
@@ -89,13 +89,17 @@ jobs:
           TARGET: "${{ matrix.env.TARGET }}"
       - name: Setup macos build tooling
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.2.0.app/Contents/Developer/
+          ls -la /Applications/
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer/
+          xcodebuild -showsdks
           # Set SDK environment variables
-          echo "SDKROOT=$(xcrun -sdk macosx14.2 --show-sdk-path)" >> $GITHUB_ENV
-          MACOSX_DEPLOYMENT_TARGET="$(xcrun -sdk macosx14.2 --show-sdk-platform-version)"
+          echo "SDKROOT=$(xcrun -sdk ${{ env.TARGET_SDK }} --show-sdk-path)" >> $GITHUB_ENV
+          MACOSX_DEPLOYMENT_TARGET="$(xcrun -sdk ${{ env.TARGET_SDK }} --show-sdk-platform-version)"
           if [[ -n "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
             echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
           fi
+        env:
+          TARGET_SDK: macosx15.1
         if: startswith(matrix.os, 'macos')
       - name: Setup Windows Bazelrc
         run: |
