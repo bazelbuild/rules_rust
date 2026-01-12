@@ -98,9 +98,9 @@ rust_library(
     }),
     version = "0.6.0",
     deps = [
-        "@rmdbi__log-0.4.28//:log",
+        "@rmdbi__log-0.4.29//:log",
         "@rmdbi__notify-8.2.0//:notify",
         "@rmdbi__notify-types-2.0.0//:notify_types",
-        "@rmdbi__tempfile-3.23.0//:tempfile",
+        "@rmdbi__tempfile-3.24.0//:tempfile",
     ],
 )

@@ -96,6 +96,6 @@ rust_library(
     deps = [
         "@rmdbi__bytes-1.11.0//:bytes",
         "@rmdbi__fnv-1.0.7//:fnv",
-        "@rmdbi__itoa-1.0.15//:itoa",
+        "@rmdbi__itoa-1.0.17//:itoa",
     ],
 )

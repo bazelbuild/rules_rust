@@ -101,8 +101,8 @@ rust_library(
     version = "0.21.0",
     deps = [
         "@rmdbi__futures-util-0.3.31//:futures_util",
-        "@rmdbi__log-0.4.28//:log",
-        "@rmdbi__tokio-1.48.0//:tokio",
+        "@rmdbi__log-0.4.29//:log",
+        "@rmdbi__tokio-1.49.0//:tokio",
         "@rmdbi__tungstenite-0.21.0//:tungstenite",
     ],
 )

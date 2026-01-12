@@ -98,6 +98,6 @@ rust_library(
         "@rmdbi__html5ever-0.35.0//:html5ever",
         "@rmdbi__maplit-1.0.2//:maplit",
         "@rmdbi__tendril-0.4.3//:tendril",
-        "@rmdbi__url-2.5.7//:url",
+        "@rmdbi__url-2.5.8//:url",
     ],
 )

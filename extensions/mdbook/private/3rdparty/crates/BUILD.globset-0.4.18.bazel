@@ -100,7 +100,7 @@ rust_library(
     deps = [
         "@rmdbi__aho-corasick-1.1.4//:aho_corasick",
         "@rmdbi__bstr-1.12.1//:bstr",
-        "@rmdbi__log-0.4.28//:log",
+        "@rmdbi__log-0.4.29//:log",
         "@rmdbi__regex-automata-0.4.13//:regex_automata",
         "@rmdbi__regex-syntax-0.8.8//:regex_syntax",
     ],

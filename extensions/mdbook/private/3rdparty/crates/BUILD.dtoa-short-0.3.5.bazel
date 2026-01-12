@@ -94,6 +94,6 @@ rust_library(
     }),
     version = "0.3.5",
     deps = [
-        "@rmdbi__dtoa-1.0.10//:dtoa",
+        "@rmdbi__dtoa-1.0.11//:dtoa",
     ],
 )

@@ -96,7 +96,7 @@ rust_library(
     deps = [
         "@rmdbi__phf_generator-0.11.3//:phf_generator",
         "@rmdbi__phf_shared-0.11.3//:phf_shared",
-        "@rmdbi__proc-macro2-1.0.103//:proc_macro2",
-        "@rmdbi__quote-1.0.42//:quote",
+        "@rmdbi__proc-macro2-1.0.105//:proc_macro2",
+        "@rmdbi__quote-1.0.43//:quote",
     ],
 )

@@ -97,7 +97,7 @@ rust_library(
     }),
     version = "0.35.0",
     deps = [
-        "@rmdbi__log-0.4.28//:log",
+        "@rmdbi__log-0.4.29//:log",
         "@rmdbi__markup5ever-0.35.0//:markup5ever",
     ],
 )
