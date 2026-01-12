@@ -753,12 +753,12 @@ def collect_inputs(
     # Pass linker inputs only for linking-like actions, not for example where
     # the output is rlib. This avoids quadratic behavior where transitive noncrates are
     # flattened on each transitive rust_library dependency.
-    additional_transitive_inputs = []
+    libs_from_linker_inputs = []
     ambiguous_libs = {}
     if crate_info.type not in ("lib", "rlib"):
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
-        additional_transitive_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
+        libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
             additional_input
             for linker_input in linker_inputs
             for additional_input in linker_input.additional_inputs
@@ -802,16 +802,17 @@ def collect_inputs(
 
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
-        additional_transitive_inputs,
+        ([] if experimental_use_cc_common_link else libs_from_linker_inputs),
         transitive = [
-            runtime_libs,
-            linker_depset,
             crate_info.srcs,
             transitive_crate_outputs,
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
             toolchain.all_files,
-        ],
+        ] + ([] if experimental_use_cc_common_link else [
+            runtime_libs,
+            linker_depset,
+        ]),
     )
 
     # Register linkstamps when linking with rustc (when linking with
