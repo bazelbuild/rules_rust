@@ -59,9 +59,6 @@ fn run_buildrs() -> Result<(), String> {
     // For some reason Google's RBE does not create the output directory, force create it.
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
-    {
-        std::fs::File::create(out_dir_abs.join(".rbe-marker")).unwrap();
-    }
 
     let mut exec_root_links = Vec::new();
     if should_symlink_exec_root() {
