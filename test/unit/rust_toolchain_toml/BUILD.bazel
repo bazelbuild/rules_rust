@@ -1,0 +1,3 @@
+load(":rust_toolchain_toml_test.bzl", "rust_toolchain_toml_test_suite")
+
+rust_toolchain_toml_test_suite(name = "rust_toolchain_toml_tests")
