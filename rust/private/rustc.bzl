@@ -1483,6 +1483,18 @@ def rustc_compile_action(
         interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
         outputs.append(interface_library)
 
+    extra_outdirs_outputs = []
+    if hasattr(ctx.attr, "extra_outdirs"):
+        extra_outdirs_outputs = [ctx.actions.declare_directory(outdir) for outdir in ctx.attr.extra_outdirs]
+        outputs.extend(extra_outdirs_outputs)
+
+        # Pass the output directory paths to proc macros via environment variables
+        # Format: EXTRA_OUTDIRS_PATHS=dir1:path1,dir2:path2
+        extra_outdirs_paths = []
+        for outdir, outdir_output in zip(ctx.attr.extra_outdirs, extra_outdirs_outputs):
+            extra_outdirs_paths.append("{}:{}".format(outdir, outdir_output.path))
+        env["EXTRA_OUTDIRS_PATHS"] = ",".join(extra_outdirs_paths)
+
     # The action might generate extra output that we don't want to include in the `DefaultInfo` files.
     action_outputs = list(outputs)
     if rustc_output:
