@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "ring_demo",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates//:ring",
+    ],
+    edition = "2021",
+) 
