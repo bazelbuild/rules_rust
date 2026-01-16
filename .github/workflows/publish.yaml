@@ -1,0 +1,41 @@
+# See https://github.com/bazel-contrib/publish-to-bcr
+name: Publish to BCR
+
+on:
+  # Allow the publish workflow to be called from another workflow.
+  # In this case, we trigger it from the release.yaml workflow.
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+    secrets:
+      BCR_PUBLISH_TOKEN:
+        required: true
+  # In case of problems, let release engineers retry by manually dispatching
+  # the workflow from the GitHub UI.
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        type: string
+        description: Release version to publish to the Bazel Central Registry
+      templates_ref:
+        default: ''
+        type: string
+        description: Override the ref to read .bcr templates from
+jobs:
+  publish:
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.1.0
+    with:
+      attest: false
+      tag_name: ${{ inputs.release_version }}
+      # Tags don't include a "v" prefix
+      tag_prefix: ""
+      # GitHub repository which is a fork of the upstream where the Pull Request will be opened.
+      registry_fork: scentini/bazel-central-registry
+      templates_ref: ${{ inputs.templates_ref || inputs.release_version }}
+    permissions:
+      contents: write
+    secrets:
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
