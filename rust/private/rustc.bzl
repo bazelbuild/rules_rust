@@ -1163,7 +1163,7 @@ def construct_arguments(
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
 
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+    if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
