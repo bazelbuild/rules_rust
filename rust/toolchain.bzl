@@ -152,7 +152,7 @@ def _symlink_sysroot_tree(ctx, name, target, target_files = None):
     tree_files = []
     if target_files == None:
         target_files = target.files
-    for file in target.files.to_list():
+    for file in target_files.to_list():
         # Parse the path to the file relative to the workspace root so a
         # symlink matching this path can be created within the sysroot.
 
@@ -284,11 +284,14 @@ def _generate_sysroot(
                 linker.label,
             ))
         linker_bin = linker_files[0]
+
+        # Extract lib/rustlib/{triple}/bin from linker source path.
+        # rustc adds {sysroot}/lib/rustlib/{host}/bin/ to PATH when invoking
+        # linkers, so tools like wasm-component-ld can find rust-lld there.
         dest = "bin"
-        if "/bin/" in linker_bin.path:
-            _, _, subdir = linker_bin.path.partition("/bin/")
-            if subdir:
-                dest = "bin/{}".format(subdir[:-len("/" + linker_bin.basename)]).rstrip("/")
+        if "/lib/rustlib/" in linker_bin.dirname:
+            idx = linker_bin.dirname.find("/lib/rustlib/")
+            dest = linker_bin.dirname[idx + 1:]
 
         sysroot_linker = _symlink_sysroot_bin(ctx, name, dest, linker_bin)
         sysroot_linker_files = _symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files)
