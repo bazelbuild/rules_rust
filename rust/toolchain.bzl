@@ -585,6 +585,7 @@ def _rust_toolchain_impl(ctx):
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         llvm_lib = ctx.files.llvm_lib,
+        rust_objcopy = ctx.file.rust_objcopy,
         lto = lto,
         make_variables = make_variable_info,
         rust_doc = sysroot.rustdoc,
@@ -779,6 +780,11 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
             mandatory = True,
+        ),
+        "rust_objcopy": attr.label(
+            doc = "The location of the `rust-objcopy` binary. Can be a direct source or a filegroup containing one item.",
+            allow_single_file = True,
+            cfg = "exec",
         ),
         "rust_std": attr.label(
             doc = "The Rust standard library.",
