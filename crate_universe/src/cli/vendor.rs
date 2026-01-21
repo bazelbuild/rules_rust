@@ -120,6 +120,22 @@ fn bzlmod_tidy(bin: &Path, workspace_dir: &Path) -> anyhow::Result<ExitStatus> {
     Ok(status)
 }
 
+/// Check if bzlmod is enabled in the workspace
+fn is_bzlmod_enabled(bin: &Path, workspace_dir: &Path) -> bool {
+    let output = process::Command::new(bin)
+        .current_dir(workspace_dir)
+        .arg("info")
+        .arg("starlark-semantics")
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            !String::from_utf8_lossy(&output.stdout).contains("enable_bzlmod=false")
+        }
+        _ => true, // Assume enabled if we can't determine
+    }
+}
+
 /// Info about a Bazel workspace
 struct BazelInfo {
     /// The version of Bazel being used
@@ -313,7 +329,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     // Optionally perform bazel mod tidy to update the MODULE.bazel file
     if bazel_info.release >= semver::Version::new(7, 0, 0) {
         let module_bazel = opt.workspace_dir.join("MODULE.bazel");
-        if module_bazel.exists() {
+        if module_bazel.exists() && is_bzlmod_enabled(&opt.bazel, &opt.workspace_dir) {
             bzlmod_tidy(&opt.bazel, &opt.workspace_dir)?;
         }
     }
