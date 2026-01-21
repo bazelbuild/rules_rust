@@ -1,6 +1,6 @@
 """A small utility module dedicated to detecting whether or not the `--stamp` flag is enabled"""
 
-def is_stamping_enabled(attr):
+def is_stamping_enabled(ctx, attr):
     """Determine whether or not build stamping is enabled
 
     Args:
