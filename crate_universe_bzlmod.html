@@ -184,7 +184,7 @@
 <pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.68.1")
 </code></pre>
 <p>You find the latest version on the <a href="https://github.com/bazelbuild/rules_rust/releases">release page</a>.</p>
-<p>After adding <code>rules_rust</code> in your <code>MODULE.bazel, set the following to begin using </code>crate_universe`:</p>
+<p>After adding <code>rules_rust</code> in your <code>MODULE.bazel</code>, set the following to begin using <code>crate_universe</code>:</p>
 <pre><code class="language-python">crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 //  # ... Dependencies
 use_repo(crate, "crates")
