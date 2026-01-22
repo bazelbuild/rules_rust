@@ -239,7 +239,7 @@ load("@rules_rust_pyo3//:defs.bzl", "pyo3_extension")
 
 pyo3_extension(*, <a href="#pyo3_extension-name">name</a>, <a href="#pyo3_extension-srcs">srcs</a>, <a href="#pyo3_extension-aliases">aliases</a>, <a href="#pyo3_extension-compile_data">compile_data</a>, <a href="#pyo3_extension-crate_features">crate_features</a>, <a href="#pyo3_extension-crate_root">crate_root</a>, <a href="#pyo3_extension-data">data</a>, <a href="#pyo3_extension-deps">deps</a>,
                <a href="#pyo3_extension-edition">edition</a>, <a href="#pyo3_extension-imports">imports</a>, <a href="#pyo3_extension-proc_macro_deps">proc_macro_deps</a>, <a href="#pyo3_extension-rustc_env">rustc_env</a>, <a href="#pyo3_extension-rustc_env_files">rustc_env_files</a>, <a href="#pyo3_extension-rustc_flags">rustc_flags</a>, <a href="#pyo3_extension-stubs">stubs</a>,
-               <a href="#pyo3_extension-version">version</a>, <a href="#pyo3_extension-compilation_mode">compilation_mode</a>, <a href="#pyo3_extension-kwargs">**kwargs</a>)
+               <a href="#pyo3_extension-version">version</a>, <a href="#pyo3_extension-compilation_mode">compilation_mode</a>, <a href="#pyo3_extension-module_name">module_name</a>, <a href="#pyo3_extension-kwargs">**kwargs</a>)
 </pre>
 <p>Define a PyO3 python extension module.</p>
 <p>This target is consumed just as a <code>py_library</code> would be.</p>
@@ -262,6 +262,7 @@ pyo3_extension(*, <a href="#pyo3_extension-name">name</a>, <a href="#pyo3_extens
 <tr><td style="text-align: left"><a id="pyo3_extension-stubs"></a>stubs</td><td style="text-align: left">Whether or not to generate stubs (<code>.pyi</code> file) for the module.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="pyo3_extension-version"></a>version</td><td style="text-align: left">A version to inject in the cargo environment variable. For more details see <a href="https://bazelbuild.github.io/rules_rust/defs.html#rust_shared_library">rust_shared_library</a>.</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="pyo3_extension-compilation_mode"></a>compilation_mode</td><td style="text-align: left">The <a href="https://bazel.build/reference/command-line-reference#flag--compilation_mode">compilation_mode</a> value to build the extension for. If set to <code>"current"</code>, the current configuration will be used.</td><td style="text-align: left"><code>"opt"</code></td></tr>
+<tr><td style="text-align: left"><a id="pyo3_extension-module_name"></a>module_name</td><td style="text-align: left">A full dotted Python module path implemented by this extension (e.g. <code>foo.bar</code>).</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="pyo3_extension-kwargs"></a>kwargs</td><td style="text-align: left">Additional keyword arguments.</td><td style="text-align: left">none</td></tr>
 </tbody></table>
 </div>
