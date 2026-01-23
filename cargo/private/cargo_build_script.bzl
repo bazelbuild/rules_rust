@@ -744,16 +744,19 @@ cargo_build_script = rule(
         "_fallback_ar": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_ar"),
         ),
         "_fallback_cc": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_cc"),
         ),
         "_fallback_cxx": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_cxx"),
         ),
         "_incompatible_runfiles_cargo_manifest_dir": attr.label(
