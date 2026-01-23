@@ -17,5 +17,7 @@ rust_library(
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
     edition = "2024",
+    # This is hacky, but it lets us compile the shims even on stable.
+    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
     tags = ["manual"],
 )

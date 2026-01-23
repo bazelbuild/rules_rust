@@ -23,16 +23,12 @@
 #![feature(linkage)]
 
 unsafe extern "C" {
-    #[rustc_std_internal_symbol]
     fn __rdl_alloc(size: usize, align: usize) -> *mut u8;
 
-    #[rustc_std_internal_symbol]
     fn __rdl_dealloc(ptr: *mut u8, size: usize, align: usize);
 
-    #[rustc_std_internal_symbol]
     fn __rdl_realloc(ptr: *mut u8, old_size: usize, align: usize, new_size: usize) -> *mut u8;
 
-    #[rustc_std_internal_symbol]
     fn __rdl_alloc_zeroed(size: usize, align: usize) -> *mut u8;
 }
 

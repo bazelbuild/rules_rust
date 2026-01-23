@@ -23,6 +23,8 @@ rust_library(
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
     edition = "2024",
+    # This is hacky, but lets us compile the shims even on stable.
+    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
     tags = ["manual"],
 )
 
@@ -31,5 +33,6 @@ rust_library_without_process_wrapper(
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
     edition = "2024",
+    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
     tags = ["manual"],
 )
