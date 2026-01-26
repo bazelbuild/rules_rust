@@ -31,7 +31,7 @@ def _with_modified_crate_name_impl(ctx):
     ) for dep in ctx.attr.deps]
 
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    return rustc_compile_action(
+    return list(rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -52,7 +52,7 @@ def _with_modified_crate_name_impl(ctx):
             is_test = False,
         ),
         output_hash = output_hash,
-    )
+    ).values())
 
 with_modified_crate_name = rule(
     implementation = _with_modified_crate_name_impl,
