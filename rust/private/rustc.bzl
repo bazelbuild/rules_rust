@@ -1349,7 +1349,7 @@ def rustc_compile_action(
         linkstamps = depset([])
 
     # Determine if the build is currently running with --stamp
-    stamp = is_stamping_enabled(attr)
+    stamp = is_stamping_enabled(ctx, attr)
 
     # Add flags for any 'rustc' lints that are specified.
     #
