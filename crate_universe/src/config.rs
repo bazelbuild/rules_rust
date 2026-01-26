@@ -716,7 +716,19 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn try_from_path<T: AsRef<Path>>(path: T) -> Result<Self> {
         let data = fs::read_to_string(path)?;
-        Ok(serde_json::from_str(&data)?)
+        Self::try_from_str(&data)
+    }
+
+    pub(crate) fn try_from_str(data: &str) -> Result<Self> {
+        let mut res: Config = serde_json::from_str(data)?;
+
+        // rules_rust/crate_universe/private/generate_utils.bzl:generate_config
+        // injects the cargo_config as a literal JSON string, this causes line ending
+        // instability in Unix vs Windows. Parsing it here fixes any cross platform differences.
+        if let Some(Some(config)) = res.cargo_config.as_ref().map(|v| v.as_str()) {
+            res.cargo_config = Some(config.parse()?)
+        }
+        Ok(res)
     }
 }
 
