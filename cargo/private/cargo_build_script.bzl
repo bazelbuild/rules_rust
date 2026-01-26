@@ -426,9 +426,9 @@ def _cargo_build_script_impl(ctx):
     fallback_tools = []
     if not cc_toolchain:
         fallbacks = {
+            "AR": "_fallback_ar",
             "CC": "_fallback_cc",
             "CXX": "_fallback_cxx",
-            "AR": "_fallback_ar",
         }
         for key, attr in fallbacks.items():
             tool = getattr(ctx.executable, attr)
