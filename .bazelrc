@@ -66,6 +66,8 @@ build --nolegacy_external_runfiles
 # https://github.com/bazelbuild/bazel/issues/23043.
 build --incompatible_autoload_externally=
 
+common --incompatible_disable_native_repo_rules
+
 ###############################################################################
 ## Bzlmod
 ###############################################################################
