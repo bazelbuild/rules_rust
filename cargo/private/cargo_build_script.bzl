@@ -420,12 +420,22 @@ def _cargo_build_script_impl(ctx):
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
     # Defaults for cxx flags.
-    env["CC"] = "${{pwd}}/{}".format(ctx.executable._fallback_cc.path)
-    env["CXX"] = "${{pwd}}/{}".format(ctx.executable._fallback_cxx.path)
-    env["AR"] = "${{pwd}}/{}".format(ctx.executable._fallback_ar.path)
     env["ARFLAGS"] = ""
     env["CFLAGS"] = ""
     env["CXXFLAGS"] = ""
+    fallback_tools = []
+    if not cc_toolchain:
+        fallbacks = {
+            "CC": "_fallback_cc",
+            "CXX": "_fallback_cxx",
+            "AR": "_fallback_ar",
+        }
+        for key, attr in fallbacks.items():
+            tool = getattr(ctx.executable, attr)
+            if not tool:
+                fail("cargo_build_script without a cc toolchain requires %s" % attr)
+            fallback_tools.append(tool)
+            env[key] = "${{pwd}}/{}".format(tool.path)
 
     if cc_toolchain:
         # MSVC requires INCLUDE to be set
@@ -516,10 +526,7 @@ def _cargo_build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-            ctx.executable._fallback_cc,
-            ctx.executable._fallback_cxx,
-            ctx.executable._fallback_ar,
-        ] + ([toolchain.target_json] if toolchain.target_json else []),
+        ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + script_tools + toolchain_tools,
     )
 
