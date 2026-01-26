@@ -6,6 +6,7 @@ load(
     "feature",
 )
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
 load("//bazel/toolchain_rules/cc_tools:clang.bzl", clang_compile_action_configs = "compile_action_configs")
 load("//bazel/toolchain_rules/cc_tools:ld.lld.bzl", ld_lld_link_action_configs = "link_action_configs")
 load("//bazel/toolchain_rules/cc_tools:ld64.lld.bzl", ld64_lld_link_action_configs = "link_action_configs")
