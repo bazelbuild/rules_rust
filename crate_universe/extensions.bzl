@@ -32,7 +32,7 @@ bazel_dep(name = "rules_rust", version = "0.68.1")
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
 
 
-After adding `rules_rust` in your `MODULE.bazel, set the following to begin using `crate_universe`:
+After adding `rules_rust` in your `MODULE.bazel`, set the following to begin using `crate_universe`:
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
