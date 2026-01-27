@@ -18,13 +18,18 @@ srcs = select({
     "//conditions:default": ["allocator_library.rs"],
 })
 
+# This is hacky, but lets us compile the shims even on stable.
+rustc_env = {"RUSTC_BOOTSTRAP": "1"}
+
+rustc_flags = []
+
 rust_library(
     name = "allocator_library",
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
     edition = "2024",
-    # This is hacky, but lets us compile the shims even on stable.
-    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
+    rustc_env = rustc_env,
+    rustc_flags = rustc_flags,
     tags = ["manual"],
 )
 
@@ -33,6 +38,7 @@ rust_library_without_process_wrapper(
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
     edition = "2024",
-    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
+    rustc_env = rustc_env,
+    rustc_flags = rustc_flags,
     tags = ["manual"],
 )

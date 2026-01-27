@@ -23,11 +23,13 @@
 #![feature(linkage)]
 
 unsafe extern "C" {
+    #[cfg(rules_rust_allocator_legacy_rg_oom)]
     #[rustc_std_internal_symbol]
     fn __rg_oom(size: usize, align: usize) -> *mut u8;
 }
 
 #[linkage = "weak"]
+#[cfg(rules_rust_allocator_legacy_rg_oom)]
 #[rustc_std_internal_symbol]
 fn __rust_alloc_error_handler(size: usize, align: usize) {
     unsafe {
@@ -41,7 +43,19 @@ fn __rust_alloc_error_handler(size: usize, align: usize) {
 #[rustc_std_internal_symbol]
 static mut __rust_alloc_error_handler_should_panic: u8 = 1;
 
+// See  https://github.com/rust-lang/rust/pull/143387.
+#[linkage = "weak"]
+#[rustc_std_internal_symbol]
+fn __rust_alloc_error_handler_should_panic_v2() -> u8 {
+    return 1;
+}
+
 // See https://github.com/rust-lang/rust/issues/73632#issuecomment-1563462239
 #[linkage = "weak"]
 #[rustc_std_internal_symbol]
 static mut __rust_no_alloc_shim_is_unstable: u8 = 0;
+
+// See https://github.com/rust-lang/rust/pull/141061.
+#[linkage = "weak"]
+#[rustc_std_internal_symbol]
+fn __rust_no_alloc_shim_is_unstable_v2() {}
