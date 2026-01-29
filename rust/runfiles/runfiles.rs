@@ -44,8 +44,25 @@ const TEST_SRCDIR_ENV_VAR: &str = "TEST_SRCDIR";
 #[macro_export]
 macro_rules! rlocation {
     ($r:expr, $path:expr) => {
-        $r.rlocation_from($path, env!("REPOSITORY_NAME"))
+        {
+            let repo = option_env!("REPOSITORY_NAME");
+            $r.rlocation_from($path, $crate::repository_name(repo))
+        }
     };
+}
+
+/// Return the build-time repository name.
+///
+/// Bazel sets the `REPOSITORY_NAME` environment variable while compiling this crate. When
+/// building via Cargo (e.g., from a git dependency), callers must either set the same
+/// environment variable at compile time or call `rlocation_from` directly with an explicit
+/// `source_repo`. This function panics if the value is not available.
+pub fn repository_name(repo: Option<&'static str>) -> &'static str {
+    repo.unwrap_or_else(|| {
+        panic!(
+            "REPOSITORY_NAME was not set at compile time; set it or call rlocation_from directly"
+        )
+    })
 }
 
 /// The error type for [Runfiles] construction.
