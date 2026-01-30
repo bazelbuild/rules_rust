@@ -1,0 +1,11 @@
+[package]
+name = "member"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+# This path dependency goes OUTSIDE the Cargo workspace root.
+# This is the scenario from issue #3089.
+external_crate = { path = "../../external_crate" }
