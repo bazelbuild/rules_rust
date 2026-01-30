@@ -1,0 +1,4 @@
+load(":test_sharding.bzl", "test_sharding_test_suite")
+
+############################ UNIT TESTS #############################
+test_sharding_test_suite(name = "test_sharding_test_suite")

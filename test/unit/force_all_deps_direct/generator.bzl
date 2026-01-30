@@ -47,7 +47,7 @@ def _generator_impl(ctx):
     ) for dep in ctx.attr.deps]
 
     rust_lib = ctx.actions.declare_file(rust_lib_name)
-    return rustc_compile_action(
+    return list(rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -69,7 +69,7 @@ def _generator_impl(ctx):
         ),
         output_hash = output_hash,
         force_all_deps_direct = True,
-    )
+    ).values())
 
 generator = rule(
     implementation = _generator_impl,

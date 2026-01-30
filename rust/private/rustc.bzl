@@ -1302,10 +1302,14 @@ def rustc_compile_action(
         include_coverage (bool, optional): Whether to generate coverage information or not.
 
     Returns:
-        list: A list of the following providers:
-            - (CrateInfo): info for the crate we just built; same as `crate_info` parameter.
-            - (DepInfo): The transitive dependencies of this crate.
-            - (DefaultInfo): The output file for this crate, and its runfiles.
+        dict: A dict mapping provider types to provider instances. Keys include:
+            - DefaultInfo: The output file for this crate, and its runfiles.
+            - CrateInfo: info for the crate we just built (or TestCrateInfo for staticlib/cdylib).
+            - DepInfo: The transitive dependencies of this crate.
+            - InstrumentedFilesInfo: Coverage information (if include_coverage is True).
+            - CcInfo: C/C++ interop info (if applicable).
+            - OutputGroupInfo: Additional output groups (if any).
+        Callers should convert to a list via `list(providers.values())` when returning from a rule.
     """
     deps = crate_info_dict.pop("deps")
     proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
@@ -1696,25 +1700,24 @@ def rustc_compile_action(
             "metadata_files": coverage_runfiles + [executable] if executable else [],
         })
 
-    providers = [
-        DefaultInfo(
+    # Use string keys for providers since provider types are not hashable in all Bazel versions
+    providers = {
+        "DefaultInfo": DefaultInfo(
             # nb. This field is required for cc_library to depend on our output.
             files = depset(outputs),
             runfiles = runfiles,
             executable = executable,
         ),
-    ]
+    }
 
     # When invoked by aspects (and when running `bazel coverage`), the
     # baseline_coverage.dat created here will conflict with the baseline_coverage.dat of the
     # underlying target, which is a build failure. So we add an option to disable it so that this
     # function can be invoked from aspects for rules that have its own InstrumentedFilesInfo.
     if include_coverage:
-        providers.append(
-            coverage_common.instrumented_files_info(
-                ctx,
-                **instrumented_files_kwargs
-            ),
+        providers["InstrumentedFilesInfo"] = coverage_common.instrumented_files_info(
+            ctx,
+            **instrumented_files_kwargs
         )
 
     if crate_info_dict != None:
@@ -1733,11 +1736,20 @@ def rustc_compile_action(
         # as such they shouldn't provide a CrateInfo. However, one may still want to
         # write a rust_test for them, so we provide the CrateInfo wrapped in a provider
         # that rust_test understands.
-        providers.extend([rust_common.test_crate_info(crate = crate_info), dep_info])
+        providers["test_crate_info"] = rust_common.test_crate_info(crate = crate_info)
     else:
-        providers.extend([crate_info, dep_info])
+        providers["crate_info"] = crate_info
 
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    providers["dep_info"] = dep_info
+
+    cc_info_providers = establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    for cc_provider in cc_info_providers:
+        # establish_cc_info returns CcInfo and optionally AllocatorLibrariesImplInfo
+        if type(cc_provider) == "CcInfo":
+            providers["CcInfo"] = cc_provider
+        else:
+            # AllocatorLibrariesImplInfo
+            providers["AllocatorLibrariesImplInfo"] = cc_provider
 
     output_group_info = {}
 
@@ -1753,12 +1765,12 @@ def rustc_compile_action(
         output_group_info["rustc_output"] = depset([rustc_output])
 
     if output_group_info:
-        providers.append(OutputGroupInfo(**output_group_info))
+        providers["OutputGroupInfo"] = OutputGroupInfo(**output_group_info)
 
     # A bit unfortunate, but sidecar the lints info so rustdoc can access the
     # set of lints from the target it is documenting.
     if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
-        providers.append(ctx.attr.lint_config[LintsInfo])
+        providers["LintsInfo"] = ctx.attr.lint_config[LintsInfo]
 
     return providers
 
