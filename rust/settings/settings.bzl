@@ -3,6 +3,7 @@
 Definitions for all `@rules_rust//rust` settings
 """
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     "@bazel_skylib//rules:common_settings.bzl",
     "bool_flag",
@@ -221,8 +222,6 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
     the result of building the rust allocator libraries via a provider, which
     can be consumed by the rust build actions. We attach an instance of this
     as a common attribute to the rust rule set.
-
-    TODO: how this interacts with stdlibs
     """
     bool_flag(
         name = name,
@@ -242,6 +241,42 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
             ":experimental_use_allocator_libraries_with_mangled_symbols": "false",
         },
     )
+
+    legacy_configs = [{
+        # For rust toolchains prior to this rust commit:
+        #   Support #[alloc_error_handler] without the allocator shim
+        #   https://github.com/rust-lang/rust/commit/116f4ae171e292423304ee6842a11c48a4fff5ba
+        "name": "rg_oom",
+        "latest_versions": ["1.91.1", "nightly/2025-10-15", "beta/2025-10-26"],
+    }]
+
+    legacy_names = [config["name"] for config in legacy_configs]
+
+    legacy_flag_name = "%s.legacy" % name
+
+    string_flag(
+        name = legacy_flag_name,
+        values = legacy_names + ["latest"],
+        build_setting_default = "latest",
+    )
+
+    for name in legacy_names:
+        native.config_setting(
+            name = "%s.%s_only" % (legacy_flag_name, name),
+            flag_values = {
+                legacy_flag_name: name,
+            },
+        )
+
+    for index in range(len(legacy_names)):
+        match_any = [
+            "%s.%s_only" % (legacy_flag_name, later)
+            for later in legacy_names[index:]
+        ]
+        selects.config_setting_group(
+            name = "%s.%s" % (legacy_flag_name, legacy_names[index]),
+            match_any = match_any,
+        )
 
 def experimental_use_coverage_metadata_files():
     """A flag to have coverage tooling added as `coverage_common.instrumented_files_info.metadata_files` instead of \
