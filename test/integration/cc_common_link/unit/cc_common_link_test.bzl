@@ -2,7 +2,9 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "artifact_name_pattern", "tool_path")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_binary",
@@ -14,6 +16,54 @@ load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain
 DepActionsInfo = provider(
     "Contains information about dependencies actions.",
     fields = {"actions": "List[Action]"},
+)
+
+def _artifact_name_patterns_cc_config_impl(ctx):
+    tool_exec = ctx.actions.declare_file("artifact_name_patterns_fake_cc.sh")
+    ctx.actions.symlink(
+        output = tool_exec,
+        target_file = ctx.file.tool,
+        is_executable = True,
+    )
+
+    return cc_common.create_cc_toolchain_config_info(
+        ctx = ctx,
+        toolchain_identifier = "artifact-name-pattern-cc-toolchain",
+        host_system_name = "unknown",
+        target_system_name = "unknown",
+        target_cpu = "unknown",
+        target_libc = "unknown",
+        compiler = "unknown",
+        abi_version = "unknown",
+        abi_libc_version = "unknown",
+        cxx_builtin_include_directories = [],
+        artifact_name_patterns = [
+            artifact_name_pattern(
+                category_name = "executable",
+                prefix = "",
+                extension = ".exe",
+            ),
+        ],
+        tool_paths = [tool_path(name = name, path = tool_exec.path) for name in [
+            "gcc",
+            "ld",
+            "ar",
+            "cpp",
+            "gcov",
+            "nm",
+            "objcopy",
+            "objdump",
+            "strip",
+        ]],
+    )
+
+artifact_name_patterns_cc_config = rule(
+    implementation = _artifact_name_patterns_cc_config_impl,
+    attrs = {
+        "tool": attr.label(
+            allow_single_file = True,
+        ),
+    },
 )
 
 def _collect_dep_actions_aspect_impl(target, _ctx):
@@ -61,6 +111,38 @@ with_collect_dep_actions = rule(
     },
 )
 
+def _artifact_name_patterns_transition_impl(_settings, attr):
+    return {
+        "//command_line_option:extra_toolchains": attr.extra_toolchains,
+        "@rules_rust//rust/settings:experimental_use_cc_common_link": True,
+    }
+
+artifact_name_patterns_transition = transition(
+    inputs = [],
+    outputs = [
+        "//command_line_option:extra_toolchains",
+        "@rules_rust//rust/settings:experimental_use_cc_common_link",
+    ],
+    implementation = _artifact_name_patterns_transition_impl,
+)
+
+def _use_cc_common_link_with_toolchains_impl(ctx):
+    return [ctx.attr.target[0][DepActionsInfo], ctx.attr.target[0][OutputGroupInfo]]
+
+use_cc_common_link_with_toolchains = rule(
+    implementation = _use_cc_common_link_with_toolchains_impl,
+    attrs = {
+        "target": attr.label(
+            cfg = artifact_name_patterns_transition,
+            aspects = [collect_dep_actions_aspect],
+        ),
+        "extra_toolchains": attr.string_list(),
+        "_allowlist_function_transition": attr.label(
+            default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
+        ),
+    },
+)
+
 def _with_exec_cfg_impl(ctx):
     return [ctx.attr.target[DepActionsInfo]]
 
@@ -102,6 +184,33 @@ def _use_cc_common_link_test(ctx):
     return analysistest.end(env)
 
 use_cc_common_link_test = analysistest.make(_use_cc_common_link_test, attrs = {"expect_pdb": attr.bool()})
+
+def _artifact_name_patterns_link_output_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    link_actions = [action for action in tut[DepActionsInfo].actions if action.mnemonic == "CppLink"]
+    asserts.equals(env, 1, len(link_actions))
+
+    link_outputs = [output.basename for output in link_actions[0].outputs.to_list()]
+    asserts.true(
+        env,
+        ctx.attr.expected_output in link_outputs,
+        "Expected '{}' in link outputs: {}".format(ctx.attr.expected_output, link_outputs),
+    )
+    asserts.false(
+        env,
+        any([name.endswith(".exe.exe") for name in link_outputs]),
+        "Unexpected double-extension in link outputs: {}".format(link_outputs),
+    )
+
+    return analysistest.end(env)
+
+artifact_name_patterns_link_output_test = analysistest.make(
+    _artifact_name_patterns_link_output_test,
+    attrs = {
+        "expected_output": attr.string(),
+    },
+)
 
 def _custom_malloc_test(ctx):
     env = analysistest.begin(ctx)
@@ -214,6 +323,55 @@ def _cc_common_link_test_targets():
         target_under_test = ":cdylib_with_cc_common_link",
     )
 
+    # Toolchains configured with custom artifact_name_patterns to ensure we honor the declared main output.
+    native.filegroup(
+        name = "artifact_name_patterns_empty",
+        srcs = [],
+    )
+    native.filegroup(
+        name = "artifact_name_patterns_tool",
+        srcs = ["artifact_name_patterns_fake_cc.sh"],
+    )
+
+    artifact_name_patterns_cc_config(
+        name = "artifact_name_patterns_cc_config_target",
+        tool = ":artifact_name_patterns_fake_cc.sh",
+    )
+
+    cc_toolchain(
+        name = "artifact_name_patterns_cc_toolchain_impl",
+        all_files = ":artifact_name_patterns_tool",
+        compiler_files = ":artifact_name_patterns_tool",
+        dwp_files = ":artifact_name_patterns_empty",
+        linker_files = ":artifact_name_patterns_tool",
+        objcopy_files = ":artifact_name_patterns_tool",
+        strip_files = ":artifact_name_patterns_tool",
+        supports_param_files = 0,
+        toolchain_config = ":artifact_name_patterns_cc_config_target",
+        toolchain_identifier = "artifact-name-pattern-cc-toolchain",
+    )
+
+    rust_binary(
+        name = "artifact_name_patterns_bin",
+        binary_name = "artifact_name_patterns_bin.exe",
+        srcs = ["bin.rs"],
+        edition = "2018",
+    )
+
+    use_cc_common_link_with_toolchains(
+        name = "artifact_name_patterns_bin_with_cc_common_link",
+        target = ":artifact_name_patterns_bin",
+        extra_toolchains = [
+            "//unit:artifact_name_patterns_cc_toolchain_impl",
+        ],
+    )
+
+    artifact_name_patterns_link_output_test(
+        name = "artifact_name_patterns_link_output_test",
+        target_under_test = ":artifact_name_patterns_bin_with_cc_common_link",
+        expected_output = "artifact_name_patterns_bin.exe",
+    )
+
     custom_malloc_test(
         name = "custom_malloc_on_binary_test",
         target_under_test = ":bin_with_cc_common_link",
@@ -225,6 +383,7 @@ def _cc_common_link_test_targets():
         "use_cc_common_link_on_test",
         "use_cc_common_link_on_crate_test",
         "use_cc_common_link_on_cdylib",
+        "artifact_name_patterns_link_output_test",
         "custom_malloc_on_binary_test",
     ]
 
