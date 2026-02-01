@@ -252,6 +252,10 @@ def _pwd_flags_resource_dir(args):
     """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
     return _prefix_pwd_to_flag_flexible(args, "-resource-dir")
 
+def _pwd_paths(args):
+    """Prefix execroot-relative paths with ${pwd}."""
+    return _prefix_pwd_to_paths(args)
+
 def _pwd_flags(args):
     return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
 
@@ -462,7 +466,11 @@ def _cargo_build_script_impl(ctx):
         cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
         include = cc_env.get("INCLUDE")
         if include:
-            env["INCLUDE"] = include
+            if toolchain.exec_triple.str.find("windows") > 0:
+                path_separator = ";"
+            else:
+                path_separator = ":"
+            env["INCLUDE"] = path_separator.join(_pwd_paths(include.split(path_separator)))
 
         toolchain_tools.append(cc_toolchain.all_files)
 
