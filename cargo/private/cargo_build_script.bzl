@@ -154,86 +154,106 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
-def _pwd_flags_sysroot(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
+def _prefix_pwd_to_flag_equals_value(args, flag_with_equals):
+    """Prefix execroot-relative paths for flags using equals syntax (e.g., --flag=path).
+
+    Handles flags like `--sysroot=/path` or `-fsanitize-ignorelist=/path`.
 
     Args:
         args (list): List of tool arguments.
+        flag_with_equals (str): The flag prefix including the equals sign (e.g., "--sysroot=").
 
     Returns:
-        list: The modified argument list.
+        list: The modified argument list with relative paths prefixed with ${pwd}.
     """
     res = []
     for arg in args:
-        s, opt, path = arg.partition("--sysroot=")
+        s, opt, path = arg.partition(flag_with_equals)
         if s == "" and not paths.is_absolute(path):
             res.append("{}${{pwd}}/{}".format(opt, path))
         else:
             res.append(arg)
     return res
 
-def _pwd_flags_isystem(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
+def _prefix_pwd_to_flag_flexible(args, flag):
+    """Prefix execroot-relative paths for flags that support both concatenated and space-separated forms.
+
+    Handles flags like `-L /path` (space-separated) or `-L/path` (concatenated).
+    This covers most compiler/linker flags including `-L`, `-B`, `-isystem`, `-resource-dir`, etc.
 
     Args:
         args (list): List of tool arguments.
+        flag (str): The flag to look for (e.g., "-L", "-B", "-isystem", "-resource-dir").
 
     Returns:
-        list: The modified argument list.
+        list: The modified argument list with relative paths prefixed with ${pwd}.
     """
     res = []
-    fix_next_arg = False
+    prefix_next_arg = False
     for arg in args:
-        if fix_next_arg and not paths.is_absolute(arg):
+        if arg.startswith(flag) and arg != flag:
+            # Concatenated form: -Lpath or -isystempath
+            path = arg[len(flag):]
+            if not paths.is_absolute(path):
+                res.append("{}${{pwd}}/{}".format(flag, path))
+            else:
+                res.append(arg)
+            prefix_next_arg = False
+        elif prefix_next_arg and not paths.is_absolute(arg):
+            # Space-separated form: -L path or -isystem path
             res.append("${{pwd}}/{}".format(arg))
+            prefix_next_arg = False
         else:
             res.append(arg)
-
-        fix_next_arg = arg == "-isystem"
+            prefix_next_arg = arg == flag
 
     return res
 
-def _pwd_flags_bindir(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
+def _prefix_pwd_to_paths(args):
+    """Prefix execroot-relative paths with ${pwd}.
+
+    Handles plain path arguments without any associated flags.
 
     Args:
-        args (list): List of tool arguments.
+        args (list): List of path arguments.
 
     Returns:
-        list: The modified argument list.
+        list: The modified argument list with relative paths prefixed with ${pwd}.
     """
     res = []
-    fix_next_arg = False
-    for arg in args:
-        if fix_next_arg and not paths.is_absolute(arg):
-            res.append("${{pwd}}/{}".format(arg))
+    for path in args:
+        if not paths.is_absolute(path):
+            res.append("${{pwd}}/{}".format(path))
         else:
-            res.append(arg)
-
-        fix_next_arg = arg == "-B"
-
+            res.append(path)
     return res
+
+def _pwd_flags_sysroot(args):
+    """Prefix execroot-relative paths in --sysroot= arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_equals_value(args, "--sysroot=")
 
 def _pwd_flags_fsanitize_ignorelist(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
+    """Prefix execroot-relative paths in -fsanitize-ignorelist= arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_equals_value(args, "-fsanitize-ignorelist=")
 
-    Args:
-        args (list): List of tool arguments.
+def _pwd_flags_isystem(args):
+    """Prefix execroot-relative paths in -isystem arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_flexible(args, "-isystem")
 
-    Returns:
-        list: The modified argument list.
-    """
-    res = []
-    for arg in args:
-        s, opt, path = arg.partition("-fsanitize-ignorelist=")
-        if s == "" and not paths.is_absolute(path):
-            res.append("{}${{pwd}}/{}".format(opt, path))
-        else:
-            res.append(arg)
-    return res
+def _pwd_flags_L(args):
+    """Prefix execroot-relative paths in -L arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_flexible(args, "-L")
+
+def _pwd_flags_B(args):
+    """Prefix execroot-relative paths in -B arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_flexible(args, "-B")
+
+def _pwd_flags_resource_dir(args):
+    """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
+    return _prefix_pwd_to_flag_flexible(args, "-resource-dir")
 
 def _pwd_flags(args):
-    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_bindir(_pwd_flags_sysroot(args))))
+    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
