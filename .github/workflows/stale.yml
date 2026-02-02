@@ -32,9 +32,9 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         days-before-issue-stale: 430
-        days-before-pr-stale: 430
+        days-before-pr-stale: 90
         days-before-issue-close: 90
-        days-before-pr-close: 90
+        days-before-pr-close: 30
         stale-issue-message: >
           Thank you for contributing to the rules_rust repository!
           This issue has been marked as stale since it has not had any activity in the last 1+ years. It will be closed in the next 90
