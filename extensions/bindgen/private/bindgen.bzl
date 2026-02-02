@@ -282,7 +282,10 @@ def _rust_bindgen_impl(ctx):
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
         system_include_directories = depset(
-            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            transitive = [
+                cc_lib[CcInfo].compilation_context.system_includes,
+                cc_lib[CcInfo].compilation_context.external_includes,
+            ],
             direct = cc_toolchain.built_in_include_directories,
         ),
         user_compile_flags = ctx.attr.clang_flags,
