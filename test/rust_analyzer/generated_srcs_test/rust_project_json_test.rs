@@ -50,7 +50,12 @@ mod tests {
         assert!(with_gen.root_module.ends_with("/lib.rs"));
 
         let include_dirs = &with_gen.source.as_ref().unwrap().include_dirs;
-        assert!(include_dirs.len() == 1);
-        assert!(include_dirs[0].starts_with(output_base));
+        assert_eq!(include_dirs.len(), 2);
+
+        // The first entry is the workspace directory.
+        assert!(!include_dirs[0].starts_with(output_base));
+
+        // The second entry is the output base, where the generated files are located.
+        assert!(include_dirs[1].starts_with(output_base));
     }
 }
