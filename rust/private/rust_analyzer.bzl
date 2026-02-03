@@ -256,7 +256,10 @@ def _create_single_crate(ctx, attrs, info):
         src_map = {src.short_path: src for src in srcs if src.is_source}
         if info.crate.root.short_path in src_map:
             crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
-            crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
+            crate["source"]["include_dirs"].extend([
+                _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].dirname,
+                path_prefix + info.crate.root.dirname,
+            ])
 
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
