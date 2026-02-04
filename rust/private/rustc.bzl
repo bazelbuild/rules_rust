@@ -870,7 +870,14 @@ def collect_inputs(
     if build_env_file:
         build_env_files = list(build_env_files)
         build_env_files.append(build_env_file)
-    compile_inputs = depset(build_env_files + lint_files, transitive = [build_script_compile_inputs, compile_inputs])
+
+    # On Windows, symlink transitive deps to a single directory to avoid exceeding PATH length limits
+    # when loading proc macro DLLs. See https://github.com/rust-lang/rust/issues/79923
+    symlink_deps = []
+    if toolchain.target_os == "windows":
+        symlink_deps = windows_symlink_transitive_deps(ctx, crate_info, dep_info)
+
+    compile_inputs = depset(build_env_files + lint_files + symlink_deps, transitive = [build_script_compile_inputs, compile_inputs])
     return compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs
 
 def _will_emit_object_file(emit):
@@ -1156,7 +1163,7 @@ def construct_arguments(
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)
+    add_crate_link_flags(rustc_flags, dep_info, crate_info, force_all_deps_direct, use_metadata, toolchain.target_os == "windows")
 
     needs_extern_proc_macro_flag = _is_proc_macro(crate_info) and crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
@@ -2120,15 +2127,46 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_metadata = False):
+def windows_symlink_transitive_deps(ctx, crate_info, dep_info):
+    """Symlinks in transitive dependencies to fix rustc bug on Windows: https://github.com/rust-lang/rust/issues/79923
+
+    Args:
+        ctx (ctx): The source rule's context object
+        crate_info (CrateInfo): A CrateInfo provider
+        dep_info (DepInfo): The current target's dependency info
+
+    Returns:
+        list: A list of all symlinked transitive dependencies
+    """
+    symlink_deps = []
+    if crate_info.output == None:
+        return []
+    for dep in (dep_info.direct_crates.to_list() + dep_info.transitive_crates.to_list()):
+        if hasattr(dep, "dep"):
+            dep = dep.dep
+
+        if dep.output == None:
+            continue
+
+        symlink_dir = ctx.actions.declare_file("rlib_sym/" + dep.output.basename, sibling = crate_info.output)
+        ctx.actions.symlink(
+            output = symlink_dir,
+            target_file = dep.output,
+        )
+        symlink_deps.append(symlink_dir)
+    return symlink_deps
+
+def add_crate_link_flags(args, dep_info, crate_info, force_all_deps_direct = False, use_metadata = False, for_windows = False):
     """Adds link flags to an Args object reference
 
     Args:
         args (Args): An arguments object reference
         dep_info (DepInfo): The current target's dependency info
+        crate_info (CrateInfo): A CrateInfo provider
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
         use_metadata (bool, optional): Build command line arguments using metadata for crates that provide it.
+        for_windows (bool, optional): Whether to add the rlib_sym directory to the linker search path.
     """
 
     direct_crates = depset(
@@ -2141,12 +2179,18 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
     crate_to_link_flags = _crate_to_link_flag_metadata if use_metadata else _crate_to_link_flag
     args.add_all(direct_crates, uniquify = True, map_each = crate_to_link_flags)
 
-    args.add_all(
-        dep_info.transitive_crates,
-        map_each = _get_crate_dirname,
-        uniquify = True,
-        format_each = "-Ldependency=%s",
-    )
+    # crate_info.output is None when building rust_doc targets
+    if for_windows and crate_info.output != None:
+        args.add(
+            "-Ldependency={}".format(crate_info.output.dirname + "/rlib_sym"),
+        )
+    else:
+        args.add_all(
+            dep_info.transitive_crates,
+            map_each = _get_crate_dirname,
+            uniquify = True,
+            format_each = "-Ldependency=%s",
+        )
 
 def _crate_to_link_flag_metadata(crate):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
