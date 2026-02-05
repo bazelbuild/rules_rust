@@ -243,7 +243,7 @@ def _rust_bindgen_impl(ctx):
     args.add_all(ctx.attr.bindgen_flags)
 
     rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    if "--rust-edition " not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+    if "--rust-edition" not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
         args.add("--rust-edition=%s" % rust_toolchain.default_edition)
 
     args.add(header)
@@ -284,7 +284,10 @@ def _rust_bindgen_impl(ctx):
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
         system_include_directories = depset(
-            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            transitive = [
+                cc_lib[CcInfo].compilation_context.system_includes,
+                cc_lib[CcInfo].compilation_context.external_includes,
+            ],
             direct = cc_toolchain.built_in_include_directories,
         ),
         user_compile_flags = ctx.attr.clang_flags,
