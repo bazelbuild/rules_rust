@@ -21,7 +21,7 @@ ALL_TOOLS = [target for target in TOOLS.values()]
         data = ALL_TOOLS if tool_name == "cargo" else [target],
         edition = "2018",
         rustc_env = {
-            "WRAPPED_TOOL_EXECPATH": "$(execpath {})".format(target),
+            "WRAPPED_TOOL_EXECPATH": "$(rootpath {})".format(target),
             "WRAPPED_TOOL_NAME": tool_name,
             "WRAPPED_TOOL_TARGET": "$(rlocationpath {})".format(target),
         },
