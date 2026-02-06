@@ -4,7 +4,7 @@ use std::process::{exit, Command};
 
 const WRAPPED_TOOL_NAME: &str = env!("WRAPPED_TOOL_NAME");
 const WRAPPED_TOOL_TARGET: &str = env!("WRAPPED_TOOL_TARGET");
-const WRAPPED_TOOL_EXECPATH: &str = env!("WRAPPED_TOOL_EXECPATH");
+const WRAPPED_TOOL_ROOTPATH: &str = env!("WRAPPED_TOOL_ROOTPATH");
 
 #[cfg(not(target_os = "windows"))]
 const PATH_SEPARATOR: &str = ":";
@@ -20,7 +20,7 @@ fn main() {
             }
             Ok(path)
         })
-        .unwrap_or(PathBuf::from(WRAPPED_TOOL_EXECPATH));
+        .unwrap_or(PathBuf::from(WRAPPED_TOOL_ROOTPATH));
 
     if !wrapped_tool_path.exists() {
         panic!(
