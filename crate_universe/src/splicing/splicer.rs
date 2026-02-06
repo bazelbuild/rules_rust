@@ -165,6 +165,46 @@ impl<'a> SplicerKind<'a> {
             Some(IGNORE_LIST),
         )?;
 
+        // Handle external path dependencies in the root manifest
+        symlink_external_path_deps(
+            &manifest,
+            manifest_dir.as_std_path(),
+            manifest_dir.as_std_path(),
+            workspace_dir.as_std_path(),
+        )?;
+
+        // Handle external path dependencies in workspace members
+        if let Some(workspace) = &manifest.workspace {
+            for member_glob in &workspace.members {
+                // Resolve glob patterns to actual paths
+                let member_paths = glob::glob(manifest_dir.join(member_glob).as_str())
+                    .with_context(|| format!("Invalid glob pattern for workspace member: {}", member_glob))?
+                    .filter_map(|r| r.ok());
+
+                for member_path in member_paths {
+                    let member_manifest_path = if member_path.is_dir() {
+                        member_path.join("Cargo.toml")
+                    } else {
+                        member_path
+                    };
+
+                    if member_manifest_path.exists() {
+                        if let Ok(member_manifest) = Manifest::from_path(&member_manifest_path) {
+                            let member_dir = member_manifest_path
+                                .parent()
+                                .expect("Member manifest should have a parent directory");
+                            symlink_external_path_deps(
+                                &member_manifest,
+                                member_dir,
+                                manifest_dir.as_std_path(),
+                                workspace_dir.as_std_path(),
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
+
         // Optionally install the cargo config after contents have been symlinked
         Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
 
@@ -208,6 +248,14 @@ impl<'a> SplicerKind<'a> {
             manifest_dir.as_std_path(),
             workspace_dir.as_std_path(),
             Some(IGNORE_LIST),
+        )?;
+
+        // Handle external path dependencies
+        symlink_external_path_deps(
+            manifest,
+            manifest_dir.as_std_path(),
+            manifest_dir.as_std_path(),
+            workspace_dir.as_std_path(),
         )?;
 
         // Optionally install the cargo config after contents have been symlinked
@@ -616,6 +664,170 @@ pub(crate) fn write_manifest(path: &Path, manifest: &cargo_toml::Manifest) -> Re
         content
     );
     fs::write(path, content).context(format!("Failed to write manifest to {}", path.display()))
+}
+
+/// Extract all path dependencies from a Cargo manifest's dependency map.
+fn extract_path_deps_from_deps(deps: &cargo_toml::DepsSet) -> Vec<String> {
+    deps.iter()
+        .filter_map(|(_, dep)| dep.detail().and_then(|d| d.path.clone()))
+        .collect()
+}
+
+/// Extract all path dependencies from a manifest (dependencies, dev-dependencies,
+/// build-dependencies, and patches).
+fn extract_path_deps_from_manifest(manifest: &Manifest) -> Vec<String> {
+    let mut paths = Vec::new();
+
+    // Regular dependencies
+    paths.extend(extract_path_deps_from_deps(&manifest.dependencies));
+
+    // Dev dependencies
+    paths.extend(extract_path_deps_from_deps(&manifest.dev_dependencies));
+
+    // Build dependencies
+    paths.extend(extract_path_deps_from_deps(&manifest.build_dependencies));
+
+    // Target-specific dependencies
+    for (_, target) in &manifest.target {
+        paths.extend(extract_path_deps_from_deps(&target.dependencies));
+        paths.extend(extract_path_deps_from_deps(&target.dev_dependencies));
+        paths.extend(extract_path_deps_from_deps(&target.build_dependencies));
+    }
+
+    // Patch sections
+    for (_, patches) in &manifest.patch {
+        paths.extend(extract_path_deps_from_deps(patches));
+    }
+
+    paths
+}
+
+/// Symlink external path dependencies that are outside the workspace root.
+///
+/// When a Cargo workspace member has a path dependency pointing outside the workspace
+/// (e.g., `path = "../../external_crate"`), we need to symlink that external crate
+/// into the spliced workspace at the same relative location.
+pub(crate) fn symlink_external_path_deps(
+    manifest: &Manifest,
+    manifest_dir: &Path,
+    workspace_root: &Path,
+    dest_workspace_dir: &Path,
+) -> Result<()> {
+    let path_deps = extract_path_deps_from_manifest(manifest);
+
+    for path_dep in path_deps {
+        let path_dep_path = Path::new(&path_dep);
+
+        // Skip absolute paths - they should work as-is
+        if path_dep_path.is_absolute() {
+            continue;
+        }
+
+        // Compute the relative path from workspace_root to manifest_dir
+        // This tells us where the manifest is within the workspace
+        let manifest_rel_to_workspace = match pathdiff::diff_paths(manifest_dir, workspace_root) {
+            Some(p) => p,
+            None => continue,
+        };
+
+        // The resolved path relative to workspace_root
+        // e.g., if manifest is at workspace_root/member/ and path_dep is ../../external_crate,
+        // this gives member/../../external_crate which normalizes to ../external_crate
+        let resolved_rel_path = manifest_rel_to_workspace.join(path_dep_path);
+
+        // Normalize the path by resolving .. components
+        let mut normalized_components = Vec::new();
+        for component in resolved_rel_path.components() {
+            match component {
+                std::path::Component::ParentDir => {
+                    if normalized_components
+                        .last()
+                        .map_or(false, |c| *c != std::path::Component::ParentDir)
+                    {
+                        normalized_components.pop();
+                    } else {
+                        normalized_components.push(component);
+                    }
+                }
+                std::path::Component::CurDir => {}
+                _ => normalized_components.push(component),
+            }
+        }
+
+        // Check if the normalized path goes outside the workspace (starts with ..)
+        let is_external = normalized_components
+            .first()
+            .map_or(false, |c| *c == std::path::Component::ParentDir);
+
+        if is_external {
+            // This is an external path dependency
+            // The dest_path is at the same relative position from dest_workspace_dir
+            let normalized_path: std::path::PathBuf = normalized_components.iter().collect();
+            let dest_path = dest_workspace_dir.join(&normalized_path);
+
+            // Get the actual source path by resolving against the original manifest_dir
+            let source_path = manifest_dir.join(path_dep_path);
+            let canonical_source = match source_path.canonicalize() {
+                Ok(p) => p,
+                Err(_) => {
+                    // Path doesn't exist, skip it (Cargo will report the error)
+                    continue;
+                }
+            };
+
+            // Create parent directories if needed
+            if let Some(parent) = dest_path.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).with_context(|| {
+                        format!(
+                            "Failed to create parent directories for external path dep: {}",
+                            parent.display()
+                        )
+                    })?;
+                }
+            }
+
+            // Handle existing symlinks - verify they point to the correct target
+            if dest_path.exists() || dest_path.symlink_metadata().is_ok() {
+                if dest_path.symlink_metadata().map(|m| m.file_type().is_symlink()).unwrap_or(false) {
+                    // It's a symlink - check if it points to the right place
+                    let current_target = dest_path.read_link().ok().and_then(|p| p.canonicalize().ok());
+                    if current_target.as_ref() == Some(&canonical_source) {
+                        // Already correct, skip
+                        continue;
+                    }
+                    // Wrong target, remove and recreate
+                    remove_symlink(&dest_path).with_context(|| {
+                        format!(
+                            "Failed to remove stale symlink for external path dep: {}",
+                            dest_path.display()
+                        )
+                    })?;
+                } else {
+                    // Not a symlink but exists - this shouldn't happen in normal operation
+                    bail!(
+                        "Cannot create symlink at {} - path already exists as a non-symlink",
+                        dest_path.display()
+                    );
+                }
+            }
+
+            symlink(&canonical_source, &dest_path).with_context(|| {
+                format!(
+                    "Failed to symlink external path dependency: {} -> {}",
+                    canonical_source.display(),
+                    dest_path.display()
+                )
+            })?;
+            debug!(
+                "Symlinked external path dependency: {} -> {}",
+                canonical_source.display(),
+                dest_path.display()
+            );
+        }
+    }
+
+    Ok(())
 }
 
 /// Symlinks the root contents of a source directory into a destination directory
