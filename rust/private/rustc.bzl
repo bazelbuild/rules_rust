@@ -2141,7 +2141,7 @@ def windows_symlink_transitive_deps(ctx, crate_info, dep_info):
     symlink_deps = []
     if crate_info.output == None:
         return []
-    for dep in (dep_info.direct_crates.to_list() + dep_info.transitive_crates.to_list()):
+    for dep in dep_info.transitive_crates.to_list():
         if hasattr(dep, "dep"):
             dep = dep.dep
 
