@@ -48,7 +48,7 @@ jobs:
         close-pr-message: >
           This pull request has been automatically closed due to inactivity. If you're still interested in pursuing this, please post a comment here pinging @bazelbuild/rust-maintainers and we'll take a look. Thanks!
         stale-issue-label: 'stale'
-        exempt-issue-labels: 'not stale,good first issue,help wanted'
+        exempt-issue-labels: 'not stale,good first issue,help wanted,P0,P1,P2,P3'
         close-issue-reason: "not_planned"
         stale-pr-label: 'stale'
         exempt-pr-labels: 'not stale'
