@@ -2,14 +2,13 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("//rust:defs.bzl", "rust_library")
-load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains_prefix")
+load("//test/unit:common.bzl", "assert_action_mnemonic", "assert_argv_contains_prefix", "find_action_by_mnemonic")
 load("//test/unit/force_all_deps_direct:generator.bzl", "generator")
 
 def _force_all_deps_direct_rustc_flags_test(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    action = tut.actions[1]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = find_action_by_mnemonic(tut.actions, "Rustc")
     assert_argv_contains_prefix(
         env,
         action,

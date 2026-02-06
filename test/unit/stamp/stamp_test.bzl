@@ -7,6 +7,7 @@ load(
     "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_not",
+    "find_action_by_mnemonic",
 )
 
 _STAMP_ATTR_VALUES = (0, 1, -1)
@@ -30,8 +31,7 @@ def _stamp_build_flag_test_impl(ctx, flag_value):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = find_action_by_mnemonic(target.actions, "Rustc")
 
     is_test = target[rust_common.crate_info].is_test
     is_bin = target[rust_common.crate_info].type == "bin"
@@ -132,8 +132,7 @@ def _attribute_stamp_test_impl(ctx, attribute_value, build_flag_value):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = find_action_by_mnemonic(target.actions, "Rustc")
 
     if attribute_value == 1:
         _assert_stamped(env, action)
@@ -281,8 +280,7 @@ def _process_wrapper_with_stamp_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
-    action = target.actions[0]
-    assert_action_mnemonic(env, action, "Rustc")
+    action = find_action_by_mnemonic(target.actions, "Rustc")
 
     _assert_not_stamped(env, action)
 

@@ -52,6 +52,21 @@ def assert_argv_contains_prefix_not(env, action, prefix):
                 ),
             )
 
+def find_action_by_mnemonic(actions, mnemonic):
+    """Find the first action with the given mnemonic.
+
+    Args:
+        actions (list): A list of actions.
+        mnemonic (str): The mnemonic to search for.
+
+    Returns:
+        Action: The first action matching the given mnemonic.
+    """
+    for action in actions:
+        if action.mnemonic == mnemonic:
+            return action
+    fail("Failed to find action with mnemonic '{}' in actions: {}".format(mnemonic, actions))
+
 def assert_action_mnemonic(env, action, mnemonic):
     if not action.mnemonic == mnemonic:
         unittest.fail(

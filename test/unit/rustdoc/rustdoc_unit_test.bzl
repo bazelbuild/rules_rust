@@ -6,9 +6,9 @@ load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_binary", "rust_doc", "rust_doc_test", "rust_library", "rust_proc_macro", "rust_test")
 load(
     "//test/unit:common.bzl",
-    "assert_action_mnemonic",
     "assert_argv_contains",
     "assert_argv_contains_prefix_not",
+    "find_action_by_mnemonic",
 )
 
 # TODO: `rust_doc_test` currently does not work on Windows.
@@ -19,10 +19,7 @@ NOT_WINDOWS = select({
 })
 
 def _get_rustdoc_action(env, tut):
-    actions = tut.actions
-    action = actions[0]
-    assert_action_mnemonic(env, action, "Rustdoc")
-
+    action = find_action_by_mnemonic(tut.actions, "Rustdoc")
     return action
 
 def _common_rustdoc_checks(env, tut):
