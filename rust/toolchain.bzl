@@ -367,6 +367,12 @@ def _expand_flags(ctx, attr_name, targets, make_variables):
         expanded_flags.append(flag)
     return expanded_flags
 
+def _process_wrapper_default(bootstrapping):
+    return None if bootstrapping else Label("@rules_rust//util/process_wrapper")
+
+def _bootstrap_process_wrapper_default(bootstrapping):
+    return Label("@rules_rust//util/process_wrapper:bootstrap_process_wrapper") if bootstrapping else None
+
 def _rust_toolchain_impl(ctx):
     """The rust_toolchain implementation
 
@@ -598,6 +604,8 @@ def _rust_toolchain_impl(ctx):
         extra_rustc_flags = expanded_extra_rustc_flags,
         extra_rustc_flags_for_crate_types = ctx.attr.extra_rustc_flags_for_crate_types,
         extra_exec_rustc_flags = expanded_extra_exec_rustc_flags,
+        process_wrapper = ctx.executable._process_wrapper if ctx.attr._process_wrapper else None,
+        bootstrap_process_wrapper = ctx.executable._bootstrap_process_wrapper if ctx.attr._bootstrap_process_wrapper else None,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
@@ -641,6 +649,9 @@ rust_toolchain = rule(
         "binary_ext": attr.string(
             doc = "The extension for binaries created from rustc.",
             mandatory = True,
+        ),
+        "bootstrapping": attr.bool(
+            doc = "Internal attribute, set when bootstrapping process_wrapper. Do not use.",
         ),
         "cargo": attr.label(
             doc = "The location of the `cargo` binary. Can be a direct source or a filegroup containing one item.",
@@ -833,6 +844,13 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
         ),
+        "_bootstrap_process_wrapper": attr.label(
+            doc = "A bootstrap process wrapper for building the process wrapper",
+            default = _bootstrap_process_wrapper_default,
+            executable = True,
+            allow_single_file = True,
+            cfg = "exec",
+        ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
         ),
@@ -869,6 +887,13 @@ rust_toolchain = rule(
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),
+        ),
+        "_process_wrapper": attr.label(
+            doc = "A process wrapper for running rustc on all platforms.",
+            default = _process_wrapper_default,
+            executable = True,
+            allow_single_file = True,
+            cfg = "exec",
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),

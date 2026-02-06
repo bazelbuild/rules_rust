@@ -201,6 +201,7 @@ def _define_targets():
         name = "extra_flags_toolchain",
         toolchain = ":rust_extra_flags_toolchain",
         toolchain_type = "@rules_rust//rust:toolchain",
+        target_settings = ["@rules_rust//rust/private:bootstrapped"],
     )
 
     extra_toolchain_wrapper(
