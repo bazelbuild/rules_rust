@@ -1,0 +1,58 @@
+load("@bazel_skylib//rules:select_file.bzl", "select_file")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
+load(":extra_outdirs_test.bzl", "extra_outdirs_test_suite")
+
+rust_proc_macro(
+    name = "write_outdirs_macro",
+    srcs = ["proc_macro.rs"],
+    edition = "2018",
+    visibility = ["//test:__subpackages__"],
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    edition = "2018",
+)
+
+not_windows = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+rust_library(
+    name = "lib_with_outdirs",
+    srcs = ["lib_with_outdirs.rs"],
+    edition = "2018",
+    extra_outdirs = [
+        "test_dir",
+        "another_dir",
+    ],
+    proc_macro_deps = [":write_outdirs_macro"],
+    #   = help: message: Failed to write marker file to C:\b\3vh76b43\execroot\_main\bazel-out\x64_windows-fastbuild\bin\test\unit\extra_outdirs\test_dir\marker.txt: Os { code: 5, kind: PermissionDenied, message: "Access is denied." }
+    target_compatible_with = not_windows,
+)
+
+extra_outdirs_test_suite(
+    name = "extra_outdirs_test_suite",
+)
+
+select_file(
+    name = "lib_with_outdirs_select_file",
+    srcs = ":lib_with_outdirs",
+    subpath = "test_dir",
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "outdirs_content_test",
+    srcs = ["outdirs_content_test.sh"],
+    args = [
+        "$(rlocationpath :lib_with_outdirs_select_file)",
+    ],
+    data = [
+        ":lib_with_outdirs_select_file",
+    ],
+    deps = ["@rules_shell//shell/runfiles"],
+)
