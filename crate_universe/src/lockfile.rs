@@ -376,4 +376,57 @@ mod test {
             digest,
         );
     }
+
+    #[test]
+    fn digest_stable_with_crlf_cargo_config() {
+        let context = Context::default();
+        let splicing_metadata = SplicingMetadata::default();
+
+        let json_config = |cargo_config: &str| {
+            serde_json::to_string(&serde_json::json!({
+                "generate_binaries": false,
+                "generate_build_scripts": false,
+                "cargo_config": cargo_config,
+                "rendering": {
+                    "repository_name": "test",
+                    "regen_command": "//test",
+                    "generate_cargo_toml_env_vars": true
+                }
+            }))
+            .unwrap()
+        };
+
+        let config_crlf: Config = serde_json::from_str(&json_config(
+            "[registries.my-registry]\r\nindex = \"sparse+https://example.com/\"",
+        ))
+        .unwrap();
+
+        let config_lf: Config = serde_json::from_str(&json_config(
+            "[registries.my-registry]\nindex = \"sparse+https://example.com/\"",
+        ))
+        .unwrap();
+
+        let digest_crlf = Digest::compute(
+            &context,
+            &config_crlf,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        let digest_lf = Digest::compute(
+            &context,
+            &config_lf,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        assert_eq!(
+            digest_crlf, digest_lf,
+            "Digests should be identical regardless of CRLF vs LF line endings in cargo_config"
+        );
+    }
 }
