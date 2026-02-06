@@ -4,12 +4,42 @@ load(
     "rust_binary",
     "rust_library",
     "rust_shared_library",
+    "rust_library_group",
     "rust_test",
 )
 
 cc_library(
     name = "cclinkstampdep",
     linkstamp = "cclinkstampdep.cc",
+)
+
+rust_library(
+    name = "deep_dep",
+    srcs = ["deep_dep.rs"],
+    edition = "2021",
+)
+
+rust_library_group(
+    name = "dep_group",
+    deps = [":deep_dep"],
+)
+
+rust_library(
+    name = "very_nested_dep",
+    srcs = ["very_nested_dep.rs"],
+    edition = "2021",
+)
+
+rust_library_group(
+    name = "nested_dep_group",
+    deps = [":very_nested_dep"],
+)
+
+rust_library(
+    name = "nesting_dep",
+    srcs = ["nesting_dep.rs"],
+    deps = [":nested_dep_group"],
+    edition = "2021",
 )
 
 rust_library(
@@ -25,6 +55,8 @@ rust_binary(
     deps = [
         ":cclinkstampdep",
         ":rdep",
+        ":dep_group",
+        ":nesting_dep",
     ],
 )
 
