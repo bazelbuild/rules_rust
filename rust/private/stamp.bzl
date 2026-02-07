@@ -10,7 +10,7 @@ def is_stamping_enabled(ctx, attr):
     Returns:
         bool: The stamp value
     """
-    stamp_num = getattr(attr, "stamp", 0)
+    stamp_num = getattr(attr, "stamp", -1)
     if stamp_num == 1:
         return True
     elif stamp_num == 0:
