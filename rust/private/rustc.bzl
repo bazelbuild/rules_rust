@@ -2279,7 +2279,13 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
         elif include_link_flags:
             get_lib_name = get_lib_name_for_windows if flavor_msvc else get_lib_name_default
             ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, flavor_msvc = flavor_msvc))
-    _add_user_link_flags(ret, linker_input)
+
+    # Windows toolchains can inherit POSIX defaults like -pthread from C deps,
+    # which fails to link with the MinGW/LLD toolchain. Drop them here.
+    for flag in linker_input.user_link_flags:
+        if flag in ("-pthread", "-lpthread"):
+            continue
+        ret.append("--codegen=link-arg={}".format(flag))
     return ret
 
 def _make_link_flags_windows_msvc(make_link_flags_args, use_direct_driver):
