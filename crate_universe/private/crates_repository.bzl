@@ -36,6 +36,151 @@ SUPPORTED_PLATFORM_TRIPLES = [
     "x86_64-unknown-nixos-gnu",
 ]
 
+_CRATES_REPOSITORY_ATTRS = {
+    "annotations": attr.string_list_dict(
+        doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
+    ),
+    "cargo_config": attr.label(
+        doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
+    ),
+    "cargo_lockfile": attr.label(
+        doc = (
+            "The path used to store the `crates_repository` specific " +
+            "[Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. " +
+            "In the case that your `crates_repository` corresponds directly with an existing " +
+            "`Cargo.toml` file which has a paired `Cargo.lock` file, that `Cargo.lock` file " +
+            "should be used here, which will keep the versions used by cargo and bazel in sync."
+        ),
+        mandatory = True,
+    ),
+    "compressed_windows_toolchain_names": attr.bool(
+        doc = "Whether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
+        default = True,
+    ),
+    "generate_binaries": attr.bool(
+        doc = (
+            "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
+            "By default only the `rust_library` targets are generated."
+        ),
+        default = False,
+    ),
+    "generate_build_scripts": attr.bool(
+        doc = (
+            "Whether or not to generate " +
+            "[cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default."
+        ),
+        default = True,
+    ),
+    "generate_target_compatible_with": attr.bool(
+        doc = "DEPRECATED: Moved to `render_config`.",
+        default = True,
+    ),
+    "generator": attr.string(
+        doc = (
+            "The absolute label of a generator. Eg. `@cargo_bazel_bootstrap//:cargo-bazel`. " +
+            "This is typically used when bootstrapping"
+        ),
+    ),
+    "generator_sha256s": attr.string_dict(
+        doc = "Dictionary of `host_triple` -> `sha256` for a `cargo-bazel` binary.",
+        default = CARGO_BAZEL_SHA256S,
+    ),
+    "generator_urls": attr.string_dict(
+        doc = (
+            "URL template from which to download the `cargo-bazel` binary. `{host_triple}` and will be " +
+            "filled in according to the host platform."
+        ),
+        default = CARGO_BAZEL_URLS,
+    ),
+    "isolated": attr.bool(
+        doc = (
+            "If true, `CARGO_HOME` will be overwritten to a directory within the generated repository in " +
+            "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
+            "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
+            "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
+            "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
+        ),
+        default = True,
+    ),
+    "lockfile": attr.label(
+        doc = (
+            "The path to a file to use for reproducible renderings. " +
+            "If set, this file must exist within the workspace (but can be empty) before this rule will work." +
+            "If you already have a `MODULE.bazel.lock` file, you don't need this." +
+            "If you don't have a `MODULE.bazel.lock` file, the `lockfile` will save you generation time."
+        ),
+    ),
+    "manifests": attr.label_list(
+        doc = "A list of Cargo manifests (`Cargo.toml` files).",
+    ),
+    "packages": attr.string_dict(
+        doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
+    ),
+    "quiet": attr.bool(
+        doc = "If stdout and stderr should not be printed to the terminal.",
+        default = True,
+    ),
+    "render_config": attr.string(
+        doc = (
+            "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
+            "generate the value for this field. If unset, the defaults defined there will be used."
+        ),
+    ),
+    "repin_instructions": attr.string(
+        doc = "Instructions to re-pin the repository if required. Many people have wrapper scripts for keeping dependencies up to date, and would like to point users to that instead of the default.",
+    ),
+    "rust_toolchain_cargo_template": attr.string(
+        doc = (
+            "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
+            "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+            "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+            "'rustc.exe') will be replaced in the string if present."
+        ),
+        default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
+    ),
+    "rust_toolchain_rustc_template": attr.string(
+        doc = (
+            "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
+            "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
+            "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
+            "'cargo.exe') will be replaced in the string if present."
+        ),
+        default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
+    ),
+    "rust_version": attr.string(
+        doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
+        default = rust_common.default_version,
+    ),
+    "skip_cargo_lockfile_overwrite": attr.bool(
+        doc = (
+            "Whether to skip writing the cargo lockfile back after resolving. " +
+            "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
+            "But you probably don't want to set this."
+        ),
+        default = False,
+    ),
+    "splicing_config": attr.string(
+        doc = (
+            "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
+            "generate the value for this field. If unset, the defaults defined there will be used."
+        ),
+    ),
+    "strip_internal_dependencies_from_cargo_lockfile": attr.bool(
+        doc = (
+            "Whether to strip internal dependencies from the cargo lockfile. " +
+            "You may want to use this if you want to maintain a cargo lockfile for bazel only. " +
+            "Bazel only requires external dependencies to be present in the lockfile. " +
+            "By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts " +
+            "in other lockfiles where the cargo lockfile's sha is stored."
+        ),
+        default = False,
+    ),
+    "supported_platform_triples": attr.string_list(
+        doc = "A set of all platform triples to consider when generating dependencies.",
+        default = SUPPORTED_PLATFORM_TRIPLES,
+    ),
+}
+
 def _crates_repository_impl(repository_ctx):
     # Determine the current host's platform triple
     host_triple = get_host_triple(repository_ctx)
@@ -137,10 +282,9 @@ def _crates_repository_impl(repository_ctx):
         print("WARN: {}".format(warning))
 
     # Determine the set of reproducible values
-    attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}
-    exclude = ["to_json", "to_proto"]
-    for attr in exclude:
-        attrs.pop(attr, None)
+    attrs = {"name": repository_ctx.name}
+    for key in _CRATES_REPOSITORY_ATTRS:
+        attrs[key] = getattr(repository_ctx.attr, key)
 
     # Note that this is only scoped to the current host platform. Users should
     # ensure they provide all the values necessary for the host environments
@@ -249,149 +393,6 @@ CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_i
 
 """,
     implementation = _crates_repository_impl,
-    attrs = {
-        "annotations": attr.string_list_dict(
-            doc = "Extra settings to apply to crates. See [crate.annotation](#crateannotation).",
-        ),
-        "cargo_config": attr.label(
-            doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file",
-        ),
-        "cargo_lockfile": attr.label(
-            doc = (
-                "The path used to store the `crates_repository` specific " +
-                "[Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file. " +
-                "In the case that your `crates_repository` corresponds directly with an existing " +
-                "`Cargo.toml` file which has a paired `Cargo.lock` file, that `Cargo.lock` file " +
-                "should be used here, which will keep the versions used by cargo and bazel in sync."
-            ),
-            mandatory = True,
-        ),
-        "compressed_windows_toolchain_names": attr.bool(
-            doc = "Whether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.",
-            default = True,
-        ),
-        "generate_binaries": attr.bool(
-            doc = (
-                "Whether to generate `rust_binary` targets for all the binary crates in every package. " +
-                "By default only the `rust_library` targets are generated."
-            ),
-            default = False,
-        ),
-        "generate_build_scripts": attr.bool(
-            doc = (
-                "Whether or not to generate " +
-                "[cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) by default."
-            ),
-            default = True,
-        ),
-        "generate_target_compatible_with": attr.bool(
-            doc = "DEPRECATED: Moved to `render_config`.",
-            default = True,
-        ),
-        "generator": attr.string(
-            doc = (
-                "The absolute label of a generator. Eg. `@cargo_bazel_bootstrap//:cargo-bazel`. " +
-                "This is typically used when bootstrapping"
-            ),
-        ),
-        "generator_sha256s": attr.string_dict(
-            doc = "Dictionary of `host_triple` -> `sha256` for a `cargo-bazel` binary.",
-            default = CARGO_BAZEL_SHA256S,
-        ),
-        "generator_urls": attr.string_dict(
-            doc = (
-                "URL template from which to download the `cargo-bazel` binary. `{host_triple}` and will be " +
-                "filled in according to the host platform."
-            ),
-            default = CARGO_BAZEL_URLS,
-        ),
-        "isolated": attr.bool(
-            doc = (
-                "If true, `CARGO_HOME` will be overwritten to a directory within the generated repository in " +
-                "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
-                "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
-                "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
-                "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
-            ),
-            default = True,
-        ),
-        "lockfile": attr.label(
-            doc = (
-                "The path to a file to use for reproducible renderings. " +
-                "If set, this file must exist within the workspace (but can be empty) before this rule will work." +
-                "If you already have a `MODULE.bazel.lock` file, you don't need this." +
-                "If you don't have a `MODULE.bazel.lock` file, the `lockfile` will save you generation time."
-            ),
-        ),
-        "manifests": attr.label_list(
-            doc = "A list of Cargo manifests (`Cargo.toml` files).",
-        ),
-        "packages": attr.string_dict(
-            doc = "A set of crates (packages) specifications to depend on. See [crate.spec](#crate.spec).",
-        ),
-        "quiet": attr.bool(
-            doc = "If stdout and stderr should not be printed to the terminal.",
-            default = True,
-        ),
-        "render_config": attr.string(
-            doc = (
-                "The configuration flags to use for rendering. Use `//crate_universe:defs.bzl\\%render_config` to " +
-                "generate the value for this field. If unset, the defaults defined there will be used."
-            ),
-        ),
-        "repin_instructions": attr.string(
-            doc = "Instructions to re-pin the repository if required. Many people have wrapper scripts for keeping dependencies up to date, and would like to point users to that instead of the default.",
-        ),
-        "rust_toolchain_cargo_template": attr.string(
-            doc = (
-                "The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
-                "'rustc.exe') will be replaced in the string if present."
-            ),
-            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
-        ),
-        "rust_toolchain_rustc_template": attr.string(
-            doc = (
-                "The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), " +
-                "`{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), " +
-                "`{system}` (eg. 'darwin'), `{cfg}` (eg. 'exec'), `{channel}` (eg. 'stable'), and `{tool}` (eg. " +
-                "'cargo.exe') will be replaced in the string if present."
-            ),
-            default = "@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}",
-        ),
-        "rust_version": attr.string(
-            doc = "The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`",
-            default = rust_common.default_version,
-        ),
-        "skip_cargo_lockfile_overwrite": attr.bool(
-            doc = (
-                "Whether to skip writing the cargo lockfile back after resolving. " +
-                "You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. " +
-                "But you probably don't want to set this."
-            ),
-            default = False,
-        ),
-        "splicing_config": attr.string(
-            doc = (
-                "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
-                "generate the value for this field. If unset, the defaults defined there will be used."
-            ),
-        ),
-        "strip_internal_dependencies_from_cargo_lockfile": attr.bool(
-            doc = (
-                "Whether to strip internal dependencies from the cargo lockfile. " +
-                "You may want to use this if you want to maintain a cargo lockfile for bazel only. " +
-                "Bazel only requires external dependencies to be present in the lockfile. " +
-                "By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts " +
-                "in other lockfiles where the cargo lockfile's sha is stored."
-            ),
-            default = False,
-        ),
-        "supported_platform_triples": attr.string_list(
-            doc = "A set of all platform triples to consider when generating dependencies.",
-            default = SUPPORTED_PLATFORM_TRIPLES,
-        ),
-    },
+    attrs = _CRATES_REPOSITORY_ATTRS,
     environ = CRATES_REPOSITORY_ENVIRON,
 )
