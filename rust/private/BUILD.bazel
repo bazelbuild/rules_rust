@@ -1,5 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
+load("//rust/private:stamp.bzl", "stamp_build_setting")
 
 # Exported for docs
 exports_files(["providers.bzl"])
@@ -30,6 +31,8 @@ bzl_library(
         "@bazel_skylib//rules:common_settings",
     ],
 )
+
+stamp_build_setting(name = "stamp")
 
 rust_analyzer_detect_sysroot(
     name = "rust_analyzer_detect_sysroot",
