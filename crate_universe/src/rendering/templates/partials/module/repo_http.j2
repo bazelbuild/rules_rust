@@ -23,6 +23,10 @@
     {%- endif %}
         type = "tar.gz",
         urls = ["{{ attrs.url }}"],
+    {%- if attrs | get(key="strip_prefix", default=Null) %}
+        strip_prefix = "{{ attrs.strip_prefix }}",
+    {%- else %}
         strip_prefix = "{{ crate.name }}-{{ crate.version }}",
+    {%- endif %}
         build_file = Label("{{ crate_build_file(name = crate.name, version = crate.version)}}"),
     )

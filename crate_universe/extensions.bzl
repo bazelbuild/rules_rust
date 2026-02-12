@@ -744,7 +744,7 @@ def _generate_hub_and_spokes(
                 sha256 = repo.get("sha256", None),
                 type = "tar.gz",
                 urls = [repo["url"]],
-                strip_prefix = "%s-%s" % (crate["name"], crate["version"]),
+                strip_prefix = repo.get("strip_prefix", "%s-%s" % (crate["name"], crate["version"])),
                 build_file_content = build_file_content,
             )
         elif "Git" in repo:
