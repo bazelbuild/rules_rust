@@ -568,7 +568,11 @@ impl CrateContext {
         .with_overrides(extras, package))
     }
 
-    fn with_overrides(mut self, extras: &BTreeMap<CrateId, PairedExtras>, package: &Package) -> Self {
+    fn with_overrides(
+        mut self,
+        extras: &BTreeMap<CrateId, PairedExtras>,
+        package: &Package,
+    ) -> Self {
         let id = CrateId::new(self.name.clone(), self.version.clone());
 
         // Insert all overrides/extras
@@ -967,14 +971,11 @@ fn collect_activated_deps(
         .iter()
         .flat_map(|f| feature_map.get(f).into_iter().flatten())
         .filter_map(|entry| {
-            entry
-                .strip_prefix("dep:")
-                .map(str::to_owned)
-                .or_else(|| {
-                    optional_deps
-                        .contains(entry.as_str())
-                        .then(|| entry.clone())
-                })
+            entry.strip_prefix("dep:").map(str::to_owned).or_else(|| {
+                optional_deps
+                    .contains(entry.as_str())
+                    .then(|| entry.clone())
+            })
         })
         .collect()
 }
@@ -994,10 +995,7 @@ fn compute_orphaned_deps(
     let remaining: BTreeSet<String> = remaining_features.values().into_iter().collect();
     let full_removed = expand_removed(feature_map, removed, &remaining);
 
-    let surviving: BTreeSet<String> = remaining
-        .difference(&full_removed)
-        .cloned()
-        .collect();
+    let surviving: BTreeSet<String> = remaining.difference(&full_removed).cloned().collect();
 
     let deps_surviving = collect_activated_deps(&surviving, feature_map, &optional_deps);
     let deps_removed = collect_activated_deps(&full_removed, feature_map, &optional_deps);
@@ -1469,5 +1467,237 @@ mod test {
         .to_string();
 
         assert_eq!(err, "Package \"common\" target \"common\" had an absolute source path \"/dev/null\", which is not supported");
+    }
+
+    fn syntect_feature_map() -> BTreeMap<String, Vec<String>> {
+        BTreeMap::from([
+            ("default".into(), vec!["default-onig".into(), "html".into()]),
+            (
+                "default-onig".into(),
+                vec![
+                    "onig".into(),
+                    "parsing".into(),
+                    "default-themes".into(),
+                    "default-syntaxes".into(),
+                ],
+            ),
+            (
+                "default-fancy".into(),
+                vec![
+                    "fancy-regex".into(),
+                    "parsing".into(),
+                    "default-themes".into(),
+                    "default-syntaxes".into(),
+                ],
+            ),
+            ("regex-onig".into(), vec!["onig".into()]),
+            ("regex-fancy".into(), vec!["fancy-regex".into()]),
+            ("onig".into(), vec!["dep:onig".into()]),
+            ("fancy-regex".into(), vec!["dep:fancy-regex".into()]),
+            (
+                "parsing".into(),
+                vec![
+                    "bincode".into(),
+                    "flate2".into(),
+                    "fnv".into(),
+                    "plist-load".into(),
+                    "regex-syntax".into(),
+                    "yaml-load".into(),
+                ],
+            ),
+            ("plist-load".into(), vec!["dep:plist".into()]),
+            ("yaml-load".into(), vec!["dep:yaml-rust".into()]),
+            ("html".into(), vec![]),
+            ("default-themes".into(), vec![]),
+            ("default-syntaxes".into(), vec![]),
+        ])
+    }
+
+    #[test]
+    fn expand_removed_transitive() {
+        let feature_map = syntect_feature_map();
+
+        let removed =
+            BTreeSet::from(["default".into(), "default-onig".into(), "regex-onig".into()]);
+        let remaining = BTreeSet::from([
+            "bincode".into(),
+            "default".into(),
+            "default-fancy".into(),
+            "default-onig".into(),
+            "default-syntaxes".into(),
+            "default-themes".into(),
+            "fancy-regex".into(),
+            "flate2".into(),
+            "fnv".into(),
+            "html".into(),
+            "onig".into(),
+            "parsing".into(),
+            "plist-load".into(),
+            "regex-fancy".into(),
+            "regex-onig".into(),
+            "regex-syntax".into(),
+            "yaml-load".into(),
+        ]);
+
+        let full_removed = expand_removed(&feature_map, &removed, &remaining);
+
+        assert!(
+            full_removed.contains("onig"),
+            "onig should be transitively removed"
+        );
+        assert!(
+            full_removed.contains("html"),
+            "html should be transitively removed"
+        );
+        assert!(
+            !full_removed.contains("parsing"),
+            "parsing survives via default-fancy"
+        );
+        assert!(
+            !full_removed.contains("fancy-regex"),
+            "fancy-regex survives via regex-fancy and default-fancy"
+        );
+        assert!(
+            !full_removed.contains("default-themes"),
+            "default-themes survives via default-fancy"
+        );
+    }
+
+    #[test]
+    fn expand_removed_shared_child_survives() {
+        let feature_map = BTreeMap::from([
+            ("a".into(), vec!["shared".into()]),
+            ("b".into(), vec!["shared".into()]),
+        ]);
+        let removed = BTreeSet::from(["a".to_owned()]);
+        let remaining = BTreeSet::from(["a".into(), "b".into(), "shared".into()]);
+
+        let full_removed = expand_removed(&feature_map, &removed, &remaining);
+
+        assert!(
+            !full_removed.contains("shared"),
+            "shared survives because parent b is not removed"
+        );
+    }
+
+    #[test]
+    fn expand_removed_cascade() {
+        let feature_map = BTreeMap::from([
+            ("root".into(), vec!["mid".into()]),
+            ("mid".into(), vec!["leaf".into()]),
+        ]);
+        let removed = BTreeSet::from(["root".to_owned()]);
+        let remaining = BTreeSet::from(["root".into(), "mid".into(), "leaf".into()]);
+
+        let full_removed = expand_removed(&feature_map, &removed, &remaining);
+
+        assert!(
+            full_removed.contains("mid"),
+            "mid cascades because its only parent root is removed"
+        );
+        assert!(
+            full_removed.contains("leaf"),
+            "leaf cascades because its only parent mid is removed"
+        );
+    }
+
+    #[test]
+    fn collect_activated_deps_dep_prefix() {
+        let feature_map = BTreeMap::from([
+            ("onig".into(), vec!["dep:onig".into()]),
+            ("fancy-regex".into(), vec!["dep:fancy-regex".into()]),
+        ]);
+        let optional_deps = BTreeSet::from(["onig", "fancy-regex"]);
+
+        let features = BTreeSet::from(["fancy-regex".into()]);
+        let deps = collect_activated_deps(&features, &feature_map, &optional_deps);
+
+        assert!(deps.contains("fancy-regex"));
+        assert!(!deps.contains("onig"));
+    }
+
+    fn optional_dep(name: &str) -> cargo_metadata::Dependency {
+        serde_json::from_value(serde_json::json!({
+            "name": name,
+            "req": "*",
+            "kind": null,
+            "optional": true,
+            "uses_default_features": true,
+            "features": [],
+            "rename": null,
+            "source": null,
+            "target": null,
+            "registry": null,
+            "path": null,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn compute_orphaned_deps_syntect_scenario() {
+        let feature_map = syntect_feature_map();
+        let dependencies: Vec<cargo_metadata::Dependency> =
+            ["onig", "fancy-regex", "plist", "yaml-rust"]
+                .into_iter()
+                .map(optional_dep)
+                .collect();
+
+        let removed =
+            BTreeSet::from(["default".into(), "default-onig".into(), "regex-onig".into()]);
+        let mut remaining_features = Select::<BTreeSet<String>>::default();
+        for f in [
+            "bincode",
+            "default",
+            "default-fancy",
+            "default-onig",
+            "default-syntaxes",
+            "default-themes",
+            "fancy-regex",
+            "flate2",
+            "fnv",
+            "html",
+            "onig",
+            "parsing",
+            "plist-load",
+            "regex-fancy",
+            "regex-onig",
+            "regex-syntax",
+            "yaml-load",
+        ] {
+            remaining_features.insert(f.to_owned(), None);
+        }
+
+        let (orphaned_deps, extra_removed) =
+            compute_orphaned_deps(&feature_map, &dependencies, &removed, &remaining_features);
+
+        assert!(
+            orphaned_deps.contains("onig"),
+            "onig dep should be orphaned"
+        );
+        assert!(
+            !orphaned_deps.contains("fancy-regex"),
+            "fancy-regex dep survives"
+        );
+        assert!(
+            !orphaned_deps.contains("plist"),
+            "plist dep survives via parsing"
+        );
+        assert!(
+            !orphaned_deps.contains("yaml-rust"),
+            "yaml-rust dep survives via parsing"
+        );
+
+        assert!(
+            extra_removed.contains("onig"),
+            "onig feature transitively removed"
+        );
+        assert!(
+            extra_removed.contains("html"),
+            "html feature transitively removed"
+        );
+        assert!(
+            !extra_removed.contains("parsing"),
+            "parsing feature survives"
+        );
     }
 }
