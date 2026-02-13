@@ -372,6 +372,17 @@ impl<T> Select<BTreeSet<T>>
 where
     T: SelectableOrderedValue,
 {
+    pub(crate) fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        self.common.retain(|v| f(v));
+        for platform_set in self.selects.values_mut() {
+            platform_set.retain(|v| f(v));
+        }
+        self.selects.retain(|_, set| !set.is_empty());
+    }
+
     pub(crate) fn map<U, F>(self, func: F) -> Select<BTreeSet<U>>
     where
         U: SelectableOrderedValue,

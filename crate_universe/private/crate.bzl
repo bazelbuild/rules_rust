@@ -106,6 +106,7 @@ def _annotation(
         compile_data_glob = None,
         compile_data_glob_excludes = None,
         crate_features = None,
+        features_to_remove = None,
         data = None,
         data_glob = None,
         deps = None,
@@ -154,6 +155,9 @@ def _annotation(
             attribute.
         crate_features (optional): A list of strings to add to a crate's `rust_library::crate_features`
             attribute.
+        features_to_remove (list, optional): A list of features to remove from a crate's resolved feature set.
+            Overrides Cargo feature unification for this crate. Dependencies gated exclusively on removed
+            features are also excluded.
         data (list, optional): A list of labels to add to a crate's `rust_library::data` attribute.
         data_glob (list, optional): A list of glob patterns to add to a crate's `rust_library::data` attribute.
         deps (list, optional): A list of labels to add to a crate's `rust_library::deps` attribute.
@@ -212,6 +216,7 @@ def _annotation(
             compile_data_glob = compile_data_glob,
             compile_data_glob_excludes = compile_data_glob_excludes,
             crate_features = crate_features,
+            features_to_remove = features_to_remove,
             data = _stringify_list(data),
             data_glob = data_glob,
             deps = _stringify_list(deps),

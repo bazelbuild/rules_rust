@@ -364,6 +364,8 @@ pub(crate) struct CrateAnnotations {
 
     /// The crates to use instead of the generated one.
     pub(crate) override_targets: Option<BTreeMap<String, Label>>,
+
+    pub(crate) features_to_remove: Option<BTreeSet<String>>,
 }
 
 macro_rules! joined_extra_member {
@@ -441,6 +443,7 @@ impl Add for CrateAnnotations {
             extra_aliased_targets: joined_extra_member!(self.extra_aliased_targets, rhs.extra_aliased_targets, BTreeMap::new, BTreeMap::extend),
             alias_rule: self.alias_rule.or(rhs.alias_rule),
             override_targets: self.override_targets.or(rhs.override_targets),
+            features_to_remove: joined_extra_member!(self.features_to_remove, rhs.features_to_remove, BTreeSet::new, BTreeSet::extend),
         };
 
         output

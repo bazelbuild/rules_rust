@@ -1365,6 +1365,9 @@ _ANNOTATION_SELECT_ATTRS = {
     "crate_features": attr.string_list(
         doc = "A list of strings to add to a crate's `rust_library::crate_features` attribute.",
     ),
+    "features_to_remove": attr.string_list(
+        doc = "A list of features to remove from a crate's resolved feature set. Overrides Cargo feature unification for this crate. Dependencies gated exclusively on removed features are also excluded.",
+    ),
     "data": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::data` attribute.",
     ),
