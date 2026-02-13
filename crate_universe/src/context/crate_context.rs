@@ -616,7 +616,7 @@ impl CrateContext {
                     .crate_features
                     .retain(|f| !to_remove.contains(f));
 
-                let orphaned = compute_orphaned_deps(
+                let (orphaned_deps, extra_removed) = compute_orphaned_deps(
                     &package.features,
                     &package.dependencies,
                     to_remove,
@@ -624,12 +624,16 @@ impl CrateContext {
                 );
 
                 self.common_attrs
+                    .crate_features
+                    .retain(|f| !extra_removed.contains(f));
+
+                self.common_attrs
                     .deps
-                    .retain(|d| !orphaned.contains(&d.id.name));
+                    .retain(|d| !orphaned_deps.contains(&d.id.name));
                 if let Some(ref mut build_script) = self.build_script_attrs {
                     build_script
                         .deps
-                        .retain(|d| !orphaned.contains(&d.id.name));
+                        .retain(|d| !orphaned_deps.contains(&d.id.name));
                 }
             }
 
@@ -916,25 +920,42 @@ impl CrateContext {
     }
 }
 
-fn expand_features(
-    seeds: &BTreeSet<String>,
+fn expand_removed(
     feature_map: &BTreeMap<String, Vec<String>>,
-    exclude: &BTreeSet<String>,
+    removed: &BTreeSet<String>,
+    remaining: &BTreeSet<String>,
 ) -> BTreeSet<String> {
-    let mut expanded = BTreeSet::new();
-    let mut queue: Vec<_> = seeds.iter().cloned().collect();
-    while let Some(feature) = queue.pop() {
-        if expanded.contains(&feature) || exclude.contains(&feature) {
-            continue;
-        }
-        expanded.insert(feature.clone());
-        for entry in feature_map.get(&feature).into_iter().flatten() {
-            if !entry.starts_with("dep:") && !entry.contains('/') {
-                queue.push(entry.clone());
+    let mut enabled_by: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+    for (parent, children) in feature_map {
+        for child in children {
+            if !child.starts_with("dep:") && !child.contains('/') {
+                enabled_by
+                    .entry(child.as_str())
+                    .or_default()
+                    .insert(parent.as_str());
             }
         }
     }
-    expanded
+
+    let mut full_removed = removed.clone();
+    loop {
+        let mut changed = false;
+        for feature in remaining.iter() {
+            if full_removed.contains(feature) {
+                continue;
+            }
+            if let Some(parents) = enabled_by.get(feature.as_str()) {
+                if parents.iter().all(|p| full_removed.contains(*p)) {
+                    full_removed.insert(feature.clone());
+                    changed = true;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    full_removed
 }
 
 fn collect_activated_deps(
@@ -951,8 +972,8 @@ fn collect_activated_deps(
                 .map(str::to_owned)
                 .or_else(|| {
                     optional_deps
-                        .get(entry.as_str())
-                        .map(|d| (*d).to_owned())
+                        .contains(entry.as_str())
+                        .then(|| entry.clone())
                 })
         })
         .collect()
@@ -963,7 +984,7 @@ fn compute_orphaned_deps(
     dependencies: &[cargo_metadata::Dependency],
     removed: &BTreeSet<String>,
     remaining_features: &Select<BTreeSet<String>>,
-) -> BTreeSet<String> {
+) -> (BTreeSet<String>, BTreeSet<String>) {
     let optional_deps: BTreeSet<&str> = dependencies
         .iter()
         .filter(|d| d.optional)
@@ -971,15 +992,19 @@ fn compute_orphaned_deps(
         .collect();
 
     let remaining: BTreeSet<String> = remaining_features.values().into_iter().collect();
-    let expanded_remaining = expand_features(&remaining, feature_map, removed);
-    let deps_remaining = collect_activated_deps(&expanded_remaining, feature_map, &optional_deps);
+    let full_removed = expand_removed(feature_map, removed, &remaining);
 
-    let all_features: BTreeSet<String> =
-        remaining.iter().chain(removed.iter()).cloned().collect();
-    let expanded_all = expand_features(&all_features, feature_map, &BTreeSet::new());
-    let deps_all = collect_activated_deps(&expanded_all, feature_map, &optional_deps);
+    let surviving: BTreeSet<String> = remaining
+        .difference(&full_removed)
+        .cloned()
+        .collect();
 
-    deps_all.difference(&deps_remaining).cloned().collect()
+    let deps_surviving = collect_activated_deps(&surviving, feature_map, &optional_deps);
+    let deps_removed = collect_activated_deps(&full_removed, feature_map, &optional_deps);
+
+    let orphaned_deps = deps_removed.difference(&deps_surviving).cloned().collect();
+    let extra_removed = full_removed.difference(removed).cloned().collect();
+    (orphaned_deps, extra_removed)
 }
 
 #[cfg(test)]
