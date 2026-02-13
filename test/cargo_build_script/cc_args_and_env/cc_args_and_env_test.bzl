@@ -422,3 +422,47 @@ def legacy_cc_toolchain_test(name):
         target_under_test = "%s/cargo_build_script" % name,
         legacy_cc_toolchain = True,
     )
+
+def libpath_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-Ltest/relative/sysroot", "-L", "test/relative/sysroot2", "-LIBPATH:test/relative/sysroot3", "-LIBPATH=test/relative/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-L${pwd}/test/relative/sysroot", "-L", "${pwd}/test/relative/sysroot2", "-LIBPATH:${pwd}/test/relative/sysroot3", "-LIBPATH=${pwd}/test/relative/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+
+def libpath_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-L/test/absolute/sysroot", "-L", "/test/absolute/sysroot2", "-LIBPATH:/test/absolute/sysroot3", "-LIBPATH=/test/absolute/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-L/test/absolute/sysroot", "-L", "/test/absolute/sysroot2", "-LIBPATH:/test/absolute/sysroot3", "-LIBPATH=/test/absolute/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+
+def resource_dir_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-resource-dir", "test/relative/resources", "-resource-dir=test/relative/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-resource-dir", "${pwd}/test/relative/resources", "-resource-dir=${pwd}/test/relative/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+
+def resource_dir_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-resource-dir", "/test/absolute/resources", "-resource-dir=/test/absolute/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-resource-dir", "/test/absolute/resources", "-resource-dir=/test/absolute/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
