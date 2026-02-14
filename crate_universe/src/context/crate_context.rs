@@ -616,28 +616,25 @@ impl CrateContext {
             }
 
             if let Some(to_remove) = &crate_extra.features_to_remove {
-                self.common_attrs
-                    .crate_features
-                    .retain(|f| !to_remove.contains(f));
-
-                let (orphaned_deps, extra_removed) = compute_orphaned_deps(
+                let orphaned = compute_orphaned_deps(
                     &package.features,
                     &package.dependencies,
                     to_remove,
                     &self.common_attrs.crate_features,
                 );
 
+                let all_removed: BTreeSet<_> = to_remove.union(&orphaned.extra_features).collect();
                 self.common_attrs
                     .crate_features
-                    .retain(|f| !extra_removed.contains(f));
+                    .retain(|f| !all_removed.contains(f));
 
                 self.common_attrs
                     .deps
-                    .retain(|d| !orphaned_deps.contains(&d.id.name));
+                    .retain(|d| !orphaned.deps.contains(&d.id.name));
                 if let Some(ref mut build_script) = self.build_script_attrs {
                     build_script
                         .deps
-                        .retain(|d| !orphaned_deps.contains(&d.id.name));
+                        .retain(|d| !orphaned.deps.contains(&d.id.name));
                 }
             }
 
@@ -924,6 +921,10 @@ impl CrateContext {
     }
 }
 
+/// Transitively expands a set of removed features by cascading through
+/// reverse dependencies in the feature map. A feature is additionally
+/// removed if all of its parent features (features that enable it) are
+/// themselves in the removed set.
 fn expand_removed(
     feature_map: &BTreeMap<String, Vec<String>>,
     removed: &BTreeSet<String>,
@@ -962,6 +963,10 @@ fn expand_removed(
     full_removed
 }
 
+/// Collects the set of optional dependency names activated by the given
+/// features. Recognizes both explicit `dep:name` entries and implicit
+/// optional dependency activation (where a feature name matches an
+/// optional dependency).
 fn collect_activated_deps(
     features: &BTreeSet<String>,
     feature_map: &BTreeMap<String, Vec<String>>,
@@ -980,29 +985,43 @@ fn collect_activated_deps(
         .collect()
 }
 
+/// Result of computing which dependencies and features become orphaned
+/// after removing a set of features.
+struct OrphanedDeps {
+    /// Dependency names to exclude (activated only by removed features).
+    deps: BTreeSet<String>,
+    /// Features transitively removed beyond the explicitly requested set.
+    extra_features: BTreeSet<String>,
+}
+
+/// Computes optional dependencies orphaned by removing the given features.
+/// Takes the full (unmodified) feature set and handles initial stripping
+/// internally.
 fn compute_orphaned_deps(
     feature_map: &BTreeMap<String, Vec<String>>,
     dependencies: &[cargo_metadata::Dependency],
     removed: &BTreeSet<String>,
-    remaining_features: &Select<BTreeSet<String>>,
-) -> (BTreeSet<String>, BTreeSet<String>) {
+    all_features: &Select<BTreeSet<String>>,
+) -> OrphanedDeps {
     let optional_deps: BTreeSet<&str> = dependencies
         .iter()
         .filter(|d| d.optional)
         .map(|d| d.name.as_str())
         .collect();
 
-    let remaining: BTreeSet<String> = remaining_features.values().into_iter().collect();
+    let all: BTreeSet<String> = all_features.values().into_iter().collect();
+    let remaining: BTreeSet<String> = all.difference(removed).cloned().collect();
     let full_removed = expand_removed(feature_map, removed, &remaining);
 
-    let surviving: BTreeSet<String> = remaining.difference(&full_removed).cloned().collect();
+    let surviving: BTreeSet<String> = all.difference(&full_removed).cloned().collect();
 
     let deps_surviving = collect_activated_deps(&surviving, feature_map, &optional_deps);
     let deps_removed = collect_activated_deps(&full_removed, feature_map, &optional_deps);
 
-    let orphaned_deps = deps_removed.difference(&deps_surviving).cloned().collect();
-    let extra_removed = full_removed.difference(removed).cloned().collect();
-    (orphaned_deps, extra_removed)
+    OrphanedDeps {
+        deps: deps_removed.difference(&deps_surviving).cloned().collect(),
+        extra_features: full_removed.difference(removed).cloned().collect(),
+    }
 }
 
 #[cfg(test)]
@@ -1667,36 +1686,36 @@ mod test {
             remaining_features.insert(f.to_owned(), None);
         }
 
-        let (orphaned_deps, extra_removed) =
+        let orphaned =
             compute_orphaned_deps(&feature_map, &dependencies, &removed, &remaining_features);
 
         assert!(
-            orphaned_deps.contains("onig"),
+            orphaned.deps.contains("onig"),
             "onig dep should be orphaned"
         );
         assert!(
-            !orphaned_deps.contains("fancy-regex"),
+            !orphaned.deps.contains("fancy-regex"),
             "fancy-regex dep survives"
         );
         assert!(
-            !orphaned_deps.contains("plist"),
+            !orphaned.deps.contains("plist"),
             "plist dep survives via parsing"
         );
         assert!(
-            !orphaned_deps.contains("yaml-rust"),
+            !orphaned.deps.contains("yaml-rust"),
             "yaml-rust dep survives via parsing"
         );
 
         assert!(
-            extra_removed.contains("onig"),
+            orphaned.extra_features.contains("onig"),
             "onig feature transitively removed"
         );
         assert!(
-            extra_removed.contains("html"),
+            orphaned.extra_features.contains("html"),
             "html feature transitively removed"
         );
         assert!(
-            !extra_removed.contains("parsing"),
+            !orphaned.extra_features.contains("parsing"),
             "parsing feature survives"
         );
     }

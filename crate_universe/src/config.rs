@@ -365,6 +365,8 @@ pub(crate) struct CrateAnnotations {
     /// The crates to use instead of the generated one.
     pub(crate) override_targets: Option<BTreeMap<String, Label>>,
 
+    /// Features to remove from the resolved feature set. Overrides Cargo feature
+    /// unification. Dependencies gated exclusively on removed features are also excluded.
     pub(crate) features_to_remove: Option<BTreeSet<String>>,
 }
 

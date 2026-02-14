@@ -1294,6 +1294,9 @@ _ANNOTATION_NORMAL_ATTRS = {
     "extra_aliased_targets": attr.string_dict(
         doc = "A list of targets to add to the generated aliases in the root crate_universe repository.",
     ),
+    "features_to_remove": attr.string_list(
+        doc = "A list of features to remove from a crate's resolved feature set. Overrides Cargo feature unification for this crate. Dependencies gated exclusively on removed features are also excluded.",
+    ),
     "gen_all_binaries": attr.bool(
         doc = "If true, generates `rust_binary` targets for all of the crates bins",
     ),
@@ -1364,9 +1367,6 @@ _ANNOTATION_SELECT_ATTRS = {
     ),
     "crate_features": attr.string_list(
         doc = "A list of strings to add to a crate's `rust_library::crate_features` attribute.",
-    ),
-    "features_to_remove": attr.string_list(
-        doc = "A list of features to remove from a crate's resolved feature set. Overrides Cargo feature unification for this crate. Dependencies gated exclusively on removed features are also excluded.",
     ),
     "data": _relative_label_list(
         doc = "A list of labels to add to a crate's `rust_library::data` attribute.",
