@@ -1,0 +1,4 @@
+alias(
+    name = "tower",
+    actual = "@no_cargo//:tower_with_util",  # ensures the package_alias works
+)
