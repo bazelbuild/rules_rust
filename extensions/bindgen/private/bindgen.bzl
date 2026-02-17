@@ -216,8 +216,8 @@ def _rust_bindgen_impl(ctx):
     toolchain = ctx.toolchains[Label("//:toolchain_type")]
     bindgen_bin = toolchain.bindgen
     clang_bin = toolchain.clang
-    libclang = toolchain.libclang
-    libstdcxx = toolchain.libstdcxx
+    libclang = getattr(toolchain, "libclang", None)
+    libstdcxx = getattr(toolchain, "libstdcxx", None)
 
     output = ctx.outputs.out
 
@@ -225,13 +225,15 @@ def _rust_bindgen_impl(ctx):
 
     tools = depset(([clang_bin] if clang_bin else []), transitive = [cc_toolchain.all_files])
 
-    # libclang should only have 1 output file
-    libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
-
     env = {
-        "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+
+    if libclang:
+        # libclang should only have 1 output file
+        libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
+        env["LIBCLANG_PATH"] = libclang_dir
+
     if clang_bin:
         env["CLANG_PATH"] = clang_bin.path
 
@@ -241,7 +243,7 @@ def _rust_bindgen_impl(ctx):
     args.add_all(ctx.attr.bindgen_flags)
 
     rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
-    if "--rust-edition " not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+    if "--rust-edition" not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
         args.add("--rust-edition=%s" % rust_toolchain.default_edition)
 
     args.add(header)
@@ -282,7 +284,10 @@ def _rust_bindgen_impl(ctx):
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
         system_include_directories = depset(
-            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            transitive = [
+                cc_lib[CcInfo].compilation_context.system_includes,
+                cc_lib[CcInfo].compilation_context.external_includes,
+            ],
             direct = cc_toolchain.built_in_include_directories,
         ),
         user_compile_flags = ctx.attr.clang_flags,
@@ -378,8 +383,9 @@ def _rust_bindgen_impl(ctx):
             [header],
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
-                _get_libs_for_static_executable(libclang),
             ] + ([
+                _get_libs_for_static_executable(libclang),
+            ] if libclang else []) + ([
                 _get_libs_for_static_executable(libstdcxx),
             ] if libstdcxx else []),
         ),
@@ -525,10 +531,11 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             default = True,
         ),
         "libclang": attr.label(
-            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            doc = "A cc_library providing bindgen's runtime dependency on libclang. This attribute is required for hermeticity when bindgen is dynamically linked. If None, bindgen must be statically linked; else, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             allow_files = True,
+            mandatory = False,
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",

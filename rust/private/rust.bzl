@@ -826,10 +826,6 @@ _common_attrs = {
         doc = "Enable collection of cfg flags with results stored in CrateInfo.cfgs.",
         default = Label("//rust/settings:collect_cfgs"),
     ),
-    "_stamp_flag": attr.label(
-        doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
-        default = Label("//rust/private:stamp"),
-    ),
 } | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS
 
 _coverage_attrs = {
