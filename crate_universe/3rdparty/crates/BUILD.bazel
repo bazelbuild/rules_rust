@@ -248,6 +248,30 @@ alias(
 )
 
 alias(
+    name = "reqwest-0.13.2",
+    actual = "@cui__reqwest-0.13.2//:reqwest",
+    tags = ["manual"],
+)
+
+alias(
+    name = "reqwest",
+    actual = "@cui__reqwest-0.13.2//:reqwest",
+    tags = ["manual"],
+)
+
+alias(
+    name = "rustls-0.23.36",
+    actual = "@cui__rustls-0.23.36//:rustls",
+    tags = ["manual"],
+)
+
+alias(
+    name = "rustls",
+    actual = "@cui__rustls-0.23.36//:rustls",
+    tags = ["manual"],
+)
+
+alias(
     name = "semver-1.0.26",
     actual = "@cui__semver-1.0.26//:semver",
     tags = ["manual"],
