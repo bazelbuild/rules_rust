@@ -275,15 +275,6 @@ def experimental_link_std_dylib():
         build_setting_default = False,
     )
 
-def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
-    """A flag to control whether the shell path from a shell toolchain (`@bazel_tools//tools/sh:toolchain_type`) \
-    is embedded into the bootstrap process wrapper for the `.sh` file.
-    """
-    bool_flag(
-        name = "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
-        build_setting_default = False,
-    )
-
 def toolchain_linker_preference():
     """A flag to control which linker is preferred for linking Rust binaries.
 
