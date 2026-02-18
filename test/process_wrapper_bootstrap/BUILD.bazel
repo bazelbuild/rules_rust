@@ -1,12 +1,22 @@
-load("//rust:defs.bzl", "rust_test")
-load(":process_wrapper_bootstrap_test.bzl", "process_wrapper_bootstrap_test_suite")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "bootstrap_process_wrapper_probe",
+    srcs = ["bootstrap_process_wrapper_probe.rs"],
+    edition = "2021",
+)
 
 rust_test(
     name = "bootstrap_process_wrapper_test",
     srcs = ["bootstrap_process_wrapper_test.rs"],
-    data = ["//util/process_wrapper/private:process_wrapper.sh"],
+    data = [
+        ":bootstrap_process_wrapper_probe",
+        "//util/process_wrapper:bootstrap_process_wrapper",
+    ],
     edition = "2021",
+    env = {
+        "BOOTSTRAP_PROCESS_WRAPPER_PROBE_RLOCATIONPATH": "$(rlocationpath :bootstrap_process_wrapper_probe)",
+        "BOOTSTRAP_PROCESS_WRAPPER_RLOCATIONPATH": "$(rlocationpath //util/process_wrapper:bootstrap_process_wrapper)",
+    },
     deps = ["//rust/runfiles"],
 )
-
-process_wrapper_bootstrap_test_suite(name = "process_wrapper_bootstrap_test_suite")

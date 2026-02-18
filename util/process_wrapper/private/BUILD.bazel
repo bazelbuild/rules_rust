@@ -1,4 +1,7 @@
-exports_files([
-    "process_wrapper.sh",
-    "process_wrapper.bat",
-])
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+cc_binary(
+    name = "bootstrap_process_wrapper",
+    srcs = ["bootstrap_process_wrapper.cc"],
+    visibility = ["//util/process_wrapper:__pkg__"],
+)
