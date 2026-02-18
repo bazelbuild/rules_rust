@@ -18,7 +18,6 @@ load(
     "experimental_use_cc_common_link",
     "experimental_use_coverage_metadata_files",
     "experimental_use_global_allocator",
-    "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
     "extra_exec_rustc_env",
     "extra_exec_rustc_flag",
     "extra_exec_rustc_flags",
@@ -95,8 +94,6 @@ experimental_use_global_allocator()
 experimental_use_allocator_libraries_with_mangled_symbols(
     name = "experimental_use_allocator_libraries_with_mangled_symbols",
 )
-
-experimental_use_sh_toolchain_for_bootstrap_process_wrapper()
 
 extra_exec_rustc_env()
 
