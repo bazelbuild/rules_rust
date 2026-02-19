@@ -69,6 +69,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -103,10 +104,10 @@ rust_library(
     version = "0.10.3",
     deps = [
         "@rmdbi__bitflags-2.10.0//:bitflags",
-        "@rmdbi__memchr-2.7.6//:memchr",
+        "@rmdbi__memchr-2.8.0//:memchr",
         "@rmdbi__pulldown-cmark-0.10.3//:build_script_build",
         "@rmdbi__pulldown-cmark-escape-0.10.1//:pulldown_cmark_escape",
-        "@rmdbi__unicase-2.8.1//:unicase",
+        "@rmdbi__unicase-2.9.0//:unicase",
     ],
 )
 

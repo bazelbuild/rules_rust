@@ -564,7 +564,15 @@ def _rust_toolchain_tools_repository_impl(ctx):
         repro[key] = getattr(ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(ctx.attr.sha256s)
+    return ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rust_toolchain_tools_repository = repository_rule(
     doc = (
@@ -834,7 +842,15 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         repro[key] = getattr(repository_ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(repository_ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(repository_ctx.attr.sha256s)
+    return repository_ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rust_analyzer_toolchain_tools_repository = repository_rule(
     doc = "A repository rule for defining a rust_analyzer_toolchain with a `rust-src` artifact.",
@@ -979,7 +995,15 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         repro[key] = getattr(repository_ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(repository_ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(repository_ctx.attr.sha256s)
+    return repository_ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rustfmt_toolchain_tools_repository = repository_rule(
     doc = "A repository rule for defining a rustfmt_toolchain.",

@@ -326,6 +326,10 @@ pub(crate) struct CrateAnnotations {
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
 
+    /// Additional execution properties to pass to a build script's
+    /// [exec_properties](https://bazel.build/reference/be/common-definitions#common.exec_properties) attribute.
+    pub(crate) build_script_exec_properties: Option<Select<BTreeMap<String, String>>>,
+
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
     pub(crate) build_script_toolchains: Option<BTreeSet<Label>>,
@@ -430,6 +434,7 @@ impl Add for CrateAnnotations {
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
             build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
+            build_script_exec_properties: select_merge(self.build_script_exec_properties, rhs.build_script_exec_properties),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_use_default_shell_env: self.build_script_use_default_shell_env.or(rhs.build_script_use_default_shell_env),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),

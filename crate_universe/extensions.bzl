@@ -1344,6 +1344,9 @@ _ANNOTATION_SELECT_ATTRS = {
     "build_script_env": attr.string_dict(
         doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
     ),
+    "build_script_exec_properties": attr.string_dict(
+        doc = "Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.",
+    ),
     "build_script_link_deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",
     ),
