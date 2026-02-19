@@ -67,6 +67,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -145,6 +146,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # arm-unknown-linux-gnueabi
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # arm-unknown-linux-musleabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # armv7-linux-androideabi

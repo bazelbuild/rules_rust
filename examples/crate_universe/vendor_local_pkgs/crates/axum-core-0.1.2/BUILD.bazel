@@ -64,6 +64,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -97,7 +98,7 @@ rust_library(
     }),
     version = "0.1.2",
     deps = [
-        "//vendor_local_pkgs/crates/bytes-1.11.0:bytes",
+        "//vendor_local_pkgs/crates/bytes-1.11.1:bytes",
         "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",

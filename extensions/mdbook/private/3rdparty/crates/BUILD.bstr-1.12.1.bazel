@@ -50,6 +50,10 @@ rust_library(
             "default",  # arm-unknown-linux-gnueabi
             "unicode",  # arm-unknown-linux-gnueabi
         ],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
+            "default",  # arm-unknown-linux-musleabi
+            "unicode",  # arm-unknown-linux-musleabi
+        ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
             "default",  # armv7-unknown-linux-gnueabi
             "unicode",  # armv7-unknown-linux-gnueabi
@@ -107,6 +111,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -140,37 +145,40 @@ rust_library(
     }),
     version = "1.12.1",
     deps = [
-        "@rmdbi__memchr-2.7.6//:memchr",
+        "@rmdbi__memchr-2.8.0//:memchr",
     ] + select({
         "@rules_rust//rust/platform:aarch64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # aarch64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # aarch64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # aarch64-unknown-linux-gnu, aarch64-unknown-nixos-gnu
         ],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # arm-unknown-linux-gnueabi
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # arm-unknown-linux-gnueabi
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # arm-unknown-linux-musleabi
         ],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # armv7-unknown-linux-gnueabi
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # armv7-unknown-linux-gnueabi
         ],
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # i686-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # i686-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # powerpc-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # powerpc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # riscv64gc-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # riscv64gc-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # s390x-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # s390x-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-linux-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # x86_64-unknown-linux-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # x86_64-unknown-linux-gnu
         ],
         "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu": [
-            "@rmdbi__regex-automata-0.4.13//:regex_automata",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
+            "@rmdbi__regex-automata-0.4.14//:regex_automata",  # x86_64-unknown-linux-gnu, x86_64-unknown-nixos-gnu
         ],
         "//conditions:default": [],
     }),
