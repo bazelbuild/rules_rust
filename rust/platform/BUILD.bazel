@@ -31,5 +31,4 @@ package_group(
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
-    visibility = ["//rust:__subpackages__"],
 )
