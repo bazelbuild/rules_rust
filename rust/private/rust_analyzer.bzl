@@ -265,6 +265,15 @@ def _create_single_crate(ctx, attrs, info):
             crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
             crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
 
+    # Ensure workspace crates in the same Bazel package share one source root.
+    #
+    # rust-analyzer picks candidate crates by source root (`relevant_crates`).
+    # Widening include_dirs at the package level keeps related crates in a
+    # shared candidate set; final membership is still resolved by each crate's
+    # module tree.
+    if not is_external:
+        crate["source"]["include_dirs"].append(_WORKSPACE_TEMPLATE + ctx.label.package)
+
     if info.build_info != None and info.build_info.out_dir != None:
         out_dir_path = info.build_info.out_dir.path
         crate["env"].update({"OUT_DIR": _EXEC_ROOT_TEMPLATE + out_dir_path})
