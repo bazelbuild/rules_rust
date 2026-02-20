@@ -1352,11 +1352,8 @@ def rustc_compile_action(
     stamp = is_stamping_enabled(attr)
 
     # Add flags for any 'rustc' lints that are specified.
-    #
-    # Exclude lints if we're building in the exec configuration to prevent crates
-    # used in build scripts from generating warnings.
     lint_files = []
-    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config and not is_exec_configuration(ctx):
+    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
         rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
         lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
 
