@@ -17,6 +17,7 @@ mod options;
 mod output;
 mod rustc;
 mod util;
+mod worker;
 
 use std::collections::HashMap;
 #[cfg(windows)]
@@ -38,7 +39,7 @@ use crate::rustc::ErrorFormat;
 use crate::util::read_file_to_array;
 
 #[derive(Debug)]
-struct ProcessWrapperError(String);
+pub(crate) struct ProcessWrapperError(String);
 
 impl fmt::Display for ProcessWrapperError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -288,6 +289,11 @@ fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, Str
 }
 
 fn main() -> Result<(), ProcessWrapperError> {
+    // Check if Bazel is invoking us as a persistent worker.
+    if std::env::args().any(|a| a == "--persistent_worker") {
+        return worker::worker_main();
+    }
+
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
     let (child_arguments, dep_dir_cleanup) =
