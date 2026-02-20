@@ -322,6 +322,41 @@ rust_toolchain(
     rust_doc = "//:rustdoc",
     rust_std = "//:rust_std-{target_triple}",
     rustc = "//:rustc",
+    process_wrapper = "@rules_rust//util/process_wrapper",
+    linker = {linker_label},
+    linker_type = {linker_type},
+    rustfmt = {rustfmt_label},
+    cargo = "//:cargo",
+    clippy_driver = "//:clippy_driver_bin",
+    cargo_clippy = "//:cargo_clippy_bin",
+    llvm_cov = {llvm_cov_label},
+    llvm_profdata = {llvm_profdata_label},
+    llvm_lib = {llvm_lib_label},
+    rustc_lib = "//:rustc_lib",
+    allocator_library = {allocator_library},
+    global_allocator_library = {global_allocator_library},
+    binary_ext = "{binary_ext}",
+    staticlib_ext = "{staticlib_ext}",
+    dylib_ext = "{dylib_ext}",
+    stdlib_linkflags = [{stdlib_linkflags}],
+    default_edition = "{default_edition}",
+    exec_triple = "{exec_triple}",
+    target_triple = "{target_triple}",
+    visibility = ["//visibility:public"],
+    extra_rustc_flags = {extra_rustc_flags},
+    extra_exec_rustc_flags = {extra_exec_rustc_flags},
+    opt_level = {opt_level},
+    strip_level = {strip_level},
+    tags = ["rust_version={version}"],
+)
+
+rust_toolchain(
+    name = "{toolchain_name}_bootstrap",
+    bootstrapping = True,
+    rust_doc = "//:rustdoc",
+    rust_std = "//:rust_std-{target_triple}",
+    rustc = "//:rustc",
+    process_wrapper = "@rules_rust//util/process_wrapper:bootstrap_process_wrapper",
     linker = {linker_label},
     linker_type = {linker_type},
     rustfmt = {rustfmt_label},
@@ -449,7 +484,20 @@ toolchain(
     target_compatible_with = {target_constraint_sets_serialized},
     toolchain = "{toolchain}",
     toolchain_type = "{toolchain_type}",
-    {target_settings}
+    target_settings = [
+        "@rules_rust//rust/private:bootstrapped",{target_settings}
+    ],
+)
+
+toolchain(
+    name = "{name}_bootstrap",
+    exec_compatible_with = {exec_constraint_sets_serialized},
+    target_compatible_with = {target_constraint_sets_serialized},
+    toolchain = "{toolchain}_bootstrap",
+    toolchain_type = "{toolchain_type}",
+    target_settings = [
+        "@rules_rust//rust/private:bootstrapping",{target_settings}
+    ],
 )
 """
 
@@ -460,7 +508,7 @@ def BUILD_for_toolchain(
         target_settings,
         target_compatible_with,
         exec_compatible_with):
-    target_settings_value = "target_settings = {},".format(json.encode(target_settings)) if target_settings else "# target_settings = []"
+    target_settings_value = ",\n        ".join([repr(setting) for setting in target_settings])
 
     return _build_file_for_toolchain_template.format(
         name = name,

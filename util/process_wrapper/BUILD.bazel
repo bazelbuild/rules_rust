@@ -43,6 +43,10 @@ rust_binary_without_process_wrapper(
         ":opt_macos": ["-Cstrip=debuginfo"],
         "//conditions:default": [],
     }),
+    target_compatible_with = select({
+        "@rules_rust//rust/private:bootstrapping": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         "@rules_rust_tinyjson//:tinyjson",
