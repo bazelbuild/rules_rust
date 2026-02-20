@@ -22,7 +22,7 @@ bzl_library(
 bzl_library(
     name = "bzl_lib",
     srcs = glob(["**/*.bzl"]),
-    visibility = ["//rust:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         ":bazel_tools_bzl_lib",
         ":rules_cc_bzl_lib",
