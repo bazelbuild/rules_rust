@@ -39,6 +39,9 @@ copy_file(
 
 bzl_library(
     name = "bzl_lib",
+    deps = [
+        "//rust:bzl_lib",
+    ],
     srcs = glob(["**/*.bzl"]),
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
