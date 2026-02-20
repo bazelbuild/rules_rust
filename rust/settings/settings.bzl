@@ -562,6 +562,23 @@ def codegen_units():
         build_setting_default = -1,
     )
 
+def experimental_incremental():
+    """A flag to enable incremental compilation for Rust targets.
+
+    When enabled, rustc is invoked with `-Cincremental=/tmp/rules_rust_incremental/<crate_name>`
+    and sandboxing is disabled for Rustc actions so the incremental cache persists between builds.
+
+    This flag is intended for local development builds only. Do not use in CI or release builds
+    as it disables sandboxing and produces non-hermetic outputs.
+
+    Usage in .bazelrc:
+        build:dev --@rules_rust//rust/settings:experimental_incremental
+    """
+    bool_flag(
+        name = "experimental_incremental",
+        build_setting_default = False,
+    )
+
 # buildifier: disable=unnamed-macro
 def collect_cfgs():
     """Enable collection of cfg flags with results stored in CrateInfo.cfgs.

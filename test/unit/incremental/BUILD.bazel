@@ -1,0 +1,5 @@
+load(":incremental_test_suite.bzl", "incremental_test_suite")
+
+incremental_test_suite(
+    name = "incremental_test_suite",
+)

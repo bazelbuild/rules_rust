@@ -589,6 +589,9 @@ RUSTC_ATTRS = {
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
     ),
+    "_incremental": attr.label(
+        default = Label("//rust/settings:experimental_incremental"),
+    ),
     "_extra_exec_rustc_env": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_env"),
     ),

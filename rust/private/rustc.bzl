@@ -26,6 +26,7 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
 load(":compat.bzl", "abs")
+load(":incremental.bzl", "construct_incremental_arguments", "is_incremental_enabled")
 load(":lto.bzl", "construct_lto_arguments")
 load(
     ":providers.bzl",
@@ -1144,6 +1145,16 @@ def construct_arguments(
     _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
     _add_codegen_units_flags(toolchain, emit, rustc_flags)
 
+    # RustcMetadata and Rustc both use incremental compilation, but with separate
+    # cache directories (see construct_incremental_arguments).  Using the same path
+    # for both causes a rustc ICE ("no entry found for key") because the metadata-
+    # only session state is incompatible with a full-compilation session.  The
+    # distinct paths allow both to benefit from caching; because SVH does not
+    # depend on the incremental cache path, both actions produce the same SVH value
+    # for the same source, so Rustc(A) overwriting libA-HASH.rmeta in execroot is
+    # safe for concurrently running sandboxed RustcMetadata(B) actions.
+    _add_incremental_flags(ctx, rustc_flags, crate_info, is_metadata = build_metadata)
+
     # Use linker_type to determine whether to use direct or indirect linker invocation
     # If linker_type is not explicitly set, infer from which linker is actually being used
     ld_is_direct_driver = False
@@ -1465,6 +1476,10 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
+    # When incremental compilation is enabled, force a param file so the worker
+    # strategy sees exactly one @flagfile in the command line (Bazel requirement).
+    use_param_file_always = is_incremental_enabled(ctx, crate_info)
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
@@ -1529,6 +1544,7 @@ def rustc_compile_action(
             build_metadata = True,
             experimental_use_cc_common_link = experimental_use_cc_common_link,
             require_explicit_unstable_features = require_explicit_unstable_features,
+            use_param_file_always = use_param_file_always,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -1590,10 +1606,33 @@ def rustc_compile_action(
             action_outputs.append(dsym_folder)
 
     if ctx.executable._process_wrapper:
+        # Compute execution requirements for incremental compilation.
+        # - "no-sandbox": ensures local fallback builds see stable source paths
+        #   (avoids the rustc ICE that occurs when sandbox paths change between builds).
+        # - "supports-workers": declares that process_wrapper supports Bazel's
+        #   persistent worker protocol. When --strategy=Rustc=worker,local is set,
+        #   Bazel uses the worker (which runs in execroot, also avoiding the sandbox
+        #   path problem), enabling dynamic execution strategy as well.
+        exec_reqs = {}
+        if is_incremental_enabled(ctx, crate_info):
+            exec_reqs["no-sandbox"] = "1"
+            exec_reqs["supports-workers"] = "1"
+            exec_reqs["requires-worker-protocol"] = "json"
+
+        # When incremental compilation is active and pipelining is enabled, add
+        # build_metadata as an ordering dep so Rustc(A) starts only after
+        # RustcMetadata(A) completes.  After RustcMetadata(A) succeeds Bazel marks
+        # its output (libA.rmeta) read-only; the worker's prepare_outputs() runs at
+        # the very start of the Rustc(A) request and chmods those files writable
+        # before rustc tries to overwrite them, avoiding "not writeable" errors.
+        rustc_inputs = compile_inputs
+        if build_metadata and is_incremental_enabled(ctx, crate_info):
+            rustc_inputs = depset([build_metadata], transitive = [compile_inputs])
+
         # Run as normal
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
-            inputs = compile_inputs,
+            inputs = rustc_inputs,
             outputs = action_outputs,
             env = env,
             arguments = args.all,
@@ -1607,8 +1646,19 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            execution_requirements = exec_reqs,
         )
         if args_metadata:
+            # When incremental compilation is enabled, RustcMetadata also runs as a
+            # worker (no-sandbox) so it can read and write the -meta-suffixed
+            # incremental cache at /tmp/rules_rust_incremental/<crate>-meta.
+            # Without worker mode it would be sandboxed and unable to accumulate
+            # incremental state, making every rebuild a cold compilation.
+            meta_exec_reqs = {}
+            if is_incremental_enabled(ctx, crate_info):
+                meta_exec_reqs["no-sandbox"] = "1"
+                meta_exec_reqs["supports-workers"] = "1"
+                meta_exec_reqs["requires-worker-protocol"] = "json"
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs_for_metadata,
@@ -1624,6 +1674,7 @@ def rustc_compile_action(
                     "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
+                execution_requirements = meta_exec_reqs,
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
@@ -1956,6 +2007,17 @@ def _add_codegen_units_flags(toolchain, emit, args):
         return
 
     args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
+
+def _add_incremental_flags(ctx, args, crate_info, is_metadata = False):
+    """Adds flags to an Args object to configure incremental compilation for 'rustc'.
+
+    Args:
+        ctx (ctx): The calling rule's context object.
+        args (Args): A reference to an Args object.
+        crate_info (CrateInfo): The CrateInfo provider of the target crate.
+        is_metadata (bool): True when building a RustcMetadata action.
+    """
+    args.add_all(construct_incremental_arguments(ctx, crate_info, is_metadata = is_metadata))
 
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
