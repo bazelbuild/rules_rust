@@ -4,9 +4,16 @@ load(
     "bindir_relative_test",
     "fsanitize_ignorelist_absolute_test",
     "fsanitize_ignorelist_relative_test",
+    "include_absolute_test",
+    "include_mixed_test",
+    "include_relative_test",
     "isystem_absolute_test",
     "isystem_relative_test",
     "legacy_cc_toolchain_test",
+    "libpath_absolute_test",
+    "libpath_relative_test",
+    "resource_dir_absolute_test",
+    "resource_dir_relative_test",
     "sysroot_absolute_test",
     "sysroot_next_absolute_test",
     "sysroot_relative_test",
@@ -31,3 +38,17 @@ fsanitize_ignorelist_absolute_test(name = "fsanitize_ignorelist_absolute_test")
 fsanitize_ignorelist_relative_test(name = "fsanitize_ignorelist_relative_test")
 
 legacy_cc_toolchain_test(name = "legacy_cc_toolchain_test")
+
+libpath_absolute_test(name = "libpath_absolute_test")
+
+libpath_relative_test(name = "libpath_relative_test")
+
+resource_dir_absolute_test(name = "resource_dir_absolute_test")
+
+resource_dir_relative_test(name = "resource_dir_relative_test")
+
+include_relative_test(name = "include_relative_test")
+
+include_absolute_test(name = "include_absolute_test")
+
+include_mixed_test(name = "include_mixed_test")
