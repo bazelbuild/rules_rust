@@ -1,5 +1,8 @@
 package(default_visibility = ["//visibility:public"])
 
-toolchain_type(
+alias(
     name = "toolchain_type",
+    actual = "@rust_toolchains//rustfmt:toolchain_type",
+    deprecation = "instead use `@rust_toolchains//rustfmt:toolchain_type`",
+    tags = ["manual"],
 )

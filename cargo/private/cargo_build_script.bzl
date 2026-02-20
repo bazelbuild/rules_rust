@@ -21,6 +21,7 @@ load(
     "deduplicate",
     "expand_dict_value_locations",
     "find_cc_toolchain",
+    "find_optional_toolchain",
     "find_toolchain",
     _name_to_crate_name = "name_to_crate_name",
 )
@@ -315,14 +316,15 @@ def _cargo_build_script_impl(ctx):
     """
     script = ctx.executable.script
     script_info = ctx.attr.script[CargoBuildScriptRunfilesInfo]
-    toolchain = find_toolchain(ctx)
+    rustc_toolchain = find_toolchain(ctx)
+    cargo_toolchain = find_optional_toolchain(ctx, "@rust_toolchains//cargo:toolchain_type") or rustc_toolchain
     out_dir = ctx.actions.declare_directory(ctx.label.name + ".out_dir")
     env_out = ctx.actions.declare_file(ctx.label.name + ".env")
     dep_env_out = ctx.actions.declare_file(ctx.label.name + ".depenv")
     flags_out = ctx.actions.declare_file(ctx.label.name + ".flags")
     link_flags = ctx.actions.declare_file(ctx.label.name + ".linkflags")
     link_search_paths = ctx.actions.declare_file(ctx.label.name + ".linksearchpaths")  # rustc-link-search, propagated from transitive dependencies
-    compilation_mode_opt_level = get_compilation_mode_opts(ctx, toolchain).opt_level
+    compilation_mode_opt_level = get_compilation_mode_opts(ctx, rustc_toolchain).opt_level
 
     script_tools = []
     script_data = []
@@ -364,7 +366,7 @@ def _cargo_build_script_impl(ctx):
     if pkg_name == "":
         pkg_name = name_to_pkg_name(ctx.label.name)
 
-    toolchain_tools = [toolchain.all_files]
+    toolchain_tools = [rustc_toolchain.all_files]
 
     env = {}
 
@@ -380,19 +382,19 @@ def _cargo_build_script_impl(ctx):
     if use_default_shell_env:
         env.update(ctx.configuration.default_shell_env)
 
-    if toolchain.cargo:
-        env["CARGO"] = "${pwd}/%s" % toolchain.cargo.path
+    if cargo_toolchain.cargo:
+        env["CARGO"] = "${pwd}/%s" % cargo_toolchain.cargo.path
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
         "CARGO_MANIFEST_DIR": manifest_dir,
         "CARGO_PKG_NAME": pkg_name,
-        "HOST": toolchain.exec_triple.str,
+        "HOST": rustc_toolchain.exec_triple.str,
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
-        "RUSTC": toolchain.rustc.path,
-        "RUSTDOC": toolchain.rust_doc.path,
-        "TARGET": toolchain.target_flag_value,
+        "RUSTC": rustc_toolchain.rustc.path,
+        "RUSTDOC": rustc_toolchain.rust_doc.path,
+        "TARGET": rustc_toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })
 
@@ -414,7 +416,7 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
+    linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", rustc_toolchain, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
@@ -477,7 +479,7 @@ def _cargo_build_script_impl(ctx):
     # https://github.com/rust-lang/cargo/issues/9600
     env["CARGO_ENCODED_RUSTFLAGS"] = "\\x1f".join([
         # Allow build scripts to locate the generated sysroot
-        "--sysroot=${{pwd}}/{}".format(toolchain.sysroot),
+        "--sysroot=${{pwd}}/{}".format(rustc_toolchain.sysroot),
     ] + ctx.attr.rustc_flags)
 
     for f in ctx.attr.crate_features:
@@ -488,7 +490,7 @@ def _cargo_build_script_impl(ctx):
         env["CARGO_MANIFEST_LINKS"] = links
 
     # Add environment variables from the Rust toolchain.
-    env.update(toolchain.env)
+    env.update(rustc_toolchain.env)
 
     known_variables = {}
 
@@ -526,7 +528,7 @@ def _cargo_build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-        ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
+        ] + fallback_tools + ([rustc_toolchain.target_json] if rustc_toolchain.target_json else []),
         transitive = script_data + script_tools + toolchain_tools,
     )
 
@@ -772,7 +774,8 @@ cargo_build_script = rule(
     },
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@rust_toolchains//cargo:toolchain_type", mandatory = False),
+        str(Label("@rust_toolchains//rustc:toolchain_type")),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
 )
