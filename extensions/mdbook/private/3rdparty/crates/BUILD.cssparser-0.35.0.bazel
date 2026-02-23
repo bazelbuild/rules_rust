@@ -64,6 +64,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -98,7 +99,7 @@ rust_library(
     version = "0.35.0",
     deps = [
         "@rmdbi__dtoa-short-0.3.5//:dtoa_short",
-        "@rmdbi__itoa-1.0.15//:itoa",
+        "@rmdbi__itoa-1.0.17//:itoa",
         "@rmdbi__phf-0.11.3//:phf",
         "@rmdbi__smallvec-1.15.1//:smallvec",
     ],

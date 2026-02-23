@@ -64,6 +64,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -98,6 +99,6 @@ rust_library(
     version = "1.2.1",
     deps = [
         "@rmdbi__icu_normalizer-2.1.1//:icu_normalizer",
-        "@rmdbi__icu_properties-2.1.1//:icu_properties",
+        "@rmdbi__icu_properties-2.1.2//:icu_properties",
     ],
 )
