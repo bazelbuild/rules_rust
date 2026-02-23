@@ -1980,6 +1980,9 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             cc_infos.append(libstd_and_allocator_cc_info)
 
     providers = [cc_common.merge_cc_infos(cc_infos = cc_infos)]
+    if crate_info.type == "staticlib":
+        # The static archive is the output.
+        dot_a = crate_info.output
     if dot_a:
         providers.append(AllocatorLibrariesImplInfo(static_archive = dot_a))
     return providers

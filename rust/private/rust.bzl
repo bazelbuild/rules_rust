@@ -1386,6 +1386,26 @@ rust_library_without_process_wrapper = rule(
     ],
 )
 
+def _rust_static_library_without_process_wrapper_impl(ctx):
+    providers = _rust_static_library_impl(ctx)
+    return providers + [_RustBuiltWithoutProcessWrapperInfo()]
+
+rust_static_library_without_process_wrapper = rule(
+    implementation = _rust_static_library_without_process_wrapper_impl,
+    doc = "A variant of `rust_static_library` that uses a minimal process wrapper for `Rustc` actions.",
+    attrs = dict(_common_attrs_for_binary_without_process_wrapper(_common_attrs).items()),
+    fragments = ["cpp"],
+    toolchains = [
+        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+    provides = [
+        CcInfo,
+        rust_common.test_crate_info,
+        _RustBuiltWithoutProcessWrapperInfo,
+    ],
+)
+
 def _test_attrs_for_binary_without_process_wrapper(attrs):
     new_attrs = {}
     new_attrs.update(attrs)
