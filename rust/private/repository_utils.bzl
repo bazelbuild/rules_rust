@@ -280,6 +280,7 @@ rust_stdlib_filegroup(
     srcs = glob(
         [
             "lib/rustlib/{target_triple}/lib/*.rlib",
+            "lib/rustlib/{target_triple}/lib/*.rmeta",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
             "lib/rustlib/{target_triple}/lib/self-contained/**",
