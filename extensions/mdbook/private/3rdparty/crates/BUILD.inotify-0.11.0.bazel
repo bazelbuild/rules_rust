@@ -61,6 +61,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -96,6 +97,6 @@ rust_library(
     deps = [
         "@rmdbi__bitflags-2.10.0//:bitflags",
         "@rmdbi__inotify-sys-0.1.5//:inotify_sys",
-        "@rmdbi__libc-0.2.177//:libc",
+        "@rmdbi__libc-0.2.181//:libc",
     ],
 )

@@ -61,6 +61,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -98,6 +99,6 @@ rust_library(
         "@rmdbi__html5ever-0.35.0//:html5ever",
         "@rmdbi__maplit-1.0.2//:maplit",
         "@rmdbi__tendril-0.4.3//:tendril",
-        "@rmdbi__url-2.5.7//:url",
+        "@rmdbi__url-2.5.8//:url",
     ],
 )
