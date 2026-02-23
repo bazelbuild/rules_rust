@@ -96,6 +96,7 @@ def _annotation(
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
+        build_script_exec_properties = None,
         build_script_link_deps = None,
         build_script_proc_macro_deps = None,
         build_script_rundir = None,
@@ -139,6 +140,7 @@ def _annotation(
             attribute.
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
         build_script_env (dict, optional): Additional environment variables to set when running the crate's `cargo_build_script` - sets that target's `build_script_env` attribute.
+        build_script_exec_properties (dict, optional): Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.
         build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
@@ -202,6 +204,7 @@ def _annotation(
             build_script_data_glob = build_script_data_glob,
             build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
+            build_script_exec_properties = build_script_exec_properties,
             build_script_link_deps = build_script_link_deps,
             build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
             build_script_rundir = build_script_rundir,

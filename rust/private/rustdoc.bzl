@@ -254,6 +254,7 @@ def _rust_doc_impl(ctx):
         env = action.env,
         arguments = action.arguments,
         tools = action.tools,
+        toolchain = Label("//rust:toolchain_type"),
     )
 
     # This rule does nothing without a single-file output, though the directory should've sufficed.
