@@ -107,22 +107,26 @@ impl Digest {
 
     /// Normalize canonical Bazel labels in a JSON string for stable digest computation.
     ///
-    /// In bzlmod, the canonical name of a module changes depending on whether it is used
-    /// as a root module or as a non-root dependency:
-    /// - Root:     `@@//package:target`
-    /// - Non-root: `@@module_name+//package:target`
+    /// The canonical name of a repository changes depending on whether it is used as the
+    /// root workspace/module or as a dependency:
+    ///
+    /// - bzlmod root:     `@@//package:target`
+    /// - bzlmod non-root: `@@module_name+//package:target`
+    /// - WORKSPACE root:  `@@//package:target` (or `//package:target`)
+    /// - WORKSPACE dep:   `@@repo_name//package:target`
     ///
     /// To ensure the lockfile digest is stable across these contexts (so that a lockfile
     /// generated when a module is root remains valid when the module is used as a
     /// non-root dependency), we normalize all canonical labels by stripping the
-    /// repository name component.
+    /// repository name component, treating `@@repo_name//` the same as `@@//`.
     fn normalize_labels_for_digest(json: &str) -> std::borrow::Cow<'_, str> {
         static RE: OnceCell<Regex> = OnceCell::new();
         let re = RE.get_or_init(|| {
             // Match canonical labels (@@...) with a non-empty repository name followed by //.
             // The repository name is matched by [^/"]+ (one or more chars that are not / or ").
-            // This does NOT match @@// (root module form, empty repo name) since [^/"]+ requires
-            // at least one character.
+            // This handles both bzlmod (@@module_name+//) and WORKSPACE (@@repo_name//) forms.
+            // This does NOT match @@// (root form, empty repo name) since [^/"]+ requires at
+            // least one character.
             Regex::new(r#"@@[^/"]+//"#).expect("valid regex")
         });
         re.replace_all(json, "@@//")
@@ -504,6 +508,56 @@ mod test {
         assert_eq!(
             digest_root, digest_non_root,
             "Digests should be identical for root (@@//...) and non-root (@@module_name+//...) module contexts"
+        );
+    }
+
+    #[test]
+    fn digest_stable_for_workspace_root_vs_dep() {
+        // Verifies that the digest is stable in legacy WORKSPACE mode, where labels also
+        // change canonical form when the workspace transitions from root to an external dep:
+        // - Root workspace:    @@//package:target
+        // - External workspace dep: @@repo_name//package:target  (no "+" suffix unlike bzlmod)
+        let context = Context::default();
+        let splicing_metadata = SplicingMetadata::default();
+
+        let make_config = |patch_label: &str| -> Config {
+            Config {
+                annotations: BTreeMap::from([(
+                    CrateNameAndVersionReq::new("some_crate".to_owned(), "1.0.0".parse().unwrap()),
+                    CrateAnnotations {
+                        patches: Some(BTreeSet::from([patch_label.to_owned()])),
+                        ..CrateAnnotations::default()
+                    },
+                )]),
+                ..Config::default()
+            }
+        };
+
+        // Same patch label in WORKSPACE root vs external dep context (no "+" in repo name)
+        let config_root = make_config("@@//patches/my_crate.patch");
+        let config_dep = make_config("@@my_workspace//patches/my_crate.patch");
+
+        let digest_root = Digest::compute(
+            &context,
+            &config_root,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        let digest_dep = Digest::compute(
+            &context,
+            &config_dep,
+            &splicing_metadata,
+            "0.1.0",
+            "cargo 1.57.0 (b2e52d7ca 2021-10-21)",
+            "rustc 1.57.0 (f1edd0429 2021-11-29)",
+        );
+
+        assert_eq!(
+            digest_root, digest_dep,
+            "Digests should be identical for WORKSPACE root (@@//...) and dep (@@repo_name//...) contexts"
         );
     }
 }
