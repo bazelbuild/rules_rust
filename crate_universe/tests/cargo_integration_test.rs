@@ -7,7 +7,7 @@ extern crate tempfile;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{ensure, Context, Result};
 use camino::Utf8PathBuf;
@@ -44,10 +44,10 @@ fn setup_cargo_env(rfiles: &runfiles::Runfiles) -> Result<(PathBuf, PathBuf)> {
     // If $RUSTC is a relative path it can cause issues with
     // `cargo_metadata::MetadataCommand`. Just to be on the safe side, we make
     // both of these env variables absolute paths.
-    if cargo != env::var("CARGO").unwrap() {
+    if cargo != Path::new(&env::var("CARGO").unwrap()) {
         env::set_var("CARGO", cargo.as_os_str());
     }
-    if rustc != env::var("RUSTC").unwrap() {
+    if rustc != Path::new(&env::var("RUSTC").unwrap()) {
         env::set_var("RUSTC", rustc.as_os_str());
     }
 
