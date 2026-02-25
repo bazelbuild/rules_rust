@@ -908,6 +908,7 @@ def construct_arguments(
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
+        always_use_param_file = False,
         error_format = None,
         allowed_unstable_rust_features = None):
     """Builds an Args object containing common rustc flags
@@ -1100,7 +1101,7 @@ def construct_arguments(
     # Rustc arguments
     rustc_flags = ctx.actions.args()
     rustc_flags.set_param_file_format("multiline")
-    rustc_flags.use_param_file("@%s", use_always = bool(ctx.executable._process_wrapper))
+    rustc_flags.use_param_file("@%s", use_always = always_use_param_file)
     rustc_flags.add(crate_info.root)
     rustc_flags.add(crate_info.name, format = "--crate-name=%s")
     rustc_flags.add(crate_info.type, format = "--crate-type=%s")
@@ -1593,6 +1594,7 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
+        always_use_param_file = not ctx.executable._process_wrapper,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
     )
 
