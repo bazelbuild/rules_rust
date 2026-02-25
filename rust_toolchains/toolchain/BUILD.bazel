@@ -3,6 +3,9 @@ load(
     "current_rust_analyzer_toolchain",
     "current_rustfmt_toolchain",
 )
+
+# This module is a child of rules_rust so we permit "friendly" visibility
+# buildifier: disable=bzl-visibility
 load(
     "@rules_rust//rust/private:toolchain_utils.bzl",
     "current_rust_toolchain",
