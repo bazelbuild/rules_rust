@@ -90,12 +90,24 @@ filegroup(
 )
 """
 
-def BUILD_for_compiler(target_triple, include_linker = False):
+_build_file_for_objcopy_template = """\
+filegroup(
+    name = "rust-objcopy",
+    srcs = glob(
+        ["lib/rustlib/{target_triple}/bin/rust-objcopy{binary_ext}"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = False):
     """Emits a BUILD file the compiler archive.
 
     Args:
         target_triple (str): The triple of the target platform
         include_linker (bool): Whether to generate targets for linkers.
+        include_objcopy (bool): Whether to generate targets for rust-objcopy.
 
     Returns:
         str: The contents of a BUILD file
@@ -113,6 +125,14 @@ def BUILD_for_compiler(target_triple, include_linker = False):
                 binary_ext = system_to_binary_ext(target_triple.system),
                 staticlib_ext = system_to_staticlib_ext(target_triple.system),
                 dylib_ext = system_to_dylib_ext(target_triple.system),
+                target_triple = target_triple.str,
+            ),
+        )
+
+    if include_objcopy:
+        content.append(
+            _build_file_for_objcopy_template.format(
+                binary_ext = system_to_binary_ext(target_triple.system),
                 target_triple = target_triple.str,
             ),
         )
@@ -325,6 +345,7 @@ rust_toolchain(
     rustc = "//:rustc",
     linker = {linker_label},
     linker_type = {linker_type},
+    rust_objcopy = {rust_objcopy_label},
     rustfmt = {rustfmt_label},
     cargo = "//:cargo",
     clippy_driver = "//:clippy_driver_bin",
@@ -362,6 +383,7 @@ def BUILD_for_rust_toolchain(
         include_rustfmt,
         include_llvm_tools,
         include_linker,
+        include_objcopy = False,
         stdlib_linkflags = None,
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
@@ -382,6 +404,7 @@ def BUILD_for_rust_toolchain(
         include_rustfmt (bool): Whether rustfmt is present in the toolchain.
         include_llvm_tools (bool): Whether llvm-tools are present in the toolchain.
         include_linker (bool): Whether a linker is available in the toolchain.
+        include_objcopy (bool): Whether rust-objcopy is available in the toolchain.
         stdlib_linkflags (list, optional): Overridden flags needed for linking to rust
                                            stdlib, akin to BAZEL_LINKLIBS. Defaults to
                                            None.
@@ -419,6 +442,10 @@ def BUILD_for_rust_toolchain(
         linker_label = "//:rust-lld"
         linker_type = "direct"
 
+    rust_objcopy_label = None
+    if include_objcopy:
+        rust_objcopy_label = "//:rust-objcopy"
+
     return _build_file_for_rust_toolchain_template.format(
         toolchain_name = name,
         binary_ext = system_to_binary_ext(target_triple.system),
@@ -436,6 +463,7 @@ def BUILD_for_rust_toolchain(
         llvm_lib_label = repr(llvm_lib_label),
         linker_label = repr(linker_label),
         linker_type = repr(linker_type),
+        rust_objcopy_label = repr(rust_objcopy_label),
         extra_rustc_flags = extra_rustc_flags,
         extra_exec_rustc_flags = extra_exec_rustc_flags,
         opt_level = opt_level,
@@ -520,7 +548,7 @@ def load_rustfmt(ctx, target_triple, version, iso_date):
 
     return BUILD_for_rustfmt(target_triple), sha256
 
-def load_rust_compiler(ctx, iso_date, target_triple, version, include_linker = False):
+def load_rust_compiler(ctx, iso_date, target_triple, version, include_linker = False, include_objcopy = False):
     """Loads a rust compiler and yields corresponding BUILD for it
 
     Args:
@@ -529,6 +557,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version, include_linker = F
         target_triple (struct): The Rust-style target that this compiler runs on.
         version (str): The version of the tool among \"nightly\", \"beta\", or an exact version.
         include_linker (bool): Whether to include linker targets in the output BUILD contents.
+        include_objcopy (bool): Whether to include rust-objcopy targets in the output BUILD contents.
 
     Returns:
         Tuple[str, Dict[str, str]]: The BUILD file contents for this compiler and compiler library
@@ -544,7 +573,7 @@ def load_rust_compiler(ctx, iso_date, target_triple, version, include_linker = F
         version = version,
     )
 
-    return BUILD_for_compiler(target_triple, include_linker), sha256
+    return BUILD_for_compiler(target_triple, include_linker, include_objcopy), sha256
 
 def load_clippy(ctx, iso_date, target_triple, version):
     """Loads Clippy and yields corresponding BUILD for it
