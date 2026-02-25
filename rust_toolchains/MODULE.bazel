@@ -1,0 +1,4 @@
+module(
+    name = "rust_toolchains",
+    version = "0.0.1",
+)
