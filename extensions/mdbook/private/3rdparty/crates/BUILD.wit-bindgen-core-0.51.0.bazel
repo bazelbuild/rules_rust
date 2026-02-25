@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.51.0",
     deps = [
-        "@rmdbi__anyhow-1.0.101//:anyhow",
+        "@rmdbi__anyhow-1.0.102//:anyhow",
         "@rmdbi__heck-0.5.0//:heck",
         "@rmdbi__wit-parser-0.244.0//:wit_parser",
     ],

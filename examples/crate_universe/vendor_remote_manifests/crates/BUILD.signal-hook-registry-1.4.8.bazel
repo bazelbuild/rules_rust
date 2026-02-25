@@ -96,6 +96,6 @@ rust_library(
     version = "1.4.8",
     deps = [
         "@cvm__errno-0.3.14//:errno",
-        "@cvm__libc-0.2.181//:libc",
+        "@cvm__libc-0.2.182//:libc",
     ],
 )

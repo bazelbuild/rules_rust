@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.4.5",
     deps = [
-        "@cvm__futures-core-0.3.31//:futures_core",
+        "@cvm__futures-core-0.3.32//:futures_core",
         "@cvm__tokio-1.49.0//:tokio",
         "@cvm__tokio-stream-0.1.18//:tokio_stream",
     ],

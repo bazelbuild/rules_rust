@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "//vendor_local_manifests/crates/anyhow-1.0.101:anyhow",
+        "//vendor_local_manifests/crates/anyhow-1.0.102:anyhow",
         "//vendor_local_manifests/crates/indexmap-2.13.0:indexmap",
         "//vendor_local_manifests/crates/wasm-encoder-0.244.0:wasm_encoder",
         "//vendor_local_manifests/crates/wasmparser-0.244.0:wasmparser",
