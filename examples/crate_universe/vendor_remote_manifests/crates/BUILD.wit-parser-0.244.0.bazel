@@ -104,7 +104,7 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "@cvm__anyhow-1.0.101//:anyhow",
+        "@cvm__anyhow-1.0.102//:anyhow",
         "@cvm__id-arena-2.3.0//:id_arena",
         "@cvm__indexmap-2.13.0//:indexmap",
         "@cvm__log-0.4.29//:log",

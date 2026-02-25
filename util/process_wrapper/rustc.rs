@@ -18,16 +18,11 @@ use tinyjson::JsonValue;
 
 use crate::output::{LineOutput, LineResult};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub(crate) enum ErrorFormat {
     Json,
+    #[default]
     Rendered,
-}
-
-impl Default for ErrorFormat {
-    fn default() -> Self {
-        Self::Rendered
-    }
 }
 
 fn get_key(value: &JsonValue, key: &str) -> Option<String> {

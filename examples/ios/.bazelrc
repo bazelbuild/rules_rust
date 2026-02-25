@@ -20,6 +20,8 @@ coverage --experimental_fetch_all_coverage_outputs
 # https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
 common --experimental_cc_shared_library
 
+build --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=True
+
 ###############################################################################
 ## Unique configuration groups
 ###############################################################################

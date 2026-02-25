@@ -181,7 +181,8 @@ def experimental_use_global_allocator():
         },
     )
 
-def experimental_use_allocator_libraries_with_mangled_symbols(name):
+def experimental_use_allocator_libraries_with_mangled_symbols(
+        name = "experimental_use_allocator_libraries_with_mangled_symbols"):
     """A flag used to select allocator libraries implemented in rust that are compatible with the rustc allocator symbol mangling.
 
     The symbol mangling mechanism relies on unstable language features and requires a nightly rustc from 2025-04-05 or later.
@@ -201,10 +202,9 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
 
     Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
     The mangling uses a scheme that is specific to the exact version of the compiler.
-    This makes the cc allocator library definitions ineffective. To work around
-    this, we provide rust versions of the symbol definitions annotated with
-    an unstable language attribute that instructs rustc to mangle them consistently.
-    Because of that, this is only compatible with nightly versions of the compiler.
+    This makes the cc allocator library definitions ineffective. When rustc builds a
+    staticlib it provides the mapping definitions. We rely on this and build an empty
+    staticlib as a basis for the allocator definitions.
 
     Since the new symbol definitions are written in rust, we cannot just attach
     them as attributes on the `rust_toolchain` as the old cc versions, as that
@@ -221,8 +221,6 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
     the result of building the rust allocator libraries via a provider, which
     can be consumed by the rust build actions. We attach an instance of this
     as a common attribute to the rust rule set.
-
-    TODO: how this interacts with stdlibs
     """
     bool_flag(
         name = name,
@@ -232,14 +230,14 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
     native.config_setting(
         name = "%s_on" % name,
         flag_values = {
-            ":experimental_use_allocator_libraries_with_mangled_symbols": "true",
+            ":{}".format(name): "true",
         },
     )
 
     native.config_setting(
         name = "%s_off" % name,
         flag_values = {
-            ":experimental_use_allocator_libraries_with_mangled_symbols": "false",
+            ":{}".format(name): "false",
         },
     )
 

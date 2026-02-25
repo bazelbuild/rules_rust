@@ -838,7 +838,7 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
              "this crate as a rust_binary instead.")
 
     if not extension:
-        fail(("Unknown crate_type: {}. If this is a cargo-supported crate type, " +
+        fail(("Unknown crate_type: `{}`. If this is a cargo-supported crate type, " +
               "please file an issue!").format(crate_type))
 
     prefix = "lib"

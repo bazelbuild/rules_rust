@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.51.0",
     deps = [
-        "//vendor_local_manifests/crates/anyhow-1.0.101:anyhow",
+        "//vendor_local_manifests/crates/anyhow-1.0.102:anyhow",
         "//vendor_local_manifests/crates/heck-0.5.0:heck",
         "//vendor_local_manifests/crates/wit-parser-0.244.0:wit_parser",
     ],
