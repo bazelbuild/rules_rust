@@ -67,6 +67,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -140,6 +141,10 @@ rust_library(
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@rrwbd__libc-0.2.177//:libc",  # arm-unknown-linux-gnueabi
             "@rrwbd__num_threads-0.1.7//:num_threads",  # arm-unknown-linux-gnueabi
+        ],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
+            "@rrwbd__libc-0.2.177//:libc",  # arm-unknown-linux-musleabi
+            "@rrwbd__num_threads-0.1.7//:num_threads",  # arm-unknown-linux-musleabi
         ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@rrwbd__libc-0.2.177//:libc",  # armv7-linux-androideabi

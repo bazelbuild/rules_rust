@@ -34,6 +34,9 @@ rust_proc_macro(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -61,6 +64,7 @@ rust_proc_macro(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -94,8 +98,8 @@ rust_proc_macro(
     }),
     version = "1.0.228",
     deps = [
-        "@cvm__proc-macro2-1.0.103//:proc_macro2",
-        "@cvm__quote-1.0.42//:quote",
-        "@cvm__syn-2.0.110//:syn",
+        "@cvm__proc-macro2-1.0.106//:proc_macro2",
+        "@cvm__quote-1.0.44//:quote",
+        "@cvm__syn-2.0.115//:syn",
     ],
 )
