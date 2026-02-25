@@ -224,7 +224,7 @@ def experimental_use_allocator_libraries_with_mangled_symbols(
     """
     bool_flag(
         name = name,
-        build_setting_default = True,
+        build_setting_default = False,
     )
 
     native.config_setting(
