@@ -18,7 +18,6 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1", repo_name = "build_bazel_apple_support")
 
-bazel_dep(name = "rust_toolchains", version = "0.0.1")
 local_path_override(
     module_name = "rust_toolchains",
     path = "rust_toolchains",
