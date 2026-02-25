@@ -271,10 +271,9 @@ attributes, with sample targets like <code>@rules_rust//ffi/cc/allocator_library
 and <code>@rules_rust//ffi/cc/global_allocator_library</code>.</p>
 <p>Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
 The mangling uses a scheme that is specific to the exact version of the compiler.
-This makes the cc allocator library definitions ineffective. To work around
-this, we provide rust versions of the symbol definitions annotated with
-an unstable language attribute that instructs rustc to mangle them consistently.
-Because of that, this is only compatible with nightly versions of the compiler.</p>
+This makes the cc allocator library definitions ineffective. When rustc builds a
+staticlib it provides the mapping definitions. We rely on this and build an empty
+staticlib as a basis for the allocator definitions.</p>
 <p>Since the new symbol definitions are written in rust, we cannot just attach
 them as attributes on the <code>rust_toolchain</code> as the old cc versions, as that
 would create a build graph cycle (we need a <code>rust_toolchain</code> to build a
@@ -288,10 +287,9 @@ rust toolchains, repository and supporting tools used for them.</p>
 the result of building the rust allocator libraries via a provider, which
 can be consumed by the rust build actions. We attach an instance of this
 as a common attribute to the rust rule set.</p>
-<p>TODO: how this interacts with stdlibs</p>
 <p><strong>PARAMETERS</strong></p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Options</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="experimental_use_allocator_libraries_with_mangled_symbols-name"></a>name</td><td style="text-align: left"><p align="center"> - </p></td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="experimental_use_allocator_libraries_with_mangled_symbols-name"></a>name</td><td style="text-align: left"><p align="center"> - </p></td><td style="text-align: left"><code>"experimental_use_allocator_libraries_with_mangled_symbols"</code></td></tr>
 </tbody></table>
 </div>
 <p><a id="experimental_use_cc_common_link"></a></p>
