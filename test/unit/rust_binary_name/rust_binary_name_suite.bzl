@@ -1,6 +1,5 @@
 """Starlark tests for `rust_binary.binary_name`"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary")
@@ -14,8 +13,7 @@ def _rust_binary_binary_name_test_impl(ctx):
     action = target.actions[0]
     output = action.outputs.to_list()[0]
 
-    filename = paths.split_extension(output.basename)[0]
-    asserts.equals(env, filename, expected_basename)
+    asserts.equals(env, output.basename, expected_basename)
 
     return analysistest.end(env)
 
@@ -63,7 +61,10 @@ def binary_name_test_suite(name):
     _binary_name_test(
         name = "set_binary_name_test",
         target_under_test = ":bin",
-        expected_binary_name = "some-binary",
+        expected_binary_name = select({
+            "@platforms//os:windows": "some-binary.exe",
+            "//conditions:default": "some-binary",
+        }),
     )
 
     native.test_suite(
