@@ -48,7 +48,10 @@ def binary_name_test_suite(name):
     _binary_name_test(
         name = "unset_binary_name_test",
         target_under_test = ":bin_unset",
-        expected_binary_name = "bin_unset",
+        expected_binary_name = select({
+            "@platforms//os:windows": "bin_unset.exe",
+            "//conditions:default": "bin_unset",
+        }),
     )
 
     rust_binary(
