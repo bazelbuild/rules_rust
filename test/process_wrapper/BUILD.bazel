@@ -157,8 +157,8 @@ rust_binary(
 )
 
 rust_test(
-    name = "rustc_quit_on_rmeta",
-    srcs = ["rustc_quit_on_rmeta.rs"],
+    name = "rustc_output_format",
+    srcs = ["rustc_output_format.rs"],
     data = [
         ":fake_rustc",
         "//util/process_wrapper",

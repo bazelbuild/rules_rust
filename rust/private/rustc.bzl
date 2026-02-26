@@ -945,7 +945,7 @@ def construct_arguments(
         build_flags_files,
         tool_file = None,
         tool_path = None,
-        emit = ["dep-info", "link"],
+        emit = ["link"],
         force_all_deps_direct = False,
         add_flags_for_binary = False,
         include_link_flags = True,
@@ -1154,8 +1154,11 @@ def construct_arguments(
         error_format = "json"
 
     if build_metadata:
-        # Configure process_wrapper to terminate rustc when metadata are emitted
-        process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+        # Build a hollow rlib (metadata-full, Buck2 equivalent) using -Zno-codegen.
+        # This produces an rlib with metadata but no object code, allowing downstream
+        # crates to start compiling without waiting for codegen.
+        # RUSTC_BOOTSTRAP=1 must be set in the action env for this unstable flag.
+        rustc_flags.add("-Zno-codegen")
         if crate_info.rustc_rmeta_output:
             process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
@@ -1197,7 +1200,12 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and build_metadata and crate_info.metadata != None:
+            # Redirect hollow rlib output to the declared metadata file path,
+            # since -Zno-codegen --emit=link would otherwise write lib<name>.rlib
+            # which collides with the full action's output.
+            rustc_flags.add(crate_info.metadata, format = "--emit=link=%s")
+        elif kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         else:
             emit_without_paths.append(kind)
@@ -1566,17 +1574,12 @@ def rustc_compile_action(
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
 
+    compile_inputs_metadata = compile_inputs
+
     # The types of rustc outputs to emit.
-    # If we build metadata, we need to keep the command line of the two invocations
-    # (rlib and rmeta) as similar as possible, otherwise rustc rejects the rmeta as
-    # a candidate.
-    # Because of that we need to add emit=metadata to both the rlib and rmeta invocation.
-    #
     # When cc_common linking is enabled, emit a `.o` file, which is later
     # passed to the cc_common.link action.
-    emit = ["dep-info", "link"]
-    if build_metadata:
-        emit.append("metadata")
+    emit = ["link"]
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
@@ -1626,7 +1629,7 @@ def rustc_compile_action(
             toolchain = toolchain,
             tool_file = toolchain.rustc,
             cc_toolchain = cc_toolchain,
-            emit = emit,
+            emit = ["link"],
             feature_configuration = feature_configuration,
             crate_info = crate_info,
             dep_info = dep_info,
@@ -1649,6 +1652,12 @@ def rustc_compile_action(
 
     # this is the final list of env vars
     env.update(env_from_args)
+
+    if build_metadata:
+        # RUSTC_BOOTSTRAP=1 is required for -Zno-codegen on stable rustc, and must
+        # be set on both the metadata and full actions for SVH compatibility (since
+        # RUSTC_BOOTSTRAP affects the crate hash).
+        env["RUSTC_BOOTSTRAP"] = "1"
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
@@ -1722,7 +1731,7 @@ def rustc_compile_action(
         if args_metadata:
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
-                inputs = compile_inputs,
+                inputs = compile_inputs_metadata,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,

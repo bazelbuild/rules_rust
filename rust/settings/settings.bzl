@@ -112,10 +112,15 @@ def use_real_import_macro():
     )
 
 def pipelined_compilation():
-    """When set, this flag causes rustc to emit `*.rmeta` files and use them for `rlib -> rlib` dependencies.
+    """When set, this flag enables pipelined compilation for `rlib -> rlib` dependencies.
 
-    While this involves one extra (short) rustc invocation to build the rmeta file,
-    it allows library dependencies to be unlocked much sooner, increasing parallelism during compilation.
+    For each library target, a second RustcMetadata action is created that runs rustc with
+    `-Zno-codegen --emit=link` to produce a hollow rlib (metadata & MIR, no object code).
+    Downstream library compilations can start as soon as this hollow rlib is available,
+    increasing parallelism during compilation.
+
+    Requires RUSTC_BOOTSTRAP=1, which is set automatically on both the metadata and full
+    actions for pipelined targets.
     """
     bool_flag(
         name = "pipelined_compilation",
