@@ -1095,49 +1095,6 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  extensions_protobuf_linux:
-    platform: ubuntu2204
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_linux_rbe:
-    platform: rbe_ubuntu2204
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_macos:
-    platform: macos_arm64
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_windows:
-    platform: windows
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
   extensions_pyo3_linux:
     platform: ubuntu2204
     name: Extensions PyO3
