@@ -34,6 +34,7 @@ load(
     "//rust/private:utils.bzl",
     "determine_output_hash",
     "find_cc_toolchain",
+    "find_optional_toolchain",
     "find_toolchain",
 )
 load("//rust/settings:incompatible.bzl", "IncompatibleFlagInfo")
@@ -120,7 +121,16 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     Returns:
         None
     """
-    toolchain = find_toolchain(ctx)
+    rustc_toolchain = find_toolchain(ctx)
+    rustc_toolchain_type = "@rust_toolchains//rustc:toolchain_type"
+
+    clippy_toolchain = find_optional_toolchain(ctx, "@rust_toolchains//clippy:toolchain_type")
+    if clippy_toolchain:
+        clippy_toolchain_type = "@rust_toolchains//clippy:toolchain_type"
+    else:
+        clippy_toolchain_type = rustc_toolchain_type
+        clippy_toolchain = rustc_toolchain
+
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, _ = collect_deps(
@@ -146,7 +156,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         ctx.rule.files,
         # Clippy doesn't need to invoke transitive linking, therefore doesn't need linkstamps.
         depset([]),
-        toolchain,
+        rustc_toolchain,
         cc_toolchain,
         feature_configuration,
         crate_info,
@@ -164,7 +174,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         ctx = ctx,
         attr = ctx.rule.attr,
         file = ctx.file,
-        toolchain = toolchain,
+        toolchain = rustc_toolchain,
         tool_path = clippy_executable.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
@@ -232,7 +242,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         arguments = args.all,
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
-        toolchain = "@rules_rust//rust:toolchain_type",
+        toolchain = clippy_toolchain_type,
     )
 
 def _clippy_aspect_impl(target, ctx):
@@ -246,7 +256,8 @@ def _clippy_aspect_impl(target, ctx):
     if not crate_info:
         return [ClippyInfo(output = depset([]))]
 
-    toolchain = find_toolchain(ctx)
+    clippy_toolchain = find_optional_toolchain(ctx, "@rust_toolchains//clippy:toolchain_type") or find_toolchain(ctx)
+    toolchain = clippy_toolchain or find_toolchain(ctx)
 
     # For remote execution purposes, the clippy_out file must be a sibling of crate_info.output
     # or rustc may fail to create intermediate output files because the directory does not exist.
@@ -359,7 +370,8 @@ rust_clippy_aspect = aspect(
         [rust_common.test_crate_info],
     ],
     toolchains = [
-        str(Label("//rust:toolchain_type")),
+        config_common.toolchain_type("@rust_toolchains//clippy:toolchain_type", mandatory = False),
+        str(Label("@rust_toolchains//rustc:toolchain_type")),
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     implementation = _clippy_aspect_impl,

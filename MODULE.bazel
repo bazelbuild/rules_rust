@@ -12,10 +12,16 @@ module(
 bazel_dep(name = "bazel_features", version = "1.32.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rust_toolchains", version = "0.68.1")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1", repo_name = "build_bazel_apple_support")
+
+local_path_override(
+    module_name = "rust_toolchains",
+    path = "rust_toolchains",
+)
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
@@ -45,10 +51,10 @@ use_repo(
 
 rust = use_extension("//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
-use_repo(rust, "rust_toolchains")
+use_repo(rust, rules_rust_toolchains = "rust_toolchains")
 
 register_toolchains(
-    "@rust_toolchains//:all",
+    "@rules_rust_toolchains//:all",
 )
 
 rust_host_tools = use_extension("//rust:extensions.bzl", "rust_host_tools")
