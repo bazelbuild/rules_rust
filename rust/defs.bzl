@@ -14,6 +14,7 @@
 
 """Public entry point to all Rust rules and supported APIs."""
 
+load("@bazel_features//:features.bzl", "bazel_features")
 load(
     "//rust:toolchain.bzl",
     _rust_stdlib_filegroup = "rust_stdlib_filegroup",
@@ -90,7 +91,27 @@ def _rule_wrapper(rule):
 
     return _wrapped
 
-rust_library = _rule_wrapper(_rust_library)
+def _symbolic_rule_wrapper(rule, macro_fn):
+    def _wrapped(name, visibility, deps, proc_macro_deps, **kwargs):
+        rule(
+            name = name,
+            visibility = visibility,
+            deps = deps + proc_macro_deps,
+            # TODO(zbarsky): This attribute would ideally be called `exec_configured_deps` or similar.
+            proc_macro_deps = deps + proc_macro_deps,
+            **kwargs
+        )
+
+    return macro_fn(
+        implementation = _wrapped,
+        inherit_attrs = rule,
+        attrs = {
+            "deps": attr.label_list(default = []),
+            "proc_macro_deps": attr.label_list(default = []),
+        },
+    )
+
+rust_library = _symbolic_rule_wrapper(_rust_library, bazel_features.globals.macro) if bazel_features.globals.macro else _rule_wrapper(_rust_library)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_static_library = _rule_wrapper(_rust_static_library)
@@ -102,13 +123,13 @@ rust_shared_library = _rule_wrapper(_rust_shared_library)
 rust_proc_macro = _rule_wrapper(_rust_proc_macro)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_binary = _rule_wrapper(_rust_binary)
+rust_binary = _symbolic_rule_wrapper(_rust_binary, bazel_features.globals.macro) if bazel_features.globals.macro else _rule_wrapper(_rust_binary)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_library_group = _rust_library_group
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_test = _rule_wrapper(_rust_test)
+rust_test = _symbolic_rule_wrapper(_rust_test, bazel_features.globals.macro) if bazel_features.globals.macro else _rule_wrapper(_rust_test)
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
 rust_test_suite = _rust_test_suite
