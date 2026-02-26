@@ -205,11 +205,15 @@ def _rust_library_common(ctx, crate_type):
         crate_type,
         disable_pipelining = getattr(ctx.attr, "disable_pipelining", False),
     ):
+        # The hollow rlib uses .rlib extension (not .rmeta) so rustc reads it as an
+        # rlib archive containing lib.rmeta with optimized MIR. It is placed in a
+        # "_hollow/" subdirectory so the full rlib and hollow rlib never appear in the
+        # same -Ldependency= search directory (which would cause E0463).
         rust_metadata = ctx.actions.declare_file(
-            paths.replace_extension(rust_lib_name, ".rmeta"),
-            sibling = rust_lib,
+            "_hollow/" + rust_lib_name[:-len(".rlib")] + "-hollow.rlib",
         )
         rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
+
         metadata_supports_pipelining = (
             can_use_metadata_for_pipelining(toolchain, crate_type) and
             not ctx.attr.disable_pipelining

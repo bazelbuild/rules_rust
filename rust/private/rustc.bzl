@@ -663,7 +663,7 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
             visited_libs[name] = artifact
     return ambiguous_libs
 
-def _depend_on_metadata(crate_info, force_depend_on_objects):
+def _depend_on_metadata(crate_info, force_depend_on_objects, experimental_use_cc_common_link = False):
     """Determines if we can depend on metadata for this crate.
 
     By default (when pipelining is disabled or when the crate type needs to link against
@@ -673,15 +673,33 @@ def _depend_on_metadata(crate_info, force_depend_on_objects):
     In some rare cases, even if both of those conditions are true, we still want to
     depend on objects. This is what force_depend_on_objects is.
 
+    When experimental_use_cc_common_link is True, bin/cdylib crates also use hollow
+    rlib deps. The rustc step only emits .o files (no rustc linking), so SVH chain
+    consistency is sufficient; the actual linking is done by cc_common.link, which
+    does not check SVH.
+
+    Callers are responsible for zeroing out experimental_use_cc_common_link for
+    exec-platform builds before calling this function (see rustc_compile_action).
+    Exec-platform binaries (build scripts) must use full rlib deps because their
+    CcInfo linking contexts may lack a CC toolchain.
+
     Args:
         crate_info (CrateInfo): The Crate to determine this for.
         force_depend_on_objects (bool): if set we will not depend on metadata.
+        experimental_use_cc_common_link (bool): if set, bin/cdylib crates also use
+            hollow rlib deps for SVH consistency. Must already be False for
+            exec-platform builds when this function is called.
 
     Returns:
         Whether we can depend on metadata for this crate.
     """
     if force_depend_on_objects:
         return False
+
+    if experimental_use_cc_common_link and crate_info.type in ("bin", "cdylib"):
+        # cc_common.link: rustc only emits .o files, so hollow rlib deps are safe and
+        # keep the SVH chain consistent (avoiding E0460 from nondeterministic proc macros).
+        return True
 
     return crate_info.type in ("rlib", "lib")
 
@@ -770,7 +788,7 @@ def collect_inputs(
     linkstamp_outs = []
 
     transitive_crate_outputs = dep_info.transitive_crate_outputs
-    if _depend_on_metadata(crate_info, force_depend_on_objects):
+    if _depend_on_metadata(crate_info, force_depend_on_objects, experimental_use_cc_common_link):
         transitive_crate_outputs = dep_info.transitive_metadata_outputs
 
     nolinkstamp_compile_direct_inputs = []
@@ -806,6 +824,12 @@ def collect_inputs(
         transitive = [
             crate_info.srcs,
             transitive_crate_outputs,
+            # Always include hollow rlibs so they are present in the sandbox for
+            # -Ldependency= resolution. Binaries and proc-macros compile against full
+            # rlib --extern deps but need hollow rlibs available for transitive
+            # dependency resolution when those rlibs were themselves compiled against
+            # hollow deps. For rlib/lib crates this is a no-op (already included above).
+            dep_info.transitive_metadata_outputs,
             crate_info.compile_data,
             dep_info.transitive_proc_macro_data,
             toolchain.all_files,
@@ -909,6 +933,7 @@ def construct_arguments(
         use_json_output = False,
         build_metadata = False,
         force_depend_on_objects = False,
+        experimental_use_cc_common_link = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
         error_format = None):
@@ -1044,8 +1069,14 @@ def construct_arguments(
         error_format = "json"
 
     if build_metadata:
-        # Configure process_wrapper to terminate rustc when metadata are emitted
-        process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+        if crate_info.type in ("rlib", "lib"):
+            # Hollow rlib approach (Buck2-style): rustc runs to completion with -Zno-codegen,
+            # producing a hollow .rlib (metadata only, no object code) via --emit=link=<path>.
+            # No need to kill rustc — -Zno-codegen skips codegen entirely and exits quickly.
+            rustc_flags.add("-Zno-codegen")
+
+        # else: IDE-only metadata for non-rlib types (bin, proc-macro, etc.): rustc exits
+        # naturally after writing .rmeta via --emit=dep-info,metadata (no kill needed).
         if crate_info.rustc_rmeta_output:
             process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
     elif crate_info.rustc_output:
@@ -1078,7 +1109,14 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and build_metadata and crate_info.type in ("rlib", "lib") and crate_info.metadata:
+            # Hollow rlib: direct rustc's link output to the -hollow.rlib path.
+            # The file has .rlib extension so rustc reads it as an rlib archive
+            # (with optimized MIR in lib.rmeta). Using a .rmeta path would cause
+            # E0786 "found invalid metadata files" because rustc parses .rmeta files
+            # as raw metadata blobs, not rlib archives.
+            rustc_flags.add(crate_info.metadata, format = "--emit=link=%s")
+        elif kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         else:
             emit_without_paths.append(kind)
@@ -1153,7 +1191,7 @@ def construct_arguments(
             include_link_flags = include_link_flags,
         )
 
-    use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
+    use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects, experimental_use_cc_common_link)
 
     # These always need to be added, even if not linking this crate.
     add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)
@@ -1322,6 +1360,13 @@ def rustc_compile_action(
     rustc_output = crate_info.rustc_output
     rustc_rmeta_output = crate_info.rustc_rmeta_output
 
+    # Use the hollow rlib approach (Buck2-style) for rlib/lib crate types when a metadata
+    # action is being created. This always applies for rlib/lib regardless of whether
+    # pipelining is globally enabled — the hollow rlib is simpler than killing rustc.
+    # Non-rlib types (bin, proc-macro, etc.) use --emit=dep-info,metadata instead
+    # (rustc exits naturally after writing .rmeta, no process-wrapper kill needed).
+    use_hollow_rlib = bool(build_metadata) and crate_info.type in ("rlib", "lib")
+
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
     #  * or if experimental_use_cc_common_link is -1 and
@@ -1334,6 +1379,12 @@ def rustc_compile_action(
             experimental_use_cc_common_link = True
         elif ctx.attr.experimental_use_cc_common_link == -1:
             experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
+
+    # Exec-platform binaries (build scripts) skip cc_common.link: exec-configuration
+    # rlib deps may lack a CC toolchain, causing empty CcInfo linking contexts. They
+    # use standard rustc linking with full rlib deps instead.
+    if experimental_use_cc_common_link and is_exec_configuration(ctx):
+        experimental_use_cc_common_link = False
 
     dep_info, build_info, linkstamps = collect_deps(
         deps = deps,
@@ -1376,17 +1427,34 @@ def rustc_compile_action(
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
 
-    # The types of rustc outputs to emit.
-    # If we build metadata, we need to keep the command line of the two invocations
-    # (rlib and rmeta) as similar as possible, otherwise rustc rejects the rmeta as
-    # a candidate.
-    # Because of that we need to add emit=metadata to both the rlib and rmeta invocation.
-    #
-    # When cc_common linking is enabled, emit a `.o` file, which is later
-    # passed to the cc_common.link action.
+    # The main Rustc action uses FULL rlib deps so the full rlib it produces records
+    # full-rlib SVHs. A downstream binary links against full rlibs; if the Rustc action
+    # had used hollow rlib deps instead, nondeterministic proc macros could produce
+    # different SVHs for the hollow vs full rlib, causing E0460 in the binary build.
+    # The RustcMetadata action still uses hollow rlibs (compile_inputs_for_metadata)
+    # so it can start before full codegen of its deps completes.
+    compile_inputs_for_metadata = compile_inputs
+    if use_hollow_rlib:
+        compile_inputs, _, _, _, _, _ = collect_inputs(
+            ctx = ctx,
+            file = ctx.file,
+            files = ctx.files,
+            linkstamps = linkstamps,
+            toolchain = toolchain,
+            cc_toolchain = cc_toolchain,
+            feature_configuration = feature_configuration,
+            crate_info = crate_info,
+            dep_info = dep_info,
+            build_info = build_info,
+            lint_files = lint_files,
+            stamp = stamp,
+            force_depend_on_objects = True,
+            experimental_use_cc_common_link = experimental_use_cc_common_link,
+        )
+
+    # The main Rustc action emits dep-info and link (the full rlib/binary/cdylib).
+    # When cc_common linking is enabled, emit a `.o` file instead.
     emit = ["dep-info", "link"]
-    if build_metadata:
-        emit.append("metadata")
     if experimental_use_cc_common_link:
         emit = ["obj"]
 
@@ -1421,12 +1489,24 @@ def rustc_compile_action(
         force_all_deps_direct = force_all_deps_direct,
         stamp = stamp,
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
+        # Force full rlib --extern deps so the full rlib records full-rlib SVHs.
+        force_depend_on_objects = use_hollow_rlib,
+        experimental_use_cc_common_link = experimental_use_cc_common_link,
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
     )
 
     args_metadata = None
     if build_metadata:
+        if use_hollow_rlib:
+            # Hollow rlib: emit dep-info and link (directed to the -hollow.rlib path via
+            # -Zno-codegen). dep-info must be included: it affects the SVH stored in the
+            # rlib, so both actions must include it to keep SVHs consistent.
+            metadata_emit = ["dep-info", "link"]
+        else:
+            # IDE-only metadata for non-rlib types (bin, proc-macro, etc.): rustc exits
+            # naturally after writing .rmeta with --emit=dep-info,metadata.
+            metadata_emit = ["dep-info", "metadata"]
         args_metadata, _ = construct_arguments(
             ctx = ctx,
             attr = attr,
@@ -1434,7 +1514,7 @@ def rustc_compile_action(
             toolchain = toolchain,
             tool_path = toolchain.rustc.path,
             cc_toolchain = cc_toolchain,
-            emit = emit,
+            emit = metadata_emit,
             feature_configuration = feature_configuration,
             crate_info = crate_info,
             dep_info = dep_info,
@@ -1449,6 +1529,7 @@ def rustc_compile_action(
             stamp = stamp,
             use_json_output = True,
             build_metadata = True,
+            experimental_use_cc_common_link = experimental_use_cc_common_link,
             require_explicit_unstable_features = require_explicit_unstable_features,
         )
 
@@ -1456,6 +1537,13 @@ def rustc_compile_action(
 
     # this is the final list of env vars
     env.update(env_from_args)
+
+    if use_hollow_rlib:
+        # Both the metadata action and the full Rustc action must have RUSTC_BOOTSTRAP=1
+        # for SVH compatibility. RUSTC_BOOTSTRAP=1 changes the crate hash — setting it
+        # on only one action would cause SVH mismatch even for deterministic crates.
+        # This enables -Zno-codegen on stable Rust compilers for the metadata action.
+        env["RUSTC_BOOTSTRAP"] = "1"
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
@@ -1525,7 +1613,7 @@ def rustc_compile_action(
         if args_metadata:
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
-                inputs = compile_inputs,
+                inputs = compile_inputs_for_metadata,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,
@@ -2144,9 +2232,14 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
     crate_to_link_flags = _crate_to_link_flag_metadata if use_metadata else _crate_to_link_flag
     args.add_all(direct_crates, uniquify = True, map_each = crate_to_link_flags)
 
+    # Use hollow rlib directories for -Ldependency= when use_metadata=True (rlib/lib)
+    # so that both --extern= and -Ldependency= point to the same hollow rlib file.
+    # When use_metadata=False (bins, proc-macros), use full rlib directories; pointing
+    # to hollow dirs alongside full --extern= args would cause E0463 (ambiguous crate).
+    get_dirname = _get_crate_dirname_pipelined if use_metadata else _get_crate_dirname
     args.add_all(
         dep_info.transitive_crates,
-        map_each = _get_crate_dirname,
+        map_each = get_dirname,
         uniquify = True,
         format_each = "-Ldependency=%s",
     )
@@ -2202,6 +2295,24 @@ def _get_crate_dirname(crate):
     Returns:
         str: The directory name of the the output File that will be produced.
     """
+    return crate.output.dirname
+
+def _get_crate_dirname_pipelined(crate):
+    """For pipelined compilation: returns the _hollow/ directory for pipelined crates
+
+    When a crate supports pipelining and has a hollow rlib in its _hollow/ subdirectory,
+    pointing -Ldependency= to that subdirectory lets rustc find the hollow rlib (which has
+    the correct SVH matching downstream metadata). Pointing to the parent directory instead
+    would expose the full rlib (compiled separately, with a different SVH), causing E0460.
+
+    Args:
+        crate (CrateInfo): A CrateInfo provider from the current rule
+
+    Returns:
+        str: The directory to use for -Ldependency= search.
+    """
+    if crate.metadata and crate.metadata_supports_pipelining:
+        return crate.metadata.dirname
     return crate.output.dirname
 
 def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
