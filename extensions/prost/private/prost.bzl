@@ -180,7 +180,7 @@ def _compile_rust(
         prefix = "lib",
         name = crate_name,
         lib_hash = output_hash,
-        extension = ".rmeta",
+        extension = "_meta.rlib",
     )
 
     lib = ctx.actions.declare_file(lib_name)
@@ -193,7 +193,7 @@ def _compile_rust(
             prefix = "lib",
             name = crate_name,
             lib_hash = output_hash,
-            extension = ".rmeta",
+            extension = "_meta.rlib",
         )
         rmeta = ctx.actions.declare_file(rmeta_name)
         rustc_rmeta_output = generate_output_diagnostics(ctx, rmeta)

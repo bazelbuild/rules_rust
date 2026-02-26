@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro")
-load("//test/unit:common.bzl", "assert_argv_contains", "assert_list_contains_adjacent_elements", "assert_list_contains_adjacent_elements_not")
+load("//test/unit:common.bzl", "assert_argv_contains")
 load(":wrap.bzl", "wrap")
 
 ENABLE_PIPELINING = {
@@ -22,49 +22,56 @@ def _second_lib_test_impl(ctx):
     rlib_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
     metadata_action = [act for act in tut.actions if act.mnemonic == "RustcMetadata"][0]
 
-    # Both actions should use the same --emit=
-    assert_argv_contains(env, rlib_action, "--emit=dep-info,link,metadata")
-    assert_argv_contains(env, metadata_action, "--emit=dep-info,link,metadata")
+    # The full action emits link; the metadata action emits only
+    # link with an explicit path (--emit=link=<path>) and uses -Zno-codegen to
+    # produce a hollow rlib (metadata-full).
+    assert_argv_contains(env, rlib_action, "--emit=link")
 
-    # The metadata action should have a .rmeta as output and the rlib action a .rlib
+    # RustcMetadata uses --emit=link=<path> to redirect the hollow rlib to the
+    # declared .rmeta output. Check that it contains the flag with a path.
+    metadata_emit = [arg for arg in metadata_action.argv if arg.startswith("--emit=link=")]
+    asserts.true(
+        env,
+        len(metadata_emit) == 1,
+        "expected RustcMetadata to have --emit=link=<path>, got " + str(metadata_emit),
+    )
+
+    # RustcMetadata must use -Zno-codegen to produce a hollow rlib
+    assert_argv_contains(env, metadata_action, "-Zno-codegen")
+
+    # The metadata action outputs a hollow .rlib (_meta.rlib), the full action a normal .rlib
     path = rlib_action.outputs.to_list()[0].path
     asserts.true(
         env,
-        path.endswith(".rlib"),
-        "expected Rustc to output .rlib, got " + path,
+        path.endswith(".rlib") and not path.endswith("_meta.rlib"),
+        "expected Rustc to output .rlib (not _meta.rlib), got " + path,
     )
     path = metadata_action.outputs.to_list()[0].path
     asserts.true(
         env,
-        path.endswith(".rmeta"),
-        "expected RustcMetadata to output .rmeta, got " + path,
+        path.endswith("_meta.rlib"),
+        "expected RustcMetadata to output _meta.rlib, got " + path,
     )
 
-    # Only the action building metadata should contain --rustc-quit-on-rmeta
-    assert_list_contains_adjacent_elements_not(env, rlib_action.argv, ["--rustc-quit-on-rmeta", "true"])
-    assert_list_contains_adjacent_elements(env, metadata_action.argv, ["--rustc-quit-on-rmeta", "true"])
-
-    # Check that both actions refer to the metadata of :first, not the rlib
-    extern_metadata = [arg for arg in metadata_action.argv if arg.startswith("--extern=first=") and "libfirst" in arg and arg.endswith(".rmeta")]
+    # Both actions should refer to the metadata artifact of :first.
+    extern_metadata = [arg for arg in metadata_action.argv if arg.startswith("--extern=first=") and "libfirst" in arg and arg.endswith("_meta.rlib")]
     asserts.true(
         env,
         len(extern_metadata) == 1,
-        "did not find a --extern=first=*.rmeta but expected one",
+        "expected RustcMetadata --extern=first=*_meta.rlib, got " + str([a for a in metadata_action.argv if "--extern=first=" in a]),
     )
-    extern_rlib = [arg for arg in rlib_action.argv if arg.startswith("--extern=first=") and "libfirst" in arg and arg.endswith(".rmeta")]
+    extern_rlib = [arg for arg in rlib_action.argv if arg.startswith("--extern=first=") and "libfirst" in arg and arg.endswith("_meta.rlib")]
     asserts.true(
         env,
         len(extern_rlib) == 1,
-        "did not find a --extern=first=*.rlib but expected one",
+        "expected Rustc --extern=first=*_meta.rlib, got " + str([a for a in rlib_action.argv if "--extern=first=" in a]),
     )
 
-    # Check that the input to both actions is the metadata of :first
-    input_metadata = [i for i in metadata_action.inputs.to_list() if i.basename.startswith("libfirst")]
-    asserts.true(env, len(input_metadata) == 1, "expected only one libfirst input, found " + str([i.path for i in input_metadata]))
-    asserts.true(env, input_metadata[0].extension == "rmeta", "expected libfirst dependency to be rmeta, found " + input_metadata[0].path)
-    input_rlib = [i for i in rlib_action.inputs.to_list() if i.basename.startswith("libfirst")]
-    asserts.true(env, len(input_rlib) == 1, "expected only one libfirst input, found " + str([i.path for i in input_rlib]))
-    asserts.true(env, input_rlib[0].extension == "rmeta", "expected libfirst dependency to be rmeta, found " + input_rlib[0].path)
+    # Both actions should take the metadata artifact as input.
+    input_metadata = [i for i in metadata_action.inputs.to_list() if i.basename.startswith("libfirst") and i.basename.endswith("_meta.rlib")]
+    asserts.true(env, len(input_metadata) == 1, "expected one libfirst _meta.rlib input to RustcMetadata, found " + str([i.path for i in metadata_action.inputs.to_list() if i.basename.startswith("libfirst")]))
+    input_rlib = [i for i in rlib_action.inputs.to_list() if i.basename.startswith("libfirst") and i.basename.endswith("_meta.rlib")]
+    asserts.true(env, len(input_rlib) == 1, "expected one libfirst _meta.rlib input to Rustc, found " + str([i.path for i in rlib_action.inputs.to_list() if i.basename.startswith("libfirst")]))
 
     return analysistest.end(env)
 
@@ -73,10 +80,10 @@ def _bin_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     bin_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
 
-    # Check that no inputs to this binary are .rmeta files.
-    metadata_inputs = [i.path for i in bin_action.inputs.to_list() if i.path.endswith(".rmeta")]
+    # Check that no inputs to this binary are hollow rlib (_meta.rlib) files.
+    metadata_inputs = [i.path for i in bin_action.inputs.to_list() if i.path.endswith("_meta.rlib")]
 
-    # Filter out toolchain targets. This test intends to only check for rmeta files of `deps`.
+    # Filter out toolchain targets. This test intends to only check for metadata files of `deps`.
     metadata_inputs = [i for i in metadata_inputs if "/lib/rustlib" not in i]
 
     asserts.false(env, metadata_inputs, "expected no metadata inputs, found " + json.encode_indent(metadata_inputs, indent = " " * 4))
@@ -130,6 +137,14 @@ def _pipelined_compilation_test():
         ":bin_test",
     ]
 
+def _is_metadata_file(path):
+    """Returns True if the path is a hollow rlib (metadata-full) file."""
+    return path.endswith("_meta.rlib")
+
+def _is_full_rlib(path):
+    """Returns True if the path is a full rlib (not a hollow rlib)."""
+    return path.endswith(".rlib") and not path.endswith("_meta.rlib")
+
 def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -138,24 +153,21 @@ def _rmeta_is_propagated_through_custom_rule_test_impl(ctx):
     # also depend on metadata for 'wrapper'.
     rust_action = [act for act in tut.actions if act.mnemonic == "RustcMetadata"][0]
 
-    metadata_inputs = [i for i in rust_action.inputs.to_list() if i.path.endswith(".rmeta")]
-    rlib_inputs = [i for i in rust_action.inputs.to_list() if i.path.endswith(".rlib")]
-
     seen_wrapper_metadata = False
     seen_to_wrap_metadata = False
-    for mi in metadata_inputs:
-        if "libwrapper" in mi.path:
-            seen_wrapper_metadata = True
-        if "libto_wrap" in mi.path:
-            seen_to_wrap_metadata = True
-
     seen_wrapper_rlib = False
     seen_to_wrap_rlib = False
-    for ri in rlib_inputs:
-        if "libwrapper" in ri.path:
-            seen_wrapper_rlib = True
-        if "libto_wrap" in ri.path:
-            seen_to_wrap_rlib = True
+    for i in rust_action.inputs.to_list():
+        if "libwrapper" in i.path:
+            if _is_metadata_file(i.path):
+                seen_wrapper_metadata = True
+            elif _is_full_rlib(i.path):
+                seen_wrapper_rlib = True
+        if "libto_wrap" in i.path:
+            if _is_metadata_file(i.path):
+                seen_to_wrap_metadata = True
+            elif _is_full_rlib(i.path):
+                seen_to_wrap_rlib = True
 
     if ctx.attr.generate_metadata:
         asserts.true(env, seen_wrapper_metadata, "expected dependency on metadata for 'wrapper' but not found")
@@ -176,22 +188,23 @@ def _rmeta_is_used_when_building_custom_rule_test_impl(ctx):
     # This is the custom rule invocation of rustc.
     rust_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
 
-    # We want to check that the action depends on metadata, regardless of ctx.attr.generate_metadata
+    # The custom rule invocation should depend on metadata, regardless of whether
+    # the wrapper itself generates metadata.
     seen_to_wrap_rlib = False
-    seen_to_wrap_rmeta = False
+    seen_to_wrap_metadata = False
     for act in rust_action.inputs.to_list():
-        if "libto_wrap" in act.path and act.path.endswith(".rlib"):
+        if "libto_wrap" in act.path and _is_full_rlib(act.path):
             seen_to_wrap_rlib = True
-        elif "libto_wrap" in act.path and act.path.endswith(".rmeta"):
-            seen_to_wrap_rmeta = True
+        elif "libto_wrap" in act.path and _is_metadata_file(act.path):
+            seen_to_wrap_metadata = True
 
-    asserts.true(env, seen_to_wrap_rmeta, "expected dependency on metadata for 'to_wrap' but not found")
+    asserts.true(env, seen_to_wrap_metadata, "expected dependency on metadata for 'to_wrap' but not found")
     asserts.false(env, seen_to_wrap_rlib, "expected no dependency on object for 'to_wrap' but it was found")
 
     return analysistest.end(env)
 
 rmeta_is_propagated_through_custom_rule_test = analysistest.make(_rmeta_is_propagated_through_custom_rule_test_impl, attrs = {"generate_metadata": attr.bool()}, config_settings = ENABLE_PIPELINING)
-rmeta_is_used_when_building_custom_rule_test = analysistest.make(_rmeta_is_used_when_building_custom_rule_test_impl, config_settings = ENABLE_PIPELINING)
+rmeta_is_used_when_building_custom_rule_test = analysistest.make(_rmeta_is_used_when_building_custom_rule_test_impl, attrs = {"generate_metadata": attr.bool()}, config_settings = ENABLE_PIPELINING)
 
 def _rmeta_not_produced_if_pipelining_disabled_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -249,6 +262,7 @@ def _custom_rule_test(generate_metadata, suffix):
 
     rmeta_is_used_when_building_custom_rule_test(
         name = "rmeta_is_used_when_building_custom_rule_test" + suffix,
+        generate_metadata = generate_metadata,
         target_under_test = ":wrapper" + suffix,
         target_compatible_with = _NO_WINDOWS,
     )
