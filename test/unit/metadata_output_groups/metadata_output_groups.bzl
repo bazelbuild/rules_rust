@@ -13,8 +13,8 @@ def _metadata_output_groups_present_test_impl(ctx):
 
     asserts.equals(env, 1, len(build_metadata), "Expected 1 build_metadata file")
     asserts.true(
-        build_metadata[0].basename.endswith(".rmeta"),
-        "Expected %s to end with .rmeta" % build_metadata[0],
+        build_metadata[0].basename.endswith("_meta.rlib"),
+        "Expected %s to end with _meta.rlib" % build_metadata[0],
     )
 
     asserts.equals(env, 1, len(rustc_rmeta_output), "Expected 1 rustc_rmeta_output file")

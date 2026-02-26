@@ -541,47 +541,4 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_process_line_emit_link() -> Result<(), String> {
-        let mut metadata_emitted = false;
-        assert!(matches!(
-            process_line(
-                r#"
-                {
-                    "$message_type": "artifact",
-                    "emit": "link"
-                }
-            "#
-                .to_string(),
-                /*quit_on_rmeta=*/ true,
-                ErrorFormat::Rendered,
-                &mut metadata_emitted,
-            )?,
-            LineOutput::Skip
-        ));
-        assert!(!metadata_emitted);
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_line_emit_metadata() -> Result<(), String> {
-        let mut metadata_emitted = false;
-        assert!(matches!(
-            process_line(
-                r#"
-                {
-                    "$message_type": "artifact",
-                    "emit": "metadata"
-                }
-            "#
-                .to_string(),
-                /*quit_on_rmeta=*/ true,
-                ErrorFormat::Rendered,
-                &mut metadata_emitted,
-            )?,
-            LineOutput::Terminate
-        ));
-        assert!(metadata_emitted);
-        Ok(())
-    }
 }

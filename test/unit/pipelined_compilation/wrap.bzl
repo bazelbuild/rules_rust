@@ -44,7 +44,7 @@ def _wrap_impl(ctx):
         prefix = "lib",
         name = crate_name,
         lib_hash = output_hash,
-        extension = ".rmeta",
+        extension = "_meta.rlib",
     )
 
     tgt = ctx.attr.target
