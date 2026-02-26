@@ -27,6 +27,5 @@
     - [bindgen](./rust_bindgen.md)
     - [mdbook](./rust_mdbook.md)
     - [prost](./rust_prost.md)
-    - [protobuf](./rust_protobuf.md)
     - [pyo3](./rust_pyo3.md)
     - [wasm_bindgen](./rust_wasm_bindgen.md)

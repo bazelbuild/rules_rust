@@ -35,12 +35,6 @@ local_path_override(
     path = "../extensions/pyo3",
 )
 
-bazel_dep(name = "rules_rust_protobuf", version = "0.0.0")
-local_path_override(
-    module_name = "rules_rust_protobuf",
-    path = "../extensions/protobuf",
-)
-
 bazel_dep(name = "rules_rust_wasm_bindgen", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust_wasm_bindgen",
