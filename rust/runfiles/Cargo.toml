@@ -1,0 +1,10 @@
+[package]
+name = "runfiles"
+version = "0.1.0"
+edition = "2018"
+license = "Apache-2.0"
+description = "Runfiles lookup library for Bazel-built Rust binaries and tests."
+repository = "https://github.com/bazelbuild/rules_rust"
+
+[lib]
+path = "runfiles.rs"
