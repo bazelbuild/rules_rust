@@ -27,7 +27,6 @@ bzl_library(
         "@rules_rust//rust:bzl_lib",
         "@rules_rust_bindgen//:bzl_lib",
         "@rules_rust_prost//:bzl_lib",
-        "@rules_rust_protobuf//:bzl_lib",
         "@rules_rust_wasm_bindgen//:bzl_lib",
     ],
 )
@@ -217,13 +216,6 @@ stardoc(
 )
 
 stardoc(
-    name = "rust_protobuf",
-    out = "src/rust_protobuf.md",
-    input = "@rules_rust_protobuf//:defs.bzl",
-    deps = ["@rules_rust_protobuf//:bzl_lib"],
-)
-
-stardoc(
     name = "rust_prost",
     out = "src/rust_prost.md",
     input = "@rules_rust_prost//:defs.bzl",
@@ -276,7 +268,6 @@ mdbook(
         ":rust_fmt",
         ":rust_mdbook",
         ":rust_prost",
-        ":rust_protobuf",
         ":rust_pyo3",
         ":rust_repositories",
         ":rust_settings",
