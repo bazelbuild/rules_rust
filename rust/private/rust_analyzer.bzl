@@ -132,10 +132,13 @@ def _rust_analyzer_aspect_impl(target, ctx):
     else:
         fail("Unexpected target type: {}".format(target))
 
-    aliases = {}
+    # Keep aliases as a list of (RustAnalyzerInfo, alias_name) tuples.
+    # Using RustAnalyzerInfo as a dict key can trigger expensive recursive hashing.
+    aliases = []
     for aliased_target, aliased_name in getattr(ctx.rule.attr, "aliases", {}).items():
-        if aliased_target.label in labels_to_rais:
-            aliases[labels_to_rais[aliased_target.label]] = aliased_name
+        dep_info = labels_to_rais.get(aliased_target.label)
+        if dep_info:
+            aliases.append((dep_info, aliased_name))
 
     proc_macro_dylib = find_proc_macro_dylib(toolchain, target)
     proc_macro_dylibs = [proc_macro_dylib] if proc_macro_dylib else None
@@ -294,7 +297,7 @@ def _create_single_crate(ctx, attrs, info):
     # the crate being processed, we don't add it as a dependency to itself. This is
     # common and expected - `rust_test.crate` pointing to the `rust_library`.
     crate["deps"] = [_crate_id(dep.crate) for dep in info.deps if _crate_id(dep.crate) != crate_id]
-    crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases.items()}
+    crate["aliases"] = {_crate_id(alias_target.crate): alias_name for alias_target, alias_name in info.aliases}
     crate["cfg"] = info.cfgs
     toolchain = find_toolchain(ctx)
     crate["target"] = (_EXEC_ROOT_TEMPLATE + toolchain.target_json.path) if toolchain.target_json else toolchain.target_flag_value
