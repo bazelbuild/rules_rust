@@ -188,6 +188,7 @@ def _define_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        process_wrapper = "@rules_rust//util/process_wrapper",
         linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
@@ -201,6 +202,7 @@ def _define_targets():
         name = "extra_flags_toolchain",
         toolchain = ":rust_extra_flags_toolchain",
         toolchain_type = "@rules_rust//rust:toolchain",
+        target_settings = ["@rules_rust//rust/private:bootstrapped"],
     )
 
     extra_toolchain_wrapper(
