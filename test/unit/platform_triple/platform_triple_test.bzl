@@ -120,6 +120,7 @@ def _construct_known_triples_test_impl(ctx):
     env = unittest.begin(ctx)
 
     _assert_parts(env, triple("aarch64-apple-darwin"), "aarch64", "apple", "macos", None)
+    _assert_parts(env, triple("aarch64-apple-ios-macabi"), "aarch64", "apple", "ios", "macabi")
     _assert_parts(env, triple("aarch64-fuchsia"), "aarch64", "unknown", "fuchsia", None)
     _assert_parts(env, triple("aarch64-unknown-linux-musl"), "aarch64", "unknown", "linux", "musl")
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")
@@ -143,6 +144,7 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("wasm32v1-none"), "wasm32", "v1", "none", None)
 
     _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "unknown", "fuchsia", None)
+    _assert_parts(env, triple("x86_64-apple-ios-macabi"), "x86_64", "apple", "ios", "macabi")
 
     return unittest.end(env)
 
