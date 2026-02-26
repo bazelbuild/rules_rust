@@ -1,7 +1,7 @@
 """rust_binary"""
 
 load(
-    "//rust/private:rust.bzl",
+    "//rust:defs.bzl",
     _rust_binary = "rust_binary",
 )
 

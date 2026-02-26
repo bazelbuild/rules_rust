@@ -1,7 +1,7 @@
 """rust_test"""
 
 load(
-    "//rust/private:rust.bzl",
+    "//rust:defs.bzl",
     _rust_test = "rust_test",
 )
 
