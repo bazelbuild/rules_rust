@@ -581,9 +581,7 @@ rust_binary(
     name = "cxxbridge-cmd",
     srcs = glob(["src/**/*.rs"]),
     aliases = aliases(),
-    compile_data = [
-        "src/gen/include/cxx.h",
-    ],
+    compile_data = glob(["src/gen/**/*.h"]),
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
@@ -591,10 +589,10 @@ rust_binary(
     ),
 )
     """,
-    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
-    strip_prefix = "cxxbridge-cmd-1.0.109",
+    sha256 = "6a368ed4a0fd83ebd3f2808613842d942a409c41cc24cd9d83f1696a00d78afe",
+    strip_prefix = "cxxbridge-cmd-1.0.189",
     type = "tar.gz",
-    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.109.crate"],
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.189.crate"],
 )
 
 cxxbridge_cmd_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
