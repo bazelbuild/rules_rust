@@ -1,7 +1,7 @@
 #[test]
 pub fn test_data_rootpath() {
     assert_eq!(
-        "test/cargo_build_script/location_expansion/target_data.txt",
+        "cargo/tests/cargo_build_script/location_expansion/target_data.txt",
         env!("DATA_ROOTPATH")
     );
 }
@@ -11,9 +11,9 @@ pub fn test_data_rlocation() {
     assert!(
         [
             // workspace
-            "rules_rust/test/cargo_build_script/location_expansion/target_data.txt",
+            "rules_rust/cargo/tests/cargo_build_script/location_expansion/target_data.txt",
             // bzlmod
-            "_main/test/cargo_build_script/location_expansion/target_data.txt",
+            "_main/cargo/tests/cargo_build_script/location_expansion/target_data.txt",
         ]
         .contains(&env!("DATA_RLOCATIONPATH")),
         concat!("Unexpected rlocationpath: ", env!("DATA_RLOCATIONPATH"))
@@ -23,7 +23,7 @@ pub fn test_data_rlocation() {
 #[test]
 pub fn test_tool_rootpath() {
     assert_eq!(
-        "test/cargo_build_script/location_expansion/exec_data.txt",
+        "cargo/tests/cargo_build_script/location_expansion/exec_data.txt",
         env!("TOOL_ROOTPATH")
     );
 }
@@ -33,9 +33,9 @@ pub fn test_tool_rlocationpath() {
     assert!(
         [
             // workspace
-            "rules_rust/test/cargo_build_script/location_expansion/exec_data.txt",
+            "rules_rust/cargo/tests/cargo_build_script/location_expansion/exec_data.txt",
             // bzlmod
-            "_main/test/cargo_build_script/location_expansion/exec_data.txt",
+            "_main/cargo/tests/cargo_build_script/location_expansion/exec_data.txt",
         ]
         .contains(&env!("TOOL_RLOCATIONPATH")),
         concat!("Unexpected rlocationpath: ", env!("TOOL_RLOCATIONPATH"))
@@ -83,10 +83,10 @@ pub fn test_execpath() {
 
     assert_eq!(
         data_short_path,
-        "test/cargo_build_script/location_expansion/target_data.txt"
+        "cargo/tests/cargo_build_script/location_expansion/target_data.txt"
     );
     assert_eq!(
         tool_short_path,
-        "test/cargo_build_script/location_expansion/exec_data.txt"
+        "cargo/tests/cargo_build_script/location_expansion/exec_data.txt"
     );
 }
