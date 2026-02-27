@@ -6,18 +6,18 @@ load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_LABEL")
 load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 
 _UNIX_WRAPPER = """\
-#!/usr/bin/env bash
+        #!/usr/bin/env bash
 
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
 set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
 # shellcheck disable=SC1090
 source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || \\
-    source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || \
-    source "$0.runfiles/$f" 2>/dev/null || \\
-    source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-    source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
-    {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
+        source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || \
+        source "$0.runfiles/$f" 2>/dev/null || \\
+        source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+        source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+        {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
 # --- end runfiles.bash initialization v3 ---
 
 set -euo pipefail
@@ -48,15 +48,15 @@ while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
 exec env - \\
-"${{_ENVIRON[@]}}" \\
-    "${{_BIN}}" \\
-    {args} \\
-    --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
-    "$@"
+        "${{_ENVIRON[@]}}" \\
+        "${{_BIN}}" \\
+        {args} \\
+        --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
+        "$@"
 """
 
 _WINDOWS_WRAPPER = """\
-@ECHO OFF
+        @ECHO OFF
 
 SETLOCAL ENABLEEXTENSIONS
 SETLOCAL ENABLEDELAYEDEXPANSION
@@ -226,8 +226,10 @@ def _write_splicing_manifest(ctx):
             packages = ctx.attr.packages,
             splicing_config = splicing_config,
             cargo_config = ctx.attr.cargo_config,
+            cargo_creds = ctx.attr.cargo_creds,
             manifests = manifests,
             manifest_to_path = _prepare_manifest_path,
+            isolated = ctx.attr.isolated,
         ),
     )
 
@@ -235,10 +237,11 @@ def _write_splicing_manifest(ctx):
 
     env = [_sys_runfile_env(ctx, "SPLICING_MANIFEST", manifest, is_windows)]
     args = ["--splicing-manifest", _expand_env("SPLICING_MANIFEST", is_windows)]
-    runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
+    runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else []) + ([ctx.file.cargo_creds] if ctx.attr.cargo_creds else [])
+
     return args, env, runfiles
 
-def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manifests, manifest_to_path):
+def generate_splicing_manifest(*, packages, splicing_config, cargo_config, cargo_creds, manifests, manifest_to_path, isolated):
     # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
@@ -248,7 +251,9 @@ def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manif
 
     splicing_manifest_content = {
         "cargo_config": str(manifest_to_path(cargo_config)) if cargo_config else None,
+        "cargo_creds": str(manifest_to_path(cargo_creds)) if cargo_creds else None,
         "direct_packages": direct_packages_info,
+        "isolated": isolated,
         "manifests": manifests,
     }
 
@@ -519,6 +524,10 @@ CRATES_VENDOR_ATTRS = {
         doc = "A [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html) file.",
         allow_single_file = True,
     ),
+    "cargo_creds": attr.label(
+        doc = "A [Cargo credentials](https://doc.rust-lang.org/cargo/reference/config.html#credentials) file.",
+        allow_single_file = True,
+    ),
     "cargo_lockfile": attr.label(
         doc = "The path to an existing `Cargo.lock` file",
         allow_single_file = True,
@@ -543,6 +552,16 @@ CRATES_VENDOR_ATTRS = {
     ),
     "generate_target_compatible_with": attr.bool(
         doc = "DEPRECATED: Moved to `render_config`.",
+        default = True,
+    ),
+    "isolated": attr.bool(
+        doc = (
+            "If true, `CARGO_HOME` will be overwritten to a directory within the generated repository in " +
+            "order to prevent other uses of Cargo from impacting having any effect on the generated targets " +
+            "produced by this rule. For users who either have multiple `crate_repository` definitions in a " +
+            "WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This " +
+            "variable is also controlled by `CARGO_BAZEL_ISOLATED` environment variable."
+        ),
         default = True,
     ),
     "lockfile": attr.label(

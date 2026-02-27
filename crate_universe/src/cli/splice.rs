@@ -49,6 +49,9 @@ pub struct SpliceOptions {
     #[clap(long)]
     pub cargo_config: Option<PathBuf>,
 
+    /// The path to a cargo credentials file.
+    pub cargo_creds: Option<PathBuf>,
+
     /// The path to the config file (containing [crate::config::Config].)
     #[clap(long)]
     pub config: PathBuf,
