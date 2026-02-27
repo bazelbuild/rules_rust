@@ -10,6 +10,7 @@ load(
     "DEFAULT_NIGHTLY_VERSION",
     "DEFAULT_STATIC_RUST_URL_TEMPLATES",
 )
+load("//rust/private:rust_toolchain_toml.bzl", "parse_rust_toolchain_file")
 
 _RUST_TOOLCHAIN_VERSIONS = [
     rust_common.default_version,
@@ -98,7 +99,37 @@ def _rust_impl(module_ctx):
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
-        if len(toolchain.versions) == 0:
+
+        # Start with explicit attribute values
+        versions = toolchain.versions
+        extra_target_triples = toolchain.extra_target_triples
+        dev_components = toolchain.dev_components
+
+        # Override/merge with rust_toolchain_file if specified
+        if toolchain.rust_toolchain_file:
+            toolchain_file_path = module_ctx.path(toolchain.rust_toolchain_file)
+            toolchain_file_content = module_ctx.read(toolchain_file_path)
+            parsed = parse_rust_toolchain_file(toolchain_file_content)
+            if parsed:
+                # Use parsed versions (required)
+                versions = parsed.versions
+
+                # Merge extra_target_triples (explicit + parsed)
+                if parsed.extra_target_triples:
+                    # Combine explicit targets with parsed targets, avoiding duplicates
+                    combined_triples = list(extra_target_triples)
+                    for triple in parsed.extra_target_triples:
+                        if triple not in combined_triples:
+                            combined_triples.append(triple)
+                    extra_target_triples = combined_triples
+
+                # Enable dev_components if specified in file (or already enabled explicitly)
+                if parsed.dev_components:
+                    dev_components = True
+            else:
+                fail("Failed to parse rust-toolchain file: {}".format(toolchain.rust_toolchain_file))
+
+        if len(versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
             # so that the `register_toolchains()` in MODULES.bazel is still
@@ -109,7 +140,7 @@ def _rust_impl(module_ctx):
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
-                dev_components = toolchain.dev_components,
+                dev_components = dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
                 extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
@@ -117,9 +148,9 @@ def _rust_impl(module_ctx):
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
-                extra_target_triples = toolchain.extra_target_triples,
+                extra_target_triples = extra_target_triples,
                 urls = toolchain.urls,
-                versions = toolchain.versions,
+                versions = versions,
                 register_toolchains = False,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -225,6 +256,14 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
         ),
+        "rust_toolchain_file": attr.label(
+            doc = (
+                "A label to a rust-toolchain.toml file. If specified, the toolchain version will be " +
+                "read from this file instead of using the `versions` attribute. This allows keeping " +
+                "the Rust version in sync between Bazel and cargo/rustup."
+            ),
+            allow_single_file = True,
+        ),
         "target_settings": attr.label_list(
             doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
@@ -232,7 +271,8 @@ _RUST_TOOLCHAIN_TAG = tag_class(
             doc = (
                 "A list of toolchain versions to download. This parameter only accepts one version " +
                 "per channel. E.g. `[\"1.65.0\", \"nightly/2022-11-02\", \"beta/2020-12-30\"]`. " +
-                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
+                "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains. " +
+                "If `rust_toolchain_file` is specified, this attribute is ignored."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
         ),
