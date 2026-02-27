@@ -967,9 +967,7 @@ def construct_arguments(
     # Wrapper args first
     process_wrapper_flags = ctx.actions.args()
 
-    for build_env_file in build_env_files:
-        process_wrapper_flags.add("--env-file", build_env_file)
-
+    process_wrapper_flags.add_all(build_env_files, before_each = "--env-file")
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
 
     if require_explicit_unstable_features:
@@ -1047,9 +1045,9 @@ def construct_arguments(
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
         if crate_info.rustc_rmeta_output:
-            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
-        process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+        process_wrapper_flags.add("--output-file", crate_info.rustc_output)
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -1074,7 +1072,7 @@ def construct_arguments(
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
-        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+        rustc_flags.add(remap_path_prefix, format = "--remap-path-prefix=${{pwd}}=%s")
 
     emit_without_paths = []
     for kind in emit:
@@ -1089,8 +1087,10 @@ def construct_arguments(
         # Color is not compatible with json output.
         rustc_flags.add("--color=always")
     rustc_flags.add(toolchain.target_flag_value, format = "--target=%s")
-    if hasattr(attr, "crate_features"):
-        rustc_flags.add_all(getattr(attr, "crate_features"), before_each = "--cfg", format_each = 'feature="%s"')
+
+    crate_features = getattr(attr, "crate_features", None)
+    if crate_features:
+        rustc_flags.add_all(crate_features, before_each = "--cfg", format_each = 'feature="%s"')
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
@@ -1103,7 +1103,10 @@ def construct_arguments(
     data_paths = depset(direct = getattr(attr, "data", []), transitive = [crate_info.compile_data_targets]).to_list()
 
     add_edition_flags(rustc_flags, crate_info)
-    _add_lto_flags(ctx, toolchain, rustc_flags, crate_info)
+
+    lto_args = construct_lto_arguments(ctx, toolchain, crate_info)
+    rustc_flags.add_all(lto_args)
+
     _add_codegen_units_flags(toolchain, emit, rustc_flags)
 
     # Use linker_type to determine whether to use direct or indirect linker invocation
@@ -1160,8 +1163,7 @@ def construct_arguments(
 
     needs_extern_proc_macro_flag = _is_proc_macro(crate_info) and crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
-        rustc_flags.add("--extern")
-        rustc_flags.add("proc_macro")
+        rustc_flags.add("--extern", "proc_macro")
 
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
@@ -1200,16 +1202,18 @@ def construct_arguments(
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
 
+    is_exec = is_exec_configuration(ctx)
+
     # extra_rustc_env applies to the target configuration, not the exec configuration.
-    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
+    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec:
         env.update(ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env)
 
-    if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
+    if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec:
         env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
-    rustc_flags.add_all(collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type), map_each = map_flag)
+    rustc_flags.add_all(collect_extra_rustc_flags(ctx, is_exec, toolchain, crate_info.root, crate_info.type), map_each = map_flag)
 
-    if is_no_std(ctx, toolchain, crate_info.is_test):
+    if is_no_std(is_exec, toolchain, crate_info.is_test):
         rustc_flags.add('--cfg=feature="no_std"')
 
     # Add target specific flags last, so they can override previous flags
@@ -1237,11 +1241,12 @@ def construct_arguments(
 
     return args, env
 
-def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
+def collect_extra_rustc_flags(ctx, is_exec, toolchain, crate_root, crate_type):
     """Gather all 'extra' rustc flags from the target's attributes and toolchain.
 
     Args:
         ctx (ctx): The current rule's context object.
+        is_exec (bool): Whether this target is being built in the exec configuration
         toolchain (rust_toolchain): The current Rust toolchain.
         crate_root (File): The root file of the crate.
         crate_type (str): The crate type.
@@ -1254,25 +1259,26 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
     if crate_type in toolchain.extra_rustc_flags_for_crate_types.keys():
         flags.extend(toolchain.extra_rustc_flags_for_crate_types[crate_type])
 
-    is_exec = is_exec_configuration(ctx)
+    if is_exec:
+        flags.extend(toolchain.extra_exec_rustc_flags)
 
-    flags.extend(toolchain.extra_exec_rustc_flags if is_exec else toolchain.extra_rustc_flags)
+        if hasattr(ctx.attr, "_extra_exec_rustc_flags"):
+            flags.extend(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
 
-    if hasattr(ctx.attr, "_extra_rustc_flags") and not is_exec:
-        flags.extend(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
+        if hasattr(ctx.attr, "_extra_exec_rustc_flag"):
+            flags.extend(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+    else:
+        flags.extend(toolchain.extra_rustc_flags)
 
-    if hasattr(ctx.attr, "_extra_rustc_flag") and not is_exec:
-        flags.extend(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
+        if hasattr(ctx.attr, "_extra_rustc_flags"):
+            flags.extend(ctx.attr._extra_rustc_flags[ExtraRustcFlagsInfo].extra_rustc_flags)
 
-    if hasattr(ctx.attr, "_per_crate_rustc_flag") and not is_exec:
-        per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
-        flags.extend(_collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags))
+        if hasattr(ctx.attr, "_extra_rustc_flag"):
+            flags.extend(ctx.attr._extra_rustc_flag[ExtraRustcFlagsInfo].extra_rustc_flags)
 
-    if hasattr(ctx.attr, "_extra_exec_rustc_flags") and is_exec:
-        flags.extend(ctx.attr._extra_exec_rustc_flags[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
-
-    if hasattr(ctx.attr, "_extra_exec_rustc_flag") and is_exec:
-        flags.extend(ctx.attr._extra_exec_rustc_flag[ExtraExecRustcFlagsInfo].extra_exec_rustc_flags)
+        if hasattr(ctx.attr, "_per_crate_rustc_flag"):
+            per_crate_rustc_flags = ctx.attr._per_crate_rustc_flag[PerCrateRustcFlagsInfo].per_crate_rustc_flags
+            flags.extend(_collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags))
 
     return flags
 
@@ -1762,8 +1768,8 @@ def rustc_compile_action(
 
     return providers
 
-def is_no_std(ctx, toolchain, crate_is_test):
-    return not (is_exec_configuration(ctx) or crate_is_test or toolchain._no_std == "off")
+def is_no_std(is_exec_config, toolchain, crate_is_test):
+    return not (is_exec_config or crate_is_test or toolchain._no_std == "off")
 
 def _should_use_rustc_allocator_libraries(toolchain):
     use_or_default = toolchain._experimental_use_allocator_libraries_with_mangled_symbols
@@ -1793,12 +1799,15 @@ def _get_std_and_alloc_info(ctx, toolchain, crate_info):
         libs = ctx.attr.allocator_libraries[AllocatorLibrariesInfo]
         attr_allocator_library = libs.allocator_library
         attr_global_allocator_library = libs.global_allocator_library
-    if is_exec_configuration(ctx):
+
+    is_exec = is_exec_configuration(ctx)
+
+    if is_exec:
         if attr_allocator_library:
             return libs.libstd_and_allocator_ccinfo
         return toolchain.libstd_and_allocator_ccinfo
     if toolchain._experimental_use_global_allocator:
-        if is_no_std(ctx, toolchain, crate_info.is_test):
+        if is_no_std(is_exec, toolchain, crate_info.is_test):
             if attr_global_allocator_library:
                 return libs.nostd_and_global_allocator_ccinfo
             return toolchain.nostd_and_global_allocator_ccinfo
@@ -1836,18 +1845,6 @@ def _collect_nonstatic_linker_inputs(cc_info):
             ))
     return shared_linker_inputs
 
-def _add_lto_flags(ctx, toolchain, args, crate):
-    """Adds flags to an Args object to configure LTO for 'rustc'.
-
-    Args:
-        ctx (ctx): The calling rule's context object.
-        toolchain (rust_toolchain): The current target's `rust_toolchain`.
-        args (Args): A reference to an Args object
-        crate (CrateInfo): A CrateInfo provider
-    """
-    lto_args = construct_lto_arguments(ctx, toolchain, crate)
-    args.add_all(lto_args)
-
 def _add_codegen_units_flags(toolchain, emit, args):
     """Adds flags to an Args object to configure codegen_units for 'rustc'.
 
@@ -1868,7 +1865,7 @@ def _add_codegen_units_flags(toolchain, emit, args):
     if not is_codegen_units_enabled(toolchain):
         return
 
-    args.add("-Ccodegen-units={}".format(toolchain._codegen_units))
+    args.add(toolchain._codegen_units, format = "-Ccodegen-units=%s")
 
 def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library):
     """If the produced crate is suitable yield a CcInfo to allow for interop with cc rules
