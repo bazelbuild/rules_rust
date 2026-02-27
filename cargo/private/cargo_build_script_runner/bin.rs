@@ -237,6 +237,19 @@ fn run_buildrs() -> Result<(), String> {
             .drain_runfiles_dir(&out_dir_abs)
             .unwrap();
     }
+
+    // If out_dir is empty add an empty file to the directory to avoid an upstream Bazel bug
+    // https://github.com/bazelbuild/bazel/issues/28286
+    if out_dir_abs.read_dir().map(|read| read.count()).unwrap_or(1) == 0 {
+        std::fs::write(out_dir_abs.join(".empty"), "").unwrap_or_else(|e| {
+            panic!(
+                "Failed to write empty file to OUT_DIR `{}`\n{:?}",
+                out_dir_abs.display(),
+                e
+            )
+        })
+    }
+
     Ok(())
 }
 
