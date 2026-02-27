@@ -1,5 +1,6 @@
 load(":platform_triple_test.bzl", "platform_triple_test_suite")
 load(":wasi_platform_test.bzl", "wasi_platform_test_suite")
+load(":qnx_version_test.bzl", "qnx_version_constraints_test")
 
 platform_triple_test_suite(
     name = "platform_triple_test_suite",
@@ -7,4 +8,8 @@ platform_triple_test_suite(
 
 wasi_platform_test_suite(
     name = "wasi_platform_test_suite",
+)
+
+qnx_version_constraints_test(
+    name = "qnx_version_test_suite",
 )
