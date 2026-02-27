@@ -125,6 +125,10 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
 
+    # BPF targets
+    _assert_parts(env, triple("bpfeb-unknown-none"), "bpfeb", "unknown", "none", None)
+    _assert_parts(env, triple("bpfel-unknown-none"), "bpfel", "unknown", "none", None)
+
     # Test all WASM32 targets
     _assert_parts(env, triple("wasm32-unknown-unknown"), "wasm32", "unknown", "unknown", None)
     _assert_parts(env, triple("wasm32-unknown-emscripten"), "wasm32", "unknown", "emscripten", None)
