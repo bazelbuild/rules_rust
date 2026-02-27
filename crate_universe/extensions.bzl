@@ -635,7 +635,7 @@ def _generate_hub_and_spokes(
     )
 
     # The workspace root when one is explicitly provided.
-    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
+    nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:BUILD")).dirname
 
     # If re-pinning is enabled, gather additional inputs for the generator
     kwargs = dict()
