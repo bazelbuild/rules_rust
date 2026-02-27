@@ -280,7 +280,12 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "wasi": [],
     "wasip1": [],
     "wasip2": [],
-    "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+    "windows": {
+        # see https://github.com/rust-lang/rust/blob/c4aa646f15e40bd3e64ddb5017b7b89b3646ac99/src/tools/run-make-support/src/external_deps/c_cxx_compiler/extras.rs#L14-L23
+        "gnu": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
+        "gnullvm": ["-lws2_32", "-luserenv", "-lbcrypt", "-lntdll", "-lsynchronization"],
+        "msvc": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
+    },
 }
 
 def cpu_arch_to_constraints(cpu_arch, *, system = None):
@@ -405,8 +410,11 @@ def system_to_staticlib_ext(system):
 def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
 
-def system_to_stdlib_linkflags(system):
-    return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
+def system_to_stdlib_linkflags(target_triple):
+    val = _SYSTEM_TO_STDLIB_LINKFLAGS[target_triple.system]
+    if type(val) == "list":
+        return val
+    return val[target_triple.abi]
 
 def triple_to_constraint_set(target_triple):
     """Returns a set of constraints for a given platform triple
