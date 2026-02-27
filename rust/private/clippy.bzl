@@ -101,10 +101,7 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
-    """Run clippy with the specified parameters.
-
-    Args:
+_RUST_CLIPPY_ACTION_MACRO_ARGS = """
         ctx (ctx): The aspect's context object. This function should not read ctx.attr, but it might read ctx.rule.attr
         clippy_executable (File): The clippy executable to run
         process_wrapper (File): An executable process wrapper that can run clippy, usually @rules_rust//utils/process_wrapper
@@ -112,14 +109,36 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         config (File): The clippy configuration file. Reference: https://doc.rust-lang.org/clippy/configuration.html#configuring-clippy
         output (File): The output file for clippy stdout/stderr. If None, no output will be captured
         success_marker (File): A file that will be written if clippy succeeds
+        exit_code_file (File): A file that will contain clippy's exit code
+        forward_clippy_exit_code (bool): If set, let the action exit with the same exit code as clippy
         cap_at_warnings (bool): If set, it will cap all reports as warnings, allowing the build to continue even with clippy failures
         extra_clippy_flags (List[str]): A list of extra options to pass to clippy. If not set, every warnings will be turned into errors
         error_format (str): Which error format to use. Must be acceptable by rustc: https://doc.rust-lang.org/beta/rustc/command-line-arguments.html#--error-format-control-how-errors-are-produced
         clippy_diagnostics_file (File): File to output diagnostics to. If None, no diagnostics will be written
+"""
+
+def rust_create_clippy_action(
+        ctx,
+        clippy_executable,
+        process_wrapper,
+        crate_info,
+        config,
+        output = None,
+        success_marker = None,
+        exit_code_file = None,
+        forward_clippy_exit_code = True,
+        cap_at_warnings = False,
+        extra_clippy_flags = [],
+        error_format = None,
+        clippy_diagnostics_file = None):
+    """Calculate inputs and arguments to run clippy with the specified parameters.
+
+    Args: {args}
 
     Returns:
-        None
-    """
+        A struct indicating how to run clippy. The fields of the struct match the fields of `ctx.action.run`.
+    """.format(args = _RUST_CLIPPY_ACTION_MACRO_ARGS)
+    print("BL: first line flags ={}".format(extra_clippy_flags))
     toolchain = find_toolchain(ctx)
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
@@ -186,6 +205,8 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     if crate_info.is_test:
         args.rustc_flags.add("--test")
 
+    print("BL: inside flags ={}".format(extra_clippy_flags))
+
     # Then append the clippy flags specified from the command line, so they override what is
     # specified on the library.
     clippy_flags += extra_clippy_flags
@@ -199,6 +220,13 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     if success_marker != None:
         args.process_wrapper_flags.add("--touch-file", success_marker)
         outputs.append(success_marker)
+
+    if forward_clippy_exit_code == False:
+        args.process_wrapper_flags.add("--forward-exit-code", "false")
+
+    if exit_code_file != None:
+        args.process_wrapper_flags.add("--exit-code-file", exit_code_file)
+        outputs.append(exit_code_file)
 
     if clippy_flags or lint_files:
         args.rustc_flags.add_all(clippy_flags)
@@ -223,7 +251,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
     env["CLIPPY_CONF_DIR"] = "${{pwd}}/{}".format(config.dirname)
     compile_inputs = depset([config], transitive = [compile_inputs])
 
-    ctx.actions.run(
+    return struct(
         executable = process_wrapper,
         inputs = compile_inputs,
         outputs = outputs + [x for x in [clippy_diagnostics_file] if x],
@@ -233,6 +261,56 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
+    )
+
+def rust_clippy_action(
+        ctx,
+        clippy_executable,
+        process_wrapper,
+        crate_info,
+        config,
+        output = None,
+        success_marker = None,
+        exit_code_file = None,
+        forward_clippy_exit_code = True,
+        cap_at_warnings = False,
+        extra_clippy_flags = [],
+        error_format = None,
+        clippy_diagnostics_file = None):
+    """Run clippy with the specified parameters.
+
+    Args: {args}
+
+    Returns:
+        None
+    """.format(args = _RUST_CLIPPY_ACTION_MACRO_ARGS)
+    print("BL: flags ={}".format(extra_clippy_flags))
+    clippy_action = rust_create_clippy_action(
+        ctx = ctx,
+        clippy_executable = clippy_executable,
+        process_wrapper = process_wrapper,
+        crate_info = crate_info,
+        config = config,
+        output = output,
+        success_marker = success_marker,
+        exit_code_file = exit_code_file,
+        forward_clippy_exit_code = forward_clippy_exit_code,
+        cap_at_warnings = cap_at_warnings,
+        extra_clippy_flags = extra_clippy_flags,
+        error_format = error_format,
+        clippy_diagnostics_file = clippy_diagnostics_file,
+    )
+
+    ctx.actions.run(
+        executable = clippy_action.executable,
+        inputs = clippy_action.inputs,
+        outputs = clippy_action.outputs,
+        env = clippy_action.env,
+        tools = clippy_action.tools,
+        arguments = clippy_action.arguments,
+        mnemonic = clippy_action.mnemonic,
+        progress_message = clippy_action.progress_message,
+        toolchain = clippy_action.toolchain,
     )
 
 def _clippy_aspect_impl(target, ctx):
