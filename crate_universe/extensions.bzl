@@ -377,7 +377,9 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//crate_universe/private:common_utils.bzl",
+    "apply_label_injections",
     "new_cargo_bazel_fn",
+    "sanitize_label_injections",
 )
 load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
@@ -406,13 +408,6 @@ load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_UR
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
 load(":defs.bzl", _crate_universe_crate = "crate")
-
-# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
-#
-# If I were to write ":foo", with attr.label_list, it would evaluate to
-# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
-# "@@rules_rust~crates~<crate>//:foo".
-_relative_label_list = attr.string_list
 
 _OPT_BOOL_VALUES = {
     "auto": None,
@@ -1010,6 +1005,7 @@ def _crate_impl(module_ctx):
             repositories = annotation_dict.pop("repositories")
             crate = annotation_dict.pop("crate")
             version = annotation_dict.pop("version")
+            label_injections = sanitize_label_injections(annotation_dict.pop("label_injections", {}))
 
             # The crate.annotation function can take in either a list or a bool.
             # For the tag-based method, because it has type safety, we have to
@@ -1041,6 +1037,16 @@ def _crate_impl(module_ctx):
             replacement = annotation_dict.pop("override_target_bin")
             if replacement:
                 annotation_dict["override_targets"]["bin"] = str(replacement)
+
+            # Replace any apparent labels with canonical ones. This is important for cases where an apparent label
+            # (e.g. `@foo` vs canonical `@@rules_rust+0.1.2+toolchains~foo`) is used in an annotation. To match the
+            # user intent of the annotation, these labels must be resolved at the same module level the annotation
+            # is defined.
+            for attr_name in _ANNOTATION_SELECT_ATTRS:
+                annotation_dict[attr_name] = apply_label_injections(
+                    label_mapping = label_injections,
+                    attribute = annotation_dict[attr_name],
+                )
 
             if not repositories:
                 _insert_annotation(module_annotations, crate, version, annotation_dict)
@@ -1305,6 +1311,13 @@ _ANNOTATION_NORMAL_ATTRS = {
         values = _OPT_BOOL_VALUES.keys(),
         default = "auto",
     ),
+    "label_injections": attr.label_keyed_string_dict(
+        doc = (
+            "A mapping of labels to stable names used in the annotation. This is necessary for cases where a `build_script_data` annotation is given and the new label is used in location " +
+            "expansion via `build_script_env`. E.g. `build_script_data = [\"@xz//:lzma\"]` and `build_script_env = {\"LZMA_BIN\": \"$(execpath @xz//:lzma)\"}`. This example would require " +
+            "`label_injections = {\"@xz\": \"@xz\"}` where the key will be resolved to a canonical label and the value is the apparent label used in annotations."
+        ),
+    ),
     "override_target_bin": attr.label(
         doc = "An optional alternate target to use when something depends on this crate to allow the parent repo to provide its own version of this dependency.",
     ),
@@ -1330,6 +1343,13 @@ _ANNOTATION_NORMAL_ATTRS = {
         doc = "An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.",
     ),
 }
+
+# A list of labels which may be relative (and if so, is within the repo the rule is generated in).
+#
+# If I were to write ":foo", with attr.label_list, it would evaluate to
+# "@@//:foo". However, for a tag such as deps, ":foo" should refer to
+# "@@rules_rust~crates~<crate>//:foo".
+_relative_label_list = attr.string_list
 
 _ANNOTATION_SELECT_ATTRS = {
     "build_script_compile_data": _relative_label_list(
