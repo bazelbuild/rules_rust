@@ -153,7 +153,9 @@ def rust_register_toolchains(
         sha256s = None,
         extra_target_triples = DEFAULT_EXTRA_TARGET_TRIPLES,
         extra_rustc_flags = None,
+        extra_rustc_flags_exec = None,
         extra_exec_rustc_flags = None,
+        extra_exec_rustc_flags_exec = None,
         strip_level = None,
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         versions = _RUST_TOOLCHAIN_VERSIONS,
@@ -193,7 +195,9 @@ def rust_register_toolchains(
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
-        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        extra_rustc_flags_exec (dict, list, optional): Dictionary of exec triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
+        extra_exec_rustc_flags_exec (dict, list, optional): Dictionary of exec triples to list of extra flags to pass to rustc in exec configuration.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
@@ -272,7 +276,9 @@ def rust_register_toolchains(
             register_toolchain = register_toolchains,
             rustfmt_version = rustfmt_version,
             extra_rustc_flags = extra_rustc_flags,
+            extra_rustc_flags_exec = extra_rustc_flags_exec,
             extra_exec_rustc_flags = extra_exec_rustc_flags,
+            extra_exec_rustc_flags_exec = extra_exec_rustc_flags_exec,
             strip_level = strip_level,
             sha256s = sha256s,
             urls = urls,
@@ -1179,13 +1185,14 @@ def _get_toolchain_repositories(
     return toolchain_repos.values()
 
 def _get_flags_for_triple(name, flags, target_triple):
+    # type: (string, list[string] | dict[string, list[string]] | None, string) -> list[string]
     """Infer toolchain-specific flags depending on the type (list, dict, optional)."""
     if flags == None:
-        return None
+        return []
     elif type(flags) == "list":
         return flags
     elif type(flags) == "dict":
-        return flags.get(target_triple)
+        return flags.get(target_triple, [])
     else:
         fail(name + " should be a list or a dict")
 
@@ -1202,7 +1209,9 @@ def rust_repository_set(
         edition = None,
         dev_components = False,
         extra_rustc_flags = None,
+        extra_rustc_flags_exec = None,
         extra_exec_rustc_flags = None,
+        extra_exec_rustc_flags_exec = None,
         opt_level = None,
         strip_level = None,
         sha256s = None,
@@ -1236,7 +1245,9 @@ def rust_repository_set(
         dev_components (bool, optional): Whether to download the rustc-dev components.
             Requires version to be "nightly".
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
+        extra_rustc_flags_exec (dict, list, optional): Dictionary of exec triples to list of extra flags to pass to rustc in non-exec configuration.
         extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
+        extra_exec_rustc_flags_exec (dict, list, optional): Dictionary of exec triples to list of extra flags to pass to rustc in exec configuration.
         opt_level (dict, dict, optional): Dictionary of target triples to optimization config.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes. See
@@ -1274,11 +1285,20 @@ def rust_repository_set(
             "extra_exec_rustc_flags",
             extra_exec_rustc_flags,
             toolchain.target_triple,
+        ) + _get_flags_for_triple(
+            "extra_exec_rustc_flags_exec",
+            extra_exec_rustc_flags_exec,
+            exec_triple,
         )
+
         toolchain_extra_rustc_flags = _get_flags_for_triple(
             "extra_rustc_flags",
             extra_rustc_flags,
             toolchain.target_triple,
+        ) + _get_flags_for_triple(
+            "extra_rustc_flags_exec",
+            extra_rustc_flags_exec,
+            exec_triple,
         )
 
         toolchain_info = rust_toolchain_repository(
