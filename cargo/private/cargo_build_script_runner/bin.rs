@@ -238,7 +238,6 @@ fn run_buildrs() -> Result<(), String> {
             .unwrap();
     }
 
-
     // If out_dir is empty add an empty file to the directory to avoid an upstream Bazel bug
     // https://github.com/bazelbuild/bazel/issues/28286
     if out_dir_abs.read_dir().map(|read| read.count()).unwrap_or(1) == 0 {
