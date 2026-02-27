@@ -283,6 +283,11 @@ rust_stdlib_filegroup(
             "lib/rustlib/{target_triple}/lib/*.rmeta",
             "lib/rustlib/{target_triple}/lib/*{dylib_ext}*",
             "lib/rustlib/{target_triple}/lib/*{staticlib_ext}",
+            # *-pc-windows-gnu targets have a staticlib_ext of .lib, but the
+            # rust toolchain also builds and ships rsbegin.o and rsend.o as
+            # part of the stdlib.  This glob picks these up and conveniently
+            # fails silently thanks to allow_empty.
+            "lib/rustlib/{target_triple}/lib/*.o",
             "lib/rustlib/{target_triple}/lib/self-contained/**",
         ],
         # Some patterns (e.g. `lib/*.a`) don't match anything, see https://github.com/bazelbuild/rules_rust/pull/245
