@@ -125,25 +125,22 @@ def _compile_proto(
     return lib_rs, package_info_file
 
 def _get_crate_info(providers):
-    """Finds the CrateInfo provider in the list of providers."""
-    for provider in providers:
-        if hasattr(provider, "name"):
-            return provider
-    fail("Couldn't find a CrateInfo in the list of providers")
+    """Finds the CrateInfo provider in the dict of providers."""
+    if "crate_info" in providers:
+        return providers["crate_info"]
+    fail("Couldn't find a CrateInfo in the providers")
 
 def _get_dep_info(providers):
-    """Finds the DepInfo provider in the list of providers."""
-    for provider in providers:
-        if hasattr(provider, "direct_crates"):
-            return provider
-    fail("Couldn't find a DepInfo in the list of providers")
+    """Finds the DepInfo provider in the dict of providers."""
+    if "dep_info" in providers:
+        return providers["dep_info"]
+    fail("Couldn't find a DepInfo in the providers")
 
 def _get_cc_info(providers):
-    """Finds the CcInfo provider in the list of providers."""
-    for provider in providers:
-        if hasattr(provider, "linking_context"):
-            return provider
-    fail("Couldn't find a CcInfo in the list of providers")
+    """Finds the CcInfo provider in the dict of providers."""
+    if "CcInfo" in providers:
+        return providers["CcInfo"]
+    fail("Couldn't find a CcInfo in the providers")
 
 def _compile_rust(
         *,

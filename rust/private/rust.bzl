@@ -218,7 +218,7 @@ def _rust_library_common(ctx, crate_type):
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
 
-    return rustc_compile_action(
+    return list(rustc_compile_action(
         ctx = ctx,
         attr = ctx.attr,
         toolchain = toolchain,
@@ -246,7 +246,7 @@ def _rust_library_common(ctx, crate_type):
             owner = ctx.label,
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = False),
         ),
-    )
+    ).values())
 
 def _rust_binary_impl(ctx):
     """The implementation of the `rust_binary` rule
@@ -312,16 +312,16 @@ def _rust_binary_impl(ctx):
         ),
     )
 
-    providers.append(RunEnvironmentInfo(
+    providers["RunEnvironmentInfo"] = RunEnvironmentInfo(
         environment = expand_dict_value_locations(
             ctx,
             ctx.attr.env,
             ctx.attr.data,
             {},
         ),
-    ))
+    )
 
-    return providers
+    return list(providers.values())
 
 def get_rust_test_flags(attr):
     """Determine the desired rustc flags for test targets.
@@ -516,6 +516,50 @@ def _rust_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
+
+    # If sharding is enabled and we're using libtest harness, wrap the test binary
+    # with a script that handles test enumeration and shard partitioning
+    if ctx.attr.experimental_enable_sharding and ctx.attr.use_libtest_harness:
+        default_info = providers["DefaultInfo"]
+
+        # Get the test binary from CrateInfo (or TestCrateInfo for staticlib/cdylib)
+        crate_info_provider = providers.get("crate_info") or providers.get("test_crate_info")
+        if crate_info_provider:
+            # TestCrateInfo wraps the actual CrateInfo
+            if hasattr(crate_info_provider, "crate"):
+                crate_info_provider = crate_info_provider.crate
+            test_binary = crate_info_provider.output
+
+            # Select the appropriate wrapper template based on target OS
+            if toolchain.target_os == "windows":
+                wrapper = ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.bat")
+                wrapper_template = ctx.file._test_sharding_wrapper_windows
+            else:
+                wrapper = ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.sh")
+                wrapper_template = ctx.file._test_sharding_wrapper_unix
+
+            # Generate wrapper script with test binary path substituted
+            ctx.actions.expand_template(
+                template = wrapper_template,
+                output = wrapper,
+                substitutions = {
+                    "{{TEST_BINARY}}": test_binary.short_path,
+                },
+                is_executable = True,
+            )
+
+            # Update runfiles to include both wrapper and test binary
+            new_runfiles = default_info.default_runfiles.merge(
+                ctx.runfiles(files = [test_binary]),
+            )
+
+            # Replace DefaultInfo with wrapper as executable
+            providers["DefaultInfo"] = DefaultInfo(
+                files = default_info.files,
+                runfiles = new_runfiles,
+                executable = wrapper,
+            )
+
     data = getattr(ctx.attr, "data", [])
 
     env = expand_dict_value_locations(
@@ -544,12 +588,12 @@ def _rust_test_impl(ctx):
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-    providers.append(RunEnvironmentInfo(
+    providers["RunEnvironmentInfo"] = RunEnvironmentInfo(
         environment = env,
         inherited_environment = ctx.attr.env_inherit,
-    ))
+    )
 
-    return providers
+    return list(providers.values())
 
 def _rust_library_group_impl(ctx):
     dep_variant_infos = []
@@ -912,6 +956,22 @@ _rust_test_attrs = {
             Whether to use `libtest`. For targets using this flag, individual tests can be run by using the
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
+        """),
+    ),
+    "experimental_enable_sharding": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            If True, enable support for Bazel test sharding (shard_count attribute).
+
+            When enabled, tests are executed via a wrapper script that:
+            1. Enumerates tests using libtest's --list flag
+            2. Partitions tests across shards based on TEST_SHARD_INDEX/TEST_TOTAL_SHARDS
+            3. Runs only the tests assigned to the current shard
+
+            This attribute only has an effect when use_libtest_harness is True.
+
+            This is experimental and may change in future releases.
         """),
     ),
 } | _coverage_attrs | _experimental_use_cc_common_link_attrs
@@ -1467,6 +1527,14 @@ rust_test = rule(
         ),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+        "_test_sharding_wrapper_unix": attr.label(
+            default = Label("//rust/private:test_sharding_wrapper.sh"),
+            allow_single_file = True,
+        ),
+        "_test_sharding_wrapper_windows": attr.label(
+            default = Label("//rust/private:test_sharding_wrapper.bat"),
+            allow_single_file = True,
         ),
     },
     executable = True,
