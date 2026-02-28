@@ -26,8 +26,6 @@ def _find_modules(module_ctx):
             our_module = mod
     if root == None:
         root = our_module
-    if our_module == None:
-        fail("Unable to find rules_rust module")
 
     return root, our_module
 
@@ -93,7 +91,9 @@ def _rust_impl(module_ctx):
         if toolchain_triples.get(repository_set["exec_triple"]) == repository_set["name"]:
             toolchain_triples.pop(repository_set["exec_triple"], None)
 
-    toolchains = root.tags.toolchain or rules_rust.tags.toolchain
+    toolchains = root.tags.toolchain
+    if not toolchains and rules_rust:
+        toolchains = rules_rust.tags.toolchain
 
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
