@@ -95,6 +95,6 @@ rust_library(
     }),
     version = "0.5.18",
     deps = [
-        "//vendor_local_manifests/crates/bitflags-2.10.0:bitflags",
+        "//vendor_local_manifests/crates/bitflags-2.11.0:bitflags",
     ],
 )

@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "@rmdbi__anyhow-1.0.101//:anyhow",
+        "@rmdbi__anyhow-1.0.102//:anyhow",
         "@rmdbi__indexmap-2.13.0//:indexmap",
         "@rmdbi__wasm-encoder-0.244.0//:wasm_encoder",
         "@rmdbi__wasmparser-0.244.0//:wasmparser",

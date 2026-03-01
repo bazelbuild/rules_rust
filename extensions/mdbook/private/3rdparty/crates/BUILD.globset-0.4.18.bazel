@@ -103,6 +103,6 @@ rust_library(
         "@rmdbi__bstr-1.12.1//:bstr",
         "@rmdbi__log-0.4.29//:log",
         "@rmdbi__regex-automata-0.4.14//:regex_automata",
-        "@rmdbi__regex-syntax-0.8.9//:regex_syntax",
+        "@rmdbi__regex-syntax-0.8.10//:regex_syntax",
     ],
 )

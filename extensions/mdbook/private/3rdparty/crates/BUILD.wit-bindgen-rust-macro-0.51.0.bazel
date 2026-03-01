@@ -99,11 +99,11 @@ rust_proc_macro(
     }),
     version = "0.51.0",
     deps = [
-        "@rmdbi__anyhow-1.0.101//:anyhow",
+        "@rmdbi__anyhow-1.0.102//:anyhow",
         "@rmdbi__prettyplease-0.2.37//:prettyplease",
         "@rmdbi__proc-macro2-1.0.106//:proc_macro2",
         "@rmdbi__quote-1.0.44//:quote",
-        "@rmdbi__syn-2.0.115//:syn",
+        "@rmdbi__syn-2.0.117//:syn",
         "@rmdbi__wit-bindgen-core-0.51.0//:wit_bindgen_core",
         "@rmdbi__wit-bindgen-rust-0.51.0//:wit_bindgen_rust",
         "@rmdbi__wit-bindgen-rust-macro-0.51.0//:build_script_build",
