@@ -4,7 +4,7 @@
 
 ## Overview
 
-This repository provides rules for building [Rust](https://www.rust-lang.org/) projects with [Bazel](https://bazel.build/). It also provides an override to allow for building MCU floating point targets.
+This repository provides rules for building [Rust](https://www.rust-lang.org/) projects with [Bazel](https://bazel.build/).
 
 ### Starter repo
 
