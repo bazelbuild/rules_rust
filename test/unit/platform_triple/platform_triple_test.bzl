@@ -123,6 +123,7 @@ def _construct_known_triples_test_impl(ctx):
     _assert_parts(env, triple("aarch64-fuchsia"), "aarch64", "unknown", "fuchsia", None)
     _assert_parts(env, triple("aarch64-unknown-linux-musl"), "aarch64", "unknown", "linux", "musl")
     _assert_parts(env, triple("thumbv7em-none-eabi"), "thumbv7em", None, "none", "eabi")
+    _assert_parts(env, triple("thumbv7em-none-eabihf"), "thumbv7em", None, "none", "eabihf")
     _assert_parts(env, triple("thumbv8m.main-none-eabi"), "thumbv8m.main", None, "none", "eabi")
 
     # Test all WASM32 targets
