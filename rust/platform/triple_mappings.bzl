@@ -59,7 +59,9 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
+    "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-emscripten": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
@@ -283,12 +285,13 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch, *, system = None):
+def cpu_arch_to_constraints(cpu_arch, *, system = None, abi = None):
     """Returns a list of constraint values which represents a triple's CPU.
 
     Args:
         cpu_arch (str): The architecture to match constraints for
         system (str, optional): The system for the associated ABI value.
+        abi (str, optional): The application binary interface required for the target platform
 
     Returns:
         List: A list of labels to constraint values
@@ -299,7 +302,7 @@ def cpu_arch_to_constraints(cpu_arch, *, system = None):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     # Patch armv7e-m to mf if hardfloat abi is selected
-    if plat_suffix == "armv7e-m" and system == "eabihf":
+    if plat_suffix == "armv7e-m" and (system == "eabihf" or abi == "eabihf"):
         plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
@@ -463,6 +466,7 @@ def triple_to_constraint_set(target_triple):
     constraint_set += cpu_arch_to_constraints(
         triple_struct.arch,
         system = triple_struct.system,
+        abi = triple_struct.abi,
     )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)
