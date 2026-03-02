@@ -109,9 +109,9 @@ rust_library(
     version = "0.14.32",
     deps = [
         "//vendor_local_pkgs/crates/bytes-1.11.1:bytes",
-        "//vendor_local_pkgs/crates/futures-channel-0.3.31:futures_channel",
-        "//vendor_local_pkgs/crates/futures-core-0.3.31:futures_core",
-        "//vendor_local_pkgs/crates/futures-util-0.3.31:futures_util",
+        "//vendor_local_pkgs/crates/futures-channel-0.3.32:futures_channel",
+        "//vendor_local_pkgs/crates/futures-core-0.3.32:futures_core",
+        "//vendor_local_pkgs/crates/futures-util-0.3.32:futures_util",
         "//vendor_local_pkgs/crates/h2-0.3.27:h2",
         "//vendor_local_pkgs/crates/http-0.2.12:http",
         "//vendor_local_pkgs/crates/http-body-0.4.6:http_body",

@@ -102,6 +102,6 @@ rust_library(
         "@rmdbi__log-0.4.29//:log",
         "@rmdbi__notify-8.2.0//:notify",
         "@rmdbi__notify-types-2.1.0//:notify_types",
-        "@rmdbi__tempfile-3.25.0//:tempfile",
+        "@rmdbi__tempfile-3.26.0//:tempfile",
     ],
 )

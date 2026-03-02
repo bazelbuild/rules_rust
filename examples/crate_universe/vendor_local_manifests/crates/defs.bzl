@@ -308,7 +308,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "vendor_local_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("//vendor_local_manifests/crates/tempfile-3.25.0:tempfile"),
+            "tempfile": Label("//vendor_local_manifests/crates/tempfile-3.26.0:tempfile"),
             "tokio-test": Label("//vendor_local_manifests/crates/tokio-test-0.4.5:tokio_test"),
         },
     },

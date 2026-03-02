@@ -99,11 +99,11 @@ rust_proc_macro(
     }),
     version = "0.51.0",
     deps = [
-        "//vendor_local_manifests/crates/anyhow-1.0.101:anyhow",
+        "//vendor_local_manifests/crates/anyhow-1.0.102:anyhow",
         "//vendor_local_manifests/crates/prettyplease-0.2.37:prettyplease",
         "//vendor_local_manifests/crates/proc-macro2-1.0.106:proc_macro2",
         "//vendor_local_manifests/crates/quote-1.0.44:quote",
-        "//vendor_local_manifests/crates/syn-2.0.115:syn",
+        "//vendor_local_manifests/crates/syn-2.0.117:syn",
         "//vendor_local_manifests/crates/wit-bindgen-core-0.51.0:wit_bindgen_core",
         "//vendor_local_manifests/crates/wit-bindgen-rust-0.51.0:wit_bindgen_rust",
         "//vendor_local_manifests/crates/wit-bindgen-rust-macro-0.51.0:build_script_build",

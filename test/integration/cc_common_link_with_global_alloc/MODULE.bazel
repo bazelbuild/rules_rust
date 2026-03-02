@@ -39,6 +39,21 @@ rust.repository_set(
     target_triple = "x86_64-unknown-linux-gnu",
     versions = [VERSION],
 )
+rust.repository_set(
+    name = "rust_with_alloc_mangling_macos_aarch64",
+    allocator_library = "@rules_rust//ffi/rs:empty",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    target_settings = [
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on",
+    ],
+    target_triple = "aarch64-apple-darwin",
+    versions = [VERSION],
+)
 use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")

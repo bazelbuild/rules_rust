@@ -103,7 +103,7 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "@rmdbi__bitflags-2.10.0//:bitflags",
+        "@rmdbi__bitflags-2.11.0//:bitflags",
         "@rmdbi__hashbrown-0.15.5//:hashbrown",
         "@rmdbi__indexmap-2.13.0//:indexmap",
         "@rmdbi__semver-1.0.27//:semver",

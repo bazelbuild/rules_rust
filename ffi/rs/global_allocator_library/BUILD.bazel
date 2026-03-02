@@ -16,6 +16,6 @@ rust_library(
     name = "global_allocator_library",
     srcs = srcs,
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
-    edition = "2024",
+    edition = "2021",
     tags = ["manual"],
 )

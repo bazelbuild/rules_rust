@@ -97,9 +97,9 @@ rust_library(
     deps = [
         "@rmdbi__bytes-1.11.1//:bytes",
         "@rmdbi__fnv-1.0.7//:fnv",
-        "@rmdbi__futures-core-0.3.31//:futures_core",
-        "@rmdbi__futures-sink-0.3.31//:futures_sink",
-        "@rmdbi__futures-util-0.3.31//:futures_util",
+        "@rmdbi__futures-core-0.3.32//:futures_core",
+        "@rmdbi__futures-sink-0.3.32//:futures_sink",
+        "@rmdbi__futures-util-0.3.32//:futures_util",
         "@rmdbi__http-0.2.12//:http",
         "@rmdbi__indexmap-2.13.0//:indexmap",
         "@rmdbi__slab-0.4.12//:slab",

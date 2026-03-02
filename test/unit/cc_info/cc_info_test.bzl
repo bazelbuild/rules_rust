@@ -1,6 +1,10 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load(
+    "@bazel_skylib//rules:common_settings.bzl",
+    "BuildSettingInfo",
+)
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
@@ -53,7 +57,12 @@ def _collect_user_link_flags(env, tut):
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "rlib", 4)
+
+    count = 4
+    if ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols[BuildSettingInfo].value:
+        count = 3
+
+    _assert_cc_info_has_library_to_link(env, tut, "rlib", count)
     return analysistest.end(env)
 
 def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(ctx):
@@ -102,7 +111,14 @@ def _crate_group_info_provides_cc_info_test_impl(ctx):
     )
     return analysistest.end(env)
 
-rlib_provides_cc_info_test = analysistest.make(_rlib_provides_cc_info_test_impl)
+rlib_provides_cc_info_test = analysistest.make(
+    _rlib_provides_cc_info_test_impl,
+    attrs = {
+        "_experimental_use_allocator_libraries_with_mangled_symbols": attr.label(
+            default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
+        ),
+    },
+)
 rlib_with_dep_only_has_stdlib_linkflags_once_test = analysistest.make(
     _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl,
 )
