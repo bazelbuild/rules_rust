@@ -73,33 +73,6 @@ pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResul
     })
 }
 
-/// stop_on_rmeta_completion parses the json output of rustc in the same way
-/// process_rustc_json does. In addition, it will signal to stop when metadata
-/// is emitted so the compiler can be terminated.
-/// This is used to implement pipelining in rules_rust, please see
-/// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199
-/// Returns an error if parsing json fails.
-/// TODO: pass a function to handle the emit event and merge with process_json
-pub(crate) fn stop_on_rmeta_completion(
-    line: String,
-    error_format: ErrorFormat,
-    kill: &mut bool,
-) -> LineResult {
-    let parsed: JsonValue = line
-        .parse()
-        .map_err(|_| "error parsing rustc output as json".to_owned())?;
-    Ok(match parsed.try_into() {
-        Ok(RustcMessage::Emit(emit)) if emit == "metadata" => {
-            *kill = true;
-            LineOutput::Terminate
-        }
-        Ok(RustcMessage::Message(rendered)) => {
-            output_based_on_error_format(line, rendered, error_format)
-        }
-        _ => LineOutput::Skip,
-    })
-}
-
 fn output_based_on_error_format(
     line: String,
     rendered: String,

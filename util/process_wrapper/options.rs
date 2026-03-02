@@ -44,9 +44,6 @@ pub(crate) struct Options {
     // If set, also logs all unprocessed output from the rustc output to this file.
     // Meant to be used to get json output out of rustc for tooling usage.
     pub(crate) output_file: Option<String>,
-    // If set, it configures rustc to emit an rmeta file and then
-    // quit.
-    pub(crate) rustc_quit_on_rmeta: bool,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
 }
@@ -64,7 +61,6 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut stdout_file = None;
     let mut stderr_file = None;
     let mut output_file = None;
-    let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
     let mut require_explicit_unstable_features = None;
@@ -103,16 +99,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         &mut output_file,
     );
     flags.define_flag(
-        "--rustc-quit-on-rmeta",
-        "If enabled, this wrapper will terminate rustc after rmeta has been emitted.",
-        &mut rustc_quit_on_rmeta_raw,
-    );
-    flags.define_flag(
         "--rustc-output-format",
-        "Controls the rustc output format if --rustc-quit-on-rmeta is set.\n\
-        'json' will cause the json output to be output, \
-        'rendered' will extract the rendered message and print that.\n\
-        Default: `rendered`",
+        "The expected rustc output format. Valid values: json, rendered.",
         &mut rustc_output_format_raw,
     );
     flags.define_flag(
@@ -179,7 +167,6 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         })
         .transpose()?;
 
-    let rustc_quit_on_rmeta = rustc_quit_on_rmeta_raw.is_some_and(|s| s == "true");
     let rustc_output_format = rustc_output_format_raw
         .map(|v| match v.as_str() {
             "json" => Ok(rustc::ErrorFormat::Json),
@@ -227,7 +214,6 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         stdout_file,
         stderr_file,
         output_file,
-        rustc_quit_on_rmeta,
         rustc_output_format,
     })
 }
