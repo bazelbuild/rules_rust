@@ -18,15 +18,11 @@ use std::io::{self, prelude::*};
 
 /// LineOutput tells process_output what to do when a line is processed.
 /// If a Message is returned, it will be written to write_end, if
-/// Skip is returned nothing will be printed and execution continues,
-/// if Terminate is returned, process_output returns immediately.
-/// Terminate is used to stop processing when we see an emit metadata
-/// message.
+/// Skip is returned nothing will be printed and execution continues.
 #[derive(Debug)]
 pub(crate) enum LineOutput {
     Message(String),
     Skip,
-    Terminate,
 }
 
 #[derive(Debug)]
@@ -95,7 +91,6 @@ where
         match process_line(line.clone()) {
             Ok(LineOutput::Message(to_write)) => output_writer.write_all(to_write.as_bytes())?,
             Ok(LineOutput::Skip) => {}
-            Ok(LineOutput::Terminate) => return Ok(()),
             Err(msg) => {
                 failed_on = Some((line, msg));
                 break;
