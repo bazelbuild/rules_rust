@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::convert::{TryFrom, TryInto};
-
 use tinyjson::JsonValue;
 
 use crate::output::{LineOutput, LineResult};
@@ -37,66 +35,20 @@ fn get_key(value: &JsonValue, key: &str) -> Option<String> {
     }
 }
 
-#[derive(Debug)]
-enum RustcMessage {
-    Emit(String),
-    Message(String),
-}
-
-impl TryFrom<JsonValue> for RustcMessage {
-    type Error = ();
-    fn try_from(val: JsonValue) -> Result<Self, Self::Error> {
-        if let Some(emit) = get_key(&val, "emit") {
-            return Ok(Self::Emit(emit));
-        }
-        if let Some(rendered) = get_key(&val, "rendered") {
-            return Ok(Self::Message(rendered));
-        }
-        Err(())
-    }
-}
-
 /// process_rustc_json takes an output line from rustc configured with
 /// --error-format=json, parses the json and returns the appropriate output
 /// according to the original --error-format supplied.
-/// Only messages are returned, emits are ignored.
+/// Only diagnostics with a rendered message are returned.
 /// Returns an errors if parsing json fails.
 pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResult {
     let parsed: JsonValue = line
         .parse()
         .map_err(|_| "error parsing rustc output as json".to_owned())?;
-    Ok(match parsed.try_into() {
-        Ok(RustcMessage::Message(rendered)) => {
-            output_based_on_error_format(line, rendered, error_format)
-        }
-        _ => LineOutput::Skip,
-    })
-}
-
-/// stop_on_rmeta_completion parses the json output of rustc in the same way
-/// process_rustc_json does. In addition, it will signal to stop when metadata
-/// is emitted so the compiler can be terminated.
-/// This is used to implement pipelining in rules_rust, please see
-/// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199
-/// Returns an error if parsing json fails.
-/// TODO: pass a function to handle the emit event and merge with process_json
-pub(crate) fn stop_on_rmeta_completion(
-    line: String,
-    error_format: ErrorFormat,
-    kill: &mut bool,
-) -> LineResult {
-    let parsed: JsonValue = line
-        .parse()
-        .map_err(|_| "error parsing rustc output as json".to_owned())?;
-    Ok(match parsed.try_into() {
-        Ok(RustcMessage::Emit(emit)) if emit == "metadata" => {
-            *kill = true;
-            LineOutput::Terminate
-        }
-        Ok(RustcMessage::Message(rendered)) => {
-            output_based_on_error_format(line, rendered, error_format)
-        }
-        _ => LineOutput::Skip,
+    Ok(if let Some(rendered) = get_key(&parsed, "rendered") {
+        output_based_on_error_format(line, rendered, error_format)
+    } else {
+        // Ignore non-diagnostic messages such as artifact notifications.
+        LineOutput::Skip
     })
 }
 
