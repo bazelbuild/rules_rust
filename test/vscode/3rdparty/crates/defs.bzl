@@ -493,22 +493,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rtvsc__syn-2.0.115",
-        sha256 = "6e614ed320ac28113fa64972c4262d5dbc89deacdfd00c34a3e4cea073243c12",
+        name = "rtvsc__syn-2.0.117",
+        sha256 = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/syn/2.0.115/download"],
-        strip_prefix = "syn-2.0.115",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-2.0.115.bazel"),
+        urls = ["https://static.crates.io/crates/syn/2.0.117/download"],
+        strip_prefix = "syn-2.0.117",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.syn-2.0.117.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "rtvsc__unicode-ident-1.0.23",
-        sha256 = "537dd038a89878be9b64dd4bd1b260315c1bb94f4d784956b81e27a088d9a09e",
+        name = "rtvsc__unicode-ident-1.0.24",
+        sha256 = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/unicode-ident/1.0.23/download"],
-        strip_prefix = "unicode-ident-1.0.23",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.unicode-ident-1.0.23.bazel"),
+        urls = ["https://static.crates.io/crates/unicode-ident/1.0.24/download"],
+        strip_prefix = "unicode-ident-1.0.24",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.unicode-ident-1.0.24.bazel"),
     )
 
     maybe(

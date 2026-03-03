@@ -112,10 +112,18 @@ def use_real_import_macro():
     )
 
 def pipelined_compilation():
-    """When set, this flag causes rustc to emit `*.rmeta` files and use them for `rlib -> rlib` dependencies.
+    """When set, this flag enables pipelined compilation for rlib/lib crates.
 
-    While this involves one extra (short) rustc invocation to build the rmeta file,
-    it allows library dependencies to be unlocked much sooner, increasing parallelism during compilation.
+    For each rlib/lib, a separate RustcMetadata action produces a hollow rlib
+    (via `-Zno-codegen`) containing only metadata. Downstream rlib/lib crates
+    can begin compiling against the hollow rlib before the upstream full codegen
+    action completes, increasing build parallelism.
+
+    Pipelining applies to rlib→rlib dependencies by default. To also pipeline
+    bin/cdylib crates (starting their compile step before upstream full codegen
+    finishes), enable `experimental_use_cc_common_link` alongside this flag.
+    With cc_common.link, rustc only emits `.o` files for binaries (linking is
+    handled separately), so hollow rlib deps are safe for bins too.
     """
     bool_flag(
         name = "pipelined_compilation",
@@ -126,6 +134,11 @@ def pipelined_compilation():
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \
     cc_common.link instead of rustc.
+
+    When combined with `pipelined_compilation`, bin/cdylib crates also participate
+    in the hollow-rlib dependency chain: rustc only emits `.o` files (linking is
+    done by cc_common.link and does not check SVH), so bin compile steps can start
+    as soon as upstream hollow rlibs are ready rather than waiting for full codegen.
     """
     bool_flag(
         name = "experimental_use_cc_common_link",
@@ -181,7 +194,8 @@ def experimental_use_global_allocator():
         },
     )
 
-def experimental_use_allocator_libraries_with_mangled_symbols(name):
+def experimental_use_allocator_libraries_with_mangled_symbols(
+        name = "experimental_use_allocator_libraries_with_mangled_symbols"):
     """A flag used to select allocator libraries implemented in rust that are compatible with the rustc allocator symbol mangling.
 
     The symbol mangling mechanism relies on unstable language features and requires a nightly rustc from 2025-04-05 or later.
@@ -201,10 +215,9 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
 
     Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
     The mangling uses a scheme that is specific to the exact version of the compiler.
-    This makes the cc allocator library definitions ineffective. To work around
-    this, we provide rust versions of the symbol definitions annotated with
-    an unstable language attribute that instructs rustc to mangle them consistently.
-    Because of that, this is only compatible with nightly versions of the compiler.
+    This makes the cc allocator library definitions ineffective. When rustc builds a
+    staticlib it provides the mapping definitions. We rely on this and build an empty
+    staticlib as a basis for the allocator definitions.
 
     Since the new symbol definitions are written in rust, we cannot just attach
     them as attributes on the `rust_toolchain` as the old cc versions, as that
@@ -221,8 +234,6 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
     the result of building the rust allocator libraries via a provider, which
     can be consumed by the rust build actions. We attach an instance of this
     as a common attribute to the rust rule set.
-
-    TODO: how this interacts with stdlibs
     """
     bool_flag(
         name = name,
@@ -232,14 +243,14 @@ def experimental_use_allocator_libraries_with_mangled_symbols(name):
     native.config_setting(
         name = "%s_on" % name,
         flag_values = {
-            ":experimental_use_allocator_libraries_with_mangled_symbols": "true",
+            ":{}".format(name): "true",
         },
     )
 
     native.config_setting(
         name = "%s_off" % name,
         flag_values = {
-            ":experimental_use_allocator_libraries_with_mangled_symbols": "false",
+            ":{}".format(name): "false",
         },
     )
 

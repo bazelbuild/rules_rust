@@ -99,11 +99,11 @@ rust_proc_macro(
     }),
     version = "0.51.0",
     deps = [
-        "@cvm__anyhow-1.0.101//:anyhow",
+        "@cvm__anyhow-1.0.102//:anyhow",
         "@cvm__prettyplease-0.2.37//:prettyplease",
         "@cvm__proc-macro2-1.0.106//:proc_macro2",
         "@cvm__quote-1.0.44//:quote",
-        "@cvm__syn-2.0.115//:syn",
+        "@cvm__syn-2.0.117//:syn",
         "@cvm__wit-bindgen-core-0.51.0//:wit_bindgen_core",
         "@cvm__wit-bindgen-rust-0.51.0//:wit_bindgen_rust",
         "@cvm__wit-bindgen-rust-macro-0.51.0//:build_script_build",

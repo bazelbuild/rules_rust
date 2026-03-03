@@ -98,8 +98,8 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "//vendor_local_manifests/crates/anyhow-1.0.101:anyhow",
-        "//vendor_local_manifests/crates/bitflags-2.10.0:bitflags",
+        "//vendor_local_manifests/crates/anyhow-1.0.102:anyhow",
+        "//vendor_local_manifests/crates/bitflags-2.11.0:bitflags",
         "//vendor_local_manifests/crates/indexmap-2.13.0:indexmap",
         "//vendor_local_manifests/crates/log-0.4.29:log",
         "//vendor_local_manifests/crates/serde-1.0.228:serde",

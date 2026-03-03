@@ -101,7 +101,7 @@ rust_library(
     deps = [
         "@cvm__prettyplease-0.2.37//:build_script_build",
         "@cvm__proc-macro2-1.0.106//:proc_macro2",
-        "@cvm__syn-2.0.115//:syn",
+        "@cvm__syn-2.0.117//:syn",
     ],
 )
 

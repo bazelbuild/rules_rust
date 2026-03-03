@@ -43,6 +43,7 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 # See `@rules_rust//rust/platform:triple_mappings.bzl` for the complete list.
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
+    "aarch64-apple-ios-macabi": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
@@ -67,6 +68,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "wasm32-wasip1-threads": _support(std = True, host_tools = False),
     "wasm32-wasip2": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
+    "x86_64-apple-ios-macabi": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
@@ -175,6 +177,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "ios": "",
     "linux": "",
     "macos": "",
+    "netbsd": "",
     "nixos": "",
     "none": "",
     "nto": "",
@@ -183,6 +186,7 @@ _SYSTEM_TO_BINARY_EXT = {
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
+    "threads": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
     "wasip2": ".wasm",
@@ -200,11 +204,13 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "ios": ".a",
     "linux": ".a",
     "macos": ".a",
+    "netbsd": ".a",
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
     "uefi": ".lib",
     "unknown": "",
+    "threads": "",
     "wasi": "",
     "wasip1": "",
     "wasip2": "",
@@ -222,11 +228,13 @@ _SYSTEM_TO_DYLIB_EXT = {
     "ios": ".dylib",
     "linux": ".so",
     "macos": ".dylib",
+    "netbsd": ".so",
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
     "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
+    "threads": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
     "wasip2": ".wasm",
@@ -463,6 +471,18 @@ def triple_to_constraint_set(target_triple):
         return [
             "@platforms//cpu:wasm64",
             "@platforms//os:none",
+        ]
+    if target_triple == "aarch64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
+        ]
+    if target_triple == "x86_64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
         ]
 
     triple_struct = triple(target_triple)

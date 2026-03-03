@@ -18,7 +18,7 @@ rust_static_library(
     name = "allocator_library",
     srcs = ["empty.rs"],
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
-    edition = "2024",
+    edition = "2021",
     tags = ["manual"],
 )
 
@@ -26,6 +26,6 @@ rust_static_library_without_process_wrapper(
     name = "allocator_library_without_process_wrapper",
     srcs = ["empty.rs"],
     allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
-    edition = "2024",
+    edition = "2021",
     tags = ["manual"],
 )

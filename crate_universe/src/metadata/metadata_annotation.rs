@@ -568,7 +568,7 @@ mod test {
         let pkg = mock_cargo_metadata_package();
         let lock_pkg = mock_cargo_lock_package();
 
-        assert!(cargo_meta_pkg_to_locked_pkg(&pkg, &vec![lock_pkg]).is_some())
+        assert!(cargo_meta_pkg_to_locked_pkg(&pkg, &[lock_pkg]).is_some())
     }
 
     #[test]

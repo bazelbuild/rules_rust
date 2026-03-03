@@ -100,6 +100,6 @@ rust_proc_macro(
     deps = [
         "@rtvsc__proc-macro2-1.0.106//:proc_macro2",
         "@rtvsc__quote-1.0.44//:quote",
-        "@rtvsc__syn-2.0.115//:syn",
+        "@rtvsc__syn-2.0.117//:syn",
     ],
 )

@@ -99,7 +99,7 @@ rust_library(
     }),
     version = "0.1.18",
     deps = [
-        "@cvm__futures-core-0.3.31//:futures_core",
+        "@cvm__futures-core-0.3.32//:futures_core",
         "@cvm__pin-project-lite-0.2.16//:pin_project_lite",
         "@cvm__tokio-1.49.0//:tokio",
     ],

@@ -91,9 +91,7 @@ experimental_use_coverage_metadata_files()
 
 experimental_use_global_allocator()
 
-experimental_use_allocator_libraries_with_mangled_symbols(
-    name = "experimental_use_allocator_libraries_with_mangled_symbols",
-)
+experimental_use_allocator_libraries_with_mangled_symbols()
 
 extra_exec_rustc_env()
 
