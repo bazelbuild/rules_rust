@@ -4,7 +4,6 @@ load(
     "cargo_manifest_dir_filename_suffixes_to_retain",
     "debug_std_streams_output_group",
     "experimental_symlink_execroot",
-    "incompatible_runfiles_cargo_manifest_dir",
     "use_default_shell_env",
 )
 
@@ -26,7 +25,5 @@ cargo_manifest_dir_filename_suffixes_to_retain()
 debug_std_streams_output_group()
 
 experimental_symlink_execroot()
-
-incompatible_runfiles_cargo_manifest_dir()
 
 use_default_shell_env()

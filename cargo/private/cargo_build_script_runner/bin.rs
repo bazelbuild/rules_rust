@@ -51,9 +51,7 @@ fn run_buildrs() -> Result<(), String> {
         cargo_manifest_maker,
     } = Args::parse();
 
-    if let Some(cargo_manifest_maker) = &cargo_manifest_maker {
-        cargo_manifest_maker.create_runfiles_dir().unwrap()
-    }
+    cargo_manifest_maker.create_runfiles_dir().unwrap();
 
     let out_dir_abs = exec_root.join(out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
@@ -232,11 +230,10 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     // Delete any runfiles that do not need to be propagated to down stream dependents.
-    if let Some(cargo_manifest_maker) = cargo_manifest_maker {
-        cargo_manifest_maker
-            .drain_runfiles_dir(&out_dir_abs)
-            .unwrap();
-    }
+    cargo_manifest_maker
+        .drain_runfiles_dir(&out_dir_abs)
+        .unwrap();
+
     Ok(())
 }
 
@@ -292,7 +289,7 @@ struct Args {
     stderr_path: Option<String>,
     rundir: String,
     input_dep_env_paths: Vec<String>,
-    cargo_manifest_maker: Option<RunfilesMaker>,
+    cargo_manifest_maker: RunfilesMaker,
 }
 
 impl Args {
@@ -316,7 +313,8 @@ impl Args {
         let mut stderr_path = None;
         let mut rundir: Result<String, String> = Err("Argument `rundir` not provided".to_owned());
         let mut input_dep_env_paths = Vec::new();
-        let mut cargo_manifest_maker = None;
+        let mut cargo_manifest_maker: Result<RunfilesMaker, String> =
+            Err("Argument `cargo_manifest_args` not provided".to_owned());
 
         for mut arg in env::args().skip(1) {
             if arg.starts_with("--script=") {
@@ -344,7 +342,7 @@ impl Args {
             } else if arg.starts_with("--input_dep_env_path=") {
                 input_dep_env_paths.push(arg.split_off("--input_dep_env_path=".len()));
             } else if arg.starts_with("--cargo_manifest_args=") {
-                cargo_manifest_maker = Some(RunfilesMaker::from_param_file(
+                cargo_manifest_maker = Ok(RunfilesMaker::from_param_file(
                     &arg.split_off("--cargo_manifest_args=".len()),
                 ));
             }
@@ -363,7 +361,7 @@ impl Args {
             stderr_path,
             rundir: rundir.unwrap(),
             input_dep_env_paths,
-            cargo_manifest_maker,
+            cargo_manifest_maker: cargo_manifest_maker.unwrap(),
         }
     }
 }
