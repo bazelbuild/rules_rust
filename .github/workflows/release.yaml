@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths:
+      - crate_universe/tools/cross_installer/**
       - version.bzl
       - .github/workflows/release.yaml
   push:
