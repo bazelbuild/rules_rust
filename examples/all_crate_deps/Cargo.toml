@@ -9,4 +9,5 @@ publish = false
 path = "fake.rs"
 
 [dependencies]
-anyhow = "1.0.79"
+# Fetched via git to test that git dependencies are converted to http_archive in MODULE.bazel.lock
+anyhow = { git = "https://github.com/dtolnay/anyhow.git", rev = "709fe86f04878a62a29b9279f5bb96422f8bca28" }
