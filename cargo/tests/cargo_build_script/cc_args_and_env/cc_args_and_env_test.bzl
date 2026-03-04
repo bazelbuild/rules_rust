@@ -309,7 +309,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
     )
     with_extra_toolchains(
         name = name,
-        extra_toolchains = ["//test/cargo_build_script/cc_args_and_env:%s/test_cc_toolchain" % name],
+        extra_toolchains = ["//%s:%s/test_cc_toolchain" % (native.package_name(), name)],
         target = "%s/cargo_build_script_impl" % name,
         tags = ["manual"],
     )
