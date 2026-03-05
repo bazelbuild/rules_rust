@@ -52,6 +52,7 @@ rust_library(
     target_compatible_with = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
+        "@rules_rust//rust/platform:aarch64-apple-ios-macabi": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -74,7 +75,9 @@ rust_library(
         "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:thumbv6m-none-eabi": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
+        "@rules_rust//rust/platform:thumbv7em-none-eabihf": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
         "@rules_rust//rust/platform:wasm32-unknown-emscripten": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
@@ -83,6 +86,7 @@ rust_library(
         "@rules_rust//rust/platform:wasm32-wasip2": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
+        "@rules_rust//rust/platform:x86_64-apple-ios-macabi": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
@@ -99,6 +103,9 @@ rust_library(
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
+            "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-macabi": [
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
@@ -161,7 +168,13 @@ rust_library(
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
+        "@rules_rust//rust/platform:thumbv6m-none-eabi": [
+            "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
+        ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
+            "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:thumbv7em-none-eabihf": [
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
@@ -186,6 +199,9 @@ rust_library(
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
+            "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios-macabi": [
             "@rrwbd__libc-0.2.177//:libc",  # cfg(not(windows))
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [

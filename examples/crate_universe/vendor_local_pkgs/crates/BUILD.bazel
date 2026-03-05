@@ -91,14 +91,14 @@ alias(
 )
 
 alias(
-    name = "tokio-1.49.0",
-    actual = "//vendor_local_pkgs/crates/tokio-1.49.0:tokio",
+    name = "tokio-1.50.0",
+    actual = "//vendor_local_pkgs/crates/tokio-1.50.0:tokio",
     tags = ["manual"],
 )
 
 alias(
     name = "tokio",
-    actual = "//vendor_local_pkgs/crates/tokio-1.49.0:tokio",
+    actual = "//vendor_local_pkgs/crates/tokio-1.50.0:tokio",
     tags = ["manual"],
 )
 
