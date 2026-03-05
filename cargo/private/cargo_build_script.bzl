@@ -163,7 +163,7 @@ def _prefix_pwd_to_flag(args, flag_variations):
 
     Args:
         args (list): List of tool arguments.
-        flag ([str]): The flag variants to look for (e.g., ["-LIBPATH", "-L"], ["-B"], ["-isystem"], ["-resource-dir"]).
+        flag_variations (list[str]): The flag variants to look for (e.g., ["-LIBPATH", "-L"], ["-B"], ["-isystem"], ["-resource-dir"]).
 
     Returns:
         list: The modified argument list with relative paths prefixed with ${pwd}.

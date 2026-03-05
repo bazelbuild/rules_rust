@@ -663,16 +663,16 @@ inject_repo(complicated_dependencies, "boringssl")
 
 complicated_dependencies.annotation(
     build_script_data = [
-        "@@//complicated_dependencies:boringssl_gen_dir",
+        "@//complicated_dependencies:boringssl_gen_dir",
     ],
     build_script_env = {
         # Ideally this would use an execpath macro, but we need to point at a directory and that's fiddly. We could probably
         # copy the director somewhere and point at that... For now, this works.
-        "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)/include",
-        "BORING_BSSL_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)",
+        "BORING_BSSL_INCLUDE_PATH": "$(execpath @//complicated_dependencies:boringssl_gen_dir)/include",
+        "BORING_BSSL_PATH": "$(execpath @//complicated_dependencies:boringssl_gen_dir)",
     },
     compile_data = [
-        "@@//complicated_dependencies:boringssl_gen_dir",
+        "@//complicated_dependencies:boringssl_gen_dir",
     ],
     crate = "boring-sys",
     repositories = ["complicated_dependencies"],

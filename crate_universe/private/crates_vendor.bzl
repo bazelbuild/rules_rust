@@ -205,6 +205,8 @@ def _prepare_manifest_path(target):
                 manifest,
                 manifest.short_path,
             ))
+
+        # buildifier: disable=external-path
         return manifest.short_path.replace("../", "${output_base}/external/", 1)
 
     return "${build_workspace_directory}/" + manifest.short_path
