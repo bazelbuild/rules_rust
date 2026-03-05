@@ -9,7 +9,7 @@ To verify the processed cargo cc_args, we use cc_args_and_env_analysis_test().
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES", "ACTION_NAME_GROUPS")
-load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "feature", "flag_group", "flag_set", "tool", "tool_path")
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "action_config", "env_entry", "env_set", "feature", "flag_group", "flag_set", "tool", "tool_path")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
@@ -36,6 +36,17 @@ def _test_cc_config_impl(ctx):
                     ]),
                 ),
             ],
+            env_sets = [
+                env_set(
+                    actions = ACTION_NAME_GROUPS.all_cc_compile_actions,
+                    env_entries = [
+                        env_entry(
+                            key = "INCLUDE",
+                            value = ctx.attr.extra_include_paths,
+                        ),
+                    ],
+                ),
+            ] if ctx.attr.extra_include_paths else [],
         ),
         feature(
             name = "default_cpp_flags",
@@ -156,6 +167,7 @@ test_cc_config = rule(
         "extra_ar_flags": attr.string_list(),
         "extra_cc_compile_flags": attr.string_list(),
         "extra_cxx_compile_flags": attr.string_list(),
+        "extra_include_paths": attr.string(default = ""),
         "legacy_cc_toolchain": attr.bool(default = False),
     },
     provides = [CcToolchainConfigInfo],
@@ -241,6 +253,15 @@ def _cc_args_and_env_analysis_test_impl(ctx):
         "set up by most Bazel C/C++ toolchains is extremely error-prone.",
     )
 
+    if ctx.attr.expected_include:
+        actual_include = cargo_action.env.get("INCLUDE")
+        asserts.equals(
+            env,
+            ctx.attr.expected_include,
+            actual_include,
+            "error: expected INCLUDE '{}' but got '{}'".format(ctx.attr.expected_include, actual_include),
+        )
+
     return analysistest.end(env)
 
 cc_args_and_env_analysis_test = analysistest.make(
@@ -249,6 +270,7 @@ cc_args_and_env_analysis_test = analysistest.make(
     attrs = {
         "expected_cflags": attr.string_list(default = ["-Wall"]),
         "expected_cxxflags": attr.string_list(default = ["-fno-rtti"]),
+        "expected_include": attr.string(default = ""),
         "legacy_cc_toolchain": attr.bool(default = False),
     },
 )
@@ -259,6 +281,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cc_compile_flags = ["-Wall"],
         extra_cxx_compile_flags = ["-fno-rtti"],
         extra_ar_flags = ["-x"],
+        extra_include_paths = "",
         legacy_cc_toolchain = False):
     """Produces a test cargo_build_script target that's set up to use a custom cc_toolchain with the extra_cc_compile_flags.
 
@@ -273,6 +296,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
       extra_cc_compile_flags: Extra C/C++ args for the cc_toolchain.
       extra_cxx_compile_flags: Extra C++-specific args for the cc_toolchain.
       extra_ar_flags: Extra archiver args for the cc_toolchain.
+      extra_include_paths: INCLUDE environment variable value for the cc_toolchain.
       legacy_cc_toolchain: Enables legacy tool_path configuration of the cc
         cc toolchain.
     """
@@ -282,6 +306,7 @@ def cargo_build_script_with_extra_cc_compile_flags(
         extra_cc_compile_flags = extra_cc_compile_flags,
         extra_cxx_compile_flags = extra_cxx_compile_flags,
         extra_ar_flags = extra_ar_flags,
+        extra_include_paths = extra_include_paths,
         legacy_cc_toolchain = legacy_cc_toolchain,
     )
     cc_toolchain(
@@ -422,4 +447,99 @@ def legacy_cc_toolchain_test(name):
         name = name,
         target_under_test = "%s/cargo_build_script" % name,
         legacy_cc_toolchain = True,
+    )
+
+def libpath_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-Ltest/relative/sysroot", "-L", "test/relative/sysroot2", "-LIBPATH:test/relative/sysroot3", "-LIBPATH=test/relative/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-L${pwd}/test/relative/sysroot", "-L", "${pwd}/test/relative/sysroot2", "-LIBPATH:${pwd}/test/relative/sysroot3", "-LIBPATH=${pwd}/test/relative/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+
+def libpath_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-L/test/absolute/sysroot", "-L", "/test/absolute/sysroot2", "-LIBPATH:/test/absolute/sysroot3", "-LIBPATH=/test/absolute/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-L/test/absolute/sysroot", "-L", "/test/absolute/sysroot2", "-LIBPATH:/test/absolute/sysroot3", "-LIBPATH=/test/absolute/sysroot4", "-LIBPATH:", "some_unrelated_arg", "-LIBPATH=", "some_unrelated_arg2"],
+    )
+
+def resource_dir_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-resource-dir", "test/relative/resources", "-resource-dir=test/relative/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-resource-dir", "${pwd}/test/relative/resources", "-resource-dir=${pwd}/test/relative/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+
+def resource_dir_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-resource-dir", "/test/absolute/resources", "-resource-dir=/test/absolute/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-resource-dir", "/test/absolute/resources", "-resource-dir=/test/absolute/resources2", "-resource-dir=", "some_unrelated_arg"],
+    )
+
+def include_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_include_paths = select({
+            "@platforms//os:windows": "test/relative/include;another/relative/path",
+            "//conditions:default": "test/relative/include:another/relative/path",
+        }),
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_include = select({
+            "@platforms//os:windows": "${pwd}/test/relative/include;${pwd}/another/relative/path",
+            "//conditions:default": "${pwd}/test/relative/include:${pwd}/another/relative/path",
+        }),
+    )
+
+def include_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_include_paths = select({
+            "@platforms//os:windows": "/test/absolute/include;/another/absolute/path",
+            "//conditions:default": "/test/absolute/include:/another/absolute/path",
+        }),
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_include = select({
+            "@platforms//os:windows": "/test/absolute/include;/another/absolute/path",
+            "//conditions:default": "/test/absolute/include:/another/absolute/path",
+        }),
+    )
+
+def include_mixed_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_include_paths = select({
+            "@platforms//os:windows": "/test/absolute/include;test/relative/path",
+            "//conditions:default": "/test/absolute/include:test/relative/path",
+        }),
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_include = select({
+            "@platforms//os:windows": "/test/absolute/include;${pwd}/test/relative/path",
+            "//conditions:default": "/test/absolute/include:${pwd}/test/relative/path",
+        }),
     )
