@@ -6,6 +6,5 @@ moduleRoots:
   - "extensions/bindgen"
   - "extensions/mdbook"
   - "extensions/prost"
-  - "extensions/protobuf"
   - "extensions/pyo3"
   - "extensions/wasm_bindgen"
