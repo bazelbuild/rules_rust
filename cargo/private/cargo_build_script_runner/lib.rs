@@ -86,6 +86,20 @@ impl BuildScriptOutput {
                 eprint!("Build Script Warning: {}", split[1]);
                 None
             }
+            "metadata" => {
+                // cargo::metadata=KEY=VALUE is forwarded to dependents as
+                // DEP_<links>_<KEY>=<VALUE> by Cargo.
+                if let Some((key, value)) = param.split_once('=') {
+                    Some(BuildScriptOutput::DepEnv(format!(
+                        "{}={}",
+                        key.to_uppercase().replace('-', "_"),
+                        value.trim()
+                    )))
+                } else {
+                    // Keep legacy behavior for malformed metadata payloads.
+                    Some(BuildScriptOutput::DepEnv(format!("METADATA={}", param)))
+                }
+            }
             "rustc-cdylib-link-arg" | "rustc-link-arg-bin" | "rustc-link-arg-bins" => {
                 // cargo::rustc-cdylib-link-arg=FLAG — Passes custom flags to a linker for cdylib crates.
                 // cargo::rustc-link-arg-bin=BIN=FLAG – Passes custom flags to a linker for the binary BIN.
@@ -373,6 +387,16 @@ cargo:rustc-env=valid2=2
         assert_eq!(
             &BuildScriptOutput::outputs_to_env(&result, "/some/absolute/path"),
             "valid1=1\nvalid2=2"
+        );
+    }
+
+    #[test]
+    fn metadata_directive_maps_to_dep_env_key_value() {
+        let reader = BufReader::new(Cursor::new("cargo::metadata=version_1_10_0=1\n"));
+        let result = BuildScriptOutput::outputs_from_reader(reader);
+        assert_eq!(
+            result,
+            vec![BuildScriptOutput::DepEnv("VERSION_1_10_0=1".to_owned())]
         );
     }
 }
