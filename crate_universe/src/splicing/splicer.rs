@@ -1583,8 +1583,8 @@ mod test {
     fn splice_multi_package_with_conflicting_patch() {
         let (splicing_manifest, cache_dir) = mock_splicing_manifest_with_multi_package();
 
-        let mut patch = 3;
-        for pkg in ["pkg_a", "pkg_b"] {
+        // Using the patch semver to make the patch info unique.
+        for (pkg, patch) in [("pkg_a", 3), ("pkg_b", 4)] {
             // Generate a patch entry
             let new_patch = cargo_toml::PatchSet::from([(
                 "registry".to_owned(),
@@ -1593,9 +1593,6 @@ mod test {
                     cargo_toml::Dependency::Simple(format!("1.2.{patch}")),
                 )]),
             )]);
-
-            // Increment the patch semver to make the patch info unique.
-            patch += 1;
 
             // Insert the patch entry to the manifests
             let manifest_path = cache_dir.as_ref().join(pkg).join("Cargo.toml");
