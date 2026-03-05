@@ -1,13 +1,19 @@
 //! Collect and store information from Cargo metadata specific to Bazel's needs
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::io::Read;
+use std::ops::Deref;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
+use cargo_lock::package::GitReference;
+use cargo_lock::SourceId;
 use cargo_metadata::{Node, Package, PackageId};
 use hex::ToHex;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::config::{Commitish, Config, CrateAnnotations, CrateId};
 use crate::metadata::dependency::{build_dep_tree, DependencySet};
@@ -151,6 +157,11 @@ pub(crate) enum SourceAnnotation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         sha256: Option<String>,
 
+        /// See [http_archive::strip_prefix](https://docs.bazel.build/versions/main/repo/http.html#http_archive-strip_prefix)
+        /// When set, overrides the default strip_prefix of `{crate_name}-{crate_version}`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        strip_prefix: Option<String>,
+
         /// See [http_archive::patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         patch_args: Option<Vec<String>>,
@@ -213,6 +224,9 @@ impl LockfileAnnotation {
             .filter(|node| !is_workspace_member(&node.id))
             .collect();
 
+        crate::ensure_tls_provider();
+        let http_client = Client::new();
+
         // Produce source annotations for each crate in the resolve graph
         let crates = nodes
             .iter()
@@ -226,6 +240,7 @@ impl LockfileAnnotation {
                         &lockfile,
                         workspace_metadata,
                         nonhermetic_root_bazel_workspace_dir,
+                        &http_client,
                     )?,
                 ))
             })
@@ -247,6 +262,7 @@ impl LockfileAnnotation {
         lockfile: &CargoLockfile,
         workspace_metadata: &WorkspaceMetadata,
         nonhermetic_root_bazel_workspace_dir: &Utf8Path,
+        http_client: &Client,
     ) -> Result<SourceAnnotation> {
         let pkg = &metadata[&node.id];
 
@@ -270,6 +286,7 @@ impl LockfileAnnotation {
                     return Ok(SourceAnnotation::Http {
                         url: info.url,
                         sha256: Some(info.sha256),
+                        strip_prefix: None,
                         patch_args: None,
                         patch_tool: None,
                         patches: None,
@@ -337,6 +354,27 @@ impl LockfileAnnotation {
         if let Some(git_ref) = source.git_reference() {
             let strip_prefix = Self::extract_git_strip_prefix(pkg)?;
 
+            // Try to convert the Git remote URL to a HTTP url of a .tar.gz
+            if let Some(tar_gz) = GIT_REPO_TO_HTTP_TAR_GZ_MAPPING
+                .iter()
+                .flat_map(|f| f(source))
+                .next()
+            {
+                let sha256 = fetch_sha256(http_client, &tar_gz.url)
+                    .with_context(|| format!("Failed to fetch {}", tar_gz.url))?;
+                return Ok(SourceAnnotation::Http {
+                    url: tar_gz.url,
+                    sha256: Some(sha256),
+                    strip_prefix: Some(match &strip_prefix {
+                        Some(sub_path) => format!("{}/{}", tar_gz.strip_prefix, sub_path),
+                        None => tar_gz.strip_prefix,
+                    }),
+                    patch_args: None,
+                    patch_tool: None,
+                    patches: None,
+                });
+            }
+
             return Ok(SourceAnnotation::Git {
                 remote: source.url().to_string(),
                 commitish: source
@@ -357,6 +395,7 @@ impl LockfileAnnotation {
             return Ok(SourceAnnotation::Http {
                 url: info.url,
                 sha256: Some(info.sha256),
+                strip_prefix: None,
                 patch_args: None,
                 patch_tool: None,
                 patches: None,
@@ -384,6 +423,7 @@ impl LockfileAnnotation {
                         }
                     })
                     .map(|sum| sum.encode_hex::<String>()),
+                strip_prefix: None,
                 patch_args: None,
                 patch_tool: None,
                 patches: None,
@@ -433,6 +473,61 @@ impl LockfileAnnotation {
         bail!("Expected git package to have a manifest path of pattern {{CARGO_HOME}}/git/checkouts/[name]-[hash]/[short-sha]/.../Cargo.toml but {:?} had manifest path {}", pkg.id, pkg.manifest_path);
     }
 }
+
+/// Fetch the content at `url` and return its SHA-256 hex digest.
+fn fetch_sha256(http_client: &Client, url: &str) -> Result<String> {
+    let mut response = http_client.get(url).send()?.error_for_status()?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 8192];
+    loop {
+        let n = response.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+struct HttpArchive {
+    url: String,
+    strip_prefix: String,
+}
+
+static GIT_REPO_TO_HTTP_TAR_GZ_MAPPING: &[fn(&SourceId) -> Option<HttpArchive>] = &[
+    // GitHub
+    |source| {
+        let git_ref = source.precise().or_else(|| {
+            source
+                .git_reference()
+                .map(|x| match x {
+                    GitReference::Tag(s) => s,
+                    GitReference::Branch(s) => s,
+                    GitReference::Rev(s) => s,
+                })
+                .map(Deref::deref)
+        })?;
+        let git_url = &source.url().to_string();
+
+        let mut parts = git_url
+            .strip_suffix(".git")
+            .unwrap_or(git_url)
+            .strip_prefix("https://github.com/")?
+            .splitn(3, '/');
+
+        let owner = parts.next()?;
+        let repo = parts.next()?;
+
+        Some(HttpArchive {
+            url: format!(
+                "https://github.com/{}/{}/archive/{}.tar.gz",
+                owner, repo, git_ref
+            ),
+            strip_prefix: format!("{}-{}", repo, git_ref),
+        })
+    },
+    // Add other possible Git URL => HTTP .tar.gz URL mappings here
+];
 
 /// A pairing of a crate's package identifier to its annotations.
 #[derive(Debug)]
@@ -652,14 +747,18 @@ mod test {
             .map(|(_, v)| v)
             .unwrap();
         match tracing_core {
-            SourceAnnotation::Git {
+            SourceAnnotation::Http {
                 strip_prefix: Some(strip_prefix),
+                url,
                 ..
-            } if strip_prefix == "tracing-core" => {
-                // Matched correctly.
+            } if strip_prefix.ends_with("/tracing-core")
+                && url.starts_with("https://github.com/tokio-rs/tracing/archive/") =>
+            {
+                // GitHub git deps are converted to http_archive with the
+                // git strip_prefix appended to the archive strip_prefix.
             }
             other => {
-                panic!("Wanted SourceAnnotation::Git with strip_prefix == Some(\"tracing-core\"), got: {:?}", other);
+                panic!("Wanted SourceAnnotation::Http with strip_prefix ending in '/tracing-core' and GitHub archive URL, got: {:?}", other);
             }
         }
     }
@@ -682,15 +781,19 @@ mod test {
         };
         let annotation = crates.get(&package_id).unwrap();
 
-        let commitish = match annotation {
-            SourceAnnotation::Git { commitish, .. } => commitish,
-            _ => panic!("Unexpected annotation type"),
-        };
-
-        assert_eq!(
-            *commitish,
-            Commitish::Rev("1e09e50e8d15580b5929adbade9c782a6833e4a0".into())
-        );
+        // GitHub git deps are converted to http_archive URLs.
+        match annotation {
+            SourceAnnotation::Http { url, .. } => {
+                assert_eq!(
+                    *url,
+                    "https://github.com/tokio-rs/tracing/archive/1e09e50e8d15580b5929adbade9c782a6833e4a0.tar.gz"
+                );
+            }
+            other => panic!(
+                "Expected SourceAnnotation::Http for GitHub dep, got: {:?}",
+                other
+            ),
+        }
     }
 
     #[test]

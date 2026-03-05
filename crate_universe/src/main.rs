@@ -3,6 +3,7 @@
 use cargo_bazel::cli;
 
 fn main() -> cli::Result<()> {
+
     // Parse arguments
     let opt = cli::parse_args();
 

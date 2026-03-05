@@ -109,6 +109,7 @@ rust_test(
         "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
         "RUSTC": "$(rootpath @rules_rust//rust/toolchain:current_rustc_files)",
     },
+    tags = ["requires-network"],
     # TODO: `crate_universe` currently does not work on Windows.
     # https://github.com/bazelbuild/rules_rust/issues/1156
     target_compatible_with = select({
