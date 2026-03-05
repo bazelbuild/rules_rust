@@ -15,7 +15,7 @@ def _bootstrap_process_wrapper_impl_unix(ctx):
             substitutions = {
                 # Replace the shebang with one constructed from the configured
                 # shell toolchain.
-                "#!/usr/bin/env bash": shebang,
+                "#!/bin/sh": shebang,
             },
         )
     else:

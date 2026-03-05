@@ -1119,8 +1119,8 @@ mod test {
         } else {
             dedent(
                 r#"
-                #!/usr/bin/env bash
-                set -euo pipefail
+                #!/bin/sh
+                set -eu
                 cat << EOF
                 "#,
             ) + &text
@@ -1166,8 +1166,8 @@ mod test {
         } else {
             dedent(
                 r#"
-                #!/usr/bin/env bash
-                set -euo pipefail
+                #!/bin/sh
+                set -eu
                 echo "$@"
                 "#,
             )
@@ -1216,8 +1216,8 @@ mod test {
         } else {
             dedent(
                 r#"
-                #!/usr/bin/env bash
-                set -euo pipefail
+                #!/bin/sh
+                set -eu
                 echo "$@"
                 "#,
             )
