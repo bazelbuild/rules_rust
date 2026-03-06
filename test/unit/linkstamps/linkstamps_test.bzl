@@ -10,6 +10,7 @@ def _is_running_on_linux(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._linux[platform_common.ConstraintValueInfo])
 
 def _get_workspace_prefix(ctx):
+    # buildifier: disable=external-path
     return "" if ctx.workspace_name in ["rules_rust", "_main"] else "/external/rules_rust"
 
 def _supports_linkstamps_test(ctx):

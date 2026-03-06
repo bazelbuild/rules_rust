@@ -8,6 +8,7 @@ on:
     types:
       - opened
       - synchronize
+  merge_group:
 
 jobs:
   code-format-checks:

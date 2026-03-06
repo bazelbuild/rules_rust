@@ -2506,7 +2506,10 @@ def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
         label_string = str(ctx.label)
         if label_string.startswith("@//"):
             label = label_string[1:]
-        elif label_string.startswith("@@//"):
+        elif label_string.startswith(
+            # buildifier: disable=canonical-repository
+            "@@//",
+        ):
             label = label_string[2:]
         else:
             label = label_string
