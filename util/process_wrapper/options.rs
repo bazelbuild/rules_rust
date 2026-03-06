@@ -250,6 +250,16 @@ fn is_allow_features_flag(arg: &str) -> bool {
     arg.starts_with("-Zallow-features=") || arg.starts_with("allow-features=")
 }
 
+/// Returns true for worker-pipelining protocol flags that should never be
+/// forwarded to rustc. These flags live in the @paramfile (rustc_flags) so
+/// both RustcMetadata and Rustc actions share identical startup args (same
+/// worker key). They must be stripped before the args reach rustc.
+pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
+    arg == "--pipelining-metadata"
+        || arg == "--pipelining-full"
+        || arg.starts_with("--pipelining-key=")
+}
+
 fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     for (f, replace_with) in subst_mappings {
         let from = format!("${{{f}}}");
@@ -274,6 +284,10 @@ fn prepare_param_file(
         let mut has_allow_features_flag = false;
         for arg in read_file(filename)? {
             let arg = prepare_arg(arg, subst_mappings);
+            // Strip worker-pipelining protocol flags; they must not reach rustc.
+            if is_pipelining_flag(&arg) {
+                continue;
+            }
             has_allow_features_flag |= is_allow_features_flag(&arg);
             if let Some(arg_file) = arg.strip_prefix('@') {
                 has_allow_features_flag |=
