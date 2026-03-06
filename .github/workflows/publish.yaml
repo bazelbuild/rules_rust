@@ -28,6 +28,8 @@ jobs:
   publish:
     uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.1.0
     with:
+      author_name: bazel-io
+      author_email: 5028808+bazel-io@users.noreply.github.com
       attest: false
       draft: false
       tag_name: ${{ inputs.release_version }}
