@@ -50,6 +50,7 @@ load(
     "filter_deps",
     "find_toolchain",
     "generate_output_diagnostics",
+    "is_exec_configuration",
     "get_edition",
     "get_import_macro_deps",
     "transform_deps",
@@ -172,13 +173,26 @@ def _rust_library_common(ctx, crate_type):
         crate_type,
         disable_pipelining = getattr(ctx.attr, "disable_pipelining", False),
     ):
-        # The hollow rlib uses .rlib extension (not .rmeta) so rustc reads it as an
-        # rlib archive containing lib.rmeta with optimized MIR. It is placed in a
-        # "_hollow/" subdirectory so the full rlib and hollow rlib never appear in the
-        # same -Ldependency= search directory (which would cause E0463).
-        rust_metadata = ctx.actions.declare_file(
-            "_hollow/" + rust_lib_name[:-len(".rlib")] + "-hollow.rlib",
-        )
+        if can_use_metadata_for_pipelining(toolchain, crate_type) and toolchain._worker_pipelining and not is_exec_configuration(ctx):
+            # Worker pipelining: single rustc invocation emitting both .rmeta and .rlib.
+            # Use a real .rmeta file (not a hollow rlib) so downstream crates can use
+            # --extern name=path.rmeta. No -Zno-codegen, no RUSTC_BOOTSTRAP needed.
+            # The .rmeta is placed in a "_pipeline/" subdirectory so it never coexists
+            # with the .rlib in the same -Ldependency= search directory (which would
+            # cause E0463 if they're from different build runs with different SVHs).
+            # Exec-platform builds always use hollow rlib (with RUSTC_BOOTSTRAP=1)
+            # to maintain consistent SVH across all three pipelining configurations.
+            rust_metadata = ctx.actions.declare_file(
+                "_pipeline/" + rust_lib_name[:-len(".rlib")] + ".rmeta",
+            )
+        else:
+            # The hollow rlib uses .rlib extension (not .rmeta) so rustc reads it as an
+            # rlib archive containing lib.rmeta with optimized MIR. It is placed in a
+            # "_hollow/" subdirectory so the full rlib and hollow rlib never appear in the
+            # same -Ldependency= search directory (which would cause E0463).
+            rust_metadata = ctx.actions.declare_file(
+                "_hollow/" + rust_lib_name[:-len(".rlib")] + "-hollow.rlib",
+            )
         rustc_rmeta_output = generate_output_diagnostics(ctx, rust_metadata)
 
         metadata_supports_pipelining = (
@@ -628,6 +642,9 @@ RUSTC_ATTRS = {
     ),
     "_rustc_output_diagnostics": attr.label(
         default = Label("//rust/settings:rustc_output_diagnostics"),
+    ),
+    "_worker_pipelining": attr.label(
+        default = Label("//rust/settings:experimental_worker_pipelining"),
     ),
 }
 

@@ -393,6 +393,7 @@ def _rust_toolchain_impl(ctx):
     rename_first_party_crates = ctx.attr._rename_first_party_crates[BuildSettingInfo].value
     third_party_dir = ctx.attr._third_party_dir[BuildSettingInfo].value
     pipelined_compilation = ctx.attr._pipelined_compilation[BuildSettingInfo].value
+    worker_pipelining = ctx.attr._worker_pipelining[BuildSettingInfo].value
     no_std = ctx.attr._no_std[BuildSettingInfo].value
     lto = ctx.attr.lto[RustLtoInfo]
 
@@ -617,6 +618,7 @@ def _rust_toolchain_impl(ctx):
         _rename_first_party_crates = rename_first_party_crates,
         _third_party_dir = third_party_dir,
         _pipelined_compilation = pipelined_compilation,
+        _worker_pipelining = worker_pipelining,
         _experimental_link_std_dylib = _experimental_link_std_dylib(ctx),
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
@@ -878,6 +880,9 @@ rust_toolchain = rule(
         ),
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),
+        ),
+        "_worker_pipelining": attr.label(
+            default = Label("//rust/settings:experimental_worker_pipelining"),
         ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),

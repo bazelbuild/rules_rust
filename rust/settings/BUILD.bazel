@@ -13,6 +13,7 @@ load(
     "default_allocator_library",
     "error_format",
     "experimental_incremental",
+    "experimental_worker_pipelining",
     "experimental_link_std_dylib",
     "experimental_per_crate_rustc_flag",
     "experimental_use_allocator_libraries_with_mangled_symbols",
@@ -77,6 +78,8 @@ codegen_units()
 collect_cfgs()
 
 experimental_incremental()
+
+experimental_worker_pipelining()
 
 default_allocator_library()
 

@@ -579,6 +579,35 @@ def experimental_incremental():
         build_setting_default = False,
     )
 
+def experimental_worker_pipelining():
+    """A flag to enable worker-managed pipelined compilation.
+
+    When enabled (alongside pipelined_compilation), the persistent worker uses a single rustc
+    invocation per pipelined rlib/lib crate instead of two. The worker starts rustc with
+    --emit=dep-info,metadata,link, returns the .rmeta file as soon as metadata is ready,
+    and caches the running process so the full compile action can retrieve the .rlib without
+    re-invoking rustc.
+
+    Benefits over the default two-invocation (hollow rlib) approach:
+    - Eliminates SVH mismatch with non-deterministic proc macros (proc macro runs once)
+    - No -Zno-codegen / RUSTC_BOOTSTRAP=1 required
+    - Reduces total rustc invocations by ~50% for pipelined crates
+
+    Requires pipelined_compilation=true and worker strategy:
+        build --@rules_rust//rust/settings:pipelined_compilation=true
+        build --@rules_rust//rust/settings:experimental_worker_pipelining=true
+        build --strategy=Rustc=worker,local
+        # Optional: tune concurrent worker requests. Bazel's default (8) works well for
+        # machines with ~16 CPUs. On larger machines, raise to ~CPU_count/2 to scale
+        # parallelism without oversubscribing CPUs (each rustc benefits from ~2 cores).
+        # Setting this too high degrades performance via CPU thrashing.
+        # build --worker_max_multiplex_instances=Rustc=HOST_CPUS*.5
+    """
+    bool_flag(
+        name = "experimental_worker_pipelining",
+        build_setting_default = False,
+    )
+
 # buildifier: disable=unnamed-macro
 def collect_cfgs():
     """Enable collection of cfg flags with results stored in CrateInfo.cfgs.
