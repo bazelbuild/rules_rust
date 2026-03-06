@@ -2330,12 +2330,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__socket2-0.6.2",
-        sha256 = "86f4aa3ad99f2088c990dfa82d367e19cb29268ed67c574d10d0a4bfe71f07e0",
+        name = "rmdbi__socket2-0.6.3",
+        sha256 = "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/socket2/0.6.2/download"],
-        strip_prefix = "socket2-0.6.2",
-        build_file = Label("//private/3rdparty/crates:BUILD.socket2-0.6.2.bazel"),
+        urls = ["https://static.crates.io/crates/socket2/0.6.3/download"],
+        strip_prefix = "socket2-0.6.3",
+        build_file = Label("//private/3rdparty/crates:BUILD.socket2-0.6.3.bazel"),
     )
 
     maybe(

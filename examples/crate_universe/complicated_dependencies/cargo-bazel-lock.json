@@ -1,5 +1,5 @@
 {
-  "checksum": "768041144272cf39228688bb9b2a4495ae5ab7464eccaa5ccd07a61519e28ed4",
+  "checksum": "f8c38517c68dada6830ea285b6ca836958195a0a500de19551f2846a767528bb",
   "crates": {
     "aho-corasick 1.1.3": {
       "name": "aho-corasick",
@@ -315,7 +315,7 @@
       "common_attrs": {
         "compile_data": {
           "common": [
-            "@@//complicated_dependencies:boringssl_gen_dir"
+            "@//complicated_dependencies:boringssl_gen_dir"
           ],
           "selects": {}
         },
@@ -343,7 +343,7 @@
         ],
         "data": {
           "common": [
-            "@@//complicated_dependencies:boringssl_gen_dir"
+            "@//complicated_dependencies:boringssl_gen_dir"
           ],
           "selects": {}
         },
@@ -373,8 +373,8 @@
         },
         "build_script_env": {
           "common": {
-            "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)/include",
-            "BORING_BSSL_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)"
+            "BORING_BSSL_INCLUDE_PATH": "$(execpath @//complicated_dependencies:boringssl_gen_dir)/include",
+            "BORING_BSSL_PATH": "$(execpath @//complicated_dependencies:boringssl_gen_dir)"
           },
           "selects": {}
         },
