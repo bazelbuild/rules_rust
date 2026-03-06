@@ -24,6 +24,11 @@ def _fake_cc_toolchain_config_impl(ctx):
                         "-fexperimental-optimized-noescape",
                         "-Xclang",
                         "-fcolor-diagnostics",
+                        "--target=here",
+                        "-target",
+                        "there",
+                        "-notarget",
+                        "idbeholdi",
                     ]),
                 ],
             ),
@@ -222,8 +227,14 @@ def _test_strip_xclang_impl(env, target):
     env.expect.that_action(target.actions[0]).not_contains_arg(
         "-fexperimental-optimized-noescape",
     )
+    env.expect.that_action(target.actions[0]).not_contains_arg(
+        "-notarget",
+    )
+    env.expect.that_action(target.actions[0]).not_contains_arg(
+        "idbeholdi",
+    )
     env.expect.that_action(target.actions[0]).contains_at_least_args(
-        ["-Xclang", "-fcolor-diagnostics"],
+        ["-Xclang", "-fcolor-diagnostics", "--target=here", "-target", "there"],
     )
 
 def _test_strip_xclang(name):

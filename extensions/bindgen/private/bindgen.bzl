@@ -303,13 +303,14 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`).
+    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`, `-target T`).
     param_flags_known_to_clang = (
         "-I",
         "-iquote",
         "-isystem",
         "--sysroot",
         "--gcc-toolchain",
+        "-target",
         "--target",
         "-W",
         "--system-header-prefix",
