@@ -262,10 +262,24 @@ def collect_deps(
     transitive_metadata_outputs = []
 
     crate_deps = []
-    for dep in deps + proc_macro_deps:
+    for dep in deps:
         crate_group = getattr(dep, "crate_group_info", None)
         if crate_group:
-            crate_deps.extend(crate_group.dep_variant_infos.to_list())
+            for dvi in crate_group.dep_variant_infos.to_list():
+                # Skip proc macros from target-config deps; they are handled
+                # via proc_macro_deps (exec configuration) below.
+                if not (dvi.crate_info and _is_proc_macro(dvi.crate_info)):
+                    crate_deps.append(dvi)
+        else:
+            crate_deps.append(dep)
+
+    for dep in proc_macro_deps:
+        crate_group = getattr(dep, "crate_group_info", None)
+        if crate_group:
+            for dvi in crate_group.dep_variant_infos.to_list():
+                # Only include proc macros from exec-config proc_macro_deps.
+                if dvi.crate_info and _is_proc_macro(dvi.crate_info):
+                    crate_deps.append(dvi)
         else:
             crate_deps.append(dep)
 
@@ -704,6 +718,25 @@ def _depend_on_metadata(crate_info, force_depend_on_objects, experimental_use_cc
 
     return crate_info.type in ("rlib", "lib")
 
+def _use_worker_pipelining(toolchain, crate_info):
+    """Returns True if worker-managed pipelining should be used for this crate.
+
+    Worker pipelining requires pipelined_compilation AND experimental_worker_pipelining,
+    and only applies to rlib/lib crate types (the same as hollow rlib pipelining).
+
+    Args:
+        toolchain (rust_toolchain): The current target's rust_toolchain.
+        crate_info (CrateInfo): The crate being compiled.
+
+    Returns:
+        bool: True if worker pipelining is active for this crate.
+    """
+    return (
+        toolchain._worker_pipelining and
+        toolchain._pipelined_compilation and
+        crate_info.type in ("rlib", "lib")
+    )
+
 def collect_inputs(
         ctx,
         file,
@@ -1070,12 +1103,17 @@ def construct_arguments(
 
         error_format = "json"
 
+    use_worker_pipe = toolchain._worker_pipelining and toolchain._pipelined_compilation and not is_exec_configuration(ctx)
+
     if build_metadata:
         if crate_info.type in ("rlib", "lib"):
-            # Hollow rlib approach (Buck2-style): rustc runs to completion with -Zno-codegen,
-            # producing a hollow .rlib (metadata only, no object code) via --emit=link=<path>.
-            # No need to kill rustc — -Zno-codegen skips codegen entirely and exits quickly.
-            rustc_flags.add("-Zno-codegen")
+            # Hollow rlib approach (Buck2-style): rustc runs with -Zno-codegen, producing
+            # a hollow rlib (metadata only, no object code) via --emit=link=<path>.
+            # Worker pipelining uses --emit=dep-info,metadata,link instead (no -Zno-codegen):
+            # the background rustc produces the full rlib, so codegen must not be skipped.
+            # Exec-platform builds always use hollow rlib (not worker pipelining).
+            if not use_worker_pipe:
+                rustc_flags.add("-Zno-codegen")
 
         # else: IDE-only metadata for non-rlib types (bin, proc-macro, etc.): rustc exits
         # naturally after writing .rmeta via --emit=dep-info,metadata (no kill needed).
@@ -1111,12 +1149,14 @@ def construct_arguments(
 
     emit_without_paths = []
     for kind in emit:
-        if kind == "link" and build_metadata and crate_info.type in ("rlib", "lib") and crate_info.metadata:
+        if kind == "link" and build_metadata and crate_info.type in ("rlib", "lib") and crate_info.metadata and not use_worker_pipe:
             # Hollow rlib: direct rustc's link output to the -hollow.rlib path.
             # The file has .rlib extension so rustc reads it as an rlib archive
             # (with optimized MIR in lib.rmeta). Using a .rmeta path would cause
             # E0786 "found invalid metadata files" because rustc parses .rmeta files
             # as raw metadata blobs, not rlib archives.
+            # Worker pipelining: let link go to --out-dir normally (no redirect);
+            # the background rustc produces the full rlib directly.
             rustc_flags.add(crate_info.metadata, format = "--emit=link=%s")
         elif kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
@@ -1326,6 +1366,28 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     return flags
 
+def _build_worker_exec_reqs(use_worker_pipelining, is_incremental):
+    """Builds execution_requirements for Rustc worker actions.
+
+    Args:
+        use_worker_pipelining: Whether worker-managed pipelining is active.
+        is_incremental: Whether incremental compilation is enabled.
+
+    Returns:
+        A dict of execution_requirements.
+    """
+    reqs = {}
+    if is_incremental or use_worker_pipelining:
+        reqs["requires-worker-protocol"] = "json"
+        if use_worker_pipelining:
+            reqs["supports-multiplex-workers"] = "1"
+            reqs["supports-multiplex-sandboxing"] = "1"
+        else:
+            reqs["supports-workers"] = "1"
+        if is_incremental:
+            reqs["no-sandbox"] = "1"
+    return reqs
+
 def rustc_compile_action(
         *,
         ctx,
@@ -1372,12 +1434,30 @@ def rustc_compile_action(
     rustc_output = crate_info.rustc_output
     rustc_rmeta_output = crate_info.rustc_rmeta_output
 
+    # Use worker pipelining (single rustc invocation, .rmeta output) when enabled.
+    # This takes precedence over the hollow rlib approach for rlib/lib crates.
+    # Exec-platform builds (build script deps) skip worker pipelining: they always
+    # use hollow rlib so RUSTC_BOOTSTRAP=1 is set consistently. Without this, switching
+    # between hollow-rlib and worker-pipe modes changes the SVH for exec-platform rlibs,
+    # causing E0460 when Bazel action-cache-hits some exec crates but recompiles others.
+    use_worker_pipelining = _use_worker_pipelining(toolchain, crate_info) and not is_exec_configuration(ctx)
+
+    # Worker pipelining requires RustcMetadata and Rustc to share the same worker
+    # process (so they share PipelineState). Bazel worker key = startup args =
+    # everything before the @paramfile. The only startup-arg difference between
+    # RustcMetadata and Rustc is --output-file (companion .rustc-output files).
+    # Suppress those companion files when worker pipelining is active so both
+    # actions have identical startup args → same worker key → same process.
+    if use_worker_pipelining:
+        rustc_output = None
+        rustc_rmeta_output = None
+
     # Use the hollow rlib approach (Buck2-style) for rlib/lib crate types when a metadata
-    # action is being created. This always applies for rlib/lib regardless of whether
-    # pipelining is globally enabled — the hollow rlib is simpler than killing rustc.
+    # action is being created, UNLESS worker pipelining is active (which uses a single
+    # rustc invocation with --emit=dep-info,metadata,link and .rmeta output instead).
     # Non-rlib types (bin, proc-macro, etc.) use --emit=dep-info,metadata instead
     # (rustc exits naturally after writing .rmeta, no process-wrapper kill needed).
-    use_hollow_rlib = bool(build_metadata) and crate_info.type in ("rlib", "lib")
+    use_hollow_rlib = bool(build_metadata) and crate_info.type in ("rlib", "lib") and not use_worker_pipelining
 
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
@@ -1477,9 +1557,11 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
-    # When incremental compilation is enabled, force a param file so the worker
-    # strategy sees exactly one @flagfile in the command line (Bazel requirement).
-    use_param_file_always = is_incremental_enabled(ctx, crate_info)
+    # When incremental compilation or worker pipelining is enabled, force a param file
+    # so the worker strategy sees exactly one @flagfile in the command line (Bazel
+    # requirement). For worker pipelining, the metadata handler parses the param file
+    # to spawn rustc directly; it needs the args in a file to apply substitutions.
+    use_param_file_always = is_incremental_enabled(ctx, crate_info) or use_worker_pipelining
 
     args, env_from_args = construct_arguments(
         ctx = ctx,
@@ -1507,7 +1589,7 @@ def rustc_compile_action(
         experimental_use_cc_common_link = experimental_use_cc_common_link,
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
-        always_use_param_file = not ctx.executable._process_wrapper,
+        always_use_param_file = use_param_file_always or not ctx.executable._process_wrapper,
     )
 
     args_metadata = None
@@ -1517,6 +1599,11 @@ def rustc_compile_action(
             # -Zno-codegen). dep-info must be included: it affects the SVH stored in the
             # rlib, so both actions must include it to keep SVHs consistent.
             metadata_emit = ["dep-info", "link"]
+        elif use_worker_pipelining:
+            # Worker pipelining: single rustc invocation emits metadata+link in one pass.
+            # The worker monitors stderr for the rmeta artifact JSON, returns the .rmeta
+            # early, and keeps rustc running in the background to finish codegen.
+            metadata_emit = ["dep-info", "metadata", "link"]
         else:
             # IDE-only metadata for non-rlib types (bin, proc-macro, etc.): rustc exits
             # naturally after writing .rmeta with --emit=dep-info,metadata.
@@ -1545,8 +1632,27 @@ def rustc_compile_action(
             build_metadata = True,
             experimental_use_cc_common_link = experimental_use_cc_common_link,
             require_explicit_unstable_features = require_explicit_unstable_features,
-            use_param_file_always = use_param_file_always,
+            always_use_param_file = use_param_file_always,
         )
+
+    # Worker pipelining: add pipelining mode flags to rustc_flags (the @paramfile).
+    # IMPORTANT: These must NOT go in process_wrapper_flags (startup args). Startup
+    # args determine the Bazel worker key — if RustcMetadata and Rustc have different
+    # startup args, Bazel routes them to different worker processes and they cannot
+    # share PipelineState. With these flags in rustc_flags (per-request @paramfile),
+    # both actions share the same startup args → same worker key → same worker.
+    #
+    # --json=artifacts is already emitted by construct_arguments via use_json_output=True.
+    if use_worker_pipelining and build_metadata:
+        # Use crate_info.output.short_path (unique per output artifact) sanitized for
+        # filesystem use. This is collision-free and human-readable.
+        pipeline_key = crate_info.output.short_path.replace("/", "_").replace(".", "_")
+        # Metadata action: tell the worker to start rustc and return .rmeta early.
+        args_metadata.rustc_flags.add("--pipelining-metadata")
+        args_metadata.rustc_flags.add("--pipelining-key={}".format(pipeline_key))
+        # Full action: tell the worker to wait for the background rustc started above.
+        args.rustc_flags.add("--pipelining-full")
+        args.rustc_flags.add("--pipelining-key={}".format(pipeline_key))
 
     env = dict(ctx.configuration.default_shell_env)
 
@@ -1614,20 +1720,15 @@ def rustc_compile_action(
         #   persistent worker protocol. When --strategy=Rustc=worker,local is set,
         #   Bazel uses the worker (which runs in execroot, also avoiding the sandbox
         #   path problem), enabling dynamic execution strategy as well.
-        exec_reqs = {}
-        if is_incremental_enabled(ctx, crate_info):
-            exec_reqs["no-sandbox"] = "1"
-            exec_reqs["supports-workers"] = "1"
-            exec_reqs["requires-worker-protocol"] = "json"
+        exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info))
 
-        # When incremental compilation is active and pipelining is enabled, add
-        # build_metadata as an ordering dep so Rustc(A) starts only after
-        # RustcMetadata(A) completes.  After RustcMetadata(A) succeeds Bazel marks
-        # its output (libA.rmeta) read-only; the worker's prepare_outputs() runs at
-        # the very start of the Rustc(A) request and chmods those files writable
-        # before rustc tries to overwrite them, avoiding "not writeable" errors.
+        # When incremental compilation or worker pipelining is active and pipelining is
+        # enabled, add build_metadata as an ordering dep so Rustc(A) starts only after
+        # RustcMetadata(A) completes. For worker pipelining, this ensures the metadata
+        # action has started rustc before the full action tries to look it up.
+        # For incremental, prepare_outputs() chmods rmeta writable before rustc overwrites.
         rustc_inputs = compile_inputs
-        if build_metadata and is_incremental_enabled(ctx, crate_info):
+        if build_metadata and (is_incremental_enabled(ctx, crate_info) or use_worker_pipelining):
             rustc_inputs = depset([build_metadata], transitive = [compile_inputs])
 
         # Run as normal
@@ -1655,18 +1756,21 @@ def rustc_compile_action(
             # incremental cache at /tmp/rules_rust_incremental/<crate>-meta.
             # Without worker mode it would be sandboxed and unable to accumulate
             # incremental state, making every rebuild a cold compilation.
-            meta_exec_reqs = {}
-            if is_incremental_enabled(ctx, crate_info):
-                meta_exec_reqs["no-sandbox"] = "1"
-                meta_exec_reqs["supports-workers"] = "1"
-                meta_exec_reqs["requires-worker-protocol"] = "json"
+            meta_exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info))
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs_for_metadata,
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,
-                mnemonic = "RustcMetadata",
+                # When worker pipelining is active, use the same mnemonic as the
+                # full Rustc action so both actions share the same multiplex worker
+                # process. This is required because Bazel's worker key is derived
+                # from (mnemonic + executable + startup_args), and PipelineState is
+                # an in-process HashMap. With different mnemonics, RustcMetadata and
+                # Rustc would always go to different worker processes and could never
+                # share pipeline state.
+                mnemonic = "Rustc" if use_worker_pipelining else "RustcMetadata",
                 progress_message = "Compiling Rust metadata {} {}{} ({} file{})".format(
                     crate_info.type,
                     ctx.label.name,

@@ -9,6 +9,11 @@ ENABLE_PIPELINING = {
     str(Label("//rust/settings:pipelined_compilation")): True,
 }
 
+ENABLE_WORKER_PIPELINING = {
+    str(Label("//rust/settings:pipelined_compilation")): True,
+    str(Label("//rust/settings:experimental_worker_pipelining")): True,
+}
+
 # TODO: Fix pipeline compilation on windows
 # https://github.com/bazelbuild/rules_rust/issues/3383
 _NO_WINDOWS = select({
@@ -273,6 +278,128 @@ def _hollow_rlib_env_test_impl(ctx):
 
 hollow_rlib_env_test = analysistest.make(_hollow_rlib_env_test_impl, config_settings = ENABLE_PIPELINING)
 
+def _worker_pipelining_second_lib_test_impl(ctx):
+    """Verify worker pipelining uses .rmeta output (not hollow rlib) for pipelined libs.
+
+    With experimental_worker_pipelining enabled, both the metadata and full actions use
+    mnemonic "Rustc" (same mnemonic ensures they share the same worker process and
+    PipelineState). They are distinguished by their outputs:
+    - Metadata action: produces .rmeta file
+    - Full action: produces .rlib file
+
+    The metadata action must:
+    - Produce a .rmeta file (not -hollow.rlib) — single rustc invocation, no -Zno-codegen
+    - NOT set RUSTC_BOOTSTRAP=1 (no unstable flags needed)
+    - Take first's .rmeta as input (not first's hollow rlib)
+
+    The Rustc (full) action must:
+    - NOT set RUSTC_BOOTSTRAP=1
+    - Also take first's .rmeta as input (same input set as metadata — no force_depend_on_objects)
+    """
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    # Both metadata and full actions share mnemonic "Rustc" with worker pipelining.
+    # Distinguish by output: metadata action outputs .rmeta; full action outputs .rlib.
+    rustc_actions = [act for act in tut.actions if act.mnemonic == "Rustc"]
+    metadata_actions = [
+        act
+        for act in rustc_actions
+        if len([o for o in act.outputs.to_list() if o.path.endswith(".rmeta")]) > 0
+    ]
+    rlib_actions = [
+        act
+        for act in rustc_actions
+        if len([
+            o
+            for o in act.outputs.to_list()
+            if o.path.endswith(".rlib") and not o.path.endswith("-hollow.rlib")
+        ]) > 0
+    ]
+    asserts.true(
+        env,
+        len(metadata_actions) >= 1,
+        "expected a Rustc action with .rmeta output for worker pipelining metadata",
+    )
+    asserts.true(
+        env,
+        len(rlib_actions) >= 1,
+        "expected a Rustc action with .rlib output",
+    )
+    metadata_action = metadata_actions[0]
+    rlib_action = rlib_actions[0]
+
+    # Metadata output must be .rmeta, not -hollow.rlib.
+    metadata_outputs = metadata_action.outputs.to_list()
+    rmeta_outputs = [o for o in metadata_outputs if o.path.endswith(".rmeta")]
+    hollow_outputs = [o for o in metadata_outputs if o.path.endswith("-hollow.rlib")]
+    asserts.true(
+        env,
+        len(rmeta_outputs) >= 1,
+        "expected .rmeta output for worker pipelining, got: " + str([o.path for o in metadata_outputs]),
+    )
+    asserts.true(
+        env,
+        len(hollow_outputs) == 0,
+        "unexpected -hollow.rlib output (hollow rlib should not be used with worker pipelining): " + str([o.path for o in hollow_outputs]),
+    )
+
+    # Neither action should set RUSTC_BOOTSTRAP=1 (no -Zno-codegen needed).
+    asserts.equals(
+        env,
+        "",
+        metadata_action.env.get("RUSTC_BOOTSTRAP", ""),
+        "RUSTC_BOOTSTRAP must not be set with worker pipelining (no -Zno-codegen needed)",
+    )
+    asserts.equals(
+        env,
+        "",
+        rlib_action.env.get("RUSTC_BOOTSTRAP", ""),
+        "RUSTC_BOOTSTRAP must not be set with worker pipelining",
+    )
+
+    # Both actions take first's .rmeta as input (not hollow rlib).
+    # Worker pipelining does not use force_depend_on_objects, so both actions
+    # use the same pipelined (rmeta) input set.
+    first_inputs_metadata = [i for i in metadata_action.inputs.to_list() if "libfirst" in i.path]
+    first_inputs_full = [i for i in rlib_action.inputs.to_list() if "libfirst" in i.path]
+
+    asserts.true(
+        env,
+        len([i for i in first_inputs_metadata if i.path.endswith(".rmeta")]) >= 1,
+        "expected first's .rmeta in metadata action inputs, found: " + str([i.path for i in first_inputs_metadata]),
+    )
+    asserts.true(
+        env,
+        len([i for i in first_inputs_metadata if i.path.endswith("-hollow.rlib")]) == 0,
+        "unexpected hollow rlib in metadata action inputs: " + str([i.path for i in first_inputs_metadata]),
+    )
+    asserts.true(
+        env,
+        len([i for i in first_inputs_full if i.path.endswith(".rmeta")]) >= 1,
+        "expected first's .rmeta in full Rustc action inputs (no force_depend_on_objects), found: " + str([i.path for i in first_inputs_full]),
+    )
+    asserts.true(
+        env,
+        len([i for i in first_inputs_full if i.path.endswith("-hollow.rlib")]) == 0,
+        "unexpected hollow rlib in full Rustc action inputs: " + str([i.path for i in first_inputs_full]),
+    )
+
+    return analysistest.end(env)
+
+worker_pipelining_second_lib_test = analysistest.make(
+    _worker_pipelining_second_lib_test_impl,
+    config_settings = ENABLE_WORKER_PIPELINING,
+)
+
+def _worker_pipelining_test():
+    worker_pipelining_second_lib_test(
+        name = "worker_pipelining_second_lib_test",
+        target_under_test = ":second",
+        target_compatible_with = _NO_WINDOWS,
+    )
+    return [":worker_pipelining_second_lib_test"]
+
 def _disable_pipelining_test():
     rust_library(
         name = "lib",
@@ -389,6 +516,7 @@ def pipelined_compilation_test_suite(name):
     """
     tests = []
     tests.extend(_pipelined_compilation_test())
+    tests.extend(_worker_pipelining_test())
     tests.extend(_disable_pipelining_test())
     tests.extend(_custom_rule_test(generate_metadata = True, suffix = "_with_metadata"))
     tests.extend(_custom_rule_test(generate_metadata = False, suffix = "_without_metadata"))

@@ -530,7 +530,7 @@ def filter_deps(ctx):
 
     proc_macro_deps = []
     for dep in ctx.attr.proc_macro_deps:
-        if CrateInfo in dep and dep[CrateInfo].type == "proc-macro":
+        if (CrateInfo in dep and dep[CrateInfo].type == "proc-macro") or CrateGroupInfo in dep:
             proc_macro_deps.append(dep)
 
     return deps, proc_macro_deps
