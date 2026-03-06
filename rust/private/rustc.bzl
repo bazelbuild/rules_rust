@@ -1056,8 +1056,7 @@ def construct_arguments(
         process_wrapper_flags.add("--rustc-output-format", "json" if error_format == "json" else "rendered")
 
         # Configure rustc json output by adding artifact notifications.
-        # These will always be filtered out by process_wrapper and will be use to terminate
-        # rustc when appropriate.
+        # These are filtered out by process_wrapper.
         json = ["artifacts"]
         if error_format == "short":
             json.append("diagnostic-short")

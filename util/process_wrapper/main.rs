@@ -510,7 +510,7 @@ mod test {
                 .to_string(),
                 ErrorFormat::Rendered,
             )?,
-            LineOutput::Terminate
+            LineOutput::Skip
         ));
         Ok(())
     }
