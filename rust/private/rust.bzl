@@ -1176,14 +1176,6 @@ _rust_binary_attrs = {
         """),
         allow_single_file = True,
     ),
-    "out_binary": attr.bool(
-        doc = (
-            "Force a target, regardless of it's `crate_type`, to always mark the " +
-            "file as executable. This attribute is only used to support wasm targets but is " +
-            "expected to be removed following a resolution to https://github.com/bazelbuild/rules_rust/issues/771."
-        ),
-        default = False,
-    ),
     "stamp": _stamp_attribute(default_value = -1),
 } | _experimental_use_cc_common_link_attrs
 
