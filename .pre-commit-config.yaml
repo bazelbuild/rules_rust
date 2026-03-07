@@ -8,9 +8,9 @@ repos:
     rev: 0.1.5
     hooks:
       - id: buildifier
-        args: [--version, "v8.2.0"]
+        args: [--version, "v8.5.1"]
       - id: buildifier-lint
-        args: [--version, "v8.2.0", --warnings=all]
+        args: [--version, "v8.5.1", --warnings=all]
   - repo: https://github.com/crate-ci/typos
     rev: v1.38.1
     hooks:

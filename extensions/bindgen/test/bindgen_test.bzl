@@ -5,6 +5,7 @@ load("@rules_cc//cc:action_names.bzl", "ALL_CPP_COMPILE_ACTION_NAMES")
 load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "feature", "flag_group", "flag_set")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
 load("@rules_testing//lib:analysis_test.bzl", "analysis_test", "test_suite")
@@ -23,6 +24,11 @@ def _fake_cc_toolchain_config_impl(ctx):
                         "-fexperimental-optimized-noescape",
                         "-Xclang",
                         "-fcolor-diagnostics",
+                        "--target=here",
+                        "-target",
+                        "there",
+                        "-notarget",
+                        "idbeholdi",
                     ]),
                 ],
             ),
@@ -221,8 +227,14 @@ def _test_strip_xclang_impl(env, target):
     env.expect.that_action(target.actions[0]).not_contains_arg(
         "-fexperimental-optimized-noescape",
     )
+    env.expect.that_action(target.actions[0]).not_contains_arg(
+        "-notarget",
+    )
+    env.expect.that_action(target.actions[0]).not_contains_arg(
+        "idbeholdi",
+    )
     env.expect.that_action(target.actions[0]).contains_at_least_args(
-        ["-Xclang", "-fcolor-diagnostics"],
+        ["-Xclang", "-fcolor-diagnostics", "--target=here", "-target", "there"],
     )
 
 def _test_strip_xclang(name):

@@ -100,6 +100,8 @@ pub(crate) struct CargoBuildScript {
     pub(crate) build_script_env: SelectDict<String, String>,
     #[serde(skip_serializing_if = "Data::is_empty")]
     pub(crate) compile_data: Data,
+    #[serde(skip_serializing_if = "SelectDict::is_empty")]
+    pub(crate) exec_properties: SelectDict<String, String>,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) crate_features: SelectSet<String>,
     pub(crate) crate_name: String,

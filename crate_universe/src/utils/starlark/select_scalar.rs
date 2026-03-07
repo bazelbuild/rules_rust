@@ -112,8 +112,12 @@ where
         //         },
         //     })
 
-        if self.common.is_some() && self.selects.is_empty() && self.unmapped.is_empty() {
-            return self.common.as_ref().unwrap().serialize(serializer);
+        if let Some(common) = self
+            .common
+            .as_ref()
+            .filter(|_| self.selects.is_empty() && self.unmapped.is_empty())
+        {
+            return common.serialize(serializer);
         }
 
         struct SelectInner<'a, T>(&'a SelectScalar<T>)

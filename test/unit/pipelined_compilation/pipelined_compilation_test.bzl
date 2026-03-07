@@ -75,7 +75,11 @@ def _bin_test_impl(ctx):
 
     # Check that no inputs to this binary are .rmeta files.
     metadata_inputs = [i.path for i in bin_action.inputs.to_list() if i.path.endswith(".rmeta")]
-    asserts.false(env, metadata_inputs, "expected no metadata inputs, found " + str(metadata_inputs))
+
+    # Filter out toolchain targets. This test intends to only check for rmeta files of `deps`.
+    metadata_inputs = [i for i in metadata_inputs if "/lib/rustlib" not in i]
+
+    asserts.false(env, metadata_inputs, "expected no metadata inputs, found " + json.encode_indent(metadata_inputs, indent = " " * 4))
 
     return analysistest.end(env)
 
