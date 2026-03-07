@@ -645,9 +645,9 @@ use_repo(
     "crates_vendor_pkgs__tracing-subscriber-0.3.19",
     "cvm",
     "cvm__serde_yaml-0.9.34-deprecated",
-    "cvm__tempfile-3.23.0",
-    "cvm__tokio-1.48.0",
-    "cvm__tokio-test-0.4.4",
+    "cvm__tempfile-3.26.0",
+    "cvm__tokio-1.50.0",
+    "cvm__tokio-test-0.4.5",
 )
 
 ###############################################################################
@@ -663,15 +663,19 @@ inject_repo(complicated_dependencies, "boringssl")
 
 complicated_dependencies.annotation(
     build_script_data = [
+        # buildifier: disable=canonical-repository
         "@@//complicated_dependencies:boringssl_gen_dir",
     ],
     build_script_env = {
         # Ideally this would use an execpath macro, but we need to point at a directory and that's fiddly. We could probably
         # copy the director somewhere and point at that... For now, this works.
+        # buildifier: disable=canonical-repository
         "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)/include",
+        # buildifier: disable=canonical-repository
         "BORING_BSSL_PATH": "$(execpath @@//complicated_dependencies:boringssl_gen_dir)",
     },
     compile_data = [
+        # buildifier: disable=canonical-repository
         "@@//complicated_dependencies:boringssl_gen_dir",
     ],
     crate = "boring-sys",

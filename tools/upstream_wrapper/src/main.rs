@@ -4,7 +4,7 @@ use std::process::{exit, Command};
 
 const WRAPPED_TOOL_NAME: &str = env!("WRAPPED_TOOL_NAME");
 const WRAPPED_TOOL_TARGET: &str = env!("WRAPPED_TOOL_TARGET");
-const WRAPPED_TOOL_EXECPATH: &str = env!("WRAPPED_TOOL_EXECPATH");
+const WRAPPED_TOOL_ROOTPATH: &str = env!("WRAPPED_TOOL_ROOTPATH");
 
 #[cfg(not(target_os = "windows"))]
 const PATH_SEPARATOR: &str = ":";
@@ -20,7 +20,11 @@ fn main() {
             }
             Ok(path)
         })
-        .unwrap_or(PathBuf::from(WRAPPED_TOOL_EXECPATH));
+        .unwrap_or_else(|_| {
+            std::env::current_dir()
+                .expect("Failed to get current directory")
+                .join(WRAPPED_TOOL_ROOTPATH)
+        });
 
     if !wrapped_tool_path.exists() {
         panic!(
@@ -39,7 +43,7 @@ fn main() {
 
     let working_directory = std::env::var_os("BUILD_WORKING_DIRECTORY")
         .map(PathBuf::from)
-        .unwrap_or_else(|| std::env::current_dir().expect("Failed to get working directory"));
+        .unwrap_or_else(|| std::env::current_dir().expect("Failed to get build working directory"));
 
     let mut command = Command::new(wrapped_tool_path);
     command

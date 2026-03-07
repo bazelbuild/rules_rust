@@ -43,12 +43,14 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 # See `@rules_rust//rust/platform:triple_mappings.bzl` for the complete list.
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
+    "aarch64-apple-ios-macabi": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
+    "arm-unknown-linux-musleabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
@@ -58,7 +60,9 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
+    "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
     "wasm32-unknown-emscripten": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
@@ -66,6 +70,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "wasm32-wasip1-threads": _support(std = True, host_tools = False),
     "wasm32-wasip2": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
+    "x86_64-apple-ios-macabi": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
@@ -282,12 +287,13 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch, *, system = None):
+def cpu_arch_to_constraints(cpu_arch, *, system = None, abi = None):
     """Returns a list of constraint values which represents a triple's CPU.
 
     Args:
         cpu_arch (str): The architecture to match constraints for
         system (str, optional): The system for the associated ABI value.
+        abi (str, optional): The application binary interface required for the target platform
 
     Returns:
         List: A list of labels to constraint values
@@ -298,7 +304,7 @@ def cpu_arch_to_constraints(cpu_arch, *, system = None):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     # Patch armv7e-m to mf if hardfloat abi is selected
-    if plat_suffix == "armv7e-m" and system == "eabihf":
+    if plat_suffix == "armv7e-m" and (system == "eabihf" or abi == "eabihf"):
         plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
@@ -455,6 +461,18 @@ def triple_to_constraint_set(target_triple):
             "@platforms//cpu:wasm64",
             "@platforms//os:none",
         ]
+    if target_triple == "aarch64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
+        ]
+    if target_triple == "x86_64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
+        ]
 
     triple_struct = triple(target_triple)
 
@@ -462,6 +480,7 @@ def triple_to_constraint_set(target_triple):
     constraint_set += cpu_arch_to_constraints(
         triple_struct.arch,
         system = triple_struct.system,
+        abi = triple_struct.abi,
     )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)

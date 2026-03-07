@@ -573,6 +573,12 @@ impl Renderer {
                     .map(|attrs| attrs.compile_data.clone())
                     .unwrap_or_default(),
             ),
+            exec_properties: SelectDict::new(
+                attrs
+                    .map(|attrs| attrs.exec_properties.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
             crate_features: SelectSet::new(krate.common_attrs.crate_features.clone(), platforms),
             crate_name: utils::sanitize_module_name(&target.crate_name),
             crate_root: target.crate_root.clone(),
@@ -1243,6 +1249,10 @@ mod test {
 
         let attrs = BuildScriptAttributes {
             use_default_shell_env: Some(1),
+            exec_properties: Select::from_value(BTreeMap::from([
+                ("OSFamily".to_owned(), "Linux".to_owned()),
+                ("container-image".to_owned(), "docker://my-image".to_owned()),
+            ])),
             ..BuildScriptAttributes::default()
         };
 
@@ -1302,6 +1312,21 @@ mod test {
         );
         assert!(
             build_file_content.contains("use_default_shell_env = 1"),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("exec_properties = {"),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("\"OSFamily\": \"Linux\""),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("\"container-image\": \"docker://my-image\""),
             "```\n{}```\n",
             build_file_content
         );

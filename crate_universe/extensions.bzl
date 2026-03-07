@@ -26,13 +26,13 @@ There are some examples of using crate_universe with bzlmod in the [example fold
 To use rules_rust in a project using bzlmod, add the following to your MODULE.bazel file:
 
 ```python
-bazel_dep(name = "rules_rust", version = "0.68.1")
+bazel_dep(name = "rules_rust", version = "0.69.0")
 ```
 
 You find the latest version on the [release page](https://github.com/bazelbuild/rules_rust/releases).
 
 
-After adding `rules_rust` in your `MODULE.bazel, set the following to begin using `crate_universe`:
+After adding `rules_rust` in your `MODULE.bazel`, set the following to begin using `crate_universe`:
 
 ```python
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
@@ -243,7 +243,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 # https://github.com/bazelbuild/rules_rust/releases
-bazel_dep(name = "rules_rust", version = "0.68.1")
+bazel_dep(name = "rules_rust", version = "0.69.0")
 
 ###############################################################################
 # T O O L C H A I N S
@@ -635,6 +635,7 @@ def _generate_hub_and_spokes(
     )
 
     # The workspace root when one is explicitly provided.
+    # buildifier: disable=canonical-repository
     nonhermetic_root_bazel_workspace_dir = module_ctx.path(Label("@@//:MODULE.bazel")).dirname
 
     # If re-pinning is enabled, gather additional inputs for the generator
@@ -1343,6 +1344,9 @@ _ANNOTATION_SELECT_ATTRS = {
     ),
     "build_script_env": attr.string_dict(
         doc = "Additional environment variables to set on a crate's `cargo_build_script::env` attribute.",
+    ),
+    "build_script_exec_properties": attr.string_dict(
+        doc = "Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.",
     ),
     "build_script_link_deps": _relative_label_list(
         doc = "A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.",

@@ -1349,7 +1349,7 @@ def rustc_compile_action(
         linkstamps = depset([])
 
     # Determine if the build is currently running with --stamp
-    stamp = is_stamping_enabled(attr)
+    stamp = is_stamping_enabled(ctx, attr)
 
     # Add flags for any 'rustc' lints that are specified.
     #
@@ -1980,6 +1980,9 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
             cc_infos.append(libstd_and_allocator_cc_info)
 
     providers = [cc_common.merge_cc_infos(cc_infos = cc_infos)]
+    if crate_info.type == "staticlib":
+        # The static archive is the output.
+        dot_a = crate_info.output
     if dot_a:
         providers.append(AllocatorLibrariesImplInfo(static_archive = dot_a))
     return providers
@@ -2503,7 +2506,10 @@ def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
         label_string = str(ctx.label)
         if label_string.startswith("@//"):
             label = label_string[1:]
-        elif label_string.startswith("@@//"):
+        elif label_string.startswith(
+            # buildifier: disable=canonical-repository
+            "@@//",
+        ):
             label = label_string[2:]
         else:
             label = label_string

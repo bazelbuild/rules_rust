@@ -434,6 +434,19 @@ def _include_llvm_tools(version, iso_date):
 
     return False
 
+def _include_rust_objcopy(version, iso_date):
+    """rust-objcopy is available in Rust 1.84.0+ and nightly builds after 2024-10-17"""
+    if version in ("nightly", "beta"):
+        if iso_date > "2024-10-17":
+            return True
+        return False
+
+    version_semver = semver(version)
+    if version_semver.major >= 1 and version_semver.minor >= 84:
+        return True
+
+    return False
+
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
     sha256s = dict(ctx.attr.sha256s)
@@ -450,12 +463,16 @@ def _rust_toolchain_tools_repository_impl(ctx):
 
     include_linker = True
 
+    # rust-objcopy is only available in Rust 1.84.0+
+    include_objcopy = _include_rust_objcopy(version, iso_date)
+
     rustc_content, rustc_sha256 = load_rust_compiler(
         ctx = ctx,
         iso_date = iso_date,
         target_triple = exec_triple,
         version = version,
         include_linker = include_linker,
+        include_objcopy = include_objcopy,
     )
     clippy_content, clippy_sha256 = load_clippy(
         ctx = ctx,
@@ -534,6 +551,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         include_rustfmt = not (not ctx.attr.rustfmt_version),
         include_llvm_tools = include_llvm_tools,
         include_linker = include_linker,
+        include_objcopy = include_objcopy,
         extra_rustc_flags = ctx.attr.extra_rustc_flags,
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
@@ -564,7 +582,15 @@ def _rust_toolchain_tools_repository_impl(ctx):
         repro[key] = getattr(ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(ctx.attr.sha256s)
+    return ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rust_toolchain_tools_repository = repository_rule(
     doc = (
@@ -834,7 +860,15 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         repro[key] = getattr(repository_ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(repository_ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(repository_ctx.attr.sha256s)
+    return repository_ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rust_analyzer_toolchain_tools_repository = repository_rule(
     doc = "A repository rule for defining a rust_analyzer_toolchain with a `rust-src` artifact.",
@@ -979,7 +1013,15 @@ def _rustfmt_toolchain_tools_repository_impl(repository_ctx):
         repro[key] = getattr(repository_ctx.attr, key)
     repro["sha256s"] = sha256s
 
-    return repro
+    # Bazel <8.3.0 lacks ctx.repo_metadata
+    if not hasattr(repository_ctx, "repo_metadata"):
+        return repro
+
+    reproducible = sha256s == dict(repository_ctx.attr.sha256s)
+    return repository_ctx.repo_metadata(
+        reproducible = reproducible,
+        attrs_for_reproducibility = {} if reproducible else repro,
+    )
 
 rustfmt_toolchain_tools_repository = repository_rule(
     doc = "A repository rule for defining a rustfmt_toolchain.",

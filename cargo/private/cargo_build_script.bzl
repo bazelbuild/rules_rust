@@ -154,86 +154,113 @@ def get_cc_compile_args_and_env(cc_toolchain, feature_configuration):
     )
     return cc_c_args, cc_cxx_args, cc_env
 
+def _prefix_pwd_to_flag(args, flag_variations):
+    """Prefix execroot-relative paths for flags that support both concatenated and space-separated forms (unless it ends with `=` or `:`).
+
+    Handles flags like:
+    * `-L /path` (space-separated) or `-L/path` (concatenated).
+    * `-LIBPATH /path` (space-separated) or `-LIBPATH/path` (concatenated) or `-LIBPATH=/path` or `-LIBPATH:/path`
+
+    Args:
+        args (list): List of tool arguments.
+        flag_variations (list[str]): The flag variants to look for (e.g., ["-LIBPATH", "-L"], ["-B"], ["-isystem"], ["-resource-dir"]).
+
+    Returns:
+        list: The modified argument list with relative paths prefixed with ${pwd}.
+    """
+    res = []
+    prefix_next_arg = False
+    for arg in args:
+        handled = False
+        new_prefix_next_arg = False
+
+        for flag in flag_variations:
+            # Check for exact match first
+            if arg == flag:
+                if flag.endswith("=") or flag.endswith(":"):
+                    # Flag ending with '=' or ':' and empty path: keep as-is
+                    res.append(arg)
+                    handled = True
+                    break
+                else:
+                    # Flag without '=' or ':': next arg might be space-separated path
+                    new_prefix_next_arg = True
+                continue
+
+            # Check for concatenated form (flag with path)
+            if arg.startswith(flag):
+                path = arg[len(flag):]
+
+                # Don't prefix absolute paths
+                if paths.is_absolute(path):
+                    res.append(arg)
+                else:
+                    res.append("{}${{pwd}}/{}".format(flag, path))
+                handled = True
+                break
+
+            # Check for space-separated form (only for flags without '=' or ':')
+            if not flag.endswith("=") and not flag.endswith(":") and prefix_next_arg and not paths.is_absolute(arg):
+                res.append("${{pwd}}/{}".format(arg))
+                handled = True
+                break
+
+        if not handled:
+            res.append(arg)
+
+        prefix_next_arg = new_prefix_next_arg
+
+    return res
+
+def _prefix_pwd_to_paths(args):
+    """Prefix execroot-relative paths with ${pwd}.
+
+    Handles plain path arguments without any associated flags.
+
+    Args:
+        args (list): List of path arguments.
+
+    Returns:
+        list: The modified argument list with relative paths prefixed with ${pwd}.
+    """
+    res = []
+    for path in args:
+        if not paths.is_absolute(path):
+            res.append("${{pwd}}/{}".format(path))
+        else:
+            res.append(path)
+    return res
+
 def _pwd_flags_sysroot(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
-
-    Args:
-        args (list): List of tool arguments.
-
-    Returns:
-        list: The modified argument list.
-    """
-    res = []
-    for arg in args:
-        s, opt, path = arg.partition("--sysroot=")
-        if s == "" and not paths.is_absolute(path):
-            res.append("{}${{pwd}}/{}".format(opt, path))
-        else:
-            res.append(arg)
-    return res
-
-def _pwd_flags_isystem(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
-
-    Args:
-        args (list): List of tool arguments.
-
-    Returns:
-        list: The modified argument list.
-    """
-    res = []
-    fix_next_arg = False
-    for arg in args:
-        if fix_next_arg and not paths.is_absolute(arg):
-            res.append("${{pwd}}/{}".format(arg))
-        else:
-            res.append(arg)
-
-        fix_next_arg = arg == "-isystem"
-
-    return res
-
-def _pwd_flags_bindir(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
-
-    Args:
-        args (list): List of tool arguments.
-
-    Returns:
-        list: The modified argument list.
-    """
-    res = []
-    fix_next_arg = False
-    for arg in args:
-        if fix_next_arg and not paths.is_absolute(arg):
-            res.append("${{pwd}}/{}".format(arg))
-        else:
-            res.append(arg)
-
-        fix_next_arg = arg == "-B"
-
-    return res
+    """Prefix execroot-relative paths in --sysroot= arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["--sysroot="])
 
 def _pwd_flags_fsanitize_ignorelist(args):
-    """Prefix execroot-relative paths of known arguments with ${pwd}.
+    """Prefix execroot-relative paths in -fsanitize-ignorelist= arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-fsanitize-ignorelist="])
 
-    Args:
-        args (list): List of tool arguments.
+def _pwd_flags_isystem(args):
+    """Prefix execroot-relative paths in -isystem arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-isystem"])
 
-    Returns:
-        list: The modified argument list.
-    """
-    res = []
-    for arg in args:
-        s, opt, path = arg.partition("-fsanitize-ignorelist=")
-        if s == "" and not paths.is_absolute(path):
-            res.append("{}${{pwd}}/{}".format(opt, path))
-        else:
-            res.append(arg)
-    return res
+def _pwd_flags_L(args):
+    """Prefix execroot-relative paths in -L arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-LIBPATH=", "-LIBPATH:", "-LIBPATH", "-L"])
+
+def _pwd_flags_B(args):
+    """Prefix execroot-relative paths in -B arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-B"])
+
+def _pwd_flags_resource_dir(args):
+    """Prefix execroot-relative paths in -resource-dir arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-resource-dir=", "-resource-dir"])
+
+def _pwd_paths(args):
+    """Prefix execroot-relative paths with ${pwd}."""
+    return _prefix_pwd_to_paths(args)
 
 def _pwd_flags(args):
-    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_bindir(_pwd_flags_sysroot(args))))
+    return _pwd_flags_fsanitize_ignorelist(_pwd_flags_isystem(_pwd_flags_L(_pwd_flags_B(_pwd_flags_resource_dir(_pwd_flags_sysroot(args))))))
 
 def _feature_enabled(ctx, feature_name, default = False):
     """Check if a feature is enabled.
@@ -420,19 +447,33 @@ def _cargo_build_script_impl(ctx):
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
 
     # Defaults for cxx flags.
-    env["CC"] = "${{pwd}}/{}".format(ctx.executable._fallback_cc.path)
-    env["CXX"] = "${{pwd}}/{}".format(ctx.executable._fallback_cxx.path)
-    env["AR"] = "${{pwd}}/{}".format(ctx.executable._fallback_ar.path)
     env["ARFLAGS"] = ""
     env["CFLAGS"] = ""
     env["CXXFLAGS"] = ""
+    fallback_tools = []
+    if not cc_toolchain:
+        fallbacks = {
+            "AR": "_fallback_ar",
+            "CC": "_fallback_cc",
+            "CXX": "_fallback_cxx",
+        }
+        for key, attr in fallbacks.items():
+            tool = getattr(ctx.executable, attr)
+            if not tool:
+                fail("cargo_build_script without a cc toolchain requires %s" % attr)
+            fallback_tools.append(tool)
+            env[key] = "${{pwd}}/{}".format(tool.path)
 
     if cc_toolchain:
         # MSVC requires INCLUDE to be set
         cc_c_args, cc_cxx_args, cc_env = get_cc_compile_args_and_env(cc_toolchain, feature_configuration)
         include = cc_env.get("INCLUDE")
         if include:
-            env["INCLUDE"] = include
+            if toolchain.exec_triple.str.find("windows") > 0:
+                path_separator = ";"
+            else:
+                path_separator = ":"
+            env["INCLUDE"] = path_separator.join(_pwd_paths(include.split(path_separator)))
 
         toolchain_tools.append(cc_toolchain.all_files)
 
@@ -516,10 +557,7 @@ def _cargo_build_script_impl(ctx):
         direct = [
             script,
             ctx.executable._cargo_build_script_runner,
-            ctx.executable._fallback_cc,
-            ctx.executable._fallback_cxx,
-            ctx.executable._fallback_ar,
-        ] + ([toolchain.target_json] if toolchain.target_json else []),
+        ] + fallback_tools + ([toolchain.target_json] if toolchain.target_json else []),
         transitive = script_data + script_tools + toolchain_tools,
     )
 
@@ -744,16 +782,19 @@ cargo_build_script = rule(
         "_fallback_ar": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_ar"),
         ),
         "_fallback_cc": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_cc"),
         ),
         "_fallback_cxx": attr.label(
             cfg = "exec",
             executable = True,
+            allow_files = True,
             default = Label("//cargo/private:no_cxx"),
         ),
         "_incompatible_runfiles_cargo_manifest_dir": attr.label(

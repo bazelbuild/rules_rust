@@ -108,9 +108,12 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
     // Use the existing lockfile if possible, otherwise generate a new one.
-    let cargo_lockfile = if opt.cargo_lockfile.is_some() && opt.skip_cargo_lockfile_overwrite {
-        let cargo_lockfile_path = opt.cargo_lockfile.unwrap();
-        cargo_lock::Lockfile::load(&cargo_lockfile_path).context(format!(
+    let cargo_lockfile = if let Some(cargo_lockfile_path) = opt
+        .cargo_lockfile
+        .as_ref()
+        .filter(|_| opt.skip_cargo_lockfile_overwrite)
+    {
+        cargo_lock::Lockfile::load(cargo_lockfile_path).context(format!(
             "Failed to load lockfile: {}",
             cargo_lockfile_path.display()
         ))?
