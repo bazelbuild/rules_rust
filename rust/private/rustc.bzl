@@ -1679,11 +1679,7 @@ def rustc_compile_action(
         transitive_runfiles.append(dynamic_libraries)
     runfiles = runfiles.merge_all(transitive_runfiles)
 
-    # TODO: Remove after some resolution to
-    # https://github.com/bazelbuild/rules_rust/issues/771
-    out_binary = getattr(attr, "out_binary", False)
-
-    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None
+    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None
 
     instrumented_files_kwargs = {
         "dependency_attributes": ["deps", "crate"],
@@ -1893,11 +1889,6 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     # Only generate CcInfo for particular crate types
     if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
-        return []
-
-    # TODO: Remove after some resolution to
-    # https://github.com/bazelbuild/rules_rust/issues/771
-    if getattr(attr, "out_binary", False):
         return []
 
     dot_a = None
