@@ -171,6 +171,14 @@ def _prefix_pwd_to_flag(args, flag_variations):
     res = []
     prefix_next_arg = False
     for arg in args:
+        # When expecting a path argument and we see -Xclang, skip over it and
+        # map the next argument instead.
+        # ex: -Xclang -internal-isystem -Xclang path
+        # to: -Xclang -internal-isystem -Xclang ${pwd}/path
+        if prefix_next_arg and arg == "-Xclang":
+            res.append(arg)
+            continue
+
         handled = False
         new_prefix_next_arg = False
 
@@ -240,8 +248,8 @@ def _pwd_flags_fsanitize_ignorelist(args):
     return _prefix_pwd_to_flag(args, ["-fsanitize-ignorelist="])
 
 def _pwd_flags_isystem(args):
-    """Prefix execroot-relative paths in -isystem arguments with ${pwd}."""
-    return _prefix_pwd_to_flag(args, ["-isystem"])
+    """Prefix execroot-relative paths in -isystem and -Xclang -internal-isystem arguments with ${pwd}."""
+    return _prefix_pwd_to_flag(args, ["-isystem", "-internal-isystem"])
 
 def _pwd_flags_L(args):
     """Prefix execroot-relative paths in -L arguments with ${pwd}."""
