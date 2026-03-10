@@ -6,8 +6,8 @@
 #
 # Configs measured (cold builds — all Rust actions forced to cache-miss via --cfg):
 #   no-pipeline        pipelined_compilation=false, no incremental (baseline)
-#   worker-pipe        worker pipelining, no incremental
-#   worker-pipe+incr   worker pipelining + incremental (cold build I/O overhead)
+#   worker-pipe        worker pipelining, multiplex sandboxing, no incremental
+#   worker-pipe+incr   worker pipelining, multiplex sandboxing + incremental
 #
 # Configs measured (warm rebuilds — prime build then append a comment to lib/hash):
 #   no-pipeline-rb        rebuild, no pipelining, no incremental
@@ -28,10 +28,6 @@ TARGET="//sdk"
 ITERS="${1:-5}"
 RUN_ID=$(date +%s)
 
-# Use Bazel 8.4.2: Bazel 9 has a pre-existing diplomat-tool build issue
-# (include!() paths reference missing cache locations) that prevents //sdk
-# from building when diplomat-tool isn't already in the disk cache.
-export USE_BAZEL_VERSION=8.4.2
 BAZEL="bazel"
 
 # First-party crate to touch for rebuild tests.
@@ -50,14 +46,18 @@ NO_PIPE_FLAGS=(
 WORKER_PIPE_FLAGS=(
     "--@rules_rust//rust/settings:pipelined_compilation=true"
     "--@rules_rust//rust/settings:experimental_worker_pipelining=true"
-    "--strategy=Rustc=worker,local"
+    "--experimental_worker_multiplex_sandboxing"
+    "--strategy=Rustc=worker,sandboxed"
+    "--strategy=RustcMetadata=worker,sandboxed"
 )
 
 WORKER_PIPE_INCR_FLAGS=(
     "--@rules_rust//rust/settings:pipelined_compilation=true"
     "--@rules_rust//rust/settings:experimental_worker_pipelining=true"
     "--@rules_rust//rust/settings:experimental_incremental=true"
-    "--strategy=Rustc=worker,local"
+    "--experimental_worker_multiplex_sandboxing"
+    "--strategy=Rustc=worker,sandboxed"
+    "--strategy=RustcMetadata=worker,sandboxed"
 )
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

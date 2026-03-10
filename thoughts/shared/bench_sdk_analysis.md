@@ -1,9 +1,11 @@
-# SDK Benchmark Analysis: Pipelining + Incremental Compilation
+# SDK Benchmark Analysis: Worker Pipelining with Multiplex Sandboxing
 
-**Date:** 2026-03-06
+**Date:** 2026-03-09
 **Target:** `reactor-repo-2 //sdk` (73 first-party Rust libraries, ~165 total)
-**Machine:** 16 jobs, same machine as previous benchmarks
+**Machine:** 16 jobs, Linux 6.17.7, x86_64
+**Bazel:** 9.0.0
 **Script:** `thoughts/shared/bench_sdk.sh`, 5 iterations
+**Previous benchmark:** 2026-03-06 (Bazel 8.4.2, no multiplex sandboxing)
 
 ## Methodology
 
@@ -12,15 +14,19 @@ Three cold-build configs and three warm-rebuild configs were measured:
 | Config | Flags |
 |---|---|
 | `no-pipeline` | `pipelined_compilation=false` (baseline) |
-| `worker-pipe` | `experimental_worker_pipelining=true`, `--strategy=Rustc=worker,local` |
+| `worker-pipe` | `experimental_worker_pipelining=true`, `--experimental_worker_multiplex_sandboxing`, `--strategy=Rustc=worker,sandboxed` |
 | `worker-pipe+incr` | same as worker-pipe + `experimental_incremental=true` |
 | `*-rb` | corresponding rebuild: prime build → append comment to `lib/hash/src/lib.rs` → rebuild |
 
+**Key change from previous benchmark:** This run uses `--experimental_worker_multiplex_sandboxing`
+(per-request sandbox isolation within the multiplex worker) and `worker,sandboxed` fallback
+strategy. The previous benchmark used unsandboxed multiplex workers with `worker,local` fallback.
+
 **Forcing Rust cache misses:** each cold build uses a unique `--extra_rustc_flag=--cfg=bench_<config>_i<N>_r<RUN_ID>`. This is a target-config flag only; exec-config actions (C/CC, build scripts, proc-macros) stay disk-cached across all runs.
 
-**Note on iteration 1:** Iteration 1 cold builds show higher variance for `no-pipeline` (138.8s vs 94–125s in iters 2–5) because some C/CC disk-cache entries were not yet populated before the benchmark. By iteration 2 all C actions are cached. Stable means below use iterations 2–5.
+**Note on iteration 1:** Iteration 1 cold builds show higher variance (157.7s no-pipeline, 126.9s worker-pipe) because some disk-cache entries were not yet populated. By iteration 2 all non-Rust actions are cached. Stable means below use iterations 2–5.
 
-**Note on incremental rebuild validity:** The benchmark clears `/tmp/rules_rust_incremental` before each cold-build group. In iteration 1, the rebuild prime must run rustc (fresh key) and thus writes valid incremental state. In iterations 2–5, the rebuild prime hits the Bazel disk cache (same stable `--cfg` key as iter 1), rustc doesn't run, and no incremental state is written. The rebuild then has no incremental state to exploit. **Only iteration 1's `worker-pipe+incr-rb` result (13.8s) reflects true warm-incremental performance.** The iter 2–5 results for `worker-pipe+incr-rb` (28–32s) are effectively `worker-pipe-rb` with no incremental state.
+**Note on incremental rebuild validity:** Only iteration 1's `worker-pipe+incr-rb` (4.3s) reflects true warm-incremental performance. In iterations 2+, the rebuild prime hits the Bazel disk cache (rustc doesn't run), so no incremental state gets written. The iters 2–5 `worker-pipe+incr-rb` results (~21.4s) are effectively cold-incremental rebuilds.
 
 ---
 
@@ -28,157 +34,210 @@ Three cold-build configs and three warm-rebuild configs were measured:
 
 ```
 iter,config,wall_ms,wall_s,crit_s,total_actions,worker_count,sandbox_count
-1,no-pipeline,138769,138.8,80.99,1065,0,1042
-1,worker-pipe,58484,58.5,41.80,1640,1160,0
-1,worker-pipe+incr,91918,91.9,79.60,1167,1165,0
-1,no-pipeline-rb,27819,27.8,27.22,106,0,105
-1,worker-pipe-rb,48988,49.0,46.96,174,112,15
-1,worker-pipe+incr-rb,13830,13.8,11.66,64,7,0    ← only valid incremental measurement
-2,no-pipeline,97680,97.7,77.24,1066,0,590
-2,worker-pipe,64907,64.9,43.49,1655,1160,0
-2,worker-pipe+incr,100684,100.7,83.50,1167,1165,0
-2,no-pipeline-rb,40530,40.5,30.82,106,0,105
-2,worker-pipe-rb,51503,51.5,28.92,174,112,15
-2,worker-pipe+incr-rb,31887,31.9,31.27,174,117,2  ← no incremental state
-3,no-pipeline,124667,124.7,97.54,1066,0,590
-3,worker-pipe,65015,65.0,43.81,1655,1160,0
-3,worker-pipe+incr,102395,102.4,83.09,1167,1165,0
-3,no-pipeline-rb,31332,31.3,30.76,106,0,105
-3,worker-pipe-rb,29714,29.7,29.07,174,112,15
-3,worker-pipe+incr-rb,29450,29.4,28.93,174,117,0  ← no incremental state
-4,no-pipeline,94392,94.4,76.41,1066,0,590
-4,worker-pipe,61262,61.3,40.98,1655,1160,0
-4,worker-pipe+incr,98997,99.0,79.97,1167,1165,0
-4,no-pipeline-rb,31086,31.1,30.51,106,0,105
-4,worker-pipe-rb,27816,27.8,27.20,174,112,15
-4,worker-pipe+incr-rb,30099,30.1,29.55,174,117,0  ← no incremental state
-5,no-pipeline,93910,93.9,77.49,1066,0,590
-5,worker-pipe,62697,62.7,41.95,1655,1160,0
-5,worker-pipe+incr,101129,101.1,80.72,1167,1165,0
-5,no-pipeline-rb,28766,28.8,28.25,106,0,105
-5,worker-pipe-rb,26192,26.2,25.66,174,112,15
-5,worker-pipe+incr-rb,28425,28.4,27.89,174,117,0  ← no incremental state
+1,no-pipeline,157741,157.7,106.63,1086,0,1043
+1,worker-pipe,126874,126.9,72.77,1661,1150,15
+1,worker-pipe+incr,97381,97.4,78.77,1167,1165,0
+1,no-pipeline-rb,26438,26.4,25.87,106,0,105
+1,worker-pipe-rb,27624,27.6,26.95,174,106,67
+1,worker-pipe+incr-rb,4310,4.3,3.84,64,7,0
+2,no-pipeline,86856,86.9,71.85,1087,0,590
+2,worker-pipe,79841,79.8,52.59,1676,1150,15
+2,worker-pipe+incr,109799,109.8,82.11,1167,1165,0
+2,no-pipeline-rb,28022,28.0,27.49,106,0,105
+2,worker-pipe-rb,29418,29.4,28.83,174,106,67
+2,worker-pipe+incr-rb,21176,21.2,20.59,174,117,0
+3,no-pipeline,86055,86.1,72.46,1087,0,590
+3,worker-pipe,87662,87.7,53.41,1676,1150,15
+3,worker-pipe+incr,109580,109.6,82.51,1167,1165,0
+3,no-pipeline-rb,28596,28.6,28.05,106,0,105
+3,worker-pipe-rb,29962,30.0,29.38,174,106,67
+3,worker-pipe+incr-rb,21503,21.5,21.01,174,117,0
+4,no-pipeline,87759,87.8,71.19,1087,0,590
+4,worker-pipe,85072,85.1,55.23,1676,1150,15
+4,worker-pipe+incr,110241,110.2,82.63,1167,1165,0
+4,no-pipeline-rb,28258,28.3,27.69,106,0,105
+4,worker-pipe-rb,28717,28.7,28.20,174,106,67
+4,worker-pipe+incr-rb,21360,21.4,20.85,174,117,0
+5,no-pipeline,86292,86.3,70.73,1087,0,590
+5,worker-pipe,86607,86.6,53.24,1676,1150,15
+5,worker-pipe+incr,106365,106.4,80.83,1167,1165,0
+5,no-pipeline-rb,28515,28.5,27.96,106,0,105
+5,worker-pipe-rb,28888,28.9,28.05,174,106,67
+5,worker-pipe+incr-rb,21467,21.5,20.93,174,117,0
 ```
 
 ---
 
 ## Cold Build Summary (iters 2–5, stable)
 
-| Config | Mean wall (s) | Mean crit path (s) | vs no-pipeline | Actions |
+| Config | Mean wall (s) | Mean crit path (s) | Overhead (wall - crit) | vs no-pipeline | Actions | Workers | Sandbox |
+|---|---|---|---|---|---|---|---|
+| `no-pipeline` | 86.8 | 71.6 | 15.2s | — | ~1087 | 0 | 590 |
+| `worker-pipe` | 84.8 | 53.6 | 31.2s | **1.02× faster** | ~1676 | 1150 | 15 |
+| `worker-pipe+incr` | 109.0 | 82.0 | 27.0s | 0.80× (26% slower) | ~1167 | 1165 | 0 |
+
+## Warm Rebuild Summary
+
+| Config | Iter 1 (s) | Mean iters 2–5 (s) | Actions | Workers |
 |---|---|---|---|---|
-| `no-pipeline` | 102.7 | 82.2 | — | ~1066 |
-| `worker-pipe` | 63.5 | 42.6 | **1.62× faster** | ~1655 |
-| `worker-pipe+incr` | 100.8 | 81.8 | 1.02× faster (negligible) | ~1167 |
-
-### Key finding: incremental I/O dominates the critical path
-
-`worker-pipe+incr` wall time (100.8s) is only marginally better than `no-pipeline` (102.7s), and their **critical paths are nearly identical** (81.8s vs 82.2s). Writing incremental state to `/tmp/rules_rust_incremental/` for each of 73 first-party crates sits squarely on the critical path, completely offsetting the pipelining benefit for sequential chains of large crates.
-
-`worker-pipe` (no incremental) reduces the critical path by 47% (42.6s vs 82.2s), confirming the pipelining benefit is real — incremental just cancels it out.
-
-**Recommendation for cold builds:** `worker-pipe` alone. Do not enable incremental for clean or CI builds.
+| `no-pipeline-rb` | 26.4 | 28.4 | 106 | 0 |
+| `worker-pipe-rb` | 27.6 | 29.2 | 174 | 106 |
+| `worker-pipe+incr-rb` | **4.3** | 21.4 | 64/174 | 7/117 |
 
 ---
 
-## Warm Rebuild Summary (touching `lib/hash`, ~27 first-party rdeps)
+## Analysis
 
-| Config | Wall (s) | Crit path (s) | Actions | Workers |
+### Multiplex sandboxing eliminates the wall-time benefit of worker pipelining
+
+The headline finding: **worker-pipe is only 2.3% faster than no-pipeline** (84.8s vs 86.8s). The
+critical path is 25% shorter (53.6s vs 71.6s), confirming that pipelining works — downstream crates
+start earlier. But the Bazel overhead doubles: 31.2s for worker-pipe vs 15.2s for no-pipeline.
+
+The overhead comes from `--experimental_worker_multiplex_sandboxing`, which creates a per-request
+sandbox directory, stages inputs via hardlinks/symlinks into a worker-owned execroot
+(`_pw_state/pipeline/<key>/`), and copies outputs back after completion. With 1150 worker requests,
+this I/O adds up.
+
+### Comparison with previous unsandboxed benchmark (2026-03-06, Bazel 8.4.2)
+
+| Config | Old wall (s) | New wall (s) | Old overhead | New overhead |
 |---|---|---|---|---|
-| `no-pipeline-rb` (iters 3–5 mean) | 30.4 | 29.2 | 106 | 0 |
-| `worker-pipe-rb` (iters 3–5 mean) | 27.9 | 27.3 | 174 | 112 |
-| `worker-pipe+incr-rb` (iter 1 only) | **13.8** | 11.7 | 64 | 7 |
+| `no-pipeline` | 102.7 | 86.8 | 20.5s | 15.2s |
+| `worker-pipe` | 63.5 | 84.8 | 20.9s | 31.2s |
+| `worker-pipe+incr` | 100.8 | 109.0 | 19.0s | 27.0s |
 
-### Key finding: incremental + pipelining dramatically accelerates rebuilds
+The no-pipeline baseline improved 15.5% (Bazel 9 vs 8.4.2). Worker-pipe regressed 33.5% due to
+sandboxing overhead. The old unsandboxed worker-pipe was **1.62× faster** than its baseline;
+the new sandboxed version is only **1.02× faster**.
 
-`worker-pipe+incr-rb` at **13.8s is 2.2× faster** than `no-pipeline-rb` (30.4s), with only 64 actions (vs 106/174) and just 7 worker invocations.
+### Incremental rebuild remains the star
 
-Why so few actions? Adding a comment to `lib/hash/src/lib.rs` changes the source but **does not alter `lib/hash`'s `.rmeta`** (public API is unchanged). With worker pipelining:
-1. `lib/hash` recompiles quickly using incremental state (only re-codegen the changed function)
-2. The emitted `.rmeta` is identical to the prior build
-3. All downstream crates see identical `.rmeta` inputs → Bazel action cache hits → no downstream work
+`worker-pipe+incr-rb` iteration 1 at **4.3s** (vs 13.8s in the old benchmark) is a 3.2× improvement.
+This is the CGU fix (`-Ccodegen-units=16`) from the previous analysis working as expected: incremental
+codegen with 16 CGUs instead of 256 eliminates the overhead that was masking the incremental benefit.
 
-Without incremental, Bazel must run rustc for all 27+ downstream crates to discover (after the fact) that their outputs are unchanged. With incremental, the combination of fast recompilation + unchanged `.rmeta` propagation short-circuits the entire rebuild.
+### Rebuild pipelining shows no benefit with sandboxing
 
-`worker-pipe-rb` (no incremental) at 27.9s is only marginally faster than `no-pipeline-rb` (30.4s) for small rebuilds — worker pipelining's critical-path reduction helps less when only 30 crates need recompiling and the bottleneck is a short sequential chain.
-
-### Note on iter 1 vs iter 3–5 worker-pipe-rb variance
-
-`worker-pipe-rb` iter 1 (49.0s) is notably slower than iters 3–5 (~27.9s). This is first-run worker overhead: fresh Bazel + worker processes after a long shutdown have higher startup latency. By iter 3 the JVM and worker processes are warm from prior iterations. This is an inherent characteristic of the worker strategy for small rebuilds with few actions.
+`worker-pipe-rb` (29.2s) is slightly slower than `no-pipeline-rb` (28.4s). For small rebuilds
+(~27 crates), the sandboxing overhead per-action dominates any pipelining benefit. Without
+sandboxing, the old benchmark showed worker-pipe-rb at 27.9s vs no-pipeline-rb at 30.4s (8% faster).
 
 ---
 
 ## Recommendations
 
+### Do NOT enable `--experimental_worker_multiplex_sandboxing` for performance
+
+The per-request sandboxing overhead (input staging, output copying) negates the pipelining speedup.
+Worker pipelining's critical-path reduction only translates to wall-time improvement when the
+per-action overhead is low — which unsandboxed multiplex workers achieve but sandboxed ones do not.
+
+### Updated strategy recommendation
+
 | Use case | Recommended config |
 |---|---|
-| CI / full clean builds | `worker-pipe` only (`experimental_incremental=false`) |
-| Local development (frequent rebuilds) | `worker-pipe` + `experimental_incremental=true` |
-| One-off full local rebuild | `worker-pipe` only (save ~37s vs worker-pipe+incr) |
+| CI / performance-sensitive builds | `worker-pipe` **without** `--experimental_worker_multiplex_sandboxing` |
+| Hermetic / security-sensitive builds | `worker-pipe` **with** `--experimental_worker_multiplex_sandboxing` (accept ~30% overhead) |
+| Local development (frequent rebuilds) | `worker-pipe` + `experimental_incremental=true` (without multiplex sandboxing) |
 
-The trade-off is clear:
-- Cold build: `worker-pipe+incr` costs ~37s extra vs `worker-pipe` (incremental I/O write overhead)
-- Warm rebuild: `worker-pipe+incr` saves ~16s vs `no-pipeline-rb` (2.2× speedup)
+On Bazel 9+, no `--strategy` flags are needed — Bazel auto-selects the multiplex worker from
+`supports-multiplex-workers` in exec_reqs. Use `--strategy=Rustc=worker,sandboxed` on Bazel 8
+as fallback (the `sandboxed` fallback is only used when the worker strategy is unavailable, which
+is not the sandboxing-overhead case measured here).
 
-For a developer making many small changes in a session, incremental pays back its cold-build tax after roughly 3 rebuilds.
+### Future optimization opportunities
+
+The sandboxing overhead is dominated by input staging (hardlinking/symlinking ~1000+ files per
+request into `_pw_state/pipeline/<key>/execroot/`). Potential improvements:
+1. **Shared read-only layer:** Instead of staging inputs per-request, use a single symlink tree
+   updated incrementally, with per-request output directories only.
+2. **Lazy input resolution:** Only stage inputs that rustc actually reads (use strace/seccomp to
+   detect), rather than all declared inputs.
+3. **Skip staging for non-pipelined requests:** Only pipeline requests (metadata+full pairs) need
+   persistent execroots. Non-pipelined requests could use `current_dir(sandbox_dir)` directly.
 
 ---
 
-## Root Cause Investigation: Cold-Build Overhead
+## Benchmark Improvements Applied
 
-The 42% first-party overhead seemed surprising since Cargo shows ≤5% overhead. Profiled
-builds (`--generate_json_trace_profile`) and per-crate cargo experiments revealed:
+Compared to the 2026-03-06 benchmark:
+1. **Bazel 9.0.0** (was Bazel 8.4.2)
+2. **Multiplex sandboxing enabled** (`--experimental_worker_multiplex_sandboxing`)
+3. **Sandboxed fallback** (`worker,sandboxed` instead of `worker,local`)
+4. **RustcMetadata strategy** added (`--strategy=RustcMetadata=worker,sandboxed`)
+5. **CGU fix** (`-Ccodegen-units=16` with incremental) from prior analysis
 
-### CGU mismatch (37% of overhead, fixed)
+## Remaining improvements needed
 
-When `-Cincremental` is passed without explicit `-Ccodegen-units`, rustc bumps CGUs from
-16 → 256. Cargo avoids this by always passing `-Ccodegen-units=16` in dev profile (since
-Cargo 1.73). Our implementation didn't set CGUs, getting the inflated 256 default.
+The `worker-pipe+incr-rb` result is only valid for iteration 1 (same issue as previous benchmark).
+Fix the benchmark script to avoid clearing incremental cache between rebuild primes.
 
-**Fix applied:** `construct_incremental_arguments` in `rust/private/incremental.bzl` now
-also passes `-Ccodegen-units=16` alongside `-Cincremental=...`.
+---
 
-### Profile comparison (single-run, //sdk)
+## 2026-03-10 Focused Follow-up: `//zm_cli:zm_cli_lib`
 
-| Profile | First-party total | Overhead | Critical path |
+To separate SDK-level cache effects from actual worker sandbox cost, a colder Rust-heavy target
+in the `//sdk` graph was measured with remote cache hits disabled:
+
+| Config | Wall (s) | Crit path (s) | Actions | Workers | Sandbox |
+|---|---|---|---|---|---|
+| `worker-pipe` | 69.6 | 43.34 | 746 | 736 | 9 |
+| `no-pipeline` | 115.0 | 75.91 | 927 | 0 | 912 |
+
+For the `worker-pipe` run, pipeline logs from 280 metadata actions show:
+
+- `stage_ms`: 55.4s total, 197.9ms average per action, p90 392ms, p99 1083ms
+- `setup_ms`: 56.1s total, effectively identical to `stage_ms`
+- metadata output materialization: 29ms total, all via hardlinks, zero copies
+- staged inputs: 295,571 declared inputs, all preserved as symlinks, zero file copies
+
+This narrows the remaining problem:
+
+- On a real cold Rust-heavy target, sandboxed worker pipelining still clearly helps.
+- The dominant residual overhead is staged-input setup, even when it is entirely symlink-based.
+- Output copying is not the bottleneck for the safe path.
+
+So the next safe optimization direction is staged-execroot reuse or narrower input staging, not
+further output materialization work.
+
+---
+
+## 2026-03-10 Profile Follow-up: `//sdk/sdk_builder:sdk_builder_lib`
+
+To check whether the `//sdk` slowdown was mostly top-level packaging or a broader graph issue, I
+profiled `//sdk/sdk_builder:sdk_builder_lib` with Bazel profiles in both modes.
+
+Profiled comparison:
+
+| Config | Wall (s) | Crit path (s) | Processes |
 |---|---|---|---|
-| `worker-pipe` (no incr, 16 CGU) | 67.1s | — | 67.6s |
-| `worker-pipe+incr` (256 CGU) | 95.5s | +28.3s (42%) | 80.1s |
-| `worker-pipe+incr` (16 CGU fixed) | 85.0s | +17.9s (27%) | 76.3s |
-| **CGU fix saves** | | **10.5s (37% of overhead)** | **3.8s** |
+| `no-pipeline` | 19.4 | 12.25 | 231 `linux-sandbox` |
+| `worker-pipe` | 23.0 | 14.03 | 228 `worker`, 4 `linux-sandbox` |
 
-External crates (incremental disabled) showed +9–11% overhead across all runs — attributable
-to system-load variance between sequential profile runs.
+Key findings:
 
-### Per-crate cargo experiment
+- The slowdown is **not** primarily a top-level packaging/linking issue. In both profiles, the
+  critical path ends in Rust compilation work, not a final binary/packaging action.
+- The worker profile shows a large new bucket in worker setup:
+  - `worker_preparing`: 91.8s total across 199 events, 461ms average
+  - `worker_working`: 71.6s total across 126 events, 568ms average
+- `ACTION_EXECUTION` grows from 116.1s to 191.2s summed across threads, while analysis/load phases
+  only increase modestly.
+- The process_wrapper pipeline logs for the same run show setup time is almost entirely input
+  staging:
+  - 226 metadata actions
+  - `stage_ms`: 29.9s total, 132ms average, p90 238ms
+  - `setup_ms`: 30.4s total, 134ms average
+  - sandbox symlink seeding: 4ms total
+  - worker entry seeding: 35ms total
+  - output materialization remains negligible
 
-A direct per-crate test (ecs, 3894 lines) showed ~1.1s compile time regardless of
-incremental/CGU settings. The per-action overhead of 260ms mean (from Bazel profiles)
-is consistent with incremental state serialization for smaller crates, adding up across
-the 79 first-party crate actions on the critical path.
+Interpretation:
 
-### Cargo comparison (iteration 1)
-
-| Config | Cold build | Rebuild (touch lib/hash) |
-|---|---|---|
-| `cargo` (incr, 16 CGU) | 81.2s | 22.4s |
-| `cargo` (no incr, 16 CGU) | 85.4s | 24.3s |
-| `worker-pipe` (no incr) | 63.5s | 27.9s |
-| `worker-pipe+incr` (256 CGU) | 100.8s | 13.8s |
-
-Cargo's ≤5% incremental cold-build overhead confirms that CGU=16 eliminates most of the
-overhead. The remaining ~17% after our CGU fix is genuine incremental serialization cost
-(dep-graph, MIR, query caches) — inherent to rustc, not a bug in our implementation.
-
----
-
-## Benchmark Improvements Needed (Future Work)
-
-The `worker-pipe+incr-rb` result is only valid for iteration 1 due to a design flaw: the
-benchmark clears `/tmp/rules_rust_incremental` before each cold-build group, and in
-iterations 2+ the rebuild prime hits the Bazel disk cache (rustc doesn't run), so no
-incremental state gets written. Fix: do not clear the incremental cache in the rebuild
-section (only clear before cold builds); the unique `--cfg` per cold-build iteration
-ensures those sessions don't cross-contaminate the stable prime key.
-
-Re-run the full benchmark with the CGU fix (`-Ccodegen-units=16`) to get proper 5-iteration
-means for the corrected implementation.
+- `sdk_builder_lib` is a genuine mixed-graph regression case for sandboxed `worker-pipe`, not a
+  misleading artifact of the final `//sdk` action.
+- The dominant loss is still pre-execution setup in the pipelined worker path, especially staged
+  input construction.
+- On this target, pipelining does not recover that cost through a shorter critical path; the
+  critical path is slightly worse under sandboxed `worker-pipe`.

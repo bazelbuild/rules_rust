@@ -38,6 +38,7 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Instant;
 
 use tinyjson::JsonValue;
 
@@ -51,7 +52,9 @@ use crate::ProcessWrapperError;
 /// we recover the inner value — the data is still valid because
 /// `catch_unwind` prevents partial updates from escaping.
 fn lock_or_recover<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    mutex
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn extract_request_id_from_raw_line(line: &str) -> Option<i64> {
@@ -174,12 +177,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     // the response; the other side skips. Entries are removed by the worker thread
     // when it finishes, so request IDs can be safely reused across builds when
     // Bazel keeps the worker process alive.
-    let in_flight: Arc<Mutex<HashMap<i64, Arc<AtomicBool>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
+    let in_flight: Arc<Mutex<HashMap<i64, Arc<AtomicBool>>>> = Arc::new(Mutex::new(HashMap::new()));
 
     for line in stdin.lock().lines() {
-        let line = line
-            .map_err(|e| ProcessWrapperError(format!("failed to read WorkRequest: {e}")))?;
+        let line =
+            line.map_err(|e| ProcessWrapperError(format!("failed to read WorkRequest: {e}")))?;
         if line.is_empty() {
             continue;
         }
@@ -249,8 +251,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             // The worker thread removes the entry when it finishes, so the same
             // request ID can be safely reused across builds.
             let claim_flag = Arc::new(AtomicBool::new(false));
-            lock_or_recover(&in_flight)
-                .insert(request.request_id, Arc::clone(&claim_flag));
+            lock_or_recover(&in_flight).insert(request.request_id, Arc::clone(&claim_flag));
 
             // Multiplex: dispatch to a new thread. Bazel bounds concurrency via
             // --worker_max_multiplex_instances (default: 8), so no in-process
@@ -262,8 +263,8 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let request = request.clone();
 
             std::thread::spawn(move || {
-                let (exit_code, output) = match std::panic::catch_unwind(
-                    std::panic::AssertUnwindSafe(|| {
+                let (exit_code, output) =
+                    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         let mut full_args = startup_args;
                         full_args.extend(request.arguments.clone());
 
@@ -287,44 +288,33 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         let pipelining = detect_pipelining_mode(&full_args);
 
                         match pipelining {
-                            PipeliningMode::Metadata { key } => {
-                                handle_pipelining_metadata(
-                                    &request,
-                                    full_args,
-                                    key,
-                                    &state_roots,
-                                    &pipeline_state,
-                                )
-                            }
-                            PipeliningMode::Full { key } => {
-                                handle_pipelining_full(
-                                    &request,
-                                    full_args,
-                                    key,
-                                    &pipeline_state,
-                                    &self_path,
-                                )
-                            }
+                            PipeliningMode::Metadata { key } => handle_pipelining_metadata(
+                                &request,
+                                full_args,
+                                key,
+                                &state_roots,
+                                &pipeline_state,
+                            ),
+                            PipeliningMode::Full { key } => handle_pipelining_full(
+                                &request,
+                                full_args,
+                                key,
+                                &pipeline_state,
+                                &self_path,
+                            ),
                             PipeliningMode::None => match sandbox_opt {
-                                Some(ref dir) => {
-                                    run_sandboxed_request(&self_path, full_args, dir)
-                                        .unwrap_or_else(|e| {
-                                            (1, format!("sandboxed worker error: {e}"))
-                                        })
-                                }
-                                None => {
-                                    run_request(&self_path, full_args)
-                                        .unwrap_or_else(|e| {
-                                            (1, format!("worker thread error: {e}"))
-                                        })
-                                }
+                                Some(ref dir) => run_sandboxed_request(&self_path, full_args, dir)
+                                    .unwrap_or_else(|e| {
+                                        (1, format!("sandboxed worker error: {e}"))
+                                    }),
+                                None => run_request(&self_path, full_args)
+                                    .unwrap_or_else(|e| (1, format!("worker thread error: {e}"))),
                             },
                         }
-                    }),
-                ) {
-                    Ok(result) => result,
-                    Err(_) => (1, "internal error: worker thread panicked".to_string()),
-                };
+                    })) {
+                        Ok(result) => result,
+                        Err(_) => (1, "internal error: worker thread panicked".to_string()),
+                    };
 
                 // Remove our entry from in_flight regardless of who sends the response.
                 // This keeps the map from growing indefinitely and allows request_id
@@ -407,9 +397,7 @@ fn detect_pipelining_mode(args: &[String]) -> PipeliningMode {
 
 /// Scans an iterator of argument strings for pipelining flags.
 /// Returns `(is_metadata, is_full, pipeline_key)`.
-fn scan_pipelining_flags<'a>(
-    iter: impl Iterator<Item = &'a str>,
-) -> (bool, bool, Option<String>) {
+fn scan_pipelining_flags<'a>(iter: impl Iterator<Item = &'a str>) -> (bool, bool, Option<String>) {
     let mut is_metadata = false;
     let mut is_full = false;
     let mut key: Option<String> = None;
@@ -497,6 +485,23 @@ struct StagedPipeline {
     outputs_dir: PathBuf,
 }
 
+#[derive(Default)]
+struct InputStageStats {
+    declared_inputs: usize,
+    regular_files: usize,
+    directories: usize,
+    preserved_symlinks: usize,
+    hardlinked_files: usize,
+    copied_files: usize,
+}
+
+#[derive(Default)]
+struct OutputMaterializationStats {
+    files: usize,
+    hardlinked_files: usize,
+    copied_files: usize,
+}
+
 /// Parses process_wrapper flags from the pre-`--` portion of args.
 fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
     let current_dir = pwd.to_string_lossy().into_owned();
@@ -577,7 +582,10 @@ fn prepare_rustc_args(
 ) -> Result<(Vec<String>, String), (i32, String)> {
     let mut rustc_args = expand_rustc_args(rustc_and_after, &pw_args.subst, execroot_dir);
     if rustc_args.is_empty() {
-        return Err((1, "pipelining: no rustc arguments after expansion".to_string()));
+        return Err((
+            1,
+            "pipelining: no rustc arguments after expansion".to_string(),
+        ));
     }
 
     // Append args from --arg-file files (e.g. build script output: --cfg=..., -L ...).
@@ -624,6 +632,7 @@ fn copy_or_link_path(
     dest: &std::path::Path,
     sandbox_dir: Option<&std::path::Path>,
     execroot_dir: &std::path::Path,
+    stats: &mut InputStageStats,
 ) -> Result<(), std::io::Error> {
     let metadata = std::fs::symlink_metadata(src)?;
     let file_type = metadata.file_type();
@@ -633,9 +642,12 @@ fn copy_or_link_path(
         let resolved_target = if link_target.is_absolute() {
             link_target
         } else {
-            src.parent().unwrap_or_else(|| std::path::Path::new("")).join(&link_target)
+            src.parent()
+                .unwrap_or_else(|| std::path::Path::new(""))
+                .join(&link_target)
         };
-        let safe_to_preserve = sandbox_dir.is_none_or(|sandbox_dir| !resolved_target.starts_with(sandbox_dir));
+        let safe_to_preserve =
+            sandbox_dir.is_none_or(|sandbox_dir| !resolved_target.starts_with(sandbox_dir));
 
         if safe_to_preserve {
             maybe_seed_cache_root_for_path(execroot_dir, &resolved_target)?;
@@ -643,29 +655,57 @@ fn copy_or_link_path(
                 std::fs::create_dir_all(parent)?;
             }
             let target_metadata = std::fs::metadata(&resolved_target)?;
+            stats.preserved_symlinks += 1;
             return symlink_path(&resolved_target, dest, target_metadata.is_dir());
         }
 
-        return copy_or_link_path(&resolved_target, dest, sandbox_dir, execroot_dir);
+        return copy_or_link_path(&resolved_target, dest, sandbox_dir, execroot_dir, stats);
     }
 
     if metadata.is_dir() {
+        stats.directories += 1;
+        let safe_to_link_dir = sandbox_dir.is_none_or(|sandbox_dir| !src.starts_with(sandbox_dir));
+        if safe_to_link_dir {
+            let link_target = src.canonicalize().unwrap_or_else(|_| src.to_path_buf());
+            maybe_seed_cache_root_for_path(execroot_dir, &link_target)?;
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            if symlink_path(&link_target, dest, true).is_ok() {
+                stats.preserved_symlinks += 1;
+                return Ok(());
+            }
+        }
+
         std::fs::create_dir_all(dest)?;
         for entry in std::fs::read_dir(src)? {
             let entry = entry?;
-            copy_or_link_path(&entry.path(), &dest.join(entry.file_name()), sandbox_dir, execroot_dir)?;
+            copy_or_link_path(
+                &entry.path(),
+                &dest.join(entry.file_name()),
+                sandbox_dir,
+                execroot_dir,
+                stats,
+            )?;
         }
         return Ok(());
     }
 
+    stats.regular_files += 1;
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
     match std::fs::hard_link(src, dest) {
-        Ok(()) => Ok(()),
+        Ok(()) => {
+            stats.hardlinked_files += 1;
+            Ok(())
+        }
         Err(link_err) => match std::fs::copy(src, dest) {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                stats.copied_files += 1;
+                Ok(())
+            }
             Err(copy_err) => Err(std::io::Error::new(
                 copy_err.kind(),
                 format!(
@@ -702,13 +742,49 @@ fn maybe_seed_cache_root_for_path(
     symlink_path(&cache_root, &dest, true)
 }
 
+fn materialize_output_file(
+    src: &std::path::Path,
+    dest: &std::path::Path,
+) -> Result<bool, std::io::Error> {
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    if dest.exists() {
+        std::fs::remove_file(dest)?;
+    }
+
+    match std::fs::hard_link(src, dest) {
+        Ok(()) => Ok(true),
+        Err(link_err) => match std::fs::copy(src, dest) {
+            Ok(_) => Ok(false),
+            Err(copy_err) => Err(std::io::Error::new(
+                copy_err.kind(),
+                format!(
+                    "failed to materialize {} at {} via hardlink ({link_err}) or copy ({copy_err})",
+                    src.display(),
+                    dest.display(),
+                ),
+            )),
+        },
+    }
+}
+
 #[cfg(unix)]
-fn symlink_path(src: &std::path::Path, dest: &std::path::Path, _is_dir: bool) -> Result<(), std::io::Error> {
+fn symlink_path(
+    src: &std::path::Path,
+    dest: &std::path::Path,
+    _is_dir: bool,
+) -> Result<(), std::io::Error> {
     std::os::unix::fs::symlink(src, dest)
 }
 
 #[cfg(windows)]
-fn symlink_path(src: &std::path::Path, dest: &std::path::Path, is_dir: bool) -> Result<(), std::io::Error> {
+fn symlink_path(
+    src: &std::path::Path,
+    dest: &std::path::Path,
+    is_dir: bool,
+) -> Result<(), std::io::Error> {
     if is_dir {
         std::os::windows::fs::symlink_dir(src, dest)
     } else {
@@ -719,7 +795,11 @@ fn symlink_path(src: &std::path::Path, dest: &std::path::Path, is_dir: bool) -> 
 fn stage_request_inputs(
     request: &WorkRequestContext,
     execroot_dir: &std::path::Path,
-) -> Result<(), ProcessWrapperError> {
+) -> Result<InputStageStats, ProcessWrapperError> {
+    let mut stats = InputStageStats {
+        declared_inputs: request.inputs.len(),
+        ..InputStageStats::default()
+    };
     let sandbox_dir = request.sandbox_dir.as_deref().map(std::path::Path::new);
     for input in &request.inputs {
         let dest = resolve_relative_to(&input.path, execroot_dir);
@@ -729,7 +809,7 @@ fn stage_request_inputs(
             continue;
         }
 
-        copy_or_link_path(&src, &dest, sandbox_dir, execroot_dir).map_err(|e| {
+        copy_or_link_path(&src, &dest, sandbox_dir, execroot_dir, &mut stats).map_err(|e| {
             ProcessWrapperError(format!(
                 "failed to stage worker input {} -> {}: {e}",
                 src.display(),
@@ -737,68 +817,7 @@ fn stage_request_inputs(
             ))
         })?;
     }
-    Ok(())
-}
-
-fn seed_execroot_with_sandbox_symlinks(
-    execroot_dir: &std::path::Path,
-    sandbox_dir: &std::path::Path,
-) -> Result<(), ProcessWrapperError> {
-    let entries = std::fs::read_dir(sandbox_dir).map_err(|e| {
-        ProcessWrapperError(format!("failed to read request sandbox for staged execroot seeding: {e}"))
-    })?;
-
-    for entry in entries {
-        let entry = entry.map_err(|e| {
-            ProcessWrapperError(format!("failed to enumerate request sandbox entry: {e}"))
-        })?;
-        let source = entry.path();
-        let metadata = std::fs::symlink_metadata(&source).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to read request sandbox metadata for {}: {e}",
-                source.display()
-            ))
-        })?;
-        if !metadata.file_type().is_symlink() {
-            continue;
-        }
-
-        let link_target = std::fs::read_link(&source).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to read request sandbox symlink {}: {e}",
-                source.display()
-            ))
-        })?;
-        let resolved_target = if link_target.is_absolute() {
-            link_target
-        } else {
-            source.parent().unwrap_or_else(|| std::path::Path::new("")).join(&link_target)
-        };
-        if resolved_target.starts_with(sandbox_dir) {
-            continue;
-        }
-
-        let dest = execroot_dir.join(entry.file_name());
-        if dest.exists() {
-            continue;
-        }
-
-        let target_metadata = std::fs::metadata(&resolved_target).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to stat seeded sandbox symlink target {}: {e}",
-                resolved_target.display()
-            ))
-        })?;
-        symlink_path(&resolved_target, &dest, target_metadata.is_dir()).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to seed staged sandbox symlink {} -> {}: {e}",
-                resolved_target.display(),
-                dest.display()
-            ))
-        })?;
-    }
-
-    Ok(())
+    Ok(stats)
 }
 
 fn seed_sandbox_cache_root(sandbox_dir: &std::path::Path) -> Result<(), ProcessWrapperError> {
@@ -808,7 +827,9 @@ fn seed_sandbox_cache_root(sandbox_dir: &std::path::Path) -> Result<(), ProcessW
     }
 
     let entries = std::fs::read_dir(sandbox_dir).map_err(|e| {
-        ProcessWrapperError(format!("failed to read request sandbox for cache seeding: {e}"))
+        ProcessWrapperError(format!(
+            "failed to read request sandbox for cache seeding: {e}"
+        ))
     })?;
 
     for entry in entries {
@@ -843,41 +864,6 @@ fn seed_sandbox_cache_root(sandbox_dir: &std::path::Path) -> Result<(), ProcessW
     Ok(())
 }
 
-fn seed_execroot_with_worker_entries(execroot_dir: &std::path::Path) -> Result<(), ProcessWrapperError> {
-    let worker_execroot = std::env::current_dir().map_err(|e| {
-        ProcessWrapperError(format!("failed to determine worker execroot for staged request: {e}"))
-    })?;
-
-    for entry in std::fs::read_dir(&worker_execroot).map_err(|e| {
-        ProcessWrapperError(format!("failed to read worker execroot for staged request: {e}"))
-    })? {
-        let entry = entry.map_err(|e| {
-            ProcessWrapperError(format!("failed to enumerate worker execroot entry: {e}"))
-        })?;
-        let file_name = entry.file_name();
-        if file_name == "_pw_state" {
-            continue;
-        }
-
-        let dest = execroot_dir.join(&file_name);
-        if dest.exists() {
-            continue;
-        }
-
-        let source = entry.path();
-        let is_dir = std::fs::metadata(&source).map(|metadata| metadata.is_dir()).unwrap_or(false);
-        symlink_path(&source, &dest, is_dir).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to seed staged execroot entry {} -> {}: {e}",
-                source.display(),
-                dest.display(),
-            ))
-        })?;
-    }
-
-    Ok(())
-}
-
 fn snapshot_named_request(
     pipeline_root: &std::path::Path,
     file_name: &str,
@@ -885,24 +871,27 @@ fn snapshot_named_request(
 ) -> Result<(), ProcessWrapperError> {
     std::fs::create_dir_all(pipeline_root)
         .map_err(|e| ProcessWrapperError(format!("failed to create pipeline snapshot dir: {e}")))?;
-    std::fs::write(pipeline_root.join(file_name), build_request_snapshot(request))
-        .map_err(|e| ProcessWrapperError(format!("failed to write pipeline request snapshot: {e}")))
+    std::fs::write(
+        pipeline_root.join(file_name),
+        build_request_snapshot(request),
+    )
+    .map_err(|e| ProcessWrapperError(format!("failed to write pipeline request snapshot: {e}")))
 }
 
 fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
     let path = pipeline_root.join("pipeline.log");
-    let mut file = match std::fs::OpenOptions::new().create(true).append(true).open(path) {
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
         Ok(file) => file,
         Err(_) => return,
     };
     let _ = writeln!(file, "{message}");
 }
 
-fn maybe_cleanup_pipeline_dir(
-    pipeline_root: &std::path::Path,
-    keep: bool,
-    reason: &str,
-) {
+fn maybe_cleanup_pipeline_dir(pipeline_root: &std::path::Path, keep: bool, reason: &str) {
     if keep {
         append_pipeline_log(
             pipeline_root,
@@ -923,11 +912,121 @@ fn should_preserve_pipeline_dir(exit_code: i32, staged_outputs: &[String]) -> bo
     exit_code != 0 || !staged_outputs.iter().any(|name| name.ends_with(".rlib"))
 }
 
+fn seed_execroot_with_sandbox_symlinks(
+    execroot_dir: &std::path::Path,
+    sandbox_dir: &std::path::Path,
+) -> Result<(), ProcessWrapperError> {
+    let entries = std::fs::read_dir(sandbox_dir).map_err(|e| {
+        ProcessWrapperError(format!(
+            "failed to read request sandbox for staged execroot seeding: {e}"
+        ))
+    })?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| {
+            ProcessWrapperError(format!("failed to enumerate request sandbox entry: {e}"))
+        })?;
+        let source = entry.path();
+        let metadata = std::fs::symlink_metadata(&source).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to read request sandbox metadata for {}: {e}",
+                source.display()
+            ))
+        })?;
+        if !metadata.file_type().is_symlink() {
+            continue;
+        }
+
+        let link_target = std::fs::read_link(&source).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to read request sandbox symlink {}: {e}",
+                source.display()
+            ))
+        })?;
+        let resolved_target = if link_target.is_absolute() {
+            link_target
+        } else {
+            source
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new(""))
+                .join(&link_target)
+        };
+        if resolved_target.starts_with(sandbox_dir) {
+            continue;
+        }
+
+        let dest = execroot_dir.join(entry.file_name());
+        if dest.exists() {
+            continue;
+        }
+
+        let target_metadata = std::fs::metadata(&resolved_target).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to stat seeded sandbox symlink target {}: {e}",
+                resolved_target.display()
+            ))
+        })?;
+        symlink_path(&resolved_target, &dest, target_metadata.is_dir()).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to seed staged sandbox symlink {} -> {}: {e}",
+                resolved_target.display(),
+                dest.display()
+            ))
+        })?;
+    }
+
+    Ok(())
+}
+
+fn seed_execroot_with_worker_entries(
+    execroot_dir: &std::path::Path,
+) -> Result<(), ProcessWrapperError> {
+    let worker_execroot = std::env::current_dir().map_err(|e| {
+        ProcessWrapperError(format!(
+            "failed to determine worker execroot for staged request: {e}"
+        ))
+    })?;
+
+    for entry in std::fs::read_dir(&worker_execroot).map_err(|e| {
+        ProcessWrapperError(format!(
+            "failed to read worker execroot for staged request: {e}"
+        ))
+    })? {
+        let entry = entry.map_err(|e| {
+            ProcessWrapperError(format!("failed to enumerate worker execroot entry: {e}"))
+        })?;
+        let file_name = entry.file_name();
+        if file_name == "_pw_state" {
+            continue;
+        }
+
+        let dest = execroot_dir.join(&file_name);
+        if dest.exists() {
+            continue;
+        }
+
+        let source = entry.path();
+        let is_dir = std::fs::metadata(&source)
+            .map(|metadata| metadata.is_dir())
+            .unwrap_or(false);
+        symlink_path(&source, &dest, is_dir).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to seed staged execroot entry {} -> {}: {e}",
+                source.display(),
+                dest.display(),
+            ))
+        })?;
+    }
+
+    Ok(())
+}
+
 fn create_staged_pipeline(
     state_roots: &WorkerStateRoots,
     key: &str,
     request: &WorkRequestContext,
 ) -> Result<StagedPipeline, (i32, String)> {
+    let create_start = Instant::now();
     let root_dir = state_roots.pipeline_dir(key);
     if let Err(e) = std::fs::remove_dir_all(&root_dir) {
         if e.kind() != std::io::ErrorKind::NotFound {
@@ -937,30 +1036,95 @@ fn create_staged_pipeline(
 
     let execroot_dir = root_dir.join("execroot");
     let outputs_dir = root_dir.join("outputs");
-    std::fs::create_dir_all(&execroot_dir)
-        .map_err(|e| (1, format!("pipelining: failed to create staged execroot: {e}")))?;
-    std::fs::create_dir_all(&outputs_dir)
-        .map_err(|e| (1, format!("pipelining: failed to create staged outputs dir: {e}")))?;
-    let root_dir = root_dir
-        .canonicalize()
-        .map_err(|e| (1, format!("pipelining: failed to resolve pipeline dir: {e}")))?;
-    let execroot_dir = execroot_dir
-        .canonicalize()
-        .map_err(|e| (1, format!("pipelining: failed to resolve staged execroot: {e}")))?;
-    let outputs_dir = outputs_dir
-        .canonicalize()
-        .map_err(|e| (1, format!("pipelining: failed to resolve staged outputs dir: {e}")))?;
+    std::fs::create_dir_all(&execroot_dir).map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to create staged execroot: {e}"),
+        )
+    })?;
+    std::fs::create_dir_all(&outputs_dir).map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to create staged outputs dir: {e}"),
+        )
+    })?;
+    let root_dir = root_dir.canonicalize().map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to resolve pipeline dir: {e}"),
+        )
+    })?;
+    let execroot_dir = execroot_dir.canonicalize().map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to resolve staged execroot: {e}"),
+        )
+    })?;
+    let outputs_dir = outputs_dir.canonicalize().map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to resolve staged outputs dir: {e}"),
+        )
+    })?;
 
-    snapshot_named_request(&root_dir, "metadata_request.json", request)
-        .map_err(|e| (1, format!("pipelining: failed to snapshot metadata request: {e}")))?;
-    stage_request_inputs(request, &execroot_dir)
-        .map_err(|e| (1, format!("pipelining: failed to stage request inputs: {e}")))?;
+    snapshot_named_request(&root_dir, "metadata_request.json", request).map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to snapshot metadata request: {e}"),
+        )
+    })?;
+    let stage_start = Instant::now();
+    let stage_stats = stage_request_inputs(request, &execroot_dir).map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to stage request inputs: {e}"),
+        )
+    })?;
+    append_pipeline_log(
+        &root_dir,
+        &format!(
+            "staging inputs_ms={} declared_inputs={} files={} dirs={} preserved_symlinks={} hardlinks={} copies={}",
+            stage_start.elapsed().as_millis(),
+            stage_stats.declared_inputs,
+            stage_stats.regular_files,
+            stage_stats.directories,
+            stage_stats.preserved_symlinks,
+            stage_stats.hardlinked_files,
+            stage_stats.copied_files,
+        ),
+    );
     if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
+        let seed_start = Instant::now();
         seed_execroot_with_sandbox_symlinks(&execroot_dir, std::path::Path::new(sandbox_dir))
-            .map_err(|e| (1, format!("pipelining: failed to seed sandbox symlinks: {e}")))?;
+            .map_err(|e| {
+                (
+                    1,
+                    format!("pipelining: failed to seed sandbox symlinks: {e}"),
+                )
+            })?;
+        append_pipeline_log(
+            &root_dir,
+            &format!(
+                "seed sandbox_symlinks_ms={}",
+                seed_start.elapsed().as_millis()
+            ),
+        );
     }
-    seed_execroot_with_worker_entries(&execroot_dir)
-        .map_err(|e| (1, format!("pipelining: failed to seed staged execroot: {e}")))?;
+    let worker_seed_start = Instant::now();
+    seed_execroot_with_worker_entries(&execroot_dir).map_err(|e| {
+        (
+            1,
+            format!("pipelining: failed to seed staged execroot: {e}"),
+        )
+    })?;
+    append_pipeline_log(
+        &root_dir,
+        &format!(
+            "seed worker_entries_ms={} total_setup_ms={}",
+            worker_seed_start.elapsed().as_millis(),
+            create_start.elapsed().as_millis()
+        ),
+    );
 
     Ok(StagedPipeline {
         root_dir,
@@ -977,7 +1141,9 @@ fn list_regular_files(dir: &std::path::Path) -> Vec<String> {
     let mut files = entries
         .flatten()
         .filter_map(|entry| match entry.metadata() {
-            Ok(metadata) if metadata.is_file() => Some(entry.file_name().to_string_lossy().into_owned()),
+            Ok(metadata) if metadata.is_file() => {
+                Some(entry.file_name().to_string_lossy().into_owned())
+            }
             _ => None,
         })
         .collect::<Vec<_>>();
@@ -985,7 +1151,7 @@ fn list_regular_files(dir: &std::path::Path) -> Vec<String> {
     files
 }
 
-fn rewrite_path_args_for_staged_execroot(
+fn rewrite_emit_paths_for_execroot(
     args: Vec<String>,
     execroot_dir: &std::path::Path,
 ) -> Vec<String> {
@@ -1026,8 +1192,9 @@ fn rewrite_path_args_for_staged_execroot(
 /// notification appears, stores the running Child in PipelineState, and returns
 /// success immediately so Bazel can unblock downstream rlib compiles.
 ///
-/// When `sandbox_dir` is `Some`, sets `CWD = sandbox_dir` on rustc and copies
-/// the `.rmeta` into the sandbox. When `None`, copies to the execroot.
+/// Background rustc runs from a worker-managed staged execroot. When
+/// `sandbox_dir` is `Some`, only the returned metadata artifact is materialized
+/// back into the request sandbox before Bazel cleans it up.
 fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
@@ -1057,19 +1224,27 @@ fn handle_pipelining_metadata(
         env_files: raw_pw_args
             .env_files
             .into_iter()
-            .map(|path| resolve_relative_to(&path, &staged.execroot_dir).display().to_string())
+            .map(|path| {
+                resolve_relative_to(&path, &staged.execroot_dir)
+                    .display()
+                    .to_string()
+            })
             .collect(),
         arg_files: raw_pw_args
             .arg_files
             .into_iter()
-            .map(|path| resolve_relative_to(&path, &staged.execroot_dir).display().to_string())
+            .map(|path| {
+                resolve_relative_to(&path, &staged.execroot_dir)
+                    .display()
+                    .to_string()
+            })
             .collect(),
         output_file: raw_pw_args.output_file.map(|path| {
             let base = request
                 .sandbox_dir
                 .as_deref()
                 .map(std::path::Path::new)
-                .unwrap_or_else(|| staged.execroot_dir.as_path());
+                .unwrap_or(staged.execroot_dir.as_path());
             resolve_relative_to(&path, base).display().to_string()
         }),
     };
@@ -1077,13 +1252,13 @@ fn handle_pipelining_metadata(
 
     let (rustc_args, original_out_dir) =
         match prepare_rustc_args(rustc_and_after, &pw_args, &staged.execroot_dir) {
-        Ok(v) => v,
-        Err(e) => return e,
-    };
+            Ok(v) => v,
+            Err(e) => return e,
+        };
 
     // Redirect --out-dir to our persistent directory so rustc writes all outputs
     // (.rmeta, .rlib, .d) there instead of the Bazel-managed out-dir.
-    let rustc_args = rewrite_path_args_for_staged_execroot(
+    let rustc_args = rewrite_emit_paths_for_execroot(
         rewrite_out_dir_in_expanded(rustc_args, &staged.outputs_dir),
         &staged.execroot_dir,
     );
@@ -1137,12 +1312,23 @@ fn handle_pipelining_metadata(
             // Copy .rmeta to the declared output location (_pipeline/ subdirectory).
             match request.sandbox_dir.as_ref() {
                 Some(ref dir) => {
-                    copy_output_to_sandbox(&rmeta_path_str, dir, &original_out_dir, "_pipeline");
+                    let copy_start = Instant::now();
+                    let copy_stats = copy_output_to_sandbox(
+                        &rmeta_path_str,
+                        dir,
+                        &original_out_dir,
+                        "_pipeline",
+                    );
                     append_pipeline_log(
                         &staged.root_dir,
                         &format!(
-                            "metadata copied rmeta into sandbox pipeline dir: {}/{}",
-                            dir, original_out_dir
+                            "metadata copied rmeta into sandbox pipeline dir: {}/{} files={} hardlinks={} copies={} materialize_ms={}",
+                            dir,
+                            original_out_dir,
+                            copy_stats.files,
+                            copy_stats.hardlinked_files,
+                            copy_stats.copied_files,
+                            copy_start.elapsed().as_millis()
                         ),
                     );
                 }
@@ -1206,7 +1392,7 @@ fn handle_pipelining_metadata(
             append_pipeline_log(
                 &staged.root_dir,
                 &format!(
-                    "metadata stored background rustc; staged outputs now={:?}",
+                    "metadata stored background rustc; pipeline outputs now={:?}",
                     list_regular_files(&staged.outputs_dir)
                 ),
             );
@@ -1270,7 +1456,6 @@ fn extract_rendered_diagnostic(json: &JsonValue) -> Option<String> {
     None
 }
 
-
 /// Handles a `--pipelining-full` request (sandboxed or unsandboxed).
 ///
 /// Looks up the background rustc by pipeline key. If found, waits for it to
@@ -1317,7 +1502,8 @@ fn handle_pipelining_full(
                         // Copy all outputs from the persistent pipeline dir.
                         match request.sandbox_dir.as_ref() {
                             Some(dir) => {
-                                copy_all_outputs_to_sandbox(
+                                let copy_start = Instant::now();
+                                let copy_stats = copy_all_outputs_to_sandbox(
                                     &bg.pipeline_output_dir,
                                     dir,
                                     &bg.original_out_dir,
@@ -1326,8 +1512,12 @@ fn handle_pipelining_full(
                                 append_pipeline_log(
                                     &bg.pipeline_root_dir,
                                     &format!(
-                                        "full copied outputs into sandbox dir {}; dest_files={:?}",
+                                        "full copied outputs into sandbox dir {}; files={} hardlinks={} copies={} materialize_ms={} dest_files={:?}",
                                         dest_dir.display(),
+                                        copy_stats.files,
+                                        copy_stats.hardlinked_files,
+                                        copy_stats.copied_files,
+                                        copy_start.elapsed().as_millis(),
                                         list_regular_files(&dest_dir)
                                     ),
                                 );
@@ -1371,7 +1561,11 @@ fn handle_pipelining_full(
                 .ok()
                 .map(|cwd| cwd.join("_pw_state").join("fallback.log"));
             if let Some(path) = worker_state_root {
-                if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+                if let Ok(mut file) = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(path)
+                {
                     let _ = writeln!(
                         file,
                         "full missing bg request_id={} key={} sandbox_dir={:?}",
@@ -1384,10 +1578,8 @@ fn handle_pipelining_full(
             // one-shot compilation.
             let filtered_args = strip_pipelining_flags(&args);
             match request.sandbox_dir.as_ref() {
-                Some(ref dir) => {
-                    run_sandboxed_request(self_path, filtered_args, dir)
-                        .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
-                }
+                Some(ref dir) => run_sandboxed_request(self_path, filtered_args, dir)
+                    .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
                 None => {
                     prepare_outputs(&filtered_args);
                     run_request(self_path, filtered_args)
@@ -1404,7 +1596,10 @@ fn handle_pipelining_full(
 /// in direct args if no @paramfile was used). When flags are in a @paramfile,
 /// `options.rs` `prepare_param_file` handles stripping during expansion.
 fn strip_pipelining_flags(args: &[String]) -> Vec<String> {
-    args.iter().filter(|a| !is_pipelining_flag(a)).cloned().collect()
+    args.iter()
+        .filter(|a| !is_pipelining_flag(a))
+        .cloned()
+        .collect()
 }
 
 /// Applies substitution mappings to a single argument string.
@@ -1527,9 +1722,7 @@ fn build_cancel_response(request_id: i64) -> String {
         ("wasCancelled".to_string(), JsonValue::Boolean(true)),
     ]));
     response.stringify().unwrap_or_else(|_| {
-        format!(
-            r#"{{"exitCode":0,"output":"","requestId":{request_id},"wasCancelled":true}}"#
-        )
+        format!(r#"{{"exitCode":0,"output":"","requestId":{request_id},"wasCancelled":true}}"#)
     })
 }
 
@@ -1538,9 +1731,8 @@ fn snapshot_request_context(
     request: &WorkRequestContext,
 ) -> Result<(), ProcessWrapperError> {
     let request_dir = state_roots.request_dir(request.request_id);
-    std::fs::create_dir_all(&request_dir).map_err(|e| {
-        ProcessWrapperError(format!("failed to create worker request dir: {e}"))
-    })?;
+    std::fs::create_dir_all(&request_dir)
+        .map_err(|e| ProcessWrapperError(format!("failed to create worker request dir: {e}")))?;
     let snapshot = build_request_snapshot(request);
     std::fs::write(request_dir.join("request.json"), snapshot).map_err(|e| {
         ProcessWrapperError(format!("failed to write worker request snapshot: {e}"))
@@ -1611,9 +1803,7 @@ fn run_sandboxed_request(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(|e| {
-            ProcessWrapperError(format!("failed to spawn sandboxed subprocess: {e}"))
-        })?;
+        .map_err(|e| ProcessWrapperError(format!("failed to spawn sandboxed subprocess: {e}")))?;
 
     let exit_code = output.status.code().unwrap_or(1);
     let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
@@ -1702,15 +1892,30 @@ fn rewrite_out_dir_in_expanded(args: Vec<String>, new_out_dir: &std::path::Path)
 ///
 /// Used after the metadata action to make the `.rmeta` file visible to Bazel
 /// inside the sandbox before the sandbox is cleaned up.
-fn copy_output_to_sandbox(src: &str, sandbox_dir: &str, original_out_dir: &str, dest_subdir: &str) {
+fn copy_output_to_sandbox(
+    src: &str,
+    sandbox_dir: &str,
+    original_out_dir: &str,
+    dest_subdir: &str,
+) -> OutputMaterializationStats {
+    let mut stats = OutputMaterializationStats::default();
     let src_path = std::path::Path::new(src);
     let filename = match src_path.file_name() {
         Some(n) => n,
-        None => return,
+        None => return stats,
     };
-    let dest_dir = std::path::Path::new(sandbox_dir).join(original_out_dir).join(dest_subdir);
-    let _ = std::fs::create_dir_all(&dest_dir);
-    let _ = std::fs::copy(src, dest_dir.join(filename));
+    let dest_dir = std::path::Path::new(sandbox_dir)
+        .join(original_out_dir)
+        .join(dest_subdir);
+    if let Ok(hardlinked) = materialize_output_file(src_path, &dest_dir.join(filename)) {
+        stats.files = 1;
+        if hardlinked {
+            stats.hardlinked_files = 1;
+        } else {
+            stats.copied_files = 1;
+        }
+    }
+    stats
 }
 
 /// Copies all regular files from `pipeline_dir` into `<sandbox_dir>/<original_out_dir>/`.
@@ -1721,18 +1926,28 @@ fn copy_all_outputs_to_sandbox(
     pipeline_dir: &PathBuf,
     sandbox_dir: &str,
     original_out_dir: &str,
-) {
+) -> OutputMaterializationStats {
     let dest_dir = std::path::Path::new(sandbox_dir).join(original_out_dir);
-    let _ = std::fs::create_dir_all(&dest_dir);
+    let mut stats = OutputMaterializationStats::default();
     if let Ok(entries) = std::fs::read_dir(pipeline_dir) {
         for entry in entries.flatten() {
             if let Ok(meta) = entry.metadata() {
                 if meta.is_file() {
-                    let _ = std::fs::copy(entry.path(), dest_dir.join(entry.file_name()));
+                    if let Ok(hardlinked) =
+                        materialize_output_file(&entry.path(), &dest_dir.join(entry.file_name()))
+                    {
+                        stats.files += 1;
+                        if hardlinked {
+                            stats.hardlinked_files += 1;
+                        } else {
+                            stats.copied_files += 1;
+                        }
+                    }
                 }
             }
         }
     }
+    stats
 }
 
 // ---------------------------------------------------------------------------
@@ -1878,10 +2093,7 @@ fn build_response(exit_code: i32, output: &str, request_id: i64) -> String {
         sanitize_response_output(output)
     };
     let response = JsonValue::Object(HashMap::from([
-        (
-            "exitCode".to_string(),
-            JsonValue::Number(exit_code as f64),
-        ),
+        ("exitCode".to_string(), JsonValue::Number(exit_code as f64)),
         ("output".to_string(), JsonValue::String(output)),
         (
             "requestId".to_string(),
@@ -1927,7 +2139,8 @@ mod test {
 
     #[test]
     fn test_extract_arguments() {
-        let req = parse_json(r#"{"requestId": 0, "arguments": ["--subst", "pwd=/work", "--", "rustc"]}"#);
+        let req =
+            parse_json(r#"{"requestId": 0, "arguments": ["--subst", "pwd=/work", "--", "rustc"]}"#);
         assert_eq!(
             extract_arguments(&req),
             vec!["--subst", "pwd=/work", "--", "rustc"]
@@ -1997,12 +2210,13 @@ mod test {
 
         // Write an --arg-file containing --out-dir.
         let arg_file = tmp.join("rustc.params");
-        fs::write(&arg_file, format!("--out-dir={}\n--crate-name=foo\n", out_dir.display())).unwrap();
+        fs::write(
+            &arg_file,
+            format!("--out-dir={}\n--crate-name=foo\n", out_dir.display()),
+        )
+        .unwrap();
 
-        let args = vec![
-            "--arg-file".to_string(),
-            arg_file.display().to_string(),
-        ];
+        let args = vec!["--arg-file".to_string(), arg_file.display().to_string()];
         prepare_outputs(&args);
 
         assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
@@ -2038,7 +2252,10 @@ mod test {
     #[test]
     fn test_detect_pipelining_mode_none() {
         let args = vec!["--subst".to_string(), "pwd=/work".to_string()];
-        assert!(matches!(detect_pipelining_mode(&args), PipeliningMode::None));
+        assert!(matches!(
+            detect_pipelining_mode(&args),
+            PipeliningMode::None
+        ));
     }
 
     #[test]
@@ -2049,7 +2266,10 @@ mod test {
         ];
         match detect_pipelining_mode(&args) {
             PipeliningMode::Metadata { key } => assert_eq!(key, "my_crate_abc123"),
-            other => panic!("expected Metadata, got {:?}", std::mem::discriminant(&other)),
+            other => panic!(
+                "expected Metadata, got {:?}",
+                std::mem::discriminant(&other)
+            ),
         }
     }
 
@@ -2069,7 +2289,10 @@ mod test {
     fn test_detect_pipelining_mode_no_key() {
         // If pipelining flag present but no key, fall back to None.
         let args = vec!["--pipelining-metadata".to_string()];
-        assert!(matches!(detect_pipelining_mode(&args), PipeliningMode::None));
+        assert!(matches!(
+            detect_pipelining_mode(&args),
+            PipeliningMode::None
+        ));
     }
 
     #[test]
@@ -2110,14 +2333,20 @@ mod test {
             ("out".to_string(), "bazel-out/k8/bin".to_string()),
         ];
         assert_eq!(apply_substs("${pwd}/src", &subst), "/work/src");
-        assert_eq!(apply_substs("${out}/foo.rlib", &subst), "bazel-out/k8/bin/foo.rlib");
+        assert_eq!(
+            apply_substs("${out}/foo.rlib", &subst),
+            "bazel-out/k8/bin/foo.rlib"
+        );
         assert_eq!(apply_substs("--crate-name=foo", &subst), "--crate-name=foo");
     }
 
     #[test]
     fn test_scan_pipelining_flags_metadata() {
-        let (is_metadata, is_full, key) =
-            scan_pipelining_flags(["--pipelining-metadata", "--pipelining-key=foo_abc"].iter().copied());
+        let (is_metadata, is_full, key) = scan_pipelining_flags(
+            ["--pipelining-metadata", "--pipelining-key=foo_abc"]
+                .iter()
+                .copied(),
+        );
         assert!(is_metadata);
         assert!(!is_full);
         assert_eq!(key, Some("foo_abc".to_string()));
@@ -2125,8 +2354,11 @@ mod test {
 
     #[test]
     fn test_scan_pipelining_flags_full() {
-        let (is_metadata, is_full, key) =
-            scan_pipelining_flags(["--pipelining-full", "--pipelining-key=bar_xyz"].iter().copied());
+        let (is_metadata, is_full, key) = scan_pipelining_flags(
+            ["--pipelining-full", "--pipelining-key=bar_xyz"]
+                .iter()
+                .copied(),
+        );
         assert!(!is_metadata);
         assert!(is_full);
         assert_eq!(key, Some("bar_xyz".to_string()));
@@ -2166,7 +2398,10 @@ mod test {
 
         match detect_pipelining_mode(&args) {
             PipeliningMode::Metadata { key } => assert_eq!(key, "foo_abc123"),
-            other => panic!("expected Metadata, got {:?}", std::mem::discriminant(&other)),
+            other => panic!(
+                "expected Metadata, got {:?}",
+                std::mem::discriminant(&other)
+            ),
         }
 
         let _ = std::fs::remove_dir_all(&tmp);
@@ -2233,7 +2468,10 @@ mod test {
     #[test]
     fn test_extract_sandbox_dir_present() {
         let req = parse_json(r#"{"requestId": 1, "sandboxDir": "/tmp/sandbox/42"}"#);
-        assert_eq!(extract_sandbox_dir(&req), Some("/tmp/sandbox/42".to_string()));
+        assert_eq!(
+            extract_sandbox_dir(&req),
+            Some("/tmp/sandbox/42".to_string())
+        );
     }
 
     #[test]
@@ -2293,7 +2531,10 @@ mod test {
         if let JsonValue::Object(map) = parsed {
             assert!(matches!(map.get("requestId"), Some(JsonValue::Number(n)) if *n == 7.0));
             assert!(matches!(map.get("exitCode"), Some(JsonValue::Number(n)) if *n == 0.0));
-            assert!(matches!(map.get("wasCancelled"), Some(JsonValue::Boolean(true))));
+            assert!(matches!(
+                map.get("wasCancelled"),
+                Some(JsonValue::Boolean(true))
+            ));
         } else {
             panic!("expected object");
         }
@@ -2350,6 +2591,79 @@ mod test {
     }
 
     #[test]
+    fn test_rewrite_emit_paths_for_execroot_rewrites_relative_paths() {
+        let args = vec![
+            "--emit=dep-info=foo.d,metadata=meta/libfoo.rmeta,link".to_string(),
+            "--crate-name=foo".to_string(),
+        ];
+        let execroot = std::path::Path::new("/work/execroot");
+
+        let result = rewrite_emit_paths_for_execroot(args, execroot);
+
+        assert_eq!(
+            result,
+            vec![
+                "--emit=dep-info=/work/execroot/foo.d,metadata=/work/execroot/meta/libfoo.rmeta,link",
+                "--crate-name=foo",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_pw_args_substitutes_pwd_from_real_execroot() {
+        let parsed = parse_pw_args(
+            &[
+                "--subst".to_string(),
+                "pwd=${pwd}".to_string(),
+                "--output-file".to_string(),
+                "diag.txt".to_string(),
+            ],
+            std::path::Path::new("/real/execroot"),
+        );
+
+        assert_eq!(
+            parsed.subst,
+            vec![("pwd".to_string(), "/real/execroot".to_string())]
+        );
+        assert_eq!(parsed.output_file, Some("diag.txt".to_string()));
+    }
+
+    #[test]
+    fn test_create_staged_pipeline_creates_execroot_and_outputs_dirs() {
+        let tmp = std::env::temp_dir().join("pw_test_create_pipeline_dirs");
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).unwrap();
+        let old_cwd = std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+        std::env::set_current_dir(&tmp).unwrap();
+        let state_roots = WorkerStateRoots {
+            request_root: tmp.join("_pw_state/requests"),
+            pipeline_root: tmp.join("_pw_state/pipeline"),
+        };
+        std::fs::create_dir_all(&state_roots.request_root).unwrap();
+        std::fs::create_dir_all(&state_roots.pipeline_root).unwrap();
+        std::fs::create_dir_all(tmp.join("sandbox")).unwrap();
+        let request = WorkRequestContext {
+            request_id: 7,
+            arguments: Vec::new(),
+            sandbox_dir: Some(tmp.join("sandbox").display().to_string()),
+            inputs: Vec::new(),
+            cancel: false,
+        };
+
+        let pipeline = create_staged_pipeline(&state_roots, "crate_hash", &request).unwrap();
+
+        assert!(pipeline.root_dir.exists());
+        assert!(pipeline.execroot_dir.exists());
+        assert!(pipeline.outputs_dir.exists());
+        assert!(pipeline.root_dir.join("metadata_request.json").exists());
+
+        std::env::set_current_dir(&old_cwd)
+            .or_else(|_| std::env::set_current_dir(std::env::temp_dir()))
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
     fn test_extract_rmeta_path_valid() {
         let line = r#"{"artifact":"/work/out/libfoo.rmeta","emit":"metadata"}"#;
         assert_eq!(
@@ -2389,7 +2703,10 @@ mod test {
             "_pipeline",
         );
 
-        let dest = sandbox_dir.join(out_rel).join("_pipeline").join("libfoo.rmeta");
+        let dest = sandbox_dir
+            .join(out_rel)
+            .join("_pipeline")
+            .join("libfoo.rmeta");
         assert!(dest.exists(), "expected rmeta copied to sandbox/_pipeline/");
         assert_eq!(fs::read(&dest).unwrap(), b"fake rmeta content");
 
@@ -2413,16 +2730,42 @@ mod test {
         fs::write(pipeline_dir.join("libfoo.rmeta"), b"fake rmeta").unwrap();
         fs::write(pipeline_dir.join("libfoo.d"), b"fake dep-info").unwrap();
 
-        copy_all_outputs_to_sandbox(
-            &pipeline_dir,
-            &sandbox_dir.display().to_string(),
-            out_rel,
-        );
+        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel);
 
         let dest = sandbox_dir.join(out_rel);
         assert!(dest.join("libfoo.rlib").exists());
         assert!(dest.join("libfoo.rmeta").exists());
         assert!(dest.join("libfoo.d").exists());
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_copy_all_outputs_to_sandbox_prefers_hardlinks() {
+        use std::fs;
+        use std::os::unix::fs::MetadataExt;
+
+        let tmp =
+            std::env::temp_dir().join("pw_test_copy_all_outputs_to_sandbox_prefers_hardlinks");
+        let pipeline_dir = tmp.join("pipeline");
+        let sandbox_dir = tmp.join("sandbox");
+        let out_rel = "bazel-out/k8/bin/pkg";
+
+        fs::create_dir_all(&pipeline_dir).unwrap();
+        fs::create_dir_all(&sandbox_dir).unwrap();
+
+        let src = pipeline_dir.join("libfoo.rlib");
+        fs::write(&src, b"fake rlib").unwrap();
+
+        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel);
+
+        let dest = sandbox_dir.join(out_rel).join("libfoo.rlib");
+        assert!(dest.exists());
+        assert_eq!(
+            fs::metadata(&src).unwrap().ino(),
+            fs::metadata(&dest).unwrap().ino()
+        );
 
         let _ = fs::remove_dir_all(&tmp);
     }
@@ -2455,6 +2798,45 @@ mod test {
             b"header"
         );
 
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_stage_request_inputs_symlinks_stable_directories() {
+        use std::fs;
+
+        let tmp =
+            std::env::temp_dir().join("pw_test_stage_request_inputs_symlinks_stable_directories");
+        let stable_root = tmp.join("stable");
+        let execroot = tmp.join("execroot");
+        fs::create_dir_all(stable_root.join("include/c++")).unwrap();
+        fs::write(stable_root.join("include/c++/vector"), b"header").unwrap();
+
+        let old_cwd = std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+        std::env::set_current_dir(&tmp).unwrap();
+
+        let request = WorkRequestContext {
+            request_id: 1,
+            arguments: Vec::new(),
+            sandbox_dir: Some(tmp.join("sandbox").display().to_string()),
+            inputs: vec![WorkRequestInput {
+                path: "stable/include".to_string(),
+                digest: None,
+            }],
+            cancel: false,
+        };
+
+        stage_request_inputs(&request, &execroot).unwrap();
+
+        let dest = execroot.join("stable/include");
+        assert!(std::fs::symlink_metadata(&dest)
+            .unwrap()
+            .file_type()
+            .is_symlink());
+        assert_eq!(fs::read(dest.join("c++/vector")).unwrap(), b"header");
+
+        std::env::set_current_dir(old_cwd).unwrap();
         let _ = fs::remove_dir_all(&tmp);
     }
 
