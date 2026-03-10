@@ -372,6 +372,28 @@ def sysroot_next_absolute_test(name):
         expected_cflags = ["--sysroot=/test/absolute/sysroot", "test/relative/another"],
     )
 
+def xclang_isystem_relative_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-Xclang", "-internal-isystem", "-Xclang", "test/relative/path"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-Xclang", "-internal-isystem", "-Xclang", "${pwd}/test/relative/path"],
+    )
+
+def xclang_isystem_absolute_test(name):
+    cargo_build_script_with_extra_cc_compile_flags(
+        name = "%s/cargo_build_script" % name,
+        extra_cc_compile_flags = ["-Xclang", "-internal-isystem", "-Xclang", "/test/absolute/path"],
+    )
+    cc_args_and_env_analysis_test(
+        name = name,
+        target_under_test = "%s/cargo_build_script" % name,
+        expected_cflags = ["-Xclang", "-internal-isystem", "-Xclang", "/test/absolute/path"],
+    )
+
 def isystem_relative_test(name):
     cargo_build_script_with_extra_cc_compile_flags(
         name = "%s/cargo_build_script" % name,
