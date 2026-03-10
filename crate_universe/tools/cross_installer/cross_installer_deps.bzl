@@ -23,14 +23,10 @@ def cross_installer_deps(**kwargs):
         http_archive,
         name = "cross_rs",
         # v0.2.5+
-        urls = ["https://github.com/cross-rs/cross/archive/4090beca3cfffa44371a5bba524de3a578aa46c3.zip"],
-        strip_prefix = "cross-4090beca3cfffa44371a5bba524de3a578aa46c3",
-        integrity = "sha256-9lo/wRsDWdaTzt3kVSBWRfNp+DXeDZqrG3Z+10mE+fo=",
+        urls = ["https://github.com/cross-rs/cross/archive/588b3c99db52b5a9c5906fab96cfadcf1bde7863.zip"],
+        strip_prefix = "cross-588b3c99db52b5a9c5906fab96cfadcf1bde7863",
+        integrity = "sha256-5LqzALSHMZGDtTLMk94fGa6oexMfoi3YjlbivVstMXU=",
         build_file_content = """exports_files(["Cargo.toml", "Cargo.lock"], visibility = ["//visibility:public"])""",
-        patch_args = ["-p1"],
-        patches = [
-            Label("//crate_universe/tools/cross_installer/patches:cross_rs.static_mut_refs.patch"),
-        ],
     )
 
     direct_deps.append(struct(
