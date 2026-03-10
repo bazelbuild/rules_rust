@@ -622,6 +622,12 @@ tasks:
     build_targets:
       - "@rust_toolchains//:all"
       - "//..."
+  external_relative_path_deps:
+    name: External relative path deps (issue 3089)
+    platform: ubuntu2204
+    working_directory: test/integration/external_relative_path_deps
+    build_targets:
+      - "//..."
   android_examples_ubuntu2204:
     name: Android Examples
     platform: ubuntu2204
