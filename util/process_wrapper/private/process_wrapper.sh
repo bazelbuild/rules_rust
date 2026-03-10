@@ -1,18 +1,21 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -euo pipefail
+set -eu
 
 # Skip the first argument which is expected to be `--`
 shift
 
-args=()
-
 for arg in "$@"; do
-    # Check if the argument contains "${PWD}" and replace it with the actual value of PWD
-    if [[ "${arg}" == *'${pwd}'* ]]; then
-        arg="${arg//\$\{pwd\}/$PWD}"
-    fi
-    args+=("${arg}")
+    case "$arg" in
+        *'${pwd}'*)
+            # Split on '${pwd}' and rejoin with the actual PWD value
+            prefix="${arg%%\$\{pwd\}*}"
+            suffix="${arg#*\$\{pwd\}}"
+            arg="${prefix}${PWD}${suffix}"
+            ;;
+    esac
+    set -- "$@" "$arg"
+    shift
 done
 
-exec "${args[@]}"
+exec "$@"
