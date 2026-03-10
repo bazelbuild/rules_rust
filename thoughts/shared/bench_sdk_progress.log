@@ -1,0 +1,116 @@
+[bench] === Iteration 1 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1066 processes: 3691 action cache hit, 453 disk cache hit, 22 internal, 590 linux-sandbox, 1 local.
+INFO: Build completed successfully, 1066 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1640 processes: 4024 action cache hit, 453 disk cache hit, 22 internal, 5 local, 1160 worker.
+INFO: Build completed successfully, 1640 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 56 disk cache hit, 1 internal, 1 local, 1165 worker.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 1 done.
+[bench] === Iteration 2 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1066 processes: 3691 action cache hit, 1043 disk cache hit, 22 internal, 1 local.
+INFO: Build completed successfully, 1066 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1640 processes: 4024 action cache hit, 1618 disk cache hit, 22 internal.
+INFO: Build completed successfully, 1640 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 2 done.
+[bench] === Iteration 3 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1066 processes: 3691 action cache hit, 1043 disk cache hit, 22 internal, 1 local.
+INFO: Build completed successfully, 1066 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1640 processes: 4024 action cache hit, 1618 disk cache hit, 22 internal.
+INFO: Build completed successfully, 1640 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 3 done.
+[bench] === Iteration 4 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1066 processes: 3691 action cache hit, 1043 disk cache hit, 22 internal, 1 local.
+INFO: Build completed successfully, 1066 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1640 processes: 4024 action cache hit, 1618 disk cache hit, 22 internal.
+INFO: Build completed successfully, 1640 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 4 done.
+[bench] === Iteration 5 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1066 processes: 3691 action cache hit, 1043 disk cache hit, 22 internal, 1 local.
+INFO: Build completed successfully, 1066 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1640 processes: 4024 action cache hit, 1618 disk cache hit, 22 internal.
+INFO: Build completed successfully, 1640 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 5 done.
+[bench] Benchmark complete.

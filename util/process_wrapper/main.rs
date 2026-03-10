@@ -253,6 +253,171 @@ fn consolidate_dependency_search_paths(
     Ok((args.to_vec(), None))
 }
 
+#[cfg(unix)]
+fn symlink_dir(src: &std::path::Path, dest: &std::path::Path) -> Result<(), std::io::Error> {
+    std::os::unix::fs::symlink(src, dest)
+}
+
+#[cfg(windows)]
+fn symlink_dir(src: &std::path::Path, dest: &std::path::Path) -> Result<(), std::io::Error> {
+    std::os::windows::fs::symlink_dir(src, dest)
+}
+
+enum CacheSeedOutcome {
+    AlreadyPresent,
+    Seeded { _source: PathBuf },
+    NotFound,
+}
+
+fn cache_root_from_execroot_ancestor(cwd: &std::path::Path) -> Option<PathBuf> {
+    for ancestor in cwd.ancestors() {
+        if ancestor.file_name().is_some_and(|name| name == "execroot") {
+            continue;
+        }
+
+        let candidate = ancestor.join("cache");
+        if candidate.is_dir() {
+            return candidate.canonicalize().ok().or(Some(candidate));
+        }
+    }
+
+    for ancestor in cwd.ancestors() {
+        if ancestor.file_name().is_some_and(|name| name == "execroot") {
+            if let Some(parent) = ancestor.parent() {
+                let candidate = parent.join("cache");
+                if candidate.is_dir() {
+                    return candidate.canonicalize().ok().or(Some(candidate));
+                }
+            }
+        }
+    }
+
+    for ancestor in cwd.ancestors() {
+        if ancestor.file_name().is_some_and(|name| name == "execroot") {
+            if let Some(grandparent) = ancestor.parent().and_then(|p| p.parent()) {
+                let candidate = grandparent.join("cache");
+                if candidate.is_dir() {
+                    return candidate.canonicalize().ok().or(Some(candidate));
+                }
+            }
+        }
+    }
+
+    for ancestor in cwd.ancestors() {
+        if ancestor.file_name().is_some_and(|name| name == "execroot") {
+            let candidate = ancestor.parent()?.join("cache");
+            if candidate.is_dir() {
+                return candidate.canonicalize().ok().or(Some(candidate));
+            }
+        }
+    }
+
+    None
+}
+
+fn ensure_cache_loopback_for_path(
+    resolved_path: &std::path::Path,
+    cache_root: &std::path::Path,
+) -> Result<Option<PathBuf>, ProcessWrapperError> {
+    let Ok(relative) = resolved_path.strip_prefix(cache_root) else {
+        return Ok(None);
+    };
+    let mut components = relative.components();
+    if components.next().is_none_or(|component| component.as_os_str() != "repos") {
+        return Ok(None);
+    }
+    let Some(version) = components.next() else {
+        return Ok(None);
+    };
+    if components.next().is_none_or(|component| component.as_os_str() != "contents") {
+        return Ok(None);
+    }
+
+    let version_dir = cache_root.join("repos").join(version.as_os_str());
+    let loopback = version_dir.join("cache");
+    if loopback.exists() {
+        return Ok(Some(loopback));
+    }
+
+    symlink_dir(cache_root, &loopback).map_err(|e| {
+        ProcessWrapperError(format!(
+            "unable to seed cache loopback {} -> {}: {}",
+            cache_root.display(),
+            loopback.display(),
+            e
+        ))
+    })?;
+    Ok(Some(loopback))
+}
+
+fn ensure_cache_loopback_from_args(
+    cwd: &std::path::Path,
+    child_arguments: &[String],
+    cache_root: &std::path::Path,
+) -> Result<Option<PathBuf>, ProcessWrapperError> {
+    for arg in child_arguments {
+        let candidate = cwd.join(arg);
+        let Ok(resolved) = candidate.canonicalize() else {
+            continue;
+        };
+        if let Some(loopback) = ensure_cache_loopback_for_path(&resolved, cache_root)? {
+            return Ok(Some(loopback));
+        }
+    }
+
+    Ok(None)
+}
+
+fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperError> {
+    let cwd = std::env::current_dir()
+        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?;
+    let dest = cwd.join("cache");
+    if dest.exists() {
+        return Ok(CacheSeedOutcome::AlreadyPresent);
+    }
+
+    if let Some(cache_root) = cache_root_from_execroot_ancestor(&cwd) {
+        symlink_dir(&cache_root, &dest).map_err(|e| {
+            ProcessWrapperError(format!(
+                "unable to seed cache root {} -> {}: {}",
+                cache_root.display(),
+                dest.display(),
+                e
+            ))
+        })?;
+        return Ok(CacheSeedOutcome::Seeded { _source: cache_root });
+    }
+
+    for entry in fs::read_dir(&cwd)
+        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?
+    {
+        let entry = entry.map_err(|e| {
+            ProcessWrapperError(format!("unable to enumerate current working directory: {e}"))
+        })?;
+        let Ok(resolved) = entry.path().canonicalize() else {
+            continue;
+        };
+
+        for ancestor in resolved.ancestors() {
+            if ancestor.file_name().is_some_and(|name| name == "cache") {
+                symlink_dir(ancestor, &dest).map_err(|e| {
+                    ProcessWrapperError(format!(
+                        "unable to seed cache root {} -> {}: {}",
+                        ancestor.display(),
+                        dest.display(),
+                        e
+                    ))
+                })?;
+                return Ok(CacheSeedOutcome::Seeded {
+                    _source: ancestor.to_path_buf(),
+                });
+            }
+        }
+    }
+
+    Ok(CacheSeedOutcome::NotFound)
+}
+
 fn json_warning(line: &str) -> JsonValue {
     JsonValue::Object(HashMap::from([
         (
@@ -299,6 +464,12 @@ fn main() -> Result<(), ProcessWrapperError> {
     let (child_arguments, dep_dir_cleanup) =
         consolidate_dependency_search_paths(&opts.child_arguments)?;
     let mut temp_dir_guard = TemporaryDirectoryGuard::new(dep_dir_cleanup);
+    let cwd = std::env::current_dir()
+        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?;
+    let _ = seed_cache_root_for_current_dir();
+    if let Some(cache_root) = cache_root_from_execroot_ancestor(&cwd) {
+        let _ = ensure_cache_loopback_from_args(&cwd, &child_arguments, &cache_root);
+    }
 
     let mut command = Command::new(opts.executable);
     command
@@ -518,6 +689,91 @@ mod test {
             )?,
             LineOutput::Skip
         ));
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_seed_cache_root_for_current_dir() -> Result<(), String> {
+        let tmp = std::env::temp_dir().join("pw_test_seed_cache_root_for_current_dir");
+        let sandbox_dir = tmp.join("sandbox");
+        let cache_repo = tmp.join("cache/repos/v1/contents/hash/repo");
+        fs::create_dir_all(&sandbox_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(cache_repo.join("tool/src")).map_err(|e| e.to_string())?;
+        symlink_dir(&cache_repo, &sandbox_dir.join("external_repo")).map_err(|e| e.to_string())?;
+
+        let old_cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+        std::env::set_current_dir(&sandbox_dir).map_err(|e| e.to_string())?;
+        let result = seed_cache_root_for_current_dir().map_err(|e| e.to_string());
+        let restore = std::env::set_current_dir(old_cwd).map_err(|e| e.to_string());
+        let seeded_target = sandbox_dir
+            .join("cache")
+            .canonicalize()
+            .map_err(|e| e.to_string());
+
+        let _ = fs::remove_dir_all(&tmp);
+
+        result?;
+        restore?;
+        assert_eq!(seeded_target?, tmp.join("cache"));
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_seed_cache_root_from_execroot_ancestor() -> Result<(), String> {
+        let tmp = std::env::temp_dir().join("pw_test_seed_cache_root_from_execroot_ancestor");
+        let cwd = tmp.join("output-base/execroot/_main");
+        fs::create_dir_all(tmp.join("output-base/cache/repos")).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&cwd).map_err(|e| e.to_string())?;
+
+        let old_cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+        std::env::set_current_dir(&cwd).map_err(|e| e.to_string())?;
+        let result = seed_cache_root_for_current_dir().map_err(|e| e.to_string());
+        let restore = std::env::set_current_dir(old_cwd).map_err(|e| e.to_string());
+        let seeded_target = cwd.join("cache").canonicalize().map_err(|e| e.to_string());
+
+        let _ = fs::remove_dir_all(&tmp);
+
+        result?;
+        restore?;
+        assert_eq!(seeded_target?, tmp.join("output-base/cache"));
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_ensure_cache_loopback_from_args() -> Result<(), String> {
+        let tmp = std::env::temp_dir().join("pw_test_ensure_cache_loopback_from_args");
+        let cwd = tmp.join("output-base/execroot/_main");
+        let cache_root = tmp.join("output-base/cache");
+        let source = cache_root.join(
+            "repos/v1/contents/hash/repo/.tmp_git_root/tool/src/lib.rs",
+        );
+        fs::create_dir_all(source.parent().unwrap()).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&cwd).map_err(|e| e.to_string())?;
+        fs::write(&source, "").map_err(|e| e.to_string())?;
+        symlink_dir(
+            &cache_root.join("repos/v1/contents/hash/repo"),
+            &cwd.join("external_repo"),
+        )
+        .map_err(|e| e.to_string())?;
+
+        let loopback = ensure_cache_loopback_from_args(
+            &cwd,
+            &[String::from("external_repo/.tmp_git_root/tool/src/lib.rs")],
+            &cache_root,
+        )
+        .map_err(|e| e.to_string())?;
+        let loopback_target = cache_root
+            .join("repos/v1/cache")
+            .canonicalize()
+            .map_err(|e| e.to_string())?;
+
+        let _ = fs::remove_dir_all(&tmp);
+
+        assert_eq!(loopback, Some(cache_root.join("repos/v1/cache")));
+        assert_eq!(loopback_target, cache_root);
         Ok(())
     }
 }

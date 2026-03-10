@@ -1159,6 +1159,12 @@ def construct_arguments(
             rustc_flags.add(crate_info.metadata, format = "--emit=link=%s")
         elif kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
+        elif kind == "metadata" and build_metadata and use_worker_pipe and crate_info.metadata:
+            # Worker pipelining: direct the .rmeta to the declared _pipeline/ output
+            # path so it's produced correctly in both worker and sandbox execution.
+            # Without this, rustc writes .rmeta to --out-dir (the base directory),
+            # but the declared output is in the _pipeline/ subdirectory.
+            rustc_flags.add(crate_info.metadata, format = "--emit=metadata=%s")
         else:
             emit_without_paths.append(kind)
 
@@ -1439,7 +1445,7 @@ def rustc_compile_action(
     # use hollow rlib so RUSTC_BOOTSTRAP=1 is set consistently. Without this, switching
     # between hollow-rlib and worker-pipe modes changes the SVH for exec-platform rlibs,
     # causing E0460 when Bazel action-cache-hits some exec crates but recompiles others.
-    use_worker_pipelining = _use_worker_pipelining(toolchain, crate_info) and not is_exec_configuration(ctx)
+    use_worker_pipelining = _use_worker_pipelining(toolchain, crate_info) and not is_exec_configuration(ctx) and bool(build_metadata)
 
     # Worker pipelining requires RustcMetadata and Rustc to share the same worker
     # process (so they share PipelineState). Bazel worker key = startup args =

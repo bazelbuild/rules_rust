@@ -51,7 +51,11 @@ def construct_incremental_arguments(ctx, crate_info, is_metadata = False):
     # both actions benefit from incremental caching without interfering.
     suffix = "-meta" if is_metadata else ""
     cache_path = "/tmp/rules_rust_incremental/{}{}".format(crate_info.name, suffix)
-    return ["-Cincremental={}".format(cache_path)]
+    # Explicitly set codegen-units=16 to match Cargo's dev profile default
+    # (since Cargo 1.73). Without this, rustc silently bumps CGUs from 16 to
+    # 256 when -Cincremental is present, adding ~37% of the cold-build overhead
+    # for no rebuild benefit at opt-level=0.
+    return ["-Cincremental={}".format(cache_path), "-Ccodegen-units=16"]
 
 def is_incremental_enabled(ctx, crate_info):
     """Returns True if incremental compilation is enabled for this target.
