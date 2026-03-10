@@ -1,0 +1,6 @@
+package(default_visibility = ["//visibility:public"])
+
+# The toolchain for the exec platform.
+toolchain_type(
+    name = "toolchain_type",
+)
