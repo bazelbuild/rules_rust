@@ -89,6 +89,7 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
       ; exit 1 \
       ; }
 split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
+  - echo "9.0.0rc3" > .bazelversion
   - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
   - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc
   - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
