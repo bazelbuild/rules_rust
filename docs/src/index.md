@@ -72,6 +72,44 @@ rust.toolchain(
 )
 ```
 
+#### Using rust-toolchain.toml
+
+Alternatively, you can specify the Rust version using a `rust-toolchain.toml` file. This allows you to keep the Rust version in sync between Bazel and cargo/rustup:
+
+```python
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    rust_toolchain_file = "//:rust-toolchain.toml",
+)
+```
+
+The parser supports both single-line and multi-line TOML arrays:
+
+```toml
+[toolchain]
+channel = "1.86.0"
+
+# Multi-line arrays are supported
+components = [
+  "rustfmt",
+  "clippy",
+]
+
+# Single-line arrays work too
+targets = ["wasm32-unknown-unknown"]
+```
+
+The following fields from `rust-toolchain.toml` are parsed and mapped to rules_rust attributes:
+
+| rust-toolchain.toml | rules_rust attribute | Notes |
+|---------------------|---------------------|-------|
+| `channel` | `versions` | Required. The Rust version to use. |
+| `targets` | `extra_target_triples` | Merged with any explicit `extra_target_triples`. |
+| `components` | `dev_components` | Set to `True` if `"rustc-dev"` is in components. |
+
+Explicit attributes in `rust.toolchain()` take precedence over values parsed from `rust-toolchain.toml`.
+
 By default, a `stable` and `nightly` toolchain will be registered if no `toolchain` method is called (and thus no specific versions are registered). However, if only 1 version is passed and it is from the `nightly` or `beta` release channels (i.e. __not__ `stable`), then the following build setting flag must be present, either on the command line or set in the project's `.bazelrc` file:
 
 ```text
