@@ -9,9 +9,6 @@ load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS", "get_rust_test_flags")
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-# load("@rules_rust//rust/private:toolchain_utils.bzl", "get_coverage_env")
-
-# buildifier: disable=bzl-visibility
 load(
     "@rules_rust//rust/private:utils.bzl",
     "determine_output_hash",
@@ -26,7 +23,7 @@ load("//:providers.bzl", "RustWasmBindgenInfo")
 load("//private:transitions.bzl", "wasm_bindgen_transition")
 
 WasmBindgenTestCrateInfo = provider(
-    doc = "A provider encompasing the crate from a `rust_wasm_bindgen` target.",
+    doc = "A provider encompassing the crate from a `rust_wasm_bindgen` target.",
     fields = {
         "crate": "The underlying `rust_wasm_bindgen.crate`.",
     },
@@ -121,9 +118,9 @@ def _rust_wasm_bindgen_test_impl(ctx):
         name = crate.name,
         type = crate_type,
         root = crate.root,
-        srcs = depset(srcs, transitive = [crate.srcs]),
-        deps = depset(deps, transitive = [crate.deps]),
-        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
+        srcs = depset(srcs, transitive = [crate.srcs]).to_list(),
+        deps = depset(deps, transitive = [crate.deps]).to_list(),
+        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
         aliases = {},
         output = output,
         rustc_output = generate_output_diagnostics(ctx, output),
@@ -334,7 +331,7 @@ rust_wasm_bindgen_test = rule(
     toolchains = [
         str(Label("//:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     test = True,
 )

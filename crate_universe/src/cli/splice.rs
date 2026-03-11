@@ -1,17 +1,20 @@
 //! The cli entrypoint for the `splice` subcommand
 
+use std::fs::File;
 use std::path::PathBuf;
+use std::process::Stdio;
 
 use anyhow::Context;
 use camino::Utf8PathBuf;
 use clap::Parser;
+use itertools::Itertools;
 
 use crate::cli::Result;
 use crate::config::Config;
-use crate::metadata::{
-    write_metadata, Cargo, CargoUpdateRequest, Generator, MetadataGenerator, TreeResolver,
+use crate::metadata::{Cargo, CargoUpdateRequest, TreeResolver};
+use crate::splicing::{
+    generate_lockfile, Splicer, SplicerKind, SplicingManifest, WorkspaceMetadata,
 };
-use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 
 /// Command line options for the `splice` subcommand
 #[derive(Parser, Debug)]
@@ -57,6 +60,23 @@ pub struct SpliceOptions {
     /// The path to a rustc binary for use with Cargo
     #[clap(long, env = "RUSTC")]
     pub rustc: PathBuf,
+
+    /// The name of the repository being generated.
+    #[clap(long)]
+    pub repository_name: String,
+
+    /// Whether to skip writing the cargo lockfile back after resolving.
+    /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+    /// But you probably don't want to set this.
+    #[clap(long)]
+    pub skip_cargo_lockfile_overwrite: bool,
+
+    /// The path to the Bazel root workspace (i.e. the directory containing the WORKSPACE.bazel file or similar).
+    /// BE CAREFUL with this value. We never want to include it in a lockfile hash (to keep lockfiles portable),
+    /// which means you also should not use it anywhere that _should_ be guarded by a lockfile hash.
+    /// You basically never want to use this value.
+    #[clap(long)]
+    pub nonhermetic_root_bazel_workspace_dir: Utf8PathBuf,
 }
 
 /// Combine a set of disjoint manifests into a single workspace.
@@ -77,23 +97,35 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     };
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer = Splicer::new(splicing_dir, splicing_manifest)?;
+    let splicer = Splicer::new(splicing_dir.clone(), splicing_manifest)?;
+    let prepared_splicer = splicer.prepare()?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
     // Splice together the manifest
-    let manifest_path = splicer
-        .splice_workspace()
-        .context("Failed to splice workspace")?;
+    let manifest_path = prepared_splicer
+        .splice(&splicing_dir, &opt.nonhermetic_root_bazel_workspace_dir)
+        .with_context(|| format!("Failed to splice workspace {}", opt.repository_name))?;
 
-    // Generate a lockfile
-    let cargo_lockfile = generate_lockfile(
-        &manifest_path,
-        &opt.cargo_lockfile,
-        cargo.clone(),
-        &opt.repin,
-    )
-    .context("Failed to generate lockfile")?;
+    // Use the existing lockfile if possible, otherwise generate a new one.
+    let cargo_lockfile = if let Some(cargo_lockfile_path) = opt
+        .cargo_lockfile
+        .as_ref()
+        .filter(|_| opt.skip_cargo_lockfile_overwrite)
+    {
+        cargo_lock::Lockfile::load(cargo_lockfile_path).context(format!(
+            "Failed to load lockfile: {}",
+            cargo_lockfile_path.display()
+        ))?
+    } else {
+        generate_lockfile(
+            &manifest_path,
+            &opt.cargo_lockfile,
+            cargo.clone(),
+            &opt.repin,
+        )
+        .context("Failed to generate lockfile")?
+    };
 
     let config = Config::try_from_path(&opt.config).context("Failed to parse config")?;
 
@@ -103,6 +135,7 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
             &config.supported_platform_triples,
         )
         .context("Failed to generate features")?;
+
     // Write the registry url info to the manifest now that a lockfile has been generated
     WorkspaceMetadata::write_registry_urls_and_feature_map(
         &cargo,
@@ -113,13 +146,26 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
     )
     .context("Failed to write registry URLs and feature map")?;
 
-    let output_dir = opt.output_dir.clone();
+    // Generate the consumable outputs of the splicing process
+    std::fs::create_dir_all(&opt.output_dir).with_context(|| {
+        format!(
+            "Failed to create directories for {}",
+            opt.output_dir.display()
+        )
+    })?;
+
+    let metadata_json = File::create(opt.output_dir.join("metadata.json"))?;
 
     // Write metadata to the workspace for future reuse
-    let (cargo_metadata, _) = Generator::new()
-        .with_cargo(cargo)
-        .with_rustc(opt.rustc)
-        .generate(manifest_path.as_path_buf())
+    cargo
+        .metadata_command_with_options(
+            manifest_path.as_path_buf().as_ref(),
+            vec!["--locked".to_owned()],
+        )?
+        .cargo_command()
+        .stdout(Stdio::from(metadata_json))
+        .stderr(Stdio::null())
+        .status()
         .context("Failed to generate cargo metadata")?;
 
     let cargo_lockfile_path = manifest_path
@@ -133,15 +179,25 @@ pub fn splice(opt: SpliceOptions) -> Result<()> {
         })?
         .join("Cargo.lock");
 
-    // Generate the consumable outputs of the splicing process
-    std::fs::create_dir_all(&output_dir)
-        .with_context(|| format!("Failed to create directories for {}", &output_dir.display()))?;
-
-    write_metadata(&opt.output_dir.join("metadata.json"), &cargo_metadata)
-        .context("Failed to write metadata")?;
-
-    std::fs::copy(cargo_lockfile_path, output_dir.join("Cargo.lock"))
+    std::fs::copy(cargo_lockfile_path, opt.output_dir.join("Cargo.lock"))
         .context("Failed to copy lockfile")?;
 
+    if let SplicerKind::Workspace { path, .. } = prepared_splicer {
+        let metadata = cargo.metadata_command_with_options(
+            path.as_std_path(),
+            vec![String::from("--no-deps")],
+        )?.exec().with_context(|| {
+                format!(
+                    "Error spawning cargo in child process to compute crate paths for workspace '{}'",
+                    path
+                )
+            })?;
+        let contents = metadata
+            .packages
+            .into_iter()
+            .map(|package| package.manifest_path)
+            .join("\n");
+        std::fs::write(opt.output_dir.join("extra_paths_to_track"), contents)?;
+    }
     Ok(())
 }

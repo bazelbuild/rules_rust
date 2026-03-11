@@ -30,6 +30,9 @@ user.bazelrc
 .vscode
 *.code-workspace
 
+# zed
+.zed
+
 # JetBrains
 .idea
 .idea/**

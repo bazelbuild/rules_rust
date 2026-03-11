@@ -1,0 +1,34 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+sh_binary(
+    name = "say_hello",
+    srcs = ["src/say_hello.sh"],
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "pkg_a_library",
+    srcs = ["src/lib.rs"],
+    data = [":say_hello"],
+    rustc_env = {
+        "SAY_HELLO_BIN": "$(rlocationpath :say_hello)",
+    },
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_rust//rust/runfiles",
+    ],
+)
+
+rust_binary(
+    name = "pkg_a_binary",
+    srcs = ["src/main.rs"],
+    visibility = ["//visibility:public"],
+    deps = [":pkg_a_library"],
+)
+
+rust_test(
+    name = "pkg_a_test",
+    srcs = ["src/test.rs"],
+    deps = [":pkg_a_library"],
+)

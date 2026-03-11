@@ -11,7 +11,7 @@ load("//rust/private:rustc.bzl", "rustc_compile_action")
 def _with_modified_crate_name_impl(ctx):
     toolchain = ctx.toolchains[Label("//rust:toolchain_type")]
 
-    crate_root = ctx.attr.src.files.to_list()[0]
+    crate_root = ctx.file.src
     output_hash = repr(hash(crate_root.path))
     crate_name = ctx.label.name + "_my_custom_crate_suffix"
     crate_type = "rlib"
@@ -39,9 +39,9 @@ def _with_modified_crate_name_impl(ctx):
             name = crate_name,
             type = crate_type,
             root = crate_root,
-            srcs = ctx.attr.src.files,
-            deps = depset(deps),
-            proc_macro_deps = depset([]),
+            srcs = ctx.files.src,
+            deps = deps,
+            proc_macro_deps = [],
             aliases = {},
             output = rust_lib,
             owner = ctx.label,

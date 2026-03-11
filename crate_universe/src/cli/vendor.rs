@@ -13,9 +13,10 @@ use clap::Parser;
 
 use crate::config::{Config, VendorMode};
 use crate::context::Context;
+use crate::lockfile::{lock_context, write_lockfile};
 use crate::metadata::CargoUpdateRequest;
 use crate::metadata::TreeResolver;
-use crate::metadata::{Annotations, Cargo, Generator, MetadataGenerator, VendorGenerator};
+use crate::metadata::{Annotations, Cargo, VendorGenerator};
 use crate::rendering::{render_module_label, write_outputs, Renderer};
 use crate::splicing::{generate_lockfile, Splicer, SplicingManifest, WorkspaceMetadata};
 use crate::utils::normalize_cargo_file_paths;
@@ -43,6 +44,10 @@ pub struct VendorOptions {
     /// A generated manifest of splicing inputs
     #[clap(long)]
     pub splicing_manifest: PathBuf,
+
+    /// The path to write a Bazel lockfile
+    #[clap(long)]
+    pub lockfile: Option<PathBuf>,
 
     /// The path to a [Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) file.
     #[clap(long)]
@@ -205,14 +210,14 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         .unwrap_or_else(|path| panic!("Temporary directory wasn't valid UTF-8: {:?}", path));
 
     // Generate a splicer for creating a Cargo workspace manifest
-    let splicer =
-        Splicer::new(temp_dir_path, splicing_manifest).context("Failed to create splicer")?;
+    let splicer = Splicer::new(temp_dir_path, splicing_manifest.clone())
+        .context("Failed to create splicer")?;
 
     let cargo = Cargo::new(opt.cargo, opt.rustc.clone());
 
     // Splice together the manifest
     let manifest_path = splicer
-        .splice_workspace()
+        .splice_workspace(&opt.nonhermetic_root_bazel_workspace_dir)
         .context("Failed to splice workspace")?;
 
     // Gather a cargo lockfile
@@ -241,10 +246,12 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     )?;
 
     // Write metadata to the workspace for future reuse
-    let (cargo_metadata, cargo_lockfile) = Generator::new()
-        .with_cargo(cargo.clone())
-        .with_rustc(opt.rustc.clone())
-        .generate(manifest_path.as_path_buf())?;
+    let cargo_metadata = cargo
+        .metadata_command_with_options(
+            manifest_path.as_path_buf().as_ref(),
+            vec!["--locked".to_owned()],
+        )?
+        .exec()?;
 
     // Annotate metadata
     let annotations = Annotations::new(
@@ -255,13 +262,13 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
-    // Generate renderable contexts for earch package
+    // Generate renderable contexts for search package
     let context = Context::new(annotations, config.rendering.are_sources_present())?;
 
     // Render build files
     let outputs = Renderer::new(
         Arc::new(config.rendering.clone()),
-        Arc::new(config.supported_platform_triples),
+        Arc::new(config.supported_platform_triples.clone()),
     )
     .render(&context, None)?;
 
@@ -280,7 +287,7 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
     }
 
     if matches!(config.rendering.vendor_mode, Some(VendorMode::Local)) {
-        VendorGenerator::new(cargo, opt.rustc.clone())
+        VendorGenerator::new(cargo.clone(), opt.rustc.clone())
             .generate(manifest_path.as_path_buf(), &vendor_dir)
             .context("Failed to vendor dependencies")?;
     }
@@ -309,6 +316,13 @@ pub fn vendor(opt: VendorOptions) -> anyhow::Result<()> {
         if module_bazel.exists() {
             bzlmod_tidy(&opt.bazel, &opt.workspace_dir)?;
         }
+    }
+
+    // Write the rendering lockfile if requested.
+    if let Some(lockfile) = opt.lockfile {
+        let lock_content = lock_context(context, &config, &splicing_manifest, &cargo, &opt.rustc)?;
+
+        write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
 
     Ok(())

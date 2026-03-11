@@ -14,9 +14,9 @@ defaults:
 
 jobs:
   validation:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # TODO: Unfortunately it's not obvious how to restrict `workflow_dispatch` to a particular branch
       # so this step ensures releases are always done off of `main`.
       - name: Ensure branch is 'main'
@@ -31,9 +31,9 @@ jobs:
           fi
   builds:
     needs: validation
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install rust toolchains for host
         run: |
           # Detect the current version of rust

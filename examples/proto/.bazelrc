@@ -25,12 +25,6 @@ test --verbose_failures
 ## Common configuration
 ###############################################################################
 
-# Enable Bzlmod for every Bazel command
-common --enable_bzlmod
-
-# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
-common --lockfile_mode=off
-
 # Write build outputs in a platform-specific directory;
 # avoid outputs being wiped and rewritten when switching between platforms.
 common --experimental_platform_in_output_dir
@@ -40,9 +34,6 @@ build --incompatible_disallow_empty_glob=true
 
 # https://github.com/bazelbuild/bazel/issues/12821
 build --nolegacy_external_runfiles
-
-# Required for cargo_build_script support before Bazel 7
-build --incompatible_merge_fixed_and_default_shell_env
 
 # https://github.com/bazelbuild/bazel/issues/23043.
 build --incompatible_autoload_externally=

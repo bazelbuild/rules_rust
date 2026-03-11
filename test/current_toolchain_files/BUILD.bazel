@@ -23,7 +23,7 @@ _FILES = {
         name = tool + "_test",
         kind = kind,
         pattern = pattern,
-        # TOOO: Windows requires use of bash which is not guaranteed to be available.
+        # TODO: Windows requires use of bash which is not guaranteed to be available.
         # The test runner should ideally be rewritten in rust so that windows could
         # be tested.
         target_compatible_with = select({

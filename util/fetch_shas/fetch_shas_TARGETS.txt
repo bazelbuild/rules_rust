@@ -72,6 +72,7 @@ wasm32-unknown-emscripten
 wasm32-unknown-unknown
 wasm32-wasi
 wasm32-wasip1
+wasm32-wasip2
 wasm64-unknown-unknown
 x86_64-apple-darwin
 x86_64-apple-ios

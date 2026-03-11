@@ -47,7 +47,7 @@ exclude = [
 
 [package]
 name = "cargo-bazel"
-version = "0.16.0"
+version = "0.17.0"
 authors = ["Andre Brisco - andre.brisco@protonmail.com"]
 categories = ["development-tools"]
 description = "A collection of tools which use Cargo to generate build targets for Bazel"
@@ -63,34 +63,34 @@ default = ["cargo"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.95"
+anyhow = "1.0.98"
 camino = "1.1.9"
-cargo_metadata = "0.19.1"
-cargo_toml = "0.21.0"
+cargo_metadata = "0.19.2"
+cargo_toml = "0.22.1"
 cargo-lock = "10.1.0"
 cargo-platform = "0.1.9"
-cfg-expr = "0.17.2"
-clap = { version = "4.5.26", features = ["derive", "env"] }
+cfg-expr = "0.18.0"
+clap = { version = "4.5.37", features = ["derive", "env"] }
 crates-index = { version = "3.7.0", default-features = false, features = [
     "git",
 ] }
 hex = "0.4.3"
-indoc = "2.0.5"
+indoc = "2.0.6"
 itertools = "0.14.0"
 normpath = "1.3.0"
-once_cell = "1.20.2"
+once_cell = "1.21.3"
 pathdiff = "0.2.3"
 regex = "1.11.1"
-semver = "1.0.24"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.135"
-serde_starlark = "0.1.16"
+semver = "1.0.26"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+serde_starlark = "0.1.17"
 sha2 = "0.10.8"
 spdx = "0.10.8"
-tempfile = "3.15.0"
+tempfile = "3.19.1"
 tera = { version = "1.20.0", default-features = false }
-textwrap = "0.16.1"
-toml = "0.8.19"
+textwrap = "0.16.2"
+toml = "0.8.21"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 url = "2.5.4"

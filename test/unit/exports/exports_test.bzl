@@ -11,7 +11,7 @@ def _exports_test_impl(ctx, dependencies, externs):
     asserts.equals(env, action.mnemonic, "Rustc")
 
     # Transitive symbols that get re-exported are expected to be located by a `-Ldependency` flag.
-    # The assert below ensures that each dependnecy flag is passed to the Rustc action. For details see
+    # The assert below ensures that each dependency flag is passed to the Rustc action. For details see
     # https://doc.rust-lang.org/rustc/command-line-arguments.html#-l-add-a-directory-to-the-library-search-path
     for dep in dependencies:
         assert_argv_contains_prefix_suffix(

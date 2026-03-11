@@ -4,6 +4,7 @@ load(
     ":common_utils.bzl",
     "CARGO_BAZEL_DEBUG",
     "CARGO_BAZEL_ISOLATED",
+    "CARGO_BAZEL_TIMEOUT",
     "REPIN_ALLOWLIST_ENV_VAR",
     "REPIN_ENV_VARS",
     "parse_alias_rule",
@@ -21,6 +22,7 @@ CRATES_REPOSITORY_ENVIRON = GENERATOR_ENV_VARS + REPIN_ENV_VARS + [
     REPIN_ALLOWLIST_ENV_VAR,
     CARGO_BAZEL_ISOLATED,
     CARGO_BAZEL_DEBUG,
+    CARGO_BAZEL_TIMEOUT,
 ]
 
 def get_generator(repository_ctx, host_triple):
@@ -142,7 +144,7 @@ def render_config(
             keys are [`{triple}`].
         regen_command (str, optional): An optional command to demonstrate how generated files should be regenerated.
         vendor_mode (str, optional): An optional configuration for rendirng content to be rendered into repositories.
-        generate_rules_license_metadata (bool, optional): Whether to generate rules license metedata
+        generate_rules_license_metadata (bool, optional): Whether to generate rules license metadata
 
     Returns:
         string: A json encoded struct to match the Rust `config::RenderConfig` struct
@@ -360,7 +362,7 @@ def determine_repin(
         config,
         splicing_manifest,
         repin_instructions = None):
-    """Use the `cargo-bazel` binary to determine whether or not dpeendencies need to be re-pinned
+    """Use the `cargo-bazel` binary to determine whether or not dependencies need to be re-pinned
 
     Args:
         repository_ctx (repository_ctx): The rule's context object.
@@ -438,6 +440,8 @@ def execute_generator(
         nonhermetic_root_bazel_workspace_dir,
         paths_to_track_file,
         warnings_output_file,
+        skip_cargo_lockfile_overwrite,
+        strip_internal_dependencies_from_cargo_lockfile,
         metadata = None,
         generator_label = None):
     """Execute the `cargo-bazel` binary to produce `BUILD` and `.bzl` files.
@@ -452,6 +456,14 @@ def execute_generator(
         nonhermetic_root_bazel_workspace_dir (path): The path to the current workspace root
         paths_to_track_file (path): Path to file where generator should write which files should trigger re-generating as a JSON list.
         warnings_output_file (path): Path to file where generator should write warnings to print.
+        skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
+            You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+            But you probably don't want to set this.
+        strip_internal_dependencies_from_cargo_lockfile (bool): Whether to strip internal dependencies from the cargo lockfile.
+            You may want to use this if you want to maintain a cargo lockfile for bazel only.
+            Bazel only requires external dependencies to be present in the lockfile.
+            By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
+            in other lockfiles where the cargo lockfile's sha is stored.
         generator_label (Label): The label of the `generator` parameter.
         metadata (path, optional): The path to a Cargo metadata json file. If this is set, it indicates to
             the generator that repinning is required. This file must be adjacent to a `Cargo.toml` and
@@ -489,6 +501,12 @@ def execute_generator(
             "--lockfile",
             lockfile_path,
         ])
+
+    if skip_cargo_lockfile_overwrite:
+        args.append("--skip-cargo-lockfile-overwrite")
+
+    if strip_internal_dependencies_from_cargo_lockfile:
+        args.append("--strip-internal-dependencies-from-cargo-lockfile")
 
     # Some components are not required unless re-pinning is enabled
     if metadata:

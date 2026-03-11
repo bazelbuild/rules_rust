@@ -22,7 +22,7 @@ use crate::utils::starlark::Label;
 use crate::utils::target_triple::TargetTriple;
 
 /// Representations of different kinds of crate vendoring into workspaces.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum VendorMode {
     /// Crates having full source being vendored into a workspace
@@ -110,7 +110,7 @@ pub(crate) struct RenderConfig {
 }
 
 // Default is manually implemented so that the default values match the default
-// values when deserializing, which involves calling the vairous `default_x()`
+// values when deserializing, which involves calling the various `default_x()`
 // functions specified in `#[serde(default = "default_x")]`.
 impl Default for RenderConfig {
     fn default() -> Self {
@@ -240,7 +240,7 @@ pub(crate) struct CrateAnnotations {
     /// Which subset of the crate's bins should get produced as `rust_binary` targets.
     pub(crate) gen_binaries: Option<GenBinaries>,
 
-    /// Determins whether or not Cargo build scripts should be generated for the current package
+    /// Determines whether or not Cargo build scripts should be generated for the current package
     pub(crate) gen_build_script: Option<bool>,
 
     /// Additional data to pass to
@@ -325,6 +325,10 @@ pub(crate) struct CrateAnnotations {
     /// Additional rustc_env flags to pass to a build script's
     /// [rustc_env](https://bazelbuild.github.io/rules_rust/cargo.html#cargo_build_script-rustc_env) attribute.
     pub(crate) build_script_rustc_env: Option<Select<BTreeMap<String, String>>>,
+
+    /// Additional execution properties to pass to a build script's
+    /// [exec_properties](https://bazel.build/reference/be/common-definitions#common.exec_properties) attribute.
+    pub(crate) build_script_exec_properties: Option<Select<BTreeMap<String, String>>>,
 
     /// Additional labels to pass to a build script's
     /// [toolchains](https://bazel.build/reference/be/common-definitions#common-attributes) attribute.
@@ -430,6 +434,7 @@ impl Add for CrateAnnotations {
             build_script_data_glob: joined_extra_member!(self.build_script_data_glob, rhs.build_script_data_glob, BTreeSet::new, BTreeSet::extend),
             build_script_env: select_merge(self.build_script_env, rhs.build_script_env),
             build_script_rustc_env: select_merge(self.build_script_rustc_env, rhs.build_script_rustc_env),
+            build_script_exec_properties: select_merge(self.build_script_exec_properties, rhs.build_script_exec_properties),
             build_script_toolchains: joined_extra_member!(self.build_script_toolchains, rhs.build_script_toolchains, BTreeSet::new, BTreeSet::extend),
             build_script_use_default_shell_env: self.build_script_use_default_shell_env.or(rhs.build_script_use_default_shell_env),
             build_script_rundir: self.build_script_rundir.or(rhs.build_script_rundir),
@@ -706,11 +711,32 @@ pub(crate) struct Config {
     pub(crate) rendering: RenderConfig,
 
     /// The contents of a Cargo configuration file
+    #[serde(default, deserialize_with = "deserialize_cargo_config")]
     pub(crate) cargo_config: Option<toml::Value>,
 
     /// A set of platform triples to use in generated select statements
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub(crate) supported_platform_triples: BTreeSet<TargetTriple>,
+}
+
+// rules_rust/crate_universe/private/generate_utils.bzl:generate_config
+// injects the cargo_config as a literal JSON string, this causes line ending
+// instability in Unix vs Windows. Parsing it here fixes any cross platform differences.
+fn deserialize_cargo_config<'de, D>(deserializer: D) -> Result<Option<toml::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    match value {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(s)) => s
+            .parse::<toml::Value>()
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+        Some(other) => serde_json::from_value(other)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+    }
 }
 
 impl Config {
@@ -790,8 +816,12 @@ impl FromStr for VersionReqString {
     type Err = anyhow::Error;
 
     fn from_str(original: &str) -> Result<Self, Self::Err> {
-        let parsed = VersionReq::parse(original)
-            .context("VersionReqString must be a valid semver requirement")?;
+        let parsed = VersionReq::parse(original).with_context(|| {
+            format!(
+                "VersionReqString must be a valid semver requirement: '{}'",
+                original
+            )
+        })?;
         Ok(VersionReqString {
             original: original.to_owned(),
             parsed,

@@ -49,7 +49,7 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
         dict: A dictionary representation of a `cargo_bazel::splicing::SplicingManifest`
     """
 
-    # Deserialize information about direct packges
+    # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
         pkg: kebab_case_keys(dict(json.decode(data)))
@@ -66,9 +66,12 @@ def compile_splicing_manifest(splicing_config, manifests, cargo_config_path, pac
     return splicing_config | splicing_manifest_content
 
 def _no_at_label(label):
-    """Strips leading '@'s for stringified labels in the main repository for backwards-comaptibility reasons."""
+    """Strips leading '@'s for stringified labels in the main repository for backwards-compatibility reasons."""
     s = str(label)
-    if s.startswith("@@//"):
+    if s.startswith(
+        # buildifier: disable=canonical-repository
+        "@@//",
+    ):
         return s[2:]
     if s.startswith("@//"):
         return s[1:]
@@ -122,6 +125,9 @@ def splice_workspace_manifest(
         splicing_manifest,
         config_path,
         output_dir,
+        repository_name,
+        skip_cargo_lockfile_overwrite,
+        nonhermetic_root_bazel_workspace_dir,
         debug_workspace_dir = None):
     """Splice together a Cargo workspace from various other manifests and package definitions
 
@@ -132,6 +138,11 @@ def splice_workspace_manifest(
         splicing_manifest (path): The path to a splicing manifest.
         config_path (path): The path to the config file (containing `cargo_bazel::config::Config`.)
         output_dir (path): THe location in which to write splicing outputs.
+        repository_name (str): Name of the repository being generated.
+        skip_cargo_lockfile_overwrite (bool): Whether to skip writing the cargo lockfile back after resolving.
+            You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+            But you probably don't want to set this.
+        nonhermetic_root_bazel_workspace_dir (path): The path to the current workspace root
         debug_workspace_dir (path): The location in which to save splicing outputs for future review.
 
     Returns:
@@ -147,6 +158,10 @@ def splice_workspace_manifest(
         splicing_manifest,
         "--config",
         config_path,
+        "--repository-name",
+        repository_name,
+        "--nonhermetic-root-bazel-workspace-dir",
+        nonhermetic_root_bazel_workspace_dir,
     ]
 
     if cargo_lockfile:
@@ -154,6 +169,9 @@ def splice_workspace_manifest(
             "--cargo-lockfile",
             cargo_lockfile,
         ])
+
+    if skip_cargo_lockfile_overwrite:
+        arguments.append("--skip-cargo-lockfile-overwrite")
 
     # Optionally set the splicing workspace directory to somewhere within the repository directory
     # to improve the debugging experience.
@@ -184,7 +202,14 @@ def splice_workspace_manifest(
     if not spliced_metadata.exists:
         fail("Metadata file does not exist: " + str(spliced_metadata))
 
+    extra_paths_to_track_path = repository_ctx.path(output_dir.get_child("extra_paths_to_track"))
+    if extra_paths_to_track_path.exists:
+        extra_paths_to_track = repository_ctx.read(extra_paths_to_track_path).split("\n")
+    else:
+        extra_paths_to_track = []
+
     return struct(
         metadata = spliced_metadata,
         cargo_lock = spliced_lockfile,
+        extra_paths_to_track = extra_paths_to_track,
     )

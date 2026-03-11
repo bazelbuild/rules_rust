@@ -51,7 +51,7 @@ build_script_deps_test = analysistest.make(
 )
 
 def build_script_test_suite(name):
-    """Build script analyisis tests.
+    """Build script analysis tests.
 
     Args:
         name: the test suite name

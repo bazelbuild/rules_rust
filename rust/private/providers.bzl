@@ -17,7 +17,11 @@
 CrateInfo = provider(
     doc = "A provider containing general Crate information.",
     fields = {
-        "aliases": "Dict[Label, String]: Renamed and aliased crates",
+        "aliases": "Dict[Target, String]: Renamed and aliased crates",
+        "cfgs": (
+            "List[str]: The set of enabled cfgs for this crate. Note that this field is populated only " +
+            "when @rules_rust//rust/settings:collect_cfgs is set."
+        ),
         "compile_data": "depset[File]: Compile data required by this crate.",
         "compile_data_targets": "depset[Label]: Compile data targets required by this crate.",
         "data": "depset[File]: Compile data required by crates that use the current crate as a proc-macro.",
@@ -25,6 +29,8 @@ CrateInfo = provider(
         "edition": "str: The edition of this crate.",
         "is_test": "bool: If the crate is being compiled in a test context",
         "metadata": "File: The output from rustc from producing the output file. It is optional.",
+        "metadata_supports_pipelining": "bool: If the metadata in 'metadata' (if present) is " +
+                                        "usable for pipelined compilation.",
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
@@ -74,7 +80,7 @@ BuildInfo = provider(
     doc = "A provider containing `rustc` build settings for a given Crate.",
     fields = {
         "compile_data": "Depset[File]: Compile data provided by the build script that was not copied into `out_dir`.",
-        "dep_env": "Optinal[File]: extra build script environment varibles to be set to direct dependencies.",
+        "dep_env": "Optional[File]: extra build script environment variables to be set to direct dependencies.",
         "flags": "Optional[File]: file containing additional flags to pass to rustc",
         "link_search_paths": "Optional[File]: file containing search paths to pass to rustc and linker",
         "linker_flags": "Optional[File]: file containing flags to pass to the linker invoked by rustc or cc_common.link",
@@ -95,6 +101,17 @@ DepVariantInfo = provider(
         "crate_group_info": "CrateGroupInfo: The CrateGroupInfo of a Rust crate group dependency",
         "crate_info": "CrateInfo: The CrateInfo of a Rust dependency",
         "dep_info": "DepInfo: The DepInfo of a Rust dependency",
+    },
+)
+
+AlwaysEnableMetadataOutputGroupsInfo = provider(
+    doc = (
+        "Enable the 'metadata' and 'rustc_rmeta_output' groups for all targets, " +
+        "even if not a library or if pipelining is disabled"
+    ),
+    fields = {
+        "always_enable_metadata_output_groups": ("bool: Whether or not to always enable " +
+                                                 "metadata-related output groups"),
     },
 )
 
@@ -135,6 +152,11 @@ CaptureClippyOutputInfo = provider(
     fields = {"capture_output": "Value of the `capture_clippy_output` build setting"},
 )
 
+ClippyOutputDiagnosticsInfo = provider(
+    doc = "Value of the `clippy_output_diagnostics` build setting",
+    fields = {"output_diagnostics": "Value of the `clippy_output_diagnostics` build setting"},
+)
+
 ClippyInfo = provider(
     doc = "Provides information on a clippy run.",
     fields = {
@@ -159,12 +181,14 @@ RustAnalyzerInfo = provider(
     fields = {
         "aliases": "Dict[RustAnalyzerInfo, String]: Replacement names these targets should be known as in Rust code",
         "build_info": "BuildInfo: build info for this crate if present",
+        "build_info_out_dirs": "Depset[File]: transitive closure of build script out dirs",
         "cfgs": "List[String]: features or other compilation `--cfg` settings",
         "crate": "CrateInfo: Crate information.",
-        "crate_specs": "Depset[File]: transitive closure of OutputGroupInfo files",
+        "crate_specs": "Depset[File]: transitive closure of crate spec files",
         "deps": "List[RustAnalyzerInfo]: direct dependencies",
         "env": "Dict[String: String]: Environment variables, used for the `env!` macro",
-        "proc_macro_dylib_path": "File: compiled shared library output of proc-macro rule",
+        "proc_macro_dylib": "File: if this is a proc-macro target, the shared library output",
+        "proc_macro_dylibs": "Depset[File]: transitive closure of proc-macro shared library files",
     },
 )
 
@@ -184,5 +208,23 @@ LintsInfo = provider(
         "rustc_lint_flags": "List[String]: rustc flags to specify when building rust_* targets.",
         "rustdoc_lint_files": "List[File]: files with rustc args for rustdoc target.",
         "rustdoc_lint_flags": "List[String]: rustc flags to specify when building rust_doc targets.",
+    },
+)
+
+AllocatorLibrariesInfo = provider(
+    doc = "AllocatorLibrariesInfo provides allocator libraries for linking rust code with a non-rust linker.",
+    fields = {
+        "allocator_library": "Optional[CcInfo]: used when the default rust allocator is used",
+        "global_allocator_library": "Optional[CcInfo]: used when a global rust allocator is used",
+        "libstd_and_allocator_ccinfo": "Optional[CcInfo]: used when the default rust allocator is used",
+        "libstd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when a global rust allocator is used",
+        "nostd_and_global_allocator_ccinfo": "Optional[CcInfo]: used when nostd with a global rust allocator is used",
+    },
+)
+
+AllocatorLibrariesImplInfo = provider(
+    doc = "AllocatorLibrariesImplInfo provides the rust-generated linker input for linking rust code with a non-rust linker.",
+    fields = {
+        "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
     },
 )

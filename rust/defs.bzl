@@ -23,7 +23,9 @@ load(
     _capture_clippy_output = "capture_clippy_output",
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
+    _get_clippy_ready_crate_info = "get_clippy_ready_crate_info",
     _rust_clippy = "rust_clippy",
+    _rust_clippy_action = "rust_clippy_action",
     _rust_clippy_aspect = "rust_clippy_aspect",
 )
 load("//rust/private:common.bzl", _rust_common = "rust_common")
@@ -117,6 +119,12 @@ rust_clippy = _rust_clippy
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 capture_clippy_output = _capture_clippy_output
+# See @rules_rust//rust/private:clippy.bzl for a complete description.
+
+rust_clippy_action = struct(
+    action = _rust_clippy_action,
+    get_clippy_ready_crate_info = _get_clippy_ready_crate_info,
+)
 # See @rules_rust//rust/private:clippy.bzl for a complete description.
 
 rustc_output_diagnostics = _rustc_output_diagnostics

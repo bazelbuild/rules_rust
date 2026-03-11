@@ -4,6 +4,7 @@ TOOLS = {
     "cargo": "//rust/toolchain:current_cargo_files",
     "cargo_clippy": "//rust/toolchain:current_cargo_clippy_files",
     "rustc": "//rust/toolchain:current_rustc_files",
+    "rustdoc": "//rust/toolchain:current_rustdoc_files",
     "rustfmt": "//rust/toolchain:current_rustfmt_toolchain_for_target",
 }
 
@@ -20,8 +21,8 @@ ALL_TOOLS = [target for target in TOOLS.values()]
         data = ALL_TOOLS if tool_name == "cargo" else [target],
         edition = "2018",
         rustc_env = {
-            "WRAPPED_TOOL_EXECPATH": "$(execpath {})".format(target),
             "WRAPPED_TOOL_NAME": tool_name,
+            "WRAPPED_TOOL_ROOTPATH": "$(rootpath {})".format(target),
             "WRAPPED_TOOL_TARGET": "$(rlocationpath {})".format(target),
         },
         toolchains = ["//rust/toolchain:current_rust_toolchain"],

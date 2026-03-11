@@ -1,5 +1,5 @@
 #[test]
 fn test() {
-    dep1::dep1();
+    proc_dep1::id!(dep1::dep1());
     dep2::dep2();
 }

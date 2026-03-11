@@ -8,14 +8,14 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_rust", version = "0.0.0")
 local_path_override(
     module_name = "rules_rust",
     path = "../..",
 )
 
-bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
@@ -35,7 +35,6 @@ crate.from_cargo(
     cargo_lockfile = "//:Cargo.lock",
     manifests = [
         "//:Cargo.toml",
-        "//rust/hello_world:Cargo.toml",
     ],
 )
 use_repo(crate, "crates")

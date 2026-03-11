@@ -3,6 +3,7 @@
 ###############################################################################
 
 build --@rules_rust//rust/settings:experimental_use_cc_common_link=True
+build --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=True
 
 ###############################################################################
 
@@ -23,9 +24,6 @@ build --incompatible_disallow_empty_glob=true
 
 # https://github.com/bazelbuild/bazel/issues/12821
 build --nolegacy_external_runfiles
-
-# Required for cargo_build_script support before Bazel 7
-build --incompatible_merge_fixed_and_default_shell_env
 
 # https://github.com/bazelbuild/bazel/issues/23043.
 build --incompatible_autoload_externally=

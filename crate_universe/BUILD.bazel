@@ -70,7 +70,7 @@ rust_library(
     # This target embeds additional, stamping related information (see
     # https://docs.bazel.build/versions/main/user-manual.html#workspace_status
     # for more information). Set stamp = -1 to indicate that it should respect
-    # the value of the --stamp comandline flag.
+    # the value of the --stamp commandline flag.
     stamp = -1,
     version = VERSION,
     visibility = ["//visibility:public"],
@@ -129,7 +129,6 @@ rust_test(
     srcs = ["tests/cargo_integration_test.rs"],
     aliases = aliases(),
     data = glob(["test_data/**"]) + [
-        "//crate_universe/test_data/serialized_configs",
         "@rules_rust//rust/toolchain:current_cargo_files",
         "@rules_rust//rust/toolchain:current_rustc_files",
     ],

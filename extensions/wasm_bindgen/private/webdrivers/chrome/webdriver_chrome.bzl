@@ -111,7 +111,6 @@ def chrome_deps():
         maybe(
             webdriver_repository,
             name = name,
-            original_name = name,
             urls = [data["url"]],
             strip_prefix = "chromedriver-{}".format(platform),
             integrity = data.get("integrity", ""),
@@ -128,7 +127,6 @@ def chrome_deps():
         maybe(
             webdriver_repository,
             name = name,
-            original_name = name,
             urls = [data["url"]],
             strip_prefix = "chrome-headless-shell-{}".format(platform),
             integrity = data.get("integrity", ""),
@@ -149,7 +147,6 @@ def chrome_deps():
         maybe(
             webdriver_repository,
             name = name,
-            original_name = name,
             urls = [data["url"]],
             strip_prefix = "chrome-{}".format(platform),
             integrity = data.get("integrity", ""),

@@ -54,7 +54,7 @@ users should define their own repositories using something akin to [crate_univer
 toolchains following the instructions for [rust_bindgen_toolchain](#rust_bindgen_toolchain).
 
 [llvm_proj]: https://github.com/llvm/llvm-project
-[cra_uni]: https://bazelbuild.github.io/rules_rust/crate_universe.html
+[cra_uni]: https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html
 
 ---
 ---

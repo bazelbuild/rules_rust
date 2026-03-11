@@ -13,6 +13,12 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+alias(
+    name = "clippy_error_format",
+    actual = "//rust/settings:clippy_error_format",
+    visibility = ["//visibility:public"],
+)
+
 # This setting may be changed from the command line to generate rustc diagnostics.
 alias(
     name = "rustc_output_diagnostics",

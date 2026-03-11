@@ -107,7 +107,7 @@ def download_direct_sha256s(
 
     This function is mostly here for backward compatibility. There are artifacts
     referenced by the `channel-rust-*.toml` files which are marked as `available: false`
-    and probably intented to not be downloaded. But for now this is ignored and instead
+    and probably intended to not be downloaded. But for now this is ignored and instead
     a collection of artifacts whose hash data could not be found is explicitly checked
     by trying to download the `.sha256` files directly. A 404 indicates the artifact
     genuinely does not exist and anything else we find is extra data we can retain

@@ -141,8 +141,8 @@ def _rust_unpretty_aspect_impl(target, ctx):
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
 
     dep_info, build_info, _ = collect_deps(
-        deps = crate_info.deps,
-        proc_macro_deps = crate_info.proc_macro_deps,
+        deps = crate_info.deps.to_list(),
+        proc_macro_deps = crate_info.proc_macro_deps.to_list(),
         aliases = crate_info.aliases,
     )
     lint_files = []
@@ -244,7 +244,7 @@ rust_unpretty_aspect = aspect(
     } | RUSTC_ATTRS,
     toolchains = [
         str(Label("//rust:toolchain_type")),
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     required_providers = [
         [rust_common.crate_info],

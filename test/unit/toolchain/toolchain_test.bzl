@@ -25,7 +25,7 @@ def _toolchain_specifies_target_json_test_impl(ctx):
     asserts.equals(env, None, toolchain_info.target_triple)
     asserts.equals(env, "x86_64", toolchain_info.target_arch)
 
-    # The specific name here is not as vaulable as identifying that `target_json` is a json file
+    # The specific name here is not as valuable as identifying that `target_json` is a json file
     expected_basename = "{}.target.json".format(target.label.name)
     asserts.equals(env, expected_basename, toolchain_info.target_json.basename)
 
@@ -44,6 +44,11 @@ def _toolchain_location_expands_linkflags_impl(ctx):
         "test:test/unit/toolchain/config.txt",
         toolchain_info.stdlib_linkflags.linking_context.linker_inputs.to_list()[0].user_link_flags[0],
     )
+    asserts.equals(
+        env,
+        "test:sysroot=" + toolchain_info.sysroot,
+        toolchain_info.stdlib_linkflags.linking_context.linker_inputs.to_list()[0].user_link_flags[1],
+    )
 
     return analysistest.end(env)
 
@@ -55,6 +60,11 @@ def _toolchain_location_expands_extra_rustc_flags_impl(ctx):
         env,
         "extra_rustc_flags:test/unit/toolchain/config.txt",
         toolchain_info.extra_rustc_flags[0],
+    )
+    asserts.equals(
+        env,
+        "extra_rustc_flags:sysroot=" + toolchain_info.sysroot,
+        toolchain_info.extra_rustc_flags[1],
     )
 
     return analysistest.end(env)
@@ -109,6 +119,13 @@ def _define_test_targets():
     )
 
     write_file(
+        name = "mock_rust_lld",
+        out = "mock_rust_lld.exe",
+        content = [],
+        is_executable = True,
+    )
+
+    write_file(
         name = "mock_rustdoc",
         out = "mock_rustdoc.exe",
         content = [],
@@ -123,6 +140,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_triple = "toolchain-test-triple",
@@ -138,6 +156,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = encoded_target_json,
@@ -151,6 +170,7 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
         stdlib_linkflags = [],
         target_json = json.encode(
@@ -172,9 +192,10 @@ def _define_test_targets():
         rust_doc = ":mock_rustdoc",
         rust_std = ":std_libs",
         rustc = ":mock_rustc",
+        linker = ":mock_rust_lld",
         staticlib_ext = ".a",
-        stdlib_linkflags = ["test:$(location :stdlib_srcs)"],
-        extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)"],
+        stdlib_linkflags = ["test:$(location :stdlib_srcs)", "test:sysroot=$(RUST_SYSROOT)"],
+        extra_rustc_flags = ["extra_rustc_flags:$(location :stdlib_srcs)", "extra_rustc_flags:sysroot=$(RUST_SYSROOT)"],
         target_json = encoded_target_json,
     )
 

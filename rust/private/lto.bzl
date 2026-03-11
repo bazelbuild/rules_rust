@@ -105,16 +105,16 @@ def construct_lto_arguments(ctx, toolchain, crate_info):
 
     # proc-macros do not benefit from LTO, and cannot be dynamically linked with LTO.
     if mode in ["thin", "fat", "off"] and not is_exec_configuration(ctx) and crate_info.type != "proc-macro":
-        args.append("lto={}".format(mode))
+        args.append("-Clto=%s" % mode)
 
     if format == "object_and_bitcode":
         # Embedding LLVM bitcode in object files is `rustc's` default.
-        args.extend([])
+        pass
     elif format == "only_object":
-        args.extend(["embed-bitcode=no"])
+        args.append("-Cembed-bitcode=no")
     elif format == "only_bitcode":
-        args.extend(["linker-plugin-lto"])
+        args.append("-Clinker-plugin-lto")
     else:
-        fail("unrecognized LTO object format {}".format(format))
+        fail("unrecognized LTO object format %s" % format)
 
-    return ["-C{}".format(arg) for arg in args]
+    return args

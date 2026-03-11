@@ -27,7 +27,8 @@ def _spec(
         git = None,
         branch = None,
         tag = None,
-        rev = None):
+        rev = None,
+        path = None):
     """A constructor for a crate dependency.
 
     See [specifying dependencies][sd] in the Cargo book for more details.
@@ -36,15 +37,16 @@ def _spec(
 
     Args:
         package (str, optional): The explicit name of the package (used when attempting to alias a crate).
-        version (str, optional): The exact version of the crate. Cannot be used with `git`.
+        version (str, optional): The exact version of the crate. Cannot be used with `git` or `path`.
         artifact (str, optional): Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.
         lib (bool, optional): If using `artifact = "bin"`, additionally setting `lib = True` declares a dependency on both the package's library and binary, as opposed to just the binary.
         default_features (bool, optional): Maps to the `default-features` flag.
         features (list, optional): A list of features to use for the crate
-        git (str, optional): The Git url to use for the crate. Cannot be used with `version`.
+        git (str, optional): The Git url to use for the crate. Cannot be used with `version` or `path`.
         branch (str, optional): The git branch of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.
         tag (str, optional): The git tag of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified. Specifying `rev` is recommended for fully-reproducible builds.
         rev (str, optional): The git revision of the remote crate. Tied with the `git` param. Only one of branch, tag or rev may be specified.
+        path (str, optional): The local path of the remote crate. Cannot be used with `version` or `git`.
 
     Returns:
         string: A json encoded string of all inputs
@@ -59,6 +61,7 @@ def _spec(
             "git": git,
             "lib": lib,
             "package": package,
+            "path": path,
             "rev": rev,
             "tag": tag,
             "version": version,
@@ -93,6 +96,7 @@ def _annotation(
         build_script_data_glob = None,
         build_script_deps = None,
         build_script_env = None,
+        build_script_exec_properties = None,
         build_script_link_deps = None,
         build_script_proc_macro_deps = None,
         build_script_rundir = None,
@@ -135,14 +139,13 @@ def _annotation(
         build_script_data_glob (list, optional): A list of glob patterns to add to a crate's `cargo_build_script::data`
             attribute.
         build_script_deps (list, optional): A list of labels to add to a crate's `cargo_build_script::deps` attribute.
-        build_script_env (dict, optional): Additional environment variables to set on a crate's
-            `cargo_build_script::env` attribute.
+        build_script_env (dict, optional): Additional environment variables to set when running the crate's `cargo_build_script` - sets that target's `build_script_env` attribute.
+        build_script_exec_properties (dict, optional): Execution properties to set on a crate's `cargo_build_script::exec_properties` attribute.
         build_script_link_deps:  A list of labels to add to a crate's `cargo_build_script::link_deps` attribute.
         build_script_proc_macro_deps (list, optional): A list of labels to add to a crate's
             `cargo_build_script::proc_macro_deps` attribute.
         build_script_rundir (str, optional): An override for the build script's rundir attribute.
-        build_script_rustc_env (dict, optional): Additional environment variables to set on a crate's
-            `cargo_build_script::env` attribute.
+        build_script_rustc_env (dict, optional): Additional environment variables to set when compiling the crate's `cargo_build_script` - sets that target's `rustc_env` attribute.
         build_script_toolchains (list, optional): A list of labels to set on a crates's `cargo_build_script::toolchains` attribute.
         build_script_use_default_shell_env (int, optional): Whether or not to include the default shell environment for the build
             script action.
@@ -161,7 +164,7 @@ def _annotation(
         gen_binaries (list or bool, optional): As a list, the subset of the crate's bins that should get `rust_binary`
             targets produced. Or `True` to generate all, `False` to generate none.
         disable_pipelining (bool, optional): If True, disables pipelining for library targets for this crate.
-        gen_build_script (bool, optional): An authorative flag to determine whether or not to produce
+        gen_build_script (bool, optional): An authoritative flag to determine whether or not to produce
             `cargo_build_script` targets for the current crate.
         patch_args (list, optional): The `patch_args` attribute of a Bazel repository rule. See
             [http_archive.patch_args](https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args)
@@ -178,7 +181,7 @@ def _annotation(
         shallow_since (str, optional): An optional timestamp used for crates originating from a git repository
             instead of a crate registry. This flag optimizes fetching the source code.
         override_targets (dict, optional): A dictionary of alternate targets to use when something depends on this crate to allow
-            the parent repo to provide its own version of this dependency. Keys can be `proc-marco`, `custom-build`, `lib`, `bin`.
+            the parent repo to provide its own version of this dependency. Keys can be `proc-macro`, `custom-build`, `lib`, `bin`.
 
     Returns:
         string: A json encoded string containing the specified version and separately all other inputs.
@@ -201,6 +204,7 @@ def _annotation(
             build_script_data_glob = build_script_data_glob,
             build_script_deps = _stringify_list(build_script_deps),
             build_script_env = build_script_env,
+            build_script_exec_properties = build_script_exec_properties,
             build_script_link_deps = build_script_link_deps,
             build_script_proc_macro_deps = _stringify_list(build_script_proc_macro_deps),
             build_script_rundir = build_script_rundir,

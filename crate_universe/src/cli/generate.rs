@@ -96,6 +96,20 @@ pub struct GenerateOptions {
     /// so this provides a way for the repository rule to force printing.
     #[clap(long)]
     pub warnings_output_path: PathBuf,
+
+    /// Whether to skip writing the cargo lockfile back after resolving.
+    /// You may want to set this if your dependency versions are maintained externally through a non-trivial set-up.
+    /// But you probably don't want to set this.
+    #[clap(long)]
+    pub skip_cargo_lockfile_overwrite: bool,
+
+    /// Whether to strip internal dependencies from the cargo lockfile.
+    /// You may want to use this if you want to maintain a cargo lockfile for bazel only.
+    /// Bazel only requires external dependencies to be present in the lockfile.
+    /// By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts
+    /// in other lockfiles where the cargo lockfile's sha is stored.
+    #[clap(long)]
+    pub strip_internal_dependencies_from_cargo_lockfile: bool,
 }
 
 pub fn generate(opt: GenerateOptions) -> Result<()> {
@@ -131,6 +145,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
                     .values()
                     .filter_map(|crate_context| crate_context.repository.as_ref()),
                 context.unused_patches.iter(),
+                &opt.nonhermetic_root_bazel_workspace_dir,
             )?;
 
             return Ok(());
@@ -187,6 +202,7 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         splicing_manifest.manifests.keys().cloned(),
         annotations.lockfile.crates.values(),
         cargo_lockfile.patch.unused.iter(),
+        &opt.nonhermetic_root_bazel_workspace_dir,
     )?;
 
     // Generate renderable contexts for each package
@@ -213,9 +229,30 @@ pub fn generate(opt: GenerateOptions) -> Result<()> {
         write_lockfile(lock_content, &lockfile, opt.dry_run)?;
     }
 
-    update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile)?;
+    if !opt.skip_cargo_lockfile_overwrite {
+        let cargo_lockfile_to_write = if opt.strip_internal_dependencies_from_cargo_lockfile {
+            remove_internal_dependencies_from_cargo_lockfile(cargo_lockfile)
+        } else {
+            cargo_lockfile
+        };
+        update_cargo_lockfile(&opt.cargo_lockfile, cargo_lockfile_to_write)?;
+    }
 
     Ok(())
+}
+
+fn remove_internal_dependencies_from_cargo_lockfile(cargo_lockfile: Lockfile) -> Lockfile {
+    let filtered_packages: Vec<_> = cargo_lockfile
+        .packages
+        .into_iter()
+        // Filter packages to only keep external dependencies (those with a source)
+        .filter(|pkg| pkg.source.is_some())
+        .collect();
+
+    Lockfile {
+        packages: filtered_packages,
+        ..cargo_lockfile
+    }
 }
 
 fn update_cargo_lockfile(path: &Path, cargo_lockfile: Lockfile) -> Result<()> {
@@ -244,6 +281,7 @@ fn write_paths_to_track<
     manifests: Paths,
     source_annotations: SourceAnnotations,
     unused_patches: UnusedPatches,
+    nonhermetic_root_bazel_workspace_dir: &Utf8PathBuf,
 ) -> Result<()> {
     let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
@@ -258,6 +296,8 @@ fn write_paths_to_track<
         .iter()
         .cloned()
         .chain(manifests)
+        // Paths outside the bazel workspace cannot be `.watch`-ed.
+        .filter(|p| p.starts_with(nonhermetic_root_bazel_workspace_dir))
         .collect();
     std::fs::write(
         output_file,
@@ -279,4 +319,35 @@ fn write_paths_to_track<
     )
     .context("Failed to write warnings file")?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test;
+
+    #[test]
+    fn test_remove_internal_dependencies_from_cargo_lockfile_workspace_build_scripts_deps_should_remove_internal_dependencies(
+    ) {
+        let original_lockfile = test::lockfile::workspace_build_scripts_deps();
+
+        let filtered_lockfile =
+            remove_internal_dependencies_from_cargo_lockfile(original_lockfile.clone());
+
+        assert!(filtered_lockfile.packages.len() < original_lockfile.packages.len());
+
+        assert!(original_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "child"));
+        assert!(!filtered_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "child"));
+
+        assert!(filtered_lockfile
+            .packages
+            .iter()
+            .any(|pkg| pkg.name.as_str() == "anyhow"));
+    }
 }

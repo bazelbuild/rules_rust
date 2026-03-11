@@ -6,6 +6,10 @@
 
 This repository provides rules for building [Rust](https://www.rust-lang.org/) projects with [Bazel](https://bazel.build/).
 
+### Starter repo
+
+The fastest way to try this in an empty project is to click the green "Use this template" button on https://github.com/bazel-starters/rust.
+
 ## Community
 
 General discussions and announcements take place in the [GitHub Discussions](https://github.com/bazelbuild/rules_rust/discussions), but there are

@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(
     "//rust:defs.bzl",
     "rust_binary",
@@ -17,6 +18,11 @@ def _check_runfiles_test_impl(ctx):
 
     asserts.true(env, _is_in_runfiles("libbar.so", runfiles))
 
+    # cc_libraries put shared libs to data runfiles even when linking statically
+    # and there is a static library alternative. We must be careful not to put
+    # these shared libs to default runfiles.
+    asserts.false(env, _is_in_runfiles("libtest_Sunit_Scheck_Urunfiles_Slibcc_Ulib.so", runfiles))
+
     return analysistest.end(env)
 
 def _is_in_runfiles(name, runfiles):
@@ -28,11 +34,15 @@ def _is_in_runfiles(name, runfiles):
 check_runfiles_test = analysistest.make(_check_runfiles_test_impl)
 
 def _check_runfiles_test():
+    cc_library(
+        name = "cc_lib",
+        srcs = ["bar.cc"],
+    )
     rust_library(
         name = "foo_lib",
         srcs = ["foo.rs"],
         edition = "2018",
-        deps = [":libbar.so"],
+        deps = [":libbar.so", ":cc_lib"],
     )
 
     rust_binary(

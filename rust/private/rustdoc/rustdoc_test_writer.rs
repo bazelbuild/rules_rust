@@ -175,7 +175,7 @@ fn write_test_runner_unix(
         "#!/usr/bin/env bash".to_owned(),
         "".to_owned(),
         // TODO: Instead of creating a symlink to mimic the behavior of
-        // --legacy_external_runfiles, this rule should be able to correcrtly
+        // --legacy_external_runfiles, this rule should be able to correctly
         // sanitize the action args to run in a runfiles without this link.
         "if [[ ! -e 'external' ]]; then ln -s ../ external ; fi".to_owned(),
         "".to_owned(),
@@ -234,7 +234,7 @@ fn write_test_runner_windows(
         "@ECHO OFF".to_owned(),
         "".to_owned(),
         // TODO: Instead of creating a symlink to mimic the behavior of
-        // --legacy_external_runfiles, this rule should be able to correcrtly
+        // --legacy_external_runfiles, this rule should be able to correctly
         // sanitize the action args to run in a runfiles without this link.
         "powershell.exe -c \"if (!(Test-Path .\\external)) { New-Item -Path .\\external -ItemType SymbolicLink -Value ..\\ }\""
             .to_owned(),

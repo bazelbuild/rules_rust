@@ -44,27 +44,8 @@ impl DependencySet {
     pub(crate) fn new_for_node(
         node: &Node,
         metadata: &CargoMetadata,
-        resolver_data: &TreeResolverMetadata,
+        tree_data: Option<&Select<BTreeSet<CrateId>>>,
     ) -> Self {
-        // Build a dep tree mapping that's easily indexable via `cargo_metadata::PackageId`
-        let dep_tree: BTreeMap<CrateId, Select<BTreeSet<CrateId>>> = resolver_data
-            .iter()
-            .map(|(id, tree_data)| {
-                let mut select = Select::new();
-                for (config, data) in tree_data.items() {
-                    for dep in data.deps {
-                        select.insert(dep, config.clone());
-                    }
-                }
-                (id.clone(), select)
-            })
-            .collect();
-
-        let crate_id = {
-            let package = &metadata[&node.id];
-            CrateId::from(package)
-        };
-
         let (normal_dev_deps, normal_deps) = {
             let (dev, normal) = node
                 .deps
@@ -81,15 +62,9 @@ impl DependencySet {
                     dev,
                     metadata,
                     DependencyKind::Development,
-                    dep_tree.get(&crate_id),
+                    tree_data,
                 ),
-                collect_deps_selectable(
-                    node,
-                    normal,
-                    metadata,
-                    DependencyKind::Normal,
-                    dep_tree.get(&crate_id),
-                ),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Normal, tree_data),
             )
         };
 
@@ -109,15 +84,9 @@ impl DependencySet {
                     dev,
                     metadata,
                     DependencyKind::Development,
-                    dep_tree.get(&crate_id),
+                    tree_data,
                 ),
-                collect_deps_selectable(
-                    node,
-                    normal,
-                    metadata,
-                    DependencyKind::Normal,
-                    dep_tree.get(&crate_id),
-                ),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Normal, tree_data),
             )
         };
 
@@ -139,15 +108,9 @@ impl DependencySet {
                     proc_macro,
                     metadata,
                     DependencyKind::Build,
-                    dep_tree.get(&crate_id),
+                    tree_data,
                 ),
-                collect_deps_selectable(
-                    node,
-                    normal,
-                    metadata,
-                    DependencyKind::Build,
-                    dep_tree.get(&crate_id),
-                ),
+                collect_deps_selectable(node, normal, metadata, DependencyKind::Build, tree_data),
             )
         };
 
@@ -166,7 +129,7 @@ impl DependencySet {
             .filter(|(_, dependency)| metadata[&dependency.package_id].links.is_some())
         {
             // Add any normal dependency to build dependencies that are associated `*-sys` crates
-            build_link_deps.insert(dependency.clone(), configuration.clone());
+            build_link_deps.insert(dependency, configuration);
         }
 
         Self {
@@ -179,6 +142,24 @@ impl DependencySet {
             build_proc_macro_deps,
         }
     }
+}
+
+/// Build a dep tree mapping that's easily indexable via `cargo_metadata::PackageId`
+pub(crate) fn build_dep_tree(
+    resolver_data: &TreeResolverMetadata,
+) -> BTreeMap<CrateId, Select<BTreeSet<CrateId>>> {
+    resolver_data
+        .iter()
+        .map(|(id, tree_data)| {
+            let mut select = Select::new();
+            for (config, data) in tree_data.items() {
+                for dep in data.deps {
+                    select.insert(dep, config.clone());
+                }
+            }
+            (id.clone(), select)
+        })
+        .collect()
 }
 
 /// For details on optional dependencies see [the Rust docs](https://doc.rust-lang.org/cargo/reference/features.html#optional-dependencies).
@@ -539,8 +520,7 @@ mod test {
         let metadata = metadata::example_proc_macro_dep();
 
         let node = find_metadata_node("example-proc-macro-dep", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         let normal_deps: Vec<_> = dependencies
             .normal_deps
@@ -564,8 +544,7 @@ mod test {
         let metadata = metadata::alias();
 
         let node = find_metadata_node("surrealdb-core", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         let bindings = dependencies.normal_deps.items();
 
@@ -588,8 +567,7 @@ mod test {
 
         let openssl_node = find_metadata_node("openssl", &metadata);
 
-        let dependencies =
-            DependencySet::new_for_node(openssl_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(openssl_node, &metadata, None);
 
         let normal_sys_crate =
             dependencies
@@ -622,8 +600,7 @@ mod test {
         let metadata = metadata::build_scripts();
 
         let libssh2 = find_metadata_node("libssh2-sys", &metadata);
-        let libssh2_depset =
-            DependencySet::new_for_node(libssh2, &metadata, &TreeResolverMetadata::default());
+        let libssh2_depset = DependencySet::new_for_node(libssh2, &metadata, None);
 
         // Collect build dependencies into a set
         let build_deps: BTreeSet<String> = libssh2_depset
@@ -672,8 +649,7 @@ mod test {
         let metadata = metadata::alias();
 
         let aliases_node = find_metadata_node("aliases", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(aliases_node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(aliases_node, &metadata, None);
 
         let aliases: Vec<Dependency> = dependencies
             .normal_deps
@@ -699,8 +675,7 @@ mod test {
         let metadata = metadata::crate_types();
 
         let node = find_metadata_node("crate-types", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         let rlib_deps: Vec<Dependency> = dependencies
             .normal_deps
@@ -730,8 +705,7 @@ mod test {
         let metadata = metadata::multi_cfg_dep();
 
         let node = find_metadata_node("cpufeatures", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         let libc_cfgs: BTreeSet<Option<String>> = dependencies
             .normal_deps
@@ -756,8 +730,7 @@ mod test {
         let metadata = metadata::multi_kind_proc_macro_dep();
 
         let node = find_metadata_node("multi-kind-proc-macro-dep", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         let lib_deps: Vec<_> = dependencies
             .proc_macro_deps
@@ -781,8 +754,7 @@ mod test {
         let metadata = metadata::optional_deps_disabled();
 
         let node = find_metadata_node("clap", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         assert!(!dependencies
             .normal_deps
@@ -797,8 +769,7 @@ mod test {
         let metadata = metadata::renamed_optional_deps_disabled();
 
         let serde_with = find_metadata_node("serde_with", &metadata);
-        let serde_with_depset =
-            DependencySet::new_for_node(serde_with, &metadata, &TreeResolverMetadata::new());
+        let serde_with_depset = DependencySet::new_for_node(serde_with, &metadata, None);
         assert!(!serde_with_depset
             .normal_deps
             .items()
@@ -820,13 +791,13 @@ mod test {
             },
             None,
         );
-        let resolver_data = TreeResolverMetadata::from([(
-            CrateId::new("clap".to_owned(), Version::new(4, 1, 1)),
-            select,
-        )]);
+
+        let crate_id = CrateId::new("clap".to_owned(), Version::new(4, 1, 1));
+        let resolver_data = TreeResolverMetadata::from([(crate_id.clone(), select)]);
 
         let clap = find_metadata_node("clap", &metadata);
-        let clap_depset = DependencySet::new_for_node(clap, &metadata, &resolver_data);
+        let dep_tree = build_dep_tree(&resolver_data);
+        let clap_depset = DependencySet::new_for_node(clap, &metadata, dep_tree.get(&crate_id));
         assert_eq!(
             clap_depset
                 .normal_deps
@@ -839,8 +810,7 @@ mod test {
         );
 
         let notify = find_metadata_node("notify", &metadata);
-        let notify_depset =
-            DependencySet::new_for_node(notify, &metadata, &TreeResolverMetadata::default());
+        let notify_depset = DependencySet::new_for_node(notify, &metadata, None);
 
         // mio is not present in the common list of dependencies
         assert!(!notify_depset
@@ -873,8 +843,7 @@ mod test {
         let metadata = metadata::optional_deps_disabled_build_dep_enabled();
 
         let node = find_metadata_node("gherkin", &metadata);
-        let dependencies =
-            DependencySet::new_for_node(node, &metadata, &TreeResolverMetadata::default());
+        let dependencies = DependencySet::new_for_node(node, &metadata, None);
 
         assert!(!dependencies
             .normal_deps
@@ -901,13 +870,13 @@ mod test {
             },
             None,
         );
-        let resolver_data = TreeResolverMetadata::from([(
-            CrateId::new("p256".to_owned(), Version::new(0, 13, 2)),
-            select,
-        )]);
+
+        let crate_id = CrateId::new("p256".to_owned(), Version::new(0, 13, 2));
+        let resolver_data = TreeResolverMetadata::from([(crate_id.clone(), select)]);
 
         let p256 = find_metadata_node("p256", &metadata);
-        let p256_depset = DependencySet::new_for_node(p256, &metadata, &resolver_data);
+        let dep_tree = build_dep_tree(&resolver_data);
+        let p256_depset = DependencySet::new_for_node(p256, &metadata, dep_tree.get(&crate_id));
         assert_eq!(
             p256_depset
                 .normal_deps
@@ -959,13 +928,13 @@ mod test {
             None,
         );
 
-        let tree_metadata = TreeResolverMetadata::from([(
-            CrateId::new("tokio".to_owned(), Version::new(1, 37, 0)),
-            select,
-        )]);
+        let crate_id = CrateId::new("tokio".to_owned(), Version::new(1, 37, 0));
+        let resolver_data = TreeResolverMetadata::from([(crate_id.clone(), select)]);
 
         let tokio_node = find_metadata_node("tokio", &metadata);
-        let tokio_depset = DependencySet::new_for_node(tokio_node, &metadata, &tree_metadata);
+        let dep_tree = build_dep_tree(&resolver_data);
+        let tokio_depset =
+            DependencySet::new_for_node(tokio_node, &metadata, dep_tree.get(&crate_id));
         assert_eq!(
             tokio_depset
                 .normal_deps
