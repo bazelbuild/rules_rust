@@ -78,11 +78,9 @@ filegroup(
     srcs = ["lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}"],
     data = glob(
         include = [
+            "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
             "lib/rustlib/{target_triple}/bin/*-ld{binary_ext}",
             "lib/rustlib/{target_triple}/bin/gcc-ld/*",
-        ],
-        exclude = [
-            "lib/rustlib/{target_triple}/bin/rust-lld{binary_ext}",
         ],
         allow_empty = True,
     ),
