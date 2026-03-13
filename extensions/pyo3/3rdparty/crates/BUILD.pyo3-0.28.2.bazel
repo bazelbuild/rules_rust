@@ -47,16 +47,13 @@ rust_library(
         "default",
         "experimental-inspect",
         "extension-module",
-        "indoc",
         "macros",
         "pyo3-macros",
-        "unindent",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
     proc_macro_deps = [
-        "@rpyo3c__indoc-2.0.6//:indoc",
-        "@rpyo3c__pyo3-macros-0.26.0//:pyo3_macros",
+        "@rpyo3c__pyo3-macros-0.28.2//:pyo3_macros",
     ],
     rustc_env_files = [
         ":cargo_toml_env_vars",
@@ -119,14 +116,12 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.26.0",
+    version = "0.28.2",
     deps = [
         "@rpyo3c__libc-0.2.176//:libc",
-        "@rpyo3c__memoffset-0.9.1//:memoffset",
         "@rpyo3c__once_cell-1.21.3//:once_cell",
-        "@rpyo3c__pyo3-0.26.0//:build_script_build",
-        "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
-        "@rpyo3c__unindent-0.2.4//:unindent",
+        "@rpyo3c__pyo3-0.28.2//:build_script_build",
+        "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
     ] + select({
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [
             "@rpyo3c__portable-atomic-1.11.1//:portable_atomic",  # cfg(not(target_has_atomic = "64"))
@@ -178,10 +173,8 @@ cargo_build_script(
         "default",
         "experimental-inspect",
         "extension-module",
-        "indoc",
         "macros",
         "pyo3-macros",
-        "unindent",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -199,7 +192,7 @@ cargo_build_script(
     ),
     edition = "2021",
     link_deps = [
-        "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
+        "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
     ],
     pkg_name = "pyo3",
     rustc_env_files = [
@@ -215,10 +208,10 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.26.0",
+    version = "0.28.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rpyo3c__pyo3-build-config-0.26.0//:pyo3_build_config",
+        "@rpyo3c__pyo3-build-config-0.28.2//:pyo3_build_config",
     ],
 )
 
