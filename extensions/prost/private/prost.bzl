@@ -31,14 +31,14 @@ RUST_EDITION = "2021"
 
 TOOLCHAIN_TYPE = "@rules_rust_prost//:toolchain_type"
 
-def _create_proto_lang_toolchain(ctx, prost_toolchain):
+def _create_proto_lang_toolchain(prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
         out_replacement_format_flag = "--prost_out=%s",
         plugin_format_flag = prost_toolchain.prost_plugin_flag,
         plugin = prost_toolchain.prost_plugin[DefaultInfo].files_to_run,
         runtime = prost_toolchain.prost_runtime,
         provided_proto_sources = depset(),
-        proto_compiler = ctx.attr._prost_process_wrapper[DefaultInfo].files_to_run,
+        proto_compiler = prost_toolchain.prost_process_wrapper[DefaultInfo].files_to_run,
         protoc_opts = prost_toolchain.protoc_opts,
         progress_message = "ProstGenProto %{label}",
         mnemonic = "ProstGenProto",
@@ -118,7 +118,7 @@ def _compile_proto(
         additional_inputs = additional_inputs,
         additional_args = additional_args,
         generated_files = [lib_rs, package_info_file],
-        proto_lang_toolchain_info = _create_proto_lang_toolchain(ctx, prost_toolchain),
+        proto_lang_toolchain_info = _create_proto_lang_toolchain(prost_toolchain),
         plugin_output = ctx.bin_dir.path,
     )
 
@@ -377,12 +377,6 @@ rust_prost_aspect = aspect(
             default = Label("@bazel_tools//tools/cpp:grep-includes"),
             cfg = "exec",
         ),
-        "_prost_process_wrapper": attr.label(
-            doc = "The wrapper script for the Prost protoc plugin.",
-            cfg = "exec",
-            executable = True,
-            default = Label("//private:protoc_wrapper"),
-        ),
     } | RUSTC_ATTRS | {
         # Need to override this attribute to explicitly set the workspace.
         "_always_enable_metadata_output_groups": attr.label(
@@ -473,6 +467,7 @@ def _rust_prost_toolchain_impl(ctx):
         prost_plugin = ctx.attr.prost_plugin,
         prost_plugin_flag = ctx.attr.prost_plugin_flag,
         prost_runtime = ctx.attr.prost_runtime,
+        prost_process_wrapper = ctx.attr._prost_process_wrapper,
         prost_types = ctx.attr.prost_types,
         proto_compiler = proto_compiler,
         protoc_opts = ctx.fragments.proto.experimental_protoc_opts,
@@ -515,6 +510,12 @@ rust_prost_toolchain = rule(
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
             mandatory = True,
             aspects = [rust_analyzer_aspect],
+        ),
+        "_prost_process_wrapper": attr.label(
+            doc = "The wrapper script for the Prost protoc plugin.",
+            cfg = "exec",
+            executable = True,
+            default = Label("@rules_rust_prost//private:protoc_wrapper"),
         ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
