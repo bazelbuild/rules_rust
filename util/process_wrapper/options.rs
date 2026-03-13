@@ -351,7 +351,29 @@ fn prepare_args(
     for arg in args.into_iter() {
         let arg = prepare_arg(arg, subst_mappings);
         if let Some(param_file) = arg.strip_prefix('@') {
-            let expanded_file = format!("{param_file}.expanded");
+            // Write the expanded paramfile to a temp directory to avoid issues
+            // with sandbox filesystems where bazel-out symlinks may prevent the
+            // expanded file from being visible to the child process.
+            let expanded_file = match write_file {
+                Some(_) => format!("{param_file}.expanded"),
+                None => {
+                    let basename = std::path::Path::new(param_file)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("params");
+                    format!(
+                        "{}/pw_expanded_{}_{}",
+                        std::env::temp_dir().display(),
+                        std::process::id(),
+                        basename,
+                    )
+                }
+            };
+
+            enum Writer<'f, F: FnMut(&str, &str) -> Result<(), OptionError>> {
+                Function(&'f mut F),
+                BufWriter(io::BufWriter<File>),
+            }
             let format_err = |err: io::Error| {
                 OptionError::Generic(format!(
                     "{} writing path: {:?}, current directory: {:?}",
@@ -360,11 +382,6 @@ fn prepare_args(
                     std::env::current_dir()
                 ))
             };
-
-            enum Writer<'f, F: FnMut(&str, &str) -> Result<(), OptionError>> {
-                Function(&'f mut F),
-                BufWriter(io::BufWriter<File>),
-            }
             let mut out = match write_file {
                 Some(ref mut f) => Writer::Function(f),
                 None => Writer::BufWriter(io::BufWriter::new(

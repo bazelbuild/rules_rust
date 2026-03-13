@@ -328,7 +328,9 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 if let Some(flag) = flag {
                     // Try to claim the response slot atomically.
                     if !flag.swap(true, Ordering::SeqCst) {
-                        // We claimed it — send the cancel acknowledgment.
+                        // We claimed it — kill any associated background rustc
+                        // to avoid wasting CPU when the remote leg wins.
+                        kill_pipelined_request(&pipeline_state, request.request_id);
                         let response = build_cancel_response(request.request_id);
                         let _ =
                             write_worker_response(&stdout, &response, request.request_id, "cancel");
@@ -564,6 +566,9 @@ fn scan_pipelining_flags<'a>(iter: impl Iterator<Item = &'a str>) -> (bool, bool
 /// for the child to exit.
 struct BackgroundRustc {
     child: std::process::Child,
+    /// Request ID of the metadata action that spawned this background rustc.
+    /// Used by the cancel handler to find which pipeline key to kill.
+    metadata_request_id: i64,
     /// Diagnostics captured from rustc stderr before the metadata signal.
     diagnostics_before: String,
     /// Background thread draining rustc's remaining stderr output after the
@@ -1917,6 +1922,7 @@ fn handle_pipelining_metadata(
                 key.clone(),
                 BackgroundRustc {
                     child,
+                    metadata_request_id: request.request_id,
                     diagnostics_before,
                     stderr_drain: drain,
                     pipeline_root_dir: ctx.root_dir.clone(),
@@ -2305,6 +2311,38 @@ fn extract_cancel(request: &JsonValue) -> bool {
         }
     }
     false
+}
+
+/// Kills the background rustc process associated with a cancelled request.
+///
+/// Looks up the pipeline key by metadata_request_id, then kills the child
+/// process and joins the stderr drain thread. This prevents wasted CPU when
+/// the remote leg wins a dynamic execution race.
+fn kill_pipelined_request(
+    pipeline_state: &Arc<Mutex<PipelineState>>,
+    request_id: i64,
+) {
+    let mut state = lock_or_recover(pipeline_state);
+    let key_to_kill: Option<String> = state.active.iter().find_map(|(key, bg)| {
+        if bg.metadata_request_id == request_id {
+            Some(key.clone())
+        } else {
+            None
+        }
+    });
+    if let Some(key) = key_to_kill {
+        if let Some(mut bg) = state.active.remove(&key) {
+            append_worker_lifecycle_log(&format!(
+                "pid={} event=cancel_kill request_id={} key={}",
+                current_pid(),
+                request_id,
+                key,
+            ));
+            let _ = bg.child.kill();
+            let _ = bg.child.wait(); // reap zombie
+            let _ = bg.stderr_drain.join();
+        }
+    }
 }
 
 /// Builds a JSON WorkResponse with `wasCancelled: true`.

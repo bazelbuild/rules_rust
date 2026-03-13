@@ -1430,6 +1430,7 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental):
         if use_worker_pipelining:
             reqs["supports-multiplex-workers"] = "1"
             reqs["supports-multiplex-sandboxing"] = "1"
+            reqs["supports-worker-cancellation"] = "1"
         else:
             reqs["supports-workers"] = "1"
         if is_incremental:
