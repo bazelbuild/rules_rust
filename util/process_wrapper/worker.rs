@@ -31,18 +31,20 @@
 //!
 //! Protocol reference: https://bazel.build/remote/persistent
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, BufRead, BufReader, Write};
+use std::os::fd::AsRawFd;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
 
 use tinyjson::JsonValue;
 
-use crate::options::is_pipelining_flag;
+use crate::options::{is_pipelining_flag, is_relocated_pw_flag};
+use crate::util::read_stamp_status_to_array;
 use crate::ProcessWrapperError;
 
 /// Locks a mutex, recovering from poisoning instead of panicking.
@@ -56,6 +58,21 @@ fn lock_or_recover<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
+
+fn current_pid() -> u32 {
+    std::process::id()
+}
+
+fn current_thread_label() -> String {
+    format!("{:?}", thread::current().id())
+}
+
+static RESPONSE_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+static WORKER_SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
+#[cfg(unix)]
+static SIGNAL_LOG_FD: AtomicI32 = AtomicI32::new(-1);
+#[cfg(unix)]
+static OUTPUT_BASE_SIGNAL_LOG_FD: AtomicI32 = AtomicI32::new(-1);
 
 fn extract_request_id_from_raw_line(line: &str) -> Option<i64> {
     let key_pos = line.find("\"requestId\"")?;
@@ -131,6 +148,22 @@ impl WorkerStateRoots {
     }
 }
 
+fn output_base_from_worker_cwd(cwd: &std::path::Path) -> Option<PathBuf> {
+    for ancestor in cwd.ancestors() {
+        if ancestor.file_name().is_some_and(|name| name == "execroot") {
+            return ancestor.parent().map(PathBuf::from);
+        }
+        if ancestor
+            .file_name()
+            .is_some_and(|name| name == "bazel-workers")
+        {
+            return ancestor.parent().map(PathBuf::from);
+        }
+    }
+    None
+}
+
+
 /// Entry point for persistent worker mode.
 ///
 /// Loops reading JSON WorkRequest messages from stdin until EOF.
@@ -148,6 +181,12 @@ impl WorkerStateRoots {
 /// The worker must combine startup_args + per-request args when spawning the
 /// subprocess, so process_wrapper receives the full argument list it expects.
 pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
+    let request_counter = Arc::new(AtomicUsize::new(0));
+    install_worker_panic_hook();
+    let _lifecycle =
+        WorkerLifecycleGuard::new(&std::env::args().collect::<Vec<_>>(), &request_counter);
+    install_worker_signal_handlers();
+
     let self_path = std::env::current_exe()
         .map_err(|e| ProcessWrapperError(format!("failed to get worker executable path: {e}")))?;
 
@@ -161,9 +200,9 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         .collect();
 
     let stdin = io::stdin();
-    // Shared stdout protected by a mutex so concurrent threads don't interleave
-    // their WorkResponse messages.
-    let stdout = Arc::new(Mutex::new(io::stdout()));
+    // Serialize writes to fd 1 so multiplexed responses remain newline-delimited
+    // JSON records with no byte interleaving.
+    let stdout = Arc::new(Mutex::new(()));
 
     // Shared state for worker-managed pipelined compilation.
     // The metadata action stores a running rustc Child here; the full compile
@@ -180,11 +219,34 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let in_flight: Arc<Mutex<HashMap<i64, Arc<AtomicBool>>>> = Arc::new(Mutex::new(HashMap::new()));
 
     for line in stdin.lock().lines() {
-        let line =
-            line.map_err(|e| ProcessWrapperError(format!("failed to read WorkRequest: {e}")))?;
+        let line = match line {
+            Ok(line) => line,
+            Err(e) => {
+                begin_worker_shutdown("stdin_read_error");
+                append_worker_lifecycle_log(&format!(
+                    "pid={} event=stdin_read_error thread={} error={}",
+                    current_pid(),
+                    current_thread_label(),
+                    e
+                ));
+                return Err(ProcessWrapperError(format!(
+                    "failed to read WorkRequest: {e}"
+                )));
+            }
+        };
         if line.is_empty() {
             continue;
         }
+        if worker_is_shutting_down() {
+            append_worker_lifecycle_log(&format!(
+                "pid={} event=request_ignored_for_shutdown thread={} bytes={}",
+                current_pid(),
+                current_thread_label(),
+                line.len(),
+            ));
+            break;
+        }
+        request_counter.fetch_add(1, Ordering::SeqCst);
 
         let request: JsonValue = match line.parse::<JsonValue>() {
             Ok(request) => request,
@@ -192,21 +254,49 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 // Try to extract requestId so we can send an error response
                 // rather than leaving Bazel hanging on the missing response.
                 if let Some(request_id) = extract_request_id_from_raw_line(&line) {
+                    append_worker_lifecycle_log(&format!(
+                        "pid={} thread={} request_parse_error request_id={} bytes={} error={}",
+                        current_pid(),
+                        current_thread_label(),
+                        request_id,
+                        line.len(),
+                        e
+                    ));
                     let response =
                         build_response(1, &format!("worker protocol parse error: {e}"), request_id);
-                    let mut out = lock_or_recover(&stdout);
-                    let _ = writeln!(out, "{response}");
-                    let _ = out.flush();
+                    let _ = write_worker_response(
+                        &stdout,
+                        &response,
+                        request_id,
+                        "request_parse_error",
+                    );
                 }
                 continue;
             }
         };
         let request = WorkRequestContext::from_json(&request);
+        append_worker_lifecycle_log(&format!(
+            "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
+            current_pid(),
+            current_thread_label(),
+            request.request_id,
+            request.cancel,
+            crate_name_from_args(&request.arguments).unwrap_or("-"),
+            emit_arg_from_args(&request.arguments).unwrap_or("-"),
+            pipeline_key_from_args(&request.arguments).unwrap_or("-"),
+        ));
+
+        if worker_is_shutting_down() {
+            let response = build_shutdown_response(request.request_id);
+            let _ = write_worker_response(&stdout, &response, request.request_id, "shutdown");
+            continue;
+        }
 
         if request.request_id == 0 {
             // Singleplex: process inline on the main thread (backward-compatible).
             let mut full_args = startup_args.clone();
             full_args.extend(request.arguments.clone());
+            relocate_pw_flags(&mut full_args);
 
             // Workers run in execroot without sandboxing. Bazel marks action outputs
             // read-only after each successful action. Make them writable first.
@@ -215,11 +305,15 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let (exit_code, output) = run_request(&self_path, full_args)?;
 
             let response = build_response(exit_code, &output, request.request_id);
-            let mut out = lock_or_recover(&stdout);
-            writeln!(out, "{response}")
-                .map_err(|e| ProcessWrapperError(format!("failed to write WorkResponse: {e}")))?;
-            out.flush()
-                .map_err(|e| ProcessWrapperError(format!("failed to flush stdout: {e}")))?;
+            write_worker_response(&stdout, &response, request.request_id, "singleplex")?;
+            append_worker_lifecycle_log(&format!(
+                "pid={} thread={} request_complete request_id={} exit_code={} output_bytes={} mode=singleplex",
+                current_pid(),
+                current_thread_label(),
+                request.request_id,
+                exit_code,
+                output.len(),
+            ));
         } else {
             let stdout = Arc::clone(&stdout);
             let in_flight = Arc::clone(&in_flight);
@@ -236,9 +330,8 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     if !flag.swap(true, Ordering::SeqCst) {
                         // We claimed it — send the cancel acknowledgment.
                         let response = build_cancel_response(request.request_id);
-                        let mut out = lock_or_recover(&stdout);
-                        let _ = writeln!(out, "{response}");
-                        let _ = out.flush();
+                        let _ =
+                            write_worker_response(&stdout, &response, request.request_id, "cancel");
                     }
                     // If swap returned true, the worker thread already sent the normal
                     // response before we could cancel — nothing more to do.
@@ -263,10 +356,40 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let request = request.clone();
 
             std::thread::spawn(move || {
+                append_worker_lifecycle_log(&format!(
+                    "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
+                    current_pid(),
+                    current_thread_label(),
+                    request.request_id,
+                    crate_name_from_args(&request.arguments).unwrap_or("-"),
+                    emit_arg_from_args(&request.arguments).unwrap_or("-"),
+                    pipeline_key_from_args(&request.arguments).unwrap_or("-"),
+                ));
+                if worker_is_shutting_down() {
+                    if !claim_flag.swap(true, Ordering::SeqCst) {
+                        let response = build_shutdown_response(request.request_id);
+                        let _ = write_worker_response(
+                            &stdout,
+                            &response,
+                            request.request_id,
+                            "shutdown_thread_start",
+                        );
+                    }
+                    lock_or_recover(&in_flight).remove(&request.request_id);
+                    append_worker_lifecycle_log(&format!(
+                        "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
+                        current_pid(),
+                        current_thread_label(),
+                        request.request_id,
+                        claim_flag.load(Ordering::SeqCst),
+                    ));
+                    return;
+                }
                 let (exit_code, output) =
                     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         let mut full_args = startup_args;
                         full_args.extend(request.arguments.clone());
+                        relocate_pw_flags(&mut full_args);
 
                         let sandbox_opt = request.sandbox_dir.clone();
 
@@ -324,13 +447,29 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 // Only send a response if a cancel acknowledgment hasn't already been sent.
                 if !claim_flag.swap(true, Ordering::SeqCst) {
                     let response = build_response(exit_code, &output, request.request_id);
-                    let mut out = lock_or_recover(&stdout);
-                    let _ = writeln!(out, "{response}");
-                    let _ = out.flush();
+                    let _ =
+                        write_worker_response(&stdout, &response, request.request_id, "multiplex");
                 }
+                append_worker_lifecycle_log(&format!(
+                    "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
+                    current_pid(),
+                    current_thread_label(),
+                    request.request_id,
+                    exit_code,
+                    output.len(),
+                    claim_flag.load(Ordering::SeqCst),
+                ));
             });
         }
     }
+
+    begin_worker_shutdown("stdin_eof");
+    append_worker_lifecycle_log(&format!(
+        "pid={} event=stdin_eof thread={} requests_seen={}",
+        current_pid(),
+        current_thread_label(),
+        request_counter.load(Ordering::SeqCst),
+    ));
 
     Ok(())
 }
@@ -464,6 +603,39 @@ impl PipelineState {
     fn take(&mut self, key: &str) -> Option<BackgroundRustc> {
         self.active.remove(key)
     }
+
+    /// Remove entries whose background rustc child has already exited.
+    ///
+    /// This handles the case where a build fails between the metadata and full
+    /// actions: the metadata handler stores a `BackgroundRustc` but the full
+    /// handler never arrives. Without cleanup, resources leak until the worker dies.
+    fn drain_completed(&mut self) -> usize {
+        let stale_keys: Vec<String> = self
+            .active
+            .iter_mut()
+            .filter_map(|(key, bg)| {
+                // try_wait returns Ok(Some(status)) if the child has exited,
+                // Ok(None) if still running, Err if something went wrong.
+                match bg.child.try_wait() {
+                    Ok(Some(_)) => Some(key.clone()),
+                    Ok(None) => None,
+                    Err(_) => Some(key.clone()), // treat errors as stale
+                }
+            })
+            .collect();
+        let count = stale_keys.len();
+        for key in &stale_keys {
+            if let Some(bg) = self.active.remove(key) {
+                // Join the stderr drain thread to avoid resource leaks.
+                let _ = bg.stderr_drain.join();
+                append_worker_metric_log(&format!(
+                    "pipeline_drain_stale key={key} pid={}",
+                    current_pid()
+                ));
+            }
+        }
+        count
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -475,24 +647,20 @@ struct ParsedPwArgs {
     subst: Vec<(String, String)>,
     env_files: Vec<String>,
     arg_files: Vec<String>,
+    stable_status_file: Option<String>,
+    volatile_status_file: Option<String>,
     output_file: Option<String>,
 }
 
-#[derive(Debug)]
-struct StagedPipeline {
+/// Lightweight pipeline context for the "resolve-through" approach.
+///
+/// Instead of staging inputs into a worker-owned execroot, we use the worker's
+/// real execroot (CWD) directly. Only outputs are redirected to a persistent
+/// pipeline directory to prevent inter-request interference.
+struct PipelineContext {
     root_dir: PathBuf,
     execroot_dir: PathBuf,
     outputs_dir: PathBuf,
-}
-
-#[derive(Default)]
-struct InputStageStats {
-    declared_inputs: usize,
-    regular_files: usize,
-    directories: usize,
-    preserved_symlinks: usize,
-    hardlinked_files: usize,
-    copied_files: usize,
 }
 
 #[derive(Default)]
@@ -502,6 +670,28 @@ struct OutputMaterializationStats {
     copied_files: usize,
 }
 
+
+#[cfg(unix)]
+const SIG_HUP: i32 = 1;
+#[cfg(unix)]
+const SIG_INT: i32 = 2;
+#[cfg(unix)]
+const SIG_QUIT: i32 = 3;
+#[cfg(unix)]
+const SIG_PIPE: i32 = 13;
+#[cfg(unix)]
+const SIG_TERM: i32 = 15;
+
+#[cfg(unix)]
+unsafe extern "C" {
+    fn getpid() -> i32;
+    fn signal(signum: i32, handler: usize) -> usize;
+    fn close(fd: i32) -> i32;
+    fn write(fd: i32, buf: *const std::ffi::c_void, count: usize) -> isize;
+    fn _exit(status: i32) -> !;
+}
+
+
 /// Parses process_wrapper flags from the pre-`--` portion of args.
 fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
     let current_dir = pwd.to_string_lossy().into_owned();
@@ -509,6 +699,8 @@ fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
         subst: Vec::new(),
         env_files: Vec::new(),
         arg_files: Vec::new(),
+        stable_status_file: None,
+        volatile_status_file: None,
         output_file: None,
     };
     let mut i = 0;
@@ -541,6 +733,18 @@ fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
                     i += 1;
                 }
             }
+            "--stable-status-file" => {
+                if let Some(path) = pw_args.get(i + 1) {
+                    parsed.stable_status_file = Some(path.clone());
+                    i += 1;
+                }
+            }
+            "--volatile-status-file" => {
+                if let Some(path) = pw_args.get(i + 1) {
+                    parsed.volatile_status_file = Some(path.clone());
+                    i += 1;
+                }
+            }
             _ => {}
         }
         i += 1;
@@ -549,7 +753,12 @@ fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
 }
 
 /// Builds the environment map: inherit current process + env files + apply substitutions.
-fn build_rustc_env(env_files: &[String], subst: &[(String, String)]) -> HashMap<String, String> {
+fn build_rustc_env(
+    env_files: &[String],
+    stable_status_file: Option<&str>,
+    volatile_status_file: Option<&str>,
+    subst: &[(String, String)],
+) -> HashMap<String, String> {
     let mut env: HashMap<String, String> = std::env::vars().collect();
     for path in env_files {
         if let Ok(content) = std::fs::read_to_string(path) {
@@ -561,6 +770,24 @@ fn build_rustc_env(env_files: &[String], subst: &[(String, String)]) -> HashMap<
                     env.insert(k.to_owned(), v.to_owned());
                 }
             }
+        }
+    }
+    let stable_stamp_mappings: Vec<(String, String)> = stable_status_file
+        .map(|path| read_stamp_status_to_array(path.to_owned()))
+        .transpose()
+        .unwrap_or_default()
+        .unwrap_or_default();
+    let volatile_stamp_mappings: Vec<(String, String)> = volatile_status_file
+        .map(|path| read_stamp_status_to_array(path.to_owned()))
+        .transpose()
+        .unwrap_or_default()
+        .unwrap_or_default();
+    for (k, v) in stable_stamp_mappings
+        .iter()
+        .chain(volatile_stamp_mappings.iter())
+    {
+        for val in env.values_mut() {
+            *val = val.replace(&format!("{{{k}}}"), v);
         }
     }
     for val in env.values_mut() {
@@ -613,141 +840,21 @@ fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
     }
 }
 
-fn resolve_input_source(path: &str, sandbox_dir: Option<&str>) -> PathBuf {
-    let path_buf = std::path::Path::new(path);
-    if path_buf.is_absolute() {
-        return path_buf.to_path_buf();
-    }
-    if let Some(sandbox_dir) = sandbox_dir {
-        let sandbox_path = std::path::Path::new(sandbox_dir).join(path_buf);
-        if sandbox_path.exists() {
-            return sandbox_path;
-        }
-    }
-    PathBuf::from(path)
-}
-
-fn copy_or_link_path(
-    src: &std::path::Path,
-    dest: &std::path::Path,
-    sandbox_dir: Option<&std::path::Path>,
-    execroot_dir: &std::path::Path,
-    stats: &mut InputStageStats,
-) -> Result<(), std::io::Error> {
-    let metadata = std::fs::symlink_metadata(src)?;
-    let file_type = metadata.file_type();
-
-    if file_type.is_symlink() {
-        let link_target = std::fs::read_link(src)?;
-        let resolved_target = if link_target.is_absolute() {
-            link_target
-        } else {
-            src.parent()
-                .unwrap_or_else(|| std::path::Path::new(""))
-                .join(&link_target)
-        };
-        let safe_to_preserve =
-            sandbox_dir.is_none_or(|sandbox_dir| !resolved_target.starts_with(sandbox_dir));
-
-        if safe_to_preserve {
-            maybe_seed_cache_root_for_path(execroot_dir, &resolved_target)?;
-            if let Some(parent) = dest.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            let target_metadata = std::fs::metadata(&resolved_target)?;
-            stats.preserved_symlinks += 1;
-            return symlink_path(&resolved_target, dest, target_metadata.is_dir());
-        }
-
-        return copy_or_link_path(&resolved_target, dest, sandbox_dir, execroot_dir, stats);
-    }
-
-    if metadata.is_dir() {
-        stats.directories += 1;
-        let safe_to_link_dir = sandbox_dir.is_none_or(|sandbox_dir| !src.starts_with(sandbox_dir));
-        if safe_to_link_dir {
-            let link_target = src.canonicalize().unwrap_or_else(|_| src.to_path_buf());
-            maybe_seed_cache_root_for_path(execroot_dir, &link_target)?;
-            if let Some(parent) = dest.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            if symlink_path(&link_target, dest, true).is_ok() {
-                stats.preserved_symlinks += 1;
-                return Ok(());
-            }
-        }
-
-        std::fs::create_dir_all(dest)?;
-        for entry in std::fs::read_dir(src)? {
-            let entry = entry?;
-            copy_or_link_path(
-                &entry.path(),
-                &dest.join(entry.file_name()),
-                sandbox_dir,
-                execroot_dir,
-                stats,
-            )?;
-        }
-        return Ok(());
-    }
-
-    stats.regular_files += 1;
-    if let Some(parent) = dest.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    match std::fs::hard_link(src, dest) {
-        Ok(()) => {
-            stats.hardlinked_files += 1;
-            Ok(())
-        }
-        Err(link_err) => match std::fs::copy(src, dest) {
-            Ok(_) => {
-                stats.copied_files += 1;
-                Ok(())
-            }
-            Err(copy_err) => Err(std::io::Error::new(
-                copy_err.kind(),
-                format!(
-                    "failed to hardlink {} to {} ({link_err}); copy also failed: {copy_err}",
-                    src.display(),
-                    dest.display(),
-                ),
-            )),
-        },
-    }
-}
-
-fn maybe_seed_cache_root_for_path(
-    execroot_dir: &std::path::Path,
-    path: &std::path::Path,
-) -> Result<(), std::io::Error> {
-    let mut cache_root = None;
-    for ancestor in path.ancestors() {
-        if ancestor.file_name().is_some_and(|name| name == "cache") {
-            cache_root = Some(ancestor.to_path_buf());
-            break;
-        }
-    }
-
-    let Some(cache_root) = cache_root else {
-        return Ok(());
-    };
-
-    let dest = execroot_dir.join("cache");
-    if dest.exists() {
-        return Ok(());
-    }
-
-    symlink_path(&cache_root, &dest, true)
-}
-
 fn materialize_output_file(
     src: &std::path::Path,
     dest: &std::path::Path,
 ) -> Result<bool, std::io::Error> {
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent)?;
+    }
+
+    // Skip if src and dest resolve to the same file (e.g., when rustc writes
+    // directly into the sandbox via --emit=metadata=<relative-path> and the
+    // copy destination is the same location). Removing dest would delete src.
+    if let (Ok(a), Ok(b)) = (src.canonicalize(), dest.canonicalize()) {
+        if a == b {
+            return Ok(false);
+        }
     }
 
     if dest.exists() {
@@ -790,34 +897,6 @@ fn symlink_path(
     } else {
         std::os::windows::fs::symlink_file(src, dest)
     }
-}
-
-fn stage_request_inputs(
-    request: &WorkRequestContext,
-    execroot_dir: &std::path::Path,
-) -> Result<InputStageStats, ProcessWrapperError> {
-    let mut stats = InputStageStats {
-        declared_inputs: request.inputs.len(),
-        ..InputStageStats::default()
-    };
-    let sandbox_dir = request.sandbox_dir.as_deref().map(std::path::Path::new);
-    for input in &request.inputs {
-        let dest = resolve_relative_to(&input.path, execroot_dir);
-        let src = resolve_input_source(&input.path, request.sandbox_dir.as_deref());
-
-        if src == dest {
-            continue;
-        }
-
-        copy_or_link_path(&src, &dest, sandbox_dir, execroot_dir, &mut stats).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to stage worker input {} -> {}: {e}",
-                src.display(),
-                dest.display(),
-            ))
-        })?;
-    }
-    Ok(stats)
 }
 
 fn seed_sandbox_cache_root(sandbox_dir: &std::path::Path) -> Result<(), ProcessWrapperError> {
@@ -891,6 +970,538 @@ fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
     let _ = writeln!(file, "{message}");
 }
 
+fn is_tracked_artifact_input(path: &str) -> bool {
+    path.contains("/_pipeline/") || path.ends_with(".rmeta") || path.ends_with(".rlib")
+}
+
+fn describe_path_state(path: &std::path::Path) -> String {
+    let meta = match std::fs::symlink_metadata(path) {
+        Ok(meta) => meta,
+        Err(err) => {
+            return format!("state=missing err={err}");
+        }
+    };
+
+    let file_type = meta.file_type();
+    if file_type.is_symlink() {
+        let target = std::fs::read_link(path)
+            .map(|target| target.display().to_string())
+            .unwrap_or_else(|err| format!("<unreadable:{err}>"));
+        return format!(
+            "state=symlink readonly={} target={target}",
+            meta.permissions().readonly()
+        );
+    }
+    if file_type.is_dir() {
+        return format!("state=dir readonly={}", meta.permissions().readonly());
+    }
+
+    format!(
+        "state=file size={} readonly={}",
+        meta.len(),
+        meta.permissions().readonly()
+    )
+}
+
+fn append_request_input_state_log(
+    pipeline_root: &std::path::Path,
+    label: &str,
+    request: &WorkRequestContext,
+    resolve_path: impl Fn(&str) -> PathBuf,
+) {
+    let interesting_inputs: Vec<_> = request
+        .inputs
+        .iter()
+        .filter(|input| is_tracked_artifact_input(&input.path))
+        .collect();
+
+    append_pipeline_log(
+        pipeline_root,
+        &format!("{label} tracked_inputs={}", interesting_inputs.len()),
+    );
+
+    for input in interesting_inputs {
+        let resolved = resolve_path(&input.path);
+        append_pipeline_log(
+            pipeline_root,
+            &format!(
+                "{label} path={} digest={:?} resolved={} {}",
+                input.path,
+                input.digest,
+                resolved.display(),
+                describe_path_state(&resolved),
+            ),
+        );
+    }
+}
+
+fn append_metadata_request_probes(
+    pipeline_root: &std::path::Path,
+    request: &WorkRequestContext,
+    execroot_dir: &std::path::Path,
+) {
+    append_request_input_state_log(pipeline_root, "metadata request input", request, |path| {
+        resolve_relative_to(path, execroot_dir)
+    });
+
+    let interesting_inputs: Vec<_> = request
+        .inputs
+        .iter()
+        .filter(|input| is_tracked_artifact_input(&input.path))
+        .collect();
+    for input in interesting_inputs {
+        let source = resolve_relative_to(&input.path, execroot_dir);
+        let staged = resolve_relative_to(&input.path, execroot_dir);
+        append_pipeline_log(
+            pipeline_root,
+            &format!(
+                "metadata request source path={} source={} {} staged={} {}",
+                input.path,
+                source.display(),
+                describe_path_state(&source),
+                staged.display(),
+                describe_path_state(&staged),
+            ),
+        );
+    }
+}
+
+fn collect_rustc_extern_specs(rustc_args: &[String]) -> Vec<(String, String)> {
+    let mut externs = Vec::new();
+    let mut i = 0;
+    while i < rustc_args.len() {
+        let arg = &rustc_args[i];
+        let spec = if let Some(spec) = arg.strip_prefix("--extern=") {
+            Some(spec)
+        } else if arg == "--extern" {
+            rustc_args.get(i + 1).map(|s| s.as_str())
+        } else {
+            None
+        };
+
+        if let Some(spec) = spec {
+            if let Some((name, path)) = spec.split_once('=') {
+                externs.push((name.to_string(), path.to_string()));
+            }
+            if arg == "--extern" {
+                i += 1;
+            }
+        }
+        i += 1;
+    }
+    externs
+}
+
+fn append_rustc_extern_state_log(
+    pipeline_root: &std::path::Path,
+    label: &str,
+    rustc_args: &[String],
+    execroot_dir: &std::path::Path,
+) {
+    let mut seen = HashSet::new();
+    let externs = collect_rustc_extern_specs(rustc_args);
+    append_pipeline_log(pipeline_root, &format!("{label} externs={}", externs.len()));
+
+    for (name, path) in externs {
+        let key = format!("{name}={path}");
+        if !seen.insert(key) {
+            continue;
+        }
+        let resolved = resolve_relative_to(&path, execroot_dir);
+        append_pipeline_log(
+            pipeline_root,
+            &format!(
+                "{label} name={} path={} resolved={} {}",
+                name,
+                path,
+                resolved.display(),
+                describe_path_state(&resolved),
+            ),
+        );
+    }
+}
+
+fn append_worker_metric_log(message: &str) {
+    let path = std::path::Path::new("_pw_state").join("metrics.log");
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(_) => return,
+    };
+    let _ = writeln!(file, "{message}");
+}
+
+fn append_worker_response_log(message: &str) {
+    let path = std::path::Path::new("_pw_state").join("responses.log");
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(_) => return,
+    };
+    let _ = writeln!(file, "{message}");
+}
+
+fn append_output_base_root_log(filename: &str, message: &str) {
+    let Some(output_base_root) = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| output_base_from_worker_cwd(&cwd))
+    else {
+        return;
+    };
+
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(output_base_root.join(filename))
+    {
+        Ok(file) => file,
+        Err(_) => return,
+    };
+    let _ = writeln!(file, "{message}");
+}
+
+fn append_worker_lifecycle_log(message: &str) {
+    let root = std::path::Path::new("_pw_state");
+    let _ = std::fs::create_dir_all(root);
+    let path = root.join("worker_lifecycle.log");
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(_) => return,
+    };
+    let _ = writeln!(file, "{message}");
+    append_output_base_root_log("rules_rust_worker_lifecycle.log", message);
+}
+
+fn worker_is_shutting_down() -> bool {
+    WORKER_SHUTTING_DOWN.load(Ordering::SeqCst)
+}
+
+fn begin_worker_shutdown(reason: &str) {
+    if WORKER_SHUTTING_DOWN
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_ok()
+    {
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=shutdown_begin thread={} reason={}",
+            current_pid(),
+            current_thread_label(),
+            reason,
+        ));
+    }
+}
+
+#[cfg(unix)]
+fn install_worker_signal_handlers() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        initialize_worker_signal_log_fds();
+        for signal_number in [SIG_HUP, SIG_INT, SIG_QUIT, SIG_PIPE, SIG_TERM] {
+            unsafe {
+                signal(signal_number, worker_signal_handler as *const () as usize);
+            }
+        }
+    });
+}
+
+#[cfg(not(unix))]
+fn install_worker_signal_handlers() {}
+
+#[cfg(unix)]
+fn initialize_worker_signal_log_fds() {
+    if let Some(fd) = open_append_fd(std::path::Path::new("_pw_state/worker_lifecycle.log")) {
+        SIGNAL_LOG_FD.store(fd, Ordering::SeqCst);
+    }
+
+    if let Some(output_base_root) = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| output_base_from_worker_cwd(&cwd))
+    {
+        if let Some(fd) = open_append_fd(&output_base_root.join("rules_rust_worker_lifecycle.log"))
+        {
+            OUTPUT_BASE_SIGNAL_LOG_FD.store(fd, Ordering::SeqCst);
+        }
+    }
+}
+
+#[cfg(unix)]
+fn open_append_fd(path: &std::path::Path) -> Option<i32> {
+    let parent = path.parent()?;
+    std::fs::create_dir_all(parent).ok()?;
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .ok()?;
+    let fd = file.as_raw_fd();
+    std::mem::forget(file);
+    Some(fd)
+}
+
+#[cfg(unix)]
+extern "C" fn worker_signal_handler(signal_number: i32) {
+    WORKER_SHUTTING_DOWN.store(true, Ordering::SeqCst);
+    let mut message = [0u8; 128];
+    let len = render_signal_log_line(&mut message, signal_number);
+    write_signal_marker(SIGNAL_LOG_FD.load(Ordering::Relaxed), &message[..len]);
+    write_signal_marker(
+        OUTPUT_BASE_SIGNAL_LOG_FD.load(Ordering::Relaxed),
+        &message[..len],
+    );
+    if signal_uses_soft_shutdown(signal_number) {
+        let _ = unsafe { close(0) };
+        return;
+    }
+    unsafe {
+        _exit(128 + signal_number);
+    }
+}
+
+#[cfg(unix)]
+fn signal_uses_soft_shutdown(signal_number: i32) -> bool {
+    signal_number == SIG_TERM
+}
+
+#[cfg(unix)]
+fn render_signal_log_line(buffer: &mut [u8; 128], signal_number: i32) -> usize {
+    let mut cursor = 0usize;
+    cursor += copy_bytes(buffer, cursor, b"pid=");
+    cursor += write_decimal(buffer, cursor, unsafe { getpid() } as u32);
+    cursor += copy_bytes(buffer, cursor, b" event=signal signal=");
+    cursor += copy_bytes(buffer, cursor, signal_name(signal_number));
+    cursor += copy_bytes(buffer, cursor, b" signum=");
+    cursor += write_decimal(buffer, cursor, signal_number as u32);
+    cursor += copy_bytes(buffer, cursor, b"\n");
+    cursor
+}
+
+#[cfg(unix)]
+fn copy_bytes(buffer: &mut [u8], offset: usize, bytes: &[u8]) -> usize {
+    let len = bytes.len();
+    buffer[offset..offset + len].copy_from_slice(bytes);
+    len
+}
+
+#[cfg(unix)]
+fn write_decimal(buffer: &mut [u8], offset: usize, value: u32) -> usize {
+    if value == 0 {
+        buffer[offset] = b'0';
+        return 1;
+    }
+
+    let mut digits = [0u8; 16];
+    let mut value = value;
+    let mut len = 0usize;
+    while value > 0 {
+        digits[len] = b'0' + (value % 10) as u8;
+        value /= 10;
+        len += 1;
+    }
+
+    for i in 0..len {
+        buffer[offset + i] = digits[len - 1 - i];
+    }
+    len
+}
+
+#[cfg(unix)]
+fn signal_name(signal_number: i32) -> &'static [u8] {
+    match signal_number {
+        SIG_HUP => b"SIGHUP",
+        SIG_INT => b"SIGINT",
+        SIG_QUIT => b"SIGQUIT",
+        SIG_PIPE => b"SIGPIPE",
+        SIG_TERM => b"SIGTERM",
+        _ => b"SIGUNKNOWN",
+    }
+}
+
+#[cfg(unix)]
+fn write_signal_marker(fd: i32, bytes: &[u8]) {
+    if fd < 0 {
+        return;
+    }
+    let _ = unsafe { write(fd, bytes.as_ptr().cast(), bytes.len()) };
+}
+
+struct WorkerLifecycleGuard {
+    pid: u32,
+    start: Instant,
+    request_counter: Arc<AtomicUsize>,
+}
+
+impl WorkerLifecycleGuard {
+    fn new(argv: &[String], request_counter: &Arc<AtomicUsize>) -> Self {
+        let pid = current_pid();
+        let cwd = std::env::current_dir()
+            .map(|cwd| cwd.display().to_string())
+            .unwrap_or_else(|_| "<cwd-error>".to_string());
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=start thread={} cwd={} argv_len={}",
+            pid,
+            current_thread_label(),
+            cwd,
+            argv.len(),
+        ));
+        Self {
+            pid,
+            start: Instant::now(),
+            request_counter: Arc::clone(request_counter),
+        }
+    }
+}
+
+impl Drop for WorkerLifecycleGuard {
+    fn drop(&mut self) {
+        let uptime = self.start.elapsed();
+        let requests = self.request_counter.load(Ordering::SeqCst);
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=exit uptime_ms={} requests_seen={}",
+            self.pid,
+            uptime.as_millis(),
+            requests,
+        ));
+        // Structured summary line for easy extraction by benchmark tooling.
+        append_worker_lifecycle_log(&format!(
+            "worker_exit pid={} requests_handled={} uptime_s={:.1}",
+            self.pid,
+            requests,
+            uptime.as_secs_f64(),
+        ));
+    }
+}
+
+fn install_worker_panic_hook() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        std::panic::set_hook(Box::new(|info| {
+            append_worker_lifecycle_log(&format!(
+                "pid={} event=panic thread={} info={}",
+                current_pid(),
+                current_thread_label(),
+                info
+            ));
+        }));
+    });
+}
+
+fn crate_name_from_args(args: &[String]) -> Option<&str> {
+    args.iter()
+        .find_map(|arg| arg.strip_prefix("--crate-name="))
+}
+
+fn emit_arg_from_args(args: &[String]) -> Option<&str> {
+    args.iter().find_map(|arg| arg.strip_prefix("--emit="))
+}
+
+fn pipeline_key_from_args(args: &[String]) -> Option<&str> {
+    args.iter()
+        .find_map(|arg| arg.strip_prefix("--pipelining-key="))
+}
+
+fn worker_forced_exit_mode() -> Option<String> {
+    std::env::var("PROCESS_WRAPPER_TEST_WORKER_MODE")
+        .ok()
+        .filter(|value| !value.is_empty())
+}
+
+fn write_worker_response(
+    stdout: &Arc<Mutex<()>>,
+    response: &str,
+    request_id: i64,
+    reason: &str,
+) -> Result<(), ProcessWrapperError> {
+    let sequence = RESPONSE_SEQUENCE.fetch_add(1, Ordering::SeqCst) + 1;
+    let newline_count = response.bytes().filter(|b| *b == b'\n').count();
+    let json_ok = response.parse::<JsonValue>().is_ok();
+    let checksum = response.bytes().fold(0u64, |acc, byte| {
+        acc.wrapping_mul(131).wrapping_add(byte as u64)
+    });
+    let prefix_hex = response
+        .as_bytes()
+        .iter()
+        .take(32)
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join("");
+    let suffix_hex = response
+        .as_bytes()
+        .iter()
+        .rev()
+        .take(32)
+        .copied()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join("");
+    append_worker_response_log(&format!(
+        "seq={sequence} request_id={request_id} reason={reason} bytes={} newlines={} json_ok={json_ok} checksum={checksum:016x} prefix_hex={} suffix_hex={} preview={:?}",
+        response.len(),
+        newline_count,
+        prefix_hex,
+        suffix_hex,
+        response.chars().take(200).collect::<String>(),
+    ));
+
+    let _guard = lock_or_recover(stdout);
+    write_all_stdout_fd(response.as_bytes())
+        .and_then(|_| write_all_stdout_fd(b"\n"))
+        .map_err(|e| ProcessWrapperError(format!("failed to write WorkResponse: {e}")))?;
+
+    if worker_forced_exit_mode().as_deref() == Some("exit_after_response") {
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=forced_exit thread={} request_id={} reason={}",
+            current_pid(),
+            current_thread_label(),
+            request_id,
+            reason,
+        ));
+        std::process::exit(0);
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn write_all_stdout_fd(mut bytes: &[u8]) -> io::Result<()> {
+    while !bytes.is_empty() {
+        let written = unsafe { write(1, bytes.as_ptr().cast(), bytes.len()) };
+        if written < 0 {
+            let err = io::Error::last_os_error();
+            if err.kind() == io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(err);
+        }
+        let written = written as usize;
+        if written == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::WriteZero,
+                "short write to worker stdout",
+            ));
+        }
+        bytes = &bytes[written..];
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn write_all_stdout_fd(bytes: &[u8]) -> io::Result<()> {
+    let mut out = io::stdout().lock();
+    out.write_all(bytes)?;
+    out.flush()
+}
+
 fn maybe_cleanup_pipeline_dir(pipeline_root: &std::path::Path, keep: bool, reason: &str) {
     if keep {
         append_pipeline_log(
@@ -908,164 +1519,131 @@ fn maybe_cleanup_pipeline_dir(pipeline_root: &std::path::Path, keep: bool, reaso
     }
 }
 
-fn should_preserve_pipeline_dir(exit_code: i32, staged_outputs: &[String]) -> bool {
-    exit_code != 0 || !staged_outputs.iter().any(|name| name.ends_with(".rlib"))
+fn should_fault_inject_metadata_artifact(key: &str) -> bool {
+    std::env::var("RULES_RUST_PIPELINE_FAULT_INJECT_KEY")
+        .ok()
+        .is_some_and(|value| value == key)
 }
 
-fn seed_execroot_with_sandbox_symlinks(
-    execroot_dir: &std::path::Path,
-    sandbox_dir: &std::path::Path,
-) -> Result<(), ProcessWrapperError> {
-    let entries = std::fs::read_dir(sandbox_dir).map_err(|e| {
-        ProcessWrapperError(format!(
-            "failed to read request sandbox for staged execroot seeding: {e}"
-        ))
-    })?;
-
-    for entry in entries {
-        let entry = entry.map_err(|e| {
-            ProcessWrapperError(format!("failed to enumerate request sandbox entry: {e}"))
-        })?;
-        let source = entry.path();
-        let metadata = std::fs::symlink_metadata(&source).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to read request sandbox metadata for {}: {e}",
-                source.display()
-            ))
-        })?;
-        if !metadata.file_type().is_symlink() {
-            continue;
-        }
-
-        let link_target = std::fs::read_link(&source).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to read request sandbox symlink {}: {e}",
-                source.display()
-            ))
-        })?;
-        let resolved_target = if link_target.is_absolute() {
-            link_target
-        } else {
-            source
-                .parent()
-                .unwrap_or_else(|| std::path::Path::new(""))
-                .join(&link_target)
-        };
-        if resolved_target.starts_with(sandbox_dir) {
-            continue;
-        }
-
-        let dest = execroot_dir.join(entry.file_name());
-        if dest.exists() {
-            continue;
-        }
-
-        let target_metadata = std::fs::metadata(&resolved_target).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to stat seeded sandbox symlink target {}: {e}",
-                resolved_target.display()
-            ))
-        })?;
-        symlink_path(&resolved_target, &dest, target_metadata.is_dir()).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to seed staged sandbox symlink {} -> {}: {e}",
-                resolved_target.display(),
-                dest.display()
-            ))
-        })?;
+fn maybe_fault_inject_metadata_artifact(
+    pipeline_root: &std::path::Path,
+    key: &str,
+    rmeta_path: &std::path::Path,
+) {
+    if !should_fault_inject_metadata_artifact(key) {
+        return;
     }
 
-    Ok(())
-}
+    append_pipeline_log(
+        pipeline_root,
+        &format!(
+            "fault injecting metadata artifact for key={} path={} before={}",
+            key,
+            rmeta_path.display(),
+            describe_path_state(rmeta_path),
+        ),
+    );
 
-fn seed_execroot_with_worker_entries(
-    execroot_dir: &std::path::Path,
-) -> Result<(), ProcessWrapperError> {
-    let worker_execroot = std::env::current_dir().map_err(|e| {
-        ProcessWrapperError(format!(
-            "failed to determine worker execroot for staged request: {e}"
-        ))
-    })?;
+    let result = std::fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(rmeta_path)
+        .and_then(|mut file| file.write_all(b"fault injected invalid rmeta"));
 
-    for entry in std::fs::read_dir(&worker_execroot).map_err(|e| {
-        ProcessWrapperError(format!(
-            "failed to read worker execroot for staged request: {e}"
-        ))
-    })? {
-        let entry = entry.map_err(|e| {
-            ProcessWrapperError(format!("failed to enumerate worker execroot entry: {e}"))
-        })?;
-        let file_name = entry.file_name();
-        if file_name == "_pw_state" {
-            continue;
-        }
-
-        let dest = execroot_dir.join(&file_name);
-        if dest.exists() {
-            continue;
-        }
-
-        let source = entry.path();
-        let is_dir = std::fs::metadata(&source)
-            .map(|metadata| metadata.is_dir())
-            .unwrap_or(false);
-        symlink_path(&source, &dest, is_dir).map_err(|e| {
-            ProcessWrapperError(format!(
-                "failed to seed staged execroot entry {} -> {}: {e}",
-                source.display(),
-                dest.display(),
-            ))
-        })?;
+    match result {
+        Ok(()) => append_pipeline_log(
+            pipeline_root,
+            &format!(
+                "fault injected metadata artifact for key={} after={}",
+                key,
+                describe_path_state(rmeta_path),
+            ),
+        ),
+        Err(err) => append_pipeline_log(
+            pipeline_root,
+            &format!(
+                "failed to fault inject metadata artifact for key={} path={}: {}",
+                key,
+                rmeta_path.display(),
+                err
+            ),
+        ),
     }
-
-    Ok(())
 }
 
-fn create_staged_pipeline(
+fn should_always_preserve_pipeline_key(key: &str) -> bool {
+    matches!(
+        key,
+        "lib_zerobuf_codegen_libzerobuf_codegen-229785134_rlib"
+            | "lib_cli_config_getter_libcli_config_getter-1472696652_rlib"
+            | "lib_platform_version_libplatform_version-1023817015_rlib"
+            | "lib_zerobuf_cli_libzerobuf_cli-630641045_rlib"
+    )
+}
+
+fn should_preserve_pipeline_dir(key: &str, exit_code: i32, staged_outputs: &[String]) -> bool {
+    should_always_preserve_pipeline_key(key)
+        || exit_code != 0
+        || !staged_outputs.iter().any(|name| name.ends_with(".rlib"))
+}
+
+/// Creates a lightweight pipeline context using the "resolve-through" approach.
+///
+/// Instead of staging inputs into a worker-owned execroot, uses the worker's real
+/// execroot (CWD) directly. Only creates a persistent output directory to prevent
+/// inter-request output interference.
+fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
     key: &str,
     request: &WorkRequestContext,
-) -> Result<StagedPipeline, (i32, String)> {
-    let create_start = Instant::now();
+) -> Result<PipelineContext, (i32, String)> {
     let root_dir = state_roots.pipeline_dir(key);
-    if let Err(e) = std::fs::remove_dir_all(&root_dir) {
+
+    // Create the pipeline root and outputs dir.
+    // Clear any leftover outputs from a previous failed run for this key.
+    let outputs_dir = root_dir.join("outputs");
+    if let Err(e) = std::fs::remove_dir_all(&outputs_dir) {
         if e.kind() != std::io::ErrorKind::NotFound {
-            return Err((1, format!("pipelining: failed to reset pipeline dir: {e}")));
+            return Err((
+                1,
+                format!("pipelining: failed to clear pipeline outputs dir: {e}"),
+            ));
         }
     }
-
-    let execroot_dir = root_dir.join("execroot");
-    let outputs_dir = root_dir.join("outputs");
-    std::fs::create_dir_all(&execroot_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to create staged execroot: {e}"),
-        )
-    })?;
     std::fs::create_dir_all(&outputs_dir).map_err(|e| {
         (
             1,
-            format!("pipelining: failed to create staged outputs dir: {e}"),
+            format!("pipelining: failed to create pipeline outputs dir: {e}"),
         )
     })?;
+    std::fs::create_dir_all(&root_dir)
+        .map_err(|e| (1, format!("pipelining: failed to create pipeline dir: {e}")))?;
     let root_dir = root_dir.canonicalize().map_err(|e| {
         (
             1,
             format!("pipelining: failed to resolve pipeline dir: {e}"),
         )
     })?;
-    let execroot_dir = execroot_dir.canonicalize().map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to resolve staged execroot: {e}"),
-        )
-    })?;
     let outputs_dir = outputs_dir.canonicalize().map_err(|e| {
         (
             1,
-            format!("pipelining: failed to resolve staged outputs dir: {e}"),
+            format!("pipelining: failed to resolve pipeline outputs dir: {e}"),
         )
     })?;
+
+    // Use the sandbox dir when sandboxed (Bazel places inputs there via symlinks),
+    // otherwise use the worker's real execroot (CWD). This avoids worker-side staging
+    // entirely: Bazel's sandbox or the worker CWD already has all needed inputs.
+    let execroot_dir = if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
+        PathBuf::from(sandbox_dir)
+            .canonicalize()
+            .map_err(|e| (1, format!("pipelining: failed to canonicalize sandbox dir: {e}")))?
+    } else {
+        std::env::current_dir()
+            .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?
+            .canonicalize()
+            .map_err(|e| (1, format!("pipelining: failed to canonicalize worker CWD: {e}")))?
+    };
 
     snapshot_named_request(&root_dir, "metadata_request.json", request).map_err(|e| {
         (
@@ -1073,60 +1651,8 @@ fn create_staged_pipeline(
             format!("pipelining: failed to snapshot metadata request: {e}"),
         )
     })?;
-    let stage_start = Instant::now();
-    let stage_stats = stage_request_inputs(request, &execroot_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to stage request inputs: {e}"),
-        )
-    })?;
-    append_pipeline_log(
-        &root_dir,
-        &format!(
-            "staging inputs_ms={} declared_inputs={} files={} dirs={} preserved_symlinks={} hardlinks={} copies={}",
-            stage_start.elapsed().as_millis(),
-            stage_stats.declared_inputs,
-            stage_stats.regular_files,
-            stage_stats.directories,
-            stage_stats.preserved_symlinks,
-            stage_stats.hardlinked_files,
-            stage_stats.copied_files,
-        ),
-    );
-    if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
-        let seed_start = Instant::now();
-        seed_execroot_with_sandbox_symlinks(&execroot_dir, std::path::Path::new(sandbox_dir))
-            .map_err(|e| {
-                (
-                    1,
-                    format!("pipelining: failed to seed sandbox symlinks: {e}"),
-                )
-            })?;
-        append_pipeline_log(
-            &root_dir,
-            &format!(
-                "seed sandbox_symlinks_ms={}",
-                seed_start.elapsed().as_millis()
-            ),
-        );
-    }
-    let worker_seed_start = Instant::now();
-    seed_execroot_with_worker_entries(&execroot_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to seed staged execroot: {e}"),
-        )
-    })?;
-    append_pipeline_log(
-        &root_dir,
-        &format!(
-            "seed worker_entries_ms={} total_setup_ms={}",
-            worker_seed_start.elapsed().as_millis(),
-            create_start.elapsed().as_millis()
-        ),
-    );
 
-    Ok(StagedPipeline {
+    Ok(PipelineContext {
         root_dir,
         execroot_dir,
         outputs_dir,
@@ -1151,36 +1677,6 @@ fn list_regular_files(dir: &std::path::Path) -> Vec<String> {
     files
 }
 
-fn rewrite_emit_paths_for_execroot(
-    args: Vec<String>,
-    execroot_dir: &std::path::Path,
-) -> Vec<String> {
-    args.into_iter()
-        .map(|arg| {
-            if let Some(emit) = arg.strip_prefix("--emit=") {
-                let rewritten = emit
-                    .split(',')
-                    .map(|part| {
-                        if let Some((kind, path)) = part.split_once('=') {
-                            format!(
-                                "{}={}",
-                                kind,
-                                resolve_relative_to(path, execroot_dir).display()
-                            )
-                        } else {
-                            part.to_string()
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join(",");
-                format!("--emit={rewritten}")
-            } else {
-                arg
-            }
-        })
-        .collect()
-}
-
 // ---------------------------------------------------------------------------
 // Pipelining handlers
 // ---------------------------------------------------------------------------
@@ -1192,9 +1688,9 @@ fn rewrite_emit_paths_for_execroot(
 /// notification appears, stores the running Child in PipelineState, and returns
 /// success immediately so Bazel can unblock downstream rlib compiles.
 ///
-/// Background rustc runs from a worker-managed staged execroot. When
-/// `sandbox_dir` is `Some`, only the returned metadata artifact is materialized
-/// back into the request sandbox before Bazel cleans it up.
+/// Uses the "resolve-through" approach: rustc runs from the worker's real
+/// execroot (CWD). When `sandbox_dir` is `Some`, only the returned metadata
+/// artifact is materialized back into the request sandbox before Bazel cleans it up.
 fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
@@ -1213,19 +1709,28 @@ fn handle_pipelining_metadata(
         return (1, "pipelining: no rustc executable after '--'".to_string());
     }
 
-    let staged = match create_staged_pipeline(state_roots, &key, request) {
+    // Drain any stale BackgroundRustc entries from previous builds.
+    let drained = lock_or_recover(pipeline_state).drain_completed();
+    if drained > 0 {
+        append_worker_metric_log(&format!(
+            "pipeline_drain_stale_entries count={drained} pid={}",
+            current_pid()
+        ));
+    }
+
+    let ctx = match create_pipeline_context(state_roots, &key, request) {
         Ok(v) => v,
         Err(e) => return e,
     };
 
-    let raw_pw_args = parse_pw_args(pw_raw, &staged.execroot_dir);
+    let raw_pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
     let pw_args = ParsedPwArgs {
         subst: raw_pw_args.subst,
         env_files: raw_pw_args
             .env_files
             .into_iter()
             .map(|path| {
-                resolve_relative_to(&path, &staged.execroot_dir)
+                resolve_relative_to(&path, &ctx.execroot_dir)
                     .display()
                     .to_string()
             })
@@ -1234,49 +1739,71 @@ fn handle_pipelining_metadata(
             .arg_files
             .into_iter()
             .map(|path| {
-                resolve_relative_to(&path, &staged.execroot_dir)
+                resolve_relative_to(&path, &ctx.execroot_dir)
                     .display()
                     .to_string()
             })
             .collect(),
+        stable_status_file: raw_pw_args.stable_status_file.map(|path| {
+            resolve_relative_to(&path, &ctx.execroot_dir)
+                .display()
+                .to_string()
+        }),
+        volatile_status_file: raw_pw_args.volatile_status_file.map(|path| {
+            resolve_relative_to(&path, &ctx.execroot_dir)
+                .display()
+                .to_string()
+        }),
         output_file: raw_pw_args.output_file.map(|path| {
             let base = request
                 .sandbox_dir
                 .as_deref()
                 .map(std::path::Path::new)
-                .unwrap_or(staged.execroot_dir.as_path());
+                .unwrap_or(ctx.execroot_dir.as_path());
             resolve_relative_to(&path, base).display().to_string()
         }),
     };
-    let env = build_rustc_env(&pw_args.env_files, &pw_args.subst);
+    let env = build_rustc_env(
+        &pw_args.env_files,
+        pw_args.stable_status_file.as_deref(),
+        pw_args.volatile_status_file.as_deref(),
+        &pw_args.subst,
+    );
 
     let (rustc_args, original_out_dir) =
-        match prepare_rustc_args(rustc_and_after, &pw_args, &staged.execroot_dir) {
+        match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
             Ok(v) => v,
             Err(e) => return e,
         };
 
     // Redirect --out-dir to our persistent directory so rustc writes all outputs
     // (.rmeta, .rlib, .d) there instead of the Bazel-managed out-dir.
-    let rustc_args = rewrite_emit_paths_for_execroot(
-        rewrite_out_dir_in_expanded(rustc_args, &staged.outputs_dir),
-        &staged.execroot_dir,
-    );
+    // No need for rewrite_emit_paths_for_execroot — with real execroot CWD,
+    // --emit=metadata=<path> paths are already correct relative to CWD.
+    let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
+    prepare_expanded_rustc_outputs(&rustc_args);
     append_pipeline_log(
-        &staged.root_dir,
+        &ctx.root_dir,
         &format!(
             "metadata start request_id={} key={} sandbox_dir={:?} original_out_dir={} execroot={} outputs={}",
             request.request_id,
             key,
             request.sandbox_dir,
             original_out_dir,
-            staged.execroot_dir.display(),
-            staged.outputs_dir.display(),
+            ctx.execroot_dir.display(),
+            ctx.outputs_dir.display(),
         ),
     );
     append_pipeline_log(
-        &staged.root_dir,
+        &ctx.root_dir,
         &format!("metadata rustc args: {:?}", rustc_args),
+    );
+    append_metadata_request_probes(&ctx.root_dir, request, &ctx.execroot_dir);
+    append_rustc_extern_state_log(
+        &ctx.root_dir,
+        "metadata rustc extern",
+        &rustc_args,
+        &ctx.execroot_dir,
     );
     // Spawn rustc directly with the prepared env and args.
     let mut cmd = Command::new(&rustc_args[0]);
@@ -1285,7 +1812,7 @@ fn handle_pipelining_metadata(
         .envs(&env)
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
-        .current_dir(&staged.execroot_dir);
+        .current_dir(&ctx.execroot_dir);
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => return (1, format!("pipelining: failed to spawn rustc: {e}")),
@@ -1305,22 +1832,32 @@ fn handle_pipelining_metadata(
         let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
 
         if let Some(rmeta_path_str) = extract_rmeta_path(trimmed) {
+            // Resolve the rmeta path relative to rustc's CWD (ctx.execroot_dir)
+            // to get an absolute path, since the worker process has a different CWD.
+            let rmeta_resolved = resolve_relative_to(&rmeta_path_str, &ctx.execroot_dir);
+            let rmeta_resolved_str = rmeta_resolved.display().to_string();
+            let rmeta_path = rmeta_resolved.as_path();
             append_pipeline_log(
-                &staged.root_dir,
-                &format!("metadata saw rmeta artifact: {rmeta_path_str}"),
+                &ctx.root_dir,
+                &format!(
+                    "metadata saw rmeta artifact: {} (resolved={}) {}",
+                    rmeta_path_str,
+                    rmeta_resolved_str,
+                    describe_path_state(rmeta_path)
+                ),
             );
             // Copy .rmeta to the declared output location (_pipeline/ subdirectory).
             match request.sandbox_dir.as_ref() {
                 Some(ref dir) => {
                     let copy_start = Instant::now();
                     let copy_stats = copy_output_to_sandbox(
-                        &rmeta_path_str,
+                        &rmeta_resolved_str,
                         dir,
                         &original_out_dir,
                         "_pipeline",
                     );
                     append_pipeline_log(
-                        &staged.root_dir,
+                        &ctx.root_dir,
                         &format!(
                             "metadata copied rmeta into sandbox pipeline dir: {}/{} files={} hardlinks={} copies={} materialize_ms={}",
                             dir,
@@ -1333,16 +1870,13 @@ fn handle_pipelining_metadata(
                     );
                 }
                 None => {
-                    let rmeta_src = std::path::Path::new(&rmeta_path_str);
+                    let rmeta_src = &rmeta_resolved;
                     if let Some(filename) = rmeta_src.file_name() {
                         let dest_pipeline =
                             std::path::Path::new(&original_out_dir).join("_pipeline");
                         let _ = std::fs::create_dir_all(&dest_pipeline);
                         let dest = dest_pipeline.join(filename);
                         // Skip copy if source and dest resolve to the same file.
-                        // This happens when --emit=metadata=<path> directs rustc
-                        // to write directly to the _pipeline/ directory. Copying
-                        // a file to itself would truncate it to 0 bytes.
                         let same_file = rmeta_src
                             .canonicalize()
                             .ok()
@@ -1351,7 +1885,7 @@ fn handle_pipelining_metadata(
                         if !same_file {
                             if let Err(e) = std::fs::copy(rmeta_src, &dest) {
                                 append_pipeline_log(
-                                    &staged.root_dir,
+                                    &ctx.root_dir,
                                     &format!("metadata failed to copy rmeta to execroot pipeline dir: {e}"),
                                 );
                             }
@@ -1359,6 +1893,7 @@ fn handle_pipelining_metadata(
                     }
                 }
             }
+            maybe_fault_inject_metadata_artifact(&ctx.root_dir, &key, rmeta_path);
 
             // .rmeta is ready! Spawn a drain thread to prevent pipe buffer deadlock.
             let drain = thread::spawn(move || {
@@ -1384,16 +1919,16 @@ fn handle_pipelining_metadata(
                     child,
                     diagnostics_before,
                     stderr_drain: drain,
-                    pipeline_root_dir: staged.root_dir.clone(),
-                    pipeline_output_dir: staged.outputs_dir.clone(),
+                    pipeline_root_dir: ctx.root_dir.clone(),
+                    pipeline_output_dir: ctx.outputs_dir.clone(),
                     original_out_dir,
                 },
             );
             append_pipeline_log(
-                &staged.root_dir,
+                &ctx.root_dir,
                 &format!(
                     "metadata stored background rustc; pipeline outputs now={:?}",
-                    list_regular_files(&staged.outputs_dir)
+                    list_regular_files(&ctx.outputs_dir)
                 ),
             );
             if let Some(ref path) = pw_args.output_file {
@@ -1413,14 +1948,14 @@ fn handle_pipelining_metadata(
     // EOF: rustc exited before emitting the metadata artifact (compilation error).
     let exit_code = child.wait().ok().and_then(|s| s.code()).unwrap_or(1);
     append_pipeline_log(
-        &staged.root_dir,
+        &ctx.root_dir,
         &format!(
             "metadata rustc exited before emitting rmeta: exit_code={exit_code} diagnostics_bytes={}",
             diagnostics.len()
         ),
     );
     maybe_cleanup_pipeline_dir(
-        &staged.root_dir,
+        &ctx.root_dir,
         true,
         "metadata rustc exited before emitting rmeta",
     );
@@ -1482,6 +2017,18 @@ fn handle_pipelining_full(
                     request.sandbox_dir,
                     list_regular_files(&bg.pipeline_output_dir)
                 ),
+            );
+            let full_base = request
+                .sandbox_dir
+                .as_ref()
+                .map(PathBuf::from)
+                .or_else(|| std::env::current_dir().ok())
+                .unwrap_or_else(|| PathBuf::from("."));
+            append_request_input_state_log(
+                &bg.pipeline_root_dir,
+                "full request input",
+                request,
+                |path| resolve_relative_to(path, &full_base),
             );
             // Join the drain thread first (avoids deadlock: child blocks on stderr
             // write if the pipe buffer fills up before we drain it).
@@ -1548,7 +2095,7 @@ fn handle_pipelining_full(
                     }
                     maybe_cleanup_pipeline_dir(
                         &bg.pipeline_root_dir,
-                        should_preserve_pipeline_dir(exit_code, &staged_outputs),
+                        should_preserve_pipeline_dir(&key, exit_code, &staged_outputs),
                         "full action failed or missing .rlib in staged outputs",
                     );
                     (exit_code, all_diagnostics)
@@ -1600,6 +2147,56 @@ fn strip_pipelining_flags(args: &[String]) -> Vec<String> {
         .filter(|a| !is_pipelining_flag(a))
         .cloned()
         .collect()
+}
+
+/// Move process_wrapper flags that appear after `--` to before it.
+///
+/// When worker pipelining is active, per-action flags like `--output-file`
+/// are placed in the @paramfile (so all actions share the same WorkerKey).
+/// After the worker concatenates startup_args + request.arguments, these
+/// flags end up after the `--` separator.  Both the subprocess path
+/// (`options.rs`) and the pipelining path (`parse_pw_args`) expect them
+/// before `--`, so we relocate them here.
+fn relocate_pw_flags(args: &mut Vec<String>) {
+    let sep_pos = match args.iter().position(|a| a == "--") {
+        Some(pos) => pos,
+        None => return,
+    };
+
+    // Collect indices of relocated pw flags (and their values) after --.
+    let mut to_relocate: Vec<String> = Vec::new();
+    let mut remove_indices: Vec<usize> = Vec::new();
+    let mut i = sep_pos + 1;
+    while i < args.len() {
+        if is_relocated_pw_flag(&args[i]) {
+            remove_indices.push(i);
+            to_relocate.push(args[i].clone());
+            if i + 1 < args.len() {
+                remove_indices.push(i + 1);
+                to_relocate.push(args[i + 1].clone());
+                i += 2;
+            } else {
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    if to_relocate.is_empty() {
+        return;
+    }
+
+    // Remove from after -- in reverse order to preserve indices.
+    for &idx in remove_indices.iter().rev() {
+        args.remove(idx);
+    }
+
+    // Insert before -- (which may have shifted after removals).
+    let sep_pos = args.iter().position(|a| a == "--").unwrap_or(0);
+    for (offset, flag) in to_relocate.into_iter().enumerate() {
+        args.insert(sep_pos + offset, flag);
+    }
 }
 
 /// Applies substitution mappings to a single argument string.
@@ -1712,18 +2309,15 @@ fn extract_cancel(request: &JsonValue) -> bool {
 
 /// Builds a JSON WorkResponse with `wasCancelled: true`.
 fn build_cancel_response(request_id: i64) -> String {
-    let response = JsonValue::Object(HashMap::from([
-        ("exitCode".to_string(), JsonValue::Number(0.0)),
-        ("output".to_string(), JsonValue::String(String::new())),
-        (
-            "requestId".to_string(),
-            JsonValue::Number(request_id as f64),
-        ),
-        ("wasCancelled".to_string(), JsonValue::Boolean(true)),
-    ]));
-    response.stringify().unwrap_or_else(|_| {
-        format!(r#"{{"exitCode":0,"output":"","requestId":{request_id},"wasCancelled":true}}"#)
-    })
+    format!(
+        "{{\"exitCode\":0,\"output\":{},\"requestId\":{},\"wasCancelled\":true}}",
+        json_string_literal(""),
+        request_id
+    )
+}
+
+fn build_shutdown_response(request_id: i64) -> String {
+    build_response(1, "worker shutting down", request_id)
 }
 
 fn snapshot_request_context(
@@ -2055,6 +2649,42 @@ fn prepare_outputs(args: &[String]) {
     }
 }
 
+fn make_path_writable(path: &std::path::Path) {
+    let Ok(meta) = std::fs::metadata(path) else {
+        return;
+    };
+    if !meta.is_file() {
+        return;
+    }
+
+    let mut perms = meta.permissions();
+    if perms.readonly() {
+        perms.set_readonly(false);
+        let _ = std::fs::set_permissions(path, perms);
+    }
+}
+
+fn prepare_expanded_rustc_outputs(args: &[String]) {
+    for arg in args {
+        if let Some(dir) = arg.strip_prefix("--out-dir=") {
+            make_dir_files_writable(dir);
+            let pipeline_dir = format!("{dir}/_pipeline");
+            make_dir_files_writable(&pipeline_dir);
+            continue;
+        }
+
+        let Some(emit) = arg.strip_prefix("--emit=") else {
+            continue;
+        };
+        for part in emit.split(',') {
+            let Some((_, path)) = part.split_once('=') else {
+                continue;
+            };
+            make_path_writable(std::path::Path::new(path));
+        }
+    }
+}
+
 /// Reads `path` line-by-line, collecting any `--out-dir=<dir>` values.
 fn scan_file_for_out_dir(path: &str, out_dirs: &mut Vec<String>) {
     let Ok(content) = std::fs::read_to_string(path) else {
@@ -2092,18 +2722,12 @@ fn build_response(exit_code: i32, output: &str, request_id: i64) -> String {
     } else {
         sanitize_response_output(output)
     };
-    let response = JsonValue::Object(HashMap::from([
-        ("exitCode".to_string(), JsonValue::Number(exit_code as f64)),
-        ("output".to_string(), JsonValue::String(output)),
-        (
-            "requestId".to_string(),
-            JsonValue::Number(request_id as f64),
-        ),
-    ]));
-    response.stringify().unwrap_or_else(|_| {
-        // Fallback: hand-craft a minimal valid response if stringify fails.
-        format!(r#"{{"exitCode":{exit_code},"output":"","requestId":{request_id}}}"#)
-    })
+    format!(
+        "{{\"exitCode\":{},\"output\":{},\"requestId\":{}}}",
+        exit_code,
+        json_string_literal(&output),
+        request_id
+    )
 }
 
 fn sanitize_response_output(output: &str) -> String {
@@ -2115,6 +2739,12 @@ fn sanitize_response_output(output: &str) -> String {
             ch => ch,
         })
         .collect()
+}
+
+fn json_string_literal(value: &str) -> String {
+    JsonValue::String(value.to_owned())
+        .stringify()
+        .unwrap_or_else(|_| "\"\"".to_string())
 }
 
 #[cfg(test)]
@@ -2224,8 +2854,32 @@ mod test {
     }
 
     #[test]
+    #[cfg(unix)]
+    fn test_prepare_expanded_rustc_outputs_emit_path() {
+        use std::fs;
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = std::env::temp_dir().join("pw_test_prepare_emit_path");
+        fs::create_dir_all(&tmp).unwrap();
+
+        let emit_path = tmp.join("libfoo.rmeta");
+        fs::write(&emit_path, b"content").unwrap();
+        let mut perms = fs::metadata(&emit_path).unwrap().permissions();
+        perms.set_mode(0o555);
+        fs::set_permissions(&emit_path, perms).unwrap();
+        assert!(fs::metadata(&emit_path).unwrap().permissions().readonly());
+
+        let args = vec![format!("--emit=metadata={}", emit_path.display())];
+        prepare_expanded_rustc_outputs(&args);
+
+        assert!(!fs::metadata(&emit_path).unwrap().permissions().readonly());
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
     fn test_build_response_success() {
         let response = build_response(0, "", 0);
+        assert_eq!(response, r#"{"exitCode":0,"output":"","requestId":0}"#);
         let parsed = parse_json(&response);
         if let JsonValue::Object(map) = parsed {
             assert!(matches!(map.get("exitCode"), Some(JsonValue::Number(n)) if *n == 0.0));
@@ -2527,6 +3181,10 @@ mod test {
     #[test]
     fn test_build_cancel_response() {
         let response = build_cancel_response(7);
+        assert_eq!(
+            response,
+            r#"{"exitCode":0,"output":"","requestId":7,"wasCancelled":true}"#
+        );
         let parsed = parse_json(&response);
         if let JsonValue::Object(map) = parsed {
             assert!(matches!(map.get("requestId"), Some(JsonValue::Number(n)) if *n == 7.0));
@@ -2591,25 +3249,6 @@ mod test {
     }
 
     #[test]
-    fn test_rewrite_emit_paths_for_execroot_rewrites_relative_paths() {
-        let args = vec![
-            "--emit=dep-info=foo.d,metadata=meta/libfoo.rmeta,link".to_string(),
-            "--crate-name=foo".to_string(),
-        ];
-        let execroot = std::path::Path::new("/work/execroot");
-
-        let result = rewrite_emit_paths_for_execroot(args, execroot);
-
-        assert_eq!(
-            result,
-            vec![
-                "--emit=dep-info=/work/execroot/foo.d,metadata=/work/execroot/meta/libfoo.rmeta,link",
-                "--crate-name=foo",
-            ]
-        );
-    }
-
-    #[test]
     fn test_parse_pw_args_substitutes_pwd_from_real_execroot() {
         let parsed = parse_pw_args(
             &[
@@ -2626,41 +3265,177 @@ mod test {
             vec![("pwd".to_string(), "/real/execroot".to_string())]
         );
         assert_eq!(parsed.output_file, Some("diag.txt".to_string()));
+        assert_eq!(parsed.stable_status_file, None);
+        assert_eq!(parsed.volatile_status_file, None);
     }
 
     #[test]
-    fn test_create_staged_pipeline_creates_execroot_and_outputs_dirs() {
-        let tmp = std::env::temp_dir().join("pw_test_create_pipeline_dirs");
-        let _ = std::fs::remove_dir_all(&tmp);
+    fn test_build_rustc_env_applies_stamp_and_subst_mappings() {
+        let tmp =
+            std::env::temp_dir().join(format!("pw_test_build_rustc_env_{}", std::process::id()));
         std::fs::create_dir_all(&tmp).unwrap();
-        let old_cwd = std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
-        std::env::set_current_dir(&tmp).unwrap();
-        let state_roots = WorkerStateRoots {
-            request_root: tmp.join("_pw_state/requests"),
-            pipeline_root: tmp.join("_pw_state/pipeline"),
-        };
-        std::fs::create_dir_all(&state_roots.request_root).unwrap();
-        std::fs::create_dir_all(&state_roots.pipeline_root).unwrap();
-        std::fs::create_dir_all(tmp.join("sandbox")).unwrap();
-        let request = WorkRequestContext {
-            request_id: 7,
-            arguments: Vec::new(),
-            sandbox_dir: Some(tmp.join("sandbox").display().to_string()),
-            inputs: Vec::new(),
-            cancel: false,
-        };
 
-        let pipeline = create_staged_pipeline(&state_roots, "crate_hash", &request).unwrap();
+        let env_file = tmp.join("env.txt");
+        let stable_status = tmp.join("stable-status.txt");
+        let volatile_status = tmp.join("volatile-status.txt");
 
-        assert!(pipeline.root_dir.exists());
-        assert!(pipeline.execroot_dir.exists());
-        assert!(pipeline.outputs_dir.exists());
-        assert!(pipeline.root_dir.join("metadata_request.json").exists());
+        std::fs::write(
+            &env_file,
+            "STAMPED={BUILD_USER}:{BUILD_SCM_REVISION}:${pwd}\nUNCHANGED=value\n",
+        )
+        .unwrap();
+        std::fs::write(&stable_status, "BUILD_USER alice\n").unwrap();
+        std::fs::write(&volatile_status, "BUILD_SCM_REVISION deadbeef\n").unwrap();
 
-        std::env::set_current_dir(&old_cwd)
-            .or_else(|_| std::env::set_current_dir(std::env::temp_dir()))
-            .unwrap();
+        let env = build_rustc_env(
+            &[env_file.display().to_string()],
+            Some(stable_status.to_str().unwrap()),
+            Some(volatile_status.to_str().unwrap()),
+            &[("pwd".to_string(), "/real/execroot".to_string())],
+        );
+
+        assert_eq!(
+            env.get("STAMPED"),
+            Some(&"alice:deadbeef:/real/execroot".to_string())
+        );
+        assert_eq!(env.get("UNCHANGED"), Some(&"value".to_string()));
+
         let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_is_tracked_artifact_input() {
+        assert!(is_tracked_artifact_input(
+            "bazel-out/k8-fastbuild/bin/lib/foo/_pipeline/libfoo.rmeta"
+        ));
+        assert!(is_tracked_artifact_input(
+            "bazel-out/k8-fastbuild/bin/tools/foo/libfoo.rlib"
+        ));
+        assert!(!is_tracked_artifact_input("src/main.rs"));
+    }
+
+    #[test]
+    fn test_collect_rustc_extern_specs() {
+        let args = vec![
+            "rustc".to_string(),
+            "--extern=foo=bazel-out/k8-fastbuild/bin/lib/foo/libfoo.rlib".to_string(),
+            "--extern".to_string(),
+            "bar=bazel-out/k8-fastbuild/bin/lib/bar/_pipeline/libbar.rmeta".to_string(),
+        ];
+
+        assert_eq!(
+            collect_rustc_extern_specs(&args),
+            vec![
+                (
+                    "foo".to_string(),
+                    "bazel-out/k8-fastbuild/bin/lib/foo/libfoo.rlib".to_string()
+                ),
+                (
+                    "bar".to_string(),
+                    "bazel-out/k8-fastbuild/bin/lib/bar/_pipeline/libbar.rmeta".to_string()
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_output_base_from_execroot_worker_cwd() {
+        let cwd = std::path::Path::new("/tmp/output-base/execroot/_main");
+        assert_eq!(
+            output_base_from_worker_cwd(cwd),
+            Some(PathBuf::from("/tmp/output-base"))
+        );
+    }
+
+    #[test]
+    fn test_output_base_from_bazel_workers_cwd() {
+        let cwd = std::path::Path::new(
+            "/tmp/output-base/bazel-workers/Rustc-multiplex-worker-7-workdir/_main",
+        );
+        assert_eq!(
+            output_base_from_worker_cwd(cwd),
+            Some(PathBuf::from("/tmp/output-base"))
+        );
+    }
+
+    #[test]
+    fn test_output_base_root_lifecycle_log_path() {
+        let cwd = std::path::Path::new(
+            "/tmp/output-base/bazel-workers/Rustc-multiplex-worker-7-workdir/_main",
+        );
+        assert_eq!(
+            output_base_from_worker_cwd(cwd)
+                .unwrap()
+                .join("rules_rust_worker_lifecycle.log"),
+            PathBuf::from("/tmp/output-base/rules_rust_worker_lifecycle.log")
+        );
+    }
+
+    #[test]
+    fn test_worker_forced_exit_mode_reads_env() {
+        let key = "PROCESS_WRAPPER_TEST_WORKER_MODE";
+        let old = std::env::var(key).ok();
+        std::env::set_var(key, "exit_after_response");
+        assert_eq!(
+            worker_forced_exit_mode().as_deref(),
+            Some("exit_after_response")
+        );
+        if let Some(old) = old {
+            std::env::set_var(key, old);
+        } else {
+            std::env::remove_var(key);
+        }
+    }
+
+    #[test]
+    fn test_build_shutdown_response() {
+        let response = build_shutdown_response(11);
+        assert_eq!(
+            response,
+            r#"{"exitCode":1,"output":"worker shutting down","requestId":11}"#
+        );
+    }
+
+    #[test]
+    fn test_begin_worker_shutdown_sets_flag() {
+        WORKER_SHUTTING_DOWN.store(false, Ordering::SeqCst);
+        begin_worker_shutdown("test");
+        assert!(worker_is_shutting_down());
+        WORKER_SHUTTING_DOWN.store(false, Ordering::SeqCst);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_signal_name_known_values() {
+        assert_eq!(signal_name(SIG_HUP), b"SIGHUP");
+        assert_eq!(signal_name(SIG_INT), b"SIGINT");
+        assert_eq!(signal_name(SIG_QUIT), b"SIGQUIT");
+        assert_eq!(signal_name(SIG_PIPE), b"SIGPIPE");
+        assert_eq!(signal_name(SIG_TERM), b"SIGTERM");
+        assert_eq!(signal_name(99), b"SIGUNKNOWN");
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_signal_uses_soft_shutdown() {
+        assert!(signal_uses_soft_shutdown(SIG_TERM));
+        assert!(!signal_uses_soft_shutdown(SIG_INT));
+        assert!(!signal_uses_soft_shutdown(SIG_QUIT));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_render_signal_log_line_contains_pid_and_signal() {
+        let mut buffer = [0u8; 128];
+        let len = render_signal_log_line(&mut buffer, SIG_TERM);
+        let rendered = std::str::from_utf8(&buffer[..len]).unwrap();
+
+        assert!(rendered.starts_with("pid="), "rendered={}", rendered);
+        assert!(
+            rendered.contains(" event=signal signal=SIGTERM signum=15\n"),
+            "rendered={}",
+            rendered
+        );
     }
 
     #[test]
@@ -2670,6 +3445,35 @@ mod test {
             extract_rmeta_path(line),
             Some("/work/out/libfoo.rmeta".to_string())
         );
+    }
+
+    #[test]
+    fn test_should_preserve_pipeline_dir_for_zerobuf_chain_keys() {
+        assert!(should_preserve_pipeline_dir(
+            "lib_zerobuf_codegen_libzerobuf_codegen-229785134_rlib",
+            0,
+            &["libzerobuf_codegen-229785134.rlib".to_string()],
+        ));
+        assert!(should_preserve_pipeline_dir(
+            "lib_cli_config_getter_libcli_config_getter-1472696652_rlib",
+            0,
+            &["libcli_config_getter-1472696652.rlib".to_string()],
+        ));
+        assert!(should_preserve_pipeline_dir(
+            "lib_platform_version_libplatform_version-1023817015_rlib",
+            0,
+            &["libplatform_version-1023817015.rlib".to_string()],
+        ));
+        assert!(should_preserve_pipeline_dir(
+            "lib_zerobuf_cli_libzerobuf_cli-630641045_rlib",
+            0,
+            &["libzerobuf_cli-630641045.rlib".to_string()],
+        ));
+        assert!(!should_preserve_pipeline_dir(
+            "lib_other_libother-123_rlib",
+            0,
+            &["libother-123.rlib".to_string()],
+        ));
     }
 
     #[test]
@@ -2771,76 +3575,6 @@ mod test {
     }
 
     #[test]
-    fn test_stage_request_inputs_recurses_directories() {
-        use std::fs;
-
-        let tmp = std::env::temp_dir().join("pw_test_stage_request_inputs_recurses");
-        let input_root = tmp.join("inputs");
-        let execroot = tmp.join("execroot");
-        fs::create_dir_all(input_root.join("include/c++")).unwrap();
-        fs::write(input_root.join("include/c++/vector"), b"header").unwrap();
-
-        let request = WorkRequestContext {
-            request_id: 1,
-            arguments: Vec::new(),
-            sandbox_dir: Some(input_root.display().to_string()),
-            inputs: vec![WorkRequestInput {
-                path: "include/c++".to_string(),
-                digest: None,
-            }],
-            cancel: false,
-        };
-
-        stage_request_inputs(&request, &execroot).unwrap();
-
-        assert_eq!(
-            fs::read(execroot.join("include/c++/vector")).unwrap(),
-            b"header"
-        );
-
-        let _ = fs::remove_dir_all(&tmp);
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_stage_request_inputs_symlinks_stable_directories() {
-        use std::fs;
-
-        let tmp =
-            std::env::temp_dir().join("pw_test_stage_request_inputs_symlinks_stable_directories");
-        let stable_root = tmp.join("stable");
-        let execroot = tmp.join("execroot");
-        fs::create_dir_all(stable_root.join("include/c++")).unwrap();
-        fs::write(stable_root.join("include/c++/vector"), b"header").unwrap();
-
-        let old_cwd = std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
-        std::env::set_current_dir(&tmp).unwrap();
-
-        let request = WorkRequestContext {
-            request_id: 1,
-            arguments: Vec::new(),
-            sandbox_dir: Some(tmp.join("sandbox").display().to_string()),
-            inputs: vec![WorkRequestInput {
-                path: "stable/include".to_string(),
-                digest: None,
-            }],
-            cancel: false,
-        };
-
-        stage_request_inputs(&request, &execroot).unwrap();
-
-        let dest = execroot.join("stable/include");
-        assert!(std::fs::symlink_metadata(&dest)
-            .unwrap()
-            .file_type()
-            .is_symlink());
-        assert_eq!(fs::read(dest.join("c++/vector")).unwrap(), b"header");
-
-        std::env::set_current_dir(old_cwd).unwrap();
-        let _ = fs::remove_dir_all(&tmp);
-    }
-
-    #[test]
     #[cfg(unix)]
     fn test_seed_sandbox_cache_root() {
         use std::fs;
@@ -2860,4 +3594,92 @@ mod test {
 
         let _ = fs::remove_dir_all(&tmp);
     }
+
+    // --- relocate_pw_flags tests ---
+
+    #[test]
+    fn test_relocate_pw_flags_moves_output_file_before_separator() {
+        let mut args = vec![
+            "--subst".into(),
+            "pwd=${pwd}".into(),
+            "--".into(),
+            "/path/to/rustc".into(),
+            "--output-file".into(),
+            "bazel-out/foo/libbar.rmeta".into(),
+            "src/lib.rs".into(),
+            "--crate-name=foo".into(),
+        ];
+        relocate_pw_flags(&mut args);
+        assert_eq!(
+            args,
+            vec![
+                "--subst",
+                "pwd=${pwd}",
+                "--output-file",
+                "bazel-out/foo/libbar.rmeta",
+                "--",
+                "/path/to/rustc",
+                "src/lib.rs",
+                "--crate-name=foo",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_relocate_pw_flags_moves_multiple_flags() {
+        let mut args = vec![
+            "--subst".into(),
+            "pwd=${pwd}".into(),
+            "--".into(),
+            "/path/to/rustc".into(),
+            "--output-file".into(),
+            "out.rmeta".into(),
+            "--rustc-output-format".into(),
+            "rendered".into(),
+            "--env-file".into(),
+            "build_script.env".into(),
+            "--arg-file".into(),
+            "build_script.linksearchpaths".into(),
+            "--stable-status-file".into(),
+            "stable.status".into(),
+            "--volatile-status-file".into(),
+            "volatile.status".into(),
+            "src/lib.rs".into(),
+        ];
+        relocate_pw_flags(&mut args);
+        let sep = args.iter().position(|a| a == "--").unwrap();
+        // All pw flags should be before --
+        assert!(args[..sep].contains(&"--output-file".to_string()));
+        assert!(args[..sep].contains(&"--rustc-output-format".to_string()));
+        assert!(args[..sep].contains(&"--env-file".to_string()));
+        assert!(args[..sep].contains(&"--arg-file".to_string()));
+        assert!(args[..sep].contains(&"--stable-status-file".to_string()));
+        assert!(args[..sep].contains(&"--volatile-status-file".to_string()));
+        // Rustc args should be after --
+        assert!(args[sep + 1..].contains(&"/path/to/rustc".to_string()));
+        assert!(args[sep + 1..].contains(&"src/lib.rs".to_string()));
+    }
+
+    #[test]
+    fn test_relocate_pw_flags_noop_when_no_flags() {
+        let mut args = vec![
+            "--subst".into(),
+            "pwd=${pwd}".into(),
+            "--".into(),
+            "/path/to/rustc".into(),
+            "src/lib.rs".into(),
+        ];
+        let expected = args.clone();
+        relocate_pw_flags(&mut args);
+        assert_eq!(args, expected);
+    }
+
+    #[test]
+    fn test_relocate_pw_flags_noop_when_no_separator() {
+        let mut args = vec!["--output-file".into(), "foo".into()];
+        let expected = args.clone();
+        relocate_pw_flags(&mut args);
+        assert_eq!(args, expected);
+    }
+
 }

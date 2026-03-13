@@ -260,6 +260,23 @@ pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
         || arg.starts_with("--pipelining-key=")
 }
 
+/// Returns true if `arg` is a process_wrapper flag that may appear in the
+/// @paramfile when worker pipelining is active.  These flags are placed in
+/// the paramfile (per-request args) instead of startup args so that all
+/// worker actions share the same WorkerKey.  They must be stripped before the
+/// expanded paramfile reaches rustc.
+///
+/// Unlike pipelining flags (which are standalone), these flags consume the
+/// *next* argument as their value, so the caller must skip it too.
+pub(crate) fn is_relocated_pw_flag(arg: &str) -> bool {
+    arg == "--output-file"
+        || arg == "--rustc-output-format"
+        || arg == "--env-file"
+        || arg == "--arg-file"
+        || arg == "--stable-status-file"
+        || arg == "--volatile-status-file"
+}
+
 fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     for (f, replace_with) in subst_mappings {
         let from = format!("${{{f}}}");
@@ -282,10 +299,24 @@ fn prepare_param_file(
         write_to_file: &mut impl FnMut(&str) -> Result<(), OptionError>,
     ) -> Result<bool, OptionError> {
         let mut has_allow_features_flag = false;
+        // When true, the next arg is the value of a relocated pw flag and must
+        // also be stripped.
+        let mut skip_next = false;
         for arg in read_file(filename)? {
+            if skip_next {
+                skip_next = false;
+                continue;
+            }
             let arg = prepare_arg(arg, subst_mappings);
             // Strip worker-pipelining protocol flags; they must not reach rustc.
             if is_pipelining_flag(&arg) {
+                continue;
+            }
+            // Strip relocated process_wrapper flags (--output-file, etc.) that
+            // were placed in the paramfile for worker key stability.  These are
+            // two-part flags: the flag name on one line, its value on the next.
+            if is_relocated_pw_flag(&arg) {
+                skip_next = true;
                 continue;
             }
             has_allow_features_flag |= is_allow_features_flag(&arg);
@@ -477,5 +508,44 @@ mod test {
                 "-Zallow-features=whitespace_instead_of_curly_braces".to_string()
             )])
         );
+    }
+
+    #[test]
+    fn test_prepare_param_file_strips_relocated_pw_flags() {
+        let mut written = String::new();
+        let mut read_file = |_filename: &str| -> Result<Vec<String>, OptionError> {
+            Ok(vec![
+                "--output-file".to_string(),
+                "bazel-out/foo/libbar.rmeta".to_string(),
+                "--env-file".to_string(),
+                "bazel-out/foo/build_script.env".to_string(),
+                "src/lib.rs".to_string(),
+                "--crate-name=foo".to_string(),
+                "--arg-file".to_string(),
+                "bazel-out/foo/build_script.linksearchpaths".to_string(),
+                "--rustc-output-format".to_string(),
+                "rendered".to_string(),
+                "--crate-type=rlib".to_string(),
+            ])
+        };
+        let mut write_to_file = |s: &str| -> Result<(), OptionError> {
+            if !written.is_empty() {
+                written.push('\n');
+            }
+            written.push_str(s);
+            Ok(())
+        };
+
+        let _has_allow = prepare_param_file(
+            "test.params",
+            &[],
+            &mut read_file,
+            &mut write_to_file,
+        )
+        .unwrap();
+
+        // All relocated pw flags + values should be stripped.
+        // Only the rustc flags should remain.
+        assert_eq!(written, "src/lib.rs\n--crate-name=foo\n--crate-type=rlib");
     }
 }

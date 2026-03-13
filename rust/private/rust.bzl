@@ -167,11 +167,15 @@ def _rust_library_common(ctx, crate_type):
     rust_metadata = None
     rustc_rmeta_output = None
     metadata_supports_pipelining = False
+    # Worker pipelining uses a single rustc invocation (no SVH mismatch risk),
+    # so disable_pipelining (which works around SVH issues in hollow rlib mode)
+    # should be ignored when worker pipelining is active.
+    effective_disable_pipelining = getattr(ctx.attr, "disable_pipelining", False) and not toolchain._worker_pipelining
     if can_build_metadata(
         toolchain,
         ctx,
         crate_type,
-        disable_pipelining = getattr(ctx.attr, "disable_pipelining", False),
+        disable_pipelining = effective_disable_pipelining,
     ):
         if can_use_metadata_for_pipelining(toolchain, crate_type) and toolchain._worker_pipelining and not is_exec_configuration(ctx):
             # Worker pipelining: single rustc invocation emitting both .rmeta and .rlib.
@@ -197,7 +201,7 @@ def _rust_library_common(ctx, crate_type):
 
         metadata_supports_pipelining = (
             can_use_metadata_for_pipelining(toolchain, crate_type) and
-            not ctx.attr.disable_pipelining
+            not effective_disable_pipelining
         )
 
     deps = transform_deps(deps)
