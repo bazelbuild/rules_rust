@@ -554,8 +554,8 @@ which adds incremental flags, so both get `-Ccodegen-units=16`. This is harmless
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `bazel test //test/unit/pipelined_compilation/...` passes
-- [ ] `cargo test --lib` passes
+- [x] `bazel test //test/unit/pipelined_compilation/...` passes (10/10)
+- [x] `cargo test --lib` passes (11/11 via bazel test)
 
 #### Manual Verification:
 - [ ] Build `//sdk` with:
@@ -619,10 +619,10 @@ Add "SUPERSEDED by 2026-03-13-dynamic-execution-worker-pipelining.md" headers to
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `cargo test --lib` passes
-- [ ] `bazel test //test/unit/pipelined_compilation/...` passes
-- [ ] `grep -r 'StagePool\|BorrowedSlot\|stage_pool\|STAGE_POOL' util/process_wrapper/` returns nothing
-- [ ] `wc -l util/process_wrapper/worker.rs` is < 4000 lines (down from ~5500)
+- [x] `cargo test --lib` passes (11/11 via bazel test)
+- [x] `bazel test //test/unit/pipelined_compilation/...` passes (10/10)
+- [x] `grep -r 'StagePool\|BorrowedSlot\|stage_pool\|STAGE_POOL' util/process_wrapper/` returns nothing
+- [x] `wc -l util/process_wrapper/worker.rs` is 3723 lines (< 4000, down from ~5500)
 
 #### Manual Verification:
 - [ ] Full build of `//sdk` succeeds in all three modes:

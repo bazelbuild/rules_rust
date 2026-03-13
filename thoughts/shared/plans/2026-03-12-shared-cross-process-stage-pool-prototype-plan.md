@@ -1,3 +1,5 @@
+> **SUPERSEDED** by `2026-03-13-dynamic-execution-worker-pipelining.md`
+
 # Shared Cross-Process Stage Pool Prototype Plan
 
 ## Goal

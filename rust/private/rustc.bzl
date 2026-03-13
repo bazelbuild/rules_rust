@@ -1433,8 +1433,9 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental):
             reqs["supports-worker-cancellation"] = "1"
         else:
             reqs["supports-workers"] = "1"
-        if is_incremental:
-            reqs["no-sandbox"] = "1"
+        # no-sandbox is no longer needed — the worker uses real execroot CWD
+        # (or sandbox CWD when sandboxed), so incremental cache paths are
+        # stable regardless of sandboxing.
     return reqs
 
 def rustc_compile_action(

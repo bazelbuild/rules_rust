@@ -1,3 +1,5 @@
+> **SUPERSEDED** by `2026-03-13-dynamic-execution-worker-pipelining.md`
+
 # Multiplex Sandbox Overhead Investigation Plan
 
 ## Goal

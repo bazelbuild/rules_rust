@@ -1,3 +1,5 @@
+> **SUPERSEDED** by `2026-03-13-dynamic-execution-worker-pipelining.md`
+
 # Cross-Process Shared Stage Pool Plan
 
 ## Context

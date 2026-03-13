@@ -597,11 +597,32 @@ def experimental_worker_pipelining():
         build --@rules_rust//rust/settings:pipelined_compilation=true
         build --@rules_rust//rust/settings:experimental_worker_pipelining=true
         build --strategy=Rustc=worker,local
-        # Optional: tune concurrent worker requests. Bazel's default (8) works well for
-        # machines with ~16 CPUs. On larger machines, raise to ~CPU_count/2 to scale
-        # parallelism without oversubscribing CPUs (each rustc benefits from ~2 cores).
-        # Setting this too high degrades performance via CPU thrashing.
-        # build --worker_max_multiplex_instances=Rustc=HOST_CPUS*.5
+
+    For sandboxed worker pipelining (compatible with dynamic execution):
+        build --@rules_rust//rust/settings:pipelined_compilation=true
+        build --@rules_rust//rust/settings:experimental_worker_pipelining=true
+        build --experimental_worker_multiplex_sandboxing
+        build --strategy=Rustc=worker,sandboxed
+        # Recommended: speeds up Bazel-side symlink creation
+        # build --sandbox_base=/dev/shm
+
+    For dynamic execution (local worker racing against remote):
+        build --@rules_rust//rust/settings:pipelined_compilation=true
+        build --@rules_rust//rust/settings:experimental_worker_pipelining=true
+        build --internal_spawn_scheduler
+        build --strategy=Rustc=dynamic
+        build --dynamic_local_strategy=Rustc=worker,sandboxed
+        build --dynamic_remote_strategy=Rustc=remote
+        build --experimental_worker_cancellation
+        # Recommended: speeds up Bazel-side symlink creation
+        # build --sandbox_base=/dev/shm
+
+    With incremental compilation (compatible with sandboxing):
+        build --@rules_rust//rust/settings:pipelined_compilation=true
+        build --@rules_rust//rust/settings:experimental_worker_pipelining=true
+        build --@rules_rust//rust/settings:experimental_incremental=true
+        build --experimental_worker_multiplex_sandboxing
+        build --strategy=Rustc=worker,sandboxed
     """
     bool_flag(
         name = "experimental_worker_pipelining",

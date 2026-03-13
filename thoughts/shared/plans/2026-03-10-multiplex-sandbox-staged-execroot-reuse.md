@@ -1,3 +1,5 @@
+> **SUPERSEDED** by `2026-03-13-dynamic-execution-worker-pipelining.md`
+
 # Reusable Staged Execroot Plan For Sandboxed Multiplex Workers
 
 ## Context
