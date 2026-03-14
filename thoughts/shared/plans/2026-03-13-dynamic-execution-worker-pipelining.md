@@ -678,6 +678,148 @@ estimate). Total per-request overhead would be ~56ms.
 - The `no-sandbox` removal for incremental is the only behavioral change: incremental
   actions can now be sandboxed. This is strictly more capable, not a regression.
 
+## Phase 6: Exec/Target Dedup via Path Mapping (2026-03-13)
+
+### Problem
+53 of ~170 crates in zerobuf_schema are compiled twice (exec + target). When exec==target
+platform, this is pure waste: ~110s CPU, ~24s critical path.
+
+### Approach: `--experimental_output_paths=strip`
+Bazel's `--experimental_output_paths=strip` normalizes `bazel-out/k8-opt/` and
+`bazel-out/k8-opt-exec/` to `bazel-out/cfg/` for actions declaring `supports-path-mapping: 1`.
+If exec and target actions have identical command lines after normalization, Bazel deduplicates
+them (shared action cache key; since Bazel 7.4, concurrent identical spawns are deduplicated).
+
+### Attempt 1: Flag Inheritance Setting (REVERTED)
+Implemented `experimental_exec_inherits_target_flags` to align extra_rustc_flags, env vars,
+and LTO settings between exec and target configs. Result: flag alignment alone does NOT reduce
+actions (aquery confirmed: 239 k8-opt-exec + 179 k8-opt actions in both baseline and aligned).
+Dedup requires `--experimental_output_paths=strip` which is blocked (see below).
+
+Worker pipelining for exec was also attempted (to match target's pipelining mode) but causes:
+- E0463: `-Cpanic=abort` from target flags breaks proc-macro deps (need `panic=unwind`)
+- E0460: SVH mismatch under concurrent load (race in PipelineState, even with separate worker keys)
+- Not needed: path stripping normalizes entire command line, so pipelining mode differences are OK
+
+### Blocker: Path Mapping Requires File Objects in Args
+`supports-path-mapping: 1` causes sandbox to use `bazel-out/cfg/` symlinks. But rules_rust
+passes many paths as STRINGS via `Args.add(string)`. Bazel's PathMapper only rewrites
+File/Artifact objects in Args, leaving strings unchanged. Result: command line has unrewritten
+`bazel-out/k8-opt/` paths but sandbox only has `bazel-out/cfg/` → "No such file or directory".
+
+### String-Path Instances to Fix in rustc.bzl
+
+**construct_arguments (lines 950-1376):**
+
+| Line | Code | Type |
+|------|------|------|
+| 1078 | `rustc_path.add(tool_path)` where `tool_path = toolchain.rustc.path` | `.path` string |
+| 1150-1157 | `args.add("--output-file", file.path)` (4 instances) | `.path` string |
+| 1024+1181 | `output_dir = crate_info.output.dirname` → `add(output_dir, format="--out-dir=%s")` | `.dirname` string |
+| 1226 | `add_all(toolchain.rust_std_paths, ...)` — depset of dirname strings | depset of strings |
+| 1336 | `add(toolchain.sysroot, format="--sysroot=%s")` | `.dirname` string |
+
+**add_crate_link_flags (lines 2459-2562):**
+
+| Line | Code | Type |
+|------|------|------|
+| 2513 | `"--extern={}={}".format(name, lib_or_meta.path)` in map_each | `.path` in string concat |
+| 2532 | `"--extern={}={}".format(name, crate_info.output.path)` in map_each | `.path` in string concat |
+| 2543 | `return crate.output.dirname` in map_each | `.dirname` string |
+| 2559-2561 | `return crate.metadata.dirname` / `crate.output.dirname` in map_each | `.dirname` string |
+
+**_add_native_link_flags (lines 2747-2837):**
+
+| Line | Code | Type |
+|------|------|------|
+| 2745 | `get_preferred_artifact(lib, use_pic).dirname` in list comprehension | `.dirname` string |
+| 2791-2792 | `ambiguous_libs.values()[0].dirname` → `add(dirname, format="-Lnative=%s")` | `.dirname` string |
+| 2837 | `_get_dirname(file): return file.dirname` used in add_all map_each | `.dirname` string |
+
+**Toolchain-level (rust/toolchain.bzl):**
+
+| Line | Code | Type |
+|------|------|------|
+| 430 | `sysroot_path = sysroot.sysroot_anchor.dirname` | `.dirname` string (stored in provider) |
+| 597 | `rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()])` | depset of `.dirname` strings |
+
+### Fix Categories
+
+**A. Simple `.path` → File (5 instances):**
+- `rustc_path.add(tool_path)` → `rustc_path.add(rustc_file)` (change parameter from str to File)
+- `args.add("--output-file", file.path)` → `args.add("--output-file", file)` (4 instances)
+
+**B. `.dirname` → File with dirname extraction (7+ instances):**
+- No built-in `args.add(file, format="--flag=%s", dirname=True)` in Bazel
+- Workaround: `args.add_all([file], map_each=_dirname, format_each="--flag=%s")` — but
+  `map_each` returns strings which may or may not be path-mapped (needs testing)
+- Alternative: use `args.add(file, format="--out-dir=%s/")` with trailing slash trick? No.
+- Likely need to test whether Bazel's `mapPathString` does regex replacement on map_each output
+
+**C. `map_each` returning strings with embedded paths (4 instances):**
+- `--extern=name=path` format prevents simple File passing
+- Same question: does `mapPathString` regex-replace `bazel-out/<config>/` in returned strings?
+- If yes: no code changes needed for map_each callbacks
+- If no: need restructuring (e.g., separate `--extern name` and add file separately)
+
+**D. Toolchain-level string storage (2 instances):**
+- `toolchain.sysroot` and `toolchain.rust_std_paths` store strings, not Files
+- Fix requires changing the `rust_toolchain` provider fields and all consumers
+- Largest blast radius — may affect third-party toolchain definitions
+
+### Implementation Progress (2026-03-13)
+
+**Step 1 — Category A + D partial: DONE**
+Fixed in current working tree:
+- `tool_path` parameter changed from `str` to `File` in `construct_arguments` + all 4 call sites
+  (rustc.bzl ×2, clippy.bzl, unpretty.bzl; rustdoc.bzl keeps `short_path` string for test mode)
+- `--output-file` args: 4 instances changed from `.path` string to File object
+- `--sysroot`: uses new `toolchain.sysroot_anchor` File + `_parent_dir` map_each helper
+- `-L` std paths: uses `toolchain.rust_std` File depset + `_parent_dir` map_each (replaces string depset)
+- `--out-dir`: uses `crate_info.output` File + `_parent_dir` map_each
+- `supports-path-mapping: 1` added to `_build_worker_exec_reqs`
+
+**Step 2 — Testing: DONE**
+Results with `--experimental_output_paths=strip` on reactor-repo-2:
+- Process wrapper executable: `cfg` ✓ (Bazel rewrites automatically)
+- Rustc tool path: `cfg` ✓ (Category A fix — File object)
+- `--sysroot=`: **STILL `k8-opt`** (map_each returns dirname STRING → not path-mapped)
+- `-L` std paths: **STILL `k8-opt`** (same — map_each returns dirname string)
+- `--out-dir=`: **STILL `k8-opt`** (same — map_each returns dirname string)
+- `--emit=link=`: `cfg` ✓ (already used File object)
+- Build SUCCEEDS (598/900 processes) except `rustversion` proc-macro which uses
+  `include!(concat!(env!("OUT_DIR"), ...))` — OUT_DIR env var is NOT path-mapped
+
+**CRITICAL FINDING: `map_each` return values are NOT path-mapped by Bazel.**
+Bazel's PathMapper only rewrites File/Artifact objects passed directly to `Args.add()`.
+Strings returned by `map_each` callbacks (even if they contain `bazel-out/<config>/` paths)
+are passed through verbatim. There is no `mapPathString` regex replacement on them.
+
+This means ALL `.dirname` paths (Categories B and D) AND all `--extern=name=path` strings
+(Category C) need a fundamentally different approach. Possible options:
+1. Bazel-side fix: add `PathMapper` support for `map_each` return values
+2. Use `args.add_all()` with File depsets and have format_each handle the dirname
+   (impossible: `format_each` doesn't support dirname extraction)
+3. Pass File objects directly and have format produce the needed string format
+   (impossible for `--extern=name=path` which needs both a name and a file path)
+4. Use paramfile with post-processing by process_wrapper to normalize paths
+
+**New Blocker: `OUT_DIR` env var not path-mapped**
+Crates using `include!(concat!(env!("OUT_DIR"), "/file"))` fail because `OUT_DIR` contains
+unrewritten `k8-opt-exec` paths. Env vars aren't processed by PathMapper. This affects:
+- `rustversion` (include! of generated version.expr)
+- Any crate with a build script that generates include!-able files
+Fix: either (a) process_wrapper rewrites paths in --env-file values, or (b) use Bazel's
+env var path mapping support (if it exists).
+
+### Remaining Work
+1. **Investigate Bazel's PathMapper for `map_each`** — check Bazel source or file a feature
+   request. Without this, dirname-based paths can't be path-mapped via Args.
+2. **Fix OUT_DIR env var** — either in process_wrapper or via Bazel env path mapping
+3. **Fix Category C (`--extern` paths)** — may need to decompose into separate args
+4. **Add `experimental_exec_inherits_target_flags`** setting — prerequisite for actual dedup
+5. **Validate full pipeline** on reactor-repo-2
+
 ## References
 
 - Prior plan (worker pipelining): `thoughts/shared/plans/2026-03-02-worker-pipelined-compilation.md`
