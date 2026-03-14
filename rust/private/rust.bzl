@@ -371,21 +371,11 @@ def _rust_test_impl(ctx):
         # Target is building the crate in `test` config
         crate = ctx.attr.crate[rust_common.crate_info] if rust_common.crate_info in ctx.attr.crate else ctx.attr.crate[rust_common.test_crate_info].crate
 
-        if toolchain._incompatible_change_rust_test_compilation_output_directory:
-            crate_name = compute_crate_name(ctx.workspace_name, ctx.label, toolchain, ctx.attr.crate_name)
-            output = ctx.actions.declare_file(
-                ctx.label.name + toolchain.binary_ext,
-            )
-        else:
-            crate_name = crate.name
-            output_hash = determine_output_hash(crate.root, ctx.label)
-            output = ctx.actions.declare_file(
-                "test-%s/%s%s" % (
-                    output_hash,
-                    ctx.label.name,
-                    toolchain.binary_ext,
-                ),
-            )
+        crate_name = crate.name
+        output_hash = determine_output_hash(crate.root, ctx.label)
+        output = ctx.actions.declare_file(
+            ctx.label.name + toolchain.binary_ext,
+        )
 
         rust_metadata = None
         rustc_rmeta_output = None
@@ -452,19 +442,10 @@ def _rust_test_impl(ctx):
             crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_root_type)
         srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
-        if toolchain._incompatible_change_rust_test_compilation_output_directory:
-            output = ctx.actions.declare_file(
-                ctx.label.name + toolchain.binary_ext,
-            )
-        else:
-            output_hash = determine_output_hash(crate_root, ctx.label)
-            output = ctx.actions.declare_file(
-                "test-%s/%s%s" % (
-                    output_hash,
-                    ctx.label.name,
-                    toolchain.binary_ext,
-                ),
-            )
+        output_hash = determine_output_hash(crate_root, ctx.label)
+        output = ctx.actions.declare_file(
+            ctx.label.name + toolchain.binary_ext,
+        )
 
         rust_metadata = None
         rustc_rmeta_output = None
@@ -513,6 +494,7 @@ def _rust_test_impl(ctx):
         attr = ctx.attr,
         toolchain = toolchain,
         crate_info_dict = crate_info_dict,
+        output_hash = output_hash,
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )

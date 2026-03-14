@@ -79,11 +79,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
 
     output_hash = determine_output_hash(crate.root, ctx.label)
     output = ctx.actions.declare_file(
-        "test-%s/%s%s" % (
-            output_hash,
-            ctx.label.name,
-            toolchain.binary_ext,
-        ),
+        ctx.label.name + toolchain.binary_ext,
     )
 
     srcs = crate.srcs.to_list()
@@ -139,6 +135,7 @@ def _rust_wasm_bindgen_test_impl(ctx):
         attr = ctx.attr,
         toolchain = toolchain,
         crate_info_dict = crate_info_dict,
+        output_hash = output_hash,
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
