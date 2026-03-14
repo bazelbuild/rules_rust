@@ -33,10 +33,9 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io::{self, BufRead, BufReader, Write};
-use std::os::fd::AsRawFd;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -69,10 +68,6 @@ fn current_thread_label() -> String {
 
 static RESPONSE_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 static WORKER_SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
-#[cfg(unix)]
-static SIGNAL_LOG_FD: AtomicI32 = AtomicI32::new(-1);
-#[cfg(unix)]
-static OUTPUT_BASE_SIGNAL_LOG_FD: AtomicI32 = AtomicI32::new(-1);
 
 fn extract_request_id_from_raw_line(line: &str) -> Option<i64> {
     let key_pos = line.find("\"requestId\"")?;
@@ -147,22 +142,6 @@ impl WorkerStateRoots {
         self.pipeline_root.join(key)
     }
 }
-
-fn output_base_from_worker_cwd(cwd: &std::path::Path) -> Option<PathBuf> {
-    for ancestor in cwd.ancestors() {
-        if ancestor.file_name().is_some_and(|name| name == "execroot") {
-            return ancestor.parent().map(PathBuf::from);
-        }
-        if ancestor
-            .file_name()
-            .is_some_and(|name| name == "bazel-workers")
-        {
-            return ancestor.parent().map(PathBuf::from);
-        }
-    }
-    None
-}
-
 
 /// Entry point for persistent worker mode.
 ///
@@ -677,23 +656,13 @@ struct OutputMaterializationStats {
 
 
 #[cfg(unix)]
-const SIG_HUP: i32 = 1;
-#[cfg(unix)]
-const SIG_INT: i32 = 2;
-#[cfg(unix)]
-const SIG_QUIT: i32 = 3;
-#[cfg(unix)]
-const SIG_PIPE: i32 = 13;
-#[cfg(unix)]
 const SIG_TERM: i32 = 15;
 
 #[cfg(unix)]
 unsafe extern "C" {
-    fn getpid() -> i32;
     fn signal(signum: i32, handler: usize) -> usize;
     fn close(fd: i32) -> i32;
     fn write(fd: i32, buf: *const std::ffi::c_void, count: usize) -> isize;
-    fn _exit(status: i32) -> !;
 }
 
 
@@ -1152,25 +1121,6 @@ fn append_worker_response_log(message: &str) {
     let _ = writeln!(file, "{message}");
 }
 
-fn append_output_base_root_log(filename: &str, message: &str) {
-    let Some(output_base_root) = std::env::current_dir()
-        .ok()
-        .and_then(|cwd| output_base_from_worker_cwd(&cwd))
-    else {
-        return;
-    };
-
-    let mut file = match std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(output_base_root.join(filename))
-    {
-        Ok(file) => file,
-        Err(_) => return,
-    };
-    let _ = writeln!(file, "{message}");
-}
-
 fn append_worker_lifecycle_log(message: &str) {
     let root = std::path::Path::new("_pw_state");
     let _ = std::fs::create_dir_all(root);
@@ -1184,7 +1134,6 @@ fn append_worker_lifecycle_log(message: &str) {
         Err(_) => return,
     };
     let _ = writeln!(file, "{message}");
-    append_output_base_root_log("rules_rust_worker_lifecycle.log", message);
 }
 
 fn worker_is_shutting_down() -> bool {
@@ -1206,137 +1155,23 @@ fn begin_worker_shutdown(reason: &str) {
 }
 
 #[cfg(unix)]
+extern "C" fn worker_signal_handler(_signum: i32) {
+    WORKER_SHUTTING_DOWN.store(true, Ordering::SeqCst);
+    unsafe {
+        close(0);
+    } // close stdin to unblock main loop
+}
+
+#[cfg(unix)]
 fn install_worker_signal_handlers() {
     static ONCE: std::sync::Once = std::sync::Once::new();
-    ONCE.call_once(|| {
-        initialize_worker_signal_log_fds();
-        for signal_number in [SIG_HUP, SIG_INT, SIG_QUIT, SIG_PIPE, SIG_TERM] {
-            unsafe {
-                signal(signal_number, worker_signal_handler as *const () as usize);
-            }
-        }
+    ONCE.call_once(|| unsafe {
+        signal(SIG_TERM, worker_signal_handler as *const () as usize);
     });
 }
 
 #[cfg(not(unix))]
 fn install_worker_signal_handlers() {}
-
-#[cfg(unix)]
-fn initialize_worker_signal_log_fds() {
-    if let Some(fd) = open_append_fd(std::path::Path::new("_pw_state/worker_lifecycle.log")) {
-        SIGNAL_LOG_FD.store(fd, Ordering::SeqCst);
-    }
-
-    if let Some(output_base_root) = std::env::current_dir()
-        .ok()
-        .and_then(|cwd| output_base_from_worker_cwd(&cwd))
-    {
-        if let Some(fd) = open_append_fd(&output_base_root.join("rules_rust_worker_lifecycle.log"))
-        {
-            OUTPUT_BASE_SIGNAL_LOG_FD.store(fd, Ordering::SeqCst);
-        }
-    }
-}
-
-#[cfg(unix)]
-fn open_append_fd(path: &std::path::Path) -> Option<i32> {
-    let parent = path.parent()?;
-    std::fs::create_dir_all(parent).ok()?;
-    let file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
-        .ok()?;
-    let fd = file.as_raw_fd();
-    std::mem::forget(file);
-    Some(fd)
-}
-
-#[cfg(unix)]
-extern "C" fn worker_signal_handler(signal_number: i32) {
-    WORKER_SHUTTING_DOWN.store(true, Ordering::SeqCst);
-    let mut message = [0u8; 128];
-    let len = render_signal_log_line(&mut message, signal_number);
-    write_signal_marker(SIGNAL_LOG_FD.load(Ordering::Relaxed), &message[..len]);
-    write_signal_marker(
-        OUTPUT_BASE_SIGNAL_LOG_FD.load(Ordering::Relaxed),
-        &message[..len],
-    );
-    if signal_uses_soft_shutdown(signal_number) {
-        let _ = unsafe { close(0) };
-        return;
-    }
-    unsafe {
-        _exit(128 + signal_number);
-    }
-}
-
-#[cfg(unix)]
-fn signal_uses_soft_shutdown(signal_number: i32) -> bool {
-    signal_number == SIG_TERM
-}
-
-#[cfg(unix)]
-fn render_signal_log_line(buffer: &mut [u8; 128], signal_number: i32) -> usize {
-    let mut cursor = 0usize;
-    cursor += copy_bytes(buffer, cursor, b"pid=");
-    cursor += write_decimal(buffer, cursor, unsafe { getpid() } as u32);
-    cursor += copy_bytes(buffer, cursor, b" event=signal signal=");
-    cursor += copy_bytes(buffer, cursor, signal_name(signal_number));
-    cursor += copy_bytes(buffer, cursor, b" signum=");
-    cursor += write_decimal(buffer, cursor, signal_number as u32);
-    cursor += copy_bytes(buffer, cursor, b"\n");
-    cursor
-}
-
-#[cfg(unix)]
-fn copy_bytes(buffer: &mut [u8], offset: usize, bytes: &[u8]) -> usize {
-    let len = bytes.len();
-    buffer[offset..offset + len].copy_from_slice(bytes);
-    len
-}
-
-#[cfg(unix)]
-fn write_decimal(buffer: &mut [u8], offset: usize, value: u32) -> usize {
-    if value == 0 {
-        buffer[offset] = b'0';
-        return 1;
-    }
-
-    let mut digits = [0u8; 16];
-    let mut value = value;
-    let mut len = 0usize;
-    while value > 0 {
-        digits[len] = b'0' + (value % 10) as u8;
-        value /= 10;
-        len += 1;
-    }
-
-    for i in 0..len {
-        buffer[offset + i] = digits[len - 1 - i];
-    }
-    len
-}
-
-#[cfg(unix)]
-fn signal_name(signal_number: i32) -> &'static [u8] {
-    match signal_number {
-        SIG_HUP => b"SIGHUP",
-        SIG_INT => b"SIGINT",
-        SIG_QUIT => b"SIGQUIT",
-        SIG_PIPE => b"SIGPIPE",
-        SIG_TERM => b"SIGTERM",
-        _ => b"SIGUNKNOWN",
-    }
-}
-
-#[cfg(unix)]
-fn write_signal_marker(fd: i32, bytes: &[u8]) {
-    if fd < 0 {
-        return;
-    }
-    let _ = unsafe { write(fd, bytes.as_ptr().cast(), bytes.len()) };
-}
 
 struct WorkerLifecycleGuard {
     pid: u32,
@@ -3377,39 +3212,6 @@ mod test {
     }
 
     #[test]
-    fn test_output_base_from_execroot_worker_cwd() {
-        let cwd = std::path::Path::new("/tmp/output-base/execroot/_main");
-        assert_eq!(
-            output_base_from_worker_cwd(cwd),
-            Some(PathBuf::from("/tmp/output-base"))
-        );
-    }
-
-    #[test]
-    fn test_output_base_from_bazel_workers_cwd() {
-        let cwd = std::path::Path::new(
-            "/tmp/output-base/bazel-workers/Rustc-multiplex-worker-7-workdir/_main",
-        );
-        assert_eq!(
-            output_base_from_worker_cwd(cwd),
-            Some(PathBuf::from("/tmp/output-base"))
-        );
-    }
-
-    #[test]
-    fn test_output_base_root_lifecycle_log_path() {
-        let cwd = std::path::Path::new(
-            "/tmp/output-base/bazel-workers/Rustc-multiplex-worker-7-workdir/_main",
-        );
-        assert_eq!(
-            output_base_from_worker_cwd(cwd)
-                .unwrap()
-                .join("rules_rust_worker_lifecycle.log"),
-            PathBuf::from("/tmp/output-base/rules_rust_worker_lifecycle.log")
-        );
-    }
-
-    #[test]
     fn test_worker_forced_exit_mode_reads_env() {
         let key = "PROCESS_WRAPPER_TEST_WORKER_MODE";
         let old = std::env::var(key).ok();
@@ -3440,40 +3242,6 @@ mod test {
         begin_worker_shutdown("test");
         assert!(worker_is_shutting_down());
         WORKER_SHUTTING_DOWN.store(false, Ordering::SeqCst);
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_signal_name_known_values() {
-        assert_eq!(signal_name(SIG_HUP), b"SIGHUP");
-        assert_eq!(signal_name(SIG_INT), b"SIGINT");
-        assert_eq!(signal_name(SIG_QUIT), b"SIGQUIT");
-        assert_eq!(signal_name(SIG_PIPE), b"SIGPIPE");
-        assert_eq!(signal_name(SIG_TERM), b"SIGTERM");
-        assert_eq!(signal_name(99), b"SIGUNKNOWN");
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_signal_uses_soft_shutdown() {
-        assert!(signal_uses_soft_shutdown(SIG_TERM));
-        assert!(!signal_uses_soft_shutdown(SIG_INT));
-        assert!(!signal_uses_soft_shutdown(SIG_QUIT));
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_render_signal_log_line_contains_pid_and_signal() {
-        let mut buffer = [0u8; 128];
-        let len = render_signal_log_line(&mut buffer, SIG_TERM);
-        let rendered = std::str::from_utf8(&buffer[..len]).unwrap();
-
-        assert!(rendered.starts_with("pid="), "rendered={}", rendered);
-        assert!(
-            rendered.contains(" event=signal signal=SIGTERM signum=15\n"),
-            "rendered={}",
-            rendered
-        );
     }
 
     #[test]
