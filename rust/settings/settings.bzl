@@ -258,16 +258,6 @@ def toolchain_generated_sysroot():
         visibility = ["//visibility:public"],
     )
 
-# buildifier: disable=unnamed-macro
-def incompatible_change_rust_test_compilation_output_directory():
-    """A flag to put rust_test compilation outputs in the same directory as the rust_library compilation outputs.
-    """
-    incompatible_flag(
-        name = "incompatible_change_rust_test_compilation_output_directory",
-        build_setting_default = False,
-        issue = "https://github.com/bazelbuild/rules_rust/issues/2827",
-    )
-
 def experimental_link_std_dylib():
     """A flag to control whether to link libstd dynamically."""
     bool_flag(
