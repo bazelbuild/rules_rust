@@ -165,7 +165,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         attr = ctx.rule.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = clippy_executable.path,
+        tool_path = clippy_executable,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,

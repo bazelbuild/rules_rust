@@ -940,6 +940,10 @@ def _will_emit_object_file(emit):
 def _remove_codegen_units(flag):
     return None if flag.startswith("-Ccodegen-units") else flag
 
+def _parent_dir(file):
+    """Returns the parent directory of a File. For use as a map_each callback."""
+    return file.dirname
+
 def construct_arguments(
         *,
         ctx,
@@ -980,7 +984,7 @@ def construct_arguments(
         attr (struct): The attributes for the target. These may be different from ctx.attr in an aspect context.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         toolchain (rust_toolchain): The current target's `rust_toolchain`
-        tool_path (str): Path to rustc
+        tool_path (File): The rustc executable File object (or str path for backwards compat)
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
@@ -1147,14 +1151,14 @@ def construct_arguments(
             # so all actions share the same worker key. prepare_param_file strips it
             # before rustc sees it; the worker relocates it before --.
             if use_worker_pipe:
-                rustc_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+                rustc_flags.add("--output-file", crate_info.rustc_rmeta_output)
             else:
-                process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+                process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
         if use_worker_pipe:
-            rustc_flags.add("--output-file", crate_info.rustc_output.path)
+            rustc_flags.add("--output-file", crate_info.rustc_output)
         else:
-            process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+            process_wrapper_flags.add("--output-file", crate_info.rustc_output)
 
     # For worker pipelining, add --env-file and --arg-file to the paramfile
     # (deferred from above where the non-worker-pipe path adds them to
@@ -1178,7 +1182,7 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        rustc_flags.add(output_dir, format = "--out-dir=%s")
+        rustc_flags.add_all([crate_info.output], map_each = _parent_dir, format_each = "--out-dir=%s")
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1222,8 +1226,9 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    # Tell Rustc where to find the standard library (or libcore)
-    rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
+    # Tell Rustc where to find the standard library (or libcore).
+    # Use the File depset with map_each=_parent_dir so PathMapper can rewrite paths.
+    rustc_flags.add_all(toolchain.rust_std, map_each = _parent_dir, format_each = "-L%s", uniquify = True)
     rustc_flags.add_all(rust_flags, map_each = map_flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
@@ -1331,9 +1336,14 @@ def construct_arguments(
             {},
         ))
 
-    # Ensure the sysroot is set for the target platform
+    # Ensure the sysroot is set for the target platform.
+    # Use the sysroot_anchor File (not the string path) so Bazel's PathMapper
+    # can rewrite the config segment for --experimental_output_paths=strip.
     if toolchain._toolchain_generated_sysroot:
-        rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
+        if hasattr(toolchain, "sysroot_anchor"):
+            rustc_flags.add_all([toolchain.sysroot_anchor], map_each = _parent_dir, format_each = "--sysroot=%s")
+        else:
+            rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
@@ -1414,12 +1424,15 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     return flags
 
-def _build_worker_exec_reqs(use_worker_pipelining, is_incremental):
+def _build_worker_exec_reqs(use_worker_pipelining, is_incremental, has_out_dir = False):
     """Builds execution_requirements for Rustc worker actions.
 
     Args:
         use_worker_pipelining: Whether worker-managed pipelining is active.
         is_incremental: Whether incremental compilation is enabled.
+        has_out_dir: Whether the crate has a build script OUT_DIR. If True,
+            path mapping is disabled because OUT_DIR is an env var that
+            PathMapper cannot rewrite.
 
     Returns:
         A dict of execution_requirements.
@@ -1436,6 +1449,12 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental):
         # no-sandbox is no longer needed — the worker uses real execroot CWD
         # (or sandbox CWD when sandboxed), so incremental cache paths are
         # stable regardless of sandboxing.
+
+    # Enable path mapping for --experimental_output_paths=strip deduplication.
+    # Disabled when a build script OUT_DIR is present because env vars are not
+    # rewritten by PathMapper, causing include!() to reference unrewritten paths.
+    if not has_out_dir:
+        reqs["supports-path-mapping"] = "1"
     return reqs
 
 def rustc_compile_action(
@@ -1618,7 +1637,7 @@ def rustc_compile_action(
         attr = attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rustc.path,
+        tool_path = toolchain.rustc,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1664,7 +1683,7 @@ def rustc_compile_action(
             attr = attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool_path = toolchain.rustc,
             cc_toolchain = cc_toolchain,
             emit = metadata_emit,
             feature_configuration = feature_configuration,
@@ -1796,7 +1815,7 @@ def rustc_compile_action(
         #   persistent worker protocol. When --strategy=Rustc=worker,local is set,
         #   Bazel uses the worker (which runs in execroot, also avoiding the sandbox
         #   path problem), enabling dynamic execution strategy as well.
-        exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info))
+        exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info), has_out_dir = bool(out_dir))
 
         # When incremental compilation or worker pipelining is active and pipelining is
         # enabled, add build_metadata as an ordering dep so Rustc(A) starts only after
@@ -1835,7 +1854,7 @@ def rustc_compile_action(
             # incremental cache at /tmp/rules_rust_incremental/<crate>-meta.
             # Without worker mode it would be sandboxed and unable to accumulate
             # incremental state, making every rebuild a cold compilation.
-            meta_exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info))
+            meta_exec_reqs = _build_worker_exec_reqs(use_worker_pipelining, is_incremental_enabled(ctx, crate_info), has_out_dir = bool(out_dir))
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs_for_metadata,
