@@ -360,11 +360,12 @@ does NOT work (SVH mismatch), but that's not the intended production configurati
 
 ---
 
-## Phase 5: Promote to Stable
+## Phase 5: Promote to Stable (DEFERRED)
 
 ### Overview
-Remove "experimental" prefix, make worker pipelining the recommended configuration,
-ensure backwards compatibility.
+Keep the "experimental" prefix until the feature has been proven in more circumstances
+(different codebases, CI environments, Bazel versions, remote execution setups).
+The flag name `experimental_worker_pipelining` remains unchanged for now.
 
 ### Changes Required
 
