@@ -805,6 +805,47 @@ fn prepare_rustc_args(
     Ok((rustc_args, original_out_dir))
 }
 
+/// Resolves the real Bazel execroot from sandbox symlinks.
+///
+/// In multiplex sandboxing, the sandbox dir (`__sandbox/N/_main/`) contains
+/// symlinks to the real execroot (`<output_base>/execroot/_main/`).
+/// For example: `__sandbox/3/_main/external/foo/src/lib.rs` →
+///              `/home/.../<hash>/execroot/_main/external/foo/src/lib.rs`
+///
+/// We resolve any input's symlink target and strip the relative path suffix
+/// to recover the real execroot root.
+fn resolve_real_execroot(sandbox_dir: &str, request: &WorkRequestContext) -> Option<PathBuf> {
+    let sandbox_path = std::path::Path::new(sandbox_dir);
+    for input in &request.inputs {
+        let full_path = sandbox_path.join(&input.path);
+        if let Ok(target) = std::fs::read_link(&full_path) {
+            // target = <real_execroot>/<relative_path>
+            // input.path = <relative_path>
+            // Strip the relative path suffix to get the real execroot.
+            let target_str = target.to_string_lossy();
+            if target_str.ends_with(&input.path) {
+                let prefix = &target_str[..target_str.len() - input.path.len()];
+                let execroot = PathBuf::from(prefix);
+                if execroot.is_dir() {
+                    return Some(execroot);
+                }
+            }
+        }
+        // Also try following through to the canonical path
+        if let Ok(canonical) = full_path.canonicalize() {
+            let canonical_str = canonical.to_string_lossy().to_string();
+            if canonical_str.ends_with(&input.path) {
+                let prefix = &canonical_str[..canonical_str.len() - input.path.len()];
+                let execroot = PathBuf::from(prefix);
+                if execroot.is_dir() {
+                    return Some(execroot);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
     let path = std::path::Path::new(path);
     if path.is_absolute() {
@@ -1471,13 +1512,18 @@ fn create_pipeline_context(
         )
     })?;
 
-    // Use the sandbox dir when sandboxed (Bazel places inputs there via symlinks),
-    // otherwise use the worker's real execroot (CWD). This avoids worker-side staging
-    // entirely: Bazel's sandbox or the worker CWD already has all needed inputs.
+    // CRITICAL: Use the REAL execroot, not the sandbox or worker CWD.
+    //
+    // The sandbox dir is per-request and may be torn down after the metadata response.
+    // The background rustc outlives the metadata request, so it needs a stable CWD.
+    // The worker CWD (bazel-workers/.../workdir/_main/) has bazel-out/ but NOT source
+    // files (external/, etc.). Only the real execroot has everything.
+    //
+    // When sandboxed: resolve a symlink from the sandbox back to the real execroot.
+    // When unsandboxed: the worker CWD IS the real execroot (or close enough).
     let execroot_dir = if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
-        PathBuf::from(sandbox_dir)
-            .canonicalize()
-            .map_err(|e| (1, format!("pipelining: failed to canonicalize sandbox dir: {e}")))?
+        resolve_real_execroot(sandbox_dir, request)
+            .ok_or_else(|| (1, "pipelining: failed to resolve real execroot from sandbox symlinks".to_string()))?
     } else {
         std::env::current_dir()
             .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?
@@ -1549,14 +1595,11 @@ fn handle_pipelining_metadata(
         return (1, "pipelining: no rustc executable after '--'".to_string());
     }
 
-    // Drain any stale BackgroundRustc entries from previous builds.
-    let drained = lock_or_recover(pipeline_state).drain_completed();
-    if drained > 0 {
-        append_worker_metric_log(&format!(
-            "pipeline_drain_stale_entries count={drained} pid={}",
-            current_pid()
-        ));
-    }
+    // Note: we intentionally do NOT call drain_completed() here. Background rustc
+    // entries must remain in PipelineState until handle_pipelining_full() takes them,
+    // even if the child has already exited (fast-compiling crates often finish codegen
+    // before the full action arrives). Entries are cleaned up by take() in the full
+    // handler, or persist harmlessly until worker exit for orphaned entries.
 
     let ctx = match create_pipeline_context(state_roots, &key, request) {
         Ok(v) => v,
@@ -1617,10 +1660,12 @@ fn handle_pipelining_metadata(
         };
 
     // Redirect --out-dir to our persistent directory so rustc writes all outputs
-    // (.rmeta, .rlib, .d) there instead of the Bazel-managed out-dir.
-    // No need for rewrite_emit_paths_for_execroot — with real execroot CWD,
-    // --emit=metadata=<path> paths are already correct relative to CWD.
+    // (.rlib, .d) there instead of the Bazel-managed out-dir.
     let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
+    // Also redirect --emit=metadata=<path> to the outputs dir so the .rmeta is
+    // written alongside other outputs in the persistent pipeline dir, not in the
+    // real execroot where it could conflict with concurrent builds.
+    let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
     prepare_expanded_rustc_outputs(&rustc_args);
     append_pipeline_log(
         &ctx.root_dir,
@@ -2343,6 +2388,24 @@ fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
 
 /// Returns a copy of `args` where `--out-dir=<old>` is replaced by
 /// `--out-dir=<new_out_dir>`. Other args are unchanged.
+/// Rewrites `--emit=metadata=<path>` to write the .rmeta into the pipeline outputs dir.
+/// The original relative path's filename is preserved; only the directory changes.
+fn rewrite_emit_metadata_path(args: Vec<String>, outputs_dir: &std::path::Path) -> Vec<String> {
+    args.into_iter()
+        .map(|arg| {
+            if let Some(path_str) = arg.strip_prefix("--emit=metadata=") {
+                let filename = std::path::Path::new(path_str)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy();
+                format!("--emit=metadata={}", outputs_dir.join(filename.as_ref()).display())
+            } else {
+                arg
+            }
+        })
+        .collect()
+}
+
 fn rewrite_out_dir_in_expanded(args: Vec<String>, new_out_dir: &std::path::Path) -> Vec<String> {
     args.into_iter()
         .map(|arg| {

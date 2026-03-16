@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Benchmark pipelining + incremental compilation against reactor-repo-2 //sdk
+# Benchmark pipelining configurations against reactor-repo-2 //sdk
 #
 # Usage:
 #   ./bench_sdk.sh [ITERATIONS]
 #
 # Configs measured (cold builds — all Rust actions forced to cache-miss via --cfg):
-#   no-pipeline        pipelined_compilation=false, no incremental (baseline)
-#   worker-pipe        worker pipelining, multiplex sandboxing, no incremental
-#   worker-pipe+incr   worker pipelining, multiplex sandboxing + incremental
+#   no-pipeline           pipelined_compilation=false (baseline)
+#   hollow-rlib           pipelined_compilation=true, no worker pipelining
+#   worker-pipe-nosand    worker pipelining, no multiplex sandboxing
+#   worker-pipe           worker pipelining, multiplex sandboxing
+#   worker-pipe+incr      worker pipelining, multiplex sandboxing + incremental
 #
 # Configs measured (warm rebuilds — prime build then append a comment to lib/hash):
-#   no-pipeline-rb        rebuild, no pipelining, no incremental
-#   worker-pipe-rb        rebuild, worker pipelining, no incremental
-#   worker-pipe+incr-rb   rebuild, worker pipelining + incremental
+#   *-rb variants of each cold config
 #
 # No separate warmup needed: the disk cache at ../bazel-disk-cache is assumed
 # to be warm from prior development builds. C/build-script/proc-macro actions
@@ -43,6 +43,16 @@ NO_PIPE_FLAGS=(
     "--@rules_rust//rust/settings:experimental_worker_pipelining=false"
 )
 
+HOLLOW_RLIB_FLAGS=(
+    "--@rules_rust//rust/settings:pipelined_compilation=true"
+    "--@rules_rust//rust/settings:experimental_worker_pipelining=false"
+)
+
+WORKER_PIPE_NOSAND_FLAGS=(
+    "--@rules_rust//rust/settings:pipelined_compilation=true"
+    "--@rules_rust//rust/settings:experimental_worker_pipelining=true"
+)
+
 WORKER_PIPE_FLAGS=(
     "--@rules_rust//rust/settings:pipelined_compilation=true"
     "--@rules_rust//rust/settings:experimental_worker_pipelining=true"
@@ -67,6 +77,8 @@ log() { echo "[bench] $*" >&2; }
 cfg_flags() {
     case "$1" in
         no-pipeline)         printf '%s\n' "${NO_PIPE_FLAGS[@]}" ;;
+        hollow-rlib)         printf '%s\n' "${HOLLOW_RLIB_FLAGS[@]}" ;;
+        worker-pipe-nosand)  printf '%s\n' "${WORKER_PIPE_NOSAND_FLAGS[@]}" ;;
         worker-pipe)         printf '%s\n' "${WORKER_PIPE_FLAGS[@]}" ;;
         worker-pipe+incr)    printf '%s\n' "${WORKER_PIPE_INCR_FLAGS[@]}" ;;
         *) echo "unknown config: $1" >&2; exit 1 ;;
@@ -141,7 +153,7 @@ for iter in $(seq 1 "$ITERS"); do
 
     rm -rf "$INCR_CACHE"
 
-    for cfg in no-pipeline worker-pipe worker-pipe+incr; do
+    for cfg in no-pipeline hollow-rlib worker-pipe-nosand worker-pipe worker-pipe+incr; do
         log "  [cold] $cfg"
         $BAZEL shutdown >/dev/null 2>&1 || true
 
@@ -169,7 +181,7 @@ for iter in $(seq 1 "$ITERS"); do
     #      because the stable key hasn't changed between prime runs)
     #   5. Revert file via git
 
-    for cfg in no-pipeline worker-pipe worker-pipe+incr; do
+    for cfg in no-pipeline hollow-rlib worker-pipe-nosand worker-pipe worker-pipe+incr; do
         rb_cfg="${cfg}-rb"
         log "  [rebuild] $rb_cfg"
 
