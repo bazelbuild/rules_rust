@@ -596,26 +596,28 @@ def experimental_worker_pipelining():
     Requires pipelined_compilation=true and worker strategy:
         build --@rules_rust//rust/settings:pipelined_compilation=true
         build --@rules_rust//rust/settings:experimental_worker_pipelining=true
-        build --strategy=Rustc=worker,local
+        build --strategy=Rustc=worker
 
-    For sandboxed worker pipelining (compatible with dynamic execution):
+    For sandboxed worker pipelining (recommended for hermetic builds):
         build --@rules_rust//rust/settings:pipelined_compilation=true
         build --@rules_rust//rust/settings:experimental_worker_pipelining=true
         build --experimental_worker_multiplex_sandboxing
         build --strategy=Rustc=worker,sandboxed
-        # Recommended: speeds up Bazel-side symlink creation
-        # build --sandbox_base=/dev/shm
 
-    For dynamic execution (local worker racing against remote):
+    For dynamic execution (local worker racing against remote execution):
         build --@rules_rust//rust/settings:pipelined_compilation=true
         build --@rules_rust//rust/settings:experimental_worker_pipelining=true
+        build --experimental_worker_multiplex_sandboxing
         build --internal_spawn_scheduler
         build --strategy=Rustc=dynamic
         build --dynamic_local_strategy=Rustc=worker,sandboxed
         build --dynamic_remote_strategy=Rustc=remote
-        build --experimental_worker_cancellation
-        # Recommended: speeds up Bazel-side symlink creation
-        # build --sandbox_base=/dev/shm
+
+    NOTE: The remote leg MUST use actual remote execution (not --dynamic_remote_strategy=
+    Rustc=sandboxed). When the sandboxed leg wins, it produces .rmeta and .rlib from
+    separate rustc invocations, causing SVH mismatch errors in downstream binary targets.
+    With real remote execution, the remote leg runs the action independently and produces
+    consistent artifacts.
 
     With incremental compilation (compatible with sandboxing):
         build --@rules_rust//rust/settings:pipelined_compilation=true

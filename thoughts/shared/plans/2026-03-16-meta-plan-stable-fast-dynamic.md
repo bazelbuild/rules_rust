@@ -141,6 +141,23 @@ Run each 5x with `--disk_cache=""` on a consistent machine:
 2. Is dynamic execution viable with current sandboxing overhead?
 3. What is the gap between unsandboxed and sandboxed worker pipelining?
 
+### Phase 1 Results (2026-03-16)
+**Benchmark v2**: 5 configs × 3 iterations, //sdk on Bazel 9
+
+Cold builds (mean iter 2-3):
+- no-pipeline: 88.8s wall, 74.5s crit
+- hollow-rlib: 76.6s wall, 47.9s crit
+- worker-pipe-nosand: 58.2s wall, 40.0s crit (1.53× faster)
+- worker-pipe (sandboxed): 59.2s wall, 40.8s crit (1.50× faster)
+- worker-pipe+incr: 94.2s wall, 73.4s crit (slower)
+
+Warm rebuilds (mean iter 1-2):
+- no-pipeline-rb: 29.1s, worker-pipe-rb: 20.3s (1.43× faster)
+- worker-pipe+incr-rb: 6.0s (4.85× faster)
+
+**Answers**: (1) Yes, sandboxed overhead <2% (was ~14s). (2) Sandboxed overhead acceptable.
+(3) Negligible gap between sandboxed and unsandboxed.
+
 ---
 
 ## Phase 2: Code Cleanup — Debug Infrastructure
@@ -309,6 +326,29 @@ Write clear documentation (in settings.bzl docstrings or a doc file) covering:
 - [ ] Dynamic execution benchmark shows acceptable overhead
 - [ ] Documentation is clear and actionable
 - [ ] Decision made: ready to promote from experimental?
+
+### Phase 4 Results (2026-03-16)
+
+**4a. Dynamic execution**: PARTIALLY WORKS. With `--experimental_worker_multiplex_sandboxing`
+and `--dynamic_remote_strategy=Rustc=sandboxed`, 1047/3593 actions used worker strategy.
+However, binary targets fail with E0463 because the sandboxed "remote" leg produces .rmeta
+and .rlib from different rustc invocations, causing SVH mismatch. The fundamental issue:
+dynamic execution allows different legs to win for metadata vs full actions of the same
+pipeline pair, producing inconsistent artifacts.
+
+**4b. Incremental + sandboxed**: WORKS. Tested via benchmark: worker-pipe+incr builds succeed
+and warm rebuilds are 4.85× faster than no-pipeline (6.0s vs 29.1s).
+
+**4c. Dynamic benchmarking**: BLOCKED by 4a failure. Dynamic execution with sandboxed remote
+is not viable. Real remote execution service required for accurate benchmarking.
+
+**4d. Documentation**: COMPLETE. Updated settings.bzl docstrings with:
+- Recommended flag combinations for unsandboxed, sandboxed, dynamic, and incremental
+- Warning that dynamic execution requires real remote execution (not sandboxed fallback)
+- Removed stale "--experimental_worker_cancellation" reference
+
+**Decision**: Ready to promote worker pipelining (without dynamic execution) from experimental.
+Dynamic execution support requires real remote execution infrastructure for testing.
 
 ---
 
