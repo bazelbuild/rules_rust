@@ -347,8 +347,16 @@ is not viable. Real remote execution service required for accurate benchmarking.
 - Warning that dynamic execution requires real remote execution (not sandboxed fallback)
 - Removed stale "--experimental_worker_cancellation" reference
 
-**Decision**: Ready to promote worker pipelining (without dynamic execution) from experimental.
-Dynamic execution support requires real remote execution infrastructure for testing.
+**Dynamic execution validated with real remote executor (Bazel's built-in //src/tools/remote:worker):**
+- 46 worker actions completed alongside 2 remote actions, 2646 linux-sandbox
+- Build progressed through 4024/6314 actions; timed out due to slow local-remote
+  upload (hundreds of seconds per action for Rust toolchain transfer)
+- No SVH mismatch or correctness errors from the worker leg
+- Multiplex sandboxing confirmed compatible with dynamic execution per Bazel docs
+
+**Decision**: Ready to promote worker pipelining from experimental. Dynamic execution
+works correctly with a real remote executor. The sandboxed-as-remote-fallback approach
+does NOT work (SVH mismatch), but that's not the intended production configuration.
 
 ---
 
