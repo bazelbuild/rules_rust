@@ -531,7 +531,7 @@ Reproduction / inspection work:
   after emitting a valid response
 - the abrupt `process_wrapper` probe remains a strong control case:
   Bazel reports a valid JSON response, then reports that the worker died or produced an
-  "unparseable WorkResponse"
+  "unparsable WorkResponse"
 - the root lifecycle log now captures this deterministic control path as `event=forced_exit`
 - the real `bazel clean` storm is now attributed more precisely:
   the root lifecycle log shows many Rust workers receiving `SIGTERM`

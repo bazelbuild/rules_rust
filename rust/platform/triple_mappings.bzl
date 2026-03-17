@@ -183,12 +183,12 @@ _SYSTEM_TO_BINARY_EXT = {
     "nixos": "",
     "none": "",
     "nto": "",
+    "threads": ".wasm",
     "uefi": ".efi",
     # This is currently a hack allowing us to have the proper
     # generated extension for the wasm target, similarly to the
     # windows target
     "unknown": ".wasm",
-    "threads": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
     "wasip2": ".wasm",
@@ -210,9 +210,9 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
+    "threads": "",
     "uefi": ".lib",
     "unknown": "",
-    "threads": "",
     "wasi": "",
     "wasip1": "",
     "wasip2": "",
@@ -234,9 +234,9 @@ _SYSTEM_TO_DYLIB_EXT = {
     "nixos": ".so",
     "none": ".so",
     "nto": ".a",
+    "threads": ".wasm",
     "uefi": "",  # UEFI doesn't have dynamic linking
     "unknown": ".wasm",
-    "threads": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
     "wasip2": ".wasm",

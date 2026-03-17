@@ -50,9 +50,9 @@ load(
     "filter_deps",
     "find_toolchain",
     "generate_output_diagnostics",
-    "is_exec_configuration",
     "get_edition",
     "get_import_macro_deps",
+    "is_exec_configuration",
     "transform_deps",
     "transform_sources",
 )
@@ -167,6 +167,7 @@ def _rust_library_common(ctx, crate_type):
     rust_metadata = None
     rustc_rmeta_output = None
     metadata_supports_pipelining = False
+
     # Worker pipelining uses a single rustc invocation (no SVH mismatch risk),
     # so disable_pipelining (which works around SVH issues in hollow rlib mode)
     # should be ignored when worker pipelining is active.
@@ -607,9 +608,6 @@ RUSTC_ATTRS = {
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
     ),
-    "_incremental": attr.label(
-        default = Label("//rust/settings:experimental_incremental"),
-    ),
     "_extra_exec_rustc_env": attr.label(
         default = Label("//rust/settings:extra_exec_rustc_env"),
     ),
@@ -627,6 +625,9 @@ RUSTC_ATTRS = {
     ),
     "_extra_rustc_flags": attr.label(
         default = Label("//rust/settings:extra_rustc_flags"),
+    ),
+    "_incremental": attr.label(
+        default = Label("//rust/settings:experimental_incremental"),
     ),
     "_is_proc_macro_dep": attr.label(
         default = Label("//rust/private:is_proc_macro_dep"),

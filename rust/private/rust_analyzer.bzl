@@ -260,7 +260,7 @@ def _create_single_crate(ctx, attrs, info):
         if info.crate.root.short_path in src_map:
             crate["root_module"] = _WORKSPACE_TEMPLATE + src_map[info.crate.root.short_path].path
             crate["source"]["include_dirs"].append(path_prefix + info.crate.root.dirname)
-            
+
     # Ensure workspace crates in the same Bazel package share one source root.
     #
     # rust-analyzer picks candidate crates by source root (`relevant_crates`).

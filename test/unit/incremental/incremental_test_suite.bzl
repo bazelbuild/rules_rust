@@ -1,6 +1,6 @@
 """Starlark tests for `//rust/settings:experimental_incremental`"""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_library", "rust_proc_macro")
 load(

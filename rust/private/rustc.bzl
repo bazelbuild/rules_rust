@@ -854,7 +854,7 @@ def collect_inputs(
 
     nolinkstamp_compile_inputs = depset(
         direct = nolinkstamp_compile_direct_inputs +
-            ([] if experimental_use_cc_common_link else libs_from_linker_inputs),
+                 ([] if experimental_use_cc_common_link else libs_from_linker_inputs),
         transitive = [
             crate_info.srcs,
             transitive_crate_outputs,
@@ -1007,8 +1007,10 @@ def construct_arguments(
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
+        experimental_use_cc_common_link (bool): Whether to use cc_common.link for the final binary link step.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
+        always_use_param_file (bool): Whether to always use a param file for rustc arguments.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         use_worker_pipelining (bool): Whether worker-managed pipelining is active. When True, per-action flags are routed to the paramfile for worker key stability.
 
@@ -1443,6 +1445,7 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental, has_out_dir =
         if use_worker_pipelining:
             reqs["supports-multiplex-workers"] = "1"
             reqs["supports-multiplex-sandboxing"] = "1"
+
             # Cancellation is fully effective for pipelined requests (kills the
             # background rustc). Non-pipelined requests within the same worker
             # (e.g. proc-macros) acknowledge the cancel but the subprocess runs
@@ -1450,6 +1453,7 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental, has_out_dir =
             reqs["supports-worker-cancellation"] = "1"
         else:
             reqs["supports-workers"] = "1"
+
         # no-sandbox is no longer needed — the worker uses real execroot CWD
         # (or sandbox CWD when sandboxed), so incremental cache paths are
         # stable regardless of sandboxing.
@@ -1722,9 +1726,11 @@ def rustc_compile_action(
         # Use crate_info.output.short_path (unique per output artifact) sanitized for
         # filesystem use. This is collision-free and human-readable.
         pipeline_key = crate_info.output.short_path.replace("/", "_").replace(".", "_")
+
         # Metadata action: tell the worker to start rustc and return .rmeta early.
         args_metadata.rustc_flags.add("--pipelining-metadata")
         args_metadata.rustc_flags.add("--pipelining-key={}".format(pipeline_key))
+
         # Full action: tell the worker to wait for the background rustc started above.
         args.rustc_flags.add("--pipelining-full")
         args.rustc_flags.add("--pipelining-key={}".format(pipeline_key))
@@ -2574,7 +2580,7 @@ def _get_crate_dirname_pipelined(crate):
         return crate.metadata.dirname
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_darwin = False, flavor_msvc = False):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]

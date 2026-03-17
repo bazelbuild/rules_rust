@@ -21,6 +21,7 @@ def _is_incremental_enabled(ctx, crate_info):
         return False
     if crate_info.type == "proc-macro":
         return False
+
     # Don't enable incremental for external/third-party crates, mirroring cargo's
     # behavior. External crates rarely change, so incremental saves little; more
     # importantly, the disk cache hardlinks their outputs as read-only, and running
@@ -43,6 +44,7 @@ def construct_incremental_arguments(ctx, crate_info, is_metadata = False):
     """
     if not _is_incremental_enabled(ctx, crate_info):
         return []
+
     # Use a separate cache directory for metadata-only (RustcMetadata) actions.
     # Both RustcMetadata(A) and Rustc(A) compile the same crate, so they produce
     # the same SVH — but sharing the same incremental path causes a rustc ICE
@@ -51,6 +53,7 @@ def construct_incremental_arguments(ctx, crate_info, is_metadata = False):
     # both actions benefit from incremental caching without interfering.
     suffix = "-meta" if is_metadata else ""
     cache_path = "/tmp/rules_rust_incremental/{}{}".format(crate_info.name, suffix)
+
     # Explicitly set codegen-units=16 to match Cargo's dev profile default
     # (since Cargo 1.73). Without this, rustc silently bumps CGUs from 16 to
     # 256 when -Cincremental is present, adding ~37% of the cold-build overhead

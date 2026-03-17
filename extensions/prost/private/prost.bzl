@@ -511,12 +511,6 @@ rust_prost_toolchain = rule(
             mandatory = True,
             aspects = [rust_analyzer_aspect],
         ),
-        "_prost_process_wrapper": attr.label(
-            doc = "The wrapper script for the Prost protoc plugin.",
-            cfg = "exec",
-            executable = True,
-            default = Label("@rules_rust_prost//private:protoc_wrapper"),
-        ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
@@ -543,6 +537,12 @@ rust_prost_toolchain = rule(
             doc = "The Tonic runtime crates to use.",
             providers = [[rust_common.crate_info], [rust_common.crate_group_info]],
             aspects = [rust_analyzer_aspect],
+        ),
+        "_prost_process_wrapper": attr.label(
+            doc = "The wrapper script for the Prost protoc plugin.",
+            cfg = "exec",
+            executable = True,
+            default = Label("@rules_rust_prost//private:protoc_wrapper"),
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(

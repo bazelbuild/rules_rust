@@ -882,9 +882,6 @@ rust_toolchain = rule(
         "_pipelined_compilation": attr.label(
             default = Label("//rust/settings:pipelined_compilation"),
         ),
-        "_worker_pipelining": attr.label(
-            default = Label("//rust/settings:experimental_worker_pipelining"),
-        ),
         "_rename_first_party_crates": attr.label(
             default = Label("//rust/settings:rename_first_party_crates"),
         ),
@@ -897,6 +894,9 @@ rust_toolchain = rule(
                 "Label to a boolean build setting that lets the rule knows whether to set --sysroot to rustc. " +
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:toolchain_generated_sysroot."
             ),
+        ),
+        "_worker_pipelining": attr.label(
+            default = Label("//rust/settings:experimental_worker_pipelining"),
         ),
     },
     toolchains = [
