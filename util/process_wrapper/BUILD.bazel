@@ -40,7 +40,7 @@ rust_binary_without_process_wrapper(
     # paths embedded in this section, is stripped out.
     rustc_flags = select({
         ":opt_linux": ["-Cstrip=debuginfo"],
-        ":opt_macos": ["-Cstrip=debuginfo"],
+        ":opt_macos": ["-Cstrip=symbols"],
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],
