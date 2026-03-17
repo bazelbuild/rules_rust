@@ -54,9 +54,9 @@ EOF
     cat <<EOF >"${new_workspace}/.bazelrc"
 build --keep_going
 test --test_output=errors
-# The 'strict' config is used to ensure extra checks are run on the test
-# targets that would otherwise not run due to them being tagged as "manual".
-# Note that that tag is stripped for this test.
+# The 'strict' config is used to ensure extra checks are run on the fixture
+# test targets, including ones that are explicitly invoked despite being tagged
+# as "manual".
 build:strict --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
 build:strict --output_groups=+rustfmt_checks
 build:strict --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
@@ -78,6 +78,7 @@ function rust_analyzer_test() {
     local workspace="$2"
     local generator_arg="$3"
     local rust_log="info"
+    local -a test_targets=()
     if [[ -n "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
         rust_log="debug"
     fi
@@ -86,15 +87,8 @@ function rust_analyzer_test() {
     rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}"/*.bzl "${workspace}/BUILD.bazel" "${workspace}/BUILD.bazel-e"
     cp -r "${source_dir}"/* "${workspace}"
 
-    # Drop the 'manual' tags
-    if [ "$(uname)" == "Darwin" ]; then
-        SEDOPTS=(-i '' -e)
-    else
-        SEDOPTS=(-i)
-    fi
-    sed ${SEDOPTS[@]} 's/"manual"//' "${workspace}/BUILD.bazel"
-
     pushd "${workspace}" &>/dev/null
+
     echo "Generating rust-project.json..."
 
     if [[ -n "${generator_arg}" ]]; then
@@ -109,12 +103,20 @@ function rust_analyzer_test() {
     echo "Generating auto-discovery.json..."
     RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
 
+    mapfile -t test_targets < <(bazel query 'kind(".*_test rule", //...)')
+
     echo "Building..."
     bazel build //...
     echo "Testing..."
-    bazel test //...
+    if (( ${#test_targets[@]} > 0 )); then
+        bazel test "${test_targets[@]}"
+    fi
     echo "Building with Aspects..."
-    bazel build //... --config=strict
+    if (( ${#test_targets[@]} > 0 )); then
+        bazel build //... "${test_targets[@]}" --config=strict
+    else
+        bazel build //... --config=strict
+    fi
     popd &>/dev/null
 }
 
