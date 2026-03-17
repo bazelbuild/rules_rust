@@ -1,0 +1,153 @@
+[bench] === Iteration 1 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1087 processes: 3691 action cache hit, 453 disk cache hit, 43 internal, 590 linux-sandbox, 1 local.
+INFO: Build completed successfully, 1087 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1661 processes: 4024 action cache hit, 453 disk cache hit, 43 internal, 15 linux-sandbox, 1150 worker.
+INFO: Build completed successfully, 1661 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 56 disk cache hit, 1 internal, 1 local, 1165 worker.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 1 done.
+[bench] === Iteration 2 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1087 processes: 3691 action cache hit, 1043 disk cache hit, 43 internal, 1 local.
+INFO: Build completed successfully, 1087 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1661 processes: 4024 action cache hit, 1618 disk cache hit, 43 internal.
+INFO: Build completed successfully, 1661 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 2 done.
+[bench] === Iteration 3 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1087 processes: 3691 action cache hit, 1043 disk cache hit, 43 internal, 1 local.
+INFO: Build completed successfully, 1087 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1661 processes: 4024 action cache hit, 1618 disk cache hit, 43 internal.
+INFO: Build completed successfully, 1661 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 3 done.
+[bench] === Iteration 4 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1087 processes: 3691 action cache hit, 1043 disk cache hit, 43 internal, 1 local.
+INFO: Build completed successfully, 1087 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1661 processes: 4024 action cache hit, 1618 disk cache hit, 43 internal.
+INFO: Build completed successfully, 1661 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 4 done.
+[bench] === Iteration 5 / 5 ===
+[bench]   [cold] no-pipeline
+[bench]   [cold] worker-pipe
+[bench]   [cold] worker-pipe+incr
+[bench]   [rebuild] no-pipeline-rb
+[bench]     priming...
+INFO: 1087 processes: 3691 action cache hit, 1043 disk cache hit, 43 internal, 1 local.
+INFO: Build completed successfully, 1087 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe-rb
+[bench]     priming...
+INFO: 1661 processes: 4024 action cache hit, 1618 disk cache hit, 43 internal.
+INFO: Build completed successfully, 1661 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   [rebuild] worker-pipe+incr-rb
+[bench]     priming...
+INFO: 1223 processes: 4462 action cache hit, 1221 disk cache hit, 1 internal, 1 local.
+INFO: Build completed successfully, 1223 total actions
+[bench]     modified /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]     reverted /var/mnt/dev/reactor-repo-2/lib/hash/src/lib.rs
+[bench]   iteration 5 done.
+[bench] Benchmark complete.
+
+[2026-03-10] Focused cold instrumentation run on //zm_cli:zm_cli_lib with remote cache hits disabled
+
+- worker-pipe:
+  - command shape: `bazel build //zm_cli:zm_cli_lib --remote_accept_cached=false --remote_upload_local_results=false --@rules_rust//rust/settings:pipelined_compilation=true --@rules_rust//rust/settings:experimental_worker_pipelining=true --experimental_worker_multiplex_sandboxing --strategy=Rustc=worker,sandboxed --strategy=RustcMetadata=worker,sandboxed --@rules_rust//rust/settings:extra_rustc_flag=--cfg=bench_zmcli_instr_workerpipe`
+  - result: `wall_ms=69589`, `crit_s=43.34`, `total_actions=746`, `worker_count=736`, `sandbox_count=9`
+- no-pipeline:
+  - command shape: `bazel build //zm_cli:zm_cli_lib --remote_accept_cached=false --remote_upload_local_results=false --@rules_rust//rust/settings:pipelined_compilation=false --@rules_rust//rust/settings:experimental_worker_pipelining=false --@rules_rust//rust/settings:extra_rustc_flag=--cfg=bench_zmcli_instr_nopipe`
+  - result: `wall_ms=115045`, `crit_s=75.91`, `total_actions=927`, `worker_count=0`, `sandbox_count=912`
+
+Pipeline log aggregation for the same worker-pipe run (280 metadata actions):
+
+- `stage_ms`: total `55408`, avg `197.89`, p50 `139`, p90 `392`, p99 `1083`, max `1233`
+- `setup_ms`: total `56093`, avg `200.33`, p50 `142`, p90 `396`, p99 `1086`, max `1237`
+- metadata materialization: total `29ms` across `280` files, all hardlinked, zero copies
+- staged inputs: `295571` declared inputs, all preserved as symlinks, zero hardlinks/copies
+
+Interpretation:
+
+- On this colder Rust-heavy target, sandboxed worker pipelining is still decisively faster than no-pipeline.
+- The remaining sandbox overhead is almost entirely staged-input setup time; output materialization is negligible.
+- The next optimization target should stay on `stage_request_inputs()` and staged-execroot reuse, not output copying.
+
+[2026-03-10] Additional cold no-cache matrix for //sdk dependency targets
+
+- `//sdk/sdk_builder:sdk_builder_lib`
+  - `no-pipeline`: `wall_ms=56048`, `crit_s=41.46`, `total_actions=449`, `worker_count=0`, `sandbox_count=445`
+  - `worker-pipe`: `wall_ms=60284`, `crit_s=41.45`, `total_actions=554`, `worker_count=228`, `sandbox_count=323`
+- `//helium/asset_manager:asset_manager`
+  - `no-pipeline`: `wall_ms=58797`, `crit_s=37.20`, `total_actions=641`, `worker_count=0`, `sandbox_count=507`
+  - `worker-pipe`: `wall_ms=72561`, `crit_s=40.13`, `total_actions=666`, `worker_count=442`, `sandbox_count=90`
+
+Takeaway:
+
+- `//sdk` is not an isolated anomaly.
+- Sandbox `worker-pipe` wins clearly when the target is dominated by Rust metadata/full-compile worker actions (`//zm_cli:zm_cli_lib`).
+- It loses on more mixed targets where a substantial share of the graph still runs outside the pipelined worker path (`sdk_builder_lib`, `asset_manager`, and the full `//sdk` target).

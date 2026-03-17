@@ -1,0 +1,17 @@
+iter,config,wall_ms,wall_s
+   Compiling asset_manager v0.1.0 (/var/mnt/dev/reactor-repo-2/helium/asset_manager)
+   Compiling zm_cli v0.1.0 (/var/mnt/dev/reactor-repo-2/zm_cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 21s
+1,cargo-incr-cold,81229,81.2
+   Compiling scenario_generator v0.1.0 (/var/mnt/dev/reactor-repo-2/lib/scenario_generator)
+   Compiling zm_cli v0.1.0 (/var/mnt/dev/reactor-repo-2/zm_cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.18s
+1,cargo-incr-rb,22424,22.4
+   Compiling asset_manager v0.1.0 (/var/mnt/dev/reactor-repo-2/helium/asset_manager)
+   Compiling zm_cli v0.1.0 (/var/mnt/dev/reactor-repo-2/zm_cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 25s
+1,cargo-no-incr-cold,85402,85.4
+   Compiling scenario_generator v0.1.0 (/var/mnt/dev/reactor-repo-2/lib/scenario_generator)
+   Compiling zm_cli v0.1.0 (/var/mnt/dev/reactor-repo-2/zm_cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 24.15s
+1,cargo-no-incr-rb,24272,24.3

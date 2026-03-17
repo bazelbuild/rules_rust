@@ -141,12 +141,6 @@ pub(crate) fn options() -> Result<Options, OptionError> {
             Ok((key.to_owned(), v))
         })
         .collect::<Result<Vec<(String, String)>, OptionError>>()?;
-    let stable_stamp_mappings =
-        stable_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-    let volatile_stamp_mappings =
-        volatile_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-    let environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
-    let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     // Process --copy-output
     let copy_output = copy_output_raw
         .map(|co| {
@@ -167,6 +161,50 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         })
         .transpose()?;
 
+    let require_explicit_unstable_features =
+        require_explicit_unstable_features.is_some_and(|s| s == "true");
+
+    // Expand @paramfiles and collect any relocated PW flags found inside them.
+    // This must happen before environment_block() so that relocated --env-file
+    // and --stable/volatile-status-file values are incorporated.
+    let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
+    child_args.append(&mut file_arguments);
+    let (child_args, relocated) = prepare_args(
+        child_args,
+        &subst_mappings,
+        require_explicit_unstable_features,
+        None,
+        None,
+    )?;
+
+    // Merge relocated env-files from @paramfile with those from startup args.
+    let mut env_files = env_file_raw.unwrap_or_default();
+    env_files.extend(relocated.env_files);
+    let environment_file_block = env_from_files(env_files)?;
+
+    // Merge relocated arg-files: append their contents to child_args.
+    let mut child_args = child_args;
+    if !relocated.arg_files.is_empty() {
+        let mut extra_args = args_from_file(relocated.arg_files)?;
+        child_args.append(&mut extra_args);
+    }
+
+    // Merge relocated stamp files with startup stamp files.
+    let stable_status_file = relocated
+        .stable_status_file
+        .or(stable_status_file_raw);
+    let volatile_status_file = relocated
+        .volatile_status_file
+        .or(volatile_status_file_raw);
+    let stable_stamp_mappings =
+        stable_status_file.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
+    let volatile_stamp_mappings =
+        volatile_status_file.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
+
+    // Override output_file and rustc_output_format if relocated versions found.
+    let output_file = relocated.output_file.or(output_file);
+    let rustc_output_format_raw = relocated.rustc_output_format.or(rustc_output_format_raw);
+
     let rustc_output_format = rustc_output_format_raw
         .map(|v| match v.as_str() {
             "json" => Ok(rustc::ErrorFormat::Json),
@@ -186,18 +224,6 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         &subst_mappings,
     );
 
-    let require_explicit_unstable_features =
-        require_explicit_unstable_features.is_some_and(|s| s == "true");
-
-    // Append all the arguments fetched from files to those provided via command line.
-    child_args.append(&mut file_arguments);
-    let child_args = prepare_args(
-        child_args,
-        &subst_mappings,
-        require_explicit_unstable_features,
-        None,
-        None,
-    )?;
     // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
@@ -250,6 +276,43 @@ fn is_allow_features_flag(arg: &str) -> bool {
     arg.starts_with("-Zallow-features=") || arg.starts_with("allow-features=")
 }
 
+/// Returns true for worker-pipelining protocol flags that should never be
+/// forwarded to rustc. These flags live in the @paramfile (rustc_flags) so
+/// both RustcMetadata and Rustc actions share identical startup args (same
+/// worker key). They must be stripped before the args reach rustc.
+pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
+    arg == "--pipelining-metadata"
+        || arg == "--pipelining-full"
+        || arg.starts_with("--pipelining-key=")
+}
+
+/// Returns true if `arg` is a process_wrapper flag that may appear in the
+/// @paramfile when worker pipelining is active.  These flags are placed in
+/// the paramfile (per-request args) instead of startup args so that all
+/// worker actions share the same WorkerKey.  They must be stripped before the
+/// expanded paramfile reaches rustc.
+///
+/// Unlike pipelining flags (which are standalone), these flags consume the
+/// *next* argument as their value, so the caller must skip it too.
+pub(crate) fn is_relocated_pw_flag(arg: &str) -> bool {
+    arg == "--output-file"
+        || arg == "--rustc-output-format"
+        || arg == "--env-file"
+        || arg == "--arg-file"
+        || arg == "--stable-status-file"
+        || arg == "--volatile-status-file"
+}
+
+#[derive(Default, Debug)]
+pub(crate) struct RelocatedPwFlags {
+    pub(crate) env_files: Vec<String>,
+    pub(crate) arg_files: Vec<String>,
+    pub(crate) output_file: Option<String>,
+    pub(crate) rustc_output_format: Option<String>,
+    pub(crate) stable_status_file: Option<String>,
+    pub(crate) volatile_status_file: Option<String>,
+}
+
 fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     for (f, replace_with) in subst_mappings {
         let from = format!("${{{f}}}");
@@ -258,37 +321,73 @@ fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
     arg
 }
 
-/// Apply substitutions to the given param file. Returns true iff any allow-features flags were found.
+/// Apply substitutions to the given param file.
+/// Returns `(has_allow_features, relocated_pw_flags)`.
+/// Relocated PW flags (--env-file, --output-file, etc.) are collected into
+/// `RelocatedPwFlags` so the caller can apply them, rather than being silently
+/// discarded.
 fn prepare_param_file(
     filename: &str,
     subst_mappings: &[(String, String)],
     read_file: &mut impl FnMut(&str) -> Result<Vec<String>, OptionError>,
     write_to_file: &mut impl FnMut(&str) -> Result<(), OptionError>,
-) -> Result<bool, OptionError> {
+) -> Result<(bool, RelocatedPwFlags), OptionError> {
     fn process_file(
         filename: &str,
         subst_mappings: &[(String, String)],
         read_file: &mut impl FnMut(&str) -> Result<Vec<String>, OptionError>,
         write_to_file: &mut impl FnMut(&str) -> Result<(), OptionError>,
+        relocated: &mut RelocatedPwFlags,
     ) -> Result<bool, OptionError> {
         let mut has_allow_features_flag = false;
+        // When set, the next arg is the value of this relocated pw flag.
+        let mut pending_flag: Option<String> = None;
         for arg in read_file(filename)? {
+            if let Some(flag) = pending_flag.take() {
+                let value = prepare_arg(arg, subst_mappings);
+                match flag.as_str() {
+                    "--env-file" => relocated.env_files.push(value),
+                    "--arg-file" => relocated.arg_files.push(value),
+                    "--output-file" => relocated.output_file = Some(value),
+                    "--rustc-output-format" => relocated.rustc_output_format = Some(value),
+                    "--stable-status-file" => relocated.stable_status_file = Some(value),
+                    "--volatile-status-file" => relocated.volatile_status_file = Some(value),
+                    _ => {}
+                }
+                continue;
+            }
             let arg = prepare_arg(arg, subst_mappings);
+            // Strip worker-pipelining protocol flags; they must not reach rustc.
+            if is_pipelining_flag(&arg) {
+                continue;
+            }
+            // Collect relocated process_wrapper flags (--output-file, etc.) that
+            // were placed in the paramfile for worker key stability.  These are
+            // two-part flags: the flag name on one line, its value on the next.
+            if is_relocated_pw_flag(&arg) {
+                pending_flag = Some(arg);
+                continue;
+            }
             has_allow_features_flag |= is_allow_features_flag(&arg);
             if let Some(arg_file) = arg.strip_prefix('@') {
                 has_allow_features_flag |=
-                    process_file(arg_file, subst_mappings, read_file, write_to_file)?;
+                    process_file(arg_file, subst_mappings, read_file, write_to_file, relocated)?;
             } else {
                 write_to_file(&arg)?;
             }
         }
         Ok(has_allow_features_flag)
     }
-    let has_allow_features_flag = process_file(filename, subst_mappings, read_file, write_to_file)?;
-    Ok(has_allow_features_flag)
+    let mut relocated = RelocatedPwFlags::default();
+    let has_allow_features_flag =
+        process_file(filename, subst_mappings, read_file, write_to_file, &mut relocated)?;
+    Ok((has_allow_features_flag, relocated))
 }
 
 /// Apply substitutions to the provided arguments, recursing into param files.
+/// Returns `(processed_args, relocated_pw_flags)` — any process_wrapper flags
+/// found inside `@paramfile`s are collected rather than discarded so the caller
+/// can apply them.
 #[allow(clippy::type_complexity)]
 fn prepare_args(
     args: Vec<String>,
@@ -296,9 +395,10 @@ fn prepare_args(
     require_explicit_unstable_features: bool,
     read_file: Option<&mut dyn FnMut(&str) -> Result<Vec<String>, OptionError>>,
     mut write_file: Option<&mut dyn FnMut(&str, &str) -> Result<(), OptionError>>,
-) -> Result<Vec<String>, OptionError> {
+) -> Result<(Vec<String>, RelocatedPwFlags), OptionError> {
     let mut allowed_features = false;
     let mut processed_args = Vec::<String>::new();
+    let mut relocated = RelocatedPwFlags::default();
 
     let mut read_file_wrapper = |s: &str| read_file_to_array(s).map_err(OptionError::Generic);
     let mut read_file = read_file.unwrap_or(&mut read_file_wrapper);
@@ -306,7 +406,29 @@ fn prepare_args(
     for arg in args.into_iter() {
         let arg = prepare_arg(arg, subst_mappings);
         if let Some(param_file) = arg.strip_prefix('@') {
-            let expanded_file = format!("{param_file}.expanded");
+            // Write the expanded paramfile to a temp directory to avoid issues
+            // with sandbox filesystems where bazel-out symlinks may prevent the
+            // expanded file from being visible to the child process.
+            let expanded_file = match write_file {
+                Some(_) => format!("{param_file}.expanded"),
+                None => {
+                    let basename = std::path::Path::new(param_file)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("params");
+                    format!(
+                        "{}/pw_expanded_{}_{}",
+                        std::env::temp_dir().display(),
+                        std::process::id(),
+                        basename,
+                    )
+                }
+            };
+
+            enum Writer<'f, F: FnMut(&str, &str) -> Result<(), OptionError>> {
+                Function(&'f mut F),
+                BufWriter(io::BufWriter<File>),
+            }
             let format_err = |err: io::Error| {
                 OptionError::Generic(format!(
                     "{} writing path: {:?}, current directory: {:?}",
@@ -315,11 +437,6 @@ fn prepare_args(
                     std::env::current_dir()
                 ))
             };
-
-            enum Writer<'f, F: FnMut(&str, &str) -> Result<(), OptionError>> {
-                Function(&'f mut F),
-                BufWriter(io::BufWriter<File>),
-            }
             let mut out = match write_file {
                 Some(ref mut f) => Writer::Function(f),
                 None => Writer::BufWriter(io::BufWriter::new(
@@ -334,14 +451,29 @@ fn prepare_args(
             };
 
             // Note that substitutions may also apply to the param file path!
-            let (file, allowed) = prepare_param_file(
+            let (file, (allowed, pf_relocated)) = prepare_param_file(
                 param_file,
                 subst_mappings,
                 &mut read_file,
                 &mut write_to_file,
             )
-            .map(|af| (format!("@{expanded_file}"), af))?;
+            .map(|(af, rel)| (format!("@{expanded_file}"), (af, rel)))?;
             allowed_features |= allowed;
+            // Merge relocated flags from this paramfile.
+            relocated.env_files.extend(pf_relocated.env_files);
+            relocated.arg_files.extend(pf_relocated.arg_files);
+            if pf_relocated.output_file.is_some() {
+                relocated.output_file = pf_relocated.output_file;
+            }
+            if pf_relocated.rustc_output_format.is_some() {
+                relocated.rustc_output_format = pf_relocated.rustc_output_format;
+            }
+            if pf_relocated.stable_status_file.is_some() {
+                relocated.stable_status_file = pf_relocated.stable_status_file;
+            }
+            if pf_relocated.volatile_status_file.is_some() {
+                relocated.volatile_status_file = pf_relocated.volatile_status_file;
+            }
             processed_args.push(file);
         } else {
             allowed_features |= is_allow_features_flag(&arg);
@@ -351,7 +483,7 @@ fn prepare_args(
     if !allowed_features && require_explicit_unstable_features {
         processed_args.push("-Zallow-features=".to_string());
     }
-    Ok(processed_args)
+    Ok((processed_args, relocated))
 }
 
 fn environment_block(
@@ -392,7 +524,7 @@ mod test {
     fn test_enforce_allow_features_flag_user_didnt_say() {
         let args = vec!["rustc".to_string()];
         let subst_mappings: Vec<(String, String)> = vec![];
-        let args = prepare_args(args, &subst_mappings, true, None, None).unwrap();
+        let (args, _) = prepare_args(args, &subst_mappings, true, None, None).unwrap();
         assert_eq!(
             args,
             vec!["rustc".to_string(), "-Zallow-features=".to_string(),]
@@ -406,7 +538,7 @@ mod test {
             "-Zallow-features=whitespace_instead_of_curly_braces".to_string(),
         ];
         let subst_mappings: Vec<(String, String)> = vec![];
-        let args = prepare_args(args, &subst_mappings, true, None, None).unwrap();
+        let (args, _) = prepare_args(args, &subst_mappings, true, None, None).unwrap();
         assert_eq!(
             args,
             vec![
@@ -443,16 +575,17 @@ mod test {
         let args = vec!["rustc".to_string(), "@rustc_params".to_string()];
         let subst_mappings: Vec<(String, String)> = vec![];
 
-        let args = prepare_args(
+        let (args, _) = prepare_args(
             args,
             &subst_mappings,
             true,
             Some(&mut read_file),
             Some(&mut write_file),
-        );
+        )
+        .unwrap();
 
         assert_eq!(
-            args.unwrap(),
+            args,
             vec!["rustc".to_string(), "@rustc_params.expanded".to_string(),]
         );
 
@@ -463,5 +596,56 @@ mod test {
                 "-Zallow-features=whitespace_instead_of_curly_braces".to_string()
             )])
         );
+    }
+
+    #[test]
+    fn test_prepare_param_file_strips_and_collects_relocated_pw_flags() {
+        let mut written = String::new();
+        let mut read_file = |_filename: &str| -> Result<Vec<String>, OptionError> {
+            Ok(vec![
+                "--output-file".to_string(),
+                "bazel-out/foo/libbar.rmeta".to_string(),
+                "--env-file".to_string(),
+                "bazel-out/foo/build_script.env".to_string(),
+                "src/lib.rs".to_string(),
+                "--crate-name=foo".to_string(),
+                "--arg-file".to_string(),
+                "bazel-out/foo/build_script.linksearchpaths".to_string(),
+                "--rustc-output-format".to_string(),
+                "rendered".to_string(),
+                "--stable-status-file".to_string(),
+                "bazel-out/stable-status.txt".to_string(),
+                "--volatile-status-file".to_string(),
+                "bazel-out/volatile-status.txt".to_string(),
+                "--crate-type=rlib".to_string(),
+            ])
+        };
+        let mut write_to_file = |s: &str| -> Result<(), OptionError> {
+            if !written.is_empty() {
+                written.push('\n');
+            }
+            written.push_str(s);
+            Ok(())
+        };
+
+        let (_, relocated) = prepare_param_file(
+            "test.params",
+            &[],
+            &mut read_file,
+            &mut write_to_file,
+        )
+        .unwrap();
+
+        // All relocated pw flags + values should be stripped from output.
+        // Only the rustc flags should remain.
+        assert_eq!(written, "src/lib.rs\n--crate-name=foo\n--crate-type=rlib");
+
+        // Verify collected relocated flags.
+        assert_eq!(relocated.output_file.as_deref(), Some("bazel-out/foo/libbar.rmeta"));
+        assert_eq!(relocated.env_files, vec!["bazel-out/foo/build_script.env"]);
+        assert_eq!(relocated.arg_files, vec!["bazel-out/foo/build_script.linksearchpaths"]);
+        assert_eq!(relocated.rustc_output_format.as_deref(), Some("rendered"));
+        assert_eq!(relocated.stable_status_file.as_deref(), Some("bazel-out/stable-status.txt"));
+        assert_eq!(relocated.volatile_status_file.as_deref(), Some("bazel-out/volatile-status.txt"));
     }
 }
