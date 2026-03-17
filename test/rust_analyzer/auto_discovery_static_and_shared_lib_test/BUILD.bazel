@@ -1,5 +1,6 @@
 load(
     "@rules_rust//rust:defs.bzl",
+    "rust_library",
     "rust_shared_library",
     "rust_static_library",
     "rust_test",
@@ -23,6 +24,13 @@ rust_static_library(
     ],
     crate_root = "static_lib.rs",
     edition = "2018",
+)
+
+rust_library(
+    name = "manual_root",
+    srcs = ["manual_root.rs"],
+    edition = "2018",
+    tags = ["manual"],
 )
 
 rust_test(

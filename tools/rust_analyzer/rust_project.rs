@@ -28,15 +28,35 @@ impl RustAnalyzerArg {
     /// Consumes itself to return a build file and the targets to build.
     pub fn into_target_details(
         self,
+        bazel: &Utf8Path,
+        output_base: &Utf8Path,
         workspace: &Utf8Path,
-    ) -> anyhow::Result<(Utf8PathBuf, String)> {
+        bazel_startup_options: &[String],
+        bazel_args: &[String],
+    ) -> anyhow::Result<(Utf8PathBuf, Vec<String>)> {
         match self {
             Self::Path(file) => {
                 let buildfile = source_file_to_buildfile(&file)?;
-                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+                buildfile_to_targets(
+                    bazel,
+                    output_base,
+                    workspace,
+                    bazel_startup_options,
+                    bazel_args,
+                    &buildfile,
+                )
+                .map(|t| (buildfile, t))
             }
             Self::Buildfile(buildfile) => {
-                buildfile_to_targets(workspace, &buildfile).map(|t| (buildfile, t))
+                buildfile_to_targets(
+                    bazel,
+                    output_base,
+                    workspace,
+                    bazel_startup_options,
+                    bazel_args,
+                    &buildfile,
+                )
+                .map(|t| (buildfile, t))
             }
         }
     }

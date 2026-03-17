@@ -78,6 +78,7 @@ function rust_analyzer_test() {
     local workspace="$2"
     local generator_arg="$3"
     local rust_log="info"
+    local discover_arg=""
     local -a test_targets=()
     if [[ -n "${RUST_ANALYZER_TEST_DEBUG:-}" ]]; then
         rust_log="debug"
@@ -86,6 +87,10 @@ function rust_analyzer_test() {
     echo "Testing '$(basename "${source_dir}")'"
     rm -f "${workspace}"/*.rs "${workspace}"/*.json "${workspace}"/*.bzl "${workspace}/BUILD.bazel" "${workspace}/BUILD.bazel-e"
     cp -r "${source_dir}"/* "${workspace}"
+
+    if [[ -f "${source_dir}/discover_path" ]]; then
+        discover_arg='{"path":"'"${workspace}/$(<"${source_dir}/discover_path")"'"}'
+    fi
 
     pushd "${workspace}" &>/dev/null
 
@@ -101,7 +106,11 @@ function rust_analyzer_test() {
     bazel run "@rules_rust//tools/rust_analyzer:validate" -- rust-project.json
 
     echo "Generating auto-discovery.json..."
-    RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
+    if [[ -n "${discover_arg}" ]]; then
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" -- "${discover_arg}" > auto-discovery.json
+    else
+        RUST_LOG="${rust_log}" bazel run "@rules_rust//tools/rust_analyzer:discover_bazel_rust_project" > auto-discovery.json
+    fi
 
     mapfile -t test_targets < <(bazel query 'kind(".*_test rule", //...)')
 

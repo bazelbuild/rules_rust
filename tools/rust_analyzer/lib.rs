@@ -177,7 +177,10 @@ fn source_file_to_buildfile(file: &Utf8Path) -> anyhow::Result<Utf8PathBuf> {
         .with_context(|| format!("no buildfile found for {file}"))
 }
 
-fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::Result<String> {
+fn buildfile_to_package_target_pattern(
+    workspace: &Utf8Path,
+    buildfile: &Utf8Path,
+) -> anyhow::Result<String> {
     log::info!("getting targets for buildfile: {buildfile}");
 
     let parent_dir = buildfile
@@ -187,8 +190,46 @@ fn buildfile_to_targets(workspace: &Utf8Path, buildfile: &Utf8Path) -> anyhow::R
 
     let targets = match parent_dir {
         Some(p) if !p.as_str().is_empty() => format!("//{p}:all"),
-        _ => "//...".to_string(),
+        _ => "//:all".to_string(),
     };
+
+    Ok(targets)
+}
+
+fn buildfile_to_targets(
+    bazel: &Utf8Path,
+    output_base: &Utf8Path,
+    workspace: &Utf8Path,
+    bazel_startup_options: &[String],
+    bazel_args: &[String],
+    buildfile: &Utf8Path,
+) -> anyhow::Result<Vec<String>> {
+    let target_pattern = buildfile_to_package_target_pattern(workspace, buildfile)?;
+    let query = format!("kind(rule, {target_pattern})");
+
+    let output = bazel_command(bazel, Some(workspace), Some(output_base))
+        .args(bazel_startup_options)
+        .arg("query")
+        .args(bazel_args)
+        .arg(query)
+        .output()?;
+
+    if !output.status.success() {
+        let status = output.status;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("bazel query failed: ({status:?})\n{stderr}");
+    }
+
+    let targets = String::from_utf8(output.stdout)?
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+
+    if targets.is_empty() {
+        bail!("no rule targets found for buildfile: {buildfile}");
+    }
 
     Ok(targets)
 }

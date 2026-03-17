@@ -53,10 +53,16 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
 
     log::info!("resolved rust-analyzer argument: {ra_arg:?}");
 
-    let (buildfile, targets) = ra_arg.into_target_details(&workspace)?;
+    let (buildfile, targets) = ra_arg.into_target_details(
+        &bazel,
+        &output_base,
+        &workspace,
+        &bazel_startup_options,
+        &bazel_args,
+    )?;
 
     log::debug!("got buildfile: {buildfile}");
-    log::debug!("got targets: {targets}");
+    log::debug!("got targets: {:?}", targets);
 
     // Use the generated files to print the rust-project.json.
     let project = generate_rust_project(
@@ -67,7 +73,7 @@ fn project_discovery() -> anyhow::Result<DiscoverProject<'static>> {
         &bazel_startup_options,
         &bazel_args,
         rules_rust_name,
-        &[targets],
+        &targets,
     )?;
 
     Ok(DiscoverProject::Finished { buildfile, project })

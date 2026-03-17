@@ -30,6 +30,8 @@ mod tests {
             .unwrap_or_else(|_| panic!("couldn't open {:?}", &rust_project_path));
         println!("{}", content);
 
+        let mut found_manual_root = false;
+
         for line in content.lines() {
             let discovery: DiscoverProject =
                 serde_json::from_str(line).expect("Failed to deserialize discovery JSON");
@@ -52,6 +54,20 @@ mod tests {
                 .find(|c| &c.display_name == "greeter_staticlib")
                 .unwrap();
             assert!(staticlib.root_module.ends_with("/static_lib.rs"));
+
+            found_manual_root = project.crates.iter().any(|crate_spec| {
+                crate_spec.display_name == "manual_root"
+                    && crate_spec.root_module.ends_with("/manual_root.rs")
+            });
+
+            if found_manual_root {
+                break;
+            }
         }
+
+        assert!(
+            found_manual_root,
+            "manual root-package crate was not discovered"
+        );
     }
 }
