@@ -1443,6 +1443,10 @@ def _build_worker_exec_reqs(use_worker_pipelining, is_incremental, has_out_dir =
         if use_worker_pipelining:
             reqs["supports-multiplex-workers"] = "1"
             reqs["supports-multiplex-sandboxing"] = "1"
+            # Cancellation is fully effective for pipelined requests (kills the
+            # background rustc). Non-pipelined requests within the same worker
+            # (e.g. proc-macros) acknowledge the cancel but the subprocess runs
+            # to completion — this is consistent with Bazel's best-effort semantics.
             reqs["supports-worker-cancellation"] = "1"
         else:
             reqs["supports-workers"] = "1"

@@ -427,6 +427,14 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
 
             // Cancel request: Bazel no longer needs the result for this requestId.
             // Respond with wasCancelled=true immediately if we haven't already responded.
+            //
+            // For pipelined requests, `kill_pipelined_request` kills the background
+            // rustc process to avoid wasting CPU. For non-pipelined requests (normal
+            // subprocess via `run_request`/`run_sandboxed_request`), the subprocess
+            // continues running — `Command::output()` provides no kill handle. The
+            // claim_flag prevents a duplicate response; the only cost is wasted CPU
+            // until the subprocess exits naturally. This is consistent with Bazel's
+            // best-effort cancellation semantics.
             if request.cancel {
                 // Look up the flag for this in-flight request.
                 let flag = lock_or_recover(&in_flight)

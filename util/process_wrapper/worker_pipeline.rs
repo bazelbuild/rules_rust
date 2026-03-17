@@ -747,7 +747,6 @@ pub(super) fn handle_pipelining_metadata(
             // to get an absolute path, since the worker process has a different CWD.
             let rmeta_resolved = resolve_relative_to(&rmeta_path_str, &ctx.execroot_dir);
             let rmeta_resolved_str = rmeta_resolved.display().to_string();
-            let rmeta_path = rmeta_resolved.as_path();
             append_pipeline_log(
                 &ctx.root_dir,
                 &format!("metadata rmeta ready: {}", rmeta_resolved_str),
