@@ -2020,11 +2020,7 @@ def rustc_compile_action(
         transitive_runfiles.append(dynamic_libraries)
     runfiles = runfiles.merge_all(transitive_runfiles)
 
-    # TODO: Remove after some resolution to
-    # https://github.com/bazelbuild/rules_rust/issues/771
-    out_binary = getattr(attr, "out_binary", False)
-
-    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test or out_binary else None
+    executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None
 
     instrumented_files_kwargs = {
         "dependency_attributes": ["deps", "crate"],
@@ -2245,11 +2241,6 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     # Only generate CcInfo for particular crate types
     if crate_info.type not in ("staticlib", "cdylib", "rlib", "lib"):
-        return []
-
-    # TODO: Remove after some resolution to
-    # https://github.com/bazelbuild/rules_rust/issues/771
-    if getattr(attr, "out_binary", False):
         return []
 
     dot_a = None
@@ -2579,7 +2570,7 @@ def _get_crate_dirname_pipelined(crate):
         return crate.metadata.dirname
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_darwin = False, flavor_msvc = False):
+def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
@@ -2882,7 +2873,10 @@ def _collect_per_crate_rustc_flags(ctx, crate_root, per_crate_rustc_flags):
         label_string = str(ctx.label)
         if label_string.startswith("@//"):
             label = label_string[1:]
-        elif label_string.startswith("@@//"):
+        elif label_string.startswith(
+            # buildifier: disable=canonical-repository
+            "@@//",
+        ):
             label = label_string[2:]
         else:
             label = label_string

@@ -104,14 +104,14 @@ fn get_dependency_search_paths_from_args(
     let mut filtered_args = Vec::new();
     let mut argfile_contents: HashMap<String, Vec<String>> = HashMap::new();
 
-    let mut queue: VecDeque<(String, Option<String>)> =
-        initial_args.iter().map(|arg| (arg.clone(), None)).collect();
+    let mut queue: VecDeque<(String, Option<String>)> = initial_args
+        .iter()
+        .map(|arg| (arg.clone(), None))
+        .collect();
 
     while let Some((arg, parent_argfile)) = queue.pop_front() {
         let target = match &parent_argfile {
-            Some(p) => argfile_contents
-                .entry(format!("{}.filtered", p))
-                .or_default(),
+            Some(p) => argfile_contents.entry(format!("{}.filtered", p)).or_default(),
             None => &mut filtered_args,
         };
 
@@ -211,7 +211,9 @@ fn consolidate_dependency_search_paths(
             }
 
             let file_name = entry.file_name();
-            let file_name_lower = file_name.to_string_lossy().to_ascii_lowercase();
+            let file_name_lower = file_name
+                .to_string_lossy()
+                .to_ascii_lowercase();
             if !seen.insert(file_name_lower) {
                 continue;
             }
@@ -436,7 +438,10 @@ fn json_warning(line: &str) -> JsonValue {
     ]))
 }
 
-fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, String> {
+fn process_line(
+    mut line: String,
+    format: ErrorFormat,
+) -> Result<LineOutput, String> {
     // LLVM can emit lines that look like the following, and these will be interspersed
     // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
     // like these (or to convert them to JSON), but for now we convert them to JSON
@@ -633,7 +638,10 @@ mod test {
             "'+zaamo' is not a recognized feature for this target (ignoring feature)",
             " WARN rustc_errors::emitter Invalid span...",
         ] {
-            let LineOutput::Message(msg) = process_line(text.to_string(), ErrorFormat::Json)?
+            let LineOutput::Message(msg) = process_line(
+                text.to_string(),
+                ErrorFormat::Json,
+            )?
             else {
                 return Err("Expected a LineOutput::Message".to_string());
             };

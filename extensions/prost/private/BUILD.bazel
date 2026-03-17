@@ -5,6 +5,8 @@ load("//:defs.bzl", "rust_prost_toolchain")
 load(":legacy_proto_toolchain.bzl", "legacy_proto_toolchain")
 load(":prost.bzl", "RUST_EDITION", "current_prost_runtime")
 
+exports_files(["protoc_wrapper.rs"])
+
 current_prost_runtime(
     name = "current_prost_runtime",
 )
