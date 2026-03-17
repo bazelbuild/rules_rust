@@ -1,5 +1,6 @@
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":debug_transition.bzl", "dbg_rust_binary")
+load(":remap_path_prefix_test.bzl", "remap_path_prefix_test_suite")
 
 rust_library(
     name = "dep",
@@ -34,4 +35,8 @@ rust_test(
         "BINARY": "$(rlocationpath :panic_bin_dbg)",
     },
     deps = ["//rust/runfiles"],
+)
+
+remap_path_prefix_test_suite(
+    name = "remap_path_prefix_test_suite",
 )
