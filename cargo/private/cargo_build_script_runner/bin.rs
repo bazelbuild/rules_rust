@@ -62,6 +62,7 @@ fn run_buildrs() -> Result<(), String> {
 
     let mut exec_root_links = Vec::new();
     if should_symlink_exec_root() {
+        let exec_root_skip_patterns = symlink_exec_root_skip_patterns();
         // Symlink the execroot to the manifest_dir so that we can use relative paths in the arguments.
         let exec_root_paths = std::fs::read_dir(&exec_root)
             .map_err(|err| format!("Failed while listing exec root: {err:?}"))?;
@@ -75,12 +76,26 @@ fn run_buildrs() -> Result<(), String> {
             let file_name = path
                 .file_name()
                 .ok_or_else(|| "Failed while getting file name".to_string())?;
+
+            // Skip entries matching user-configurable patterns from
+            // RULES_RUST_SYMLINK_EXEC_ROOT_SKIP_PATTERNS (comma-separated).
+            // Patterns support trailing '*' as a prefix glob.
+            let name = file_name.to_string_lossy();
+            if exec_root_skip_patterns
+                .iter()
+                .any(|p| match_skip_pattern(p, &name))
+            {
+                continue;
+            }
+
             let link = manifest_dir.join(file_name);
 
-            symlink_if_not_exists(&path, &link)
+            let created = symlink_if_not_exists(&path, &link)
                 .map_err(|err| format!("Failed to symlink {path:?} to {link:?}: {err}"))?;
 
-            exec_root_links.push(link)
+            if created {
+                exec_root_links.push(link);
+            }
         }
     }
 
@@ -219,15 +234,25 @@ fn run_buildrs() -> Result<(), String> {
         )
     });
 
-    if !exec_root_links.is_empty() {
-        for link in exec_root_links {
-            remove_symlink(&link).map_err(|e| {
-                format!(
-                    "Failed to remove exec_root link '{}' with {:?}",
+    for link in exec_root_links {
+        if let Err(e) = remove_symlink(&link) {
+            if cfg!(target_family = "windows") {
+                // On Windows, symlink removal can fail with PermissionDenied if
+                // another process still holds a handle to the target directory.
+                // These are temporary symlinks in the build sandbox that Bazel
+                // will clean up, so we log and continue rather than failing.
+                eprintln!(
+                    "Warning: could not remove exec_root link '{}': {:?}",
                     link.display(),
                     e
-                )
-            })?;
+                );
+            } else {
+                return Err(format!(
+                    "Failed to remove exec_root link '{}': {:?}",
+                    link.display(),
+                    e
+                ));
+            }
         }
     }
 
@@ -246,11 +271,34 @@ fn should_symlink_exec_root() -> bool {
         .unwrap_or(false)
 }
 
+/// Parse skip patterns from `RULES_RUST_SYMLINK_EXEC_ROOT_SKIP_PATTERNS`.
+/// Returns a comma-separated list of patterns. Each pattern is either an exact
+/// match or a prefix glob (trailing `*`).
+fn symlink_exec_root_skip_patterns() -> Vec<String> {
+    env::var("RULES_RUST_SYMLINK_EXEC_ROOT_SKIP_PATTERNS")
+        .map(|s| s.split(',').map(|p| p.to_owned()).collect())
+        .unwrap_or_default()
+}
+
+/// Match a skip pattern against a file name. Supports exact match and
+/// trailing `*` as a prefix glob (e.g. `local-spawn-runner.*` matches
+/// `local-spawn-runner.12345`).
+fn match_skip_pattern(pattern: &str, name: &str) -> bool {
+    if let Some(prefix) = pattern.strip_suffix('*') {
+        name.starts_with(prefix)
+    } else {
+        name == pattern
+    }
+}
+
 /// Create a symlink from `link` to `original` if `link` doesn't already exist.
-fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
-    symlink(original, link)
-        .or_else(swallow_already_exists)
-        .map_err(|err| format!("Failed to create symlink: {err}"))
+/// Returns `true` if a new symlink was created, `false` if the path already existed.
+fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<bool, String> {
+    match symlink(original, link) {
+        Ok(()) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(false),
+        Err(err) => Err(format!("Failed to create symlink: {err}")),
+    }
 }
 
 fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result<PathBuf, String> {
@@ -268,14 +316,6 @@ fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result
         return Err(format!("rundir must not contain .. but was {:?}", rundir));
     }
     Ok(exec_root.join(rundir_path))
-}
-
-fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
-    if err.kind() == std::io::ErrorKind::AlreadyExists {
-        Ok(())
-    } else {
-        Err(err)
-    }
 }
 
 /// A representation of expected command line arguments.
@@ -469,5 +509,28 @@ windows
         let tree = parse_rustc_cfg_output(windows_output);
         assert_eq!(tree["CARGO_CFG_WINDOWS"], "");
         assert_eq!(tree["CARGO_CFG_TARGET_FAMILY"], "windows");
+    }
+
+    #[test]
+    fn skip_pattern_exact_match() {
+        assert!(match_skip_pattern(".git", ".git"));
+        assert!(!match_skip_pattern(".git", ".github"));
+        assert!(!match_skip_pattern(".git", ".gi"));
+        assert!(!match_skip_pattern(".git", ""));
+    }
+
+    #[test]
+    fn skip_pattern_prefix_glob() {
+        assert!(match_skip_pattern("local-spawn-runner.*", "local-spawn-runner.12345"));
+        assert!(match_skip_pattern("local-spawn-runner.*", "local-spawn-runner."));
+        assert!(!match_skip_pattern("local-spawn-runner.*", "local-spawn-runner"));
+        assert!(!match_skip_pattern("local-spawn-runner.*", "other-thing"));
+    }
+
+    #[test]
+    fn skip_pattern_star_alone() {
+        // A bare "*" pattern matches everything.
+        assert!(match_skip_pattern("*", "anything"));
+        assert!(match_skip_pattern("*", ""));
     }
 }

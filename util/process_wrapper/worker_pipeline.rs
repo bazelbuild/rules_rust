@@ -29,8 +29,8 @@ use crate::ProcessWrapperError;
 
 use super::protocol::WorkRequestContext;
 use super::sandbox::{
-    copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable, make_path_writable,
-    prepare_outputs, resolve_real_execroot, resolve_relative_to, run_request,
+    copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable,
+    make_path_writable, prepare_outputs, resolve_real_execroot, resolve_relative_to, run_request,
     run_sandboxed_request,
 };
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
@@ -97,7 +97,6 @@ impl PipelineState {
     pub(super) fn take(&mut self, key: &str) -> Option<BackgroundRustc> {
         self.active.remove(key)
     }
-
 }
 
 /// Parsed process_wrapper arguments from before the `--` separator.
@@ -193,7 +192,9 @@ pub(super) fn detect_pipelining_mode(args: &[String]) -> PipeliningMode {
 
 /// Scans an iterator of argument strings for pipelining flags.
 /// Returns `(is_metadata, is_full, pipeline_key)`.
-pub(super) fn scan_pipelining_flags<'a>(iter: impl Iterator<Item = &'a str>) -> (bool, bool, Option<String>) {
+pub(super) fn scan_pipelining_flags<'a>(
+    iter: impl Iterator<Item = &'a str>,
+) -> (bool, bool, Option<String>) {
     let mut is_metadata = false;
     let mut is_full = false;
     let mut key: Option<String> = None;
@@ -370,9 +371,7 @@ pub(super) fn build_rustc_env(
         }
     }
     for val in env.values_mut() {
-        for (k, v) in subst {
-            *val = val.replace(&format!("${{{k}}}"), v);
-        }
+        crate::util::apply_substitutions(val, subst);
     }
     env
 }
@@ -410,12 +409,13 @@ pub(super) fn prepare_rustc_args(
     Ok((rustc_args, original_out_dir))
 }
 
-/// Applies substitution mappings to a single argument string.
+/// Applies `${key}` → `value` substitution mappings to a single argument string.
+///
+/// Delegates to [`crate::util::apply_substitutions`], which couples substitution
+/// with Windows verbatim path normalization so callers cannot forget it.
 pub(super) fn apply_substs(arg: &str, subst: &[(String, String)]) -> String {
     let mut a = arg.to_owned();
-    for (k, v) in subst {
-        a = a.replace(&format!("${{{k}}}"), v);
-    }
+    crate::util::apply_substitutions(&mut a, subst);
     a
 }
 
@@ -444,7 +444,8 @@ pub(super) fn expand_rustc_args(
                         }
                         let line = apply_substs(line, subst);
                         if !is_pipelining_flag(&line) {
-                            result.push(line);
+                            let resolved = crate::options::resolve_external_path(&line);
+                            result.push(resolved.into_owned());
                         }
                     }
                 }
@@ -456,7 +457,11 @@ pub(super) fn expand_rustc_args(
                 }
             }
         } else if !is_pipelining_flag(&arg) {
-            result.push(arg);
+            let resolved = crate::options::resolve_external_path(&arg);
+            result.push(match resolved {
+                std::borrow::Cow::Borrowed(_) => arg,
+                std::borrow::Cow::Owned(s) => s,
+            });
         }
     }
     result
@@ -474,7 +479,10 @@ pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
 
 /// Returns a copy of `args` where `--out-dir=<old>` is replaced by
 /// `--out-dir=<new_out_dir>`. Other args are unchanged.
-pub(super) fn rewrite_out_dir_in_expanded(args: Vec<String>, new_out_dir: &std::path::Path) -> Vec<String> {
+pub(super) fn rewrite_out_dir_in_expanded(
+    args: Vec<String>,
+    new_out_dir: &std::path::Path,
+) -> Vec<String> {
     args.into_iter()
         .map(|arg| {
             if arg.starts_with("--out-dir=") {
@@ -488,7 +496,10 @@ pub(super) fn rewrite_out_dir_in_expanded(args: Vec<String>, new_out_dir: &std::
 
 /// Rewrites `--emit=metadata=<path>` to write the .rmeta into the pipeline outputs dir.
 /// The original relative path's filename is preserved; only the directory changes.
-pub(super) fn rewrite_emit_metadata_path(args: Vec<String>, outputs_dir: &std::path::Path) -> Vec<String> {
+pub(super) fn rewrite_emit_metadata_path(
+    args: Vec<String>,
+    outputs_dir: &std::path::Path,
+) -> Vec<String> {
     args.into_iter()
         .map(|arg| {
             if let Some(path_str) = arg.strip_prefix("--emit=metadata=") {
@@ -557,13 +568,13 @@ pub(super) fn create_pipeline_context(
             format!("pipelining: failed to create pipeline outputs dir: {e}"),
         )
     })?;
-    let root_dir = root_dir.canonicalize().map_err(|e| {
+    let root_dir = std::fs::canonicalize(root_dir).map_err(|e| {
         (
             1,
             format!("pipelining: failed to resolve pipeline dir: {e}"),
         )
     })?;
-    let outputs_dir = outputs_dir.canonicalize().map_err(|e| {
+    let outputs_dir = std::fs::canonicalize(outputs_dir).map_err(|e| {
         (
             1,
             format!("pipelining: failed to resolve pipeline outputs dir: {e}"),
@@ -587,10 +598,14 @@ pub(super) fn create_pipeline_context(
             )
         })?
     } else {
-        std::env::current_dir()
-            .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?
-            .canonicalize()
-            .map_err(|e| (1, format!("pipelining: failed to canonicalize worker CWD: {e}")))?
+        let cwd = std::env::current_dir()
+            .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
+        std::fs::canonicalize(cwd).map_err(|e| {
+            (
+                1,
+                format!("pipelining: failed to canonicalize worker CWD: {e}"),
+            )
+        })?
     };
 
     Ok(PipelineContext {
@@ -716,10 +731,54 @@ pub(super) fn handle_pipelining_metadata(
             ctx.outputs_dir.display(),
         ),
     );
-    // Spawn rustc directly with the prepared env and args.
+    // On Windows, rustc's internal search-path buffer is limited to ~32K characters.
+    // Consolidate all -Ldependency dirs into one directory with hardlinks, then
+    // write all args to a response file to also avoid CreateProcessW limits.
+    #[cfg(windows)]
+    let _consolidated_dir_guard: Option<PathBuf>;
+    #[cfg(windows)]
+    let mut rustc_args = rustc_args;
+    #[cfg(windows)]
+    {
+        let unified_dir = ctx.root_dir.join("deps");
+        let _ = std::fs::remove_dir_all(&unified_dir);
+        if let Err(e) = std::fs::create_dir_all(&unified_dir) {
+            return (
+                1,
+                format!("pipelining: failed to create deps dir: {e}"),
+            );
+        }
+
+        let dep_dirs: Vec<PathBuf> = rustc_args
+            .iter()
+            .filter_map(|a| a.strip_prefix("-Ldependency=").map(PathBuf::from))
+            .collect();
+        crate::util::consolidate_deps_into(&dep_dirs, &unified_dir);
+        rustc_args.retain(|a| !a.starts_with("-Ldependency="));
+        rustc_args.push(format!("-Ldependency={}", unified_dir.display()));
+        _consolidated_dir_guard = Some(unified_dir);
+    }
+
+    // Spawn rustc with the prepared env and args.
+    // On Windows, write args to a response file to avoid CreateProcessW length limits.
     let mut cmd = Command::new(&rustc_args[0]);
-    cmd.args(&rustc_args[1..])
-        .env_clear()
+    #[cfg(windows)]
+    {
+        let response_file_path = ctx.root_dir.join("metadata_rustc.args");
+        let content = rustc_args[1..].join("\n");
+        if let Err(e) = std::fs::write(&response_file_path, &content) {
+            return (
+                1,
+                format!("pipelining: failed to write response file: {e}"),
+            );
+        }
+        cmd.arg(format!("@{}", response_file_path.display()));
+    }
+    #[cfg(not(windows))]
+    {
+        cmd.args(&rustc_args[1..]);
+    }
+    cmd.env_clear()
         .envs(&env)
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
@@ -942,10 +1001,7 @@ pub(super) fn handle_pipelining_full(
 /// Looks up the pipeline key by metadata_request_id, then kills the child
 /// process and joins the stderr drain thread. This prevents wasted CPU when
 /// the remote leg wins a dynamic execution race.
-pub(super) fn kill_pipelined_request(
-    pipeline_state: &Arc<Mutex<PipelineState>>,
-    request_id: i64,
-) {
+pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: i64) {
     let mut state = lock_or_recover(pipeline_state);
     let key_to_kill: Option<String> = state.active.iter().find_map(|(key, bg)| {
         if bg.metadata_request_id == request_id {
@@ -1008,7 +1064,11 @@ pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str
     let _ = writeln!(file, "{message}");
 }
 
-pub(super) fn maybe_cleanup_pipeline_dir(pipeline_root: &std::path::Path, keep: bool, reason: &str) {
+pub(super) fn maybe_cleanup_pipeline_dir(
+    pipeline_root: &std::path::Path,
+    keep: bool,
+    reason: &str,
+) {
     if keep {
         append_pipeline_log(
             pipeline_root,
@@ -1024,4 +1084,3 @@ pub(super) fn maybe_cleanup_pipeline_dir(pipeline_root: &std::path::Path, keep: 
         );
     }
 }
-

@@ -21,7 +21,7 @@ mod worker;
 
 use std::collections::HashMap;
 #[cfg(windows)]
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 use std::fmt;
 use std::fs::{self, copy, OpenOptions};
 use std::io;
@@ -32,7 +32,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use tinyjson::JsonValue;
 
-use crate::options::options;
+use crate::options::{options, PipeliningMode};
 use crate::output::{process_output, LineOutput};
 use crate::rustc::ErrorFormat;
 #[cfg(windows)]
@@ -58,12 +58,12 @@ macro_rules! debug_log {
 }
 
 #[cfg(windows)]
-struct TemporaryDirectoryGuard {
+struct TemporaryFileGuard {
     path: Option<PathBuf>,
 }
 
 #[cfg(windows)]
-impl TemporaryDirectoryGuard {
+impl TemporaryFileGuard {
     fn new(path: Option<PathBuf>) -> Self {
         Self { path }
     }
@@ -74,21 +74,22 @@ impl TemporaryDirectoryGuard {
 }
 
 #[cfg(windows)]
-impl Drop for TemporaryDirectoryGuard {
+impl Drop for TemporaryFileGuard {
     fn drop(&mut self) {
         if let Some(path) = self.path.take() {
-            let _ = fs::remove_dir_all(path);
+            // May be a file (argfile) or directory (consolidated deps dir).
+            let _ = fs::remove_dir_all(&path);
         }
     }
 }
 
 #[cfg(not(windows))]
-struct TemporaryDirectoryGuard;
+struct TemporaryFileGuard;
 
 #[cfg(not(windows))]
-impl TemporaryDirectoryGuard {
+impl TemporaryFileGuard {
     fn new(_: Option<PathBuf>) -> Self {
-        TemporaryDirectoryGuard
+        TemporaryFileGuard
     }
 
     fn take(&mut self) -> Option<PathBuf> {
@@ -97,21 +98,27 @@ impl TemporaryDirectoryGuard {
 }
 
 #[cfg(windows)]
+struct ParsedDependencyArgs {
+    dependency_paths: Vec<PathBuf>,
+    filtered_args: Vec<String>,
+}
+
+#[cfg(windows)]
 fn get_dependency_search_paths_from_args(
     initial_args: &[String],
-) -> Result<(Vec<PathBuf>, Vec<String>), ProcessWrapperError> {
+) -> Result<ParsedDependencyArgs, ProcessWrapperError> {
     let mut dependency_paths = Vec::new();
     let mut filtered_args = Vec::new();
     let mut argfile_contents: HashMap<String, Vec<String>> = HashMap::new();
 
-    let mut queue: VecDeque<(String, Option<String>)> = initial_args
-        .iter()
-        .map(|arg| (arg.clone(), None))
-        .collect();
+    let mut queue: VecDeque<(String, Option<String>)> =
+        initial_args.iter().map(|arg| (arg.clone(), None)).collect();
 
     while let Some((arg, parent_argfile)) = queue.pop_front() {
         let target = match &parent_argfile {
-            Some(p) => argfile_contents.entry(format!("{}.filtered", p)).or_default(),
+            Some(p) => argfile_contents
+                .entry(format!("{}.filtered", p))
+                .or_default(),
             None => &mut filtered_args,
         };
 
@@ -146,14 +153,31 @@ fn get_dependency_search_paths_from_args(
         })?;
     }
 
-    Ok((dependency_paths, filtered_args))
+    Ok(ParsedDependencyArgs {
+        dependency_paths,
+        filtered_args,
+    })
 }
 
+// On Windows, rustc's internal search-path buffer appears to be limited to
+// ~32K characters. With many transitive dependencies (400+ `-Ldependency`
+// entries), the cumulative path length exceeds this limit and rustc silently
+// fails to resolve crates, reporting E0463 ("can't find crate"). This applies
+// even if the -Ldependencies are passed via @argfile.
+//
+// Fix: hard-link all rlib/rmeta files from all `-Ldependency` directories
+// into a single consolidated directory, replacing hundreds of search paths
+// with one. Hard links share the same inode/content so rustc sees identical
+// SVH values and E0460 (SVH mismatch) does not occur.
 #[cfg(windows)]
 fn consolidate_dependency_search_paths(
     args: &[String],
 ) -> Result<(Vec<String>, Option<PathBuf>), ProcessWrapperError> {
-    let (dependency_paths, mut filtered_args) = get_dependency_search_paths_from_args(args)?;
+    let parsed = get_dependency_search_paths_from_args(args)?;
+    let ParsedDependencyArgs {
+        dependency_paths,
+        mut filtered_args,
+    } = parsed;
 
     if dependency_paths.is_empty() {
         return Ok((filtered_args, None));
@@ -181,67 +205,7 @@ fn consolidate_dependency_search_paths(
         ))
     })?;
 
-    let mut seen = HashSet::new();
-    for path in dependency_paths {
-        let entries = fs::read_dir(&path).map_err(|e| {
-            ProcessWrapperError(format!(
-                "unable to read dependency search path {}: {}",
-                path.display(),
-                e
-            ))
-        })?;
-
-        for entry in entries {
-            let entry = entry.map_err(|e| {
-                ProcessWrapperError(format!(
-                    "unable to iterate dependency search path {}: {}",
-                    path.display(),
-                    e
-                ))
-            })?;
-            let file_type = entry.file_type().map_err(|e| {
-                ProcessWrapperError(format!(
-                    "unable to inspect dependency search path {}: {}",
-                    path.display(),
-                    e
-                ))
-            })?;
-            if !(file_type.is_file() || file_type.is_symlink()) {
-                continue;
-            }
-
-            let file_name = entry.file_name();
-            let file_name_lower = file_name
-                .to_string_lossy()
-                .to_ascii_lowercase();
-            if !seen.insert(file_name_lower) {
-                continue;
-            }
-
-            let dest = unified_dir.join(&file_name);
-            let src = entry.path();
-            match fs::hard_link(&src, &dest) {
-                Ok(_) => {}
-                Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {}
-                Err(err) => {
-                    debug_log!(
-                        "failed to hardlink {} to {} ({}), falling back to copy",
-                        src.display(),
-                        dest.display(),
-                        err
-                    );
-                    fs::copy(&src, &dest).map_err(|copy_err| {
-                        ProcessWrapperError(format!(
-                            "unable to copy {} into unified dependency dir {}: {}",
-                            src.display(),
-                            dest.display(),
-                            copy_err
-                        ))
-                    })?;
-                }
-            }
-        }
-    }
+    crate::util::consolidate_deps_into(&dependency_paths, &unified_dir);
 
     filtered_args.push(format!("-Ldependency={}", unified_dir.display()));
 
@@ -272,6 +236,11 @@ enum CacheSeedOutcome {
 }
 
 fn cache_root_from_execroot_ancestor(cwd: &std::path::Path) -> Option<PathBuf> {
+    // Walk up from cwd looking for a sibling "cache" directory at each level.
+    // Skip directories named "execroot" — cache is never inside execroot itself,
+    // but its parent (e.g. <output_base>) typically has a sibling "cache" dir.
+    // Typical Bazel layout: <output_base>/execroot/_main/ (cwd)
+    //                       <output_base>/cache/          (target)
     for ancestor in cwd.ancestors() {
         if ancestor.file_name().is_some_and(|name| name == "execroot") {
             continue;
@@ -280,37 +249,6 @@ fn cache_root_from_execroot_ancestor(cwd: &std::path::Path) -> Option<PathBuf> {
         let candidate = ancestor.join("cache");
         if candidate.is_dir() {
             return candidate.canonicalize().ok().or(Some(candidate));
-        }
-    }
-
-    for ancestor in cwd.ancestors() {
-        if ancestor.file_name().is_some_and(|name| name == "execroot") {
-            if let Some(parent) = ancestor.parent() {
-                let candidate = parent.join("cache");
-                if candidate.is_dir() {
-                    return candidate.canonicalize().ok().or(Some(candidate));
-                }
-            }
-        }
-    }
-
-    for ancestor in cwd.ancestors() {
-        if ancestor.file_name().is_some_and(|name| name == "execroot") {
-            if let Some(grandparent) = ancestor.parent().and_then(|p| p.parent()) {
-                let candidate = grandparent.join("cache");
-                if candidate.is_dir() {
-                    return candidate.canonicalize().ok().or(Some(candidate));
-                }
-            }
-        }
-    }
-
-    for ancestor in cwd.ancestors() {
-        if ancestor.file_name().is_some_and(|name| name == "execroot") {
-            let candidate = ancestor.parent()?.join("cache");
-            if candidate.is_dir() {
-                return candidate.canonicalize().ok().or(Some(candidate));
-            }
         }
     }
 
@@ -325,13 +263,19 @@ fn ensure_cache_loopback_for_path(
         return Ok(None);
     };
     let mut components = relative.components();
-    if components.next().is_none_or(|component| component.as_os_str() != "repos") {
+    if components
+        .next()
+        .is_none_or(|component| component.as_os_str() != "repos")
+    {
         return Ok(None);
     }
     let Some(version) = components.next() else {
         return Ok(None);
     };
-    if components.next().is_none_or(|component| component.as_os_str() != "contents") {
+    if components
+        .next()
+        .is_none_or(|component| component.as_os_str() != "contents")
+    {
         return Ok(None);
     }
 
@@ -371,8 +315,9 @@ fn ensure_cache_loopback_from_args(
 }
 
 fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperError> {
-    let cwd = std::env::current_dir()
-        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?;
+    let cwd = std::env::current_dir().map_err(|e| {
+        ProcessWrapperError(format!("unable to read current working directory: {e}"))
+    })?;
     let dest = cwd.join("cache");
     if dest.exists() {
         return Ok(CacheSeedOutcome::AlreadyPresent);
@@ -387,14 +332,18 @@ fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperE
                 e
             ))
         })?;
-        return Ok(CacheSeedOutcome::Seeded { _source: cache_root });
+        return Ok(CacheSeedOutcome::Seeded {
+            _source: cache_root,
+        });
     }
 
-    for entry in fs::read_dir(&cwd)
-        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?
-    {
+    for entry in fs::read_dir(&cwd).map_err(|e| {
+        ProcessWrapperError(format!("unable to read current working directory: {e}"))
+    })? {
         let entry = entry.map_err(|e| {
-            ProcessWrapperError(format!("unable to enumerate current working directory: {e}"))
+            ProcessWrapperError(format!(
+                "unable to enumerate current working directory: {e}"
+            ))
         })?;
         let Ok(resolved) = entry.path().canonicalize() else {
             continue;
@@ -438,10 +387,7 @@ fn json_warning(line: &str) -> JsonValue {
     ]))
 }
 
-fn process_line(
-    mut line: String,
-    format: ErrorFormat,
-) -> Result<LineOutput, String> {
+fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, String> {
     // LLVM can emit lines that look like the following, and these will be interspersed
     // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
     // like these (or to convert them to JSON), but for now we convert them to JSON
@@ -466,11 +412,67 @@ fn main() -> Result<(), ProcessWrapperError> {
 
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
-    let (child_arguments, dep_dir_cleanup) =
+    // Worker pipelining local-mode no-op optimization.
+    //
+    // When the process_wrapper runs outside a persistent worker (local or
+    // sandboxed-without-sandbox fallback) and the action is --pipelining-full,
+    // the metadata action has already run a complete rustc invocation that
+    // produced both the .rmeta (declared output) and the .rlib (side-effect).
+    // If the .rlib exists on disk, we can skip the redundant second rustc
+    // invocation entirely. This guarantees SVH consistency because the .rmeta
+    // and .rlib came from the same compilation.
+    //
+    // If the .rlib does NOT exist (e.g. sandboxed execution discarded the
+    // side-effect, or the metadata action was an action-cache hit), we fall
+    // through to running rustc normally.
+    if opts.pipelining_mode == Some(PipeliningMode::Full) {
+        if let Some(ref rlib_path) = opts.pipelining_rlib_path {
+            if std::path::Path::new(rlib_path).exists() {
+                debug_log!(
+                    "pipelining no-op: .rlib already exists at {}, skipping rustc",
+                    rlib_path
+                );
+                // Handle post-success actions that the normal path would do.
+                if let Some(ref tf) = opts.touch_file {
+                    OpenOptions::new()
+                        .create(true)
+                        .truncate(true)
+                        .write(true)
+                        .open(tf)
+                        .map_err(|e| {
+                            ProcessWrapperError(format!("failed to create touch file: {}", e))
+                        })?;
+                }
+                if let Some((ref copy_source, ref copy_dest)) = opts.copy_output {
+                    copy(copy_source, copy_dest).map_err(|e| {
+                        ProcessWrapperError(format!(
+                            "failed to copy {} into {}: {}",
+                            copy_source, copy_dest, e
+                        ))
+                    })?;
+                }
+                exit(0);
+            }
+            eprintln!(concat!(
+                "WARNING: [rules_rust] Worker pipelining full action executing outside a worker.\n",
+                "The metadata action's .rlib side-effect was not found, so a redundant second\n",
+                "rustc invocation will run. This happens when Bazel falls back from worker to\n",
+                "sandboxed execution (sandbox discards undeclared outputs). The build may still\n",
+                "succeed if all proc macros are deterministic, but nondeterministic proc macros\n",
+                "will cause E0460 (SVH mismatch).\n",
+                "\n",
+                "To fix: set --@rules_rust//rust/settings:experimental_worker_pipelining=false\n",
+                "        to use hollow-rlib pipelining (safe for all execution strategies).\n",
+            ));
+        }
+    }
+
+    let (child_arguments, dep_argfile_cleanup) =
         consolidate_dependency_search_paths(&opts.child_arguments)?;
-    let mut temp_dir_guard = TemporaryDirectoryGuard::new(dep_dir_cleanup);
-    let cwd = std::env::current_dir()
-        .map_err(|e| ProcessWrapperError(format!("unable to read current working directory: {e}")))?;
+    let mut temp_file_guard = TemporaryFileGuard::new(dep_argfile_cleanup);
+    let cwd = std::env::current_dir().map_err(|e| {
+        ProcessWrapperError(format!("unable to read current working directory: {e}"))
+    })?;
     let _ = seed_cache_root_for_current_dir();
     if let Some(cache_root) = cache_root_from_execroot_ancestor(&cwd) {
         let _ = ensure_cache_loopback_from_args(&cwd, &child_arguments, &cache_root);
@@ -569,8 +571,25 @@ fn main() -> Result<(), ProcessWrapperError> {
         }
     }
 
-    if let Some(path) = temp_dir_guard.take() {
-        let _ = fs::remove_dir_all(path);
+    // When a pipelining-full action fails outside a worker (the warning above
+    // was already printed), repeat the fix suggestion next to the error output.
+    if code != 0
+        && opts.pipelining_mode == Some(PipeliningMode::Full)
+        && opts
+            .pipelining_rlib_path
+            .as_ref()
+            .is_some_and(|p| !std::path::Path::new(p).exists())
+    {
+        eprintln!(concat!(
+            "\nERROR: [rules_rust] Redundant rustc invocation failed (see warning above).\n",
+            "If the error is E0460 (SVH mismatch), set:\n",
+            "  --@rules_rust//rust/settings:experimental_worker_pipelining=false\n",
+        ));
+    }
+
+    if let Some(path) = temp_file_guard.take() {
+        // Consolidated dependency dir: remove the whole directory tree.
+        let _ = fs::remove_dir_all(&path);
     }
 
     exit(code)
@@ -638,10 +657,7 @@ mod test {
             "'+zaamo' is not a recognized feature for this target (ignoring feature)",
             " WARN rustc_errors::emitter Invalid span...",
         ] {
-            let LineOutput::Message(msg) = process_line(
-                text.to_string(),
-                ErrorFormat::Json,
-            )?
+            let LineOutput::Message(msg) = process_line(text.to_string(), ErrorFormat::Json)?
             else {
                 return Err("Expected a LineOutput::Message".to_string());
             };
@@ -755,9 +771,7 @@ mod test {
         let tmp = std::env::temp_dir().join("pw_test_ensure_cache_loopback_from_args");
         let cwd = tmp.join("output-base/execroot/_main");
         let cache_root = tmp.join("output-base/cache");
-        let source = cache_root.join(
-            "repos/v1/contents/hash/repo/.tmp_git_root/tool/src/lib.rs",
-        );
+        let source = cache_root.join("repos/v1/contents/hash/repo/.tmp_git_root/tool/src/lib.rs");
         fs::create_dir_all(source.parent().unwrap()).map_err(|e| e.to_string())?;
         fs::create_dir_all(&cwd).map_err(|e| e.to_string())?;
         fs::write(&source, "").map_err(|e| e.to_string())?;

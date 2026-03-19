@@ -1735,6 +1735,13 @@ def rustc_compile_action(
         args.rustc_flags.add("--pipelining-full")
         args.rustc_flags.add("--pipelining-key={}".format(pipeline_key))
 
+        # Pass the expected .rlib path for the local-mode no-op optimization.
+        # When the process_wrapper runs outside a worker (local/sandboxed fallback),
+        # it checks whether this file already exists (produced as a side-effect by
+        # the metadata action's rustc). If so, it skips the redundant second rustc
+        # invocation, guaranteeing SVH consistency (single invocation per crate).
+        args.rustc_flags.add("--pipelining-rlib-path={}".format(crate_info.output.path))
+
     env = dict(ctx.configuration.default_shell_env)
 
     # this is the final list of env vars

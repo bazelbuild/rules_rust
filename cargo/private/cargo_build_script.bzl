@@ -632,6 +632,9 @@ def _cargo_build_script_impl(ctx):
 
     if experimental_symlink_execroot:
         env["RULES_RUST_SYMLINK_EXEC_ROOT"] = "1"
+        skip_patterns = ctx.attr._symlink_exec_root_skip_patterns[BuildSettingInfo].value
+        if skip_patterns:
+            env["RULES_RUST_SYMLINK_EXEC_ROOT_SKIP_PATTERNS"] = ",".join(skip_patterns)
 
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
@@ -786,6 +789,9 @@ cargo_build_script = rule(
         ),
         "_experimental_symlink_execroot": attr.label(
             default = Label("//cargo/settings:experimental_symlink_execroot"),
+        ),
+        "_symlink_exec_root_skip_patterns": attr.label(
+            default = Label("//cargo/settings:symlink_exec_root_skip_patterns"),
         ),
         "_fallback_ar": attr.label(
             cfg = "exec",

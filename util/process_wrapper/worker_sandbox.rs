@@ -17,8 +17,8 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use super::protocol::WorkRequestContext;
 use super::pipeline::OutputMaterializationStats;
+use super::protocol::WorkRequestContext;
 use crate::ProcessWrapperError;
 
 /// Resolves the real Bazel execroot from sandbox symlinks.
@@ -30,7 +30,10 @@ use crate::ProcessWrapperError;
 ///
 /// We resolve any input's symlink target and strip the relative path suffix
 /// to recover the real execroot root.
-pub(super) fn resolve_real_execroot(sandbox_dir: &str, request: &WorkRequestContext) -> Option<PathBuf> {
+pub(super) fn resolve_real_execroot(
+    sandbox_dir: &str,
+    request: &WorkRequestContext,
+) -> Option<PathBuf> {
     let sandbox_path = std::path::Path::new(sandbox_dir);
     for input in &request.inputs {
         let full_path = sandbox_path.join(&input.path);
@@ -130,7 +133,9 @@ pub(super) fn symlink_path(
     }
 }
 
-pub(super) fn seed_sandbox_cache_root(sandbox_dir: &std::path::Path) -> Result<(), ProcessWrapperError> {
+pub(super) fn seed_sandbox_cache_root(
+    sandbox_dir: &std::path::Path,
+) -> Result<(), ProcessWrapperError> {
     let dest = sandbox_dir.join("cache");
     if dest.exists() {
         return Ok(());
@@ -346,7 +351,11 @@ pub(super) fn prepare_outputs_sandboxed(args: &[String], sandbox_dir: &str) {
 
 /// Reads `path` line-by-line, collecting any `--out-dir=<dir>` values.
 /// When `sandbox_dir` is `Some`, resolves found paths against it.
-pub(super) fn scan_file_for_out_dir(path: &str, sandbox_dir: Option<&str>, out_dirs: &mut Vec<String>) {
+pub(super) fn scan_file_for_out_dir(
+    path: &str,
+    sandbox_dir: Option<&str>,
+    out_dirs: &mut Vec<String>,
+) {
     let Ok(content) = std::fs::read_to_string(path) else {
         return;
     };

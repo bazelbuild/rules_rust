@@ -34,10 +34,10 @@
 //!
 //! Protocol reference: https://bazel.build/remote/persistent
 
-#[path = "worker_protocol.rs"]
-mod protocol;
 #[path = "worker_pipeline.rs"]
 mod pipeline;
+#[path = "worker_protocol.rs"]
+mod protocol;
 #[path = "worker_sandbox.rs"]
 mod sandbox;
 
@@ -51,13 +51,13 @@ use std::time::Instant;
 use crate::ProcessWrapperError;
 
 // Imports used by worker_main
-use protocol::{
-    WorkRequestContext, build_cancel_response, build_response, build_shutdown_response,
-    extract_request_id_from_raw_line,
-};
 use pipeline::{
-    PipelineState, PipeliningMode, WorkerStateRoots, detect_pipelining_mode,
-    handle_pipelining_full, handle_pipelining_metadata, kill_pipelined_request, relocate_pw_flags,
+    detect_pipelining_mode, handle_pipelining_full, handle_pipelining_metadata,
+    kill_pipelined_request, relocate_pw_flags, PipelineState, PipeliningMode, WorkerStateRoots,
+};
+use protocol::{
+    build_cancel_response, build_response, build_shutdown_response, extract_request_id,
+    extract_request_id_from_raw_line, WorkRequestContext,
 };
 use sandbox::{prepare_outputs, prepare_outputs_sandboxed, run_request, run_sandboxed_request};
 
@@ -373,15 +373,20 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     ));
                     let response =
                         build_response(1, &format!("worker protocol parse error: {e}"), request_id);
-                    let _ = write_worker_response(
-                        &stdout,
-                        &response,
-                    );
+                    let _ = write_worker_response(&stdout, &response);
                 }
                 continue;
             }
         };
-        let request = WorkRequestContext::from_json(&request);
+        let request = match WorkRequestContext::from_json(&request) {
+            Ok(ctx) => ctx,
+            Err(e) => {
+                let request_id = extract_request_id(&request);
+                let response = build_response(1, &e, request_id);
+                let _ = write_worker_response(&stdout, &response);
+                continue;
+            }
+        };
         append_worker_lifecycle_log(&format!(
             "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
             current_pid(),
@@ -447,8 +452,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         // to avoid wasting CPU when the remote leg wins.
                         kill_pipelined_request(&pipeline_state, request.request_id);
                         let response = build_cancel_response(request.request_id);
-                        let _ =
-                            write_worker_response(&stdout, &response);
+                        let _ = write_worker_response(&stdout, &response);
                     }
                     // If swap returned true, the worker thread already sent the normal
                     // response before we could cancel — nothing more to do.
@@ -485,10 +489,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 if worker_is_shutting_down() {
                     if !claim_flag.swap(true, Ordering::SeqCst) {
                         let response = build_shutdown_response(request.request_id);
-                        let _ = write_worker_response(
-                            &stdout,
-                            &response,
-                        );
+                        let _ = write_worker_response(&stdout, &response);
                     }
                     lock_or_recover(&in_flight).remove(&request.request_id);
                     append_worker_lifecycle_log(&format!(
@@ -558,8 +559,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 // Only send a response if a cancel acknowledgment hasn't already been sent.
                 if !claim_flag.swap(true, Ordering::SeqCst) {
                     let response = build_response(exit_code, &output, request.request_id);
-                    let _ =
-                        write_worker_response(&stdout, &response);
+                    let _ = write_worker_response(&stdout, &response);
                 }
                 append_worker_lifecycle_log(&format!(
                     "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
@@ -587,20 +587,21 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use super::protocol::{
-        WorkRequestInput, extract_arguments, extract_cancel, extract_inputs, extract_request_id,
-        extract_sandbox_dir,
-    };
     use super::pipeline::{
         apply_substs, build_rustc_env, expand_rustc_args, extract_rmeta_path,
         find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs,
         rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags,
     };
-    use super::sandbox::{
-        copy_all_outputs_to_sandbox, copy_output_to_sandbox, resolve_sandbox_path,
-        seed_sandbox_cache_root, symlink_path,
+    use super::protocol::{
+        extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
+        WorkRequestInput,
     };
+    use super::sandbox::resolve_sandbox_path;
+    #[cfg(unix)]
+    use super::sandbox::{
+        copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
+    };
+    use super::*;
     use crate::options::is_pipelining_flag;
     use tinyjson::JsonValue;
 
@@ -973,18 +974,93 @@ mod test {
     // --- Tests for Phase 4 sandbox helpers ---
 
     #[test]
-    fn test_extract_sandbox_dir_present() {
-        let req = parse_json(r#"{"requestId": 1, "sandboxDir": "/tmp/sandbox/42"}"#);
-        assert_eq!(
-            extract_sandbox_dir(&req),
-            Some("/tmp/sandbox/42".to_string())
-        );
+    fn test_extract_sandbox_dir_absent() {
+        let req = parse_json(r#"{"requestId": 1}"#);
+        assert_eq!(extract_sandbox_dir(&req), Ok(None));
     }
 
     #[test]
-    fn test_extract_sandbox_dir_absent() {
-        let req = parse_json(r#"{"requestId": 1}"#);
-        assert_eq!(extract_sandbox_dir(&req), None);
+    fn test_extract_sandbox_dir_empty_string_returns_none() {
+        let req = parse_json(r#"{"requestId": 1, "sandboxDir": ""}"#);
+        assert_eq!(extract_sandbox_dir(&req), Ok(None));
+    }
+
+    /// A nonexistent sandbox directory is an error — it means the platform
+    /// doesn't support sandboxing and the user should remove the flag.
+    #[test]
+    fn test_extract_sandbox_dir_nonexistent_is_err() {
+        let req = parse_json(r#"{"requestId": 1, "sandboxDir": "/no/such/sandbox/dir"}"#);
+        let result = extract_sandbox_dir(&req);
+        assert!(result.is_err(), "expected Err for nonexistent sandbox dir");
+        let msg = result.unwrap_err();
+        assert!(
+            msg.contains("--experimental_worker_multiplex_sandboxing"),
+            "error should mention the flag: {msg}"
+        );
+    }
+
+    /// An existing but empty sandbox directory is an error. On Windows, Bazel
+    /// creates the directory without populating it with symlinks because there
+    /// is no real sandbox implementation.
+    #[test]
+    #[cfg(unix)]
+    fn test_extract_sandbox_dir_empty_dir_is_err_unix() {
+        let dir = std::env::temp_dir().join("pw_test_sandbox_empty_unix");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, dir_str);
+        let req = parse_json(&json);
+        let result = extract_sandbox_dir(&req);
+        assert!(result.is_err(), "expected Err for empty sandbox dir");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_extract_sandbox_dir_empty_dir_is_err_windows() {
+        let dir = std::env::temp_dir().join("pw_test_sandbox_empty_win");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        let escaped = dir_str.replace('\\', "\\\\");
+        let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, escaped);
+        let req = parse_json(&json);
+        let result = extract_sandbox_dir(&req);
+        assert!(result.is_err(), "expected Err for empty sandbox dir");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// On Unix, a populated sandbox directory is accepted.
+    #[test]
+    #[cfg(unix)]
+    fn test_extract_sandbox_dir_populated_unix() {
+        let dir = std::env::temp_dir().join("pw_test_sandbox_pop_unix");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("marker"), b"").unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, dir_str);
+        let req = parse_json(&json);
+        assert_eq!(extract_sandbox_dir(&req), Ok(Some(dir_str)));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// On Windows, a populated sandbox directory is accepted.
+    /// Backslashes in the path must be escaped in JSON.
+    #[test]
+    #[cfg(windows)]
+    fn test_extract_sandbox_dir_populated_windows() {
+        let dir = std::env::temp_dir().join("pw_test_sandbox_pop_win");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("marker"), b"").unwrap();
+        let dir_str = dir.to_string_lossy().into_owned();
+        let escaped = dir_str.replace('\\', "\\\\");
+        let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, escaped);
+        let req = parse_json(&json);
+        assert_eq!(extract_sandbox_dir(&req), Ok(Some(dir_str)));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -1052,9 +1128,18 @@ mod test {
     }
 
     #[test]
-    fn test_resolve_sandbox_path_relative() {
+    #[cfg(unix)]
+    fn test_resolve_sandbox_path_relative_unix() {
         let result = resolve_sandbox_path("bazel-out/k8/bin/pkg", "/sandbox/42");
         assert_eq!(result, "/sandbox/42/bazel-out/k8/bin/pkg");
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_resolve_sandbox_path_relative_windows() {
+        // On Windows, Path::join produces backslash separators.
+        let result = resolve_sandbox_path("bazel-out/k8/bin/pkg", "/sandbox/42");
+        assert_eq!(result, "/sandbox/42\\bazel-out/k8/bin/pkg");
     }
 
     #[test]
