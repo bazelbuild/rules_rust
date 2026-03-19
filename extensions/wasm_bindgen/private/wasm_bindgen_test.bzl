@@ -173,18 +173,21 @@ def _rust_wasm_bindgen_test_impl(ctx):
     # Force the use of a browser for now as there is no node integration.
     env["WASM_BINDGEN_USE_BROWSER"] = "1"
 
-    providers = []
+    # Extract DefaultInfo and create a modified version with the wrapper as executable
+    default_info = crate_providers["DefaultInfo"]
+    files = default_info.files.to_list()
+    if len(files) != 1:
+        fail("Unexpected number of output files for `{}`: {}".format(ctx.label, files))
+    wasm_file = files[0]
+    env["TEST_WASM_BINARY"] = _rlocationpath(files[0], ctx.workspace_name)
 
-    for prov in crate_providers:
-        if type(prov) == "DefaultInfo":
-            files = prov.files.to_list()
-            if len(files) != 1:
-                fail("Unexpected number of output files for `{}`: {}".format(ctx.label, files))
-            wasm_file = files[0]
-            env["TEST_WASM_BINARY"] = _rlocationpath(files[0], ctx.workspace_name)
+    # Build providers list from the dict, replacing DefaultInfo with our modified version
+    providers = []
+    for key, prov in crate_providers.items():
+        if key == "DefaultInfo":
             providers.append(DefaultInfo(
-                files = prov.files,
-                runfiles = prov.default_runfiles.merge(ctx.runfiles(files = [wasm_file], transitive_files = wb_toolchain.all_test_files)),
+                files = default_info.files,
+                runfiles = default_info.default_runfiles.merge(ctx.runfiles(files = [wasm_file], transitive_files = wb_toolchain.all_test_files)),
                 executable = wrapper,
             ))
         else:
