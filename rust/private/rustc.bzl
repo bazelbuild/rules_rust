@@ -2317,9 +2317,15 @@ def portable_link_flags(
                 "-Clink-arg=-l{}".format(get_lib_name(artifact)),
             ]
     elif _is_dylib(lib):
-        return [
-            "-ldylib=%s" % get_lib_name(artifact),
-        ]
+        lib_file_name = artifact.basename
+        if lib_file_name.startswith("lib") and lib_file_name.endswith(".so"):
+            return [
+                "-ldylib=%s" % get_lib_name(artifact),
+            ]
+        else:
+            return [
+                "-Clink-arg=-l:{}".format(lib_file_name),
+            ]
 
     return []
 
