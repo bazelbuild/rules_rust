@@ -27,14 +27,41 @@ pub fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
     std::fs::remove_file(path)
 }
 
-/// Create a symlink file on windows systems
+/// Remove a symlink or junction on Windows.
+///
+/// Windows has three kinds of reparse points we may encounter:
+///   1. File symlinks — `remove_file` works.
+///   2. Directory symlinks — `remove_dir` removes the link itself (not the
+///      target contents), but `remove_file` also works on some Windows versions.
+///   3. Junctions — similar to directory symlinks; `remove_dir` removes the
+///      junction entry.
+///
+/// We use `symlink_metadata` + `FileTypeExt` to classify the entry and try
+/// the most appropriate removal call first, with a fallback for edge cases.
 #[cfg(target_family = "windows")]
 pub fn remove_symlink(path: &Path) -> Result<(), std::io::Error> {
-    if path.is_dir() {
-        std::fs::remove_dir(path)
-    } else {
-        std::fs::remove_file(path)
+    use std::os::windows::fs::FileTypeExt;
+
+    let metadata = std::fs::symlink_metadata(path)?;
+    let ft = metadata.file_type();
+
+    if ft.is_symlink_file() {
+        return std::fs::remove_file(path);
     }
+
+    if ft.is_symlink_dir() {
+        // remove_dir removes the symlink entry itself, not the target contents.
+        // Fall back to remove_file if remove_dir fails (some Windows versions).
+        return std::fs::remove_dir(path).or_else(|_| std::fs::remove_file(path));
+    }
+
+    // Junctions appear as directories but are not symlinks per FileTypeExt.
+    // remove_dir removes the junction entry itself.
+    if ft.is_dir() {
+        return std::fs::remove_dir(path).or_else(|_| std::fs::remove_file(path));
+    }
+
+    std::fs::remove_file(path)
 }
 
 /// Check if the system supports symlinks by attempting to create one.

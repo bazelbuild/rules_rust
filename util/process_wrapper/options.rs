@@ -24,6 +24,12 @@ impl fmt::Display for OptionError {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PipeliningMode {
+    Metadata,
+    Full,
+}
+
 #[derive(Debug)]
 pub(crate) struct Options {
     // Contains the path to the child executable
@@ -46,6 +52,15 @@ pub(crate) struct Options {
     pub(crate) output_file: Option<String>,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
+    // Worker pipelining mode detected from @paramfile flags.
+    // Set when --pipelining-metadata or --pipelining-full is found.
+    // None when running outside of worker pipelining.
+    pub(crate) pipelining_mode: Option<PipeliningMode>,
+    // The expected .rlib output path, passed via --pipelining-rlib-path=<path>
+    // in the @paramfile. Used by the local-mode no-op optimization: if this
+    // file already exists (produced as a side-effect by the metadata action's
+    // rustc invocation), the full action can skip running rustc entirely.
+    pub(crate) pipelining_rlib_path: Option<String>,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -182,20 +197,21 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     env_files.extend(relocated.env_files);
     let environment_file_block = env_from_files(env_files)?;
 
-    // Merge relocated arg-files: append their contents to child_args.
+    // Merge relocated arg-files: append their contents to child_args,
+    // applying ${pwd} and other substitutions to each line (matching the
+    // worker path which calls apply_substs on every arg-file line).
     let mut child_args = child_args;
     if !relocated.arg_files.is_empty() {
-        let mut extra_args = args_from_file(relocated.arg_files)?;
-        child_args.append(&mut extra_args);
+        for arg in args_from_file(relocated.arg_files)? {
+            let mut arg = arg;
+            crate::util::apply_substitutions(&mut arg, &subst_mappings);
+            child_args.push(arg);
+        }
     }
 
     // Merge relocated stamp files with startup stamp files.
-    let stable_status_file = relocated
-        .stable_status_file
-        .or(stable_status_file_raw);
-    let volatile_status_file = relocated
-        .volatile_status_file
-        .or(volatile_status_file_raw);
+    let stable_status_file = relocated.stable_status_file.or(stable_status_file_raw);
+    let volatile_status_file = relocated.volatile_status_file.or(volatile_status_file_raw);
     let stable_stamp_mappings =
         stable_status_file.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
     let volatile_stamp_mappings =
@@ -241,6 +257,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         stderr_file,
         output_file,
         rustc_output_format,
+        pipelining_mode: relocated.pipelining_mode,
+        pipelining_rlib_path: relocated.pipelining_rlib_path,
     })
 }
 
@@ -284,6 +302,7 @@ pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
     arg == "--pipelining-metadata"
         || arg == "--pipelining-full"
         || arg.starts_with("--pipelining-key=")
+        || arg.starts_with("--pipelining-rlib-path=")
 }
 
 /// Returns true if `arg` is a process_wrapper flag that may appear in the
@@ -311,14 +330,51 @@ pub(crate) struct RelocatedPwFlags {
     pub(crate) rustc_output_format: Option<String>,
     pub(crate) stable_status_file: Option<String>,
     pub(crate) volatile_status_file: Option<String>,
+    pub(crate) pipelining_mode: Option<PipeliningMode>,
+    pub(crate) pipelining_rlib_path: Option<String>,
 }
 
-fn prepare_arg(mut arg: String, subst_mappings: &[(String, String)]) -> String {
-    for (f, replace_with) in subst_mappings {
-        let from = format!("${{{f}}}");
-        arg = arg.replace(&from, replace_with);
+/// On Windows, resolve `.rs` source file paths that pass through junctions
+/// containing relative symlinks.  Windows cannot resolve chained reparse
+/// points (junction -> relative symlink -> symlink) in a single traversal,
+/// causing rustc to fail with ERROR_PATH_NOT_FOUND.
+///
+/// Only resolves paths ending in `.rs` to avoid changing crate identity
+/// for `--extern` and `-L` paths (which would cause crate version mismatches).
+#[cfg(windows)]
+pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
+    use std::borrow::Cow;
+    use std::path::Path;
+    if !arg.ends_with(".rs") {
+        return Cow::Borrowed(arg);
     }
-    arg
+    if !arg.starts_with("external/") && !arg.starts_with("external\\") {
+        return Cow::Borrowed(arg);
+    }
+    let path = Path::new(arg);
+    let mut components = path.components();
+    let Some(_external) = components.next() else {
+        return Cow::Borrowed(arg);
+    };
+    let Some(repo_name) = components.next() else {
+        return Cow::Borrowed(arg);
+    };
+    let junction = Path::new("external").join(repo_name);
+    let Ok(resolved) = std::fs::read_link(&junction) else {
+        return Cow::Borrowed(arg);
+    };
+    let remainder: std::path::PathBuf = components.collect();
+    if remainder.as_os_str().is_empty() {
+        return Cow::Borrowed(arg);
+    }
+    Cow::Owned(resolved.join(remainder).to_string_lossy().into_owned())
+}
+
+/// No-op on non-Windows: returns the argument unchanged without allocating.
+#[cfg(not(windows))]
+#[inline]
+pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
+    std::borrow::Cow::Borrowed(arg)
 }
 
 /// Apply substitutions to the given param file.
@@ -344,7 +400,8 @@ fn prepare_param_file(
         let mut pending_flag: Option<String> = None;
         for arg in read_file(filename)? {
             if let Some(flag) = pending_flag.take() {
-                let value = prepare_arg(arg, subst_mappings);
+                let mut value = arg;
+                crate::util::apply_substitutions(&mut value, subst_mappings);
                 match flag.as_str() {
                     "--env-file" => relocated.env_files.push(value),
                     "--arg-file" => relocated.arg_files.push(value),
@@ -356,9 +413,19 @@ fn prepare_param_file(
                 }
                 continue;
             }
-            let arg = prepare_arg(arg, subst_mappings);
+            let mut arg = arg;
+            crate::util::apply_substitutions(&mut arg, subst_mappings);
             // Strip worker-pipelining protocol flags; they must not reach rustc.
+            // Collect mode and rlib-path so the local-mode no-op optimization
+            // can detect when the full action's .rlib already exists.
             if is_pipelining_flag(&arg) {
+                if arg == "--pipelining-metadata" {
+                    relocated.pipelining_mode = Some(PipeliningMode::Metadata);
+                } else if arg == "--pipelining-full" {
+                    relocated.pipelining_mode = Some(PipeliningMode::Full);
+                } else if let Some(path) = arg.strip_prefix("--pipelining-rlib-path=") {
+                    relocated.pipelining_rlib_path = Some(path.to_string());
+                }
                 continue;
             }
             // Collect relocated process_wrapper flags (--output-file, etc.) that
@@ -370,8 +437,13 @@ fn prepare_param_file(
             }
             has_allow_features_flag |= is_allow_features_flag(&arg);
             if let Some(arg_file) = arg.strip_prefix('@') {
-                has_allow_features_flag |=
-                    process_file(arg_file, subst_mappings, read_file, write_to_file, relocated)?;
+                has_allow_features_flag |= process_file(
+                    arg_file,
+                    subst_mappings,
+                    read_file,
+                    write_to_file,
+                    relocated,
+                )?;
             } else {
                 write_to_file(&arg)?;
             }
@@ -379,8 +451,13 @@ fn prepare_param_file(
         Ok(has_allow_features_flag)
     }
     let mut relocated = RelocatedPwFlags::default();
-    let has_allow_features_flag =
-        process_file(filename, subst_mappings, read_file, write_to_file, &mut relocated)?;
+    let has_allow_features_flag = process_file(
+        filename,
+        subst_mappings,
+        read_file,
+        write_to_file,
+        &mut relocated,
+    )?;
     Ok((has_allow_features_flag, relocated))
 }
 
@@ -404,7 +481,8 @@ fn prepare_args(
     let mut read_file = read_file.unwrap_or(&mut read_file_wrapper);
 
     for arg in args.into_iter() {
-        let arg = prepare_arg(arg, subst_mappings);
+        let mut arg = arg;
+        crate::util::apply_substitutions(&mut arg, subst_mappings);
         if let Some(param_file) = arg.strip_prefix('@') {
             // Write the expanded paramfile to a temp directory to avoid issues
             // with sandbox filesystems where bazel-out symlinks may prevent the
@@ -444,8 +522,9 @@ fn prepare_args(
                 )),
             };
             let mut write_to_file = |s: &str| -> Result<(), OptionError> {
+                let s = resolve_external_path(s);
                 match out {
-                    Writer::Function(ref mut f) => f(&expanded_file, s),
+                    Writer::Function(ref mut f) => f(&expanded_file, &s),
                     Writer::BufWriter(ref mut bw) => writeln!(bw, "{s}").map_err(format_err),
                 }
             };
@@ -474,10 +553,20 @@ fn prepare_args(
             if pf_relocated.volatile_status_file.is_some() {
                 relocated.volatile_status_file = pf_relocated.volatile_status_file;
             }
+            if pf_relocated.pipelining_mode.is_some() {
+                relocated.pipelining_mode = pf_relocated.pipelining_mode;
+            }
+            if pf_relocated.pipelining_rlib_path.is_some() {
+                relocated.pipelining_rlib_path = pf_relocated.pipelining_rlib_path;
+            }
             processed_args.push(file);
         } else {
             allowed_features |= is_allow_features_flag(&arg);
-            processed_args.push(arg);
+            let resolved = resolve_external_path(&arg);
+            processed_args.push(match resolved {
+                std::borrow::Cow::Borrowed(_) => arg,
+                std::borrow::Cow::Owned(s) => s,
+            });
         }
     }
     if !allowed_features && require_explicit_unstable_features {
@@ -506,12 +595,8 @@ fn environment_block(
             *value = new;
         }
     }
-    for (f, replace_with) in subst_mappings {
-        for value in environment_variables.values_mut() {
-            let from = format!("${{{f}}}");
-            let new = value.replace(from.as_str(), replace_with);
-            *value = new;
-        }
+    for value in environment_variables.values_mut() {
+        crate::util::apply_substitutions(value, subst_mappings);
     }
     environment_variables
 }
@@ -628,24 +713,53 @@ mod test {
             Ok(())
         };
 
-        let (_, relocated) = prepare_param_file(
-            "test.params",
-            &[],
-            &mut read_file,
-            &mut write_to_file,
-        )
-        .unwrap();
+        let (_, relocated) =
+            prepare_param_file("test.params", &[], &mut read_file, &mut write_to_file).unwrap();
 
         // All relocated pw flags + values should be stripped from output.
         // Only the rustc flags should remain.
         assert_eq!(written, "src/lib.rs\n--crate-name=foo\n--crate-type=rlib");
 
         // Verify collected relocated flags.
-        assert_eq!(relocated.output_file.as_deref(), Some("bazel-out/foo/libbar.rmeta"));
+        assert_eq!(
+            relocated.output_file.as_deref(),
+            Some("bazel-out/foo/libbar.rmeta")
+        );
         assert_eq!(relocated.env_files, vec!["bazel-out/foo/build_script.env"]);
-        assert_eq!(relocated.arg_files, vec!["bazel-out/foo/build_script.linksearchpaths"]);
+        assert_eq!(
+            relocated.arg_files,
+            vec!["bazel-out/foo/build_script.linksearchpaths"]
+        );
         assert_eq!(relocated.rustc_output_format.as_deref(), Some("rendered"));
-        assert_eq!(relocated.stable_status_file.as_deref(), Some("bazel-out/stable-status.txt"));
-        assert_eq!(relocated.volatile_status_file.as_deref(), Some("bazel-out/volatile-status.txt"));
+        assert_eq!(
+            relocated.stable_status_file.as_deref(),
+            Some("bazel-out/stable-status.txt")
+        );
+        assert_eq!(
+            relocated.volatile_status_file.as_deref(),
+            Some("bazel-out/volatile-status.txt")
+        );
+    }
+
+    #[test]
+    fn resolve_external_path_non_rs_unchanged() {
+        let arg = "external/some_repo/src/lib.txt";
+        let result = resolve_external_path(arg);
+        assert_eq!(&*result, arg);
+    }
+
+    #[test]
+    fn resolve_external_path_non_external_unchanged() {
+        let arg = "src/main.rs";
+        let result = resolve_external_path(arg);
+        assert_eq!(&*result, arg);
+    }
+
+    #[test]
+    fn resolve_external_path_no_junction_unchanged() {
+        // When the junction doesn't exist (read_link fails), returns unchanged.
+        let arg = "external/nonexistent_repo_12345/src/lib.rs";
+        let result = resolve_external_path(arg);
+        assert_eq!(&*result, arg);
     }
 }

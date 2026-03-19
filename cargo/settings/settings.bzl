@@ -38,6 +38,29 @@ def cargo_manifest_dir_filename_suffixes_to_retain():
         ],
     )
 
+def symlink_exec_root_skip_patterns():
+    """A flag which specifies glob-like patterns for exec root entries to skip when symlinking
+    the exec root into `CARGO_MANIFEST_DIR`.
+
+    Each pattern is matched against exec root entry names. A pattern matches if it equals the
+    name exactly, or if it ends with `*` and the name starts with the prefix before the `*`.
+
+    Defaults cover Bazel worker directories (which hold locked handles on Windows and are
+    unnecessary on all platforms) and VCS directories (which can trick build scripts into
+    thinking they're in a checkout).
+    """
+    string_list_flag(
+        name = "symlink_exec_root_skip_patterns",
+        build_setting_default = [
+            # Worker temp dirs — hold locked handles on Windows; harmless to skip everywhere.
+            "local-spawn-runner.*",
+            "rules_rust_process_wrapper_deps_*",
+            # VCS directories — prevent build scripts from detecting a checkout.
+            ".git",
+            ".github",
+        ],
+    )
+
 def debug_std_streams_output_group():
     """A flag which adds a `streams` output group to `cargo_build_script` targets that contain \
     the raw `stderr` and `stdout` streams from the build script.

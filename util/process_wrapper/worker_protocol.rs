@@ -32,14 +32,14 @@ pub(super) struct WorkRequestContext {
 }
 
 impl WorkRequestContext {
-    pub(super) fn from_json(request: &JsonValue) -> Self {
-        Self {
+    pub(super) fn from_json(request: &JsonValue) -> Result<Self, String> {
+        Ok(Self {
             request_id: extract_request_id(request),
             arguments: extract_arguments(request),
-            sandbox_dir: extract_sandbox_dir(request),
+            sandbox_dir: extract_sandbox_dir(request)?,
             inputs: extract_inputs(request),
             cancel: extract_cancel(request),
-        }
+        })
     }
 }
 
@@ -89,13 +89,54 @@ pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
 }
 
 /// Extracts the `sandboxDir` field from a WorkRequest.
-pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Option<String> {
+///
+/// Returns `Ok(Some(dir))` if a usable sandbox directory is provided,
+/// `Ok(None)` if the field is absent, or `Err` if a `sandboxDir` was provided
+/// but the directory does not exist or is empty (unpopulated).
+///
+/// The error case indicates a misconfiguration: `--experimental_worker_multiplex_sandboxing`
+/// is enabled but the platform has no sandbox support (e.g. Windows). Rather than
+/// silently falling back — which would cause subtle failures in pipelining where
+/// the real execroot is only discoverable through sandbox symlinks — we surface
+/// a clear error directing the user to fix their Bazel configuration.
+pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<String>, String> {
     if let JsonValue::Object(map) = request {
         if let Some(JsonValue::String(dir)) = map.get("sandboxDir") {
-            return Some(dir.clone());
+            if dir.is_empty() {
+                return Ok(None);
+            }
+            if sandbox_dir_is_usable(dir) {
+                return Ok(Some(dir.clone()));
+            }
+            return Err(format!(
+                "Bazel sent sandboxDir=\"{}\" but the directory {}. \
+                 This typically means --experimental_worker_multiplex_sandboxing is enabled \
+                 on a platform without sandbox support (e.g. Windows). \
+                 Remove this flag or make it platform-specific \
+                 (e.g. build:linux --experimental_worker_multiplex_sandboxing).",
+                dir,
+                if std::path::Path::new(dir).exists() {
+                    "is empty (no symlinks to execroot)"
+                } else {
+                    "does not exist"
+                },
+            ));
         }
     }
-    None
+    Ok(None)
+}
+
+/// A sandbox directory is usable if it exists and contains at least one entry.
+///
+/// On platforms with real sandbox support (Linux), Bazel populates the directory
+/// with symlinks into the real execroot before sending the WorkRequest. On
+/// Windows, the directory may be created but left empty because there is no
+/// sandboxing implementation — an empty directory is not a usable sandbox.
+fn sandbox_dir_is_usable(dir: &str) -> bool {
+    match std::fs::read_dir(dir) {
+        Ok(mut entries) => entries.next().is_some(),
+        Err(_) => false,
+    }
 }
 
 /// Extracts the `inputs` array from a WorkRequest.

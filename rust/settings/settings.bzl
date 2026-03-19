@@ -625,6 +625,24 @@ def experimental_worker_pipelining():
         build --@rules_rust//rust/settings:experimental_incremental=true
         build --experimental_worker_multiplex_sandboxing
         build --strategy=Rustc=worker,sandboxed
+
+    Non-worker fallback behavior:
+        When workers are unavailable and Bazel falls back to local or sandboxed
+        execution, worker pipelining actions run two separate rustc invocations
+        (metadata + full) instead of one. The process_wrapper mitigates this with
+        a no-op optimization: the metadata action's rustc produces the .rlib as a
+        side-effect (via --emit=link); if the .rlib persists on disk (unsandboxed
+        local execution), the full action detects it and skips its own rustc,
+        guaranteeing SVH consistency from a single invocation per crate.
+
+        When the .rlib side-effect is NOT available (sandboxed execution discards
+        undeclared outputs, or the metadata action was an action-cache hit), the
+        full action falls through to running rustc normally. This works correctly
+        for deterministic proc macros (identical inputs produce identical SVH).
+        Nondeterministic proc macros (e.g. HashMap iteration in macro expansion)
+        may produce E0460 (SVH mismatch); the process_wrapper emits a diagnostic
+        directing the user to set experimental_worker_pipelining=false to fall
+        back to hollow-rlib pipelining, which is safe for all execution strategies.
     """
     bool_flag(
         name = "experimental_worker_pipelining",

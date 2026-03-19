@@ -5,6 +5,7 @@ load(
     "debug_std_streams_output_group",
     "experimental_symlink_execroot",
     "incompatible_runfiles_cargo_manifest_dir",
+    "symlink_exec_root_skip_patterns",
     "use_default_shell_env",
 )
 
@@ -28,5 +29,7 @@ debug_std_streams_output_group()
 experimental_symlink_execroot()
 
 incompatible_runfiles_cargo_manifest_dir()
+
+symlink_exec_root_skip_patterns()
 
 use_default_shell_env()

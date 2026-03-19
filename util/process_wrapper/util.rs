@@ -78,6 +78,92 @@ fn stamp_status_to_array(reader: impl Read) -> Result<Vec<(String, String)>, Str
         .collect()
 }
 
+/// Consolidates files from multiple `-Ldependency` directories into a single
+/// `unified_dir` using hard links (with copy fallback). This works around
+/// Windows rustc's ~32K search-path buffer limit that causes E0463 when many
+/// transitive `-Ldependency` entries are present.
+///
+/// Returns the number of files linked/copied. Skips directories that don't
+/// exist (e.g. action-cache artifacts not yet materialized) and duplicate
+/// filenames (first occurrence wins, case-insensitive on Windows).
+#[cfg(windows)]
+pub(crate) fn consolidate_deps_into(
+    dependency_dirs: &[impl AsRef<std::path::Path>],
+    unified_dir: &std::path::Path,
+) -> usize {
+    use std::collections::HashSet;
+
+    let mut seen = HashSet::new();
+    let mut count = 0usize;
+    for dir in dependency_dirs {
+        let entries = match std::fs::read_dir(dir.as_ref()) {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!(
+                    "consolidate_deps: skipping {}: {}",
+                    dir.as_ref().display(),
+                    e
+                );
+                continue;
+            }
+        };
+        for entry in entries.flatten() {
+            let file_type = match entry.file_type() {
+                Ok(ft) => ft,
+                Err(_) => continue,
+            };
+            if !(file_type.is_file() || file_type.is_symlink()) {
+                continue;
+            }
+            let file_name = entry.file_name();
+            let file_name_lower = file_name.to_string_lossy().to_ascii_lowercase();
+            if !seen.insert(file_name_lower) {
+                continue;
+            }
+            let dest = unified_dir.join(&file_name);
+            let src = entry.path();
+            match std::fs::hard_link(&src, &dest) {
+                Ok(_) => {}
+                Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {}
+                Err(e) => {
+                    eprintln!(
+                        "consolidate_deps: hard_link {} -> {} failed ({}), falling back to copy",
+                        src.display(),
+                        dest.display(),
+                        e
+                    );
+                    if let Err(copy_err) = std::fs::copy(&src, &dest) {
+                        eprintln!(
+                            "consolidate_deps: copy {} -> {} also failed: {}",
+                            src.display(),
+                            dest.display(),
+                            copy_err
+                        );
+                    }
+                }
+            }
+            count += 1;
+        }
+    }
+    count
+}
+
+/// Applies `${key}` → `value` substitution mappings to `s`.
+///
+/// On Windows, `std::fs::canonicalize` produces `\\?\` verbatim paths where
+/// forward slashes are literal, not separators. After substituting a value
+/// that contains `\\?\`, any remaining `/` in the result would break path
+/// resolution. This step can be omitted on other platforms.
+pub(crate) fn apply_substitutions(s: &mut String, subst: &[(String, String)]) {
+    for (k, v) in subst {
+        *s = s.replace(&format!("${{{k}}}"), v);
+    }
+    #[cfg(windows)]
+    if s.contains(r"\\?\") {
+        *s = s.replace('/', r"\");
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
