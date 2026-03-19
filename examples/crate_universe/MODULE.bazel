@@ -516,6 +516,13 @@ no_cargo.spec(
     version = "0.4",
 )
 no_cargo.spec(
+    features = ["util"],
+    package = "tower",
+    package_alias = "tower_new",  # used in package_alias test
+    repositories = ["no_cargo"],
+    version = "0.5.3",
+)
+no_cargo.spec(
     features = ["trace"],
     package = "tower-http",
     repositories = ["no_cargo"],
