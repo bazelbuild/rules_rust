@@ -193,7 +193,7 @@ def rust_register_toolchains(
         sha256s (str, optional): A dict associating tool subdirectories to sha256 hashes.
         extra_target_triples (list, optional): Additional rust-style targets that rust toolchains should support.
         extra_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.
-        extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
+        extra_exec_rustc_flags (dict, list, optional): Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.
         strip_level (dict, dict, optional): Dictionary of target triples to strip config.
         urls (list, optional): A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).
         versions (list, optional): A list of toolchain versions to download. This parameter only accepts one versions
