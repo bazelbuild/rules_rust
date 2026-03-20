@@ -254,73 +254,84 @@ impl RunfilesMaker {
         Ok(())
     }
 
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
+    /// Strip runfiles that do not match a retained suffix.
     ///
-    /// The Unix implementation assumes symlinks are supported and that the runfiles directory
-    /// was created using symlinks.
-    fn drain_runfiles_dir_unix(&self) -> Result<(), String> {
+    /// When `symlinks_used` is true the runfiles directory was populated with
+    /// symlinks: every entry is removed and only retained entries are copied
+    /// back as real files. When false, real file copies were used (Windows
+    /// without symlink support) and only retained entries are deleted so that
+    /// downstream steps can recreate them.
+    ///
+    /// Missing entries are tolerated in either mode — on Windows the runfiles
+    /// directory may be incomplete (e.g. a Cargo.lock that was never created).
+    fn drain_runfiles_dir_impl(&self, symlinks_used: bool) -> Result<(), String> {
         for (src, dest) in &self.runfiles {
             let abs_dest = self.output_dir.join(dest);
-
-            remove_symlink(&abs_dest).map_err(|e| {
-                format!(
-                    "Failed to delete symlink '{}' with {:?}",
-                    abs_dest.display(),
-                    e
-                )
-            })?;
-
-            if !self
+            let should_retain = self
                 .filename_suffixes_to_retain
                 .iter()
-                .any(|suffix| dest.ends_with(suffix))
-            {
-                if let Some(parent) = abs_dest.parent() {
-                    if is_dir_empty(parent).map_err(|e| {
-                        format!("Failed to determine if directory was empty with: {:?}", e)
-                    })? {
-                        std::fs::remove_dir(parent).map_err(|e| {
-                            format!(
-                                "Failed to delete directory {} with {:?}",
-                                parent.display(),
-                                e
-                            )
-                        })?;
+                .any(|suffix| dest.ends_with(suffix));
+
+            if symlinks_used {
+                match remove_symlink(&abs_dest) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        if !should_retain {
+                            continue;
+                        }
+                    }
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to delete symlink '{}' with {:?}",
+                            abs_dest.display(),
+                            e
+                        ));
                     }
                 }
+
+                if !should_retain {
+                    if let Some(parent) = abs_dest.parent() {
+                        if is_dir_empty(parent).map_err(|e| {
+                            format!("Failed to determine if directory was empty with: {:?}", e)
+                        })? {
+                            std::fs::remove_dir(parent).map_err(|e| {
+                                format!(
+                                    "Failed to delete directory {} with {:?}",
+                                    parent.display(),
+                                    e
+                                )
+                            })?;
+                        }
+                    }
+                    continue;
+                }
+
+                std::fs::copy(src, &abs_dest).map_err(|e| {
+                    format!(
+                        "Failed to copy `{} -> {}` with {:?}",
+                        src.display(),
+                        abs_dest.display(),
+                        e
+                    )
+                })?;
+            } else if !should_retain {
+                // Non-symlink mode: non-retained files are left as-is (no
+                // empty-directory cleanup needed since the files were never
+                // removed in the first place).
                 continue;
+            } else {
+                match std::fs::remove_file(&abs_dest) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to remove file {} with {:?}",
+                            abs_dest.display(),
+                            e
+                        ));
+                    }
+                }
             }
-
-            std::fs::copy(src, &abs_dest).map_err(|e| {
-                format!(
-                    "Failed to copy `{} -> {}` with {:?}",
-                    src.display(),
-                    abs_dest.display(),
-                    e
-                )
-            })?;
-        }
-        Ok(())
-    }
-
-    /// Delete runfiles from the runfiles directory that do not match user defined suffixes
-    ///
-    /// The Windows implementation assumes symlinks are not supported and real files will have
-    /// been copied into the runfiles directory.
-    fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
-        for dest in self.runfiles.values() {
-            if !self
-                .filename_suffixes_to_retain
-                .iter()
-                .any(|suffix| dest.ends_with(suffix))
-            {
-                continue;
-            }
-
-            let abs_dest = self.output_dir.join(dest);
-            std::fs::remove_file(&abs_dest).map_err(|e| {
-                format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
-            })?;
         }
         Ok(())
     }
@@ -328,15 +339,10 @@ impl RunfilesMaker {
     /// Delete runfiles from the runfiles directory that do not match user defined suffixes
     pub fn drain_runfiles_dir(&self, out_dir: &Path) -> Result<(), String> {
         if cfg!(target_family = "windows") {
-            // If symlinks are supported then symlinks will have been used.
             let supports_symlinks = system_supports_symlinks(&self.output_dir)?;
-            if supports_symlinks {
-                self.drain_runfiles_dir_unix()?;
-            } else {
-                self.drain_runfiles_dir_windows()?;
-            }
+            self.drain_runfiles_dir_impl(supports_symlinks)?;
         } else {
-            self.drain_runfiles_dir_unix()?;
+            self.drain_runfiles_dir_impl(true)?;
         }
 
         // Due to the symlinks in `CARGO_MANIFEST_DIR`, some build scripts
@@ -434,6 +440,160 @@ mod tests {
         .unwrap();
 
         out_dir
+    }
+
+    /// Create a `RunfilesMaker` for testing without needing a param file.
+    fn make_runfiles_maker(
+        output_dir: PathBuf,
+        suffixes: &[&str],
+        runfiles: Vec<(PathBuf, RlocationPath)>,
+    ) -> RunfilesMaker {
+        RunfilesMaker {
+            output_dir,
+            filename_suffixes_to_retain: suffixes.iter().map(|s| s.to_string()).collect(),
+            runfiles: runfiles.into_iter().collect(),
+        }
+    }
+
+    /// Helper to create a unique test directory under TEST_TMPDIR.
+    fn test_dir(name: &str) -> PathBuf {
+        let test_tmp = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        let dir = test_tmp.join(name);
+        if dir.exists() {
+            fs::remove_dir_all(&dir).unwrap();
+        }
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[cfg(any(target_family = "windows", target_family = "unix"))]
+    #[test]
+    fn drain_symlinks_tolerates_missing_symlinks() {
+        let base = test_dir("drain_sym_missing");
+        let output_dir = base.join("runfiles");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        // Two distinct source files so BTreeMap keeps both entries.
+        let src_real = base.join("real.txt");
+        fs::write(&src_real, "content").unwrap();
+        let src_lock = base.join("Cargo.lock");
+        fs::write(&src_lock, "lock data").unwrap();
+
+        // Two runfile entries: one exists as a symlink, one does not.
+        let existing_dest = "pkg/real.txt";
+        let missing_dest = "pkg/Cargo.lock";
+        let abs_existing = output_dir.join(existing_dest);
+        fs::create_dir_all(abs_existing.parent().unwrap()).unwrap();
+        symlink(&src_real, &abs_existing).unwrap();
+        // Intentionally do NOT create a symlink for missing_dest.
+
+        let maker = make_runfiles_maker(
+            output_dir.clone(),
+            &[], // retain nothing
+            vec![
+                (src_real.clone(), existing_dest.to_string()),
+                (src_lock.clone(), missing_dest.to_string()),
+            ],
+        );
+
+        // Should succeed despite the missing symlink.
+        maker.drain_runfiles_dir_impl(true).unwrap();
+
+        // The existing symlink should have been removed.
+        assert!(!abs_existing.exists());
+    }
+
+    #[cfg(any(target_family = "windows", target_family = "unix"))]
+    #[test]
+    fn drain_symlinks_retains_matching_suffixes() {
+        let base = test_dir("drain_sym_retain");
+        let output_dir = base.join("runfiles");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        let src_file = base.join("lib.rs");
+        fs::write(&src_file, "fn main() {}").unwrap();
+
+        let src_lock = base.join("Cargo.lock");
+        fs::write(&src_lock, "lock contents").unwrap();
+
+        let rs_dest = "pkg/lib.rs";
+        let lock_dest = "pkg/Cargo.lock";
+
+        // Create symlinks for both entries.
+        let abs_rs = output_dir.join(rs_dest);
+        let abs_lock = output_dir.join(lock_dest);
+        fs::create_dir_all(abs_rs.parent().unwrap()).unwrap();
+        symlink(&src_file, &abs_rs).unwrap();
+        symlink(&src_lock, &abs_lock).unwrap();
+
+        let maker = make_runfiles_maker(
+            output_dir.clone(),
+            &[".rs"], // only retain .rs files
+            vec![
+                (src_file.clone(), rs_dest.to_string()),
+                (src_lock.clone(), lock_dest.to_string()),
+            ],
+        );
+
+        maker.drain_runfiles_dir_impl(true).unwrap();
+
+        // .rs file should be retained (copied back as a real file, not a symlink).
+        assert!(abs_rs.exists());
+        assert!(!abs_rs.is_symlink());
+        assert_eq!(fs::read_to_string(&abs_rs).unwrap(), "fn main() {}");
+
+        // .lock file should have been removed.
+        assert!(!abs_lock.exists());
+    }
+
+    #[cfg(any(target_family = "windows", target_family = "unix"))]
+    #[test]
+    fn drain_symlinks_missing_with_retained_suffix_still_copies() {
+        let base = test_dir("drain_sym_missing_retain");
+        let output_dir = base.join("runfiles");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        let src_file = base.join("lib.rs");
+        fs::write(&src_file, "fn main() {}").unwrap();
+
+        let dest = "pkg/lib.rs";
+        // Create the parent dir but NOT the symlink.
+        fs::create_dir_all(output_dir.join("pkg")).unwrap();
+
+        let maker = make_runfiles_maker(
+            output_dir.clone(),
+            &[".rs"], // retain .rs files
+            vec![(src_file.clone(), dest.to_string())],
+        );
+
+        // Should succeed — missing symlink is tolerated, file is still copied.
+        maker.drain_runfiles_dir_impl(true).unwrap();
+
+        let abs_dest = output_dir.join(dest);
+        assert!(abs_dest.exists());
+        assert!(!abs_dest.is_symlink());
+        assert_eq!(fs::read_to_string(&abs_dest).unwrap(), "fn main() {}");
+    }
+
+    #[cfg(any(target_family = "windows", target_family = "unix"))]
+    #[test]
+    fn drain_no_symlinks_tolerates_missing_files() {
+        let base = test_dir("drain_nosym_missing");
+        let output_dir = base.join("runfiles");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        let src_file = base.join("real.txt");
+        fs::write(&src_file, "content").unwrap();
+
+        // Retain .txt but the file doesn't exist in the runfiles dir.
+        let maker = make_runfiles_maker(
+            output_dir.clone(),
+            &[".txt"],
+            vec![(src_file.clone(), "pkg/real.txt".to_string())],
+        );
+
+        // Should succeed despite the missing file.
+        maker.drain_runfiles_dir_impl(false).unwrap();
     }
 
     #[cfg(any(target_family = "windows", target_family = "unix"))]
