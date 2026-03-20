@@ -232,10 +232,26 @@ impl Runfiles {
         let path_mapping = manifest_content
             .lines()
             .flat_map(|line| {
-                let pair = line
+                let raw_pair = line
+                    .strip_prefix(' ')
+                    .unwrap_or(line)
                     .split_once(' ')
                     .ok_or(RunfilesError::RunfilesManifestInvalidFormat)?;
-                Ok::<(PathBuf, PathBuf), RunfilesError>((pair.0.into(), pair.1.into()))
+                let pair = if line.starts_with(' ') {
+                    // Unescape according to src/main/java/com/google/devtools/build/lib/analysis/SourceManifestAction.java.
+                    (
+                        raw_pair
+                            .0
+                            .replace("\\s", " ")
+                            .replace("\\n", "\n")
+                            .replace("\\b", "\\")
+                            .into(),
+                        raw_pair.1.replace("\\n", "\n").replace("\\b", "\\").into(),
+                    )
+                } else {
+                    (raw_pair.0.into(), raw_pair.1.into())
+                };
+                Ok::<(PathBuf, PathBuf), RunfilesError>(pair)
             })
             .collect::<HashMap<_, _>>();
         Ok(Mode::ManifestBased(path_mapping))
@@ -629,6 +645,43 @@ mod test {
                 f.read_to_string(&mut buffer).unwrap();
 
                 assert_eq!("Example Text!", buffer);
+            },
+        );
+    }
+
+    #[test]
+    fn test_manifest_parsing() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let manifest_file = temp_dir.join("test_manifest_parsing.manifest");
+        std::fs::write(
+            &manifest_file,
+            [
+                "a/b c/d\n",
+                " a\\sb/c\\nd\\be f g/h\\ni\\bj\n",
+                "empty-file \n",
+            ]
+            .join("\n"),
+        )
+        .unwrap();
+
+        with_mock_env(
+            [
+                (MANIFEST_FILE_ENV_VAR, Some(manifest_file.to_str().unwrap())),
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+                assert_eq!(r.rlocation("a/b"), Some(PathBuf::from("c/d")));
+                // Note that the `\s` is not escaped in the link, so not testing for it.
+                assert_eq!(
+                    r.rlocation("a b/c\nd\\e"),
+                    Some(PathBuf::from("f g/h\ni\\j"))
+                );
+                assert_eq!(r.rlocation("empty-file"), Some(PathBuf::from("")));
+                assert_eq!(r.rlocation("does/not/exist"), None);
             },
         );
     }
