@@ -1536,6 +1536,15 @@ def rustc_compile_action(
     # (rustc exits naturally after writing .rmeta, no process-wrapper kill needed).
     use_hollow_rlib = bool(build_metadata) and crate_info.type in ("rlib", "lib") and not use_worker_pipelining
 
+    # Include pipelining mode in rustc flags so the action cache key differs
+    # between pipelining modes. Different modes produce .rlib/.rmeta with
+    # different SVH chains that are incompatible — sharing cached outputs
+    # across modes causes "can't find crate" errors (E0463).
+    if use_worker_pipelining:
+        rust_flags = rust_flags + ["--cfg=rules_rust_worker_pipelining"]
+    elif use_hollow_rlib:
+        rust_flags = rust_flags + ["--cfg=rules_rust_hollow_rlib"]
+
     # Determine whether to use cc_common.link:
     #  * either if experimental_use_cc_common_link is 1,
     #  * or if experimental_use_cc_common_link is -1 and
