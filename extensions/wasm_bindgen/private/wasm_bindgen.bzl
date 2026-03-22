@@ -176,7 +176,7 @@ WASM_BINDGEN_ATTR = {
         mandatory = True,
     ),
     "_allowlist_function_transition": attr.label(
-        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
     ),
 }
 
