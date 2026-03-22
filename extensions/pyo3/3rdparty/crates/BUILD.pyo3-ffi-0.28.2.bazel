@@ -21,7 +21,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "memoffset",
+    name = "pyo3_ffi",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -39,10 +39,16 @@ rust_library(
         ],
     ),
     crate_features = [
+        "abi3",
+        "abi3-py311",
+        "abi3-py312",
+        "abi3-py313",
+        "abi3-py314",
         "default",
+        "extension-module",
     ],
     crate_root = "src/lib.rs",
-    edition = "2015",
+    edition = "2021",
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -51,7 +57,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=memoffset",
+        "crate-name=pyo3-ffi",
         "manual",
         "noclippy",
         "norustfmt",
@@ -104,9 +110,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.9.1",
+    version = "0.28.2",
     deps = [
-        "@rpyo3c__memoffset-0.9.1//:build_script_build",
+        "@rpyo3c__libc-0.2.176//:libc",
+        "@rpyo3c__pyo3-ffi-0.28.2//:build_script_build",
     ],
 )
 
@@ -116,6 +123,14 @@ cargo_build_script(
         include = ["**/*.rs"],
         allow_empty = True,
     ),
+    build_script_env = {
+        "PYO3_CROSS": "$(PYO3_CROSS)",
+        "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+        "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+        "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+        "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+        "PYO3_PYTHON": "$(PYO3_PYTHON)",
+    },
     compile_data = glob(
         include = ["**"],
         allow_empty = True,
@@ -130,7 +145,13 @@ cargo_build_script(
         ],
     ),
     crate_features = [
+        "abi3",
+        "abi3-py311",
+        "abi3-py312",
+        "abi3-py313",
+        "abi3-py314",
         "default",
+        "extension-module",
     ],
     crate_name = "build_script_build",
     crate_root = "build.rs",
@@ -145,9 +166,12 @@ cargo_build_script(
             "WORKSPACE",
             "WORKSPACE.bazel",
         ],
-    ),
-    edition = "2015",
-    pkg_name = "memoffset",
+    ) + [
+        "@rules_rust_pyo3//:current_pyo3_toolchain",
+    ],
+    edition = "2021",
+    links = "python",
+    pkg_name = "pyo3-ffi",
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -156,15 +180,16 @@ cargo_build_script(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=memoffset",
+        "crate-name=pyo3-ffi",
         "manual",
         "noclippy",
         "norustfmt",
     ],
-    version = "0.9.1",
+    toolchains = ["@rules_rust_pyo3//:current_pyo3_toolchain"],
+    version = "0.28.2",
     visibility = ["//visibility:private"],
     deps = [
-        "@rpyo3c__autocfg-1.5.0//:autocfg",
+        "@rpyo3c__pyo3-build-config-0.28.2//:pyo3_build_config",
     ],
 )
 

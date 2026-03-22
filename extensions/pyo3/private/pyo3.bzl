@@ -150,7 +150,10 @@ def _py_pyo3_library_impl(ctx):
     providers = [
         DefaultInfo(
             files = depset([ext]),
-            runfiles = ctx.runfiles(transitive_files = depset(files, transitive = [crate_info.data])),
+            runfiles = ctx.runfiles(
+                files = [ext],
+                transitive_files = depset(files, transitive = [crate_info.data]),
+            ),
         ),
         PyInfo(
             imports = _get_imports(ctx, ctx.attr.imports),

@@ -45,7 +45,7 @@ load(
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 load(
-    "//private:wasm_bindgen_test.bzl",
+    "//private:wasm_bindgen_test_wrapper.bzl",
     _rust_wasm_bindgen_test = "rust_wasm_bindgen_test",
 )
 
