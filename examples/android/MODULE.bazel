@@ -21,7 +21,7 @@ bazel_dep(name = "rules_jvm_external", version = "6.6")
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 use_repo(maven, "maven")
 
-bazel_dep(name = "rules_android", version = "0.6.0", repo_name = "build_bazel_rules_android")
+bazel_dep(name = "rules_android", version = "0.7.1")
 bazel_dep(name = "rules_android_ndk", version = "0.1.3")
 
 ###############################################################################

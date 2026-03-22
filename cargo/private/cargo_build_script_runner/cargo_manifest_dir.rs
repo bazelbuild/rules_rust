@@ -273,6 +273,25 @@ impl RunfilesMaker {
                 )
             })?;
         }
+
+        // If the runfiles dir is empty add an empty file to the directory to
+        // avoid an upstream Bazel bug https://github.com/bazelbuild/bazel/issues/28286
+        if self
+            .output_dir
+            .read_dir()
+            .map(|read| read.count())
+            .unwrap_or(1)
+            == 0
+        {
+            std::fs::write(self.output_dir.join(".empty"), "").unwrap_or_else(|e| {
+                panic!(
+                    "Failed to write empty file to OUT_DIR `{}`\n{:?}",
+                    self.output_dir.display(),
+                    e
+                )
+            })
+        }
+
         Ok(())
     }
 

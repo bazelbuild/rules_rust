@@ -64,8 +64,6 @@ rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 EOF
-  # See github.com/bazelbuild/rules_rust/issues/2317.
-  echo "build --noincompatible_sandbox_hermetic_tmp" > "${new_workspace}/.bazelrc"
 
   if [[ -f "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" ]]; then
     cp "${BUILD_WORKSPACE_DIRECTORY}/.bazelversion" "${new_workspace}/.bazelversion"
