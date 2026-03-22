@@ -254,7 +254,6 @@ also be set either in the command line or in the project's <code>.bazelrc</code>
 <ul>
 <li><a href="rust_bindgen.html">rust_bindgen</a>: rules for generating C++ bindings.</li>
 <li><a href="rust_prost.html">rust_prost</a>: rules for generating <a href="https://developers.google.com/protocol-buffers">protobuf</a> and <a href="https://grpc.io">gRPC</a> stubs using <a href="https://github.com/tokio-rs/prost">prost</a>.</li>
-<li><a href="rust_protobuf.html">rust_protobuf</a>: rules for generating <a href="https://developers.google.com/protocol-buffers">protobuf</a> and <a href="https://grpc.io">gRPC</a> stubs with <a href="https://github.com/stepancheg/rust-protobuf/">rust-protobuf</a></li>
 <li><a href="rust_pyo3.html">rust_pyo3</a>: Bazel rules for <a href="https://pyo3.rs/v0.23.4/">PyO3</a>.</li>
 <li><a href="rust_wasm_bindgen.html">rust_wasm_bindgen</a>: rules for generating <a href="https://www.rust-lang.org/what/wasm">WebAssembly</a> bindings.</li>
 </ul>
@@ -4033,161 +4032,6 @@ actions with minimal impact to other consumers.</p>
 <tr><td style="text-align: left"><a id="rust_prost_transform-tonic_opts"></a>tonic_opts</td><td style="text-align: left">Additional options to add to Tonic.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
-<h1 id="rules_rust_protobuf"><a class="header" href="#rules_rust_protobuf">rules_rust_protobuf</a></h1>
-<p>These build rules are used for building <a href="https://developers.google.com/protocol-buffers/">protobufs</a>/<a href="https://grpc.io">gRPC</a> in <a href="http://www.rust-lang.org/">Rust</a> with Bazel
-using <a href="https://github.com/stepancheg/rust-protobuf/"><code>rust-protobuf</code></a>.</p>
-<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
-<p>To use the Rust proto rules, add the following to your <code>WORKSPACE</code> file to add the
-external repositories for the Rust proto toolchain (in addition to the <a href="..">rust rules setup</a>):</p>
-<pre><code class="language-python">load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_dependencies", "rust_proto_protobuf_register_toolchains")
-
-rust_proto_protobuf_dependencies()
-
-rust_proto_protobuf_register_toolchains()
-
-load("@rules_rust//proto/protobuf:transitive_repositories.bzl", "rust_proto_protobuf_transitive_repositories")
-
-rust_proto_protobuf_transitive_repositories()
-</code></pre>
-<p>This will load the required dependencies for the <a href="https://github.com/stepancheg/rust-protobuf/"><code>rust-protobuf</code></a> rules. It will also
-register a default toolchain for the <code>rust_proto_library</code> and <code>rust_grpc_library</code> rules.</p>
-<p>To customize the <code>rust_proto_library</code> and <code>rust_grpc_library</code> toolchain, please see the section
-<a href="rust_protobuf.html#custom-proto-deps">Customizing <code>rust-protobuf</code> Dependencies</a>.</p>
-<p>For additional information about Bazel toolchains, see <a href="https://docs.bazel.build/versions/master/toolchains.html">here</a>.</p>
-<h4 id="customizing-rust-protobuf-dependencies"><a class="header" href="#customizing-rust-protobuf-dependencies"><a name="custom-proto-deps">Customizing <code>rust-protobuf</code> Dependencies</a></h4>
-<p>These rules depend on the <a href="https://crates.io/crates/protobuf"><code>protobuf</code></a> and
-the <a href="https://crates.io/crates/grpc"><code>grpc</code></a> crates in addition to the <a href="https://github.com/google/protobuf">protobuf
-compiler</a>. To obtain these crates,
-<code>rust_proto_repositories</code> imports the given crates using BUILD files generated with
-<a href="./crate_universe.html">crate_universe</a>.</p>
-<p>If you want to either change the protobuf and gRPC rust compilers, or to
-simply use <a href="./crate_universe.html">crate_universe</a> in a more
-complex scenario (with more dependencies), you must redefine those
-dependencies.</p>
-<p>To do this, once you've imported the needed dependencies (see our
-<a href="https://github.com/bazelbuild/rules_rust/blob/main/proto/protobuf/3rdparty/BUILD.bazel">@rules_rust//proto/protobuf/3rdparty/BUILD.bazel</a>
-file to see the default dependencies), you need to create your own toolchain.
-To do so you can create a BUILD file with your toolchain definition, for example:</p>
-<pre><code class="language-python">load("@rules_rust//proto:toolchain.bzl", "rust_proto_toolchain")
-
-rust_proto_toolchain(
-    name = "proto-toolchain-impl",
-    # Path to the protobuf compiler.
-    protoc = "@com_google_protobuf//:protoc",
-    # Protobuf compiler plugin to generate rust gRPC stubs.
-    grpc_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust_grpc",
-    # Protobuf compiler plugin to generate rust protobuf stubs.
-    proto_plugin = "//3rdparty/crates:cargo_bin_protoc_gen_rust",
-)
-
-toolchain(
-    name = "proto-toolchain",
-    toolchain = ":proto-toolchain-impl",
-    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
-)
-</code></pre>
-<p>Now that you have your own toolchain, you need to register it by
-inserting the following statement in your <code>WORKSPACE</code> file:</p>
-<pre><code class="language-python">register_toolchains("//my/toolchains:proto-toolchain")
-</code></pre>
-<p>Finally, you might want to set the <code>rust_deps</code> attribute in
-<code>rust_proto_library</code> and <code>rust_grpc_library</code> to change the compile-time
-dependencies:</p>
-<pre><code class="language-python">rust_proto_library(
-    ...
-    rust_deps = ["//3rdparty/crates:protobuf"],
-    ...
-)
-
-rust_grpc_library(
-    ...
-    rust_deps = [
-        "//3rdparty/crates:protobuf",
-        "//3rdparty/crates:grpc",
-        "//3rdparty/crates:tls_api",
-        "//3rdparty/crates:tls_api_stub",
-    ],
-    ...
-)
-</code></pre>
-<p><strong>Note</strong>: Ideally, we would inject those dependencies from the toolchain,
-but due to <a href="https://github.com/bazelbuild/bazel/issues/6889">bazelbuild/bazel#6889</a>
-all dependencies added via the toolchain ends-up being in the wrong
-configuration.</p>
-<hr />
-<hr />
-<p><a id="rust_grpc_library"></a></p>
-<h2 id="rust_grpc_library"><a class="header" href="#rust_grpc_library">rust_grpc_library</a></h2>
-<pre>
-load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
-
-rust_grpc_library(<a href="rust_protobuf.html#rust_grpc_library-name">name</a>, <a href="rust_protobuf.html#rust_grpc_library-deps">deps</a>, <a href="rust_protobuf.html#rust_grpc_library-crate_name">crate_name</a>, <a href="rust_protobuf.html#rust_grpc_library-rust_deps">rust_deps</a>, <a href="rust_protobuf.html#rust_grpc_library-rustc_flags">rustc_flags</a>)
-</pre>
-<p>Builds a Rust library crate from a set of <code>proto_library</code>s suitable for gRPC.</p>
-<p>Example:</p>
-<pre><code class="language-python">load("@rules_rust_protobuf//:defs.bzl", "rust_grpc_library")
-
-proto_library(
-    name = "my_proto",
-    srcs = ["my.proto"]
-)
-
-rust_grpc_library(
-    name = "rust",
-    deps = [":my_proto"],
-)
-
-rust_binary(
-    name = "my_service",
-    srcs = ["my_service.rs"],
-    deps = [":rust"],
-)
-</code></pre>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_grpc_library-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_grpc_library-deps"></a>deps</td><td style="text-align: left">List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding gRPC stubs.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_grpc_library-crate_name"></a>crate_name</td><td style="text-align: left">Crate name to use for this target.<br><br>This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores. Defaults to the target name, with any hyphens replaced by underscores.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_grpc_library-rust_deps"></a>rust_deps</td><td style="text-align: left">The crates the generated library depends on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_grpc_library-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="rust_proto_library"></a></p>
-<h2 id="rust_proto_library"><a class="header" href="#rust_proto_library">rust_proto_library</a></h2>
-<pre>
-load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
-
-rust_proto_library(<a href="rust_protobuf.html#rust_proto_library-name">name</a>, <a href="rust_protobuf.html#rust_proto_library-deps">deps</a>, <a href="rust_protobuf.html#rust_proto_library-crate_name">crate_name</a>, <a href="rust_protobuf.html#rust_proto_library-rust_deps">rust_deps</a>, <a href="rust_protobuf.html#rust_proto_library-rustc_flags">rustc_flags</a>)
-</pre>
-<p>Builds a Rust library crate from a set of <code>proto_library</code>s.</p>
-<p>Example:</p>
-<pre><code class="language-python">load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
-
-proto_library(
-    name = "my_proto",
-    srcs = ["my.proto"]
-)
-
-rust_proto_library(
-    name = "rust",
-    deps = [":my_proto"],
-)
-
-rust_binary(
-    name = "my_proto_binary",
-    srcs = ["my_proto_binary.rs"],
-    deps = [":rust"],
-)
-</code></pre>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_proto_library-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_proto_library-deps"></a>deps</td><td style="text-align: left">List of proto_library dependencies that will be built. One crate for each proto_library will be created with the corresponding stubs.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_proto_library-crate_name"></a>crate_name</td><td style="text-align: left">Crate name to use for this target.<br><br>This must be a valid Rust identifier, i.e. it may contain only alphanumeric characters and underscores. Defaults to the target name, with any hyphens replaced by underscores.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_proto_library-rust_deps"></a>rust_deps</td><td style="text-align: left">The crates the generated library depends on.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_proto_library-rustc_flags"></a>rustc_flags</td><td style="text-align: left">List of compiler flags passed to <code>rustc</code>.<br><br>These strings are subject to Make variable expansion for predefined source/output path variables like <code>$location</code>, <code>$execpath</code>, and <code>$rootpath</code>. This expansion is useful if you wish to pass a generated file of arguments to rustc: <code>@$(location //package:target)</code>.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-</tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_pyo3"><a class="header" href="#rules_rust_pyo3">rules_rust_pyo3</a></h1>
 <p><a id="pyo3_toolchain"></a></p>
 <h2 id="pyo3_toolchain"><a class="header" href="#pyo3_toolchain">pyo3_toolchain</a></h2>
@@ -4305,7 +4149,7 @@ pyo3_extension(*, <a href="rust_pyo3.html#pyo3_extension-name">name</a>, <a href
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a></li>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-11"><a class="header" href="#setup-11">Setup</a></h2>
+<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
 <p>To begin using the <code>wasm-bindgen</code> rules, users can load the necessary dependencies
 in their workspace by adding the following to their <code>WORKSPACE.bazel</code> file.</p>
 <pre><code class="language-python">load("@rules_rust_wasm_bindgen//:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
