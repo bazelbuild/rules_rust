@@ -50,10 +50,8 @@ def _rust_impl(module_ctx):
 
     toolchain_triples = dict(DEFAULT_TOOLCHAIN_TRIPLES)
 
-    repository_sets = root.tags.repository_set
-
     grouped_repository_sets = {}
-    for repository_set in repository_sets:
+    for repository_set in root.tags.repository_set:
         if repository_set.name not in grouped_repository_sets:
             grouped_repository_sets[repository_set.name] = {
                 "allocator_library": repository_set.allocator_library,
@@ -62,21 +60,27 @@ def _rust_impl(module_ctx):
                 "exec_triple": repository_set.exec_triple,
                 "extra_target_triples": {repository_set.target_triple: [str(v) for v in repository_set.target_compatible_with]},
                 "name": repository_set.name,
+                "opt_level": {repository_set.target_triple: repository_set.opt_level} if repository_set.opt_level else None,
                 "rustfmt_version": repository_set.rustfmt_version,
                 "sha256s": repository_set.sha256s,
+                "target_settings": [str(v) for v in repository_set.target_settings],
                 "urls": repository_set.urls,
                 "versions": repository_set.versions,
             }
         else:
             for attr_name in _RUST_REPOSITORY_SET_TAG_ATTRS.keys():
-                if attr_name in ["extra_target_triples", "name", "target_compatible_with", "target_triple"]:
+                if attr_name in ["extra_target_triples", "name", "target_compatible_with", "target_triple", "opt_level"]:
                     continue
                 attr_value = getattr(repository_set, attr_name, None)
                 if attr_value:
                     default_value = _COMMON_TAG_DEFAULTS.get(attr_name, None)
                     if not default_value or attr_value != default_value:
-                        fail("You must only set {} on the first call to repository_set for a particular name but it was set multiple times for {}".format(attr_name, repository_set.name))
+                        fail("You must only set `{}` on the first call to `repository_set` for a particular name but it was set multiple times for `{}`".format(attr_name, repository_set.name))
             grouped_repository_sets[repository_set.name]["extra_target_triples"][repository_set.target_triple] = [str(v) for v in repository_set.target_compatible_with]
+            if repository_set.opt_level:
+                if grouped_repository_sets[repository_set.name]["opt_level"] == None:
+                    grouped_repository_sets[repository_set.name]["opt_level"] = {}
+                grouped_repository_sets[repository_set.name]["opt_level"][repository_set.target_triple] = repository_set.opt_level
 
     extra_toolchain_infos = {}
 
@@ -119,6 +123,7 @@ def _rust_impl(module_ctx):
                 register_toolchains = False,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
+                target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
             )
     metadata_kwargs = {}
@@ -127,7 +132,7 @@ def _rust_impl(module_ctx):
     return module_ctx.extension_metadata(**metadata_kwargs)
 
 _COMMON_TAG_DEFAULTS = {
-    "allocator_library": "@rules_rust//ffi/cc/allocator_library",
+    "allocator_library": "",
     "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
     "urls": DEFAULT_STATIC_RUST_URL_TEMPLATES,
 }
@@ -167,8 +172,14 @@ _RUST_REPOSITORY_SET_TAG_ATTRS = {
     "name": attr.string(
         doc = "Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing.",
     ),
+    "opt_level": attr.string_dict(
+        doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
+    ),
     "target_compatible_with": attr.label_list(
         doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for.",
+    ),
+    "target_settings": attr.label_list(
+        doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
     ),
     "target_triple": attr.string(
         doc = "target_triple to configure.",
@@ -213,6 +224,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
+        ),
+        "target_settings": attr.label_list(
+            doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
         "versions": attr.string_list(
             doc = (

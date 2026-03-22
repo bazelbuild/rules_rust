@@ -1,5 +1,6 @@
 //! A utility for cross compiling binaries using Cross
 
+use runfiles::{rlocation, Runfiles};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use std::{env, fs};
@@ -22,7 +23,13 @@ struct Options {
 fn prepare_workspace(workspace_root: &Path) {
     // Unfortunately, cross runs into issues when cross compiling incrementally.
     // To avoid this, the workspace must be cleaned
-    let cargo = env::current_dir().unwrap().join(env!("CARGO"));
+    let r = Runfiles::create().unwrap();
+    let cargo = rlocation!(r, env!("CARGO")).unwrap();
+
+    if !cargo.exists() {
+        panic!("Cargo binary not found at {}", cargo.display());
+    }
+
     Command::new(cargo)
         .current_dir(workspace_root)
         .arg("clean")
@@ -32,7 +39,19 @@ fn prepare_workspace(workspace_root: &Path) {
 
 /// Execute a build for the provided platform
 fn execute_cross(working_dir: &Path, target_triple: &str) {
-    let cross = env::current_dir().unwrap().join(env!("CROSS_BIN"));
+    let r = Runfiles::create().unwrap();
+    let cross = rlocation!(r, env!("CROSS_BIN")).unwrap();
+
+    if !cross.exists() {
+        panic!("Cross binary not found at {}", cross.display());
+    }
+
+    let cross_config = rlocation!(r, env!("CROSS_CONFIG_RLOCATION")).unwrap();
+
+    if !cross_config.exists() {
+        panic!("Cross config not found at {}", cross_config.display());
+    }
+
     let status = Command::new(cross)
         .current_dir(working_dir)
         .arg("build")
@@ -43,6 +62,7 @@ fn execute_cross(working_dir: &Path, target_triple: &str) {
         .arg(format!("--target={target_triple}"))
         // https://github.com/cross-rs/cross/issues/1447
         .env("CROSS_NO_WARNINGS", "0")
+        .env("CROSS_CONFIG", cross_config)
         .status()
         .unwrap();
 

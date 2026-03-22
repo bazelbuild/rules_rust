@@ -11,6 +11,13 @@ load(
     "assert_argv_contains_prefix_not",
 )
 
+# TODO: `rust_doc_test` currently does not work on Windows.
+# https://github.com/bazelbuild/rules_rust/issues/1156
+NOT_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 def _get_rustdoc_action(env, tut):
     actions = tut.actions
     action = actions[0]
@@ -185,6 +192,7 @@ def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = []
         crate = ":{}".format(name),
         deps = rustdoc_deps,
         proc_macro_deps = rustdoc_proc_macro_deps,
+        target_compatible_with = NOT_WINDOWS,
     )
 
 def _define_targets():
@@ -359,6 +367,7 @@ def _define_targets():
     rust_doc_test(
         name = "rustdoc_test_with_alias_test",
         crate = ":lib_dep_with_alias",
+        target_compatible_with = NOT_WINDOWS,
     )
 
 def rustdoc_test_suite(name):

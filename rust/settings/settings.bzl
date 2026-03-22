@@ -14,13 +14,17 @@ load(
     _capture_clippy_output = "capture_clippy_output",
     _clippy_flag = "clippy_flag",
     _clippy_flags = "clippy_flags",
+    _clippy_output_diagnostics = "clippy_output_diagnostics",
 )
 load("//rust/private:lto.bzl", "rust_lto_flag")
 load(
     "//rust/private:rustc.bzl",
+    _always_enable_metadata_output_groups = "always_enable_metadata_output_groups",
     _error_format = "error_format",
+    _extra_exec_rustc_env = "extra_exec_rustc_env",
     _extra_exec_rustc_flag = "extra_exec_rustc_flag",
     _extra_exec_rustc_flags = "extra_exec_rustc_flags",
+    _extra_rustc_env = "extra_rustc_env",
     _extra_rustc_flag = "extra_rustc_flag",
     _extra_rustc_flags = "extra_rustc_flags",
     _no_std = "no_std",
@@ -74,6 +78,19 @@ def rename_first_party_crates():
         build_setting_default = False,
     )
 
+def require_explicit_unstable_features():
+    """A flag controlling whether unstable features should be disallowed by default
+
+    If true, an empty `-Zallow-features=` will be added to the rustc command line whenever no other
+    `-Zallow-features=` is present in the rustc flags. The effect is to disallow all unstable
+    features by default, with the possibility to explicitly re-enable them selectively using
+    `-Zallow-features=...`.
+    """
+    bool_flag(
+        name = "require_explicit_unstable_features",
+        build_setting_default = False,
+    )
+
 def third_party_dir():
     """A flag specifying the location of vendored third-party rust crates within this \
     repository that must not be renamed when `rename_first_party_crates` is enabled.
@@ -105,6 +122,7 @@ def pipelined_compilation():
         build_setting_default = False,
     )
 
+# buildifier: disable=unnamed-macro
 def experimental_use_cc_common_link():
     """A flag to control whether to link rust_binary and rust_test targets using \
     cc_common.link instead of rustc.
@@ -114,6 +132,30 @@ def experimental_use_cc_common_link():
         build_setting_default = False,
     )
 
+    native.config_setting(
+        name = "experimental_use_cc_common_link_on",
+        flag_values = {
+            ":experimental_use_cc_common_link": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_cc_common_link_off",
+        flag_values = {
+            ":experimental_use_cc_common_link": "false",
+        },
+    )
+
+# buildifier: disable=unnamed-macro
+def default_allocator_library():
+    """A flag that determines the default allocator library for `rust_toolchain` targets."""
+
+    native.label_flag(
+        name = "default_allocator_library",
+        build_setting_default = Label("//ffi/cc/allocator_library"),
+    )
+
+# buildifier: disable=unnamed-macro
 def experimental_use_global_allocator():
     """A flag to indicate that a global allocator is in use when using `--@rules_rust//rust/settings:experimental_use_cc_common_link`
 
@@ -123,6 +165,80 @@ def experimental_use_global_allocator():
     bool_flag(
         name = "experimental_use_global_allocator",
         build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_on",
+        flag_values = {
+            ":experimental_use_global_allocator": "true",
+        },
+    )
+
+    native.config_setting(
+        name = "experimental_use_global_allocator_off",
+        flag_values = {
+            ":experimental_use_global_allocator": "false",
+        },
+    )
+
+def experimental_use_allocator_libraries_with_mangled_symbols(
+        name = "experimental_use_allocator_libraries_with_mangled_symbols"):
+    """A flag used to select allocator libraries implemented in rust that are compatible with the rustc allocator symbol mangling.
+
+    The symbol mangling mechanism relies on unstable language features and requires a nightly rustc from 2025-04-05 or later.
+
+    Rustc generates references to internal allocator symbols when building rust
+    libraries.  At link time, rustc generates the definitions of these symbols.
+    When rustc is not used as the final linker, we need to generate the
+    definitions ourselves.  This happens for example when a rust_library is
+    used as a dependency of a rust_binary, or when the
+    experimental_use_cc_common_link setting is used.
+
+
+    For older versions of rustc, the allocator symbol definitions can be provided
+    via the `rust_toolchain`'s `allocator_library` or `global_allocator_library`
+    attributes, with sample targets like `@rules_rust//ffi/cc/allocator_library`
+    and `@rules_rust//ffi/cc/global_allocator_library`.
+
+    Recent versions of rustc started mangling these allocator symbols (https://github.com/rust-lang/rust/pull/127173).
+    The mangling uses a scheme that is specific to the exact version of the compiler.
+    This makes the cc allocator library definitions ineffective. When rustc builds a
+    staticlib it provides the mapping definitions. We rely on this and build an empty
+    staticlib as a basis for the allocator definitions.
+
+    Since the new symbol definitions are written in rust, we cannot just attach
+    them as attributes on the `rust_toolchain` as the old cc versions, as that
+    would create a build graph cycle (we need a `rust_toolchain` to build a
+    `rust_library`, so the allocator library cannot be a rust_library directly).
+
+    The bootstrapping cycle can be avoided by defining a separate internal
+    "initial" rust toolchain specifically for building the rust allocator libraries,
+    and use a transition to attach the generated libraries to the "main" rust
+    toolchain. But that duplicates the whole sub-graph of the build around the
+    rust toolchains, repository and supporting tools used for them.
+
+    Instead, we define a new custom `rust_allocator_library` rule, which exposes
+    the result of building the rust allocator libraries via a provider, which
+    can be consumed by the rust build actions. We attach an instance of this
+    as a common attribute to the rust rule set.
+    """
+    bool_flag(
+        name = name,
+        build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "%s_on" % name,
+        flag_values = {
+            ":{}".format(name): "true",
+        },
+    )
+
+    native.config_setting(
+        name = "%s_off" % name,
+        flag_values = {
+            ":{}".format(name): "false",
+        },
     )
 
 def experimental_use_coverage_metadata_files():
@@ -166,6 +282,23 @@ def experimental_use_sh_toolchain_for_bootstrap_process_wrapper():
     bool_flag(
         name = "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
         build_setting_default = False,
+    )
+
+def toolchain_linker_preference():
+    """A flag to control which linker is preferred for linking Rust binaries.
+
+    Accepts three values:
+    - "rust": Use `rust_toolchain.linker` always (e.g., `rust-lld`). This uses rustc to invoke
+      the linker directly.
+    - "cc": Use the linker provided by the configured `cc_toolchain`. This uses rustc to invoke
+      the C++ toolchain's linker (e.g., `clang`, `gcc`, `link.exe`).
+    - "none": Default to `cc` being the preference and falling back to `rust` if no `cc_toolchain`
+      is available.
+    """
+    string_flag(
+        name = "toolchain_linker_preference",
+        build_setting_default = "none",
+        values = ["rust", "cc", "none"],
     )
 
 # buildifier: disable=unnamed-macro
@@ -238,11 +371,59 @@ def error_format():
     )
 
 # buildifier: disable=unnamed-macro
+def clippy_error_format():
+    """This setting may be changed from the command line to generate machine readable errors.
+    """
+    _error_format(
+        name = "clippy_error_format",
+        build_setting_default = "human",
+    )
+
+# buildifier: disable=unnamed-macro
+def incompatible_change_clippy_error_format():
+    """A flag to enable the `clippy_error_format` setting.
+
+    If this flag is true, Clippy uses the format set in `clippy_error_format` to
+    format its diagnostics; otherwise, it uses the format set in `error_format`.
+    """
+    incompatible_flag(
+        name = "incompatible_change_clippy_error_format",
+        build_setting_default = True,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3494",
+    )
+
+# buildifier: disable=unnamed-macro
+def always_enable_metadata_output_groups():
+    """A flag to enable the `always_enable_metadata_output_groups` setting.
+
+    If this flag is true, all rules will support the `metadata` and
+    `rustc_rmeta_output` output groups."""
+    _always_enable_metadata_output_groups(
+        name = "always_enable_metadata_output_groups",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
+    )
+
+# buildifier: disable=unnamed-macro
 def rustc_output_diagnostics():
     """This setting may be changed from the command line to generate rustc diagnostics.
     """
     _rustc_output_diagnostics(
         name = "rustc_output_diagnostics",
+        build_setting_default = False,
+        visibility = ["//visibility:public"],
+    )
+
+# buildifier: disable=unnamed-macro
+def clippy_output_diagnostics():
+    """A flag to enable the `clippy_output_diagnostics` setting.
+
+    If this flag is true, rules_rust will save clippy json output (suitable for consumption
+    by rust-analyzer) in a file, available from the `clippy_output` output group. This is the
+    clippy equivalent of `rustc_output_diagnostics`.
+    """
+    _clippy_output_diagnostics(
+        name = "clippy_output_diagnostics",
         build_setting_default = False,
         visibility = ["//visibility:public"],
     )
@@ -255,6 +436,18 @@ def clippy_flags():
     """
     _clippy_flags(
         name = "clippy_flags",
+        build_setting_default = [],
+    )
+
+# buildifier: disable=unnamed-macro
+def extra_rustc_env():
+    """This setting may be used to pass extra environment variables to rustc from the command line in non-exec configuration.
+
+    It applies across all targets whereas environment variables set in a specific rule apply only to that target.
+    This can be useful for setting build-wide env flags such as `RUSTC_BOOTSTRAP=1`.
+    """
+    _extra_rustc_env(
+        name = "extra_rustc_env",
         build_setting_default = [],
     )
 
@@ -293,6 +486,18 @@ def extra_rustc_flag():
     )
 
 # buildifier: disable=unnamed-macro
+def extra_exec_rustc_env():
+    """This setting may be used to pass extra environment variables to rustc from the command line in exec configuration.
+
+    It applies to tools built and run during the build process, such as proc-macros and build scripts.
+    This can be useful for enabling features that are needed during tool compilation.
+    """
+    _extra_exec_rustc_env(
+        name = "extra_exec_rustc_env",
+        build_setting_default = [],
+    )
+
+# buildifier: disable=unnamed-macro
 def extra_exec_rustc_flags():
     """This setting may be used to pass extra options to rustc from the command line in exec configuration.
 
@@ -322,7 +527,7 @@ def experimental_per_crate_rustc_flag():
     The expected flag format is prefix_filter@flag, where any crate with a label or execution path starting
     with the prefix filter will be built with the given flag. The label matching uses the canonical form of
     the label (i.e `//package:label_name`). The execution path is the relative path to your workspace directory
-    including the base name (including extension) of the crate root. This flag is only applied to the exec
+    including the base name (including extension) of the crate root. This flag is not applied to the exec
     configuration (proc-macros, cargo_build_script, etc). Multiple uses are accumulated.
     """
     _per_crate_rustc_flag(
@@ -351,4 +556,13 @@ def codegen_units():
     int_flag(
         name = "codegen_units",
         build_setting_default = -1,
+    )
+
+# buildifier: disable=unnamed-macro
+def collect_cfgs():
+    """Enable collection of cfg flags with results stored in CrateInfo.cfgs.
+    """
+    bool_flag(
+        name = "collect_cfgs",
+        build_setting_default = False,
     )

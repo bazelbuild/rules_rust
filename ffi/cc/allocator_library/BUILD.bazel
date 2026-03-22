@@ -1,14 +1,28 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
-cc_library(
+alias(
     name = "allocator_library",
-    srcs = select({
+    actual = select({
+        # It's not guaranteed that an unknown OS is going to support weak linking
+        # In these contexts it's best for users to provide their own.
+        "@platforms//os:none": "//rust/private/cc:empty",
+        # WASI doesn't need the allocator library - WASI runtime provides allocation
+        # Use empty srcs list to avoid needing archiving tools
+        "@platforms//os:wasi": "//rust/private/cc:empty",
         # Windows doesn't support weak symbol linkage.
         # If someone can make this work on Windows, please do!
         # For now we will silently not supply any symbols, because it would be very messy to conditionally define the default allocator library on toolchains depending on the platform.
-        "@platforms//os:windows": ["empty.cc"],
-        "//conditions:default": ["allocator_library.cc"],
+        "@platforms//os:windows": "//rust/private/cc:empty",
+        "//conditions:default": ":cc_allocator_library",
     }),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "cc_allocator_library",
+    srcs = [
+        "allocator_library.cc",
+    ],
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )

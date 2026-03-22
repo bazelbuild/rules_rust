@@ -4,49 +4,59 @@ use crates_index::IndexConfig;
 use hex::ToHex;
 
 pub(crate) enum CrateIndexLookup {
-    Git(crates_index::GitIndex),
-    Http(crates_index::SparseIndex),
+    Git {
+        index: crates_index::GitIndex,
+        index_config: IndexConfig,
+    },
+    Http {
+        index: crates_index::SparseIndex,
+        index_config: IndexConfig,
+    },
 }
 
 impl CrateIndexLookup {
-    pub(crate) fn get_source_info(&self, pkg: &cargo_lock::Package) -> Result<Option<SourceInfo>> {
-        let index_config = self
+    pub(crate) fn get_source_info(&self, pkg: &cargo_lock::Package) -> Result<SourceInfo> {
+        let url = self
             .index_config()
-            .context("Failed to get crate index config")?;
-        let crate_ = match self {
-            // The crates we care about should all be in the cache already,
-            // because `cargo metadata` ran which should have fetched them.
-            Self::Http(index) => {
-                Some(index.crate_from_cache(pkg.name.as_str()).with_context(|| {
-                    format!("Failed to get crate from cache: {:?}\n{:?}", index, pkg)
-                })?)
-            }
-            Self::Git(index) => index.crate_(pkg.name.as_str()),
-        };
-        let source_info = crate_.and_then(|crate_idx| {
-            crate_idx
-                .versions()
-                .iter()
-                .find(|v| v.version() == pkg.version.to_string())
-                .and_then(|v| {
-                    v.download_url(&index_config).map(|url| {
-                        let sha256 = pkg
-                            .checksum
-                            .as_ref()
-                            .and_then(|sum| sum.as_sha256().map(|sum| sum.encode_hex::<String>()))
-                            .unwrap_or_else(|| v.checksum().encode_hex::<String>());
-                        SourceInfo { url, sha256 }
+            .download_url(pkg.name.as_str(), &pkg.version.to_string())
+            .context("no url for crate")?;
+        let sha256 = pkg
+            .checksum
+            .as_ref()
+            .and_then(|sum| sum.as_sha256().map(|sum| sum.encode_hex::<String>()))
+            .unwrap_or_else(|| {
+                let crate_ = match self {
+                    // The crates we care about should all be in the cache already,
+                    // because `cargo metadata` ran which should have fetched them.
+                    Self::Http { index, .. } => Some(
+                        index
+                            .crate_from_cache(pkg.name.as_str())
+                            .with_context(|| {
+                                format!("Failed to get crate from cache: {:?}\n{:?}", index, pkg)
+                            })
+                            .unwrap(),
+                    ),
+                    Self::Git { index, .. } => index.crate_(pkg.name.as_str()),
+                };
+                crate_
+                    .and_then(|crate_idx| {
+                        crate_idx
+                            .versions()
+                            .iter()
+                            .find(|v| v.version() == pkg.version.to_string())
+                            .map(|v| v.checksum().encode_hex::<String>())
                     })
-                })
-        });
-        Ok(source_info)
+                    .unwrap()
+            });
+
+        Ok(SourceInfo { url, sha256 })
     }
 
     #[allow(clippy::result_large_err)]
-    fn index_config(&self) -> Result<IndexConfig, crates_index::Error> {
+    fn index_config(&self) -> &IndexConfig {
         match self {
-            Self::Git(index) => index.index_config(),
-            Self::Http(index) => index.index_config(),
+            Self::Git { index_config, .. } => index_config,
+            Self::Http { index_config, .. } => index_config,
         }
     }
 }
@@ -73,9 +83,14 @@ mod test {
                 .unwrap(),
             );
 
-            let index = CrateIndexLookup::Http(
-                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap(),
-            );
+            let index =
+                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap();
+            let index_config = index.index_config().unwrap();
+            let index = CrateIndexLookup::Http {
+                index,
+                index_config,
+            };
+
             let source_info = index
                 .get_source_info(&cargo_lock::Package {
                     name: "lazy_static".parse().unwrap(),
@@ -85,7 +100,6 @@ mod test {
                     dependencies: Vec::new(),
                     replace: None,
                 })
-                .unwrap()
                 .unwrap();
             assert_eq!(
                 source_info.url,
@@ -100,9 +114,14 @@ mod test {
             let _e = EnvVarResetter::set("CARGO_HOME",
                 runfiles::rlocation!(runfiles, "rules_rust/crate_universe/test_data/crate_indexes/rewritten_lazy_static/cargo_home").unwrap());
 
-            let index = CrateIndexLookup::Http(
-                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap(),
-            );
+            let index =
+                crates_index::SparseIndex::from_url("sparse+https://index.crates.io/").unwrap();
+            let index_config = index.index_config().unwrap();
+            let index = CrateIndexLookup::Http {
+                index,
+                index_config,
+            };
+
             let source_info = index
                 .get_source_info(&cargo_lock::Package {
                     name: "lazy_static".parse().unwrap(),
@@ -112,7 +131,6 @@ mod test {
                     dependencies: Vec::new(),
                     replace: None,
                 })
-                .unwrap()
                 .unwrap();
             assert_eq!(
                 source_info.url,

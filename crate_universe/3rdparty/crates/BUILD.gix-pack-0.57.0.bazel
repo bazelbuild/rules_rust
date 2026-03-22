@@ -58,6 +58,7 @@ rust_library(
     target_compatible_with = select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [],
         "@rules_rust//rust/platform:aarch64-apple-ios": [],
+        "@rules_rust//rust/platform:aarch64-apple-ios-macabi": [],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [],
         "@rules_rust//rust/platform:aarch64-linux-android": [],
         "@rules_rust//rust/platform:aarch64-pc-windows-msvc": [],
@@ -67,6 +68,7 @@ rust_library(
         "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710": [],
         "@rules_rust//rust/platform:aarch64-unknown-uefi": [],
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [],
         "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi": [],
         "@rules_rust//rust/platform:i686-apple-darwin": [],
@@ -76,14 +78,21 @@ rust_library(
         "@rules_rust//rust/platform:i686-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:powerpc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [],
+        "@rules_rust//rust/platform:thumbv6m-none-eabi": [],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [],
+        "@rules_rust//rust/platform:thumbv7em-none-eabihf": [],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [],
+        "@rules_rust//rust/platform:wasm32-unknown-emscripten": [],
         "@rules_rust//rust/platform:wasm32-unknown-unknown": [],
         "@rules_rust//rust/platform:wasm32-wasip1": [],
+        "@rules_rust//rust/platform:wasm32-wasip1-threads": [],
+        "@rules_rust//rust/platform:wasm32-wasip2": [],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [],
         "@rules_rust//rust/platform:x86_64-apple-ios": [],
+        "@rules_rust//rust/platform:x86_64-apple-ios-macabi": [],
         "@rules_rust//rust/platform:x86_64-linux-android": [],
         "@rules_rust//rust/platform:x86_64-pc-windows-msvc": [],
         "@rules_rust//rust/platform:x86_64-unknown-freebsd": [],
@@ -105,7 +114,7 @@ rust_library(
         "@cui__gix-path-0.10.14//:gix_path",
         "@cui__memmap2-0.9.5//:memmap2",
         "@cui__parking_lot-0.12.1//:parking_lot",
-        "@cui__smallvec-1.13.2//:smallvec",
+        "@cui__smallvec-1.15.0//:smallvec",
         "@cui__thiserror-2.0.4//:thiserror",
         "@cui__uluru-3.0.0//:uluru",
     ] + select({
@@ -114,6 +123,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # aarch64-apple-ios
+        ],
+        "@rules_rust//rust/platform:aarch64-apple-ios-macabi": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # aarch64-apple-ios-macabi
         ],
         "@rules_rust//rust/platform:aarch64-apple-ios-sim": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # aarch64-apple-ios-sim
@@ -142,6 +154,9 @@ rust_library(
         "@rules_rust//rust/platform:arm-unknown-linux-gnueabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # arm-unknown-linux-gnueabi
         ],
+        "@rules_rust//rust/platform:arm-unknown-linux-musleabi": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # arm-unknown-linux-musleabi
+        ],
         "@rules_rust//rust/platform:armv7-linux-androideabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # armv7-linux-androideabi
         ],
@@ -169,14 +184,23 @@ rust_library(
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv32imc-unknown-none-elf
         ],
+        "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv64gc-unknown-linux-gnu
+        ],
         "@rules_rust//rust/platform:riscv64gc-unknown-none-elf": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # riscv64gc-unknown-none-elf
         ],
         "@rules_rust//rust/platform:s390x-unknown-linux-gnu": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # s390x-unknown-linux-gnu
         ],
+        "@rules_rust//rust/platform:thumbv6m-none-eabi": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # thumbv6m-none-eabi
+        ],
         "@rules_rust//rust/platform:thumbv7em-none-eabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # thumbv7em-none-eabi
+        ],
+        "@rules_rust//rust/platform:thumbv7em-none-eabihf": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # thumbv7em-none-eabihf
         ],
         "@rules_rust//rust/platform:thumbv8m.main-none-eabi": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # thumbv8m.main-none-eabi
@@ -186,6 +210,9 @@ rust_library(
         ],
         "@rules_rust//rust/platform:x86_64-apple-ios": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # x86_64-apple-ios
+        ],
+        "@rules_rust//rust/platform:x86_64-apple-ios-macabi": [
+            "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # x86_64-apple-ios-macabi
         ],
         "@rules_rust//rust/platform:x86_64-linux-android": [
             "@cui__gix-tempfile-16.0.0//:gix_tempfile",  # x86_64-linux-android

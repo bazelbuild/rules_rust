@@ -9,9 +9,6 @@ load("@rules_rust//rust/private:rust.bzl", "RUSTC_ATTRS", "get_rust_test_flags")
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-# load("@rules_rust//rust/private:toolchain_utils.bzl", "get_coverage_env")
-
-# buildifier: disable=bzl-visibility
 load(
     "@rules_rust//rust/private:utils.bzl",
     "determine_output_hash",
@@ -23,10 +20,10 @@ load(
     "transform_sources",
 )
 load("//:providers.bzl", "RustWasmBindgenInfo")
-load("//private:transitions.bzl", "wasm_bindgen_transition")
+load("//private:transitions.bzl", "opt_transition", "wasm_bindgen_transition")
 
 WasmBindgenTestCrateInfo = provider(
-    doc = "A provider encompasing the crate from a `rust_wasm_bindgen` target.",
+    doc = "A provider encompassing the crate from a `rust_wasm_bindgen` target.",
     fields = {
         "crate": "The underlying `rust_wasm_bindgen.crate`.",
     },
@@ -59,11 +56,8 @@ def _rlocationpath(file, workspace_name):
 
     return "{}/{}".format(workspace_name, file.short_path)
 
-def _rust_wasm_bindgen_test_impl(ctx):
+def _rust_wasm_bindgen_test_binary_impl(ctx):
     wb_toolchain = ctx.toolchains[Label("//:toolchain_type")]
-    if not wb_toolchain.webdriver:
-        fail("The currently registered wasm_bindgen_toolchain does not have a webdriver assigned. Tests are unavailable without one.")
-
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
@@ -121,9 +115,9 @@ def _rust_wasm_bindgen_test_impl(ctx):
         name = crate.name,
         type = crate_type,
         root = crate.root,
-        srcs = depset(srcs, transitive = [crate.srcs]),
-        deps = depset(deps, transitive = [crate.deps]),
-        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]),
+        srcs = depset(srcs, transitive = [crate.srcs]).to_list(),
+        deps = depset(deps, transitive = [crate.deps]).to_list(),
+        proc_macro_deps = depset(proc_macro_deps, transitive = [crate.proc_macro_deps]).to_list(),
         aliases = {},
         output = output,
         rustc_output = generate_output_diagnostics(ctx, output),
@@ -145,62 +139,12 @@ def _rust_wasm_bindgen_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
-    data = getattr(ctx.attr, "data", [])
 
-    env = expand_dict_value_locations(
-        ctx,
-        getattr(ctx.attr, "env", {}),
-        data,
-        {},
-    )
+    return crate_providers
 
-    components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
-    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
-
-    wrapper = ctx.actions.declare_file(ctx.label.name)
-    ctx.actions.symlink(
-        output = wrapper,
-        target_file = ctx.executable._wrapper,
-        is_executable = True,
-    )
-
-    if wb_toolchain.browser:
-        env["BROWSER"] = _rlocationpath(wb_toolchain.browser, ctx.workspace_name)
-
-    env["BROWSER_TYPE"] = wb_toolchain.browser_type
-    env["WEBDRIVER"] = _rlocationpath(wb_toolchain.webdriver, ctx.workspace_name)
-    env["WEBDRIVER_ARGS"] = " ".join(wb_toolchain.webdriver_args)
-    env["WEBDRIVER_JSON"] = _rlocationpath(wb_toolchain.webdriver_json, ctx.workspace_name)
-    env["WASM_BINDGEN_TEST_RUNNER"] = _rlocationpath(wb_toolchain.wasm_bindgen_test_runner, ctx.workspace_name)
-
-    # Force the use of a browser for now as there is no node integration.
-    env["WASM_BINDGEN_USE_BROWSER"] = "1"
-
-    providers = []
-
-    for prov in crate_providers:
-        if type(prov) == "DefaultInfo":
-            files = prov.files.to_list()
-            if len(files) != 1:
-                fail("Unexpected number of output files for `{}`: {}".format(ctx.label, files))
-            wasm_file = files[0]
-            env["TEST_WASM_BINARY"] = _rlocationpath(files[0], ctx.workspace_name)
-            providers.append(DefaultInfo(
-                files = prov.files,
-                runfiles = prov.default_runfiles.merge(ctx.runfiles(files = [wasm_file], transitive_files = wb_toolchain.all_test_files)),
-                executable = wrapper,
-            ))
-        else:
-            providers.append(prov)
-
-    providers.append(testing.TestEnvironment(env))
-
-    return providers
-
-rust_wasm_bindgen_test = rule(
+rust_wasm_bindgen_test_binary = rule(
     doc = "Rules for running [wasm-bindgen tests](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/index.html).",
-    implementation = _rust_wasm_bindgen_test_impl,
-    cfg = wasm_bindgen_transition,
+    implementation = _rust_wasm_bindgen_test_binary_impl,
     attrs = {
         "aliases": attr.label_keyed_string_dict(
             doc = """\
@@ -308,11 +252,6 @@ rust_wasm_bindgen_test = rule(
             file of arguments to rustc: `@$(location //package:target)`.
         """,
         ),
-        "target_arch": attr.string(
-            doc = "The target architecture to use for the wasm-bindgen command line option.",
-            default = "wasm32",
-            values = ["wasm32", "wasm64"],
-        ),
         "version": attr.string(
             doc = "A version to inject in the cargo environment variable.",
             default = "0.0.0",
@@ -323,18 +262,113 @@ rust_wasm_bindgen_test = rule(
             providers = [RustWasmBindgenInfo],
             mandatory = True,
         ),
-        "_wrapper": attr.label(
-            doc = "The process wrapper for wasm-bindgen-test-runner.",
-            cfg = "exec",
-            executable = True,
-            default = Label("//private:wasm_bindgen_test_wrapper"),
-        ),
     } | RUSTC_ATTRS,
     fragments = ["cpp"],
     toolchains = [
         str(Label("//:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
+    ],
+    executable = True,
+)
+
+def _rust_wasm_bindgen_test_impl(ctx):
+    wb_toolchain = ctx.toolchains[Label("//:toolchain_type")]
+    if not wb_toolchain.webdriver:
+        fail("The currently registered wasm_bindgen_toolchain does not have a webdriver assigned. Tests are unavailable without one.")
+
+    data = getattr(ctx.attr, "data", [])
+
+    env = expand_dict_value_locations(
+        ctx,
+        getattr(ctx.attr, "env", {}),
+        data,
+        {},
+    )
+
+    components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+
+    wrapper = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.symlink(
+        output = wrapper,
+        target_file = ctx.executable._runner,
+        is_executable = True,
+    )
+
+    if wb_toolchain.browser:
+        env["BROWSER"] = _rlocationpath(wb_toolchain.browser, ctx.workspace_name)
+
+    env["BROWSER_TYPE"] = wb_toolchain.browser_type
+    env["WEBDRIVER"] = _rlocationpath(wb_toolchain.webdriver, ctx.workspace_name)
+    env["WEBDRIVER_ARGS"] = " ".join(wb_toolchain.webdriver_args)
+    env["WEBDRIVER_JSON"] = _rlocationpath(wb_toolchain.webdriver_json, ctx.workspace_name)
+    env["WASM_BINDGEN_TEST_RUNNER"] = _rlocationpath(wb_toolchain.wasm_bindgen_test_runner, ctx.workspace_name)
+
+    # Force the use of a browser for now as there is no node integration.
+    env["WASM_BINDGEN_USE_BROWSER"] = "1"
+
+    wasm_file = ctx.executable.wasm
+
+    env["TEST_WASM_BINARY"] = _rlocationpath(wasm_file, ctx.workspace_name)
+    return [
+        DefaultInfo(
+            files = ctx.attr.wasm[0][DefaultInfo].files,
+            runfiles = ctx.attr.wasm[0][DefaultInfo].default_runfiles.merge(ctx.runfiles(files = [wasm_file], transitive_files = wb_toolchain.all_test_files)),
+            executable = wrapper,
+        ),
+        RunEnvironmentInfo(
+            environment = env,
+            inherited_environment = ctx.attr.env_inherit,
+        ),
+    ]
+
+rust_wasm_bindgen_test = rule(
+    doc = "A test rule for running [wasm-bindgen tests](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/index.html).",
+    implementation = _rust_wasm_bindgen_test_impl,
+    attrs = {
+        "data": attr.label_list(
+            doc = """\
+            List of files used by this rule at compile time and runtime.
+
+            If including data at compile time with include_str!() and similar,
+            prefer `compile_data` over `data`, to prevent the data also being included
+            in the runfiles.
+        """,
+            allow_files = True,
+        ),
+        "env": attr.string_dict(
+            mandatory = False,
+            doc = """\
+            Specifies additional environment variables to set when the test is executed by bazel test.
+            Values are subject to `$(rootpath)`, `$(execpath)`, location, and
+            ["Make variable"](https://docs.bazel.build/versions/master/be/make-variables.html) substitution.
+        """,
+        ),
+        "env_inherit": attr.string_list(
+            doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
+        ),
+        "target_arch": attr.string(
+            doc = "The target architecture to use for the wasm-bindgen command line option.",
+            default = "wasm32",
+            values = ["wasm32", "wasm64"],
+        ),
+        "wasm": attr.label(
+            doc = "The wasm target to test.",
+            executable = True,
+            cfg = wasm_bindgen_transition,
+            mandatory = True,
+        ),
+        "_runner": attr.label(
+            doc = "The process wrapper for wasm-bindgen-test-runner.",
+            # Try to get as close to `exec` as possible.
+            cfg = opt_transition,
+            executable = True,
+            default = Label("//private:wasm_bindgen_test_runner"),
+        ),
+    },
+    toolchains = [
+        str(Label("//:toolchain_type")),
     ],
     test = True,
 )

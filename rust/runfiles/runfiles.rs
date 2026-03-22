@@ -4,12 +4,12 @@
 //!
 //! 1. Depend on this runfiles library from your build rule:
 //! ```python
-//!   rust_binary(
-//!       name = "my_binary",
-//!       ...
-//!       data = ["//path/to/my/data.txt"],
-//!       deps = ["@rules_rust//rust/runfiles"],
-//!   )
+//! rust_binary(
+//!     name = "my_binary",
+//!     ...
+//!     data = ["//path/to/my/data.txt"],
+//!     deps = ["@rules_rust//rust/runfiles"],
+//! )
 //! ```
 //!
 //! 2. Import the runfiles library.
@@ -30,7 +30,7 @@
 //! // ...
 //! ```
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs;
 use std::io;
@@ -140,8 +140,53 @@ enum Mode {
     ManifestBased(HashMap<PathBuf, PathBuf>),
 }
 
+/// A pair of "source" (the workspace the mapping affects) and "target apparent name" (the
+/// non-bzlmod-generated/pretty name of a dependent workspace).
 type RepoMappingKey = (String, String);
-type RepoMapping = HashMap<RepoMappingKey, String>;
+
+/// The mapping of keys to "target canonical directory" (the bzlmod-generated workspace name).
+#[derive(Debug, PartialEq, Eq)]
+struct RepoMapping {
+    exact: HashMap<RepoMappingKey, String>,
+
+    /// Used for `--incompatible_compact_repo_mapping_manifest`.
+    /// <https://github.com/bazelbuild/bazel/issues/26262>
+    prefixes: BTreeMap<RepoMappingKey, String>,
+}
+
+impl RepoMapping {
+    pub fn new() -> Self {
+        RepoMapping {
+            exact: HashMap::new(),
+            prefixes: BTreeMap::new(),
+        }
+    }
+
+    pub fn get(&self, key: &RepoMappingKey) -> Option<&String> {
+        // First try exact match with O(1) hash lookup
+        if let Some(value) = self.exact.get(key) {
+            return Some(value);
+        }
+
+        // Then try prefix match with O(n) iteration
+        // In compact mode, entries with wildcards are stored with just the prefix.
+        // We need to check if the lookup key's source_repo starts with any stored prefix.
+        let (source_repo, apparent_name) = key;
+        for ((stored_source, stored_apparent), value) in self.prefixes.iter() {
+            if source_repo.starts_with(stored_source) && apparent_name == stored_apparent {
+                return Some(value);
+            }
+        }
+
+        None
+    }
+}
+
+impl Default for RepoMapping {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// An interface for accessing to [Bazel runfiles](https://bazel.build/extending/rules#runfiles).
 #[derive(Debug)]
@@ -151,14 +196,22 @@ pub struct Runfiles {
 }
 
 impl Runfiles {
-    /// Creates a manifest based Runfiles object when
-    /// RUNFILES_MANIFEST_FILE environment variable is present,
-    /// or a directory based Runfiles object otherwise.
+    /// Creates a manifest based Runfiles object when RUNFILES_MANIFEST_FILE
+    /// environment variable is present, with an non-empty value, or a directory
+    /// based Runfiles object otherwise.
     pub fn create() -> Result<Self> {
-        let mode = if let Some(manifest_file) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
-            Self::create_manifest_based(Path::new(&manifest_file))?
-        } else {
-            Mode::DirectoryBased(find_runfiles_dir()?)
+        let mode = match std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+            Some(manifest_file) if !manifest_file.is_empty() => {
+                Self::create_manifest_based(Path::new(&manifest_file))?
+            }
+            _ => {
+                let dir = find_runfiles_dir()?;
+                let manifest_path = dir.join("MANIFEST");
+                match manifest_path.exists() {
+                    true => Self::create_manifest_based(&manifest_path)?,
+                    false => Mode::DirectoryBased(dir),
+                }
+            }
         };
 
         let repo_mapping = raw_rlocation(&mode, "_repo_mapping")
@@ -243,7 +296,8 @@ fn raw_rlocation(mode: &Mode, path: impl AsRef<Path>) -> Option<PathBuf> {
 }
 
 fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
-    let mut repo_mapping = RepoMapping::new();
+    let mut exact = HashMap::new();
+    let mut prefixes = BTreeMap::new();
 
     for line in std::fs::read_to_string(path)
         .map_err(RunfilesError::RepoMappingIoError)?
@@ -253,19 +307,38 @@ fn parse_repo_mapping(path: PathBuf) -> Result<RepoMapping> {
         if parts.len() < 3 {
             return Err(RunfilesError::RepoMappingInvalidFormat);
         }
-        repo_mapping.insert((parts[0].into(), parts[1].into()), parts[2].into());
+
+        let source_repo = parts[0];
+        let apparent_name = parts[1];
+        let target_repo = parts[2];
+
+        // Check if this is a prefix entry (ends with '*')
+        // The '*' character is terminal and marks a prefix match entry
+        if let Some(prefix) = source_repo.strip_suffix('*') {
+            prefixes.insert(
+                (prefix.to_owned(), apparent_name.to_owned()),
+                target_repo.to_owned(),
+            );
+        } else {
+            exact.insert(
+                (source_repo.to_owned(), apparent_name.to_owned()),
+                target_repo.to_owned(),
+            );
+        }
     }
 
-    Ok(repo_mapping)
+    Ok(RepoMapping { exact, prefixes })
 }
 
 /// Returns the .runfiles directory for the currently executing binary.
 pub fn find_runfiles_dir() -> Result<PathBuf> {
-    assert!(
-        std::env::var_os(MANIFEST_FILE_ENV_VAR).is_none(),
-        "Unexpected call when {} exists",
-        MANIFEST_FILE_ENV_VAR
-    );
+    if let Some(value) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+        assert!(
+            value.is_empty(),
+            "Unexpected call when {} exists",
+            MANIFEST_FILE_ENV_VAR
+        );
+    }
 
     // If Bazel told us about the runfiles dir, use that without looking further.
     if let Some(runfiles_dir) = std::env::var_os(RUNFILES_DIR_ENV_VAR).map(PathBuf::from) {
@@ -347,7 +420,7 @@ mod test {
     /// A mutex used to guard
     static GLOBAL_MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
-    /// Mock out environment variables for a given body fo work. Very similar to
+    /// Mock out environment variables for a given body to work. Very similar to
     /// [temp-env](https://crates.io/crates/temp-env).
     fn with_mock_env<K, V, F, R>(kvs: impl AsRef<[(K, Option<V>)]>, closure: F) -> R
     where
@@ -407,13 +480,55 @@ mod test {
         assert_eq!(original_name, std::env::var("TEST_WORKSPACE").unwrap());
     }
 
+    /// Create a temp directory to act as a runfiles directory for testing
+    /// [super::Mode::DirectoryBased] style runfiles.
+    fn make_runfiles_like_dir(name: &str) -> String {
+        with_mock_env([("FAKE", None::<&str>)], || {
+            let r = Runfiles::create().unwrap();
+
+            let path = "rules_rust/rust/runfiles/data/sample.txt";
+            let f = rlocation!(r, path).unwrap();
+
+            let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+            let runfiles_dir = temp_dir.join(name);
+            let test_path = runfiles_dir.join(path);
+            if let Some(parent) = test_path.parent() {
+                std::fs::create_dir_all(parent).expect("Failed to create test path parents.");
+            }
+
+            std::fs::copy(f, test_path).expect("Failed to copy test file");
+
+            runfiles_dir.to_str().unwrap().to_string()
+        })
+    }
+
+    /// Test the general behavior of runfiles. The behavior of runfiles will change
+    /// depending on the system but each mode is explicitly covered in other tests.
+    #[test]
+    fn test_standard_lookup() {
+        let r = Runfiles::create().unwrap();
+
+        let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+
+        let mut f = File::open(&f)
+            .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer).unwrap();
+
+        assert_eq!("Example Text!", buffer);
+    }
+
     /// Only `RUNFILES_DIR` is set.
     #[test]
     fn test_env_only_runfiles_dir() {
+        let runfiles_dir = make_runfiles_like_dir("test_env_only_runfiles_dir");
+
         with_mock_env(
             [
-                (TEST_SRCDIR_ENV_VAR, None::<&str>),
                 (MANIFEST_FILE_ENV_VAR, None::<&str>),
+                (RUNFILES_DIR_ENV_VAR, Some(runfiles_dir.as_str())),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
             ],
             || {
                 let r = Runfiles::create().unwrap();
@@ -422,7 +537,37 @@ mod test {
                 let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
                 assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
 
-                let mut f = File::open(f).unwrap();
+                let mut f = File::open(&f)
+                    .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
+
+                let mut buffer = String::new();
+                f.read_to_string(&mut buffer).unwrap();
+
+                assert_eq!("Example Text!", buffer);
+            },
+        );
+    }
+
+    /// Tests when MANIFEST_FILE is set to an empty string, RUNFILES_DIR is preferred.
+    #[test]
+    fn test_runfiles_manifest_file_empty() {
+        let runfiles_dir = make_runfiles_like_dir("test_runfiles_manifest_file_empty");
+
+        with_mock_env(
+            [
+                (MANIFEST_FILE_ENV_VAR, Some("")),
+                (RUNFILES_DIR_ENV_VAR, Some(runfiles_dir.as_str())),
+                (TEST_SRCDIR_ENV_VAR, None::<&str>),
+            ],
+            || {
+                let r = Runfiles::create().unwrap();
+
+                let d = rlocation!(r, "rules_rust").unwrap();
+                let f = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+                assert_eq!(d.join("rust/runfiles/data/sample.txt"), f);
+
+                let mut f = File::open(&f)
+                    .unwrap_or_else(|e| panic!("Failed to open file: {}\n{:?}", f.display(), e));
 
                 let mut buffer = String::new();
                 f.read_to_string(&mut buffer).unwrap();
@@ -435,17 +580,21 @@ mod test {
     /// Only `TEST_SRCDIR` is set.
     #[test]
     fn test_env_only_test_srcdir() {
+        let runfiles_dir = make_runfiles_like_dir("test_env_only_test_srcdir");
+
         with_mock_env(
             [
-                (RUNFILES_DIR_ENV_VAR, None::<&str>),
                 (MANIFEST_FILE_ENV_VAR, None::<&str>),
+                (RUNFILES_DIR_ENV_VAR, None::<&str>),
+                (TEST_SRCDIR_ENV_VAR, Some(runfiles_dir.as_str())),
             ],
             || {
                 let r = Runfiles::create().unwrap();
 
-                let mut f =
-                    File::open(rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap())
-                        .unwrap();
+                let runfile = rlocation!(r, "rules_rust/rust/runfiles/data/sample.txt").unwrap();
+
+                let mut f = File::open(&runfile)
+                    .unwrap_or_else(|e| panic!("Failed to open: {}\n{:?}", runfile.display(), e));
 
                 let mut buffer = String::new();
                 f.read_to_string(&mut buffer).unwrap();
@@ -455,7 +604,12 @@ mod test {
         );
     }
 
-    /// Neither `RUNFILES_DIR` or `TEST_SRCDIR` are set
+    /// `RUNFILES_DIR`, `TEST_SRCDIR`, and `MANIFEST_FILE_ENV_VAR` are not set. This
+    /// will test the `.runfiles` directory lookup.
+    ///
+    /// This test is skipped on windows as these directories are not guaranteed
+    /// to have been created.
+    #[cfg(not(target_family = "windows"))]
     #[test]
     fn test_env_nothing_set() {
         with_mock_env(
@@ -534,43 +688,46 @@ mod test {
 
         assert_eq!(
             parse_repo_mapping(valid),
-            Ok(RepoMapping::from([
-                (
-                    ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("platforms".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
+            Ok(RepoMapping {
+                prefixes: BTreeMap::new(),
+                exact: HashMap::from([
                     (
-                        "rust_darwin_aarch64__aarch64-apple-darwin__stable_tools".to_owned(),
+                        ("local_config_xcode".to_owned(), "rules_rust".to_owned()),
                         "rules_rust".to_owned()
                     ),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("rules_rust_tinyjson".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("local_config_sh".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("bazel_tools".to_owned(), "__main__".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("local_config_cc".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                ),
-                (
-                    ("".to_owned(), "rules_rust".to_owned()),
-                    "rules_rust".to_owned()
-                )
-            ]))
+                    (
+                        ("platforms".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        (
+                            "rust_darwin_aarch64__aarch64-apple-darwin__stable_tools".to_owned(),
+                            "rules_rust".to_owned()
+                        ),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("rules_rust_tinyjson".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("local_config_sh".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("bazel_tools".to_owned(), "__main__".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("local_config_cc".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    ),
+                    (
+                        ("".to_owned(), "rules_rust".to_owned()),
+                        "rules_rust".to_owned()
+                    )
+                ])
+            })
         );
     }
 
@@ -592,5 +749,94 @@ mod test {
             parse_repo_mapping(invalid),
             Err(RunfilesError::RepoMappingInvalidFormat),
         );
+    }
+
+    #[test]
+    fn test_parse_repo_mapping_with_wildcard() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let mapping_file = temp_dir.join("test_parse_repo_mapping_with_wildcard.txt");
+        std::fs::write(
+            &mapping_file,
+            dedent(
+                r#"+deps+*,aaa,_main
++deps+*,dep,+deps+dep1
++deps+*,dep1,+deps+dep1
++deps+*,dep2,+deps+dep2
++deps+*,dep3,+deps+dep3
++other+exact,foo,bar
+"#,
+            ),
+        )
+        .unwrap();
+
+        let repo_mapping = parse_repo_mapping(mapping_file).unwrap();
+
+        // Check exact match for non-wildcard entry
+        assert_eq!(
+            repo_mapping.get(&("+other+exact".to_owned(), "foo".to_owned())),
+            Some(&"bar".to_owned())
+        );
+
+        // Check prefix matches work correctly
+        // When looking up with +deps+dep1 as source_repo, it should match entries with +deps+ prefix
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep1".to_owned(), "aaa".to_owned())),
+            Some(&"_main".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep1".to_owned(), "dep".to_owned())),
+            Some(&"+deps+dep1".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep2".to_owned(), "dep2".to_owned())),
+            Some(&"+deps+dep2".to_owned())
+        );
+        assert_eq!(
+            repo_mapping.get(&("+deps+dep3".to_owned(), "dep3".to_owned())),
+            Some(&"+deps+dep3".to_owned())
+        );
+    }
+
+    #[test]
+    fn test_rlocation_from_with_wildcard() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap());
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        // Create a mock runfiles directory
+        let runfiles_dir = temp_dir.join("test_rlocation_from_with_wildcard.runfiles");
+        std::fs::create_dir_all(&runfiles_dir).unwrap();
+
+        let r = Runfiles {
+            mode: Mode::DirectoryBased(runfiles_dir.clone()),
+            repo_mapping: RepoMapping {
+                exact: HashMap::new(),
+                prefixes: BTreeMap::from([
+                    (("+deps+".to_owned(), "aaa".to_owned()), "_main".to_owned()),
+                    (
+                        ("+deps+".to_owned(), "dep".to_owned()),
+                        "+deps+dep1".to_owned(),
+                    ),
+                ]),
+            },
+        };
+
+        // Test prefix matching for +deps+dep1
+        let result = r.rlocation_from("aaa/some/path", "+deps+dep1");
+        assert_eq!(result, Some(runfiles_dir.join("_main/some/path")));
+
+        // Test prefix matching for +deps+dep2
+        let result = r.rlocation_from("aaa/other/path", "+deps+dep2");
+        assert_eq!(result, Some(runfiles_dir.join("_main/other/path")));
+
+        // Test prefix matching with different apparent name
+        let result = r.rlocation_from("dep/foo/bar", "+deps+dep3");
+        assert_eq!(result, Some(runfiles_dir.join("+deps+dep1/foo/bar")));
+
+        // Test non-matching source repo (doesn't start with +deps+)
+        let result = r.rlocation_from("aaa/path", "+other+repo");
+        // Should fall back to the path as-is
+        assert_eq!(result, Some(runfiles_dir.join("aaa/path")));
     }
 }

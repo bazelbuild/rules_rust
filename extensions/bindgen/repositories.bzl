@@ -18,7 +18,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//3rdparty/crates:crates.bzl", "crate_repositories")
 
-BINDGEN_VERSION = "0.70.1"
+BINDGEN_VERSION = "0.71.1"
 
 # buildifier: disable=unnamed-macro
 def rust_bindgen_dependencies(is_bzlmod = False):
@@ -42,7 +42,6 @@ def rust_bindgen_dependencies(is_bzlmod = False):
             build_file_content = "# empty",
             patch_args = ["-p1"],
             patches = [
-                # Label("//3rdparty/patches:llvm-project.cxx17.patch"),
                 Label("//3rdparty/patches:llvm-raw.incompatible_disallow_empty_glob.patch"),
             ],
         )
@@ -74,7 +73,7 @@ def rust_bindgen_dependencies(is_bzlmod = False):
     maybe(
         http_archive,
         name = bindgen_name,
-        integrity = "sha256-Mz+eRtWNh1r7irkjwi27fmF4j1WtKPK12Yv5ENkL1ao=",
+        integrity = "sha256-/e0QyglWr9DL5c+JzHGuGmeeZbghbGUfyhe6feisVNw=",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/bindgen-cli/bindgen-cli-{}.crate".format(BINDGEN_VERSION)],
         strip_prefix = "bindgen-cli-{}".format(BINDGEN_VERSION),

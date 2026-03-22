@@ -32,6 +32,12 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "git2-0.14.4",
+    actual = "@complex_sys__git2-0.14.4//:git2",
+    tags = ["manual"],
+)
+
+alias(
     name = "git2",
     actual = "@complex_sys__git2-0.14.4//:git2",
     tags = ["manual"],

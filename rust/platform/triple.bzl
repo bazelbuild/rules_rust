@@ -21,7 +21,7 @@ def triple(triple):
             - abi (str, optional): The abi to use or None if abi does not apply.
             - str (str): Original string representation of the triple
     """
-    if triple in ("wasm32-wasi", "wasm32-wasip1"):
+    if triple in ("wasm32-wasi", "wasm32-wasip1", "wasm32-wasip2"):
         trip = triple
         if trip == "wasm32-wasi":
             trip = "wasm32-wasip1"
@@ -31,6 +31,14 @@ def triple(triple):
             system = trip.split("-")[1],
             abi = None,
             str = trip,
+        )
+    elif triple == "wasm32v1-none":
+        return struct(
+            arch = "wasm32",
+            vendor = "v1",
+            system = "none",
+            abi = None,
+            str = triple,
         )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(
@@ -86,7 +94,7 @@ def _validate_cpu_architecture(arch, expected_archs):
             expected_archs,
         ))
 
-def get_host_triple(repository_ctx, abi = None):
+def get_host_triple(repository_ctx, abi = {}):
     """Query host information for the appropriate triple to use with load_arbitrary_tool or the crate_universe resolver
 
     Example:
@@ -110,8 +118,9 @@ def get_host_triple(repository_ctx, abi = None):
 
     Args:
         repository_ctx (repository_ctx): The repository_rule's context object
-        abi (str): Since there's no consistent way to check for ABI, this info
-            may be explicitly provided
+        abi (dict): A mapping of platform triple prefixes to desired abi. This
+            is useful since there's no consistent way to check for ABI, this info
+            may be explicitly provided.
 
     Returns:
         struct: A triple struct; see the `triple` function in this module
@@ -134,9 +143,10 @@ def get_host_triple(repository_ctx, abi = None):
 
     if "linux" in repository_ctx.os.name:
         _validate_cpu_architecture(arch, supported_architectures["linux"])
-        return triple("{}-unknown-linux-{}".format(
-            arch,
-            abi or "gnu",
+        prefix = "{}-unknown-linux".format(arch)
+        return triple("{}-{}".format(
+            prefix,
+            abi.get(prefix, "gnu"),
         ))
 
     if "mac" in repository_ctx.os.name:
@@ -145,9 +155,10 @@ def get_host_triple(repository_ctx, abi = None):
 
     if "win" in repository_ctx.os.name:
         _validate_cpu_architecture(arch, supported_architectures["windows"])
-        return triple("{}-pc-windows-{}".format(
-            arch,
-            abi or "msvc",
+        prefix = "{}-pc-windows".format(arch)
+        return triple("{}-{}".format(
+            prefix,
+            abi.get(prefix, "msvc"),
         ))
 
     fail("Unhandled host os: {}", repository_ctx.os.name)

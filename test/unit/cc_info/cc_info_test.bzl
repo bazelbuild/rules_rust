@@ -1,11 +1,15 @@
 """Unittests for rust rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load(
+    "@bazel_skylib//rules:common_settings.bzl",
+    "BuildSettingInfo",
+)
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
-def _is_dylib_on_windows(ctx):
+def _is_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
 
 def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
@@ -24,7 +28,7 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
 
     if type == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
-        if _is_dylib_on_windows(env.ctx):
+        if _is_windows(env.ctx):
             asserts.true(env, library_to_link.interface_library != None)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
         else:
@@ -53,7 +57,14 @@ def _collect_user_link_flags(env, tut):
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
-    _assert_cc_info_has_library_to_link(env, tut, "rlib", 4)
+
+    count = 4
+    if _is_windows(env.ctx):
+        count -= 1
+    if ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols[BuildSettingInfo].value:
+        count -= 1
+
+    _assert_cc_info_has_library_to_link(env, tut, "rlib", count)
     return analysistest.end(env)
 
 def _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl(ctx):
@@ -102,7 +113,15 @@ def _crate_group_info_provides_cc_info_test_impl(ctx):
     )
     return analysistest.end(env)
 
-rlib_provides_cc_info_test = analysistest.make(_rlib_provides_cc_info_test_impl)
+rlib_provides_cc_info_test = analysistest.make(
+    _rlib_provides_cc_info_test_impl,
+    attrs = {
+        "_experimental_use_allocator_libraries_with_mangled_symbols": attr.label(
+            default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
+        ),
+        "_windows": attr.label(default = Label("@platforms//os:windows")),
+    },
+)
 rlib_with_dep_only_has_stdlib_linkflags_once_test = analysistest.make(
     _rlib_with_dep_only_has_stdlib_linkflags_once_test_impl,
 )
@@ -115,11 +134,74 @@ proc_macro_does_not_provide_cc_info_test = analysistest.make(_proc_macro_does_no
 
 crate_group_info_provides_cc_info_test = analysistest.make(_crate_group_info_provides_cc_info_test_impl)
 
+def _is_cc_interface_library_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    cc_info = tut[CcInfo]
+
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    asserts.true(
+        env,
+        len(linker_inputs) > 0,
+        "No linker inputs provided by {}".format(tut.label),
+    )
+
+    for linker_input in linker_inputs:
+        asserts.true(
+            env,
+            len(linker_input.libraries) > 0,
+            "No linker input libraries provided by {}".format(tut.label),
+        )
+
+        for library_to_link in linker_input.libraries:
+            asserts.true(
+                env,
+                library_to_link.dynamic_library == None,
+                "dynamic_library unexpectedly provided by {}".format(tut.label),
+            )
+            asserts.true(
+                env,
+                library_to_link.static_library == None,
+                "static_library unexpectedly provided by {}".format(tut.label),
+            )
+            asserts.true(
+                env,
+                library_to_link.pic_static_library == None,
+                "pic_static_library unexpectedly provided by {}".format(tut.label),
+            )
+            asserts.true(
+                env,
+                library_to_link.interface_library != None,
+                "No interface libraries provided by {}".format(tut.label),
+            )
+    return analysistest.end(env)
+
+is_cc_interface_library_test = analysistest.make(_is_cc_interface_library_test_impl)
+
+def _build_test(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    if rust_common.crate_info in tut:
+        crate_info = tut[rust_common.crate_info]
+    else:
+        crate_info = tut[rust_common.test_crate_info].crate
+    asserts.true(
+        env,
+        bool(crate_info.output),
+        "No output created by {}".format(tut.label),
+    )
+
+    return analysistest.end(env)
+
+build_test = analysistest.make(_build_test)
+
 def _rust_cc_injection_impl(ctx):
     dep_variant_info = rust_common.dep_variant_info(
         cc_info = ctx.attr.cc_dep[CcInfo],
         crate_info = None,
         dep_info = None,
+        build_info = None,
     )
     return [
         rust_common.crate_group_info(
@@ -134,6 +216,22 @@ rust_cc_injection = rule(
         ),
     },
     implementation = _rust_cc_injection_impl,
+)
+
+def _rust_output_extractor_impl(ctx):
+    dep = ctx.attr.dep
+    crate_info = dep[rust_common.test_crate_info].crate
+    output = crate_info.output
+
+    return [DefaultInfo(
+        files = depset([output]),
+    )]
+
+rust_output_extractor = rule(
+    implementation = _rust_output_extractor_impl,
+    attrs = {
+        "dep": attr.label(),
+    },
 )
 
 def _cc_info_test():
@@ -185,10 +283,38 @@ def _cc_info_test():
         cc_dep = ":cc_lib",
     )
 
+    rust_output_extractor(
+        name = "rust_output_extractor",
+        dep = select({
+            "@platforms//os:windows": ":staticlib",
+            "//conditions:default": ":cdylib",
+        }),
+    )
+
+    cc_import(
+        name = "cc_import",
+        interface_library = ":rust_output_extractor",
+        system_provided = True,
+    )
+
     rust_library(
         name = "rust_lib_with_cc_lib_injected",
         srcs = ["foo.rs"],
         deps = [":cc_lib_injected"],
+        edition = "2018",
+    )
+
+    rust_library(
+        name = "rust_lib_with_interface_lib_dep",
+        srcs = ["foo.rs"],
+        deps = [":cc_import"],
+        edition = "2018",
+    )
+
+    rust_shared_library(
+        name = "rust_dylib_with_interface_lib_dep",
+        srcs = ["foo.rs"],
+        deps = [":cc_import"],
         edition = "2018",
     )
 
@@ -220,6 +346,18 @@ def _cc_info_test():
         name = "crate_group_info_provides_cc_info_test",
         target_under_test = ":rust_lib_with_cc_lib_injected",
     )
+    is_cc_interface_library_test(
+        name = "is_cc_interface_library_test",
+        target_under_test = ":cc_import",
+    )
+    build_test(
+        name = "rust_lib_with_interface_lib_dep_test",
+        target_under_test = ":rust_lib_with_interface_lib_dep",
+    )
+    build_test(
+        name = "rust_dylib_with_interface_lib_dep_test",
+        target_under_test = ":rust_dylib_with_interface_lib_dep",
+    )
 
 def cc_info_test_suite(name):
     """Entry-point macro called from the BUILD file.
@@ -239,5 +377,8 @@ def cc_info_test_suite(name):
             ":proc_macro_does_not_provide_cc_info_test",
             ":bin_does_not_provide_cc_info_test",
             ":crate_group_info_provides_cc_info_test",
+            ":is_cc_interface_library_test",
+            ":rust_lib_with_interface_lib_dep_test",
+            ":rust_dylib_with_interface_lib_dep_test",
         ],
     )

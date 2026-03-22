@@ -28,7 +28,7 @@ load(
     "//rust/private:utils.bzl",
     "concat",
     "dedent",
-    "dedup_expand_location",
+    "deduplicate",
     "find_toolchain",
 )
 
@@ -54,7 +54,9 @@ def write_rust_analyzer_spec_file(ctx, attrs, owner, base_info):
         env = base_info.env,
         deps = base_info.deps,
         crate_specs = depset(direct = [crate_spec], transitive = [base_info.crate_specs]),
-        proc_macro_dylib_path = base_info.proc_macro_dylib_path,
+        proc_macro_dylibs = depset(transitive = [base_info.proc_macro_dylibs]),
+        build_info_out_dirs = depset(transitive = [base_info.build_info_out_dirs]),
+        proc_macro_dylib = base_info.proc_macro_dylib,
         build_info = base_info.build_info,
     )
 
@@ -135,6 +137,10 @@ def _rust_analyzer_aspect_impl(target, ctx):
         if aliased_target.label in labels_to_rais:
             aliases[labels_to_rais[aliased_target.label]] = aliased_name
 
+    proc_macro_dylib = find_proc_macro_dylib(toolchain, target)
+    proc_macro_dylibs = [proc_macro_dylib] if proc_macro_dylib else None
+    build_info_out_dirs = [build_info.out_dir] if build_info != None and build_info.out_dir != None else None
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = aliases,
         crate = crate_info,
@@ -142,23 +148,29 @@ def _rust_analyzer_aspect_impl(target, ctx):
         env = crate_info.rustc_env,
         deps = dep_infos,
         crate_specs = depset(transitive = [dep.crate_specs for dep in dep_infos]),
-        proc_macro_dylib_path = find_proc_macro_dylib_path(toolchain, target),
+        proc_macro_dylibs = depset(direct = proc_macro_dylibs, transitive = [dep.proc_macro_dylibs for dep in dep_infos]),
+        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [dep.build_info_out_dirs for dep in dep_infos]),
+        proc_macro_dylib = proc_macro_dylib,
         build_info = build_info,
     ))
 
     return [
         rust_analyzer_info,
-        OutputGroupInfo(rust_analyzer_crate_spec = rust_analyzer_info.crate_specs),
+        OutputGroupInfo(
+            rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
+            rust_analyzer_proc_macro_dylib = rust_analyzer_info.proc_macro_dylibs,
+            rust_analyzer_src = rust_analyzer_info.build_info_out_dirs,
+        ),
     ]
 
-def find_proc_macro_dylib_path(toolchain, target):
-    """Find the proc_macro_dylib_path of target. Returns None if target crate is not type proc-macro.
+def find_proc_macro_dylib(toolchain, target):
+    """Find the proc_macro_dylib of target. Returns None if target crate is not type proc-macro.
 
     Args:
         toolchain: The current rust toolchain.
         target: The current target.
     Returns:
-        (path): The path to the proc macro dylib, or None if this crate is not a proc-macro.
+        (File): The path to the proc macro dylib, or None if this crate is not a proc-macro.
     """
     if rust_common.crate_info in target:
         crate_info = target[rust_common.crate_info]
@@ -174,7 +186,7 @@ def find_proc_macro_dylib_path(toolchain, target):
     for action in target.actions:
         for output in action.outputs.to_list():
             if output.extension == dylib_ext[1:]:
-                return output.path
+                return output
 
     # Failed to find the dylib path inside a proc-macro crate.
     # TODO: Should this be an error?
@@ -188,7 +200,7 @@ rust_analyzer_aspect = aspect(
 )
 
 # Paths in the generated JSON file begin with one of these placeholders.
-# The gen_rust_project driver will replace them with absolute paths.
+# The `rust-analyzer` driver will replace them with absolute paths.
 _WORKSPACE_TEMPLATE = "__WORKSPACE__/"
 _EXEC_ROOT_TEMPLATE = "__EXEC_ROOT__/"
 _OUTPUT_BASE_TEMPLATE = "__OUTPUT_BASE__/"
@@ -220,6 +232,7 @@ def _create_single_crate(ctx, attrs, info):
     crate["edition"] = info.crate.edition
     crate["env"] = {}
     crate["crate_type"] = info.crate.type
+    crate["is_test"] = info.crate.is_test
 
     # Switch on external/ to determine if crates are in the workspace or remote.
     # TODO: Some folks may want to override this for vendored dependencies.
@@ -229,6 +242,14 @@ def _create_single_crate(ctx, attrs, info):
     crate["is_workspace_member"] = not is_external
     crate["root_module"] = path_prefix + info.crate.root.path
     crate["source"] = {"exclude_dirs": [], "include_dirs": []}
+
+    # We're only interested in the build info for local crates as these are the
+    # only ones for which we want build file watching and code lens runnables support.
+    if not is_external and not is_generated:
+        crate["build"] = {
+            "build_file": _WORKSPACE_TEMPLATE + ctx.build_file_path,
+            "label": ctx.label.package + ":" + ctx.label.name,
+        }
 
     if is_generated:
         srcs = getattr(ctx.rule.files, "srcs", [])
@@ -249,9 +270,9 @@ def _create_single_crate(ctx, attrs, info):
 
     # TODO: The only imagined use case is an env var holding a filename in the workspace passed to a
     # macro like include_bytes!. Other use cases might exist that require more complex logic.
-    expand_targets = concat([getattr(attrs, attr, []) for attr in ["data", "compile_data"]])
+    expand_targets = deduplicate(concat([getattr(attrs, attr, []) for attr in ["data", "compile_data"]]))
 
-    crate["env"].update({k: dedup_expand_location(ctx, v, expand_targets) for k, v in info.env.items()})
+    crate["env"].update({k: ctx.expand_location(v, expand_targets) for k, v in info.env.items()})
 
     # Omit when a crate appears to depend on itself (e.g. foo_test crates).
     # It can happen a single source file is present in multiple crates - there can
@@ -268,18 +289,35 @@ def _create_single_crate(ctx, attrs, info):
     crate["cfg"] = info.cfgs
     toolchain = find_toolchain(ctx)
     crate["target"] = (_EXEC_ROOT_TEMPLATE + toolchain.target_json.path) if toolchain.target_json else toolchain.target_flag_value
-    if info.proc_macro_dylib_path != None:
-        crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib_path
+    if info.proc_macro_dylib != None:
+        crate["proc_macro_dylib_path"] = _EXEC_ROOT_TEMPLATE + info.proc_macro_dylib.path
     return crate
 
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
 def _rust_analyzer_toolchain_impl(ctx):
+    make_variable_info = platform_common.TemplateVariableInfo({
+        "RUST_ANALYZER": ctx.file.rust_analyzer.path,
+        "RUST_ANALYZER_RLOCATIONPATH": _rlocationpath(ctx.file.rust_analyzer, ctx.workspace_name),
+    })
+
     toolchain = platform_common.ToolchainInfo(
         proc_macro_srv = ctx.executable.proc_macro_srv,
+        rust_analyzer = ctx.executable.rust_analyzer,
         rustc = ctx.executable.rustc,
         rustc_srcs = ctx.attr.rustc_srcs,
+        rustc_srcs_path = ctx.attr.rustc_srcs_path,
+        make_variables = make_variable_info,
     )
 
-    return [toolchain]
+    return [
+        make_variable_info,
+        toolchain,
+    ]
 
 rust_analyzer_toolchain = rule(
     implementation = _rust_analyzer_toolchain_impl,
@@ -287,6 +325,12 @@ rust_analyzer_toolchain = rule(
     attrs = {
         "proc_macro_srv": attr.label(
             doc = "The path to a `rust_analyzer_proc_macro_srv` binary.",
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+        ),
+        "rust_analyzer": attr.label(
+            doc = "The path to a `rust-analyzer` binary.",
             cfg = "exec",
             executable = True,
             allow_single_file = True,
@@ -302,7 +346,38 @@ rust_analyzer_toolchain = rule(
             doc = "The source code of rustc.",
             mandatory = True,
         ),
+        "rustc_srcs_path": attr.string(
+            doc = "The direct path to rustc srcs relative to rustc_srcs package root.",
+            default = "library",
+        ),
     },
+)
+
+def _current_rust_analyzer_toolchain_impl(ctx):
+    toolchain = ctx.toolchains[str(Label("@rules_rust//rust/rust_analyzer:toolchain_type"))]
+
+    files = []
+    if toolchain.rust_analyzer:
+        files.append(toolchain.rust_analyzer)
+    if toolchain.proc_macro_srv:
+        files.append(toolchain.proc_macro_srv)
+    if toolchain.rustc:
+        files.append(toolchain.rustc)
+
+    return [
+        toolchain,
+        toolchain.make_variables,
+        DefaultInfo(
+            files = depset(files),
+        ),
+    ]
+
+current_rust_analyzer_toolchain = rule(
+    doc = "A rule for exposing the current registered `rust_analyzer_toolchain`.",
+    implementation = _current_rust_analyzer_toolchain_impl,
+    toolchains = [
+        str(Label("@rules_rust//rust/rust_analyzer:toolchain_type")),
+    ],
 )
 
 def _rust_analyzer_detect_sysroot_impl(ctx):
@@ -315,8 +390,8 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
         )
 
     rustc_srcs = rust_analyzer_toolchain.rustc_srcs
+    sysroot_src = rustc_srcs.label.package + "/" + rust_analyzer_toolchain.rustc_srcs_path
 
-    sysroot_src = rustc_srcs.label.package + "/library"
     if rustc_srcs.label.workspace_root:
         sysroot_src = _OUTPUT_BASE_TEMPLATE + rustc_srcs.label.workspace_root + "/" + sysroot_src
     else:

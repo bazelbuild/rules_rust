@@ -51,9 +51,9 @@ pub(crate) fn resolve_cfg_platforms(
         .collect::<Result<BTreeMap<&TargetTriple, &'static TargetInfo>>>()?;
 
     // `cfg-expr` does not understand configurations that are simply platform triples
-    // (`x86_64-unknown-linux-gnu` vs `cfg(target = "x86_64-unkonwn-linux-gnu")`). So
+    // (`x86_64-unknown-linux-gnu` vs `cfg(target = "x86_64-unknown-linux-gnu")`). So
     // in order to parse configurations, the text is renamed for the check but the
-    // original is retained for comaptibility with the manifest.
+    // original is retained for compatibility with the manifest.
     let rename = |cfg: &str| -> String { format!("cfg(target = \"{cfg}\")") };
     let original_cfgs: BTreeMap<String, String> = configurations
         .iter()

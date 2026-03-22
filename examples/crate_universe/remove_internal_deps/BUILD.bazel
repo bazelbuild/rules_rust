@@ -1,0 +1,27 @@
+load("@bazel_lib//lib:testing.bzl", "assert_contains")
+
+genrule(
+    name = "generate_diff_between_stripped_and_regular_lockfile",
+    srcs = [
+        ":Cargo.bazel.lock",
+        ":Cargo.lock",
+    ],
+    outs = ["diff.txt"],
+    cmd = "diff -u $(location :Cargo.bazel.lock) $(location :Cargo.lock) > $@ || true",
+)
+
+INTERNAL_DEPENDENCY_DIFF_REMOVED_FROM_CARGO_BAZEL_LOCKFILE = """+name = "num_printer"
++version = "0.1.0"
++dependencies = [
++ "clap",
++ "printer",
++]
++
++[[package]]
+"""
+
+assert_contains(
+    name = "assert_diff_lockfiles_contains_an_internal_dependency",
+    actual = ":generate_diff_between_stripped_and_regular_lockfile",
+    expected = INTERNAL_DEPENDENCY_DIFF_REMOVED_FROM_CARGO_BAZEL_LOCKFILE,
+)

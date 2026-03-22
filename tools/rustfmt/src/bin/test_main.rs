@@ -12,7 +12,7 @@ fn main() {
 /// Run rustfmt on a set of Bazel targets
 fn run_rustfmt(options: &Config) {
     // In order to ensure the test parses all sources, we separately
-    // track whether or not a failure has occured when checking formatting.
+    // track whether or not a failure has occurred when checking formatting.
     let mut is_failure: bool = false;
 
     for manifest in options.manifests.iter() {

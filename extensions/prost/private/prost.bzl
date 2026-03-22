@@ -18,7 +18,12 @@ load("@rules_rust//rust/private:rust_analyzer.bzl", "write_rust_analyzer_spec_fi
 load("@rules_rust//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("@rules_rust//rust/private:utils.bzl", "can_build_metadata")
+load(
+    "@rules_rust//rust/private:utils.bzl",
+    "can_build_metadata",
+    "can_use_metadata_for_pipelining",
+    "generate_output_diagnostics",
+)
 load("//:providers.bzl", "ProstProtoInfo")
 load(":prost_transform.bzl", "ProstTransformInfo")
 
@@ -61,7 +66,7 @@ def _compile_proto(
     lib_rs = ctx.actions.declare_file("{}.lib.rs".format(ctx.label.name))
 
     proto_compiler = prost_toolchain.proto_compiler
-    tools = depset([proto_compiler.executable])
+    tools = [proto_compiler.executable]
 
     tonic_opts = []
     prost_opts = []
@@ -73,34 +78,33 @@ def _compile_proto(
 
     all_additional_srcs = depset(transitive = additional_srcs)
     direct_crate_names = [dep[ProstProtoInfo].dep_variant_info.crate_info.name for dep in deps]
-    additional_args = ctx.actions.args()
 
     # Prost process wrapper specific args
-    compile_well_known_types = prost_toolchain.compile_well_known_types
-    additional_args.add("--protoc={}".format(proto_compiler.executable.path))
-    additional_args.add("--label={}".format(ctx.label))
-    additional_args.add("--out_librs={}".format(lib_rs.path))
+    additional_args = ctx.actions.args()
+    additional_args.add(proto_compiler.executable, format = "--protoc=%s")
+    additional_args.add(ctx.label, format = "--label=%s")
+    additional_args.add(lib_rs, format = "--out_librs=%s")
     additional_args.add("--package_info_output={}".format("{}={}".format(crate_name, package_info_file.path)))
-    additional_args.add("--deps_info={}".format(deps_info_file.path))
-    additional_args.add("--direct_dep_crate_names={}".format(",".join(direct_crate_names)))
-    if compile_well_known_types:
+    additional_args.add(deps_info_file, format = "--deps_info=%s")
+    additional_args.add_joined(direct_crate_names, join_with = ",", format_joined = "--direct_dep_crate_names=%s")
+    if prost_toolchain.compile_well_known_types:
         additional_args.add("--compile_well_known_types")
-    additional_args.add("--descriptor_set={}".format(proto_info.direct_descriptor_set.path))
-    additional_args.add("--additional_srcs={}".format(",".join([f.path for f in all_additional_srcs.to_list()])))
+    additional_args.add(proto_info.direct_descriptor_set, format = "--descriptor_set=%s")
+    additional_args.add_joined(all_additional_srcs, join_with = ",", format_joined = "--additional_srcs=%s")
     additional_args.add_all(prost_toolchain.prost_opts + prost_opts, format_each = "--prost_opt=%s")
 
     if prost_toolchain.tonic_plugin:
         tonic_plugin = prost_toolchain.tonic_plugin[DefaultInfo].files_to_run
-        additional_args.add(prost_toolchain.tonic_plugin_flag % tonic_plugin.executable.path)
+        additional_args.add(tonic_plugin.executable, format = prost_toolchain.tonic_plugin_flag)
         additional_args.add("--tonic_opt=no_include")
         additional_args.add("--is_tonic")
 
         additional_args.add_all(prost_toolchain.tonic_opts + tonic_opts, format_each = "--tonic_opt=%s")
-        tools = depset([tonic_plugin.executable], transitive = [tools])
+        tools.append(tonic_plugin.executable)
 
     if rustfmt_toolchain:
-        additional_args.add("--rustfmt={}".format(rustfmt_toolchain.rustfmt.path))
-        tools = depset(transitive = [tools, rustfmt_toolchain.all_files])
+        additional_args.add(rustfmt_toolchain.rustfmt, format = "--rustfmt=%s")
+        tools = depset(tools, transitive = [rustfmt_toolchain.all_files]).to_list()
 
     additional_inputs = depset(
         [deps_info_file, proto_info.direct_descriptor_set] + [dep[ProstProtoInfo].package_info for dep in deps],
@@ -110,7 +114,7 @@ def _compile_proto(
     proto_common.compile(
         actions = ctx.actions,
         proto_info = proto_info,
-        additional_tools = tools.to_list(),
+        additional_tools = tools,
         additional_inputs = additional_inputs,
         additional_args = additional_args,
         generated_files = [lib_rs, package_info_file],
@@ -181,6 +185,8 @@ def _compile_rust(
 
     lib = ctx.actions.declare_file(lib_name)
     rmeta = None
+    rustc_rmeta_output = None
+    metadata_supports_pipelining = False
 
     if can_build_metadata(toolchain, ctx, "rlib"):
         rmeta_name = "{prefix}{name}-{lib_hash}{extension}".format(
@@ -190,6 +196,8 @@ def _compile_rust(
             extension = ".rmeta",
         )
         rmeta = ctx.actions.declare_file(rmeta_name)
+        rustc_rmeta_output = generate_output_diagnostics(ctx, rmeta)
+        metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 
     providers = rustc_compile_action(
         ctx = ctx,
@@ -199,12 +207,14 @@ def _compile_rust(
             name = crate_name,
             type = "rlib",
             root = src,
-            srcs = depset([src]),
-            deps = depset(deps),
-            proc_macro_deps = depset([]),
+            srcs = [src],
+            deps = deps,
+            proc_macro_deps = [],
             aliases = {},
             output = lib,
             metadata = rmeta,
+            metadata_supports_pipelining = metadata_supports_pipelining,
+            rustc_rmeta_output = rustc_rmeta_output,
             edition = edition,
             is_test = False,
             rustc_env = {},
@@ -252,7 +262,7 @@ def _rust_prost_aspect_impl(target, ctx):
                 build_info = None,
             ))
         if RustAnalyzerInfo in prost_runtime:
-            rust_analyzer_deps.append(prost_runtime[RustAnalyzerInfo].deps)
+            rust_analyzer_deps.append(prost_runtime[RustAnalyzerInfo])
         if RustAnalyzerGroupInfo in prost_runtime:
             rust_analyzer_deps.extend(prost_runtime[RustAnalyzerGroupInfo].deps)
 
@@ -278,10 +288,18 @@ def _rust_prost_aspect_impl(target, ctx):
             transform_infos.append(data_target[ProstTransformInfo])
 
     rust_deps = runtime_deps + direct_deps
+    crate_name_overrides = []
     for transform_info in transform_infos:
         rust_deps.extend(transform_info.deps)
+        if transform_info.crate_name:
+            crate_name_overrides.append(transform_info.crate_name)
 
-    crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
+    if len(crate_name_overrides) > 1:
+        fail("Multiple crate name overrides detected. Only one override is allowed. Please check your rust_prost_transform targets.")
+    elif len(crate_name_overrides) == 1:
+        crate_name = crate_name_overrides[0]
+    else:
+        crate_name = ctx.label.name.replace("-", "_").replace("/", "_")
 
     proto_info = target[ProtoInfo]
 
@@ -308,6 +326,8 @@ def _rust_prost_aspect_impl(target, ctx):
     # https://github.com/rust-analyzer/rust-analyzer/blob/2021-11-15/crates/project_model/src/workspace.rs#L529-L531
     cfgs = ["test", "debug_assertions"]
 
+    build_info_out_dirs = [dep_variant_info.build_info.out_dir] if dep_variant_info.build_info != None and dep_variant_info.build_info.out_dir != None else None
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = {},
         crate = dep_variant_info.crate_info,
@@ -315,7 +335,9 @@ def _rust_prost_aspect_impl(target, ctx):
         env = dep_variant_info.crate_info.rustc_env,
         deps = rust_analyzer_deps,
         crate_specs = depset(transitive = [dep.crate_specs for dep in rust_analyzer_deps]),
-        proc_macro_dylib_path = None,
+        proc_macro_dylibs = depset(transitive = [dep.proc_macro_dylibs for dep in rust_analyzer_deps]),
+        build_info_out_dirs = depset(direct = build_info_out_dirs, transitive = [dep.build_info_out_dirs for dep in rust_analyzer_deps]),
+        proc_macro_dylib = None,
         build_info = dep_variant_info.build_info,
     ))
 
@@ -361,11 +383,16 @@ rust_prost_aspect = aspect(
             executable = True,
             default = Label("//private:protoc_wrapper"),
         ),
-    } | RUSTC_ATTRS,
+    } | RUSTC_ATTRS | {
+        # Need to override this attribute to explicitly set the workspace.
+        "_always_enable_metadata_output_groups": attr.label(
+            default = Label("@rules_rust//rust/settings:always_enable_metadata_output_groups"),
+        ),
+    },
     fragments = ["cpp"],
     toolchains = [
         TOOLCHAIN_TYPE,
-        "@bazel_tools//tools/cpp:toolchain_type",
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
         "@rules_rust//rust:toolchain_type",
         "@rules_rust//rust/rustfmt:toolchain_type",
     ],

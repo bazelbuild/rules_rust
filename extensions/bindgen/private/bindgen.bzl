@@ -14,6 +14,7 @@
 
 """Rust Bindgen rules"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_COMPILE_ACTION_NAME",
@@ -187,6 +188,23 @@ def _generate_cc_link_build_info(ctx, cc_lib):
         rustc_env = None,
     )
 
+def _get_resource_dir(cc_toolchain):
+    """Returns the resource directory for the given cc_toolchain."""
+
+    # We use a bit of a hack to find the resource directory: We know that the builtin header
+    # stdbool.h (chosen relatively arbitrarily) needs to appear in `cc_toolchain.all_files`, so we
+    # search for it and use the directory above the include directory as the resource directory.
+    # This isn't ideal, but mboehme@google.com believes there is no more direct way of doing this.
+    for f in cc_toolchain.all_files.to_list():
+        if f.basename == "stdbool.h":
+            path = f.path
+            for _ in range(path.count("/") + 1):
+                if paths.basename(path) == "include":
+                    return paths.dirname(path)
+                path = paths.dirname(path)
+
+    return None
+
 def _rust_bindgen_impl(ctx):
     # nb. We can't grab the cc_library`s direct headers, so a header must be provided.
     cc_lib = ctx.attr.cc_lib
@@ -198,8 +216,8 @@ def _rust_bindgen_impl(ctx):
     toolchain = ctx.toolchains[Label("//:toolchain_type")]
     bindgen_bin = toolchain.bindgen
     clang_bin = toolchain.clang
-    libclang = toolchain.libclang
-    libstdcxx = toolchain.libstdcxx
+    libclang = getattr(toolchain, "libclang", None)
+    libstdcxx = getattr(toolchain, "libstdcxx", None)
 
     output = ctx.outputs.out
 
@@ -207,13 +225,15 @@ def _rust_bindgen_impl(ctx):
 
     tools = depset(([clang_bin] if clang_bin else []), transitive = [cc_toolchain.all_files])
 
-    # libclang should only have 1 output file
-    libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
-
     env = {
-        "LIBCLANG_PATH": libclang_dir,
         "RUST_BACKTRACE": "1",
     }
+
+    if libclang:
+        # libclang should only have 1 output file
+        libclang_dir = _get_libs_for_static_executable(libclang).to_list()[0].dirname
+        env["LIBCLANG_PATH"] = libclang_dir
+
     if clang_bin:
         env["CLANG_PATH"] = clang_bin.path
 
@@ -221,6 +241,11 @@ def _rust_bindgen_impl(ctx):
 
     # Configure Bindgen Arguments
     args.add_all(ctx.attr.bindgen_flags)
+
+    rust_toolchain = ctx.toolchains[Label("@rules_rust//rust:toolchain_type")]
+    if "--rust-edition" not in [f.split("=")[0] for f in ctx.attr.bindgen_flags]:
+        args.add("--rust-edition=%s" % rust_toolchain.default_edition)
+
     args.add(header)
     args.add("--output", output)
 
@@ -230,7 +255,7 @@ def _rust_bindgen_impl(ctx):
     if wrap_static_fns:
         if "--wrap-static-fns" in ctx.attr.bindgen_flags:
             fail("Do not pass `--wrap-static-fns` to `bindgen_flags, it's added automatically." +
-                 "The generated C file is accesible in the `bindgen_c_thunks` output group.")
+                 "The generated C file is accessible in the `bindgen_c_thunks` output group.")
         c_output = ctx.actions.declare_file(ctx.label.name + ".bindgen_c_thunks.c")
         args.add("--experimental")
         args.add("--wrap-static-fns")
@@ -249,13 +274,20 @@ def _rust_bindgen_impl(ctx):
     # Configure Clang Arguments
     args.add("--")
 
+    resource_dir = _get_resource_dir(cc_toolchain)
+    if resource_dir:
+        args.add("-resource-dir=%s" % resource_dir)
+
     compile_variables = cc_common.create_compile_variables(
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         include_directories = cc_lib[CcInfo].compilation_context.includes,
         quote_include_directories = cc_lib[CcInfo].compilation_context.quote_includes,
         system_include_directories = depset(
-            transitive = [cc_lib[CcInfo].compilation_context.system_includes],
+            transitive = [
+                cc_lib[CcInfo].compilation_context.system_includes,
+                cc_lib[CcInfo].compilation_context.external_includes,
+            ],
             direct = cc_toolchain.built_in_include_directories,
         ),
         user_compile_flags = ctx.attr.clang_flags,
@@ -271,23 +303,45 @@ def _rust_bindgen_impl(ctx):
     # Ideally we could depend on a more specific toolchain, requesting one which is specifically clang via some constraint.
     # Unfortunately, we can't currently rely on this, so instead we filter only to flags we know clang supports.
     # We can add extra flags here as needed.
-    flags_known_to_clang = (
+    # Flags in this tuple accept a parameter in the same argument (`-Ipath`, `--target=T`) or separately (`-I path`, `-target T`).
+    param_flags_known_to_clang = (
         "-I",
         "-iquote",
         "-isystem",
         "--sysroot",
         "--gcc-toolchain",
+        "-target",
         "--target",
         "-W",
         "--system-header-prefix",
         "--no-system-header-prefix",
         "-Xclang",
         "-D",
-        "-no-canonical-prefixes",
-        "-nostd",
     )
+
+    # Flags in this tuple do not accept a parameter.
+    paramless_flags_known_to_clang = (
+        "-no-canonical-prefixes",
+        "-nostdinc",
+        "--no-standard-includes",
+        "-nostdinc++",
+        "-nostdlib++",
+        "-nostdlibinc",
+    )
+
+    # Some forks of Clang, such as Apple's, define additional `-Xclang` flags that upstream Clang
+    # (as used by bindgen) does not understand, so we want to strip them out. We list them here.
+    xclang_flags_to_strip = (
+        "-fexperimental-optimized-noescape",
+    )
+
     open_arg = False
-    for arg in compile_flags:
+    skip_next = False
+    for idx, arg in enumerate(compile_flags):
+        if skip_next:
+            skip_next = False
+            continue
+
         if open_arg:
             args.add(arg)
             open_arg = False
@@ -298,12 +352,16 @@ def _rust_bindgen_impl(ctx):
             args.add(arg)
             continue
 
-        if not arg.startswith(flags_known_to_clang):
+        if not arg.startswith(param_flags_known_to_clang) and not arg in paramless_flags_known_to_clang:
+            continue
+
+        if arg == "-Xclang" and idx + 1 < len(compile_flags) and compile_flags[idx + 1] in xclang_flags_to_strip:
+            skip_next = True
             continue
 
         args.add(arg)
 
-        if arg in flags_known_to_clang:
+        if arg in param_flags_known_to_clang:
             open_arg = True
             continue
 
@@ -311,7 +369,7 @@ def _rust_bindgen_impl(ctx):
     for define in ctx.attr.cc_lib[CcInfo].compilation_context.defines.to_list():
         args.add("-D" + define)
 
-    _, _, linker_env = get_linker_and_args(ctx, "bin", cc_toolchain, feature_configuration, None)
+    _, _, _, linker_env = get_linker_and_args(ctx, "bin", rust_toolchain, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
 
     # Set the dynamic linker search path so that clang uses the libstdcxx from the toolchain.
@@ -326,8 +384,9 @@ def _rust_bindgen_impl(ctx):
             [header],
             transitive = [
                 cc_lib[CcInfo].compilation_context.headers,
-                _get_libs_for_static_executable(libclang),
             ] + ([
+                _get_libs_for_static_executable(libclang),
+            ] if libclang else []) + ([
                 _get_libs_for_static_executable(libstdcxx),
             ] if libstdcxx else []),
         ),
@@ -473,10 +532,11 @@ For additional information, see the [Bazel toolchains documentation](https://doc
             default = True,
         ),
         "libclang": attr.label(
-            doc = "A cc_library that provides bindgen's runtime dependency on libclang.",
+            doc = "A cc_library providing bindgen's runtime dependency on libclang. This attribute is required for hermeticity when bindgen is dynamically linked. If None, bindgen must be statically linked; else, system libraries will be used instead.",
             cfg = "exec",
             providers = [CcInfo],
             allow_files = True,
+            mandatory = False,
         ),
         "libstdcxx": attr.label(
             doc = "A cc_library that satisfies libclang's libstdc++ dependency. This is used to make the execution of clang hermetic. If None, system libraries will be used instead.",

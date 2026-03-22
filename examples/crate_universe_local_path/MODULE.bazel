@@ -4,7 +4,7 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(edition = "2021")
@@ -25,3 +25,13 @@ crate.from_cargo(
     manifests = ["//crates_from_workspace:Cargo.toml"],
 )
 use_repo(crate, "crates_from_cargo_workspace")
+
+crate.from_specs(
+    name = "crates_from_specs",
+)
+crate.spec(
+    package = "lazy_static",
+    repositories = ["crates_from_specs"],
+    version = "=1.5.0",
+)
+use_repo(crate, "crates_from_specs")

@@ -4,8 +4,8 @@
 
 ## [Documentation][docs]
 
-For detailed documentation. See https://bazelbuild.github.io/rules_rust/crate_universe.html
+For detailed documentation. See https://bazelbuild.github.io/rules_rust/external_crates.html
 
 [cargo]: https://doc.rust-lang.org/cargo/
 [bazel]: https://bazel.build/
-[docs]: https://bazelbuild.github.io/rules_rust/crate_universe.html
+[docs]: https://bazelbuild.github.io/rules_rust/external_crates.html

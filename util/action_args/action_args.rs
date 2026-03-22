@@ -3,13 +3,14 @@
 use std::path::Path;
 
 /// The format for an [Args param file[(https://bazel.build/rules/lib/builtins/Args.html#set_param_file_format).
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum ActionArgsFormat {
     /// Each item (argument name or value) is written verbatim to the param
     /// file with a newline character following it.
     Multiline,
 
     /// Same as [Self::Multiline], but the items are shell-quoted.
+    #[default]
     Shell,
 
     /// Same as [Self::Multiline], but (1) only flags (beginning with '--')
@@ -17,12 +18,6 @@ pub enum ActionArgsFormat {
     /// any, are written on the same line with a '=' separator. This is the
     /// format expected by the Abseil flags library.
     FlagPerLine,
-}
-
-impl Default for ActionArgsFormat {
-    fn default() -> Self {
-        Self::Shell
-    }
 }
 
 /// Parsed [`ctx.action.args`](https://bazel.build/rules/lib/builtins/Args.html) params.

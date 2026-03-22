@@ -127,7 +127,7 @@ fn format_lint_set<'a>(
     Some(formatted)
 }
 
-/// Generates space seperated <lint name> <lint level> files that get read back in by Bazel.
+/// Generates space separated <lint name> <lint level> files that get read back in by Bazel.
 fn generate_lints_info(
     crate_manifest: &Manifest,
     workspace_manifest: Option<&Manifest>,

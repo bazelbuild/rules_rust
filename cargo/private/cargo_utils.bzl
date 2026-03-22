@@ -76,8 +76,13 @@ def _resolve_repository_template(
         if repo.startswith("@"):
             repo = repo[1:]
             prefix = "@"
-        elif repo.startswith("@@"):
+        elif repo.startswith(
+            # buildifier: disable=canonical-repository
+            "@@",
+        ):
             repo = repo[2:]
+
+            # buildifier: disable=canonical-repository
             prefix = "@@"
 
         suffix = ""

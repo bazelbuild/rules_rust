@@ -50,10 +50,10 @@ In your MODULE.bazel, you add the following:
 # https://github.com/bazelbuild/rules_proto/releases
 bazel_dep(name = "rules_proto", version = "7.1.0")
 # https://registry.bazel.build/modules/protobuf
-bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
+bazel_dep(name = "protobuf", version = "29.1", repo_name = "com_google_protobuf")
 # rules for LLVM
 # https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.2.0")
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 # 1 Register LLVM
 ###############################################################################

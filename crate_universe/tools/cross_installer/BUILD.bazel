@@ -23,11 +23,11 @@ rust_binary(
     edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     rustc_env = {
-        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
-        "CROSS_BIN": "$(rootpath :cross)",
-        "CROSS_CONFIG": "$(rootpath :Cross.toml)",
+        "CARGO": "$(rlocationpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CROSS_BIN": "$(rlocationpath :cross)",
+        "CROSS_CONFIG_RLOCATION": "$(rlocationpath :Cross.toml)",
     },
-    deps = all_crate_deps(normal = True),
+    deps = all_crate_deps(normal = True) + ["@rules_rust//rust/runfiles"],
 )
 
 filegroup(

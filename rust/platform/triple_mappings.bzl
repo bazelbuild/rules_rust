@@ -43,25 +43,34 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
 # See `@rules_rust//rust/platform:triple_mappings.bzl` for the complete list.
 SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-apple-ios": _support(std = True, host_tools = False),
+    "aarch64-apple-ios-macabi": _support(std = True, host_tools = False),
     "aarch64-apple-ios-sim": _support(std = True, host_tools = False),
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
+    "arm-unknown-linux-musleabi": _support(std = True, host_tools = True),
     "armv7-linux-androideabi": _support(std = True, host_tools = False),
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
+    "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
     "thumbv8m.main-none-eabi": _support(std = True, host_tools = False),
+    "wasm32-unknown-emscripten": _support(std = True, host_tools = False),
     "wasm32-unknown-unknown": _support(std = True, host_tools = False),
     "wasm32-wasip1": _support(std = True, host_tools = False),
+    "wasm32-wasip1-threads": _support(std = True, host_tools = False),
+    "wasm32-wasip2": _support(std = True, host_tools = False),
     "x86_64-apple-ios": _support(std = True, host_tools = False),
+    "x86_64-apple-ios-macabi": _support(std = True, host_tools = False),
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
@@ -138,7 +147,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "dragonfly": None,
     "eabi": "none",
     "eabihf": "none",
-    "emscripten": None,
+    "emscripten": "emscripten",
     "freebsd": "freebsd",
     "fuchsia": "fuchsia",
     "ios": "ios",
@@ -155,6 +164,7 @@ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
     "unknown": None,
     "wasi": None,
     "wasip1": None,
+    "wasip2": None,
     "windows": "windows",
 }
 
@@ -179,6 +189,7 @@ _SYSTEM_TO_BINARY_EXT = {
     "unknown": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
+    "wasip2": ".wasm",
     "windows": ".exe",
 }
 
@@ -200,6 +211,7 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "unknown": "",
     "wasi": "",
     "wasip1": "",
+    "wasip2": "",
     "windows": ".lib",
 }
 
@@ -221,6 +233,7 @@ _SYSTEM_TO_DYLIB_EXT = {
     "unknown": ".wasm",
     "wasi": ".wasm",
     "wasip1": ".wasm",
+    "wasip2": ".wasm",
     "windows": ".dll",
 }
 
@@ -270,15 +283,17 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "uwp": ["ws2_32.lib"],
     "wasi": [],
     "wasip1": [],
+    "wasip2": [],
     "windows": ["advapi32.lib", "ws2_32.lib", "userenv.lib", "Bcrypt.lib"],
 }
 
-def cpu_arch_to_constraints(cpu_arch, *, system = None):
-    """Returns a list of contraint values which represents a triple's CPU.
+def cpu_arch_to_constraints(cpu_arch, *, system = None, abi = None):
+    """Returns a list of constraint values which represents a triple's CPU.
 
     Args:
         cpu_arch (str): The architecture to match constraints for
         system (str, optional): The system for the associated ABI value.
+        abi (str, optional): The application binary interface required for the target platform
 
     Returns:
         List: A list of labels to constraint values
@@ -289,7 +304,7 @@ def cpu_arch_to_constraints(cpu_arch, *, system = None):
     plat_suffix = _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX[cpu_arch]
 
     # Patch armv7e-m to mf if hardfloat abi is selected
-    if plat_suffix == "armv7e-m" and system == "eabihf":
+    if plat_suffix == "armv7e-m" and (system == "eabihf" or abi == "eabihf"):
         plat_suffix = "armv7e-mf"
 
     return ["@platforms//cpu:{}".format(plat_suffix)]
@@ -407,25 +422,56 @@ def triple_to_constraint_set(target_triple):
     Returns:
         list: A list of constraints (each represented by a list of strings)
     """
-    if target_triple in "wasm32-wasi":
+    if target_triple == "wasm32-wasi":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
         ]
     if target_triple == "wasm32-wasip1":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
+        ]
+    if target_triple == "wasm32-wasip2":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_2",
+        ]
+    if target_triple == "wasm32-unknown-emscripten":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:emscripten",
         ]
     if target_triple == "wasm32-unknown-unknown":
         return [
             "@platforms//cpu:wasm32",
             "@platforms//os:none",
         ]
+    if target_triple == "wasm32-wasip1-threads":
+        return [
+            "@platforms//cpu:wasm32",
+            "@platforms//os:wasi",
+            "@rules_rust//rust/platform:wasi_preview_1",
+        ]
     if target_triple == "wasm64-unknown-unknown":
         return [
             "@platforms//cpu:wasm64",
             "@platforms//os:none",
+        ]
+    if target_triple == "aarch64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:aarch64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
+        ]
+    if target_triple == "x86_64-apple-ios-macabi":
+        return [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:osx",
+            "@build_bazel_apple_support//constraints:catalyst",
         ]
 
     triple_struct = triple(target_triple)
@@ -434,6 +480,7 @@ def triple_to_constraint_set(target_triple):
     constraint_set += cpu_arch_to_constraints(
         triple_struct.arch,
         system = triple_struct.system,
+        abi = triple_struct.abi,
     )
     constraint_set += vendor_to_constraints(triple_struct.vendor)
     constraint_set += system_to_constraints(triple_struct.system)

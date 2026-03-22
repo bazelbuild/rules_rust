@@ -23,5 +23,6 @@ build_test(
     targets = [
         # This target would fail to build if cargo_toml_env_vars didn't properly populate $CARGO_PKG_REPOSITORY.
         "@crate_index_cargo_local//:autometrics",
+        "@crate_index_cargo_local//:aws-lc-rs",
     ],
 )

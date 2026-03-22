@@ -20,7 +20,7 @@ rust_binary(
     name = "hello_sys",
     srcs = ["src/main.rs"],
     edition = "2018",
-    # Note the `crate_unvierse` dependencies here need to have been loaded
+    # Note the `crate_universe` dependencies here need to have been loaded
     # in the `MODULE.bazel` file.
     deps = ["//basic/3rdparty/crates:bzip2"],
 )

@@ -22,6 +22,7 @@ def cargo_build_script(
         link_deps = [],
         proc_macro_deps = [],
         build_script_env = {},
+        build_script_env_files = [],
         use_default_shell_env = None,
         data = [],
         compile_data = [],
@@ -100,7 +101,7 @@ def cargo_build_script(
         edition (str): The rust edition to use for the internal binary crate.
         crate_name (str): Crate name to use for build script.
         crate_root (label): The file that will be passed to rustc to be used for building this crate.
-        srcs (list of label): Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
+        srcs (list of label): Source files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.
         crate_features (list, optional): A list of features to enable for the build script.
         version (str, optional): The semantic version (semver) of the crate.
         deps (list, optional): The build-dependencies of the crate.
@@ -109,6 +110,8 @@ def cargo_build_script(
             links attribute and therefore provide environment variables to this build script.
         proc_macro_deps (list of label, optional): List of rust_proc_macro targets used to build the script.
         build_script_env (dict, optional): Environment variables for build scripts.
+        build_script_env_files (list of label, optional): Files containing additional environment variables to set
+            when running the build script.
         use_default_shell_env (bool, optional): Whether or not to include the default shell environment for the build script action. If unset the global
             setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.
         data (list, optional): Files needed by the build script.
@@ -130,7 +133,7 @@ def cargo_build_script(
             These are other `rust_library` targets and will be presented as the new name given.
         **kwargs: Forwards to the underlying `rust_binary` rule. An exception is the `compatible_with`
             attribute, which shouldn't be forwarded to the `rust_binary`, as the `rust_binary` is only
-            built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_scirpt_run`
+            built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_script_run`
             target.
     """
 
@@ -209,6 +212,7 @@ def cargo_build_script(
         crate_features = crate_features,
         version = version,
         build_script_env = build_script_env,
+        build_script_env_files = build_script_env_files,
         use_default_shell_env = sanitized_use_default_shell_env,
         links = links,
         deps = deps,

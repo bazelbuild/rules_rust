@@ -1,0 +1,11 @@
+load("@rules_rust//rust:rust_binary.bzl", "rust_binary")
+
+rust_binary(
+    name = "infer_tester",
+    srcs = ["infer_tester.rs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates_io//:infer",
+        "@rules_rust//rust/runfiles",
+    ],
+)
