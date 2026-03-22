@@ -7,6 +7,7 @@ bzl_library(
         "transitions.bzl",
         "wasm_bindgen.bzl",
         "wasm_bindgen_test.bzl",
+        "wasm_bindgen_test_wrapper.bzl",
     ],
     visibility = ["//:__pkg__"],
     deps = [
@@ -15,8 +16,8 @@ bzl_library(
 )
 
 rust_binary(
-    name = "wasm_bindgen_test_wrapper",
-    srcs = ["wasm_bindgen_test_wrapper.rs"],
+    name = "wasm_bindgen_test_runner",
+    srcs = ["wasm_bindgen_test_runner.rs"],
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [

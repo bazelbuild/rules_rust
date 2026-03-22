@@ -139,8 +139,9 @@ def _crates_repository_impl(repository_ctx):
     # Determine the set of reproducible values
     attrs = {attr: getattr(repository_ctx.attr, attr) for attr in dir(repository_ctx.attr)}
     exclude = ["to_json", "to_proto"]
-    for attr in exclude:
-        attrs.pop(attr, None)
+    for attr in list(attrs.keys()):
+        if attr in exclude or attr.startswith("_"):
+            attrs.pop(attr, None)
 
     # Note that this is only scoped to the current host platform. Users should
     # ensure they provide all the values necessary for the host environments

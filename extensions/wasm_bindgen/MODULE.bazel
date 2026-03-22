@@ -54,8 +54,6 @@ use_repo(
 
 register_toolchains(
     "//:default_wasm_bindgen_toolchain",
-    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain",
-    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm64_toolchain",
 )
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)

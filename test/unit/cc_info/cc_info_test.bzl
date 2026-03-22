@@ -9,7 +9,7 @@ load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//rust:defs.bzl", "rust_binary", "rust_common", "rust_library", "rust_proc_macro", "rust_shared_library", "rust_static_library")
 
-def _is_dylib_on_windows(ctx):
+def _is_windows(ctx):
     return ctx.target_platform_has_constraint(ctx.attr._windows[platform_common.ConstraintValueInfo])
 
 def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
@@ -28,7 +28,7 @@ def _assert_cc_info_has_library_to_link(env, tut, type, ccinfo_count):
 
     if type == "cdylib":
         asserts.true(env, library_to_link.dynamic_library != None)
-        if _is_dylib_on_windows(env.ctx):
+        if _is_windows(env.ctx):
             asserts.true(env, library_to_link.interface_library != None)
             asserts.true(env, library_to_link.resolved_symlink_dynamic_library == None)
         else:
@@ -59,8 +59,10 @@ def _rlib_provides_cc_info_test_impl(ctx):
     tut = analysistest.target_under_test(env)
 
     count = 4
+    if _is_windows(env.ctx):
+        count -= 1
     if ctx.attr._experimental_use_allocator_libraries_with_mangled_symbols[BuildSettingInfo].value:
-        count = 3
+        count -= 1
 
     _assert_cc_info_has_library_to_link(env, tut, "rlib", count)
     return analysistest.end(env)
@@ -117,6 +119,7 @@ rlib_provides_cc_info_test = analysistest.make(
         "_experimental_use_allocator_libraries_with_mangled_symbols": attr.label(
             default = Label("//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols"),
         ),
+        "_windows": attr.label(default = Label("@platforms//os:windows")),
     },
 )
 rlib_with_dep_only_has_stdlib_linkflags_once_test = analysistest.make(
