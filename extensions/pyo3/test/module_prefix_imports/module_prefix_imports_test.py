@@ -2,7 +2,7 @@
 
 import unittest
 
-from foo import bar  # type: ignore[import-untyped]
+from foo import bar
 
 
 class ModulePrefixImportsTest(unittest.TestCase):

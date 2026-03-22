@@ -32,37 +32,37 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
-    name = "pyo3-0.26.0",
-    actual = "@rpyo3c__pyo3-0.26.0//:pyo3",
+    name = "pyo3-0.28.2",
+    actual = "@rpyo3c__pyo3-0.28.2//:pyo3",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3",
-    actual = "@rpyo3c__pyo3-0.26.0//:pyo3",
+    actual = "@rpyo3c__pyo3-0.28.2//:pyo3",
     tags = ["manual"],
 )
 
 alias(
-    name = "pyo3-ffi-0.26.0",
-    actual = "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
+    name = "pyo3-ffi-0.28.2",
+    actual = "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-ffi",
-    actual = "@rpyo3c__pyo3-ffi-0.26.0//:pyo3_ffi",
+    actual = "@rpyo3c__pyo3-ffi-0.28.2//:pyo3_ffi",
     tags = ["manual"],
 )
 
 alias(
-    name = "pyo3-introspection-0.26.0",
-    actual = "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
+    name = "pyo3-introspection-0.28.2",
+    actual = "@rpyo3c__pyo3-introspection-0.28.2//:pyo3_introspection",
     tags = ["manual"],
 )
 
 alias(
     name = "pyo3-introspection",
-    actual = "@rpyo3c__pyo3-introspection-0.26.0//:pyo3_introspection",
+    actual = "@rpyo3c__pyo3-introspection-0.28.2//:pyo3_introspection",
     tags = ["manual"],
 )

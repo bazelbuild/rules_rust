@@ -7,7 +7,7 @@
 ###############################################################################
 
 load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,8 +16,8 @@ cargo_toml_env_vars(
     src = "Cargo.toml",
 )
 
-rust_library(
-    name = "unindent",
+rust_proc_macro(
+    name = "pyo3_macros",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,6 +34,9 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "experimental-inspect",
+    ],
     crate_root = "src/lib.rs",
     edition = "2021",
     rustc_env_files = [
@@ -44,7 +47,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=unindent",
+        "crate-name=pyo3-macros",
         "manual",
         "noclippy",
         "norustfmt",
@@ -97,5 +100,11 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.4",
+    version = "0.28.2",
+    deps = [
+        "@rpyo3c__proc-macro2-1.0.101//:proc_macro2",
+        "@rpyo3c__pyo3-macros-backend-0.28.2//:pyo3_macros_backend",
+        "@rpyo3c__quote-1.0.41//:quote",
+        "@rpyo3c__syn-2.0.106//:syn",
+    ],
 )
