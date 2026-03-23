@@ -2317,10 +2317,10 @@ def portable_link_flags(
                 "-Clink-arg=-l{}".format(get_lib_name(artifact)),
             ]
     elif _is_dylib(lib):
+        lib_file_name = artifact.basename
         if for_windows or for_darwin:
             use_lib_name = True
         else:
-            lib_file_name = artifact.basename
             use_lib_name = (lib_file_name.startswith("lib") and lib_file_name.endswith(".so"))
 
         if use_lib_name:
