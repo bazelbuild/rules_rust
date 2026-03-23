@@ -56,10 +56,34 @@ def _compile_data_propagates_to_rust_doc_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _transitive_data_not_in_compile_inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    rustc_action = None
+    for action in target.actions:
+        if action.mnemonic == "Rustc":
+            rustc_action = action
+            break
+
+    asserts.false(env, rustc_action == None, "Expected a Rustc action")
+
+    data_inputs = [i for i in rustc_action.inputs.to_list() if "transitive_data_dep.txt" in i.path]
+    asserts.equals(
+        env,
+        0,
+        len(data_inputs),
+        "Expected transitive data dep file to NOT appear in Rustc action inputs, but found: " +
+        str([i.path for i in data_inputs]),
+    )
+
+    return analysistest.end(env)
+
 compile_data_propagates_to_crate_info_test = analysistest.make(_compile_data_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_to_crate_info_test = analysistest.make(_wrapper_rule_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_and_joins_compile_data_test = analysistest.make(_wrapper_rule_propagates_and_joins_compile_data_test_impl)
 compile_data_propagates_to_rust_doc_test = analysistest.make(_compile_data_propagates_to_rust_doc_test_impl)
+transitive_data_not_in_compile_inputs_test = analysistest.make(_transitive_data_not_in_compile_inputs_test_impl)
 
 def _define_test_targets():
     rust_library(
@@ -134,6 +158,41 @@ def _define_test_targets():
         crate = ":compile_data_gen_srcs",
     )
 
+    write_file(
+        name = "transitive_data_dep_file",
+        out = "transitive_data_dep.txt",
+        content = ["transitive data dep", ""],
+        newline = "unix",
+    )
+
+    write_file(
+        name = "lib_with_data_src",
+        out = "lib_with_data.rs",
+        content = ["pub fn hello() {}", ""],
+        newline = "unix",
+    )
+
+    rust_library(
+        name = "lib_with_data",
+        srcs = [":lib_with_data.rs"],
+        data = [":transitive_data_dep.txt"],
+        edition = "2021",
+    )
+
+    write_file(
+        name = "lib_depending_on_data_src",
+        out = "lib_depending_on_data.rs",
+        content = ["extern crate lib_with_data;", ""],
+        newline = "unix",
+    )
+
+    rust_library(
+        name = "lib_depending_on_data",
+        srcs = [":lib_depending_on_data.rs"],
+        deps = [":lib_with_data"],
+        edition = "2021",
+    )
+
 def compile_data_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -163,6 +222,11 @@ def compile_data_test_suite(name):
         target_under_test = ":compile_data_env_rust_doc",
     )
 
+    transitive_data_not_in_compile_inputs_test(
+        name = "transitive_data_not_in_compile_inputs_test",
+        target_under_test = ":lib_depending_on_data",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -170,5 +234,6 @@ def compile_data_test_suite(name):
             ":wrapper_rule_propagates_to_crate_info_test",
             ":wrapper_rule_propagates_and_joins_compile_data_test",
             ":compile_data_propagates_to_rust_doc_test",
+            ":transitive_data_not_in_compile_inputs_test",
         ],
     )

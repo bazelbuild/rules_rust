@@ -1,0 +1,5 @@
+load(":transitive_data_test.bzl", "transitive_cbs_data_test_suite")
+
+transitive_cbs_data_test_suite(
+    name = "transitive_cbs_data_test_suite",
+)
