@@ -238,7 +238,8 @@ impl Runfiles {
                     .split_once(' ')
                     .ok_or(RunfilesError::RunfilesManifestInvalidFormat)?;
                 let pair = if line.starts_with(' ') {
-                    // Unescape according to src/main/java/com/google/devtools/build/lib/analysis/SourceManifestAction.java.
+                    // Unescape according to SourceManifestAction.java.
+                    // https://github.com/bazelbuild/bazel/blob/3cb75e7bb181e3fb2b33707c172bf80431dc4712/src/main/java/com/google/devtools/build/lib/analysis/SourceManifestAction.java#L77-L84
                     (
                         raw_pair
                             .0
