@@ -1053,13 +1053,13 @@ def construct_arguments(
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
-    # Mangle symbols to disambiguate crates with the same name. This could
-    # happen only for non-final artifacts where we compute an output_hash,
-    # e.g., rust_library.
+    # Mangle symbols to disambiguate crates with the same name. Used for
+    # rust_library (multiple versions of a crate) and rust_test (shares a
+    # crate name with the underlying binary/library it tests).
     #
-    # For "final" artifacts and ones intended for distribution outside of
-    # Bazel, such as rust_binary, rust_static_library and rust_shared_library,
-    # where output_hash is None we don't need to add these flags.
+    # For final artifacts intended for distribution outside of Bazel, such as
+    # rust_binary, rust_static_library and rust_shared_library, output_hash
+    # is None and these flags are not added.
     if output_hash:
         rustc_flags.add(output_hash, format = "--codegen=metadata=-%s")
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
@@ -1468,10 +1468,13 @@ def rustc_compile_action(
     outputs = [crate_info.output]
 
     # The `.o` output file, only used for linking via cc_common.link.
+    # When output_hash is set (e.g. for rust_test targets), include it in the
+    # filename to avoid collisions with other targets sharing the same crate name.
     output_o = None
     if experimental_use_cc_common_link:
         obj_ext = ".o"
-        output_o = ctx.actions.declare_file(crate_info.name + obj_ext, sibling = crate_info.output)
+        obj_basename = crate_info.name + ("-%s" % output_hash if output_hash else "")
+        output_o = ctx.actions.declare_file(obj_basename + obj_ext, sibling = crate_info.output)
         outputs = [output_o]
 
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the

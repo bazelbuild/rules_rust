@@ -1,4 +1,9 @@
-"""Tests for rust_test outputs directory."""
+"""Tests that rust_test outputs have predictable names and paths.
+
+Verifies that rust_test binaries are placed in the same directory as the
+package (not in a test-{hash} subdirectory) and that their filenames match
+the target label name. This applies to both the srcs and crate attr paths.
+"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
@@ -11,20 +16,16 @@ def _rust_test_outputs_test(ctx):
     output = tut[rust_common.crate_info].output
 
     # Check compilation output is in directory with same name as package
-    test_target_label = ctx.attr.target_under_test[0].label
-    asserts.true(env, output.dirname.split("/")[-1] == test_target_label.package.split("/")[-1])
+    asserts.true(env, output.dirname.split("/")[-1] == tut.label.package.split("/")[-1])
 
-    # Check compilation output has same name as crate name, ignoring possible binary extension
+    # Check compilation output has same name as the target label
     output_filename_without_ext = paths.split_extension(output.basename)[0]
-    asserts.true(env, output_filename_without_ext == tut[rust_common.crate_info].name)
+    asserts.true(env, output_filename_without_ext == tut.label.name)
 
     return analysistest.end(env)
 
 rust_test_outputs_test = analysistest.make(
     _rust_test_outputs_test,
-    config_settings = {
-        str(Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory")): True,
-    },
 )
 
 def _rust_test_outputs_targets():
