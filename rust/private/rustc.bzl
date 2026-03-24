@@ -1193,8 +1193,10 @@ def construct_arguments(
             {},
         ))
 
-    # Ensure the sysroot is set for the target platform
-    if toolchain._toolchain_generated_sysroot:
+    # Ensure the sysroot is set for the target platform.
+    # When sysroot_path is set (system toolchain), always pass --sysroot so rustc
+    # finds the standard library at the pre-installed location.
+    if toolchain.sysroot_path or toolchain._toolchain_generated_sysroot:
         rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
 
     if toolchain._rename_first_party_crates:
@@ -1400,12 +1402,16 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
+    # When using a system sysroot, use the system rustc path instead of the
+    # sysroot-symlinked binary.
+    rustc_tool_path = (toolchain.sysroot_path + "/bin/rustc") if toolchain.sysroot_path else toolchain.rustc.path
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rustc.path,
+        tool_path = rustc_tool_path,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1432,7 +1438,7 @@ def rustc_compile_action(
             attr = attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool_path = rustc_tool_path,
             cc_toolchain = cc_toolchain,
             emit = emit,
             feature_configuration = feature_configuration,
