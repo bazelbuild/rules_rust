@@ -66,6 +66,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut output_file = None;
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
+    let mut set_env_raw = None;
     let mut flags = Flags::new();
     let mut require_explicit_unstable_features = None;
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
@@ -121,6 +122,15 @@ pub(crate) fn options() -> Result<Options, OptionError> {
          other -Zallow-features= is present in the rustc flags.",
         &mut require_explicit_unstable_features,
     );
+    flags.define_repeated_flag(
+        "--set-env",
+        "Set a child environment variable from a KEY=VALUE pair. \
+         Unlike the action env dict, values passed here go through \
+         Bazel's path mapping (--experimental_output_paths=strip) \
+         because they are conveyed via Args objects. \
+         The ${pwd} substitution is applied to values.",
+        &mut set_env_raw,
+    );
 
     let mut child_args = match flags
         .parse(env::args().collect())
@@ -157,7 +167,15 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         stable_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
     let volatile_stamp_mappings =
         volatile_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-    let environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
+    let mut environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
+    // Merge --set-env KEY=VALUE pairs into the environment block.
+    // These arrive via Args objects and are path-mapped by Bazel.
+    for kv in set_env_raw.unwrap_or_default() {
+        let (key, val) = kv.split_once('=').ok_or_else(|| {
+            OptionError::Generic(format!("--set-env requires KEY=VALUE, got '{kv}'"))
+        })?;
+        environment_file_block.insert(key.to_owned(), val.to_owned());
+    }
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     // Process --copy-output
     let copy_output = copy_output_raw
