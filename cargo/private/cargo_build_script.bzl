@@ -416,7 +416,10 @@ def _cargo_build_script_impl(ctx):
         env.update(ctx.configuration.default_shell_env)
 
     if toolchain.cargo:
-        env["CARGO"] = "${pwd}/%s" % toolchain.cargo.path
+        if toolchain.system_sysroot:
+            env["CARGO"] = toolchain.system_sysroot + "/bin/cargo"
+        else:
+            env["CARGO"] = "${pwd}/%s" % toolchain.cargo.path
 
     env.update({
         "CARGO_CRATE_NAME": name_to_crate_name(pkg_name),
@@ -425,8 +428,8 @@ def _cargo_build_script_impl(ctx):
         "HOST": toolchain.exec_triple.str,
         "NUM_JOBS": "1",
         "OPT_LEVEL": compilation_mode_opt_level,
-        "RUSTC": toolchain.rustc.path,
-        "RUSTDOC": toolchain.rust_doc.path,
+        "RUSTC": toolchain.system_rustc_path if toolchain.system_rustc_path else toolchain.rustc.path,
+        "RUSTDOC": (toolchain.system_sysroot + "/bin/rustdoc") if toolchain.system_sysroot else toolchain.rust_doc.path,
         "TARGET": toolchain.target_flag_value,
         # OUT_DIR is set by the runner itself, rather than on the action.
     })

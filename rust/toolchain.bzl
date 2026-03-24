@@ -429,10 +429,16 @@ def _rust_toolchain_impl(ctx):
     sysroot_path = sysroot.sysroot_anchor.dirname
     sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
 
+    # When system_sysroot is set, override paths to use the platform-installed toolchain.
+    # This must happen before make_variables is constructed so all consumers see system paths.
+    if ctx.attr.system_sysroot:
+        sysroot_path = ctx.attr.system_sysroot
+        sysroot_short_path = ctx.attr.system_sysroot
+
     # Variables for make variable expansion
     make_variables = {
-        "RUSTC": sysroot.rustc.path,
-        "RUSTDOC": sysroot.rustdoc.path,
+        "RUSTC": (ctx.attr.system_sysroot + "/bin/rustc") if ctx.attr.system_sysroot else sysroot.rustc.path,
+        "RUSTDOC": (ctx.attr.system_sysroot + "/bin/rustdoc") if ctx.attr.system_sysroot else sysroot.rustdoc.path,
         "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
         "RUST_SYSROOT": sysroot_path,
         "RUST_SYSROOT_SHORT": sysroot_short_path,
@@ -563,9 +569,21 @@ def _rust_toolchain_impl(ctx):
         )
 
     # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
-    all_files_depsets = [sysroot.all_files]
-    if cc_toolchain and cc_toolchain.all_files:
-        all_files_depsets.append(cc_toolchain.all_files)
+    if ctx.attr.system_sysroot:
+        # When system_sysroot is set, exclude Rust toolchain files from action inputs.
+        # The execution environment (local or remote) has the toolchain installed at this path.
+        # This eliminates ~670MB of toolchain file transfers per remote action.
+        all_files_depsets = []
+        if cc_toolchain and cc_toolchain.all_files:
+            all_files_depsets.append(cc_toolchain.all_files)
+
+        # Keep linker as input (it's custom and tiny)
+        if sysroot.linker:
+            all_files_depsets.append(depset([sysroot.linker]))
+    else:
+        all_files_depsets = [sysroot.all_files]
+        if cc_toolchain and cc_toolchain.all_files:
+            all_files_depsets.append(cc_toolchain.all_files)
 
     toolchain = platform_common.ToolchainInfo(
         all_files = depset(transitive = all_files_depsets),
@@ -605,6 +623,8 @@ def _rust_toolchain_impl(ctx):
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
+        system_rustc_path = ctx.attr.system_sysroot + "/bin/rustc" if ctx.attr.system_sysroot else "",
+        system_sysroot = ctx.attr.system_sysroot,
         target_arch = target_arch,
         target_flag_value = target_json.path if target_json else target_triple.str,
         target_json = target_json,
@@ -830,6 +850,17 @@ rust_toolchain = rule(
                 "fastbuild": "none",
                 "opt": "debuginfo",
             },
+        ),
+        "system_sysroot": attr.string(
+            doc = (
+                "When set, use the platform-provided Rust toolchain at this absolute path " +
+                "instead of shipping toolchain files as action inputs. This eliminates large " +
+                "toolchain file transfers per action when using remote execution with " +
+                "workers that have the Rust toolchain pre-installed. The path should point " +
+                "to a rustup toolchain directory (e.g. " +
+                "/home/user/.rustup/toolchains/nightly-2026-01-29-x86_64-unknown-linux-gnu)."
+            ),
+            default = "",
         ),
         "target_json": attr.string(
             doc = ("Override the target_triple with a custom target specification. " +
