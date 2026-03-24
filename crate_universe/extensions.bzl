@@ -369,6 +369,127 @@ Now, you can build the project as usual.
 
 There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/).
 
+## Handling `-sys` Crates
+
+`-sys` crates provide Rust FFI bindings to native C/C++ libraries. Their `build.rs` scripts
+typically compile C code, locate pre-installed libraries, copy headers, or run
+[bindgen](https://github.com/rust-lang/rust-bindgen). In a Bazel workspace you often already
+have the native library built as a `cc_library` and want to use it directly rather than running
+the crate's build script.
+
+### Pattern 1: Replace with a direct `cc_library` dependency
+
+**When to use:** The build script compiles C/C++ code and tells rustc to link it, but the
+crate's `lib.rs` only contains `extern "C"` declarations (no `include!()` from `OUT_DIR`).
+
+This is the most common case. Rust targets in `rules_rust` already know how to consume
+`cc_library` dependencies -- static library paths, linker search directories, and user link
+flags are all extracted from `CcInfo` and passed to `rustc` automatically.
+
+```python
+crate.annotation(
+    crate = "my-sys-crate",
+    gen_build_script = "off",
+    deps = ["@my_native_lib"],
+)
+```
+
+Setting `gen_build_script` to `"off"` prevents the build script from being generated. Adding
+the `cc_library` target to `deps` makes it available for linking.
+
+**Full example** (`libz-sys` with a pre-built zlib):
+
+```python
+crate.annotation(
+    crate = "libz-sys",
+    gen_build_script = "off",
+    deps = ["@zlib"],
+)
+```
+
+The generated `rust_library` for `libz-sys` will have `@zlib` in its `deps`. The `CcInfo` from
+`@zlib` provides the static library and search paths that `rustc` needs to link.
+
+See [`examples/sys/complex/`](https://github.com/bazelbuild/rules_rust/tree/main/examples/sys/complex)
+for a working example using `libgit2-sys` and `libz-sys`.
+
+### Pattern 2: Provide build script metadata with `cargo_dep_env`
+
+**When to use:** The build script produces metadata that downstream crates' build scripts
+consume (e.g., `cargo:root=...`, `cargo:include=...`), or the crate's `lib.rs` reads files
+from `OUT_DIR` (but those files are not bindgen output).
+
+In Cargo, a build script's `cargo:KEY=VALUE` output becomes the environment variable
+`DEP_<CRATE_LINKS>_KEY` in direct dependents' build scripts. The
+[`cargo_dep_env`](cargo.html#cargo_dep_env) rule reproduces this without running a build
+script.
+
+**Providing env vars only:**
+
+Create a file with `NAME=value` entries (one per line), and use `cargo_dep_env` to expose them:
+
+```
+# vars.env
+ROOT=${pwd}/external/my_native_lib
+INCLUDE=${pwd}/external/my_native_lib/include
+```
+
+```python
+cargo_dep_env(
+    name = "my_crate_dep_env",
+    src = "vars.env",
+)
+```
+
+Then annotate the crate to use this instead of its build script:
+
+```python
+crate.annotation(
+    crate = "my-sys-crate",
+    gen_build_script = "off",
+    deps = [
+        "@my_native_lib",               # for linking
+        "//path/to:my_crate_dep_env",   # for env var metadata
+    ],
+)
+```
+
+Use `${pwd}/` as a prefix for paths, since paths in Bazel actions are relative to the execroot.
+
+**Providing an `OUT_DIR` directory:**
+
+If the crate's Rust source uses `include!(concat!(env!("OUT_DIR"), "/some_file"))`, you need
+to provide an `out_dir` containing the expected files:
+
+```python
+genrule(
+    name = "my_out_dir",
+    srcs = ["@my_native_lib//:headers"],
+    outs = ["out_dir"],
+    cmd = "mkdir -p $@ && cp $(SRCS) $@/",
+)
+
+cargo_dep_env(
+    name = "my_crate_dep_env",
+    src = "vars.env",
+    out_dir = ":my_out_dir",
+)
+```
+
+The `out_dir` attribute accepts a single directory artifact. Its path becomes the `OUT_DIR`
+that dependent build scripts and the crate's own source code can reference.
+
+See [`test/dep_env/`](https://github.com/bazelbuild/rules_rust/tree/main/test/dep_env) for
+working examples of `cargo_dep_env` with and without `out_dir`.
+
+### Tips
+
+- `gen_build_script` in bzlmod annotations uses the string values `"on"` and `"off"` rather than booleans.
+- If `libgit2-sys` depends on `libz-sys`, and both need annotations, annotate both crates.
+- Use `additive_build_file_content` in annotations to define helper targets (like `cargo_dep_env` or genrules) directly in the generated BUILD file for a crate.
+- Some build scripts Just Work. `rules_rust` supplies a C++ toolchain and sets `CC`, `CXX`, `LD`, `LDFLAGS`, etc. Crates using [`cc-rs`](https://github.com/rust-lang/cc-rs) often compile without any annotation at all.
+- For `-sys` crates whose build scripts run [bindgen](https://github.com/rust-lang/rust-bindgen), see the [rules_rust_bindgen](rust_bindgen.html) extension which can generate Rust FFI bindings from C headers at build time.
+
 """
 
 load("@bazel_features//:features.bzl", "bazel_features")

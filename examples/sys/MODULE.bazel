@@ -14,18 +14,24 @@ local_path_override(
 )
 
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "bzip2", version = "1.0.8.bcr.3")
+bazel_dep(name = "libgit2", version = "1.9.1")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
 deps = use_extension("//:extensions.bzl", "rust_example")
+
+inject_repo(deps, "bzip2")
+
+inject_repo(deps, "libgit2")
+
 use_repo(
     deps,
     "basic_sys",
     "basic_sys__bzip2-0.3.3",
     "complex_sys",
-    "complex_sys__git2-0.14.4",
-    "libgit2",
+    "complex_sys__git2-0.20.0",
 )
 
 ###############################################################################
