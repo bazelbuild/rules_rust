@@ -4,7 +4,10 @@ crates_vendor(
     name = "crates_vendor",
     annotations = {
         "bzip2-sys": [crate.annotation(
-            gen_build_script = True,
+            gen_build_script = False,
+            # bzip2 comes from `bazel_dep(name = "bzip2")` in MODULE.bazel,
+            # injected into this extension via `inject_repo`.
+            deps = ["@bzip2//:bz2"],
         )],
     },
     cargo_lockfile = "Cargo.Bazel.lock",

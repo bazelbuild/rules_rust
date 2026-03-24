@@ -282,6 +282,23 @@ We can use those hooks by specifying paths (generally using the `build_script_da
 
 There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
 
+### Replacing the build script entirely
+
+For `-sys` crates where you already have a Bazel `cc_library` for the native code, you can skip the build script and link directly:
+
+```python
+crate.annotation(
+    gen_build_script = False,
+    deps = ["@my_native_lib"],
+)
+```
+
+Setting `gen_build_script = False` disables build script generation. The `cc_library` in `deps` provides linking information (static libraries, search paths, linker flags) to `rustc` automatically via `CcInfo`.
+
+If the crate's build script also produces metadata consumed by downstream build scripts (e.g. `cargo:root=...`, `cargo:include=...`), use [`cargo_dep_env`][cargo_dep_env] to provide those variables without running a build script.
+
+There are working examples of this in https://github.com/bazelbuild/rules_rust/tree/main/examples/sys/complex (`libgit2-sys`, `libz-sys`) and a detailed guide in the [crate_universe bzlmod docs](https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html#handling-sys-crates).
+
 ---
 
 ---
@@ -291,6 +308,7 @@ There is an example of this in the "complicated dependencies" section of https:/
 [proto]: https://rules-proto-grpc.com/en/latest/lang/rust.html
 [ra]: https://rust-analyzer.github.io/
 [cc-rs]: https://github.com/rust-lang/cc-rs
+[cargo_dep_env]: https://bazelbuild.github.io/rules_rust/cargo.html#cargo_dep_env
 """
 
 load(
