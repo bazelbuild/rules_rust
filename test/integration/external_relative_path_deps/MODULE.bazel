@@ -17,22 +17,31 @@ use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
 
-# Test: crate_universe with Cargo workspace where a member has a path dependency
-# that goes OUTSIDE the Cargo workspace root (but still inside the Bazel workspace).
+# Test: crate_universe with Cargo workspace where a member has path dependencies
+# that go OUTSIDE the Cargo workspace root (but still inside the Bazel workspace).
 #
 # Structure:
-#   external_crate/           <- Outside Cargo workspace
-#   cargo_workspace/          <- Cargo workspace root
-#     Cargo.toml              <- [workspace] members = ["member"]
+#   external_crate/           <- Outside Cargo workspace (standalone)
+#   external_crate_b/         <- Outside Cargo workspace (standalone)
+#   external_workspace/       <- Separate Cargo workspace
+#     ext_ws_crate/           <- Member of external_workspace
+#   cargo_workspace/          <- Primary Cargo workspace
+#     Cargo.toml              <- [workspace] with [workspace.dependencies] for external_crate + ext_ws_crate
 #     member/
-#       Cargo.toml            <- external_crate = { path = "../../external_crate" }
+#       Cargo.toml            <- external_crate via workspace = true,
+#                                external_crate_b via direct path dep,
+#                                ext_ws_crate via workspace = true
 #
-# This should work but currently fails because crate_universe doesn't copy
-# the external path dependency into the temp splicing directory.
+# Tests three code paths: workspace-inherited external path deps, direct
+# external path deps declared inline in a member, and external path deps
+# from a crate that belongs to a different Cargo workspace.
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.from_cargo(
     name = "crates",
     cargo_lockfile = "//cargo_workspace:Cargo.lock",
-    manifests = ["//cargo_workspace:Cargo.toml"],
+    manifests = [
+        "//cargo_workspace:Cargo.toml",
+        "//:external_workspace/ext_ws_crate/Cargo.toml",
+    ],
 )
 use_repo(crate, "crates")

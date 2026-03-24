@@ -6,6 +6,9 @@ edition = "2021"
 [lib]
 
 [dependencies]
-# This path dependency goes OUTSIDE the Cargo workspace root.
-# This is the scenario from issue #3089.
-external_crate = { path = "../../external_crate" }
+# Inherited from [workspace.dependencies]. Path goes outside the workspace.
+external_crate.workspace = true
+# Direct path dep that also goes outside the workspace.
+external_crate_b = { path = "../../external_crate_b" }
+# Inherited from [workspace.dependencies]. Path goes to a crate in a different Cargo workspace.
+ext_ws_crate.workspace = true

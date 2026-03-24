@@ -1,0 +1,3 @@
+[workspace]
+members = ["ext_ws_crate"]
+resolver = "2"
