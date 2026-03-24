@@ -25,6 +25,8 @@ load(
     "extra_rustc_env",
     "extra_rustc_flag",
     "extra_rustc_flags",
+    "incremental",
+    "incremental_seed_threshold_mb",
     "incompatible_change_clippy_error_format",
     "incompatible_do_not_include_data_in_compile_data",
     "lto",
@@ -106,6 +108,10 @@ extra_rustc_env()
 extra_rustc_flag()
 
 extra_rustc_flags()
+
+incremental()
+
+incremental_seed_threshold_mb()
 
 incompatible_change_clippy_error_format()
 
