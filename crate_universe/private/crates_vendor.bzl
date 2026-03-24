@@ -230,6 +230,7 @@ def _write_splicing_manifest(ctx):
             cargo_config = ctx.attr.cargo_config,
             manifests = manifests,
             manifest_to_path = _prepare_manifest_path,
+            main_manifest = _prepare_manifest_path(ctx.attr.manifests[0]) if ctx.attr.manifests else None,
         ),
     )
 
@@ -240,7 +241,7 @@ def _write_splicing_manifest(ctx):
     runfiles = [manifest] + ctx.files.manifests + ([ctx.file.cargo_config] if ctx.attr.cargo_config else [])
     return args, env, runfiles
 
-def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manifests, manifest_to_path):
+def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manifests, manifest_to_path, main_manifest = None):
     # Deserialize information about direct packages
     direct_packages_info = {
         # Ensure the data is using kebab-case as that's what `cargo_toml::DependencyDetail` expects.
@@ -252,6 +253,7 @@ def generate_splicing_manifest(*, packages, splicing_config, cargo_config, manif
         "cargo_config": str(manifest_to_path(cargo_config)) if cargo_config else None,
         "direct_packages": direct_packages_info,
         "manifests": manifests,
+        "main_manifest": main_manifest,
     }
 
     return json.encode_indent(

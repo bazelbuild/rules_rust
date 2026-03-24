@@ -6,7 +6,14 @@ load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_UR
 load("//rust/platform:triple.bzl", "get_host_triple")
 
 def _local_crate_mirror_impl(repository_ctx):
-    path = repository_ctx.path(repository_ctx.attr.path)
+    raw_path = repository_ctx.attr.path
+    if raw_path.startswith("/"):
+        # Absolute path (backward compatibility)
+        path = repository_ctx.path(raw_path)
+    else:
+        # Workspace-relative path — resolve using anchor
+        workspace_root = repository_ctx.path(repository_ctx.attr._workspace_root_anchor).dirname
+        path = workspace_root.get_child(raw_path)
 
     host_triple = get_host_triple(repository_ctx)
 
@@ -53,8 +60,11 @@ This is effectively a `local_repository` rule implementation, but where the `BUI
             doc = "JSON serialized instance of a crate_universe::context::SingleBuildFileRenderContext",
         ),
         "path": attr.string(
-            # TODO: Verify what happens if this is not an absolute path.
-            doc = "Absolute path to the BUILD.bazel file to generate.",
+            doc = "Path to the crate directory. Can be absolute or workspace-relative.",
+        ),
+        "_workspace_root_anchor": attr.label(
+            default = "@@//:MODULE.bazel",
+            allow_single_file = True,
         ),
         "quiet": attr.bool(
             doc = "If stdout and stderr should not be printed to the terminal.",
