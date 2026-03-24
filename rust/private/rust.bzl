@@ -621,6 +621,12 @@ RUSTC_ATTRS = {
     "_is_proc_macro_dep": attr.label(
         default = Label("//rust/private:is_proc_macro_dep"),
     ),
+    "_incremental": attr.label(
+        default = Label("//rust/settings:incremental"),
+    ),
+    "_incremental_seed_threshold_mb": attr.label(
+        default = Label("//rust/settings:incremental_seed_threshold_mb"),
+    ),
     "_is_proc_macro_dep_enabled": attr.label(
         default = Label("//rust/private:is_proc_macro_dep_enabled"),
     ),

@@ -20,8 +20,9 @@ mod util;
 
 use std::collections::HashMap;
 use std::fmt;
-use std::fs::{copy, OpenOptions};
+use std::fs::{self, copy, OpenOptions};
 use std::io;
+use std::path::Path;
 use std::process::{exit, Command, ExitStatus, Stdio};
 
 use tinyjson::JsonValue;
@@ -117,8 +118,175 @@ fn process_line(
     }
 }
 
+/// Cross-device link error (POSIX `EXDEV`, errno 18).
+const EXDEV_RAW: i32 = 18;
+
+/// Result of walking a directory tree.
+struct TreeWalk {
+    /// Destination directories to create, in parent-before-child order.
+    dirs: Vec<std::path::PathBuf>,
+    /// (source, destination) file pairs to hardlink or copy.
+    files: Vec<(std::path::PathBuf, std::path::PathBuf)>,
+    /// Total size of all source files in bytes.
+    total_bytes: u64,
+}
+
+/// Walk `src` recursively, collecting directory and file entries mapped to `dst`.
+/// Symlinks are skipped (defense-in-depth).  Also computes the total file size
+/// in a single pass.
+fn collect_tree_entries(src: &Path, dst: &Path) -> io::Result<TreeWalk> {
+    let mut dirs = Vec::new();
+    let mut files = Vec::new();
+    let mut total_bytes = 0u64;
+    let mut stack = vec![(src.to_path_buf(), dst.to_path_buf())];
+    while let Some((s, d)) = stack.pop() {
+        let entries = match fs::read_dir(&s) {
+            Ok(e) => e,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(e),
+        };
+        for entry in entries {
+            let entry = entry?;
+            let ft = entry.file_type()?;
+            if ft.is_symlink() {
+                continue;
+            }
+            let src_path = entry.path();
+            let dst_path = d.join(entry.file_name());
+            if ft.is_dir() {
+                dirs.push(dst_path.clone());
+                stack.push((src_path, dst_path));
+            } else {
+                if let Ok(meta) = entry.metadata() {
+                    total_bytes += meta.len();
+                }
+                files.push((src_path, dst_path));
+            }
+        }
+    }
+    Ok(TreeWalk {
+        dirs,
+        files,
+        total_bytes,
+    })
+}
+
+/// Hardlink (or copy on `EXDEV`) a single file from `src` to `dst`.
+fn hardlink_one(src: &Path, dst: &Path) -> io::Result<()> {
+    match fs::hard_link(src, dst) {
+        Ok(()) => Ok(()),
+        Err(e) if e.raw_os_error() == Some(EXDEV_RAW) => {
+            fs::copy(src, dst)?;
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Create directories and hardlink files from a pre-collected tree walk.
+/// Falls back to `fs::copy` on cross-device errors.
+/// File hardlinks are parallelized across threads for large trees.
+fn hardlink_entries(walk: &TreeWalk) -> io::Result<usize> {
+    for dir in &walk.dirs {
+        fs::create_dir(dir)?;
+    }
+
+    let count = walk.files.len();
+    if count == 0 {
+        return Ok(0);
+    }
+
+    const PARALLEL_THRESHOLD: usize = 256;
+    if count < PARALLEL_THRESHOLD {
+        for (s, d) in &walk.files {
+            hardlink_one(s, d)?;
+        }
+        return Ok(count);
+    }
+
+    let n_threads = std::thread::available_parallelism()
+        .map(std::num::NonZero::get)
+        .unwrap_or(4)
+        .min(8);
+    let chunk_size = (count + n_threads - 1) / n_threads;
+
+    std::thread::scope(|s| {
+        let handles: Vec<_> = walk
+            .files
+            .chunks(chunk_size)
+            .map(|chunk| {
+                s.spawn(move || -> io::Result<()> {
+                    for (src, dst) in chunk {
+                        hardlink_one(src, dst)?;
+                    }
+                    Ok(())
+                })
+            })
+            .collect();
+        for handle in handles {
+            handle.join().expect("hardlink thread panicked")?;
+        }
+        Ok(count)
+    })
+}
+
+/// Seed the incremental compilation cache by hardlinking from a source
+/// directory.  Skips seeding when the source is below `min_bytes`.
+/// Errors are logged but never fatal (cold start fallback).
+fn seed_incremental_cache(src: &Path, dst: &Path, min_bytes: u64, label: &str) {
+    let walk = match collect_tree_entries(src, dst) {
+        Ok(w) => w,
+        Err(e) => {
+            eprintln!("process_wrapper: {label} seed walk failed: {e}, starting cold");
+            return;
+        }
+    };
+    if walk.total_bytes < min_bytes {
+        debug_log!(
+            "process_wrapper: {label} seed {} below threshold ({} < {min_bytes}), skipping",
+            src.display(),
+            walk.total_bytes
+        );
+        return;
+    }
+    match hardlink_entries(&walk) {
+        Ok(0) => debug_log!("process_wrapper: empty {label} seed at {}", src.display()),
+        Ok(n) => debug_log!(
+            "process_wrapper: {label} seeded {n} files ({} bytes) {} -> {}",
+            walk.total_bytes,
+            src.display(),
+            dst.display()
+        ),
+        Err(e) => eprintln!("process_wrapper: {label} seed hardlink failed: {e}, starting cold"),
+    }
+}
+
 fn main() -> Result<(), ProcessWrapperError> {
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
+
+    // Seed the incremental compilation cache from the previous build's output.
+    let seed_min_bytes = opts.seed_min_mb * 1024 * 1024;
+    if let Some((ref seed_dir, ref dest_dir)) = opts.copy_seed {
+        seed_incremental_cache(
+            Path::new(seed_dir),
+            Path::new(dest_dir),
+            seed_min_bytes,
+            "copy",
+        );
+    }
+
+    if let Some((ref prev_dir, ref dest_dir)) = opts.seed_prev_dir {
+        let prev_path = Path::new(prev_dir);
+        if prev_path.is_dir() {
+            seed_incremental_cache(prev_path, Path::new(dest_dir), seed_min_bytes, "prev");
+        } else {
+            debug_log!("process_wrapper: prev seed {prev_dir} not found, cold start");
+        }
+    }
+
+    if opts.exit_early {
+        return Ok(());
+    }
 
     let mut command = Command::new(opts.executable);
     command
@@ -225,6 +393,15 @@ fn main() -> Result<(), ProcessWrapperError> {
                     copy_source, copy_dest, e
                 ))
             })?;
+        }
+        // Write the unused inputs list so Bazel excludes the seed directory
+        // from cache key computation.  This ensures that changes to the
+        // incremental seed (which changes every build) don't cause cache
+        // misses for the rustc action -- only source file changes do.
+        if let Some((ref unused_file, ref input_path)) = opts.write_unused_inputs {
+            std::fs::write(unused_file, format!("{input_path}\n")).unwrap_or_else(|e| {
+                eprintln!("process_wrapper: failed to write unused inputs to {unused_file}: {e}");
+            });
         }
     }
 
