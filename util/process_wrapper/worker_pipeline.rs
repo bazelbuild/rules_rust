@@ -118,7 +118,7 @@ pub(super) struct ParsedPwArgs {
 pub(super) struct PipelineContext {
     pub(super) root_dir: PathBuf,
     /// Directory used as rustc's CWD and for resolving relative paths.
-    /// Sandboxed: canonicalized `sandbox_dir`. Unsandboxed: real execroot.
+    /// Sandboxed: absolute `sandbox_dir`. Unsandboxed: canonicalized real execroot.
     pub(super) execroot_dir: PathBuf,
     pub(super) outputs_dir: PathBuf,
 }
@@ -542,11 +542,12 @@ pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
     }
 }
 
-/// Creates a lightweight pipeline context using the "resolve-through" approach.
+/// Creates a pipeline context for worker-managed pipelining.
 ///
-/// Instead of staging inputs into a worker-owned execroot, uses the worker's real
-/// execroot (CWD) directly. Only creates a persistent output directory to prevent
-/// inter-request output interference.
+/// When sandboxed, uses sandbox_dir as rustc's CWD so all reads go through the
+/// sandbox (Bazel multiplex sandbox contract compliance). When unsandboxed, uses
+/// the real execroot. In both cases, outputs are redirected to a persistent
+/// worker-owned directory to prevent inter-request interference.
 pub(super) fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
     key: &str,
@@ -638,10 +639,10 @@ pub(super) fn create_pipeline_context(
 /// success immediately so Bazel can unblock downstream rlib compiles.
 ///
 /// Two modes:
-/// - **Sandboxed (alias-root)**: rustc runs from `sandbox_dir/__rr` with args
-///   rewritten so input paths go through `src/` (→ sandbox_dir). Compliant with
-///   Bazel's multiplex sandbox contract (Rule 1: all reads through sandbox_dir).
-/// - **Unsandboxed (resolve-through)**: rustc runs from the real execroot.
+/// - **Sandboxed**: rustc runs from `sandbox_dir` directly. All relative paths
+///   in args resolve against the sandbox where Bazel placed inputs. Compliant
+///   with the Bazel multiplex sandbox contract (Rule 1: all reads via sandbox_dir).
+/// - **Unsandboxed**: rustc runs from the real execroot.
 pub(super) fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
@@ -738,10 +739,11 @@ pub(super) fn handle_pipelining_metadata(
     append_pipeline_log(
         &ctx.root_dir,
         &format!(
-            "metadata start request_id={} key={} sandbox_dir={:?} original_out_dir={} execroot={} outputs={}",
+            "metadata start request_id={} key={} sandbox_dir={:?} inputs={} original_out_dir={} execroot={} outputs={}",
             request.request_id,
             key,
             request.sandbox_dir,
+            request.inputs.len(),
             original_out_dir,
             ctx.execroot_dir.display(),
             ctx.outputs_dir.display(),
