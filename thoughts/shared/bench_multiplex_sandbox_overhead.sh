@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Benchmark multiplex-sandboxed worker pipelining across a worker-topology matrix.
 #
-# Default behavior follows thoughts/shared/plans/2026-03-11-multiplex-sandbox-overhead-investigation-plan.md:
+# Default behavior follows thoughts/shared/plans/2026-03-25-consolidated-worker-pipelining-plan.md:
 # - target: //sdk/sdk_builder:sdk_builder_lib
 # - 1 warmup + 2 measured iterations
 # - sweep worker_max_instances=1,2,4
