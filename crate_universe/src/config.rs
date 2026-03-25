@@ -729,10 +729,12 @@ where
     let value: Option<serde_json::Value> = Option::deserialize(deserializer)?;
     match value {
         None | Some(serde_json::Value::Null) => Ok(None),
-        Some(serde_json::Value::String(s)) => s
-            .parse::<toml::Value>()
-            .map(Some)
-            .map_err(serde::de::Error::custom),
+        Some(serde_json::Value::String(s)) => {
+            let normalized = s.replace("\r\n", "\n");
+            toml::from_str::<toml::Value>(&normalized)
+                .map(Some)
+                .map_err(serde::de::Error::custom)
+        }
         Some(other) => serde_json::from_value(other)
             .map(Some)
             .map_err(serde::de::Error::custom),
