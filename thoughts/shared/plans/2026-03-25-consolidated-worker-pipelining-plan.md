@@ -65,6 +65,82 @@ This consolidated plan does not try to re-litigate the Bazel documentation. It s
 future design work should start from the documented contract, not from superseded assumptions in the
 older plan files.
 
+## Sandbox Contract Compliance Analysis
+
+This section records what is known about how the current implementation interacts with the two
+primary rules of the Bazel multiplex sandbox contract.
+
+### The Two Rules
+
+From [Creating Persistent Workers](https://bazel.build/remote/creating):
+
+- **Rule 1**: The worker must use `sandbox_dir` as a prefix for all file reads and writes.
+- **Rule 2**: "Once a response has been sent for a WorkRequest, the worker must not touch the files
+  in its working directory. The server is free to clean up the files, including temporary files."
+
+### How The Current Implementation Addresses Each Rule
+
+**Rule 1 (sandbox_dir for all I/O):**
+Satisfied. In sandboxed mode, rustc runs with `cwd = sandbox_dir` (`worker_pipeline.rs`,
+`create_pipeline_context`). All relative paths in rustc args (`--extern`, `-Ldependency`, source
+files) resolve against `sandbox_dir`. Outputs are redirected to `_pw_state/pipeline/<key>/outputs/`
+(a persistent worker-owned directory outside the sandbox).
+
+**Rule 2 (no file access after response):**
+The metadata `WorkResponse` is sent as soon as `.rmeta` is emitted. The background rustc continues
+doing codegen. The safety argument has three layers:
+
+1. **Rustc architecture**: metadata is encoded at the boundary between analysis and codegen
+   (`rustc_interface/src/passes.rs`, `start_codegen` → `encode_and_write_metadata` →
+   `codegen_crate`). All parsing, type checking, borrow checking, and MIR passes complete before
+   metadata. Source files are read once during parsing into `Arc<String>` in the `SourceMap` (no
+   re-reads). Dependency `.rmeta` files are memory-mapped once during name resolution into
+   `CrateMetadata` in the `CStore`. Proc macros are fully expanded during parsing.
+
+2. **Empirical verification**: strace on rustc 1.94.0 across three cases (simple deps,
+   `include_str!`, serde derive proc macro) confirmed zero input file reads after `.rmeta` emission.
+   FDs to input files are fully closed before the `.rmeta` write, not just unused.
+
+3. **Output isolation**: `--out-dir` is redirected to `_pw_state/pipeline/<key>/outputs/`, so all
+   codegen writes (`.o`, `.rlib`, `.d`) go to a persistent worker-owned directory outside
+   `sandbox_dir`.
+
+### Strength of the Evidence
+
+The practical safety story is strong: rustc's compilation pipeline architecture guarantees input I/O
+is complete before metadata emission, the strace evidence confirms it, and Linux mmap semantics
+provide an additional safety net (mmap survives `unlink`).
+
+The contractual story is weaker: we rely on undocumented rustc implementation details (the
+compilation pipeline ordering is not a stable API), and we operate outside the documented Bazel
+worker contract (no precedent for background work spanning two requests). The strace evidence covers
+sampled rustc versions and crate shapes, not all possible configurations.
+
+### Known Caveats
+
+1. **Incremental compilation**: `-C incremental=<path>` causes reads and writes to the incremental
+   cache during codegen. The incremental directory must be outside `sandbox_dir` (currently placed
+   in `_pw_state/pipeline/<key>/`).
+
+2. **mmap page faults**: dependency metadata is mmap'd. On Linux, mmap holds an inode reference so
+   file deletion doesn't break access. Cross-platform behavior is less well characterized.
+
+3. **Cancellation**: the cancel handler must kill the background rustc to prevent wasted CPU and
+   ensure no further file mutation after a cancel response. The full-phase cancellation gap (where
+   the full handler has taken the `BackgroundRustc` from `PipelineState`) is addressed by the
+   request-ID index design in the "Cancellation Direction" section below.
+
+### Sources
+
+- [rustc compilation pipeline — passes.rs](https://github.com/rust-lang/rust/blob/master/compiler/rustc_interface/src/passes.rs) — `encode_and_write_metadata` called before `codegen_crate`
+- [Libraries and metadata — Rustc Dev Guide](https://rustc-dev-guide.rust-lang.org/backend/libs-and-metadata.html) — "As early as it can, rustc will save the rmeta file to disk before it continues to the code generation phase"
+- [Pipelining stabilization — rust-lang/rust#60988](https://github.com/rust-lang/rust/issues/60988) — "metadata is now generated right at the start of code generation"
+- [SourceMap — rustc_span](https://github.com/rust-lang/rust/blob/main/compiler/rustc_span/src/source_map.rs) — source files read via `read_to_string` into `Arc<String>`, no re-reads
+- [Mmap for rmeta — rust-lang/rust#55556](https://github.com/rust-lang/rust/pull/55556) — dependency metadata mmap'd once
+- [Creating Persistent Workers — Bazel](https://bazel.build/remote/creating) — "must not touch the files in its working directory" after response
+- [Multiplex Workers — Bazel](https://bazel.build/remote/multiplex) — sandbox_dir contract
+- [SandboxedWorkerProxy.java — bazelbuild/bazel](https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/worker/SandboxedWorkerProxy.java) — sandbox_dir lifecycle (cleaned before next request, not deleted after response)
+
 ## Aborted, Failed, And Superseded Approaches
 
 | Approach | Outcome | Why It Stopped | What To Keep |
@@ -175,9 +251,16 @@ The plan surface is now much smaller. The remaining questions are concrete:
    - fall back to the hollow-rlib / two-invocation model for sandboxed and dynamic modes,
    - or develop a new strict-sandbox design without relying on post-response background work.
 
-3. What test coverage is still missing?
+3. What cancellation and shutdown coverage is still missing?
+   Current state:
+   - metadata-phase pipelined cancellation exists,
+   - full-phase pipelined cancellation still needs an atomic ownership-transfer fix so a full
+     request never becomes cancel-acknowledgeable before a kill path is registered,
+   - and non-pipelined worker requests still use acknowledge-only cancellation semantics and must
+     remain documented as such.
    At minimum:
-   - cancellation with a live background rustc,
+   - cancellation during metadata phase with a live background rustc,
+   - cancellation during full phase across the metadata-to-full ownership handoff,
    - worker shutdown with active pipeline entries,
    - explicit `bazel clean` / teardown behavior for multiplex workers,
    - metadata-cache-hit / full-request-fallback paths,
@@ -186,6 +269,151 @@ The plan surface is now much smaller. The remaining questions are concrete:
 4. Which public docs should be downgraded from recommendation to experiment?
    The settings docs and code comments should reflect the actual maturity of the sandboxed path.
 
+## Cancellation Direction
+
+Cancellation should be tightened using an atomic request-ownership design rather than treated as
+fully settled.
+
+Goal:
+
+- every cancellable pipelined request ID must have a kill target installed before Bazel can receive
+  `wasCancelled=true` for that request.
+
+Design invariants:
+
+- a pipelined request must not become cancel-acknowledgeable until its cancel target is registered,
+- ownership transfer from metadata request ID to full request ID must be atomic,
+- and after a cancel response is sent, the worker must have either:
+  - killed the background rustc,
+  - or proven that the request already completed and no further file mutation can occur.
+
+Data model:
+
+- keep pipeline state keyed by pipeline key,
+- add a second index from active request ID to pipeline key / phase,
+- and avoid a bare PID as the primary abstraction so cancellation remains tied to owned process
+  state rather than to a reusable kernel identifier.
+
+Flow:
+
+1. Metadata phase:
+   - when storing `BackgroundRustc`, register the metadata request ID in the request-ID index in
+     the same critical section.
+2. Full phase:
+   - when the full request takes ownership of the background rustc, atomically rewrite the
+     request-ID index from metadata request ID to full request ID before releasing the state lock.
+3. Cancel:
+   - resolve request ID through the request-ID index,
+   - if it maps to a live pipelined entry, kill that entry before sending `wasCancelled=true`,
+   - if no mapping exists, treat the request as already completed and ignore the cancel.
+4. Cleanup:
+   - remove the request-ID mapping when the full handler finishes or when cancellation reaps the
+     child.
+
+Why this shape:
+
+- it closes the metadata-to-full handoff race,
+- it avoids acknowledging cancellation for a full request that still has no kill path,
+- and it keeps cancellation semantics tied to worker-owned process state instead of a raw PID.
+
+## Implementation: Contract Documentation, Strace Test, and Cancellation Fix
+
+This section contains concrete implementation tasks for the three workstreams described above.
+
+### Task 1: Add design documentation to worker_pipeline.rs
+
+Replace the module-level doc comment in `worker_pipeline.rs` (line 15) with a comprehensive doc
+covering the single-rustc pipelining architecture, sandbox contract compliance rationale (Rule 1
+and Rule 2), caveats (incremental, mmap, experimental status), and cancellation design. Include
+links to the rustc dev guide, passes.rs, SourceMap, and Bazel worker docs.
+
+### Task 2: Extend PipelineState with request_index and active_pids
+
+Add two new fields to `PipelineState` in `worker_pipeline.rs`:
+
+- `request_index: HashMap<i64, String>` — maps active request IDs to pipeline keys.
+- `active_pids: HashMap<String, u32>` — maps pipeline keys to child PIDs, retained after the full
+  handler takes ownership of `BackgroundRustc`.
+
+Change `store()` to accept `request_id` and populate all three maps atomically. Add
+`take_and_transfer(key, full_request_id)` that removes from `active`, rewrites `request_index`
+(using `bg.metadata_request_id` for O(1) removal), and keeps `active_pids`. Add `pre_register()`,
+`cleanup()`, and `kill_by_request_id()`.
+
+`kill_by_request_id` checks `active` first (metadata phase: `child.kill()` + `child.wait()`), then
+falls back to `active_pids` (full phase: `libc::kill(pid, SIGKILL)`). The PID fallback has a
+theoretical PID-reuse race (documented with a SAFETY comment); the window is microseconds because
+`cleanup()` removes the PID immediately after `child.wait()` returns. If this becomes a concern,
+upgrade to a shared `Child` handle.
+
+### Task 3: Update handle_pipelining_metadata
+
+Pass `request.request_id` to the new `store()` signature. No other changes needed — the metadata
+handler already stores `BackgroundRustc` in a single critical section.
+
+### Task 4: Update handle_pipelining_full
+
+Replace `take(&key)` with `take_and_transfer(&key, request.request_id)`. Add
+`cleanup(&key, request.request_id)` to all exit paths in the `Some(bg)` arm (success, error) and
+to the `None` arm (fallback one-shot compilation). The `None` arm cleanup is required because
+`pre_register()` from Task 5 will have inserted a `request_index` entry even when no
+`BackgroundRustc` is found.
+
+### Task 5: Pre-register on main thread and early-cancel check in worker thread
+
+In `worker.rs`, on the main thread:
+
+1. After the cancel handler block and before `in_flight.insert()`, call
+   `pipeline_state.pre_register(request.request_id, key)` for pipelined requests. This ensures the
+   cancel target exists before the request becomes cancel-acknowledgeable.
+
+In the worker thread:
+
+2. After `detect_pipelining_mode()` and before `match pipelining`, check
+   `claim_flag.load(Ordering::SeqCst)`. If the flag is already set (cancel won the race), call
+   `cleanup()` and return early without starting rustc. This prevents wasted CPU and satisfies the
+   invariant: "after cancel response, the worker must have killed the background rustc or proven
+   that no further file mutation can occur."
+
+### Task 6: Replace kill_pipelined_request
+
+Replace the standalone `kill_pipelined_request` function with a thin wrapper that delegates to
+`PipelineState::kill_by_request_id()`.
+
+### Task 7: Unit tests for PipelineState cancel tracking
+
+Add tests to `worker.rs`'s test module:
+
+- `test_pipeline_state_store_and_kill_metadata_phase` — store + kill via metadata request ID
+- `test_pipeline_state_take_and_transfer_then_kill_full_phase` — store + transfer + kill via full
+  request ID (PID path)
+- `test_pipeline_state_kill_nonexistent_request` — returns false
+- `test_pipeline_state_pre_register` — pre-register + kill returns false (no process)
+- `test_pipeline_state_cleanup_removes_all_entries` — cleanup after pre-register
+
+### Task 8: Strace regression test
+
+Add `test/unit/pipelined_compilation/strace_rustc_post_metadata_test.sh` as an `sh_test` tagged
+`manual` and `local`, Linux-only. The test:
+
+1. Compiles a small crate (with a dependency and `include_str!`) under
+   `strace -f -e trace=openat,read,close`.
+2. Finds the `.rmeta` write boundary in the strace log.
+3. Asserts zero `openat()` calls referencing input files after the boundary.
+4. Asserts all input FDs are closed before the boundary.
+5. Prints the rustc version for traceability.
+
+This test is not part of the normal CI suite. Run manually per rustc version:
+```
+bazel test //test/unit/pipelined_compilation:strace_rustc_post_metadata_test --test_output=streamed
+```
+
+### Task 9: Full test suite verification
+
+Run `cargo test` in `util/process_wrapper/` and
+`bazel test //test/unit/pipelined_compilation:pipelined_compilation_test_suite` to confirm no
+regressions.
+
 ## Recommended Next Steps
 
 1. Keep this file as the single current plan.
@@ -193,10 +421,11 @@ The plan surface is now much smaller. The remaining questions are concrete:
    materially.
 3. Move future benchmark updates into benchmark docs or raw-data summaries rather than back into
    the plan stack.
-4. Make one explicit product decision about sandboxed worker pipelining:
+4. Implement the tasks in the "Implementation" section above.
+5. Make one explicit product decision about sandboxed worker pipelining:
    - either narrow the supported scope and document the current limitations,
    - or start a fresh strict-sandbox design from the remaining open questions above.
-5. Update code comments and user-facing settings docs so they do not overstate the sandboxed
+6. Update code comments and user-facing settings docs so they do not overstate the sandboxed
    contract story.
 
 ## Benchmark And Artifact References
