@@ -16,6 +16,9 @@ exports_files(
     ] + glob(
         include = ["*.bazel"],
         allow_empty = True,
+    ) + glob(
+        include = ["*.patch"],
+        allow_empty = True,
     ),
 )
 
