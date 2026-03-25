@@ -639,7 +639,7 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/io-lifetimes/1.0.11/download"],
         strip_prefix = "io-lifetimes-1.0.11",
         build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.io-lifetimes-1.0.11.bazel"),
-        patches = [Label("//tools/rust_analyzer/3rdparty/crates::io-lifetimes-determinism.patch")],
+        patches = [Label("//tools/rust_analyzer/3rdparty/patches:io-lifetimes-determinism.patch")],
     )
 
     maybe(
@@ -780,7 +780,7 @@ def crate_repositories():
         urls = ["https://static.crates.io/crates/rustix/0.37.23/download"],
         strip_prefix = "rustix-0.37.23",
         build_file = Label("//tools/rust_analyzer/3rdparty/crates:BUILD.rustix-0.37.23.bazel"),
-        patches = [Label("//tools/rust_analyzer/3rdparty/crates:rustix-determinism.patch")],
+        patches = [Label("//tools/rust_analyzer/3rdparty/patches:rustix-determinism.patch")],
     )
 
     maybe(
