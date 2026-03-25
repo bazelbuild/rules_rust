@@ -13,6 +13,100 @@
 // limitations under the License.
 
 //! Pipelining state and handlers for the persistent worker.
+//!
+//! # Architecture: Single-rustc Pipelining
+//!
+//! Each crate is compiled by a single rustc invocation that produces both `.rmeta`
+//! (metadata, encoding type/trait information for downstream crates) and `.rlib`
+//! (the full compiled artifact including object code).  Rustc emits `.rmeta` at the
+//! boundary between analysis and codegen — specifically in `encode_and_write_metadata`
+//! inside `passes.rs`, before `codegen_crate` is called — so downstream crates can
+//! begin their own compilation as soon as the metadata is flushed.
+//!
+//! This module implements a two-phase split of that single rustc invocation across
+//! two Bazel worker requests:
+//!
+//! 1. **Metadata request** (`--pipelining-metadata --pipelining-key=<key>`):
+//!    Spawns rustc as a background child process.  A dedicated thread reads rustc's
+//!    stdout line-by-line and blocks until it sees the sentinel that signals `.rmeta`
+//!    has been written to disk.  At that point a [`WorkResponse`] is sent back to
+//!    Bazel so downstream actions can start immediately, while the child continues
+//!    running codegen in the background.
+//!
+//! 2. **Full request** (`--pipelining-full --pipelining-key=<key>`):
+//!    Retrieves the still-running child from [`PipelineState`] by key and waits for
+//!    it to exit.  Copies outputs from the pipeline output directory back into the
+//!    Bazel sandbox before sending the final [`WorkResponse`].
+//!
+//! # Sandbox Contract Compliance
+//!
+//! Bazel's persistent-worker sandbox contract has two rules:
+//!
+//! **Rule 1 — all I/O goes through `sandbox_dir`.**
+//! Satisfied by setting the worker process's `cwd` to `sandbox_dir` so that every
+//! relative path resolves inside the sandbox.  Outputs that must persist across the
+//! two requests (`.rmeta`, `.rlib`, `.d` files, etc.) are redirected to a
+//! worker-owned directory outside Bazel control:
+//! `_pw_state/pipeline/<key>/outputs/`.  The full handler copies them back into the
+//! sandbox before returning.
+//!
+//! **Rule 2 — no file access after the [`WorkResponse`] is sent.**
+//! The metadata response is sent before codegen begins.  After that point the
+//! background rustc process continues running, but it does NOT access any sandbox
+//! input files because:
+//!
+//! - Source files are read once into `Arc<String>` entries in rustc's `SourceMap`
+//!   during parsing, before `.rmeta` is emitted.
+//!   See: <https://github.com/rust-lang/rust/blob/main/compiler/rustc_span/src/source_map.rs>
+//! - Dependency `.rmeta` files are memory-mapped once during the "resolve crate"
+//!   phase, also before codegen.
+//!   See: <https://rustc-dev-guide.rust-lang.org/backend/libs-and-metadata.html>
+//! - Proc macros are fully expanded during the parsing/expansion phase, before
+//!   `.rmeta` is written.
+//!   See: <https://github.com/rust-lang/rust/issues/60988>
+//!
+//! This has been empirically verified via strace on rustc 1.94.0: zero `open`/`read`
+//! syscalls to sandbox input paths are observed after `.rmeta` is written.
+//! See the regression test:
+//! `test/unit/pipelined_compilation/strace_rustc_post_metadata_test.sh`
+//!
+//! # Caveats
+//!
+//! - **Undocumented rustc internals.** The ordering guarantee (all sandbox reads
+//!   complete before `.rmeta` emission) is an observable consequence of rustc's
+//!   current pass ordering, not a documented API contract.  A future rustc refactor
+//!   (e.g. parallel front-end, lazy source loading) could break this assumption.
+//!   The strace test provides a regression signal.
+//!
+//! - **Incremental compilation.** The incremental cache directory must reside
+//!   outside the Bazel sandbox (e.g. in `_pw_state/`) so it persists across both
+//!   requests and across rebuilds.  Enabling incremental inside the sandbox causes
+//!   cache misses and potential corruption.
+//!
+//! - **No precedent.** Spanning background work across two separate Bazel worker
+//!   requests is not an officially supported pattern.  This implementation is
+//!   experimental and may interact unexpectedly with Bazel features such as dynamic
+//!   execution, worker cancellation, or future sandboxing policy changes.
+//!
+//! # Cancellation
+//!
+//! [`PipelineState`] maintains a `request_index`: a `HashMap` from active Bazel
+//! request IDs to pipeline keys.  This index enables the cancel handler to locate
+//! the correct in-flight pipeline entry when Bazel sends a cancel signal.
+//!
+//! Invariants:
+//!
+//! - A pipeline entry is registered in `request_index` **before** the metadata
+//!   [`WorkResponse`] is sent (i.e., before the request becomes cancel-acknowledgeable).
+//! - Ownership of a pipeline entry transfers atomically from the metadata handler to
+//!   the full handler: the metadata handler inserts the entry; the full handler
+//!   removes it.
+//! - After a cancel response is sent, the background rustc child is killed (or the
+//!   request has already completed and the child has exited normally).
+//!
+//! See the "Cancellation Direction" section of the consolidated worker-pipelining
+//! plan at `thoughts/shared/plans/2026-03-25-consolidated-worker-pipelining-plan.md`
+//! for the rationale behind these invariants.
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
