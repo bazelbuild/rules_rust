@@ -1,4 +1,20 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(":pipelined_compilation_test.bzl", "pipelined_compilation_test_suite")
 
 ############################ UNIT TESTS #############################
 pipelined_compilation_test_suite(name = "pipelined_compilation_test_suite")
+
+############################ STRACE TEST #############################
+sh_test(
+    name = "strace_rustc_post_metadata_test",
+    srcs = ["strace_rustc_post_metadata_test.sh"],
+    tags = [
+        "local",
+        "manual",
+        "no-sandbox",
+    ],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
