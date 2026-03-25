@@ -181,11 +181,11 @@ pub(super) struct PipelineState {
     pub(super) active: HashMap<String, BackgroundRustc>,
     /// Maps active request IDs to pipeline keys, allowing the cancel handler
     /// to find the pipeline key for any in-flight pipelined request.
-    request_index: HashMap<i64, String>,
+    pub(super) request_index: HashMap<i64, String>,
     /// Maps pipeline keys to child PIDs, persisting across the
     /// metadata-to-full handoff so the cancel handler can kill the child
     /// even after `BackgroundRustc` has been taken from `active`.
-    active_pids: HashMap<String, u32>,
+    pub(super) active_pids: HashMap<String, u32>,
 }
 
 impl PipelineState {

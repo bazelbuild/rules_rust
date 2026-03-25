@@ -610,6 +610,7 @@ mod test {
         apply_substs, build_rustc_env, expand_rustc_args, extract_rmeta_path,
         find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs,
         rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags,
+        BackgroundRustc, PipelineState,
     };
     use super::protocol::{
         extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
@@ -1490,5 +1491,136 @@ mod test {
         let expected = args.clone();
         relocate_pw_flags(&mut args);
         assert_eq!(args, expected);
+    }
+
+    // -------------------------------------------------------------------------
+    // PipelineState cancel-tracking unit tests
+    // -------------------------------------------------------------------------
+
+    fn make_test_bg(request_id: i64) -> BackgroundRustc {
+        use std::process::Command;
+        BackgroundRustc {
+            child: Command::new("sleep").arg("60").spawn().unwrap(),
+            metadata_request_id: request_id,
+            diagnostics_before: String::new(),
+            stderr_drain: std::thread::spawn(|| String::new()),
+            pipeline_root_dir: std::path::PathBuf::from("/tmp"),
+            pipeline_output_dir: std::path::PathBuf::from("/tmp"),
+            original_out_dir: String::from("/tmp"),
+        }
+    }
+
+    #[test]
+    fn test_pipeline_state_store_and_kill_metadata_phase() {
+        let mut state = PipelineState::new();
+        let bg = make_test_bg(42);
+        state.store("key1".to_string(), 42, bg);
+        let killed = state.kill_by_request_id(42);
+        assert!(killed, "kill_by_request_id should return true");
+        assert!(state.active.is_empty(), "active should be empty after kill");
+        assert!(
+            state.request_index.is_empty(),
+            "request_index should be empty after kill"
+        );
+        assert!(
+            state.active_pids.is_empty(),
+            "active_pids should be empty after kill"
+        );
+    }
+
+    #[test]
+    fn test_pipeline_state_take_and_transfer_then_kill_full_phase() {
+        let mut state = PipelineState::new();
+        let bg = make_test_bg(42);
+        // keep pid for manual reaping after kill_by_request_id
+        state.store("key1".to_string(), 42, bg);
+
+        let mut taken = state
+            .take_and_transfer("key1", 99)
+            .expect("take_and_transfer should return the BackgroundRustc");
+
+        // After take_and_transfer: active is empty, active_pids still has key1,
+        // request_index maps 99 (not 42).
+        assert!(
+            state.active.is_empty(),
+            "active should be empty after take_and_transfer"
+        );
+        assert!(
+            state.active_pids.contains_key("key1"),
+            "active_pids should still contain key1"
+        );
+        assert!(
+            state.request_index.contains_key(&99),
+            "request_index should map request_id 99"
+        );
+        assert!(
+            !state.request_index.contains_key(&42),
+            "request_index should no longer map old request_id 42"
+        );
+
+        // Kill via the full-phase path (PID in active_pids, not in active).
+        #[cfg(unix)]
+        {
+            let killed = state.kill_by_request_id(99);
+            assert!(killed, "kill_by_request_id should return true for full phase");
+            assert!(
+                state.active.is_empty(),
+                "active should be empty after kill"
+            );
+            assert!(
+                state.request_index.is_empty(),
+                "request_index should be empty after kill"
+            );
+            assert!(
+                state.active_pids.is_empty(),
+                "active_pids should be empty after kill"
+            );
+        }
+
+        // Reap the child to prevent zombies (the kill above sent SIGKILL on unix,
+        // but we still hold the Child handle).
+        let _ = taken.child.kill();
+        let _ = taken.child.wait();
+        let _ = taken.stderr_drain.join();
+    }
+
+    #[test]
+    fn test_pipeline_state_kill_nonexistent_request() {
+        let mut state = PipelineState::new();
+        let result = state.kill_by_request_id(999);
+        assert!(!result, "kill_by_request_id should return false for unknown request_id");
+    }
+
+    #[test]
+    fn test_pipeline_state_pre_register() {
+        let mut state = PipelineState::new();
+        state.pre_register(42, "key1".to_string());
+        assert!(
+            state.request_index.contains_key(&42),
+            "request_index should contain pre-registered request_id"
+        );
+        // No process stored yet — kill should return false.
+        let result = state.kill_by_request_id(42);
+        assert!(
+            !result,
+            "kill_by_request_id should return false when no process was stored"
+        );
+        // request_index entry is cleaned up even in the no-process path.
+        assert!(
+            state.request_index.is_empty(),
+            "request_index should be empty after kill_by_request_id cleans up"
+        );
+    }
+
+    #[test]
+    fn test_pipeline_state_cleanup_removes_all_entries() {
+        let mut state = PipelineState::new();
+        state.pre_register(42, "key1".to_string());
+        assert!(state.request_index.contains_key(&42));
+        state.cleanup("key1", 42);
+        assert!(
+            state.request_index.is_empty(),
+            "request_index should be empty after cleanup"
+        );
     }
 }
