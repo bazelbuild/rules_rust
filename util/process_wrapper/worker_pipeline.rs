@@ -173,24 +173,121 @@ pub(super) struct BackgroundRustc {
 ///
 /// Keyed by the pipeline key (crate name + output hash), set by the Bazel-side
 /// `--pipelining-key=<key>` argument.
+///
+/// `request_index` and `active_pids` extend the cancel handler's reach: after
+/// `take_and_transfer` moves a `BackgroundRustc` out of `active`, the cancel
+/// handler can still locate and kill the child process via `active_pids`.
 pub(super) struct PipelineState {
     pub(super) active: HashMap<String, BackgroundRustc>,
+    /// Maps active request IDs to pipeline keys, allowing the cancel handler
+    /// to find the pipeline key for any in-flight pipelined request.
+    request_index: HashMap<i64, String>,
+    /// Maps pipeline keys to child PIDs, persisting across the
+    /// metadata-to-full handoff so the cancel handler can kill the child
+    /// even after `BackgroundRustc` has been taken from `active`.
+    active_pids: HashMap<String, u32>,
 }
 
 impl PipelineState {
     pub(super) fn new() -> Self {
         Self {
             active: HashMap::new(),
+            request_index: HashMap::new(),
+            active_pids: HashMap::new(),
         }
     }
 
-    pub(super) fn store(&mut self, key: String, bg: BackgroundRustc) {
+    /// Stores a background rustc and populates `request_index` + `active_pids`.
+    pub(super) fn store(&mut self, key: String, request_id: i64, bg: BackgroundRustc) {
+        let pid = bg.child.id();
+        self.request_index.insert(request_id, key.clone());
+        self.active_pids.insert(key.clone(), pid);
         self.active.insert(key, bg);
     }
 
+    /// Transfers ownership from metadata to full request.
+    ///
+    /// Removes `BackgroundRustc` from `active` (like `take`), rewrites
+    /// `request_index` to point the full request's ID at the pipeline key,
+    /// and keeps `active_pids` so the cancel handler can still kill the child.
+    pub(super) fn take_and_transfer(
+        &mut self,
+        key: &str,
+        full_request_id: i64,
+    ) -> Option<BackgroundRustc> {
+        let bg = self.active.remove(key)?;
+        // Remove the old metadata request_id entry (O(1) lookup).
+        self.request_index.remove(&bg.metadata_request_id);
+        // Insert the full request_id pointing at the same key.
+        self.request_index.insert(full_request_id, key.to_string());
+        // active_pids stays — same key, same PID.
+        Some(bg)
+    }
+
+    /// Pre-registers a request ID → pipeline key mapping before the worker
+    /// thread starts, so the cancel handler can find it immediately.
+    pub(super) fn pre_register(&mut self, request_id: i64, key: String) {
+        self.request_index.insert(request_id, key);
+    }
+
+    /// Removes all tracking state for a completed or cancelled request.
+    pub(super) fn cleanup(&mut self, key: &str, request_id: i64) {
+        self.active.remove(key);
+        self.request_index.remove(&request_id);
+        self.active_pids.remove(key);
+    }
+
+    /// Kills the background rustc associated with `request_id`.
+    ///
+    /// First checks `active` (metadata phase — we own the Child handle).
+    /// Falls back to `active_pids` (full phase — Child was taken, use raw
+    /// kill). Returns `true` if a kill was attempted.
+    pub(super) fn kill_by_request_id(&mut self, request_id: i64) -> bool {
+        let key = match self.request_index.get(&request_id) {
+            Some(k) => k.clone(),
+            None => return false,
+        };
+
+        // Case 1: BackgroundRustc still in `active` (metadata phase).
+        if let Some(mut bg) = self.active.remove(&key) {
+            let _ = bg.child.kill();
+            let _ = bg.child.wait(); // reap zombie
+            let _ = bg.stderr_drain.join();
+            self.request_index.remove(&request_id);
+            self.active_pids.remove(&key);
+            return true;
+        }
+
+        // Case 2: Child was taken by full handler, but PID is still tracked.
+        if let Some(pid) = self.active_pids.remove(&key) {
+            // SAFETY: PID reuse race is theoretically possible but extremely
+            // unlikely within the short window between take_and_transfer and
+            // child.wait() in the full handler. The alternative (not killing)
+            // wastes CPU for the entire remaining compilation.
+            #[cfg(unix)]
+            unsafe {
+                kill(pid as i32, 9); // SIGKILL
+            }
+            self.request_index.remove(&request_id);
+            return true;
+        }
+
+        // Key was in request_index but not in active or active_pids —
+        // pre_register without a store (e.g., full handler fallback path).
+        self.request_index.remove(&request_id);
+        false
+    }
+
+    /// Legacy take method for non-cancel paths and tests.
+    #[allow(dead_code)]
     pub(super) fn take(&mut self, key: &str) -> Option<BackgroundRustc> {
         self.active.remove(key)
     }
+}
+
+#[cfg(unix)]
+extern "C" {
+    fn kill(pid: i32, sig: i32) -> i32;
 }
 
 /// Parsed process_wrapper arguments from before the `--` separator.
@@ -971,6 +1068,7 @@ pub(super) fn handle_pipelining_metadata(
             let diagnostics_before = diagnostics.clone();
             lock_or_recover(pipeline_state).store(
                 key.clone(),
+                request.request_id,
                 BackgroundRustc {
                     child,
                     metadata_request_id: request.request_id,
@@ -1021,7 +1119,7 @@ pub(super) fn handle_pipelining_full(
     pipeline_state: &Arc<Mutex<PipelineState>>,
     self_path: &std::path::Path,
 ) -> (i32, String) {
-    let bg = lock_or_recover(pipeline_state).take(&key);
+    let bg = lock_or_recover(pipeline_state).take_and_transfer(&key, request.request_id);
 
     match bg {
         Some(mut bg) => {
@@ -1069,9 +1167,13 @@ pub(super) fn handle_pipelining_full(
                         exit_code != 0,
                         "full action failed",
                     );
+                    lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
                     (exit_code, all_diagnostics)
                 }
-                Err(e) => (1, format!("failed to wait for background rustc: {e}")),
+                Err(e) => {
+                    lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+                    (1, format!("failed to wait for background rustc: {e}"))
+                }
             }
         }
         None => {
@@ -1095,7 +1197,7 @@ pub(super) fn handle_pipelining_full(
             // and full actions, or metadata was a cache hit). Fall back to a normal
             // one-shot compilation.
             let filtered_args = strip_pipelining_flags(&args);
-            match request.sandbox_dir.as_ref() {
+            let result = match request.sandbox_dir.as_ref() {
                 Some(dir) => run_sandboxed_request(self_path, filtered_args, dir)
                     .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
                 None => {
@@ -1103,37 +1205,26 @@ pub(super) fn handle_pipelining_full(
                     run_request(self_path, filtered_args)
                         .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
                 }
-            }
+            };
+            lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+            result
         }
     }
 }
 
 /// Kills the background rustc process associated with a cancelled request.
 ///
-/// Looks up the pipeline key by metadata_request_id, then kills the child
-/// process and joins the stderr drain thread. This prevents wasted CPU when
-/// the remote leg wins a dynamic execution race.
+/// Uses `PipelineState::kill_by_request_id` which covers both phases:
+/// - Metadata phase: Child handle still in `active` — kill + wait + join.
+/// - Full phase: Child taken, but PID in `active_pids` — raw SIGKILL.
 pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: i64) {
-    let mut state = lock_or_recover(pipeline_state);
-    let key_to_kill: Option<String> = state.active.iter().find_map(|(key, bg)| {
-        if bg.metadata_request_id == request_id {
-            Some(key.clone())
-        } else {
-            None
-        }
-    });
-    if let Some(key) = key_to_kill {
-        if let Some(mut bg) = state.active.remove(&key) {
-            append_worker_lifecycle_log(&format!(
-                "pid={} event=cancel_kill request_id={} key={}",
-                current_pid(),
-                request_id,
-                key,
-            ));
-            let _ = bg.child.kill();
-            let _ = bg.child.wait(); // reap zombie
-            let _ = bg.stderr_drain.join();
-        }
+    let killed = lock_or_recover(pipeline_state).kill_by_request_id(request_id);
+    if killed {
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=cancel_kill request_id={}",
+            current_pid(),
+            request_id,
+        ));
     }
 }
 

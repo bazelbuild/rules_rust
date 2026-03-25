@@ -461,6 +461,15 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 continue;
             }
 
+            // Pre-register pipelined requests in PipelineState before they become
+            // cancel-acknowledgeable, so the cancel handler can find them immediately.
+            if let Some(key) = pipeline_key_from_args(&request.arguments) {
+                lock_or_recover(&pipeline_state).pre_register(
+                    request.request_id,
+                    key.to_string(),
+                );
+            }
+
             // Register this request in the in-flight map with an unclaimed flag.
             // The worker thread removes the entry when it finishes, so the same
             // request ID can be safely reused across builds.
@@ -521,6 +530,16 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         // --pipelining-full, --pipelining-key=<key>). When present these
                         // are handled specially; otherwise fall through to a normal subprocess.
                         let pipelining = detect_pipelining_mode(&full_args);
+
+                        // If cancel already claimed this request, bail out without starting rustc.
+                        if claim_flag.load(Ordering::SeqCst) {
+                            if let PipeliningMode::Metadata { ref key }
+                                | PipeliningMode::Full { ref key } = pipelining
+                            {
+                                lock_or_recover(&pipeline_state).cleanup(key, request.request_id);
+                            }
+                            return (0, String::new());
+                        }
 
                         match pipelining {
                             PipeliningMode::Metadata { key } => handle_pipelining_metadata(
