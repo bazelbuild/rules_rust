@@ -29,9 +29,9 @@ use crate::ProcessWrapperError;
 
 use super::protocol::WorkRequestContext;
 use super::sandbox::{
-    copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable,
-    make_path_writable, prepare_outputs, resolve_real_execroot, resolve_relative_to, run_request,
-    run_sandboxed_request,
+    copy_all_outputs_to_sandbox, copy_output_to_sandbox, create_alias_root,
+    make_dir_files_writable, make_path_writable, prepare_outputs, resolve_real_execroot,
+    resolve_relative_to, run_request, run_sandboxed_request, AliasRoot,
 };
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
 
@@ -109,15 +109,24 @@ pub(super) struct ParsedPwArgs {
     pub(super) output_file: Option<String>,
 }
 
-/// Lightweight pipeline context for the "resolve-through" approach.
+/// Pipeline context for worker-managed pipelining.
 ///
-/// Instead of staging inputs into a worker-owned execroot, we use the worker's
-/// real execroot (CWD) directly. Only outputs are redirected to a persistent
-/// pipeline directory to prevent inter-request interference.
+/// Two modes:
+/// - **Resolve-through** (unsandboxed): uses the real execroot as CWD.
+/// - **Alias-root** (sandboxed): creates `__rr/` inside `sandbox_dir` with
+///   `src -> ..` symlink so rustc reads inputs through `sandbox_dir`, complying
+///   with the Bazel multiplex sandbox contract.
 pub(super) struct PipelineContext {
     pub(super) root_dir: PathBuf,
+    /// Directory used as rustc's CWD. In alias-root mode this is `sandbox_dir/__rr`.
     pub(super) execroot_dir: PathBuf,
+    /// Directory used to resolve file reads (env-files, arg-files, @paramfiles).
+    /// In alias-root mode this is `sandbox_dir` (where Bazel placed the files).
+    /// In resolve-through mode this equals `execroot_dir`.
+    pub(super) input_resolve_dir: PathBuf,
     pub(super) outputs_dir: PathBuf,
+    /// Set when using alias-root mode (sandboxed). Used to rewrite rustc args.
+    pub(super) alias_root: Option<AliasRoot>,
 }
 
 #[derive(Default)]
@@ -467,6 +476,44 @@ pub(super) fn expand_rustc_args(
     result
 }
 
+/// Peeks at request arguments to find the `--out-dir` value before full expansion.
+///
+/// Checks both direct args and any @paramfile content. Used by `create_pipeline_context`
+/// to set up the alias-root `out` symlink before args are fully processed.
+fn peek_out_dir_from_request(request: &WorkRequestContext) -> String {
+    // Check direct args first.
+    for arg in &request.arguments {
+        if let Some(dir) = arg.strip_prefix("--out-dir=") {
+            return dir.to_string();
+        }
+    }
+    // Check @paramfile contents.
+    for arg in &request.arguments {
+        if let Some(path) = arg.strip_prefix('@') {
+            if let Ok(content) = std::fs::read_to_string(path) {
+                for line in content.lines() {
+                    if let Some(dir) = line.strip_prefix("--out-dir=") {
+                        return dir.to_string();
+                    }
+                }
+            }
+            // Also try resolving relative to sandbox_dir.
+            if let Some(ref sandbox_dir) = request.sandbox_dir {
+                let resolved = std::path::Path::new(sandbox_dir).join(path);
+                if let Ok(content) = std::fs::read_to_string(resolved) {
+                    for line in content.lines() {
+                        if let Some(dir) = line.strip_prefix("--out-dir=") {
+                            return dir.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Fallback — use a generic relative output path.
+    "bazel-out".to_string()
+}
+
 /// Searches already-expanded rustc args for `--out-dir=<path>`.
 pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
     for arg in args {
@@ -581,37 +628,43 @@ pub(super) fn create_pipeline_context(
         )
     })?;
 
-    // CRITICAL: Use the REAL execroot, not the sandbox or worker CWD.
+    // Two modes for determining rustc's CWD:
     //
-    // The sandbox dir is per-request and may be torn down after the metadata response.
-    // The background rustc outlives the metadata request, so it needs a stable CWD.
-    // The worker CWD (bazel-workers/.../workdir/_main/) has bazel-out/ but NOT source
-    // files (external/, etc.). Only the real execroot has everything.
+    // SANDBOXED (alias-root): Create __rr/ inside sandbox_dir with src -> ..
+    // symlink. Rustc runs from sandbox_dir/__rr, reading inputs through src/
+    // which resolves back to sandbox_dir. This keeps all reads rooted in the
+    // sandbox per Bazel's multiplex sandbox contract. After .rmeta emission,
+    // background rustc only writes to --out-dir (redirected to persistent
+    // pipeline dir), so sandbox cleanup doesn't affect it.
     //
-    // When sandboxed: resolve a symlink from the sandbox back to the real execroot.
-    // When unsandboxed: the worker CWD IS the real execroot (or close enough).
-    let execroot_dir = if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
-        resolve_real_execroot(sandbox_dir, request).ok_or_else(|| {
-            (
-                1,
-                "pipelining: failed to resolve real execroot from sandbox symlinks".to_string(),
-            )
-        })?
-    } else {
-        let cwd = std::env::current_dir()
-            .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
-        std::fs::canonicalize(cwd).map_err(|e| {
-            (
-                1,
-                format!("pipelining: failed to canonicalize worker CWD: {e}"),
-            )
-        })?
-    };
+    // UNSANDBOXED (resolve-through): Use the worker's real execroot directly.
+    let (execroot_dir, input_resolve_dir, alias_root) =
+        if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
+            // Alias-root: create __rr/ with src -> .. symlink.
+            let out_dir_hint = peek_out_dir_from_request(request);
+            let alias = create_alias_root(sandbox_dir, &out_dir_hint)
+                .map_err(|e| (1, format!("pipelining: {e}")))?;
+            let cwd = alias.root.clone();
+            let resolve_dir = PathBuf::from(sandbox_dir);
+            (cwd, resolve_dir, Some(alias))
+        } else {
+            let cwd = std::env::current_dir()
+                .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
+            let execroot = std::fs::canonicalize(cwd).map_err(|e| {
+                (
+                    1,
+                    format!("pipelining: failed to canonicalize worker CWD: {e}"),
+                )
+            })?;
+            (execroot.clone(), execroot, None)
+        };
 
     Ok(PipelineContext {
         root_dir,
         execroot_dir,
+        input_resolve_dir,
         outputs_dir,
+        alias_root,
     })
 }
 
@@ -626,9 +679,11 @@ pub(super) fn create_pipeline_context(
 /// notification appears, stores the running Child in PipelineState, and returns
 /// success immediately so Bazel can unblock downstream rlib compiles.
 ///
-/// Uses the "resolve-through" approach: rustc runs from the worker's real
-/// execroot (CWD). When `sandbox_dir` is `Some`, only the returned metadata
-/// artifact is materialized back into the request sandbox before Bazel cleans it up.
+/// Two modes:
+/// - **Sandboxed (alias-root)**: rustc runs from `sandbox_dir/__rr` with args
+///   rewritten so input paths go through `src/` (→ sandbox_dir). Compliant with
+///   Bazel's multiplex sandbox contract (Rule 1: all reads through sandbox_dir).
+/// - **Unsandboxed (resolve-through)**: rustc runs from the real execroot.
 pub(super) fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
@@ -658,58 +713,73 @@ pub(super) fn handle_pipelining_metadata(
         Err(e) => return e,
     };
 
-    let raw_pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
+    // ${pwd} substitution: In alias-root mode, ${pwd} must resolve through the
+    // src/ symlink so that paths like ${pwd}/bazel-out/... land in the sandbox.
+    // Must be absolute so concat'd paths resolve from any CWD.
+    // In resolve-through mode, ${pwd} is the real execroot (already absolute).
+    let pwd_for_subst = match ctx.alias_root {
+        Some(ref alias) => {
+            // __rr/src -> .. -> sandbox_dir. Canonicalize to get the absolute
+            // sandbox path, so ${pwd}/bazel-out/... resolves correctly.
+            std::fs::canonicalize(alias.root.join("src"))
+                .unwrap_or_else(|_| alias.root.join("src"))
+        }
+        None => ctx.execroot_dir.clone(),
+    };
+    // Use input_resolve_dir for resolving file paths (where Bazel placed them).
+    let raw_pw_args = parse_pw_args(pw_raw, &pwd_for_subst);
+    let resolve_base = &ctx.input_resolve_dir;
     let pw_args = ParsedPwArgs {
         subst: raw_pw_args.subst,
         env_files: raw_pw_args
             .env_files
             .into_iter()
-            .map(|path| {
-                resolve_relative_to(&path, &ctx.execroot_dir)
-                    .display()
-                    .to_string()
-            })
+            .map(|path| resolve_relative_to(&path, resolve_base).display().to_string())
             .collect(),
         arg_files: raw_pw_args
             .arg_files
             .into_iter()
-            .map(|path| {
-                resolve_relative_to(&path, &ctx.execroot_dir)
-                    .display()
-                    .to_string()
-            })
+            .map(|path| resolve_relative_to(&path, resolve_base).display().to_string())
             .collect(),
-        stable_status_file: raw_pw_args.stable_status_file.map(|path| {
-            resolve_relative_to(&path, &ctx.execroot_dir)
-                .display()
-                .to_string()
-        }),
-        volatile_status_file: raw_pw_args.volatile_status_file.map(|path| {
-            resolve_relative_to(&path, &ctx.execroot_dir)
-                .display()
-                .to_string()
-        }),
+        stable_status_file: raw_pw_args
+            .stable_status_file
+            .map(|path| resolve_relative_to(&path, resolve_base).display().to_string()),
+        volatile_status_file: raw_pw_args
+            .volatile_status_file
+            .map(|path| resolve_relative_to(&path, resolve_base).display().to_string()),
         output_file: raw_pw_args.output_file.map(|path| {
             let base = request
                 .sandbox_dir
                 .as_deref()
                 .map(std::path::Path::new)
-                .unwrap_or(ctx.execroot_dir.as_path());
+                .unwrap_or(ctx.input_resolve_dir.as_path());
             resolve_relative_to(&path, base).display().to_string()
         }),
     };
-    let env = build_rustc_env(
+    let mut env = build_rustc_env(
         &pw_args.env_files,
         pw_args.stable_status_file.as_deref(),
         pw_args.volatile_status_file.as_deref(),
         &pw_args.subst,
     );
 
+    // Expand @paramfiles and apply substitutions. Use input_resolve_dir so
+    // paramfile reads find the files where Bazel placed them.
     let (rustc_args, original_out_dir) =
-        match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
+        match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.input_resolve_dir) {
             Ok(v) => v,
             Err(e) => return e,
         };
+
+    // In alias-root mode, rewrite relative input paths to go through src/,
+    // and rewrite path-bearing env vars (OUT_DIR, DEP_* etc.).
+    let rustc_args = match ctx.alias_root {
+        Some(ref alias) => {
+            alias.rewrite_env(&mut env);
+            alias.rewrite_rustc_args(rustc_args)
+        }
+        None => rustc_args,
+    };
 
     // Redirect --out-dir to our persistent directory so rustc writes all outputs
     // (.rlib, .d) there instead of the Bazel-managed out-dir.
