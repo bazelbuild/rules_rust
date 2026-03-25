@@ -92,14 +92,14 @@ alias(
 )
 
 alias(
-    name = "cargo_toml-0.22.1",
-    actual = "@cui__cargo_toml-0.22.1//:cargo_toml",
+    name = "cargo_toml-0.22.3",
+    actual = "@cui__cargo_toml-0.22.3//:cargo_toml",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml",
-    actual = "@cui__cargo_toml-0.22.1//:cargo_toml",
+    actual = "@cui__cargo_toml-0.22.3//:cargo_toml",
     tags = ["manual"],
 )
 
@@ -356,14 +356,14 @@ alias(
 )
 
 alias(
-    name = "toml-0.8.21",
-    actual = "@cui__toml-0.8.21//:toml",
+    name = "toml-0.9.5",
+    actual = "@cui__toml-0.9.5//:toml",
     tags = ["manual"],
 )
 
 alias(
     name = "toml",
-    actual = "@cui__toml-0.8.21//:toml",
+    actual = "@cui__toml-0.9.5//:toml",
     tags = ["manual"],
 )
 

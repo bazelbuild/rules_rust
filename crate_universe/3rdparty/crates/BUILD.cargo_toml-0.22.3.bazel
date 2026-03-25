@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "cargo_lock",
+    name = "cargo_toml",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -34,7 +34,7 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
-    crate_root = "src/lib.rs",
+    crate_root = "src/cargo_toml.rs",
     edition = "2021",
     rustc_env_files = [
         ":cargo_toml_env_vars",
@@ -44,7 +44,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=cargo-lock",
+        "crate-name=cargo_toml",
         "manual",
         "noclippy",
         "norustfmt",
@@ -97,11 +97,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "10.1.0",
+    version = "0.22.3",
     deps = [
-        "@cui__semver-1.0.26//:semver",
         "@cui__serde-1.0.219//:serde",
-        "@cui__toml-0.8.19//:toml",
-        "@cui__url-2.5.4//:url",
+        "@cui__toml-0.9.5//:toml",
     ],
 )
