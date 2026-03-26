@@ -144,7 +144,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -227,7 +227,7 @@ Only a cargo workspace needs updating whenever the underlying Cargo.toml file ch
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
 and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
 or to ensure full build reproducibility since no download error could possibly occur.
-You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_deps_vendor).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples/all_deps_vendor).
 
 For the setup, you need to add the skylib in addition to the rust rules to your `MODULE.bazel`.
 
@@ -367,7 +367,7 @@ sys_deps()
 
 Now, you can build the project as usual.
 
-There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/).
+There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/).
 
 """
 
