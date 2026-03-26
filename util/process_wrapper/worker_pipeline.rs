@@ -131,7 +131,7 @@ use super::sandbox::{
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
 
 /// Pipelining mode for a worker request, parsed from process_wrapper flags.
-pub(super) enum PipeliningMode {
+pub(crate) enum PipeliningMode {
     /// No pipelining flags present — handle as a normal subprocess request.
     None,
     /// `--pipelining-metadata --pipelining-key=<key>` present.
@@ -250,7 +250,7 @@ pub(super) struct BackgroundRustc {
 ///
 /// `claim_flags` also tracks non-pipelined in-flight requests, unifying the
 /// cancel/completion race prevention into a single data structure.
-pub(super) struct PipelineState {
+pub(crate) struct PipelineState {
     /// Pipeline key → current phase.
     entries: HashMap<String, PipelinePhase>,
     /// Reverse index: request_id → pipeline key (for O(1) cancel lookup).
@@ -261,7 +261,7 @@ pub(super) struct PipelineState {
 }
 
 impl PipelineState {
-    pub(super) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             entries: HashMap::new(),
             request_index: HashMap::new(),
@@ -270,7 +270,7 @@ impl PipelineState {
     }
 
     /// Register a non-pipelined request's claim flag.
-    pub(super) fn register_claim(&mut self, request_id: i64) -> Arc<AtomicBool> {
+    pub(crate) fn register_claim(&mut self, request_id: i64) -> Arc<AtomicBool> {
         let flag = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&flag));
         flag
@@ -281,7 +281,7 @@ impl PipelineState {
     /// For metadata requests, creates a new PreRegistered entry.
     /// For full requests (entry already exists as MetadataRunning), just
     /// registers the claim flag and request_index mapping.
-    pub(super) fn pre_register(&mut self, request_id: i64, key: String) -> Arc<AtomicBool> {
+    pub(crate) fn pre_register(&mut self, request_id: i64, key: String) -> Arc<AtomicBool> {
         let flag = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&flag));
         self.request_index.insert(request_id, key.clone());
@@ -506,12 +506,12 @@ pub(super) struct OutputMaterializationStats {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct WorkerStateRoots {
+pub(crate) struct WorkerStateRoots {
     pipeline_root: PathBuf,
 }
 
 impl WorkerStateRoots {
-    pub(super) fn ensure() -> Result<Self, ProcessWrapperError> {
+    pub(crate) fn ensure() -> Result<Self, ProcessWrapperError> {
         let pipeline_root = PathBuf::from("_pw_state/pipeline");
         std::fs::create_dir_all(&pipeline_root).map_err(|e| {
             ProcessWrapperError(format!("failed to create worker pipeline root: {e}"))
@@ -519,7 +519,7 @@ impl WorkerStateRoots {
         Ok(Self { pipeline_root })
     }
 
-    pub(super) fn pipeline_dir(&self, key: &str) -> PathBuf {
+    pub(crate) fn pipeline_dir(&self, key: &str) -> PathBuf {
         self.pipeline_root.join(key)
     }
 }
@@ -530,7 +530,7 @@ impl WorkerStateRoots {
 /// RustcMetadata and Rustc actions have identical startup args (same worker
 /// key). This function checks both direct args and any @paramfile content
 /// found after the `--` separator.
-pub(super) fn detect_pipelining_mode(args: &[String]) -> PipeliningMode {
+pub(crate) fn detect_pipelining_mode(args: &[String]) -> PipeliningMode {
     // First pass: check direct args (handles the no-paramfile case and is fast).
     let (mut is_metadata, mut is_full, mut key) =
         scan_pipelining_flags(args.iter().map(String::as_str));
@@ -1018,7 +1018,7 @@ pub(super) fn create_pipeline_context(
 ///   in args resolve against the sandbox where Bazel placed inputs. Compliant
 ///   with the Bazel multiplex sandbox contract (Rule 1: all reads via sandbox_dir).
 /// - **Unsandboxed**: rustc runs from the real execroot.
-pub(super) fn handle_pipelining_metadata(
+pub(crate) fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
     key: String,
@@ -1300,7 +1300,7 @@ pub(super) fn handle_pipelining_metadata(
 /// Looks up the background rustc by pipeline key. If found, waits for it to
 /// finish and copies outputs to the correct location. If not found (worker was
 /// restarted), falls back to running rustc normally as a one-shot compilation.
-pub(super) fn handle_pipelining_full(
+pub(crate) fn handle_pipelining_full(
     request: &WorkRequestContext,
     args: Vec<String>,
     key: String,

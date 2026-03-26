@@ -35,11 +35,11 @@
 //! Protocol reference: https://bazel.build/remote/persistent
 
 #[path = "worker_pipeline.rs"]
-mod pipeline;
+pub(crate) mod pipeline;
 #[path = "worker_protocol.rs"]
-mod protocol;
+pub(crate) mod protocol;
 #[path = "worker_sandbox.rs"]
-mod sandbox;
+pub(crate) mod sandbox;
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};

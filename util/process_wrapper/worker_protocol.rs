@@ -17,18 +17,18 @@
 use tinyjson::JsonValue;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct WorkRequestInput {
-    pub(super) path: String,
-    pub(super) digest: Option<String>,
+pub(crate) struct WorkRequestInput {
+    pub(crate) path: String,
+    pub(crate) digest: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct WorkRequestContext {
-    pub(super) request_id: i64,
-    pub(super) arguments: Vec<String>,
-    pub(super) sandbox_dir: Option<String>,
-    pub(super) inputs: Vec<WorkRequestInput>,
-    pub(super) cancel: bool,
+pub(crate) struct WorkRequestContext {
+    pub(crate) request_id: i64,
+    pub(crate) arguments: Vec<String>,
+    pub(crate) sandbox_dir: Option<String>,
+    pub(crate) inputs: Vec<WorkRequestInput>,
+    pub(crate) cancel: bool,
 }
 
 impl WorkRequestContext {
