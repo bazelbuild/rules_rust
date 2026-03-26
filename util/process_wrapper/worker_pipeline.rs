@@ -112,6 +112,7 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -141,6 +142,69 @@ pub(super) enum PipeliningMode {
     Full { key: String },
 }
 
+/// Lifecycle phase of a single pipelined compilation.
+///
+///   PreRegistered ──store()──> MetadataRunning ──take_for_full()──> FullWaiting ──cleanup()──> (removed)
+///   Any phase ──cancel_by_request_id()──> (removed, child killed if applicable)
+pub(super) enum PipelinePhase {
+    /// Main thread registered the request; worker thread not yet spawned rustc.
+    PreRegistered {
+        metadata_request_id: i64,
+    },
+
+    /// Rustc spawned, .rmeta emitted, metadata response sent. Background codegen continues.
+    MetadataRunning {
+        metadata_request_id: i64,
+        bg: BackgroundRustc,
+        pid: u32,
+    },
+
+    /// Full handler took BackgroundRustc; waiting for child exit + output copy.
+    /// PID retained for cancel-via-raw-signal.
+    FullWaiting {
+        #[allow(dead_code)]
+        full_request_id: i64,
+        pid: u32,
+    },
+}
+
+/// Result of cancelling a pipeline entry. The blocking kill/wait/join must
+/// happen **outside** the `PipelineState` lock to avoid holding the mutex
+/// during I/O.
+pub(super) enum CancelledEntry {
+    /// Request ID was not found in the pipeline.
+    NotFound,
+    /// Entry existed but had no running child (PreRegistered or missing).
+    NoChild,
+    /// We own the BackgroundRustc — kill + wait + join the child.
+    OwnedChild(BackgroundRustc),
+    /// Child was taken by the full handler; only the PID remains for raw kill.
+    PidOnly(u32),
+}
+
+impl CancelledEntry {
+    /// Perform blocking cleanup. Safe to call without any lock held.
+    pub(super) fn kill(self) -> bool {
+        match self {
+            CancelledEntry::NotFound | CancelledEntry::NoChild => false,
+            CancelledEntry::OwnedChild(mut bg) => {
+                let _ = bg.child.kill();
+                let _ = bg.child.wait();
+                let _ = bg.stderr_drain.join();
+                true
+            }
+            CancelledEntry::PidOnly(pid) => {
+                #[cfg(unix)]
+                unsafe {
+                    kill(pid as i32, 9);
+                }
+                let _ = pid; // suppress unused warning on non-unix
+                true
+            }
+        }
+    }
+}
+
 /// A background rustc process started by a RustcMetadata action.
 ///
 /// After the `.rmeta` artifact notification, the handler stores the Child
@@ -149,9 +213,6 @@ pub(super) enum PipeliningMode {
 /// for the child to exit.
 pub(super) struct BackgroundRustc {
     pub(super) child: std::process::Child,
-    /// Request ID of the metadata action that spawned this background rustc.
-    /// Used by the cancel handler to find which pipeline key to kill.
-    pub(super) metadata_request_id: i64,
     /// Diagnostics captured from rustc stderr before the metadata signal.
     pub(super) diagnostics_before: String,
     /// Background thread draining rustc's remaining stderr output after the
@@ -172,116 +233,205 @@ pub(super) struct BackgroundRustc {
 /// In-process store of background rustc processes for worker-managed pipelining.
 ///
 /// Keyed by the pipeline key (crate name + output hash), set by the Bazel-side
-/// `--pipelining-key=<key>` argument.
+/// `--pipelining-key=<key>` argument. Each pipeline entry follows a lifecycle
+/// tracked by [`PipelinePhase`]:
 ///
-/// `request_index` and `active_pids` extend the cancel handler's reach: after
-/// `take_and_transfer` moves a `BackgroundRustc` out of `active`, the cancel
-/// handler can still locate and kill the child process via `active_pids`.
+///   PreRegistered → MetadataRunning → FullWaiting → (removed)
+///
+/// `claim_flags` also tracks non-pipelined in-flight requests, unifying the
+/// cancel/completion race prevention into a single data structure.
 pub(super) struct PipelineState {
-    pub(super) active: HashMap<String, BackgroundRustc>,
-    /// Maps active request IDs to pipeline keys, allowing the cancel handler
-    /// to find the pipeline key for any in-flight pipelined request.
-    pub(super) request_index: HashMap<i64, String>,
-    /// Maps pipeline keys to child PIDs, persisting across the
-    /// metadata-to-full handoff so the cancel handler can kill the child
-    /// even after `BackgroundRustc` has been taken from `active`.
-    pub(super) active_pids: HashMap<String, u32>,
+    /// Pipeline key → current phase.
+    entries: HashMap<String, PipelinePhase>,
+    /// Reverse index: request_id → pipeline key (for O(1) cancel lookup).
+    request_index: HashMap<i64, String>,
+    /// Claim flags for ALL in-flight requests (pipelined + non-pipelined).
+    /// Whoever atomically swaps the flag first sends the WorkResponse.
+    claim_flags: HashMap<i64, Arc<AtomicBool>>,
 }
 
 impl PipelineState {
     pub(super) fn new() -> Self {
         Self {
-            active: HashMap::new(),
+            entries: HashMap::new(),
             request_index: HashMap::new(),
-            active_pids: HashMap::new(),
+            claim_flags: HashMap::new(),
         }
     }
 
-    /// Stores a background rustc and populates `request_index` + `active_pids`.
-    pub(super) fn store(&mut self, key: String, request_id: i64, bg: BackgroundRustc) {
-        let pid = bg.child.id();
-        self.request_index.insert(request_id, key.clone());
-        self.active_pids.insert(key.clone(), pid);
-        self.active.insert(key, bg);
+    /// Register a non-pipelined request's claim flag.
+    pub(super) fn register_claim(&mut self, request_id: i64) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        self.claim_flags.insert(request_id, Arc::clone(&flag));
+        flag
     }
 
-    /// Transfers ownership from metadata to full request.
+    /// (none) → PreRegistered. Returns claim flag.
     ///
-    /// Removes `BackgroundRustc` from `active` (like `take`), rewrites
-    /// `request_index` to point the full request's ID at the pipeline key,
-    /// and keeps `active_pids` so the cancel handler can still kill the child.
-    pub(super) fn take_and_transfer(
+    /// For metadata requests, creates a new PreRegistered entry.
+    /// For full requests (entry already exists as MetadataRunning), just
+    /// registers the claim flag and request_index mapping.
+    pub(super) fn pre_register(&mut self, request_id: i64, key: String) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        self.claim_flags.insert(request_id, Arc::clone(&flag));
+        self.request_index.insert(request_id, key.clone());
+        self.entries
+            .entry(key)
+            .or_insert(PipelinePhase::PreRegistered {
+                metadata_request_id: request_id,
+            });
+        flag
+    }
+
+    /// Stores a background rustc in the pipeline entry.
+    ///
+    /// Handles two cases:
+    /// - PreRegistered → MetadataRunning (normal first-time store)
+    /// - MetadataRunning → MetadataRunning (Bazel retried the metadata action;
+    ///   the old child is returned for the caller to kill outside the lock)
+    ///
+    /// Returns `Some(bg)` if the new child could not be stored (entry was
+    /// removed by cancel) or if an old child was replaced (retry). The caller
+    /// must kill the returned BackgroundRustc **after releasing the lock**.
+    pub(super) fn store(&mut self, key: &str, bg: BackgroundRustc) -> Option<BackgroundRustc> {
+        let pid = bg.child.id();
+        if let Some(entry) = self.entries.get_mut(key) {
+            match entry {
+                PipelinePhase::PreRegistered {
+                    metadata_request_id,
+                } => {
+                    let req_id = *metadata_request_id;
+                    *entry = PipelinePhase::MetadataRunning {
+                        metadata_request_id: req_id,
+                        bg,
+                        pid,
+                    };
+                    return None;
+                }
+                PipelinePhase::MetadataRunning {
+                    metadata_request_id,
+                    ..
+                } => {
+                    // Bazel retried the metadata action (same key). Replace the
+                    // old child with the new one; return the old for cleanup.
+                    let req_id = *metadata_request_id;
+                    let old = std::mem::replace(
+                        entry,
+                        PipelinePhase::MetadataRunning {
+                            metadata_request_id: req_id,
+                            bg,
+                            pid,
+                        },
+                    );
+                    if let PipelinePhase::MetadataRunning { bg: old_bg, .. } = old {
+                        return Some(old_bg);
+                    }
+                    unreachable!();
+                }
+                _ => {}
+            }
+        }
+        // Entry was removed (cancelled) or in unexpected phase.
+        Some(bg)
+    }
+
+    /// MetadataRunning → FullWaiting. Returns BackgroundRustc for full handler.
+    pub(super) fn take_for_full(
         &mut self,
         key: &str,
         full_request_id: i64,
     ) -> Option<BackgroundRustc> {
-        let bg = self.active.remove(key)?;
-        // Remove the old metadata request_id entry (O(1) lookup).
-        self.request_index.remove(&bg.metadata_request_id);
-        // Insert the full request_id pointing at the same key.
-        self.request_index.insert(full_request_id, key.to_string());
-        // active_pids stays — same key, same PID.
-        Some(bg)
-    }
-
-    /// Pre-registers a request ID → pipeline key mapping before the worker
-    /// thread starts, so the cancel handler can find it immediately.
-    pub(super) fn pre_register(&mut self, request_id: i64, key: String) {
-        self.request_index.insert(request_id, key);
-    }
-
-    /// Removes all tracking state for a completed or cancelled request.
-    pub(super) fn cleanup(&mut self, key: &str, request_id: i64) {
-        self.active.remove(key);
-        self.request_index.remove(&request_id);
-        self.active_pids.remove(key);
-    }
-
-    /// Kills the background rustc associated with `request_id`.
-    ///
-    /// First checks `active` (metadata phase — we own the Child handle).
-    /// Falls back to `active_pids` (full phase — Child was taken, use raw
-    /// kill). Returns `true` if a kill was attempted.
-    pub(super) fn kill_by_request_id(&mut self, request_id: i64) -> bool {
-        let key = match self.request_index.get(&request_id) {
-            Some(k) => k.clone(),
-            None => return false,
-        };
-
-        // Case 1: BackgroundRustc still in `active` (metadata phase).
-        if let Some(mut bg) = self.active.remove(&key) {
-            let _ = bg.child.kill();
-            let _ = bg.child.wait(); // reap zombie
-            let _ = bg.stderr_drain.join();
-            self.request_index.remove(&request_id);
-            self.active_pids.remove(&key);
-            return true;
-        }
-
-        // Case 2: Child was taken by full handler, but PID is still tracked.
-        if let Some(pid) = self.active_pids.remove(&key) {
-            // SAFETY: PID reuse race is theoretically possible but extremely
-            // unlikely within the short window between take_and_transfer and
-            // child.wait() in the full handler. The alternative (not killing)
-            // wastes CPU for the entire remaining compilation.
-            #[cfg(unix)]
-            unsafe {
-                kill(pid as i32, 9); // SIGKILL
+        let entry = self.entries.get_mut(key)?;
+        if let PipelinePhase::MetadataRunning {
+            metadata_request_id,
+            pid,
+            ..
+        } = entry
+        {
+            let old_req = *metadata_request_id;
+            let pid_val = *pid;
+            let old = std::mem::replace(
+                entry,
+                PipelinePhase::FullWaiting {
+                    full_request_id,
+                    pid: pid_val,
+                },
+            );
+            self.request_index.remove(&old_req);
+            // full_request_id is already in request_index from pre_register
+            if let PipelinePhase::MetadataRunning { bg, .. } = old {
+                Some(bg)
+            } else {
+                unreachable!()
             }
-            self.request_index.remove(&request_id);
-            return true;
+        } else {
+            None
         }
-
-        // Key was in request_index but not in active or active_pids —
-        // pre_register without a store (e.g., full handler fallback path).
-        self.request_index.remove(&request_id);
-        false
     }
 
-    /// Legacy take method for non-cancel paths and tests.
-    #[allow(dead_code)]
-    pub(super) fn take(&mut self, key: &str) -> Option<BackgroundRustc> {
-        self.active.remove(key)
+    /// Terminal: remove entry entirely.
+    pub(super) fn cleanup(&mut self, key: &str, request_id: i64) {
+        self.entries.remove(key);
+        self.request_index.remove(&request_id);
+        self.claim_flags.remove(&request_id);
+    }
+
+    /// Remove a claim flag (called when a worker thread finishes).
+    pub(super) fn remove_claim(&mut self, request_id: i64) {
+        self.claim_flags.remove(&request_id);
+    }
+
+    /// Get a clone of the claim flag for a request.
+    pub(super) fn get_claim_flag(&self, request_id: i64) -> Option<Arc<AtomicBool>> {
+        self.claim_flags.get(&request_id).cloned()
+    }
+
+    /// Cancel a pipelined request. Removes the entry and returns a
+    /// [`CancelledEntry`] describing what cleanup is needed. The caller
+    /// must perform the blocking kill/wait/join **after releasing the lock**
+    /// to avoid holding the mutex during I/O.
+    pub(super) fn cancel_by_request_id(&mut self, request_id: i64) -> CancelledEntry {
+        let key = match self.request_index.remove(&request_id) {
+            Some(k) => k,
+            None => return CancelledEntry::NotFound,
+        };
+        match self.entries.remove(&key) {
+            Some(PipelinePhase::PreRegistered { .. }) => CancelledEntry::NoChild,
+            Some(PipelinePhase::MetadataRunning { bg, .. }) => {
+                CancelledEntry::OwnedChild(bg)
+            }
+            Some(PipelinePhase::FullWaiting { pid, .. }) => {
+                CancelledEntry::PidOnly(pid)
+            }
+            None => CancelledEntry::NoChild,
+        }
+    }
+
+    // --- Test accessors ---
+
+    #[cfg(test)]
+    pub(super) fn entry_count(&self) -> usize {
+        self.entries.len()
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_entry(&self, key: &str) -> bool {
+        self.entries.contains_key(key)
+    }
+
+    #[cfg(test)]
+    pub(super) fn is_empty(&self) -> bool {
+        self.entries.is_empty() && self.request_index.is_empty()
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_request(&self, id: i64) -> bool {
+        self.request_index.contains_key(&id)
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_claim(&self, id: i64) -> bool {
+        self.claim_flags.contains_key(&id)
     }
 }
 
@@ -1066,12 +1216,10 @@ pub(super) fn handle_pipelining_metadata(
             });
 
             let diagnostics_before = diagnostics.clone();
-            lock_or_recover(pipeline_state).store(
-                key.clone(),
-                request.request_id,
+            let orphan = lock_or_recover(pipeline_state).store(
+                &key,
                 BackgroundRustc {
                     child,
-                    metadata_request_id: request.request_id,
                     diagnostics_before,
                     stderr_drain: drain,
                     pipeline_root_dir: ctx.root_dir.clone(),
@@ -1079,6 +1227,12 @@ pub(super) fn handle_pipelining_metadata(
                     original_out_dir,
                 },
             );
+            // Kill orphaned background rustc outside the lock.
+            if let Some(mut orphan) = orphan {
+                let _ = orphan.child.kill();
+                let _ = orphan.child.wait();
+                let _ = orphan.stderr_drain.join();
+            }
             append_pipeline_log(&ctx.root_dir, &format!("metadata stored key={}", key));
             if let Some(ref path) = pw_args.output_file {
                 let _ = std::fs::write(path, &diagnostics);
@@ -1119,7 +1273,7 @@ pub(super) fn handle_pipelining_full(
     pipeline_state: &Arc<Mutex<PipelineState>>,
     self_path: &std::path::Path,
 ) -> (i32, String) {
-    let bg = lock_or_recover(pipeline_state).take_and_transfer(&key, request.request_id);
+    let bg = lock_or_recover(pipeline_state).take_for_full(&key, request.request_id);
 
     match bg {
         Some(mut bg) => {
@@ -1214,11 +1368,14 @@ pub(super) fn handle_pipelining_full(
 
 /// Kills the background rustc process associated with a cancelled request.
 ///
-/// Uses `PipelineState::kill_by_request_id` which covers both phases:
-/// - Metadata phase: Child handle still in `active` — kill + wait + join.
-/// - Full phase: Child taken, but PID in `active_pids` — raw SIGKILL.
+/// Uses `PipelineState::cancel_by_request_id` to remove the entry under the
+/// lock, then performs blocking kill/wait/join **after** releasing the lock
+/// to avoid holding the mutex during I/O.
 pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: i64) {
-    let killed = lock_or_recover(pipeline_state).kill_by_request_id(request_id);
+    // Remove the entry under the lock (fast, O(1) HashMap ops).
+    let cancelled = lock_or_recover(pipeline_state).cancel_by_request_id(request_id);
+    // Blocking kill/wait/join happens here, outside the lock.
+    let killed = cancelled.kill();
     if killed {
         append_worker_lifecycle_log(&format!(
             "pid={} event=cancel_kill request_id={}",
