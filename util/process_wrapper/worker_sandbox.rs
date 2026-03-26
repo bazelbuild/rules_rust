@@ -18,52 +18,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use super::pipeline::OutputMaterializationStats;
-use super::protocol::WorkRequestContext;
 use crate::ProcessWrapperError;
 
-/// Resolves the real Bazel execroot from sandbox symlinks.
-///
-/// In multiplex sandboxing, the sandbox dir (`__sandbox/N/_main/`) contains
-/// symlinks to the real execroot (`<output_base>/execroot/_main/`).
-/// For example: `__sandbox/3/_main/external/foo/src/lib.rs` →
-///              `/home/.../<hash>/execroot/_main/external/foo/src/lib.rs`
-///
-/// We resolve any input's symlink target and strip the relative path suffix
-/// to recover the real execroot root.
-pub(super) fn resolve_real_execroot(
-    sandbox_dir: &str,
-    request: &WorkRequestContext,
-) -> Option<PathBuf> {
-    let sandbox_path = std::path::Path::new(sandbox_dir);
-    for input in &request.inputs {
-        let full_path = sandbox_path.join(&input.path);
-        if let Ok(target) = std::fs::read_link(&full_path) {
-            // target = <real_execroot>/<relative_path>
-            // input.path = <relative_path>
-            // Strip the relative path suffix to get the real execroot.
-            let target_str = target.to_string_lossy();
-            if target_str.ends_with(&input.path) {
-                let prefix = &target_str[..target_str.len() - input.path.len()];
-                let execroot = PathBuf::from(prefix);
-                if execroot.is_dir() {
-                    return Some(execroot);
-                }
-            }
-        }
-        // Also try following through to the canonical path
-        if let Ok(canonical) = full_path.canonicalize() {
-            let canonical_str = canonical.to_string_lossy().to_string();
-            if canonical_str.ends_with(&input.path) {
-                let prefix = &canonical_str[..canonical_str.len() - input.path.len()];
-                let execroot = PathBuf::from(prefix);
-                if execroot.is_dir() {
-                    return Some(execroot);
-                }
-            }
-        }
-    }
-    None
-}
 
 pub(super) fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
     let path = std::path::Path::new(path);
@@ -430,3 +386,4 @@ pub(super) fn run_request(
 
     Ok((exit_code, combined))
 }
+

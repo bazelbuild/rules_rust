@@ -13,11 +13,106 @@
 // limitations under the License.
 
 //! Pipelining state and handlers for the persistent worker.
+//!
+//! # Architecture: Single-rustc Pipelining
+//!
+//! Each crate is compiled by a single rustc invocation that produces both `.rmeta`
+//! (metadata, encoding type/trait information for downstream crates) and `.rlib`
+//! (the full compiled artifact including object code).  Rustc emits `.rmeta` at the
+//! boundary between analysis and codegen — specifically in `encode_and_write_metadata`
+//! inside `passes.rs`, before `codegen_crate` is called — so downstream crates can
+//! begin their own compilation as soon as the metadata is flushed.
+//!
+//! This module implements a two-phase split of that single rustc invocation across
+//! two Bazel worker requests:
+//!
+//! 1. **Metadata request** (`--pipelining-metadata --pipelining-key=<key>`):
+//!    Spawns rustc as a background child process.  A dedicated thread reads rustc's
+//!    stdout line-by-line and blocks until it sees the sentinel that signals `.rmeta`
+//!    has been written to disk.  At that point a [`WorkResponse`] is sent back to
+//!    Bazel so downstream actions can start immediately, while the child continues
+//!    running codegen in the background.
+//!
+//! 2. **Full request** (`--pipelining-full --pipelining-key=<key>`):
+//!    Retrieves the still-running child from [`PipelineState`] by key and waits for
+//!    it to exit.  Copies outputs from the pipeline output directory back into the
+//!    Bazel sandbox before sending the final [`WorkResponse`].
+//!
+//! # Sandbox Contract Compliance
+//!
+//! Bazel's persistent-worker sandbox contract has two rules:
+//!
+//! **Rule 1 — all I/O goes through `sandbox_dir`.**
+//! Satisfied by setting the worker process's `cwd` to `sandbox_dir` so that every
+//! relative path resolves inside the sandbox.  Outputs that must persist across the
+//! two requests (`.rmeta`, `.rlib`, `.d` files, etc.) are redirected to a
+//! worker-owned directory outside Bazel control:
+//! `_pw_state/pipeline/<key>/outputs/`.  The full handler copies them back into the
+//! sandbox before returning.
+//!
+//! **Rule 2 — no file access after the [`WorkResponse`] is sent.**
+//! The metadata response is sent before codegen begins.  After that point the
+//! background rustc process continues running, but it does NOT access any sandbox
+//! input files because:
+//!
+//! - Source files are read once into `Arc<String>` entries in rustc's `SourceMap`
+//!   during parsing, before `.rmeta` is emitted.
+//!   See: <https://github.com/rust-lang/rust/blob/main/compiler/rustc_span/src/source_map.rs>
+//! - Dependency `.rmeta` files are memory-mapped once during the "resolve crate"
+//!   phase, also before codegen.
+//!   See: <https://rustc-dev-guide.rust-lang.org/backend/libs-and-metadata.html>
+//! - Proc macros are fully expanded during the parsing/expansion phase, before
+//!   `.rmeta` is written.
+//!   See: <https://github.com/rust-lang/rust/issues/60988>
+//!
+//! This has been empirically verified via strace on rustc 1.94.0: zero `open`/`read`
+//! syscalls to sandbox input paths are observed after `.rmeta` is written.
+//! See the regression test:
+//! `test/unit/pipelined_compilation/strace_rustc_post_metadata_test.sh`
+//!
+//! # Caveats
+//!
+//! - **Undocumented rustc internals.** The ordering guarantee (all sandbox reads
+//!   complete before `.rmeta` emission) is an observable consequence of rustc's
+//!   current pass ordering, not a documented API contract.  A future rustc refactor
+//!   (e.g. parallel front-end, lazy source loading) could break this assumption.
+//!   The strace test provides a regression signal.
+//!
+//! - **Incremental compilation.** The incremental cache directory must reside
+//!   outside the Bazel sandbox (e.g. in `_pw_state/`) so it persists across both
+//!   requests and across rebuilds.  Enabling incremental inside the sandbox causes
+//!   cache misses and potential corruption.
+//!
+//! - **No precedent.** Spanning background work across two separate Bazel worker
+//!   requests is not an officially supported pattern.  This implementation is
+//!   experimental and may interact unexpectedly with Bazel features such as dynamic
+//!   execution, worker cancellation, or future sandboxing policy changes.
+//!
+//! # Cancellation
+//!
+//! [`PipelineState`] maintains a `request_index`: a `HashMap` from active Bazel
+//! request IDs to pipeline keys.  This index enables the cancel handler to locate
+//! the correct in-flight pipeline entry when Bazel sends a cancel signal.
+//!
+//! Invariants:
+//!
+//! - A pipeline entry is registered in `request_index` **before** the metadata
+//!   [`WorkResponse`] is sent (i.e., before the request becomes cancel-acknowledgeable).
+//! - Ownership of a pipeline entry transfers atomically from the metadata handler to
+//!   the full handler: the metadata handler inserts the entry; the full handler
+//!   removes it.
+//! - After a cancel response is sent, the background rustc child is killed (or the
+//!   request has already completed and the child has exited normally).
+//!
+//! See the "Cancellation Direction" section of the consolidated worker-pipelining
+//! plan at `thoughts/shared/plans/2026-03-25-consolidated-worker-pipelining-plan.md`
+//! for the rationale behind these invariants.
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -30,7 +125,7 @@ use crate::ProcessWrapperError;
 use super::protocol::WorkRequestContext;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable,
-    make_path_writable, prepare_outputs, resolve_real_execroot, resolve_relative_to, run_request,
+    make_path_writable, prepare_outputs, resolve_relative_to, run_request,
     run_sandboxed_request,
 };
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
@@ -47,6 +142,79 @@ pub(super) enum PipeliningMode {
     Full { key: String },
 }
 
+/// Lifecycle phase of a single pipelined compilation.
+///
+///   PreRegistered ──store()──> MetadataRunning ──take_for_full()──> FullWaiting ──cleanup()──> (removed)
+///   Any phase ──cancel_by_request_id()──> (removed, child killed if applicable)
+pub(super) enum PipelinePhase {
+    /// Main thread registered the request; worker thread not yet spawned rustc.
+    PreRegistered {
+        metadata_request_id: i64,
+    },
+
+    /// Rustc spawned, .rmeta emitted, metadata response sent. Background codegen continues.
+    MetadataRunning {
+        metadata_request_id: i64,
+        bg: BackgroundRustc,
+        pid: u32,
+    },
+
+    /// Full handler took BackgroundRustc; waiting for child exit + output copy.
+    /// PID retained for cancel-via-signal, guarded by `child_reaped` to prevent
+    /// killing a recycled PID after the full handler has called `child.wait()`.
+    FullWaiting {
+        #[allow(dead_code)]
+        full_request_id: i64,
+        pid: u32,
+        /// Set to `true` by the full handler immediately after `child.wait()`
+        /// returns. The cancel handler checks this before sending a raw signal.
+        child_reaped: Arc<AtomicBool>,
+    },
+}
+
+/// Result of cancelling a pipeline entry. The blocking kill/wait/join must
+/// happen **outside** the `PipelineState` lock to avoid holding the mutex
+/// during I/O.
+pub(super) enum CancelledEntry {
+    /// Request ID was not found in the pipeline.
+    NotFound,
+    /// Entry existed but had no running child (PreRegistered or missing).
+    NoChild,
+    /// We own the BackgroundRustc — kill + wait + join the child.
+    OwnedChild(BackgroundRustc),
+    /// Child was taken by the full handler; only the PID remains for raw kill.
+    /// The `child_reaped` flag prevents killing a recycled PID after the full
+    /// handler has already waited on the child.
+    PidOnly(u32, Arc<AtomicBool>),
+}
+
+impl CancelledEntry {
+    /// Perform blocking cleanup. Safe to call without any lock held.
+    pub(super) fn kill(self) -> bool {
+        match self {
+            CancelledEntry::NotFound | CancelledEntry::NoChild => false,
+            CancelledEntry::OwnedChild(mut bg) => {
+                let _ = bg.child.kill();
+                let _ = bg.child.wait();
+                let _ = bg.stderr_drain.join();
+                true
+            }
+            CancelledEntry::PidOnly(pid, child_reaped) => {
+                // Only send SIGKILL if the full handler hasn't already reaped
+                // the child. Without this check, we could kill a recycled PID.
+                if !child_reaped.load(Ordering::SeqCst) {
+                    #[cfg(unix)]
+                    unsafe {
+                        kill(pid as i32, 9);
+                    }
+                    let _ = pid; // suppress unused warning on non-unix
+                }
+                true
+            }
+        }
+    }
+}
+
 /// A background rustc process started by a RustcMetadata action.
 ///
 /// After the `.rmeta` artifact notification, the handler stores the Child
@@ -55,9 +223,6 @@ pub(super) enum PipeliningMode {
 /// for the child to exit.
 pub(super) struct BackgroundRustc {
     pub(super) child: std::process::Child,
-    /// Request ID of the metadata action that spawned this background rustc.
-    /// Used by the cancel handler to find which pipeline key to kill.
-    pub(super) metadata_request_id: i64,
     /// Diagnostics captured from rustc stderr before the metadata signal.
     pub(super) diagnostics_before: String,
     /// Background thread draining rustc's remaining stderr output after the
@@ -78,25 +243,235 @@ pub(super) struct BackgroundRustc {
 /// In-process store of background rustc processes for worker-managed pipelining.
 ///
 /// Keyed by the pipeline key (crate name + output hash), set by the Bazel-side
-/// `--pipelining-key=<key>` argument.
+/// `--pipelining-key=<key>` argument. Each pipeline entry follows a lifecycle
+/// tracked by [`PipelinePhase`]:
+///
+///   PreRegistered → MetadataRunning → FullWaiting → (removed)
+///
+/// `claim_flags` also tracks non-pipelined in-flight requests, unifying the
+/// cancel/completion race prevention into a single data structure.
 pub(super) struct PipelineState {
-    pub(super) active: HashMap<String, BackgroundRustc>,
+    /// Pipeline key → current phase.
+    entries: HashMap<String, PipelinePhase>,
+    /// Reverse index: request_id → pipeline key (for O(1) cancel lookup).
+    request_index: HashMap<i64, String>,
+    /// Claim flags for ALL in-flight requests (pipelined + non-pipelined).
+    /// Whoever atomically swaps the flag first sends the WorkResponse.
+    claim_flags: HashMap<i64, Arc<AtomicBool>>,
 }
 
 impl PipelineState {
     pub(super) fn new() -> Self {
         Self {
-            active: HashMap::new(),
+            entries: HashMap::new(),
+            request_index: HashMap::new(),
+            claim_flags: HashMap::new(),
         }
     }
 
-    pub(super) fn store(&mut self, key: String, bg: BackgroundRustc) {
-        self.active.insert(key, bg);
+    /// Register a non-pipelined request's claim flag.
+    pub(super) fn register_claim(&mut self, request_id: i64) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        self.claim_flags.insert(request_id, Arc::clone(&flag));
+        flag
     }
 
-    pub(super) fn take(&mut self, key: &str) -> Option<BackgroundRustc> {
-        self.active.remove(key)
+    /// (none) → PreRegistered. Returns claim flag.
+    ///
+    /// For metadata requests, creates a new PreRegistered entry.
+    /// For full requests (entry already exists as MetadataRunning), just
+    /// registers the claim flag and request_index mapping.
+    pub(super) fn pre_register(&mut self, request_id: i64, key: String) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        self.claim_flags.insert(request_id, Arc::clone(&flag));
+        self.request_index.insert(request_id, key.clone());
+        self.entries
+            .entry(key)
+            .or_insert(PipelinePhase::PreRegistered {
+                metadata_request_id: request_id,
+            });
+        flag
     }
+
+    /// Stores a background rustc in the pipeline entry.
+    ///
+    /// Handles two cases:
+    /// - PreRegistered → MetadataRunning (normal first-time store)
+    /// - MetadataRunning → MetadataRunning (Bazel retried the metadata action;
+    ///   the old child is returned for the caller to kill outside the lock)
+    ///
+    /// Returns `Some(bg)` if the new child could not be stored (entry was
+    /// removed by cancel) or if an old child was replaced (retry). The caller
+    /// must kill the returned BackgroundRustc **after releasing the lock**.
+    pub(super) fn store(&mut self, key: &str, bg: BackgroundRustc) -> Option<BackgroundRustc> {
+        let pid = bg.child.id();
+        if let Some(entry) = self.entries.get_mut(key) {
+            match entry {
+                PipelinePhase::PreRegistered {
+                    metadata_request_id,
+                } => {
+                    let req_id = *metadata_request_id;
+                    *entry = PipelinePhase::MetadataRunning {
+                        metadata_request_id: req_id,
+                        bg,
+                        pid,
+                    };
+                    return None;
+                }
+                PipelinePhase::MetadataRunning {
+                    metadata_request_id,
+                    ..
+                } => {
+                    // Bazel retried the metadata action (same key). Replace the
+                    // old child with the new one; return the old for cleanup.
+                    let req_id = *metadata_request_id;
+                    let old = std::mem::replace(
+                        entry,
+                        PipelinePhase::MetadataRunning {
+                            metadata_request_id: req_id,
+                            bg,
+                            pid,
+                        },
+                    );
+                    if let PipelinePhase::MetadataRunning { bg: old_bg, .. } = old {
+                        return Some(old_bg);
+                    }
+                    unreachable!();
+                }
+                _ => {}
+            }
+        }
+        // Entry was removed (cancelled) or in unexpected phase.
+        Some(bg)
+    }
+
+    /// MetadataRunning → FullWaiting. Returns BackgroundRustc and a
+    /// `child_reaped` flag for the full handler to set after `child.wait()`.
+    pub(super) fn take_for_full(
+        &mut self,
+        key: &str,
+        full_request_id: i64,
+    ) -> Option<(BackgroundRustc, Arc<AtomicBool>)> {
+        let entry = self.entries.get_mut(key)?;
+        if let PipelinePhase::MetadataRunning {
+            metadata_request_id,
+            pid,
+            ..
+        } = entry
+        {
+            let old_req = *metadata_request_id;
+            let pid_val = *pid;
+            let child_reaped = Arc::new(AtomicBool::new(false));
+            let old = std::mem::replace(
+                entry,
+                PipelinePhase::FullWaiting {
+                    full_request_id,
+                    pid: pid_val,
+                    child_reaped: Arc::clone(&child_reaped),
+                },
+            );
+            self.request_index.remove(&old_req);
+            // full_request_id is already in request_index from pre_register
+            if let PipelinePhase::MetadataRunning { bg, .. } = old {
+                Some((bg, child_reaped))
+            } else {
+                unreachable!()
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Terminal: remove entry entirely.
+    pub(super) fn cleanup(&mut self, key: &str, request_id: i64) {
+        self.entries.remove(key);
+        self.request_index.remove(&request_id);
+        self.claim_flags.remove(&request_id);
+    }
+
+    /// Remove a claim flag (called when a worker thread finishes).
+    pub(super) fn remove_claim(&mut self, request_id: i64) {
+        self.claim_flags.remove(&request_id);
+    }
+
+    /// Get a clone of the claim flag for a request.
+    pub(super) fn get_claim_flag(&self, request_id: i64) -> Option<Arc<AtomicBool>> {
+        self.claim_flags.get(&request_id).cloned()
+    }
+
+    /// Cancel a pipelined request. Removes the entry and returns a
+    /// [`CancelledEntry`] describing what cleanup is needed. The caller
+    /// must perform the blocking kill/wait/join **after releasing the lock**
+    /// to avoid holding the mutex during I/O.
+    pub(super) fn cancel_by_request_id(&mut self, request_id: i64) -> CancelledEntry {
+        let key = match self.request_index.remove(&request_id) {
+            Some(k) => k,
+            None => return CancelledEntry::NotFound,
+        };
+        match self.entries.remove(&key) {
+            Some(PipelinePhase::PreRegistered { .. }) => CancelledEntry::NoChild,
+            Some(PipelinePhase::MetadataRunning { bg, .. }) => {
+                CancelledEntry::OwnedChild(bg)
+            }
+            Some(PipelinePhase::FullWaiting {
+                pid, child_reaped, ..
+            }) => CancelledEntry::PidOnly(pid, child_reaped),
+            None => CancelledEntry::NoChild,
+        }
+    }
+
+    /// Drain all pipeline entries for shutdown. Returns all entries that
+    /// have running children so the caller can kill them outside the lock.
+    pub(super) fn drain_all(&mut self) -> Vec<CancelledEntry> {
+        let mut result = Vec::new();
+        for (_key, entry) in self.entries.drain() {
+            match entry {
+                PipelinePhase::PreRegistered { .. } => {}
+                PipelinePhase::MetadataRunning { bg, .. } => {
+                    result.push(CancelledEntry::OwnedChild(bg));
+                }
+                PipelinePhase::FullWaiting {
+                    pid, child_reaped, ..
+                } => {
+                    result.push(CancelledEntry::PidOnly(pid, child_reaped));
+                }
+            }
+        }
+        self.request_index.clear();
+        result
+    }
+
+    // --- Test accessors ---
+
+    #[cfg(test)]
+    pub(super) fn entry_count(&self) -> usize {
+        self.entries.len()
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_entry(&self, key: &str) -> bool {
+        self.entries.contains_key(key)
+    }
+
+    #[cfg(test)]
+    pub(super) fn is_empty(&self) -> bool {
+        self.entries.is_empty() && self.request_index.is_empty()
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_request(&self, id: i64) -> bool {
+        self.request_index.contains_key(&id)
+    }
+
+    #[cfg(test)]
+    pub(super) fn has_claim(&self, id: i64) -> bool {
+        self.claim_flags.contains_key(&id)
+    }
+}
+
+#[cfg(unix)]
+extern "C" {
+    fn kill(pid: i32, sig: i32) -> i32;
 }
 
 /// Parsed process_wrapper arguments from before the `--` separator.
@@ -109,13 +484,16 @@ pub(super) struct ParsedPwArgs {
     pub(super) output_file: Option<String>,
 }
 
-/// Lightweight pipeline context for the "resolve-through" approach.
+/// Pipeline context for worker-managed pipelining.
 ///
-/// Instead of staging inputs into a worker-owned execroot, we use the worker's
-/// real execroot (CWD) directly. Only outputs are redirected to a persistent
-/// pipeline directory to prevent inter-request interference.
+/// Two modes:
+/// - **Unsandboxed**: uses the real execroot as rustc's CWD.
+/// - **Sandboxed**: uses the Bazel-provided `sandbox_dir` as CWD, keeping all
+///   reads rooted in the sandbox per the multiplex sandbox contract.
 pub(super) struct PipelineContext {
     pub(super) root_dir: PathBuf,
+    /// Directory used as rustc's CWD and for resolving relative paths.
+    /// Sandboxed: absolute `sandbox_dir`. Unsandboxed: canonicalized real execroot.
     pub(super) execroot_dir: PathBuf,
     pub(super) outputs_dir: PathBuf,
 }
@@ -539,11 +917,12 @@ pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
     }
 }
 
-/// Creates a lightweight pipeline context using the "resolve-through" approach.
+/// Creates a pipeline context for worker-managed pipelining.
 ///
-/// Instead of staging inputs into a worker-owned execroot, uses the worker's real
-/// execroot (CWD) directly. Only creates a persistent output directory to prevent
-/// inter-request output interference.
+/// When sandboxed, uses sandbox_dir as rustc's CWD so all reads go through the
+/// sandbox (Bazel multiplex sandbox contract compliance). When unsandboxed, uses
+/// the real execroot. In both cases, outputs are redirected to a persistent
+/// worker-owned directory to prevent inter-request interference.
 pub(super) fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
     key: &str,
@@ -581,22 +960,30 @@ pub(super) fn create_pipeline_context(
         )
     })?;
 
-    // CRITICAL: Use the REAL execroot, not the sandbox or worker CWD.
+    // Two modes for determining rustc's CWD:
     //
-    // The sandbox dir is per-request and may be torn down after the metadata response.
-    // The background rustc outlives the metadata request, so it needs a stable CWD.
-    // The worker CWD (bazel-workers/.../workdir/_main/) has bazel-out/ but NOT source
-    // files (external/, etc.). Only the real execroot has everything.
+    // SANDBOXED: Use sandbox_dir directly as CWD. All relative paths in rustc
+    // args (--extern, -Ldependency, source files) resolve against sandbox_dir
+    // where Bazel placed the inputs. This satisfies Rule 1 of the multiplex
+    // sandbox contract ("use sandbox_dir as prefix for all reads and writes").
+    // After .rmeta emission, background rustc only writes to --out-dir
+    // (redirected to persistent pipeline dir), so sandbox cleanup after the
+    // metadata response doesn't affect it (verified via strace — Gate 0).
     //
-    // When sandboxed: resolve a symlink from the sandbox back to the real execroot.
-    // When unsandboxed: the worker CWD IS the real execroot (or close enough).
+    // UNSANDBOXED: Use the worker's real execroot as CWD.
     let execroot_dir = if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
-        resolve_real_execroot(sandbox_dir, request).ok_or_else(|| {
-            (
-                1,
-                "pipelining: failed to resolve real execroot from sandbox symlinks".to_string(),
-            )
-        })?
+        // Make absolute WITHOUT canonicalizing — canonicalize() follows symlinks
+        // inside the sandbox back to the real execroot, which defeats the purpose.
+        // We need the sandbox path itself so rustc reads through sandbox_dir.
+        let sandbox_path = std::path::Path::new(sandbox_dir);
+        if sandbox_path.is_absolute() {
+            sandbox_path.to_path_buf()
+        } else {
+            let cwd = std::env::current_dir().map_err(|e| {
+                (1, format!("pipelining: failed to get worker CWD: {e}"))
+            })?;
+            cwd.join(sandbox_path)
+        }
     } else {
         let cwd = std::env::current_dir()
             .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
@@ -626,9 +1013,11 @@ pub(super) fn create_pipeline_context(
 /// notification appears, stores the running Child in PipelineState, and returns
 /// success immediately so Bazel can unblock downstream rlib compiles.
 ///
-/// Uses the "resolve-through" approach: rustc runs from the worker's real
-/// execroot (CWD). When `sandbox_dir` is `Some`, only the returned metadata
-/// artifact is materialized back into the request sandbox before Bazel cleans it up.
+/// Two modes:
+/// - **Sandboxed**: rustc runs from `sandbox_dir` directly. All relative paths
+///   in args resolve against the sandbox where Bazel placed inputs. Compliant
+///   with the Bazel multiplex sandbox contract (Rule 1: all reads via sandbox_dir).
+/// - **Unsandboxed**: rustc runs from the real execroot.
 pub(super) fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
@@ -658,6 +1047,9 @@ pub(super) fn handle_pipelining_metadata(
         Err(e) => return e,
     };
 
+    // execroot_dir is already canonicalized (absolute) in both sandboxed and
+    // unsandboxed modes, so ${pwd} substitution produces correct absolute paths
+    // for env vars like OUT_DIR=${pwd}/bazel-out/...
     let raw_pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
     let pw_args = ParsedPwArgs {
         subst: raw_pw_args.subst,
@@ -722,10 +1114,11 @@ pub(super) fn handle_pipelining_metadata(
     append_pipeline_log(
         &ctx.root_dir,
         &format!(
-            "metadata start request_id={} key={} sandbox_dir={:?} original_out_dir={} execroot={} outputs={}",
+            "metadata start request_id={} key={} sandbox_dir={:?} inputs={} original_out_dir={} execroot={} outputs={}",
             request.request_id,
             key,
             request.sandbox_dir,
+            request.inputs.len(),
             original_out_dir,
             ctx.execroot_dir.display(),
             ctx.outputs_dir.display(),
@@ -857,11 +1250,10 @@ pub(super) fn handle_pipelining_metadata(
             });
 
             let diagnostics_before = diagnostics.clone();
-            lock_or_recover(pipeline_state).store(
-                key.clone(),
+            let orphan = lock_or_recover(pipeline_state).store(
+                &key,
                 BackgroundRustc {
                     child,
-                    metadata_request_id: request.request_id,
                     diagnostics_before,
                     stderr_drain: drain,
                     pipeline_root_dir: ctx.root_dir.clone(),
@@ -869,6 +1261,12 @@ pub(super) fn handle_pipelining_metadata(
                     original_out_dir,
                 },
             );
+            // Kill orphaned background rustc outside the lock.
+            if let Some(mut orphan) = orphan {
+                let _ = orphan.child.kill();
+                let _ = orphan.child.wait();
+                let _ = orphan.stderr_drain.join();
+            }
             append_pipeline_log(&ctx.root_dir, &format!("metadata stored key={}", key));
             if let Some(ref path) = pw_args.output_file {
                 let _ = std::fs::write(path, &diagnostics);
@@ -909,17 +1307,22 @@ pub(super) fn handle_pipelining_full(
     pipeline_state: &Arc<Mutex<PipelineState>>,
     self_path: &std::path::Path,
 ) -> (i32, String) {
-    let bg = lock_or_recover(pipeline_state).take(&key);
+    let taken = lock_or_recover(pipeline_state).take_for_full(&key, request.request_id);
 
-    match bg {
-        Some(mut bg) => {
+    match taken {
+        Some((mut bg, child_reaped)) => {
             append_pipeline_log(&bg.pipeline_root_dir, &format!("full start key={}", key));
             // Join the drain thread first (avoids deadlock: child blocks on stderr
             // write if the pipe buffer fills up before we drain it).
             let remaining = bg.stderr_drain.join().unwrap_or_default();
             let all_diagnostics = bg.diagnostics_before + &remaining;
 
-            match bg.child.wait() {
+            let wait_result = bg.child.wait();
+            // Mark the child as reaped immediately so the cancel handler
+            // won't send SIGKILL to a potentially-recycled PID.
+            child_reaped.store(true, Ordering::SeqCst);
+
+            match wait_result {
                 Ok(status) => {
                     let exit_code = status.code().unwrap_or(1);
                     if exit_code == 0 {
@@ -940,7 +1343,15 @@ pub(super) fn handle_pipelining_full(
                                         if let Ok(meta) = entry.metadata() {
                                             if meta.is_file() {
                                                 let dest = dest_dir.join(entry.file_name());
-                                                let _ = std::fs::copy(entry.path(), &dest);
+                                                let same_file = entry
+                                                    .path()
+                                                    .canonicalize()
+                                                    .ok()
+                                                    .zip(dest.canonicalize().ok())
+                                                    .is_some_and(|(a, b)| a == b);
+                                                if !same_file {
+                                                    let _ = std::fs::copy(entry.path(), &dest);
+                                                }
                                             }
                                         }
                                     }
@@ -957,9 +1368,13 @@ pub(super) fn handle_pipelining_full(
                         exit_code != 0,
                         "full action failed",
                     );
+                    lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
                     (exit_code, all_diagnostics)
                 }
-                Err(e) => (1, format!("failed to wait for background rustc: {e}")),
+                Err(e) => {
+                    lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+                    (1, format!("failed to wait for background rustc: {e}"))
+                }
             }
         }
         None => {
@@ -983,7 +1398,7 @@ pub(super) fn handle_pipelining_full(
             // and full actions, or metadata was a cache hit). Fall back to a normal
             // one-shot compilation.
             let filtered_args = strip_pipelining_flags(&args);
-            match request.sandbox_dir.as_ref() {
+            let result = match request.sandbox_dir.as_ref() {
                 Some(dir) => run_sandboxed_request(self_path, filtered_args, dir)
                     .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
                 None => {
@@ -991,37 +1406,29 @@ pub(super) fn handle_pipelining_full(
                     run_request(self_path, filtered_args)
                         .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
                 }
-            }
+            };
+            lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+            result
         }
     }
 }
 
 /// Kills the background rustc process associated with a cancelled request.
 ///
-/// Looks up the pipeline key by metadata_request_id, then kills the child
-/// process and joins the stderr drain thread. This prevents wasted CPU when
-/// the remote leg wins a dynamic execution race.
+/// Uses `PipelineState::cancel_by_request_id` to remove the entry under the
+/// lock, then performs blocking kill/wait/join **after** releasing the lock
+/// to avoid holding the mutex during I/O.
 pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: i64) {
-    let mut state = lock_or_recover(pipeline_state);
-    let key_to_kill: Option<String> = state.active.iter().find_map(|(key, bg)| {
-        if bg.metadata_request_id == request_id {
-            Some(key.clone())
-        } else {
-            None
-        }
-    });
-    if let Some(key) = key_to_kill {
-        if let Some(mut bg) = state.active.remove(&key) {
-            append_worker_lifecycle_log(&format!(
-                "pid={} event=cancel_kill request_id={} key={}",
-                current_pid(),
-                request_id,
-                key,
-            ));
-            let _ = bg.child.kill();
-            let _ = bg.child.wait(); // reap zombie
-            let _ = bg.stderr_drain.join();
-        }
+    // Remove the entry under the lock (fast, O(1) HashMap ops).
+    let cancelled = lock_or_recover(pipeline_state).cancel_by_request_id(request_id);
+    // Blocking kill/wait/join happens here, outside the lock.
+    let killed = cancelled.kill();
+    if killed {
+        append_worker_lifecycle_log(&format!(
+            "pid={} event=cancel_kill request_id={}",
+            current_pid(),
+            request_id,
+        ));
     }
 }
 

@@ -41,12 +41,11 @@ mod protocol;
 #[path = "worker_sandbox.rs"]
 mod sandbox;
 
-use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::ProcessWrapperError;
 
@@ -319,13 +318,8 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let pipeline_state: Arc<Mutex<PipelineState>> = Arc::new(Mutex::new(PipelineState::new()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
 
-    // Tracks in-flight requests for cancel/completion race prevention.
-    // Key: requestId, Value: claim flag (false = response not yet sent).
-    // Whoever atomically sets the flag true first (cancel or worker thread) sends
-    // the response; the other side skips. Entries are removed by the worker thread
-    // when it finishes, so request IDs can be safely reused across builds when
-    // Bazel keeps the worker process alive.
-    let in_flight: Arc<Mutex<HashMap<i64, Arc<AtomicBool>>>> = Arc::new(Mutex::new(HashMap::new()));
+    // Track spawned worker threads so we can join them on shutdown.
+    let in_flight: Arc<Mutex<Vec<thread::JoinHandle<()>>>> = Arc::new(Mutex::new(Vec::new()));
 
     for line in stdin.lock().lines() {
         let line = match line {
@@ -428,7 +422,6 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             ));
         } else {
             let stdout = Arc::clone(&stdout);
-            let in_flight = Arc::clone(&in_flight);
 
             // Cancel request: Bazel no longer needs the result for this requestId.
             // Respond with wasCancelled=true immediately if we haven't already responded.
@@ -442,9 +435,8 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             // best-effort cancellation semantics.
             if request.cancel {
                 // Look up the flag for this in-flight request.
-                let flag = lock_or_recover(&in_flight)
-                    .get(&request.request_id)
-                    .map(Arc::clone);
+                let flag = lock_or_recover(&pipeline_state)
+                    .get_claim_flag(request.request_id);
                 if let Some(flag) = flag {
                     // Try to claim the response slot atomically.
                     if !flag.swap(true, Ordering::SeqCst) {
@@ -461,11 +453,17 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 continue;
             }
 
-            // Register this request in the in-flight map with an unclaimed flag.
-            // The worker thread removes the entry when it finishes, so the same
-            // request ID can be safely reused across builds.
-            let claim_flag = Arc::new(AtomicBool::new(false));
-            lock_or_recover(&in_flight).insert(request.request_id, Arc::clone(&claim_flag));
+            // Register claim flag and pre-register pipelined requests in PipelineState
+            // before they become cancel-acknowledgeable. For pipelined requests, also
+            // creates the pipeline entry so the cancel handler can find them immediately.
+            let claim_flag = if let Some(key) = pipeline_key_from_args(&request.arguments) {
+                lock_or_recover(&pipeline_state).pre_register(
+                    request.request_id,
+                    key.to_string(),
+                )
+            } else {
+                lock_or_recover(&pipeline_state).register_claim(request.request_id)
+            };
 
             // Multiplex: dispatch to a new thread. Bazel bounds concurrency via
             // --worker_max_multiplex_instances (default: 8), so no in-process
@@ -476,7 +474,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let state_roots = Arc::clone(&state_roots);
             let request = request.clone();
 
-            std::thread::spawn(move || {
+            let handle = std::thread::spawn(move || {
                 append_worker_lifecycle_log(&format!(
                     "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
                     current_pid(),
@@ -491,7 +489,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         let response = build_shutdown_response(request.request_id);
                         let _ = write_worker_response(&stdout, &response);
                     }
-                    lock_or_recover(&in_flight).remove(&request.request_id);
+                    lock_or_recover(&pipeline_state).remove_claim(request.request_id);
                     append_worker_lifecycle_log(&format!(
                         "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
                         current_pid(),
@@ -522,14 +520,33 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         // are handled specially; otherwise fall through to a normal subprocess.
                         let pipelining = detect_pipelining_mode(&full_args);
 
+                        // If cancel already claimed this request, bail out without starting rustc.
+                        if claim_flag.load(Ordering::SeqCst) {
+                            if let PipeliningMode::Metadata { ref key }
+                                | PipeliningMode::Full { ref key } = pipelining
+                            {
+                                lock_or_recover(&pipeline_state).cleanup(key, request.request_id);
+                            }
+                            return (0, String::new());
+                        }
+
                         match pipelining {
-                            PipeliningMode::Metadata { key } => handle_pipelining_metadata(
-                                &request,
-                                full_args,
-                                key,
-                                &state_roots,
-                                &pipeline_state,
-                            ),
+                            PipeliningMode::Metadata { key } => {
+                                let result = handle_pipelining_metadata(
+                                    &request,
+                                    full_args,
+                                    key.clone(),
+                                    &state_roots,
+                                    &pipeline_state,
+                                );
+                                // Clean up the PreRegistered entry if metadata failed early
+                                // (before it transitioned to MetadataRunning).
+                                if result.0 != 0 {
+                                    lock_or_recover(&pipeline_state)
+                                        .cleanup(&key, request.request_id);
+                                }
+                                result
+                            }
                             PipeliningMode::Full { key } => handle_pipelining_full(
                                 &request,
                                 full_args,
@@ -551,10 +568,10 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                         Err(_) => (1, "internal error: worker thread panicked".to_string()),
                     };
 
-                // Remove our entry from in_flight regardless of who sends the response.
+                // Remove our claim flag regardless of who sends the response.
                 // This keeps the map from growing indefinitely and allows request_id
                 // to be reused in the next build.
-                lock_or_recover(&in_flight).remove(&request.request_id);
+                lock_or_recover(&pipeline_state).remove_claim(request.request_id);
 
                 // Only send a response if a cancel acknowledgment hasn't already been sent.
                 if !claim_flag.swap(true, Ordering::SeqCst) {
@@ -571,10 +588,34 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     claim_flag.load(Ordering::SeqCst),
                 ));
             });
+            lock_or_recover(&in_flight).push(handle);
         }
     }
 
     begin_worker_shutdown("stdin_eof");
+
+    // Kill all in-flight pipeline children, then join worker threads.
+    {
+        let cancelled_entries = lock_or_recover(&pipeline_state).drain_all();
+        for entry in cancelled_entries {
+            entry.kill();
+        }
+    }
+    {
+        let handles: Vec<_> = lock_or_recover(&in_flight).drain(..).collect();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        for handle in handles {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                break;
+            }
+            // std::thread::JoinHandle has no timed join, so just join.
+            // Pipeline children are already killed above, so threads should
+            // unblock quickly. The 10s deadline is a safety net.
+            let _ = handle.join();
+        }
+    }
+
     append_worker_lifecycle_log(&format!(
         "pid={} event=stdin_eof thread={} requests_seen={}",
         current_pid(),
@@ -591,6 +632,7 @@ mod test {
         apply_substs, build_rustc_env, expand_rustc_args, extract_rmeta_path,
         find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs,
         rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags,
+        BackgroundRustc, CancelledEntry, PipelineState,
     };
     use super::protocol::{
         extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
@@ -816,10 +858,10 @@ mod test {
     }
 
     #[test]
-    fn test_pipeline_state_store_take() {
+    fn test_pipeline_state_take_for_full_empty() {
         let mut state = PipelineState::new();
-        // Verify that take on an empty state returns None.
-        assert!(state.take("nonexistent").is_none());
+        // Verify that take_for_full on an empty state returns None.
+        assert!(state.take_for_full("nonexistent", 1).is_none());
     }
 
     // --- Tests for new helpers added in the worker-key fix ---
@@ -1471,5 +1513,225 @@ mod test {
         let expected = args.clone();
         relocate_pw_flags(&mut args);
         assert_eq!(args, expected);
+    }
+
+    // -------------------------------------------------------------------------
+    // PipelineState cancel-tracking unit tests
+    // -------------------------------------------------------------------------
+
+    fn make_test_bg() -> BackgroundRustc {
+        use std::process::Command;
+        BackgroundRustc {
+            child: Command::new("sleep").arg("60").spawn().unwrap(),
+            diagnostics_before: String::new(),
+            stderr_drain: std::thread::spawn(|| String::new()),
+            pipeline_root_dir: std::path::PathBuf::from("/tmp"),
+            pipeline_output_dir: std::path::PathBuf::from("/tmp"),
+            original_out_dir: String::from("/tmp"),
+        }
+    }
+
+    #[test]
+    fn test_pipeline_state_store_and_cancel_metadata_phase() {
+        let mut state = PipelineState::new();
+        let _flag = state.pre_register(42, "key1".to_string());
+        let bg = make_test_bg();
+        assert!(state.store("key1", bg).is_none(), "store should succeed");
+        assert!(state.has_entry("key1"));
+        assert!(state.has_request(42));
+
+        let cancelled = state.cancel_by_request_id(42);
+        assert!(cancelled.kill(), "cancel should kill the child");
+        assert!(state.is_empty(), "state should be empty after cancel");
+    }
+
+    #[test]
+    fn test_pipeline_state_take_for_full_then_cancel() {
+        let mut state = PipelineState::new();
+        let _meta_flag = state.pre_register(42, "key1".to_string());
+        let bg = make_test_bg();
+        assert!(state.store("key1", bg).is_none());
+
+        // Simulate full request arriving
+        let _full_flag = state.pre_register(99, "key1".to_string());
+        let (mut taken, child_reaped) = state
+            .take_for_full("key1", 99)
+            .expect("take_for_full should return the BackgroundRustc");
+
+        // After take_for_full: entry is FullWaiting, request_index maps 99 (not 42).
+        assert!(state.has_entry("key1"));
+        assert!(state.has_request(99));
+        assert!(!state.has_request(42));
+
+        // Cancel via the full-phase path (FullWaiting — PID-guarded kill).
+        #[cfg(unix)]
+        {
+            let cancelled = state.cancel_by_request_id(99);
+            assert!(cancelled.kill(), "cancel should kill via PID for full phase");
+            assert!(state.is_empty(), "state should be empty after cancel");
+        }
+
+        // Verify child_reaped flag is initially false.
+        assert!(!child_reaped.load(Ordering::SeqCst));
+
+        // Reap the child to prevent zombies.
+        let _ = taken.child.kill();
+        let _ = taken.child.wait();
+        let _ = taken.stderr_drain.join();
+    }
+
+    #[test]
+    fn test_pipeline_state_cancel_nonexistent_request() {
+        let mut state = PipelineState::new();
+        let cancelled = state.cancel_by_request_id(999);
+        assert!(!cancelled.kill(), "cancel should return false for unknown request_id");
+    }
+
+    #[test]
+    fn test_pipeline_state_pre_register_and_cancel() {
+        let mut state = PipelineState::new();
+        let _flag = state.pre_register(42, "key1".to_string());
+        assert!(state.has_request(42));
+        assert!(state.has_entry("key1"));
+        assert!(state.has_claim(42));
+
+        // No process stored yet — cancel should not kill (no child).
+        let cancelled = state.cancel_by_request_id(42);
+        assert!(!cancelled.kill(), "cancel should return false when no process was stored");
+        // Entry is cleaned up.
+        assert!(!state.has_entry("key1"));
+        assert!(!state.has_request(42));
+    }
+
+    #[test]
+    fn test_pipeline_state_cleanup_removes_all_entries() {
+        let mut state = PipelineState::new();
+        let _flag = state.pre_register(42, "key1".to_string());
+        assert!(state.has_request(42));
+        assert!(state.has_claim(42));
+        state.cleanup("key1", 42);
+        assert!(state.is_empty(), "state should be empty after cleanup");
+        assert!(!state.has_claim(42), "claim should be removed after cleanup");
+    }
+
+    #[test]
+    fn test_pipeline_state_register_claim_non_pipelined() {
+        let mut state = PipelineState::new();
+        let flag = state.register_claim(42);
+        assert!(state.has_claim(42));
+        assert!(!state.has_entry("any_key"));
+        assert!(!flag.load(Ordering::SeqCst));
+        state.remove_claim(42);
+        assert!(!state.has_claim(42));
+    }
+
+    #[test]
+    fn test_pipeline_state_get_claim_flag() {
+        let mut state = PipelineState::new();
+        assert!(state.get_claim_flag(42).is_none());
+        let flag = state.register_claim(42);
+        let retrieved = state.get_claim_flag(42).expect("should find claim flag");
+        assert!(Arc::ptr_eq(&flag, &retrieved));
+    }
+
+    /// Demonstrates the stale-entry bug: if pre_register is called but
+    /// cleanup is NOT called on error, the entry persists and a second
+    /// pre_register for the same key silently overwrites it, leaving
+    /// a dangling request_index entry for the old request_id.
+    #[test]
+    fn test_stale_preregistered_entry_leaves_dangling_request_index() {
+        let mut state = PipelineState::new();
+        let _flag = state.pre_register(42, "key1".to_string());
+        assert!(state.has_entry("key1"));
+        assert!(state.has_request(42));
+
+        // BUG PATH: no cleanup() called (simulates metadata handler error).
+        // A second pre_register for the same key overwrites the entry, but
+        // the old request_index entry (42 → "key1") is NOT removed.
+        let _flag2 = state.pre_register(99, "key1".to_string());
+        assert!(
+            state.has_request(42),
+            "without cleanup, old request_index entry 42 dangles"
+        );
+        assert!(state.has_request(99));
+
+        // FIX PATH: cleanup before re-register removes both entry and index.
+        state.cleanup("key1", 99);
+        // But request 42 is still dangling! Only full cleanup fixes it.
+        assert!(
+            state.has_request(42),
+            "request 42 was never cleaned up — this is the leak"
+        );
+        // Manual cleanup of the leaked entry.
+        state.remove_claim(42);
+    }
+
+    /// Verifies that cleanup() before re-register leaves no dangling state.
+    #[test]
+    fn test_cleanup_before_reregister_prevents_stale_entries() {
+        let mut state = PipelineState::new();
+        let _flag = state.pre_register(42, "key1".to_string());
+
+        // FIX: cleanup on error before any re-register.
+        state.cleanup("key1", 42);
+        assert!(!state.has_entry("key1"));
+        assert!(!state.has_request(42));
+        assert!(!state.has_claim(42));
+
+        // Now re-register works cleanly.
+        let _flag2 = state.pre_register(99, "key1".to_string());
+        assert!(state.has_entry("key1"));
+        assert!(state.has_request(99));
+        assert!(!state.has_request(42), "old request_id must not reappear");
+        state.cleanup("key1", 99);
+    }
+
+    /// Regression: CancelledEntry::PidOnly used raw kill(pid, SIGKILL) without
+    /// checking whether the child had already been reaped. If the full handler
+    /// already called child.wait(), the PID could be recycled and the kill
+    /// would hit an unrelated process.
+    #[test]
+    #[cfg(unix)]
+    fn test_pid_only_cancel_respects_child_reaped_flag() {
+        use std::process::Command;
+
+        // Spawn a real child so we can observe kill behavior.
+        let mut child = Command::new("sleep").arg("60").spawn().unwrap();
+        let pid = child.id();
+
+        // Case 1: child_reaped=false → kill should send SIGKILL (child dies).
+        let reaped = Arc::new(AtomicBool::new(false));
+        let cancelled = CancelledEntry::PidOnly(pid, reaped);
+        assert!(cancelled.kill());
+        // Child should now be dead. Reap to confirm.
+        let status = child.wait().unwrap();
+        assert!(!status.success(), "child should have been killed");
+
+        // Case 2: child_reaped=true → kill must NOT send SIGKILL.
+        // Use our own PID — if SIGKILL were sent, this test process would die.
+        let self_pid = std::process::id();
+        let reaped = Arc::new(AtomicBool::new(true));
+        let cancelled = CancelledEntry::PidOnly(self_pid, reaped);
+        assert!(cancelled.kill());
+        // If we're still running, the guard worked.
+    }
+
+    /// Regression: build_response blanked output for exit_code==0, silently
+    /// discarding rustc warnings from successful compilations.
+    #[test]
+    fn test_build_response_preserves_warnings_on_success() {
+        let warning = "warning: unused variable `x`";
+        let response = build_response(0, warning, 42);
+        let parsed = parse_json(&response);
+        let JsonValue::Object(map) = parsed else {
+            panic!("expected object response");
+        };
+        let Some(JsonValue::String(output)) = map.get("output") else {
+            panic!("expected string output");
+        };
+        assert_eq!(
+            output, warning,
+            "build_response should preserve warnings on success (exit_code=0)"
+        );
     }
 }

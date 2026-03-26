@@ -25,7 +25,7 @@ impl fmt::Display for OptionError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum PipeliningMode {
+pub(crate) enum SubprocessPipeliningMode {
     Metadata,
     Full,
 }
@@ -55,7 +55,7 @@ pub(crate) struct Options {
     // Worker pipelining mode detected from @paramfile flags.
     // Set when --pipelining-metadata or --pipelining-full is found.
     // None when running outside of worker pipelining.
-    pub(crate) pipelining_mode: Option<PipeliningMode>,
+    pub(crate) pipelining_mode: Option<SubprocessPipeliningMode>,
     // The expected .rlib output path, passed via --pipelining-rlib-path=<path>
     // in the @paramfile. Used by the local-mode no-op optimization: if this
     // file already exists (produced as a side-effect by the metadata action's
@@ -330,7 +330,7 @@ pub(crate) struct RelocatedPwFlags {
     pub(crate) rustc_output_format: Option<String>,
     pub(crate) stable_status_file: Option<String>,
     pub(crate) volatile_status_file: Option<String>,
-    pub(crate) pipelining_mode: Option<PipeliningMode>,
+    pub(crate) pipelining_mode: Option<SubprocessPipeliningMode>,
     pub(crate) pipelining_rlib_path: Option<String>,
 }
 
@@ -420,9 +420,9 @@ fn prepare_param_file(
             // can detect when the full action's .rlib already exists.
             if is_pipelining_flag(&arg) {
                 if arg == "--pipelining-metadata" {
-                    relocated.pipelining_mode = Some(PipeliningMode::Metadata);
+                    relocated.pipelining_mode = Some(SubprocessPipeliningMode::Metadata);
                 } else if arg == "--pipelining-full" {
-                    relocated.pipelining_mode = Some(PipeliningMode::Full);
+                    relocated.pipelining_mode = Some(SubprocessPipeliningMode::Full);
                 } else if let Some(path) = arg.strip_prefix("--pipelining-rlib-path=") {
                     relocated.pipelining_rlib_path = Some(path.to_string());
                 }

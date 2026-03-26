@@ -96,9 +96,9 @@ pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
 ///
 /// The error case indicates a misconfiguration: `--experimental_worker_multiplex_sandboxing`
 /// is enabled but the platform has no sandbox support (e.g. Windows). Rather than
-/// silently falling back — which would cause subtle failures in pipelining where
-/// the real execroot is only discoverable through sandbox symlinks — we surface
-/// a clear error directing the user to fix their Bazel configuration.
+/// silently falling back — which would cause subtle pipelining failures when
+/// rustc's CWD is set to an empty sandbox — we surface a clear error directing
+/// the user to fix their Bazel configuration.
 pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<String>, String> {
     if let JsonValue::Object(map) = request {
         if let Some(JsonValue::String(dir)) = map.get("sandboxDir") {
@@ -183,11 +183,7 @@ pub(super) fn extract_cancel(request: &JsonValue) -> bool {
 
 /// Builds a JSON WorkResponse string.
 pub(super) fn build_response(exit_code: i32, output: &str, request_id: i64) -> String {
-    let output = if exit_code == 0 {
-        String::new()
-    } else {
-        sanitize_response_output(output)
-    };
+    let output = sanitize_response_output(output);
     format!(
         "{{\"exitCode\":{},\"output\":{},\"requestId\":{}}}",
         exit_code,
