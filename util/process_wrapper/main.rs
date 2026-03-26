@@ -879,4 +879,200 @@ mod test {
              byte-for-byte worker determinism testing is not viable with this rustc version"
         );
     }
+
+    #[test]
+    fn test_pipelined_matches_standalone() {
+        use crate::worker::pipeline::{
+            handle_pipelining_metadata, handle_pipelining_full,
+            PipelineState, WorkerStateRoots,
+        };
+        use crate::worker::protocol::WorkRequestContext;
+        use std::sync::{Arc, Mutex};
+
+        let rustc = resolve_rustc();
+        let dir = setup_test_crate("pipelined_vs_standalone");
+        let out_dir_standalone = dir.join("out_standalone");
+        let out_dir_pipelined = dir.join("out_pipelined");
+        fs::create_dir_all(&out_dir_standalone).unwrap();
+        fs::create_dir_all(&out_dir_pipelined).unwrap();
+
+        // 1. Compile via direct rustc invocation (baseline).
+        // Must use the same flags as the pipelined invocation, including
+        // --error-format=json and --json=artifacts, because --json=artifacts
+        // changes the crate hash (SVH) embedded in the rlib metadata.
+        let standalone_rlib = {
+            // Use env_clear + envs + current_dir to match exactly what the
+            // pipeline handler does. Without current_dir, rustc embeds
+            // CWD-relative path info in metadata, causing size differences.
+            let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
+            let status = std::process::Command::new(&rustc)
+                .args(&[
+                    "--crate-type=lib",
+                    "--edition=2021",
+                    "--crate-name=testcrate",
+                    "--emit=dep-info,metadata,link",
+                    "-Cembed-bitcode=no",
+                    "--error-format=json",
+                    "--json=artifacts",
+                ])
+                .arg(&format!("--out-dir={}", out_dir_standalone.display()))
+                .arg(dir.join("lib.rs"))
+                .env_clear()
+                .envs(&env_map)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::piped())
+                .current_dir(&dir)
+                .status()
+                .expect("failed to spawn rustc");
+            assert!(status.success(), "standalone rustc compilation failed");
+            let rlib = fs::read_dir(&out_dir_standalone)
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
+                .unwrap_or_else(|| {
+                    panic!("no .rlib found in {}", out_dir_standalone.display())
+                });
+            fs::read(rlib.path()).unwrap()
+        };
+
+        // 2. Compile via pipelined worker handlers.
+        // Save CWD, chdir to temp dir (pipeline handlers use CWD for _pw_state/).
+        let original_cwd = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&dir).unwrap();
+
+        let state_roots = WorkerStateRoots::ensure().unwrap();
+        let pipeline_state = Arc::new(Mutex::new(PipelineState::new()));
+
+        let pipeline_key = "test_determinism".to_string();
+
+        // Pre-register the metadata request.
+        {
+            let mut state = pipeline_state.lock().unwrap();
+            state.pre_register(1, pipeline_key.clone());
+        }
+
+        let rustc_str = rustc.display().to_string();
+        let src_path = dir.join("lib.rs").display().to_string();
+        let out_dir_str = out_dir_pipelined.display().to_string();
+
+        // Build args in the format handle_pipelining_metadata expects:
+        // [pw_flags...] -- rustc [rustc_args...] --pipelining-metadata --pipelining-key=<key>
+        //
+        // The handler splits on "--", parses pw args before it, and rustc args after.
+        // --json=artifacts is required so rustc emits the .rmeta notification JSON.
+        let metadata_args: Vec<String> = vec![
+            "--".to_string(),
+            rustc_str.clone(),
+            "--crate-type=lib".to_string(),
+            "--edition=2021".to_string(),
+            "--crate-name=testcrate".to_string(),
+            format!("--out-dir={out_dir_str}"),
+            "--emit=dep-info,metadata,link".to_string(),
+            "-Cembed-bitcode=no".to_string(),
+            "--error-format=json".to_string(),
+            "--json=artifacts".to_string(),
+            src_path.clone(),
+            "--pipelining-metadata".to_string(),
+            format!("--pipelining-key={pipeline_key}"),
+        ];
+
+        let metadata_request = WorkRequestContext {
+            request_id: 1,
+            arguments: metadata_args.clone(),
+            sandbox_dir: None,
+            inputs: vec![],
+            cancel: false,
+        };
+
+        let (exit_code, diagnostics) = handle_pipelining_metadata(
+            &metadata_request,
+            metadata_args,
+            pipeline_key.clone(),
+            &state_roots,
+            &pipeline_state,
+        );
+        assert_eq!(
+            exit_code, 0,
+            "pipelining metadata handler failed: {diagnostics}"
+        );
+
+        // Pre-register the full request.
+        {
+            let mut state = pipeline_state.lock().unwrap();
+            state.pre_register(2, pipeline_key.clone());
+        }
+
+        let full_args: Vec<String> = vec![
+            "--".to_string(),
+            rustc_str.clone(),
+            "--crate-type=lib".to_string(),
+            "--edition=2021".to_string(),
+            "--crate-name=testcrate".to_string(),
+            format!("--out-dir={out_dir_str}"),
+            "--emit=dep-info,metadata,link".to_string(),
+            "-Cembed-bitcode=no".to_string(),
+            "--error-format=json".to_string(),
+            "--json=artifacts".to_string(),
+            src_path,
+            "--pipelining-full".to_string(),
+            format!("--pipelining-key={pipeline_key}"),
+        ];
+
+        // handle_pipelining_full needs self_path for fallback.
+        // We won't hit the fallback path since metadata stored the bg process.
+        let self_path = std::path::Path::new("/dev/null");
+
+        let full_request = WorkRequestContext {
+            request_id: 2,
+            arguments: full_args.clone(),
+            sandbox_dir: None,
+            inputs: vec![],
+            cancel: false,
+        };
+
+        let (exit_code, diagnostics) = handle_pipelining_full(
+            &full_request,
+            full_args,
+            pipeline_key,
+            &pipeline_state,
+            self_path,
+        );
+
+        // Restore CWD before assertions (so cleanup works even if test fails).
+        std::env::set_current_dir(&original_cwd).unwrap();
+
+        assert_eq!(
+            exit_code, 0,
+            "pipelining full handler failed: {diagnostics}"
+        );
+
+        // 3. Find the pipelined .rlib.
+        let pipelined_rlib_entry = fs::read_dir(&out_dir_pipelined)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
+            .unwrap_or_else(|| {
+                panic!(
+                    "no .rlib found in pipelined output dir {}",
+                    out_dir_pipelined.display()
+                )
+            });
+        let pipelined_rlib = fs::read(pipelined_rlib_entry.path()).unwrap();
+
+        let _ = fs::remove_dir_all(&dir);
+
+        // 4. Compare.
+        assert_eq!(
+            standalone_rlib.len(),
+            pipelined_rlib.len(),
+            "rlib size differs: standalone={} pipelined={}",
+            standalone_rlib.len(),
+            pipelined_rlib.len()
+        );
+        assert_eq!(
+            standalone_rlib, pipelined_rlib,
+            "pipelined .rlib differs from standalone .rlib — \
+             worker pipelining does not preserve output determinism"
+        );
+    }
 }
