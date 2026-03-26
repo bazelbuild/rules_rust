@@ -2,7 +2,7 @@
 **/cargo-bazel-lock.json linguist-generated
 crate_universe/3rdparty/crates/** linguist-generated
 crate_universe/test_data/metadata/*/metadata.json linguist-generated
-examples/bzlmod/hello_world/third-party/crates/** linguist-generated
+examples/hello_world/third-party/crates/** linguist-generated
 examples/crate_universe_unnamed/vendor_remote_manifests/crates/** linguist-generated
 examples/crate_universe_unnamed/vendor_remote_pkgs/crates/** linguist-generated
 examples/crate_universe/vendor_external/crates/** linguist-generated
