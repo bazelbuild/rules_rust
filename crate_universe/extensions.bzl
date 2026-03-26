@@ -1112,18 +1112,6 @@ def _crate_impl(module_ctx):
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
-            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
-            # function of the module extension when the file has changed.
-            if cfg.cargo_lockfile:
-                module_ctx.watch(cfg.cargo_lockfile)
-            if cfg.lockfile:
-                module_ctx.watch(cfg.lockfile)
-            if cfg.cargo_config:
-                module_ctx.watch(cfg.cargo_config)
-            if hasattr(cfg, "manifests"):
-                for m in cfg.manifests:
-                    module_ctx.watch(m)
-
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
@@ -1179,6 +1167,19 @@ def _crate_impl(module_ctx):
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
             )
+
+            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
+            # function of the module extension when the file has changed. Watch inputs after generation so bazel 9 does
+            # not crash. If the lockfile is repinned, module_ctx.read will crash with a digest mismatch.
+            if cfg.cargo_lockfile:
+                module_ctx.watch(cfg.cargo_lockfile)
+            if cfg.lockfile:
+                module_ctx.watch(cfg.lockfile)
+            if cfg.cargo_config:
+                module_ctx.watch(cfg.cargo_config)
+            if hasattr(cfg, "manifests"):
+                for m in cfg.manifests:
+                    module_ctx.watch(m)
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
