@@ -900,7 +900,7 @@ mod test {
         // Must use the same flags as the pipelined invocation, including
         // --error-format=json and --json=artifacts, because --json=artifacts
         // changes the crate hash (SVH) embedded in the rlib metadata.
-        let standalone_rlib = {
+        {
             // Use env_clear + envs + current_dir to match exactly what the
             // pipeline handler does. Without current_dir, rustc embeds
             // CWD-relative path info in metadata, causing size differences.
@@ -925,15 +925,7 @@ mod test {
                 .status()
                 .expect("failed to spawn rustc");
             assert!(status.success(), "standalone rustc compilation failed");
-            let rlib = fs::read_dir(&out_dir_standalone)
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
-                .unwrap_or_else(|| {
-                    panic!("no .rlib found in {}", out_dir_standalone.display())
-                });
-            fs::read(rlib.path()).unwrap()
-        };
+        }
 
         // 2. Compile via pipelined worker handlers.
         // Save CWD, chdir to temp dir (pipeline handlers use CWD for _pw_state/).
@@ -1046,22 +1038,24 @@ mod test {
             "pipelining full handler failed: {diagnostics}"
         );
 
-        // 3. Find the pipelined .rlib.
-        let pipelined_rlib_entry = fs::read_dir(&out_dir_pipelined)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
-            .unwrap_or_else(|| {
-                panic!(
-                    "no .rlib found in pipelined output dir {}",
-                    out_dir_pipelined.display()
-                )
-            });
-        let pipelined_rlib = fs::read(pipelined_rlib_entry.path()).unwrap();
+        // 3. Read artifacts from both output dirs.
+        let find_artifact = |dir: &std::path::Path, ext: &str| -> Vec<u8> {
+            let entry = fs::read_dir(dir)
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .find(|e| e.path().extension().map_or(false, |x| x == ext))
+                .unwrap_or_else(|| panic!("no .{ext} found in {}", dir.display()));
+            fs::read(entry.path()).unwrap()
+        };
+
+        let standalone_rlib = find_artifact(&out_dir_standalone, "rlib");
+        let pipelined_rlib = find_artifact(&out_dir_pipelined, "rlib");
+        let standalone_rmeta = find_artifact(&out_dir_standalone, "rmeta");
+        let pipelined_rmeta = find_artifact(&out_dir_pipelined, "rmeta");
 
         let _ = fs::remove_dir_all(&dir);
 
-        // 4. Compare.
+        // 4. Compare .rlib artifacts.
         assert_eq!(
             standalone_rlib.len(),
             pipelined_rlib.len(),
@@ -1073,6 +1067,23 @@ mod test {
             standalone_rlib, pipelined_rlib,
             "pipelined .rlib differs from standalone .rlib — \
              worker pipelining does not preserve output determinism"
+        );
+
+        // 5. Compare .rmeta artifacts.
+        // The .rmeta is what downstream crates compile against. If it differs
+        // between pipelined and standalone, downstream builds could see
+        // different type information or SVH values.
+        assert_eq!(
+            standalone_rmeta.len(),
+            pipelined_rmeta.len(),
+            "rmeta size differs: standalone={} pipelined={}",
+            standalone_rmeta.len(),
+            pipelined_rmeta.len()
+        );
+        assert_eq!(
+            standalone_rmeta, pipelined_rmeta,
+            "pipelined .rmeta differs from standalone .rmeta — \
+             worker pipelining does not preserve metadata determinism"
         );
     }
 }
