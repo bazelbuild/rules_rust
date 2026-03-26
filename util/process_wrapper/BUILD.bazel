@@ -51,7 +51,20 @@ rust_binary_without_process_wrapper(
 rust_test_without_process_wrapper_test(
     name = "process_wrapper_test",
     crate = ":process_wrapper",
+    data = [
+        "//rust/toolchain:current_rust_stdlib_files",
+        "//rust/toolchain:current_rustc_files",
+    ],
     edition = "2018",
+    proc_macro_deps = [
+        "//rust/runfiles",
+    ],
+    rustc_env = {
+        "RUSTC_RLOCATIONPATH": "$(rlocationpath //rust/toolchain:current_rustc_files)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
 )
 
 alias(
