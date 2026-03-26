@@ -32,7 +32,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use tinyjson::JsonValue;
 
-use crate::options::{options, SubprocessPipeliningMode};
+use crate::options::{options, Options, SubprocessPipeliningMode};
 use crate::output::{process_output, LineOutput};
 use crate::rustc::ErrorFormat;
 #[cfg(windows)]
@@ -404,6 +404,126 @@ fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, Str
     rustc::process_json(line, format)
 }
 
+/// Core standalone compilation logic extracted from main().
+///
+/// Spawns the child process (rustc) with the given options, processes stderr
+/// output, handles touch_file/copy_output on success, and returns the exit code.
+pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError> {
+    let (child_arguments, dep_argfile_cleanup) =
+        consolidate_dependency_search_paths(&opts.child_arguments)?;
+    let mut temp_file_guard = TemporaryFileGuard::new(dep_argfile_cleanup);
+    let cwd = std::env::current_dir().map_err(|e| {
+        ProcessWrapperError(format!("unable to read current working directory: {e}"))
+    })?;
+    let _ = seed_cache_root_for_current_dir();
+    if let Some(cache_root) = cache_root_from_execroot_ancestor(&cwd) {
+        let _ = ensure_cache_loopback_from_args(&cwd, &child_arguments, &cache_root);
+    }
+
+    let mut command = Command::new(opts.executable.clone());
+    command
+        .args(child_arguments)
+        .env_clear()
+        .envs(opts.child_environment.clone())
+        .stdout(if let Some(stdout_file) = opts.stdout_file.as_deref() {
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(stdout_file)
+                .map_err(|e| ProcessWrapperError(format!("unable to open stdout file: {}", e)))?
+                .into()
+        } else {
+            Stdio::inherit()
+        })
+        .stderr(Stdio::piped());
+    debug_log!("{:#?}", command);
+    let mut child = command
+        .spawn()
+        .map_err(|e| ProcessWrapperError(format!("failed to spawn child process: {}", e)))?;
+
+    let mut stderr: Box<dyn io::Write> = if let Some(stderr_file) = opts.stderr_file.as_deref() {
+        Box::new(
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(stderr_file)
+                .map_err(|e| ProcessWrapperError(format!("unable to open stderr file: {}", e)))?,
+        )
+    } else {
+        Box::new(io::stderr())
+    };
+
+    let mut child_stderr = child.stderr.take().ok_or(ProcessWrapperError(
+        "unable to get child stderr".to_string(),
+    ))?;
+
+    let mut output_file: Option<std::fs::File> =
+        if let Some(output_file_name) = opts.output_file.as_deref() {
+            Some(
+                OpenOptions::new()
+                    .create(true)
+                    .truncate(true)
+                    .write(true)
+                    .open(output_file_name)
+                    .map_err(|e| {
+                        ProcessWrapperError(format!("Unable to open output_file: {}", e))
+                    })?,
+            )
+        } else {
+            None
+        };
+
+    let result = if let Some(format) = opts.rustc_output_format {
+        process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| process_line(line, format),
+        )
+    } else {
+        // Process output normally by forwarding stderr
+        process_output(
+            &mut child_stderr,
+            stderr.as_mut(),
+            output_file.as_mut(),
+            move |line| Ok(LineOutput::Message(line)),
+        )
+    };
+    result.map_err(|e| ProcessWrapperError(format!("failed to process stderr: {}", e)))?;
+
+    let status = child
+        .wait()
+        .map_err(|e| ProcessWrapperError(format!("failed to wait for child process: {}", e)))?;
+    let code = status.code().unwrap_or(1);
+    if code == 0 {
+        if let Some(tf) = opts.touch_file.as_deref() {
+            OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(tf)
+                .map_err(|e| ProcessWrapperError(format!("failed to create touch file: {}", e)))?;
+        }
+        if let Some((copy_source, copy_dest)) = opts.copy_output.as_ref() {
+            copy(copy_source, copy_dest).map_err(|e| {
+                ProcessWrapperError(format!(
+                    "failed to copy {} into {}: {}",
+                    copy_source, copy_dest, e
+                ))
+            })?;
+        }
+    }
+
+    if let Some(path) = temp_file_guard.take() {
+        // Consolidated dependency dir: remove the whole directory tree.
+        let _ = fs::remove_dir_all(&path);
+    }
+
+    Ok(code)
+}
+
 fn main() -> Result<(), ProcessWrapperError> {
     // Check if Bazel is invoking us as a persistent worker.
     if std::env::args().any(|a| a == "--persistent_worker") {
@@ -467,109 +587,7 @@ fn main() -> Result<(), ProcessWrapperError> {
         }
     }
 
-    let (child_arguments, dep_argfile_cleanup) =
-        consolidate_dependency_search_paths(&opts.child_arguments)?;
-    let mut temp_file_guard = TemporaryFileGuard::new(dep_argfile_cleanup);
-    let cwd = std::env::current_dir().map_err(|e| {
-        ProcessWrapperError(format!("unable to read current working directory: {e}"))
-    })?;
-    let _ = seed_cache_root_for_current_dir();
-    if let Some(cache_root) = cache_root_from_execroot_ancestor(&cwd) {
-        let _ = ensure_cache_loopback_from_args(&cwd, &child_arguments, &cache_root);
-    }
-
-    let mut command = Command::new(opts.executable);
-    command
-        .args(child_arguments)
-        .env_clear()
-        .envs(opts.child_environment)
-        .stdout(if let Some(stdout_file) = opts.stdout_file {
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(stdout_file)
-                .map_err(|e| ProcessWrapperError(format!("unable to open stdout file: {}", e)))?
-                .into()
-        } else {
-            Stdio::inherit()
-        })
-        .stderr(Stdio::piped());
-    debug_log!("{:#?}", command);
-    let mut child = command
-        .spawn()
-        .map_err(|e| ProcessWrapperError(format!("failed to spawn child process: {}", e)))?;
-
-    let mut stderr: Box<dyn io::Write> = if let Some(stderr_file) = opts.stderr_file {
-        Box::new(
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(stderr_file)
-                .map_err(|e| ProcessWrapperError(format!("unable to open stderr file: {}", e)))?,
-        )
-    } else {
-        Box::new(io::stderr())
-    };
-
-    let mut child_stderr = child.stderr.take().ok_or(ProcessWrapperError(
-        "unable to get child stderr".to_string(),
-    ))?;
-
-    let mut output_file: Option<std::fs::File> = if let Some(output_file_name) = opts.output_file {
-        Some(
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(output_file_name)
-                .map_err(|e| ProcessWrapperError(format!("Unable to open output_file: {}", e)))?,
-        )
-    } else {
-        None
-    };
-
-    let result = if let Some(format) = opts.rustc_output_format {
-        process_output(
-            &mut child_stderr,
-            stderr.as_mut(),
-            output_file.as_mut(),
-            move |line| process_line(line, format),
-        )
-    } else {
-        // Process output normally by forwarding stderr
-        process_output(
-            &mut child_stderr,
-            stderr.as_mut(),
-            output_file.as_mut(),
-            move |line| Ok(LineOutput::Message(line)),
-        )
-    };
-    result.map_err(|e| ProcessWrapperError(format!("failed to process stderr: {}", e)))?;
-
-    let status = child
-        .wait()
-        .map_err(|e| ProcessWrapperError(format!("failed to wait for child process: {}", e)))?;
-    let code = status.code().unwrap_or(1);
-    if code == 0 {
-        if let Some(tf) = opts.touch_file {
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(tf)
-                .map_err(|e| ProcessWrapperError(format!("failed to create touch file: {}", e)))?;
-        }
-        if let Some((copy_source, copy_dest)) = opts.copy_output {
-            copy(&copy_source, &copy_dest).map_err(|e| {
-                ProcessWrapperError(format!(
-                    "failed to copy {} into {}: {}",
-                    copy_source, copy_dest, e
-                ))
-            })?;
-        }
-    }
+    let code = run_standalone(&opts)?;
 
     // When a pipelining-full action fails outside a worker (the warning above
     // was already printed), repeat the fix suggestion next to the error output.
@@ -585,11 +603,6 @@ fn main() -> Result<(), ProcessWrapperError> {
             "If the error is E0460 (SVH mismatch), set:\n",
             "  --@rules_rust//rust/settings:experimental_worker_pipelining=false\n",
         ));
-    }
-
-    if let Some(path) = temp_file_guard.take() {
-        // Consolidated dependency dir: remove the whole directory tree.
-        let _ = fs::remove_dir_all(&path);
     }
 
     exit(code)
