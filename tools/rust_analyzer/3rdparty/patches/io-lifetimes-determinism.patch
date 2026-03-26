@@ -1,0 +1,21 @@
+diff --git build.rs build.rs
+index 2fc2a38..5a01d04 100644
+--- build.rs
++++ build.rs
+@@ -43,7 +43,6 @@ fn has_feature(feature: &str) -> bool {
+ fn can_compile<T: AsRef<str>>(test: T) -> bool {
+     use std::process::Stdio;
+ 
+-    let out_dir = var("OUT_DIR").unwrap();
+     let rustc = var("RUSTC").unwrap();
+     let target = var("TARGET").unwrap();
+ 
+@@ -68,7 +67,7 @@ fn can_compile<T: AsRef<str>>(test: T) -> bool {
+         .arg("--target")
+         .arg(target)
+         .arg("--out-dir")
+-        .arg(out_dir); // Put the output somewhere inconsequential.
++        .arg("/dev/null"); // Put the output somewhere inconsequential to avoid non-determinism.
+ 
+     // If Cargo wants to set RUSTFLAGS, use that.
+     if let Ok(rustflags) = var("CARGO_ENCODED_RUSTFLAGS") {
