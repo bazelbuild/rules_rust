@@ -2,23 +2,22 @@ name: Determinism
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize]
-    paths:
-      - test/determinism/**
+    inputs:
+      commit:
+        description: "Git commit or branch to test (defaults to main)"
+        required: false
+        default: "main"
 
 jobs:
   check:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-latest
-            work_dir: ${{ env.RUNNER_TEMP }}/r
-          - os: ubuntu-latest
-            work_dir: ${{ env.RUNNER_TEMP }}/r
-          - os: windows-latest
-            work_dir: C:\r
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
 
     runs-on: ${{ matrix.os }}
     name: Check (${{ matrix.os }})
@@ -28,15 +27,47 @@ jobs:
         with:
           clean: true
 
-      - name: Run tests
-        continue-on-error: true
+      - name: Choose a work directory (unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          bazel run \
-            --compilation_mode=opt \
-            //test/determinism:tester \
-            -- test \
-            --output="${{ github.workspace }}/results.json" \
-            --work-dir="${{ matrix.work_dir }}"
+          echo "WORK_DIR=$RUNNER_TEMP/r" >> "$GITHUB_ENV"
+
+      - name: Choose a work directory (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          'WORK_DIR=C:\r' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Run tests (unix)
+        if: runner.os != 'Windows'
+        continue-on-error: true
+        shell: bash
+        run: >-
+          bazel run
+          --compilation_mode=opt
+          //test/determinism:tester
+          --
+          test
+          --url=${{ format('{0}/{1}.git', github.server_url, github.repository) }}
+          --commit=${{ inputs.commit }}
+          --output="${{ github.workspace }}/results.json"
+          --work-dir="${WORK_DIR}"
+
+      - name: Run tests (windows)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: pwsh
+        run: >-
+          bazel run
+          --compilation_mode=opt
+          //test/determinism:tester
+          '--'
+          test
+          --url=${{ format('{0}/{1}.git', github.server_url, github.repository) }}
+          --commit=${{ inputs.commit }}
+          --output="${{ github.workspace }}/results.json"
+          --work-dir="$env:WORK_DIR"
 
       - name: Summarize (unix)
         if: runner.os != 'Windows'
@@ -83,16 +114,16 @@ jobs:
         if: runner.os != 'Windows' && always()
         shell: bash
         run: |
-          if [[ -d "${{ matrix.work_dir }}/o" ]]; then
-            tar -czf output-base.tar.gz -C "${{ matrix.work_dir }}" o
+          if [[ -d "${WORK_DIR}/o" ]]; then
+            tar -czf output-base.tar.gz -C "${WORK_DIR}" o
           fi
 
       - name: Archive output base (windows)
         if: runner.os == 'Windows' && always()
         shell: pwsh
         run: |
-          if (Test-Path "${{ matrix.work_dir }}\o") {
-            Compress-Archive -Path "${{ matrix.work_dir }}\o" -DestinationPath output-base.zip
+          if (Test-Path "$env:WORK_DIR\o") {
+            Compress-Archive -Path "$env:WORK_DIR\o" -DestinationPath output-base.zip
           }
 
       - name: Upload output base artifact
