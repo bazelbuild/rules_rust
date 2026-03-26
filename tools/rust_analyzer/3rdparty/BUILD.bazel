@@ -6,12 +6,12 @@ crates_vendor(
     annotations = {
         "io-lifetimes": [
             crate.annotation(
-                patches = ["@//tools/rust_analyzer/3rdparty/patches:io-lifetimes-determinism.patch"],
+                patches = ["@rules_rust//tools/rust_analyzer/3rdparty/patches:io-lifetimes-determinism.patch"],
             ),
         ],
         "rustix": [
             crate.annotation(
-                patches = ["@//tools/rust_analyzer/3rdparty/patches:rustix-determinism.patch"],
+                patches = ["@rules_rust//tools/rust_analyzer/3rdparty/patches:rustix-determinism.patch"],
             ),
         ],
     },
