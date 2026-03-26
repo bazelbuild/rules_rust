@@ -811,4 +811,72 @@ mod test {
         assert_eq!(loopback_target, cache_root);
         Ok(())
     }
+
+    /// Resolves the real rustc binary from the runfiles tree.
+    fn resolve_rustc() -> std::path::PathBuf {
+        let r = runfiles::Runfiles::create().unwrap();
+        runfiles::rlocation!(r, env!("RUSTC_RLOCATIONPATH"))
+            .expect("could not resolve RUSTC_RLOCATIONPATH via runfiles")
+    }
+
+    /// Creates a temp directory with a trivial Rust library source file.
+    fn setup_test_crate(name: &str) -> std::path::PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("pw_determinism_{name}_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join("lib.rs"),
+            "pub fn hello() -> u32 { 42 }\npub fn world() -> &'static str { \"hello\" }\n",
+        )
+        .unwrap();
+        dir
+    }
+
+    /// Compiles lib.rs by invoking rustc directly, returns the .rlib bytes.
+    fn compile_with_rustc(
+        rustc: &std::path::Path,
+        src_dir: &std::path::Path,
+        out_name: &str,
+    ) -> Vec<u8> {
+        let out_dir = src_dir.join(out_name);
+        fs::create_dir_all(&out_dir).unwrap();
+        let status = std::process::Command::new(rustc)
+            .args(&[
+                "--crate-type=lib",
+                "--edition=2021",
+                "--crate-name=testcrate",
+                "--emit=dep-info,metadata,link",
+                "-Cembed-bitcode=no",
+            ])
+            .arg(&format!("--out-dir={}", out_dir.display()))
+            .arg(src_dir.join("lib.rs"))
+            .status()
+            .expect("failed to spawn rustc");
+        assert!(status.success(), "rustc compilation failed");
+
+        let rlib = fs::read_dir(&out_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
+            .unwrap_or_else(|| panic!("no .rlib found in {}", out_dir.display()));
+        fs::read(rlib.path()).unwrap()
+    }
+
+    #[test]
+    fn test_standalone_determinism() {
+        let rustc = resolve_rustc();
+        let dir = setup_test_crate("standalone_determinism");
+
+        let rlib_a = compile_with_rustc(&rustc, &dir, "out_a");
+        let rlib_b = compile_with_rustc(&rustc, &dir, "out_b");
+
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(
+            rlib_a, rlib_b,
+            "rustc produced different .rlib bytes for identical inputs — \
+             byte-for-byte worker determinism testing is not viable with this rustc version"
+        );
+    }
 }
