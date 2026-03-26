@@ -32,7 +32,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use tinyjson::JsonValue;
 
-use crate::options::{options, PipeliningMode};
+use crate::options::{options, SubprocessPipeliningMode};
 use crate::output::{process_output, LineOutput};
 use crate::rustc::ErrorFormat;
 #[cfg(windows)]
@@ -425,7 +425,7 @@ fn main() -> Result<(), ProcessWrapperError> {
     // If the .rlib does NOT exist (e.g. sandboxed execution discarded the
     // side-effect, or the metadata action was an action-cache hit), we fall
     // through to running rustc normally.
-    if opts.pipelining_mode == Some(PipeliningMode::Full) {
+    if opts.pipelining_mode == Some(SubprocessPipeliningMode::Full) {
         if let Some(ref rlib_path) = opts.pipelining_rlib_path {
             if std::path::Path::new(rlib_path).exists() {
                 debug_log!(
@@ -574,7 +574,7 @@ fn main() -> Result<(), ProcessWrapperError> {
     // When a pipelining-full action fails outside a worker (the warning above
     // was already printed), repeat the fix suggestion next to the error output.
     if code != 0
-        && opts.pipelining_mode == Some(PipeliningMode::Full)
+        && opts.pipelining_mode == Some(SubprocessPipeliningMode::Full)
         && opts
             .pipelining_rlib_path
             .as_ref()

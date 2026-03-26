@@ -183,11 +183,7 @@ pub(super) fn extract_cancel(request: &JsonValue) -> bool {
 
 /// Builds a JSON WorkResponse string.
 pub(super) fn build_response(exit_code: i32, output: &str, request_id: i64) -> String {
-    let output = if exit_code == 0 {
-        String::new()
-    } else {
-        sanitize_response_output(output)
-    };
+    let output = sanitize_response_output(output);
     format!(
         "{{\"exitCode\":{},\"output\":{},\"requestId\":{}}}",
         exit_code,

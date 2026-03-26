@@ -112,7 +112,7 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -160,11 +160,15 @@ pub(super) enum PipelinePhase {
     },
 
     /// Full handler took BackgroundRustc; waiting for child exit + output copy.
-    /// PID retained for cancel-via-raw-signal.
+    /// PID retained for cancel-via-signal, guarded by `child_reaped` to prevent
+    /// killing a recycled PID after the full handler has called `child.wait()`.
     FullWaiting {
         #[allow(dead_code)]
         full_request_id: i64,
         pid: u32,
+        /// Set to `true` by the full handler immediately after `child.wait()`
+        /// returns. The cancel handler checks this before sending a raw signal.
+        child_reaped: Arc<AtomicBool>,
     },
 }
 
@@ -179,7 +183,9 @@ pub(super) enum CancelledEntry {
     /// We own the BackgroundRustc — kill + wait + join the child.
     OwnedChild(BackgroundRustc),
     /// Child was taken by the full handler; only the PID remains for raw kill.
-    PidOnly(u32),
+    /// The `child_reaped` flag prevents killing a recycled PID after the full
+    /// handler has already waited on the child.
+    PidOnly(u32, Arc<AtomicBool>),
 }
 
 impl CancelledEntry {
@@ -193,12 +199,16 @@ impl CancelledEntry {
                 let _ = bg.stderr_drain.join();
                 true
             }
-            CancelledEntry::PidOnly(pid) => {
-                #[cfg(unix)]
-                unsafe {
-                    kill(pid as i32, 9);
+            CancelledEntry::PidOnly(pid, child_reaped) => {
+                // Only send SIGKILL if the full handler hasn't already reaped
+                // the child. Without this check, we could kill a recycled PID.
+                if !child_reaped.load(Ordering::SeqCst) {
+                    #[cfg(unix)]
+                    unsafe {
+                        kill(pid as i32, 9);
+                    }
+                    let _ = pid; // suppress unused warning on non-unix
                 }
-                let _ = pid; // suppress unused warning on non-unix
                 true
             }
         }
@@ -335,12 +345,13 @@ impl PipelineState {
         Some(bg)
     }
 
-    /// MetadataRunning → FullWaiting. Returns BackgroundRustc for full handler.
+    /// MetadataRunning → FullWaiting. Returns BackgroundRustc and a
+    /// `child_reaped` flag for the full handler to set after `child.wait()`.
     pub(super) fn take_for_full(
         &mut self,
         key: &str,
         full_request_id: i64,
-    ) -> Option<BackgroundRustc> {
+    ) -> Option<(BackgroundRustc, Arc<AtomicBool>)> {
         let entry = self.entries.get_mut(key)?;
         if let PipelinePhase::MetadataRunning {
             metadata_request_id,
@@ -350,17 +361,19 @@ impl PipelineState {
         {
             let old_req = *metadata_request_id;
             let pid_val = *pid;
+            let child_reaped = Arc::new(AtomicBool::new(false));
             let old = std::mem::replace(
                 entry,
                 PipelinePhase::FullWaiting {
                     full_request_id,
                     pid: pid_val,
+                    child_reaped: Arc::clone(&child_reaped),
                 },
             );
             self.request_index.remove(&old_req);
             // full_request_id is already in request_index from pre_register
             if let PipelinePhase::MetadataRunning { bg, .. } = old {
-                Some(bg)
+                Some((bg, child_reaped))
             } else {
                 unreachable!()
             }
@@ -400,11 +413,32 @@ impl PipelineState {
             Some(PipelinePhase::MetadataRunning { bg, .. }) => {
                 CancelledEntry::OwnedChild(bg)
             }
-            Some(PipelinePhase::FullWaiting { pid, .. }) => {
-                CancelledEntry::PidOnly(pid)
-            }
+            Some(PipelinePhase::FullWaiting {
+                pid, child_reaped, ..
+            }) => CancelledEntry::PidOnly(pid, child_reaped),
             None => CancelledEntry::NoChild,
         }
+    }
+
+    /// Drain all pipeline entries for shutdown. Returns all entries that
+    /// have running children so the caller can kill them outside the lock.
+    pub(super) fn drain_all(&mut self) -> Vec<CancelledEntry> {
+        let mut result = Vec::new();
+        for (_key, entry) in self.entries.drain() {
+            match entry {
+                PipelinePhase::PreRegistered { .. } => {}
+                PipelinePhase::MetadataRunning { bg, .. } => {
+                    result.push(CancelledEntry::OwnedChild(bg));
+                }
+                PipelinePhase::FullWaiting {
+                    pid, child_reaped, ..
+                } => {
+                    result.push(CancelledEntry::PidOnly(pid, child_reaped));
+                }
+            }
+        }
+        self.request_index.clear();
+        result
     }
 
     // --- Test accessors ---
@@ -1273,17 +1307,22 @@ pub(super) fn handle_pipelining_full(
     pipeline_state: &Arc<Mutex<PipelineState>>,
     self_path: &std::path::Path,
 ) -> (i32, String) {
-    let bg = lock_or_recover(pipeline_state).take_for_full(&key, request.request_id);
+    let taken = lock_or_recover(pipeline_state).take_for_full(&key, request.request_id);
 
-    match bg {
-        Some(mut bg) => {
+    match taken {
+        Some((mut bg, child_reaped)) => {
             append_pipeline_log(&bg.pipeline_root_dir, &format!("full start key={}", key));
             // Join the drain thread first (avoids deadlock: child blocks on stderr
             // write if the pipe buffer fills up before we drain it).
             let remaining = bg.stderr_drain.join().unwrap_or_default();
             let all_diagnostics = bg.diagnostics_before + &remaining;
 
-            match bg.child.wait() {
+            let wait_result = bg.child.wait();
+            // Mark the child as reaped immediately so the cancel handler
+            // won't send SIGKILL to a potentially-recycled PID.
+            child_reaped.store(true, Ordering::SeqCst);
+
+            match wait_result {
                 Ok(status) => {
                     let exit_code = status.code().unwrap_or(1);
                     if exit_code == 0 {
@@ -1304,7 +1343,15 @@ pub(super) fn handle_pipelining_full(
                                         if let Ok(meta) = entry.metadata() {
                                             if meta.is_file() {
                                                 let dest = dest_dir.join(entry.file_name());
-                                                let _ = std::fs::copy(entry.path(), &dest);
+                                                let same_file = entry
+                                                    .path()
+                                                    .canonicalize()
+                                                    .ok()
+                                                    .zip(dest.canonicalize().ok())
+                                                    .is_some_and(|(a, b)| a == b);
+                                                if !same_file {
+                                                    let _ = std::fs::copy(entry.path(), &dest);
+                                                }
                                             }
                                         }
                                     }
