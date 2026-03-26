@@ -3,6 +3,18 @@ load("//crate_universe:defs.bzl", "crate", "crates_vendor")
 
 crates_vendor(
     name = "crates_vendor",
+    annotations = {
+        "io-lifetimes": [
+            crate.annotation(
+                patches = ["@//tools/rust_analyzer/3rdparty/patches:io-lifetimes-determinism.patch"],
+            ),
+        ],
+        "rustix": [
+            crate.annotation(
+                patches = ["@//tools/rust_analyzer/3rdparty/patches:rustix-determinism.patch"],
+            ),
+        ],
+    },
     cargo_lockfile = "Cargo.Bazel.lock",
     mode = "remote",
     packages = {
