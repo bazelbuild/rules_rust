@@ -18,8 +18,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use super::pipeline::OutputMaterializationStats;
+use super::types::MaterializeError;
 use crate::ProcessWrapperError;
-
 
 pub(super) fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
     let path = std::path::Path::new(path);
@@ -144,25 +144,38 @@ pub(super) fn copy_output_to_sandbox(
     sandbox_dir: &str,
     original_out_dir: &str,
     dest_subdir: &str,
-) -> OutputMaterializationStats {
+) -> Result<OutputMaterializationStats, MaterializeError> {
     let mut stats = OutputMaterializationStats::default();
     let src_path = std::path::Path::new(src);
     let filename = match src_path.file_name() {
         Some(n) => n,
-        None => return stats,
+        None => {
+            return Err(MaterializeError {
+                path: src_path.to_path_buf(),
+                cause: std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "source path has no filename",
+                ),
+            });
+        }
     };
     let dest_dir = std::path::Path::new(sandbox_dir)
         .join(original_out_dir)
         .join(dest_subdir);
-    if let Ok(hardlinked) = materialize_output_file(src_path, &dest_dir.join(filename)) {
-        stats.files = 1;
-        if hardlinked {
-            stats.hardlinked_files = 1;
-        } else {
-            stats.copied_files = 1;
+    let dest = dest_dir.join(filename);
+    let hardlinked = materialize_output_file(src_path, &dest).map_err(|cause| {
+        MaterializeError {
+            path: dest,
+            cause,
         }
+    })?;
+    stats.files = 1;
+    if hardlinked {
+        stats.hardlinked_files = 1;
+    } else {
+        stats.copied_files = 1;
     }
-    stats
+    Ok(stats)
 }
 
 /// Copies all regular files from `pipeline_dir` into `<sandbox_dir>/<original_out_dir>/`.
@@ -173,28 +186,40 @@ pub(super) fn copy_all_outputs_to_sandbox(
     pipeline_dir: &PathBuf,
     sandbox_dir: &str,
     original_out_dir: &str,
-) -> OutputMaterializationStats {
+) -> Result<OutputMaterializationStats, MaterializeError> {
     let dest_dir = std::path::Path::new(sandbox_dir).join(original_out_dir);
     let mut stats = OutputMaterializationStats::default();
-    if let Ok(entries) = std::fs::read_dir(pipeline_dir) {
-        for entry in entries.flatten() {
-            if let Ok(meta) = entry.metadata() {
-                if meta.is_file() {
-                    if let Ok(hardlinked) =
-                        materialize_output_file(&entry.path(), &dest_dir.join(entry.file_name()))
-                    {
-                        stats.files += 1;
-                        if hardlinked {
-                            stats.hardlinked_files += 1;
-                        } else {
-                            stats.copied_files += 1;
-                        }
+    let entries = std::fs::read_dir(pipeline_dir).map_err(|cause| MaterializeError {
+        path: pipeline_dir.clone(),
+        cause,
+    })?;
+    for entry in entries {
+        let entry = entry.map_err(|cause| MaterializeError {
+            path: pipeline_dir.clone(),
+            cause,
+        })?;
+        let meta = entry.metadata().map_err(|cause| MaterializeError {
+            path: entry.path(),
+            cause,
+        })?;
+        if meta.is_file() {
+            let dest = dest_dir.join(entry.file_name());
+            let hardlinked =
+                materialize_output_file(&entry.path(), &dest).map_err(|cause| {
+                    MaterializeError {
+                        path: dest,
+                        cause,
                     }
-                }
+                })?;
+            stats.files += 1;
+            if hardlinked {
+                stats.hardlinked_files += 1;
+            } else {
+                stats.copied_files += 1;
             }
         }
     }
-    stats
+    Ok(stats)
 }
 
 /// Like `run_request` but sets `current_dir(sandbox_dir)` on the subprocess.
@@ -207,18 +232,7 @@ pub(super) fn run_sandboxed_request(
     sandbox_dir: &str,
 ) -> Result<(i32, String), ProcessWrapperError> {
     let _ = seed_sandbox_cache_root(std::path::Path::new(sandbox_dir));
-    let output = Command::new(self_path)
-        .args(&arguments)
-        .current_dir(sandbox_dir)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| ProcessWrapperError(format!("failed to spawn sandboxed subprocess: {e}")))?;
-
-    let exit_code = output.status.code().unwrap_or(1);
-    let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
-    combined.push_str(&String::from_utf8_lossy(&output.stderr));
-    Ok((exit_code, combined))
+    run_request_with_current_dir(self_path, arguments, Some(sandbox_dir), "sandboxed subprocess")
 }
 
 /// Resolves `path` relative to `sandbox_dir` if it is not absolute.
@@ -248,50 +262,28 @@ pub(super) fn resolve_sandbox_path(path: &str, sandbox_dir: &str) -> String {
 /// (Bazel's param file convention) — and makes all regular files in those
 /// directories writable.
 pub(super) fn prepare_outputs(args: &[String]) {
-    let mut out_dirs: Vec<String> = Vec::new();
-
-    let mut i = 0;
-    while i < args.len() {
-        let arg = &args[i];
-        if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            out_dirs.push(dir.to_string());
-        } else if let Some(flagfile_path) = arg.strip_prefix('@') {
-            // Bazel @flagfile: one arg per line.
-            scan_file_for_out_dir(flagfile_path, None, &mut out_dirs);
-        } else if arg == "--arg-file" {
-            // process_wrapper's --arg-file <path>: reads child (rustc) args from file.
-            if let Some(path) = args.get(i + 1) {
-                scan_file_for_out_dir(path, None, &mut out_dirs);
-                i += 1; // skip the path argument
-            }
-        }
-        i += 1;
-    }
-
-    for out_dir in out_dirs {
-        make_dir_files_writable(&out_dir);
-        // Also make writable any _pipeline/ subdir (worker-pipelining .rmeta files
-        // from previous runs may be read-only after Bazel marks outputs immutable).
-        let pipeline_dir = format!("{out_dir}/_pipeline");
-        make_dir_files_writable(&pipeline_dir);
-    }
+    prepare_outputs_impl(args, None);
 }
 
 /// Like `prepare_outputs` but resolves relative `--out-dir` paths against
 /// `sandbox_dir` before making files writable.
 pub(super) fn prepare_outputs_sandboxed(args: &[String], sandbox_dir: &str) {
+    prepare_outputs_impl(args, Some(sandbox_dir));
+}
+
+fn prepare_outputs_impl(args: &[String], sandbox_dir: Option<&str>) {
     let mut out_dirs: Vec<String> = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
         if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            out_dirs.push(resolve_sandbox_path(dir, sandbox_dir));
+            out_dirs.push(resolve_out_dir(dir, sandbox_dir));
         } else if let Some(flagfile_path) = arg.strip_prefix('@') {
-            scan_file_for_out_dir(flagfile_path, Some(sandbox_dir), &mut out_dirs);
+            scan_file_for_out_dir(flagfile_path, sandbox_dir, &mut out_dirs);
         } else if arg == "--arg-file" {
             if let Some(path) = args.get(i + 1) {
-                scan_file_for_out_dir(path, Some(sandbox_dir), &mut out_dirs);
+                scan_file_for_out_dir(path, sandbox_dir, &mut out_dirs);
                 i += 1;
             }
         }
@@ -302,6 +294,13 @@ pub(super) fn prepare_outputs_sandboxed(args: &[String], sandbox_dir: &str) {
         make_dir_files_writable(&out_dir);
         let pipeline_dir = format!("{out_dir}/_pipeline");
         make_dir_files_writable(&pipeline_dir);
+    }
+}
+
+fn resolve_out_dir(dir: &str, sandbox_dir: Option<&str>) -> String {
+    match sandbox_dir {
+        Some(base) => resolve_sandbox_path(dir, base),
+        None => dir.to_string(),
     }
 }
 
@@ -367,23 +366,32 @@ pub(super) fn run_request(
     self_path: &std::path::Path,
     arguments: Vec<String>,
 ) -> Result<(i32, String), ProcessWrapperError> {
-    let output = Command::new(self_path)
-        .args(&arguments)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| {
-            ProcessWrapperError(format!("failed to spawn process_wrapper subprocess: {e}"))
-        })?;
-
-    let exit_code = output.status.code().unwrap_or(1);
-
-    // Combine stdout and stderr for the WorkResponse output field.
-    // process_wrapper normally writes rustc diagnostics to its stderr,
-    // so this captures compilation errors/warnings for display in Bazel.
-    let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
-    combined.push_str(&String::from_utf8_lossy(&output.stderr));
-
-    Ok((exit_code, combined))
+    run_request_with_current_dir(self_path, arguments, None, "process_wrapper subprocess")
 }
 
+fn run_request_with_current_dir(
+    self_path: &std::path::Path,
+    arguments: Vec<String>,
+    current_dir: Option<&str>,
+    context: &str,
+) -> Result<(i32, String), ProcessWrapperError> {
+    let mut command = Command::new(self_path);
+    command
+        .args(&arguments)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(dir) = current_dir {
+        command.current_dir(dir);
+    }
+    let output = command
+        .output()
+        .map_err(|e| ProcessWrapperError(format!("failed to spawn {context}: {e}")))?;
+    Ok(collect_subprocess_output(output))
+}
+
+fn collect_subprocess_output(output: std::process::Output) -> (i32, String) {
+    let exit_code = output.status.code().unwrap_or(1);
+    let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
+    combined.push_str(&String::from_utf8_lossy(&output.stderr));
+    (exit_code, combined)
+}

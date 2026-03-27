@@ -532,19 +532,9 @@ fn main() -> Result<(), ProcessWrapperError> {
 
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
-    // Worker pipelining local-mode no-op optimization.
-    //
-    // When the process_wrapper runs outside a persistent worker (local or
-    // sandboxed-without-sandbox fallback) and the action is --pipelining-full,
-    // the metadata action has already run a complete rustc invocation that
-    // produced both the .rmeta (declared output) and the .rlib (side-effect).
-    // If the .rlib exists on disk, we can skip the redundant second rustc
-    // invocation entirely. This guarantees SVH consistency because the .rmeta
-    // and .rlib came from the same compilation.
-    //
-    // If the .rlib does NOT exist (e.g. sandboxed execution discarded the
-    // side-effect, or the metadata action was an action-cache hit), we fall
-    // through to running rustc normally.
+    // Outside worker mode, a pipelining-full action can reuse the metadata action's
+    // side-effect `.rlib` if it is still present; otherwise we fall back to a normal
+    // standalone rustc invocation. See `util/process_wrapper/DESIGN.md`.
     if opts.pipelining_mode == Some(SubprocessPipeliningMode::Full) {
         if let Some(ref rlib_path) = opts.pipelining_rlib_path {
             if std::path::Path::new(rlib_path).exists() {
@@ -608,6 +598,12 @@ fn main() -> Result<(), ProcessWrapperError> {
     exit(code)
 }
 
+/// Pipelining test coverage overview (see also pipelined_compilation_test.bzl):
+///
+///   no pipelining          → precondition check inside test_pipelined_matches_standalone
+///   hollow-rlib            → covered by analysis tests (hollow_rlib_env_test verifies
+///                            consistent flags; -Zno-codegen does not change SVH)
+///   worker pipelining      → test_pipelined_matches_standalone (artifact determinism)
 #[cfg(test)]
 mod test {
     use super::*;
@@ -833,14 +829,15 @@ mod test {
         dir
     }
 
-    /// Compiles lib.rs by invoking rustc directly, returns the .rlib bytes.
-    fn compile_with_rustc(
+    /// Compiles lib.rs by invoking rustc directly into `out_dir`.
+    /// Uses --error-format=json --json=artifacts to match the pipelined invocation
+    /// (these flags affect the crate hash / SVH embedded in metadata).
+    fn compile_standalone(
         rustc: &std::path::Path,
         src_dir: &std::path::Path,
-        out_name: &str,
-    ) -> Vec<u8> {
-        let out_dir = src_dir.join(out_name);
-        fs::create_dir_all(&out_dir).unwrap();
+        out_dir: &std::path::Path,
+    ) {
+        let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
         let status = std::process::Command::new(rustc)
             .args(&[
                 "--crate-type=lib",
@@ -848,36 +845,29 @@ mod test {
                 "--crate-name=testcrate",
                 "--emit=dep-info,metadata,link",
                 "-Cembed-bitcode=no",
+                "--error-format=json",
+                "--json=artifacts",
             ])
             .arg(&format!("--out-dir={}", out_dir.display()))
             .arg(src_dir.join("lib.rs"))
+            .env_clear()
+            .envs(&env_map)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::piped())
+            .current_dir(src_dir)
             .status()
             .expect("failed to spawn rustc");
-        assert!(status.success(), "rustc compilation failed");
-
-        let rlib = fs::read_dir(&out_dir)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .find(|e| e.path().extension().map_or(false, |ext| ext == "rlib"))
-            .unwrap_or_else(|| panic!("no .rlib found in {}", out_dir.display()));
-        fs::read(rlib.path()).unwrap()
+        assert!(status.success(), "standalone rustc compilation failed");
     }
 
-    #[test]
-    fn test_standalone_determinism() {
-        let rustc = resolve_rustc();
-        let dir = setup_test_crate("standalone_determinism");
-
-        let rlib_a = compile_with_rustc(&rustc, &dir, "out_a");
-        let rlib_b = compile_with_rustc(&rustc, &dir, "out_b");
-
-        let _ = fs::remove_dir_all(&dir);
-
-        assert_eq!(
-            rlib_a, rlib_b,
-            "rustc produced different .rlib bytes for identical inputs — \
-             byte-for-byte worker determinism testing is not viable with this rustc version"
-        );
+    /// Reads the first file with the given extension from a directory.
+    fn find_artifact(dir: &std::path::Path, ext: &str) -> Vec<u8> {
+        let entry = fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .find(|e| e.path().extension().map_or(false, |x| x == ext))
+            .unwrap_or_else(|| panic!("no .{ext} found in {}", dir.display()));
+        fs::read(entry.path()).unwrap()
     }
 
     #[test]
@@ -896,36 +886,25 @@ mod test {
         fs::create_dir_all(&out_dir_standalone).unwrap();
         fs::create_dir_all(&out_dir_pipelined).unwrap();
 
-        // 1. Compile via direct rustc invocation (baseline).
-        // Must use the same flags as the pipelined invocation, including
-        // --error-format=json and --json=artifacts, because --json=artifacts
-        // changes the crate hash (SVH) embedded in the rlib metadata.
-        {
-            // Use env_clear + envs + current_dir to match exactly what the
-            // pipeline handler does. Without current_dir, rustc embeds
-            // CWD-relative path info in metadata, causing size differences.
-            let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
-            let status = std::process::Command::new(&rustc)
-                .args(&[
-                    "--crate-type=lib",
-                    "--edition=2021",
-                    "--crate-name=testcrate",
-                    "--emit=dep-info,metadata,link",
-                    "-Cembed-bitcode=no",
-                    "--error-format=json",
-                    "--json=artifacts",
-                ])
-                .arg(&format!("--out-dir={}", out_dir_standalone.display()))
-                .arg(dir.join("lib.rs"))
-                .env_clear()
-                .envs(&env_map)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::piped())
-                .current_dir(&dir)
-                .status()
-                .expect("failed to spawn rustc");
-            assert!(status.success(), "standalone rustc compilation failed");
-        }
+        // 1a. Compile via direct rustc invocation (baseline).
+        compile_standalone(&rustc, &dir, &out_dir_standalone);
+
+        // 1b. Compile standalone a second time — determinism precondition.
+        // If rustc itself is non-deterministic with these flags, the pipelined
+        // comparison below is meaningless.
+        let out_dir_standalone2 = dir.join("out_standalone2");
+        fs::create_dir_all(&out_dir_standalone2).unwrap();
+        compile_standalone(&rustc, &dir, &out_dir_standalone2);
+        assert_eq!(
+            find_artifact(&out_dir_standalone, "rlib"),
+            find_artifact(&out_dir_standalone2, "rlib"),
+            "rustc is non-deterministic with these flags — pipelined comparison is not viable"
+        );
+        assert_eq!(
+            find_artifact(&out_dir_standalone, "rmeta"),
+            find_artifact(&out_dir_standalone2, "rmeta"),
+            "rustc .rmeta is non-deterministic — pipelined comparison is not viable"
+        );
 
         // 2. Compile via pipelined worker handlers.
         // Save CWD, chdir to temp dir (pipeline handlers use CWD for _pw_state/).
@@ -935,12 +914,12 @@ mod test {
         let state_roots = WorkerStateRoots::ensure().unwrap();
         let pipeline_state = Arc::new(Mutex::new(PipelineState::new()));
 
-        let pipeline_key = "test_determinism".to_string();
+        let pipeline_key = worker::types::PipelineKey("test_determinism".to_string());
 
         // Pre-register the metadata request.
         {
             let mut state = pipeline_state.lock().unwrap();
-            state.pre_register(1, pipeline_key.clone());
+            state.register_metadata(worker::types::RequestId(1), pipeline_key.clone());
         }
 
         let rustc_str = rustc.display().to_string();
@@ -969,7 +948,7 @@ mod test {
         ];
 
         let metadata_request = WorkRequestContext {
-            request_id: 1,
+            request_id: worker::types::RequestId(1),
             arguments: metadata_args.clone(),
             sandbox_dir: None,
             inputs: vec![],
@@ -991,7 +970,7 @@ mod test {
         // Pre-register the full request.
         {
             let mut state = pipeline_state.lock().unwrap();
-            state.pre_register(2, pipeline_key.clone());
+            state.register_full(worker::types::RequestId(2), pipeline_key.clone());
         }
 
         let full_args: Vec<String> = vec![
@@ -1015,7 +994,7 @@ mod test {
         let self_path = std::path::Path::new("/dev/null");
 
         let full_request = WorkRequestContext {
-            request_id: 2,
+            request_id: worker::types::RequestId(2),
             arguments: full_args.clone(),
             sandbox_dir: None,
             inputs: vec![],
@@ -1039,15 +1018,6 @@ mod test {
         );
 
         // 3. Read artifacts from both output dirs.
-        let find_artifact = |dir: &std::path::Path, ext: &str| -> Vec<u8> {
-            let entry = fs::read_dir(dir)
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .find(|e| e.path().extension().map_or(false, |x| x == ext))
-                .unwrap_or_else(|| panic!("no .{ext} found in {}", dir.display()));
-            fs::read(entry.path()).unwrap()
-        };
-
         let standalone_rlib = find_artifact(&out_dir_standalone, "rlib");
         let pipelined_rlib = find_artifact(&out_dir_pipelined, "rlib");
         let standalone_rmeta = find_artifact(&out_dir_standalone, "rmeta");

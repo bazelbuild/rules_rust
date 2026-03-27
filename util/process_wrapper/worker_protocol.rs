@@ -16,17 +16,19 @@
 
 use tinyjson::JsonValue;
 
+use super::types::{RequestId, SandboxDir};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct WorkRequestInput {
     pub(crate) path: String,
     pub(crate) digest: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub(crate) struct WorkRequestContext {
-    pub(crate) request_id: i64,
+    pub(crate) request_id: RequestId,
     pub(crate) arguments: Vec<String>,
-    pub(crate) sandbox_dir: Option<String>,
+    pub(crate) sandbox_dir: Option<SandboxDir>,
     pub(crate) inputs: Vec<WorkRequestInput>,
     pub(crate) cancel: bool,
 }
@@ -43,7 +45,7 @@ impl WorkRequestContext {
     }
 }
 
-pub(super) fn extract_request_id_from_raw_line(line: &str) -> Option<i64> {
+pub(super) fn extract_request_id_from_raw_line(line: &str) -> Option<RequestId> {
     let key_pos = line.find("\"requestId\"")?;
     let after_key = &line[key_pos + "\"requestId\"".len()..];
     let colon = after_key.find(':')?;
@@ -55,18 +57,18 @@ pub(super) fn extract_request_id_from_raw_line(line: &str) -> Option<i64> {
     if digits.is_empty() {
         None
     } else {
-        digits.parse().ok()
+        digits.parse().ok().map(RequestId)
     }
 }
 
 /// Extracts the `requestId` field from a WorkRequest (defaults to 0).
-pub(super) fn extract_request_id(request: &JsonValue) -> i64 {
+pub(super) fn extract_request_id(request: &JsonValue) -> RequestId {
     if let JsonValue::Object(map) = request {
         if let Some(JsonValue::Number(id)) = map.get("requestId") {
-            return *id as i64;
+            return RequestId(*id as i64);
         }
     }
-    0
+    RequestId(0)
 }
 
 /// Extracts the `arguments` array from a WorkRequest.
@@ -99,14 +101,14 @@ pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
 /// silently falling back — which would cause subtle pipelining failures when
 /// rustc's CWD is set to an empty sandbox — we surface a clear error directing
 /// the user to fix their Bazel configuration.
-pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<String>, String> {
+pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<SandboxDir>, String> {
     if let JsonValue::Object(map) = request {
         if let Some(JsonValue::String(dir)) = map.get("sandboxDir") {
             if dir.is_empty() {
                 return Ok(None);
             }
             if sandbox_dir_is_usable(dir) {
-                return Ok(Some(dir.clone()));
+                return Ok(Some(SandboxDir(dir.clone())));
             }
             return Err(format!(
                 "Bazel sent sandboxDir=\"{}\" but the directory {}. \
@@ -182,26 +184,26 @@ pub(super) fn extract_cancel(request: &JsonValue) -> bool {
 }
 
 /// Builds a JSON WorkResponse string.
-pub(super) fn build_response(exit_code: i32, output: &str, request_id: i64) -> String {
+pub(super) fn build_response(exit_code: i32, output: &str, request_id: RequestId) -> String {
     let output = sanitize_response_output(output);
     format!(
         "{{\"exitCode\":{},\"output\":{},\"requestId\":{}}}",
         exit_code,
         json_string_literal(&output),
-        request_id
+        request_id.0
     )
 }
 
 /// Builds a JSON WorkResponse with `wasCancelled: true`.
-pub(super) fn build_cancel_response(request_id: i64) -> String {
+pub(super) fn build_cancel_response(request_id: RequestId) -> String {
     format!(
         "{{\"exitCode\":0,\"output\":{},\"requestId\":{},\"wasCancelled\":true}}",
         json_string_literal(""),
-        request_id
+        request_id.0
     )
 }
 
-pub(super) fn build_shutdown_response(request_id: i64) -> String {
+pub(super) fn build_shutdown_response(request_id: RequestId) -> String {
     build_response(1, "worker shutting down", request_id)
 }
 

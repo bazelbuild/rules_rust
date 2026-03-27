@@ -14,25 +14,7 @@
 
 //! Bazel JSON persistent worker protocol implementation.
 //!
-//! When Bazel invokes process_wrapper with `--persistent_worker`, this module
-//! takes over. It reads newline-delimited JSON WorkRequest messages from stdin,
-//! executes each request by spawning process_wrapper itself with the request's
-//! arguments, and writes a JSON WorkResponse to stdout.
-//!
-//! The worker supports both singleplex (requestId == 0) and multiplex
-//! (requestId > 0) modes. Multiplex requests are dispatched to separate threads,
-//! allowing concurrent processing. This enables worker-managed pipelined
-//! compilation where a metadata action and a full compile action for the same
-//! crate can share state through the `PipelineState` map.
-//!
-//! The worker supports both sandboxed (multiplex sandboxing) and unsandboxed
-//! modes. In unsandboxed mode it runs directly in Bazel's execroot; in
-//! sandboxed mode each request receives a per-request sandbox directory.
-//! Incremental compilation caches see stable source file paths between
-//! requests, avoiding the ICE that occurs when sandbox paths change between
-//! builds.
-//!
-//! Protocol reference: https://bazel.build/remote/persistent
+//! See `DESIGN.md` in this directory for the worker/pipelining protocol notes.
 
 #[path = "worker_pipeline.rs"]
 pub(crate) mod pipeline;
@@ -40,6 +22,8 @@ pub(crate) mod pipeline;
 pub(crate) mod protocol;
 #[path = "worker_sandbox.rs"]
 pub(crate) mod sandbox;
+#[path = "worker_types.rs"]
+pub(crate) mod types;
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -49,16 +33,16 @@ use std::time::{Duration, Instant};
 
 use crate::ProcessWrapperError;
 
-// Imports used by worker_main
 use pipeline::{
-    detect_pipelining_mode, handle_pipelining_full, handle_pipelining_metadata,
-    kill_pipelined_request, relocate_pw_flags, PipelineState, PipeliningMode, WorkerStateRoots,
+    handle_pipelining_full, handle_pipelining_metadata,
+    kill_pipelined_request, relocate_pw_flags, PipelineState, RequestKind, WorkerStateRoots,
 };
 use protocol::{
     build_cancel_response, build_response, build_shutdown_response, extract_request_id,
     extract_request_id_from_raw_line, WorkRequestContext,
 };
 use sandbox::{prepare_outputs, prepare_outputs_sandboxed, run_request, run_sandboxed_request};
+use types::RequestId;
 
 // ---------------------------------------------------------------------------
 // Worker lifecycle and signal handling
@@ -222,11 +206,6 @@ fn emit_arg_from_args(args: &[String]) -> Option<&str> {
     args.iter().find_map(|arg| arg.strip_prefix("--emit="))
 }
 
-fn pipeline_key_from_args(args: &[String]) -> Option<&str> {
-    args.iter()
-        .find_map(|arg| arg.strip_prefix("--pipelining-key="))
-}
-
 fn write_worker_response(
     stdout: &Arc<Mutex<()>>,
     response: &str,
@@ -268,26 +247,335 @@ fn write_all_stdout_fd(bytes: &[u8]) -> io::Result<()> {
     out.flush()
 }
 
-// ---------------------------------------------------------------------------
-// Main worker loop
-// ---------------------------------------------------------------------------
+type SharedStdout = Arc<Mutex<()>>;
+type SharedPipelineState = Arc<Mutex<PipelineState>>;
 
-/// Entry point for persistent worker mode.
-///
-/// Loops reading JSON WorkRequest messages from stdin until EOF.
-/// - Singleplex requests (requestId == 0): processed inline on the main thread
-///   (backward-compatible with Bazel's singleplex worker protocol).
-/// - Multiplex requests (requestId > 0): dispatched to a new thread, allowing
-///   concurrent processing and in-process state sharing for pipelined builds.
-///
-/// Bazel starts the worker with:
-///   `process_wrapper [startup_args] --persistent_worker`
-/// where `startup_args` are the fixed parts of the action command line
-/// (e.g. `--subst pwd=${pwd} -- /path/to/rustc`).
-///
-/// Each WorkRequest.arguments contains the per-request part (the `@flagfile`).
-/// The worker must combine startup_args + per-request args when spawning the
-/// subprocess, so process_wrapper receives the full argument list it expects.
+fn startup_args() -> Vec<String> {
+    std::env::args()
+        .skip(1)
+        .filter(|arg| arg != "--persistent_worker")
+        .collect()
+}
+
+fn build_full_args(startup_args: &[String], request_args: &[String]) -> Vec<String> {
+    let mut full_args = startup_args.to_vec();
+    full_args.extend_from_slice(request_args);
+    relocate_pw_flags(&mut full_args);
+    full_args
+}
+
+fn request_base_dir(request: &WorkRequestContext) -> Result<std::path::PathBuf, ProcessWrapperError> {
+    if let Some(sandbox_dir) = request.sandbox_dir.as_ref() {
+        if sandbox_dir.as_path().is_absolute() {
+            return Ok(sandbox_dir.as_path().to_path_buf());
+        }
+        return std::env::current_dir()
+            .map(|cwd| cwd.join(sandbox_dir.as_path()))
+            .map_err(|e| ProcessWrapperError(format!("failed to resolve worker cwd: {e}")));
+    }
+    std::env::current_dir()
+        .map_err(|e| ProcessWrapperError(format!("failed to resolve worker cwd: {e}")))
+}
+
+fn classify_request(
+    startup_args: &[String],
+    request: &WorkRequestContext,
+) -> Result<RequestKind, ProcessWrapperError> {
+    let full_args = build_full_args(startup_args, &request.arguments);
+    let base_dir = request_base_dir(request)?;
+    Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
+}
+
+fn pipeline_key_label(kind: &RequestKind) -> &str {
+    kind.key().map(|key| key.as_str()).unwrap_or("-")
+}
+
+fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestContext> {
+    let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
+        Ok(request) => request,
+        Err(e) => {
+            if let Some(request_id) = extract_request_id_from_raw_line(line) {
+                append_worker_lifecycle_log(&format!(
+                    "pid={} thread={} request_parse_error request_id={} bytes={} error={}",
+                    current_pid(),
+                    current_thread_label(),
+                    request_id,
+                    line.len(),
+                    e
+                ));
+                let response =
+                    build_response(1, &format!("worker protocol parse error: {e}"), request_id);
+                let _ = write_worker_response(stdout, &response);
+            }
+            return None;
+        }
+    };
+
+    match WorkRequestContext::from_json(&request) {
+        Ok(ctx) => Some(ctx),
+        Err(e) => {
+            let request_id = extract_request_id(&request);
+            let response = build_response(1, &e, request_id);
+            let _ = write_worker_response(stdout, &response);
+            None
+        }
+    }
+}
+
+fn log_request_received(request: &WorkRequestContext, kind: &RequestKind) {
+    append_worker_lifecycle_log(&format!(
+        "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
+        current_pid(),
+        current_thread_label(),
+        request.request_id,
+        request.cancel,
+        crate_name_from_args(&request.arguments).unwrap_or("-"),
+        emit_arg_from_args(&request.arguments).unwrap_or("-"),
+        pipeline_key_label(kind),
+    ));
+}
+
+fn log_request_thread_start(request: &WorkRequestContext, kind: &RequestKind) {
+    append_worker_lifecycle_log(&format!(
+        "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
+        current_pid(),
+        current_thread_label(),
+        request.request_id,
+        crate_name_from_args(&request.arguments).unwrap_or("-"),
+        emit_arg_from_args(&request.arguments).unwrap_or("-"),
+        pipeline_key_label(kind),
+    ));
+}
+
+fn prepare_request_outputs(full_args: &[String], sandbox_dir: Option<&str>) {
+    match sandbox_dir {
+        Some(dir) => prepare_outputs_sandboxed(full_args, dir),
+        None => prepare_outputs(full_args),
+    }
+}
+
+fn run_non_pipelined_request(
+    self_path: &std::path::Path,
+    full_args: Vec<String>,
+    sandbox_dir: Option<&str>,
+) -> (i32, String) {
+    match sandbox_dir {
+        Some(dir) => run_sandboxed_request(self_path, full_args, dir)
+            .unwrap_or_else(|e| (1, format!("sandboxed worker error: {e}"))),
+        None => run_request(self_path, full_args)
+            .unwrap_or_else(|e| (1, format!("worker thread error: {e}"))),
+    }
+}
+
+fn execute_singleplex_request(
+    self_path: &std::path::Path,
+    startup_args: &[String],
+    request: &WorkRequestContext,
+    stdout: &SharedStdout,
+) -> Result<(), ProcessWrapperError> {
+    let full_args = build_full_args(startup_args, &request.arguments);
+    prepare_outputs(&full_args);
+    let (exit_code, output) = run_request(self_path, full_args)?;
+    let response = build_response(exit_code, &output, request.request_id);
+    write_worker_response(stdout, &response)?;
+    append_worker_lifecycle_log(&format!(
+        "pid={} thread={} request_complete request_id={} exit_code={} output_bytes={} mode=singleplex",
+        current_pid(),
+        current_thread_label(),
+        request.request_id,
+        exit_code,
+        output.len(),
+    ));
+    Ok(())
+}
+
+fn try_handle_cancel_request(
+    request: &WorkRequestContext,
+    stdout: &SharedStdout,
+    pipeline_state: &SharedPipelineState,
+) -> bool {
+    let flag = lock_or_recover(pipeline_state).get_claim_flag(request.request_id);
+    let Some(flag) = flag else {
+        return true;
+    };
+    if !flag.swap(true, Ordering::SeqCst) {
+        kill_pipelined_request(pipeline_state, request.request_id);
+        let response = build_cancel_response(request.request_id);
+        let _ = write_worker_response(stdout, &response);
+    }
+    true
+}
+
+fn register_request(
+    pipeline_state: &SharedPipelineState,
+    request_id: RequestId,
+    kind: &RequestKind,
+) -> Arc<AtomicBool> {
+    let mut state = lock_or_recover(pipeline_state);
+    match kind {
+        RequestKind::Metadata { key } => state.register_metadata(request_id, key.clone()),
+        RequestKind::Full { key } => state.register_full(request_id, key.clone()),
+        RequestKind::NonPipelined => state.register_non_pipelined(request_id),
+    }
+}
+
+fn discard_pending_request(
+    pipeline_state: &SharedPipelineState,
+    request_kind: &RequestKind,
+    request_id: RequestId,
+) {
+    let mut state = lock_or_recover(pipeline_state);
+    match request_kind {
+        RequestKind::Metadata { key } => state.cleanup(key, request_id),
+        RequestKind::Full { .. } | RequestKind::NonPipelined => state.discard_request(request_id),
+    }
+}
+
+fn cleanup_after_panic(
+    pipeline_state: &SharedPipelineState,
+    request_kind: &RequestKind,
+    request_id: RequestId,
+) {
+    let orphan = {
+        let mut state = lock_or_recover(pipeline_state);
+        match request_kind {
+            RequestKind::Metadata { key } | RequestKind::Full { key } => state.cleanup_key_fully(key),
+            RequestKind::NonPipelined => {
+                state.discard_request(request_id);
+                None
+            }
+        }
+    };
+    if let Some(mut bg) = orphan {
+        let _ = bg.child.kill();
+        let _ = bg.child.wait();
+        let _ = bg.stderr_drain.join();
+    }
+}
+
+fn execute_request(
+    self_path: &std::path::Path,
+    startup_args: &[String],
+    request: &WorkRequestContext,
+    request_kind: &RequestKind,
+    pipeline_state: &SharedPipelineState,
+    state_roots: &Arc<WorkerStateRoots>,
+    claim_flag: &Arc<AtomicBool>,
+) -> (i32, String) {
+    let full_args = build_full_args(startup_args, &request.arguments);
+    prepare_request_outputs(
+        &full_args,
+        request.sandbox_dir.as_ref().map(|dir| dir.as_str()),
+    );
+
+    if claim_flag.load(Ordering::SeqCst) {
+        discard_pending_request(pipeline_state, request_kind, request.request_id);
+        return (0, String::new());
+    }
+
+    match request_kind {
+        RequestKind::Metadata { key } => {
+            let result = handle_pipelining_metadata(
+                request,
+                full_args,
+                key.clone(),
+                state_roots,
+                pipeline_state,
+            );
+            if result.0 != 0 {
+                lock_or_recover(pipeline_state).cleanup(key, request.request_id);
+            }
+            result
+        }
+        RequestKind::Full { key } => handle_pipelining_full(
+            request,
+            full_args,
+            key.clone(),
+            pipeline_state,
+            self_path,
+        ),
+        RequestKind::NonPipelined => run_non_pipelined_request(
+            self_path,
+            full_args,
+            request.sandbox_dir.as_ref().map(|dir| dir.as_str()),
+        ),
+    }
+}
+
+fn run_request_thread(
+    self_path: std::path::PathBuf,
+    startup_args: Vec<String>,
+    request: WorkRequestContext,
+    request_kind: RequestKind,
+    stdout: SharedStdout,
+    pipeline_state: SharedPipelineState,
+    state_roots: Arc<WorkerStateRoots>,
+    claim_flag: Arc<AtomicBool>,
+) {
+    log_request_thread_start(&request, &request_kind);
+
+    if worker_is_shutting_down() {
+        if !claim_flag.swap(true, Ordering::SeqCst) {
+            let response = build_shutdown_response(request.request_id);
+            let _ = write_worker_response(&stdout, &response);
+        }
+        discard_pending_request(&pipeline_state, &request_kind, request.request_id);
+        append_worker_lifecycle_log(&format!(
+            "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
+            current_pid(),
+            current_thread_label(),
+            request.request_id,
+            claim_flag.load(Ordering::SeqCst),
+        ));
+        return;
+    }
+
+    let (exit_code, output) =
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            execute_request(
+                &self_path,
+                &startup_args,
+                &request,
+                &request_kind,
+                &pipeline_state,
+                &state_roots,
+                &claim_flag,
+            )
+        })) {
+            Ok(result) => result,
+            Err(_) => {
+                cleanup_after_panic(&pipeline_state, &request_kind, request.request_id);
+                (1, "internal error: worker thread panicked".to_string())
+            }
+        };
+
+    lock_or_recover(&pipeline_state).remove_claim(request.request_id);
+    if !claim_flag.swap(true, Ordering::SeqCst) {
+        let response = build_response(exit_code, &output, request.request_id);
+        let _ = write_worker_response(&stdout, &response);
+    }
+    append_worker_lifecycle_log(&format!(
+        "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
+        current_pid(),
+        current_thread_label(),
+        request.request_id,
+        exit_code,
+        output.len(),
+        claim_flag.load(Ordering::SeqCst),
+    ));
+}
+
+fn join_in_flight_threads(in_flight: &Arc<Mutex<Vec<thread::JoinHandle<()>>>>) {
+    let handles: Vec<_> = lock_or_recover(in_flight).drain(..).collect();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    for handle in handles {
+        if deadline.saturating_duration_since(Instant::now()).is_zero() {
+            break;
+        }
+        let _ = handle.join();
+    }
+}
+
 pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let request_counter = Arc::new(AtomicUsize::new(0));
     install_worker_panic_hook();
@@ -298,27 +586,12 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let self_path = std::env::current_exe()
         .map_err(|e| ProcessWrapperError(format!("failed to get worker executable path: {e}")))?;
 
-    // Collect the startup args that Bazel passed when spawning this worker
-    // process. These are the fixed action args (e.g. `--subst pwd=${pwd} --
-    // /path/to/rustc`). We skip argv[0] (the binary path) and strip
-    // `--persistent_worker` since that flag is what triggered worker mode.
-    let startup_args: Vec<String> = std::env::args()
-        .skip(1)
-        .filter(|a| a != "--persistent_worker")
-        .collect();
+    let startup_args = startup_args();
 
     let stdin = io::stdin();
-    // Serialize writes to fd 1 so multiplexed responses remain newline-delimited
-    // JSON records with no byte interleaving.
-    let stdout = Arc::new(Mutex::new(()));
-
-    // Shared state for worker-managed pipelined compilation.
-    // The metadata action stores a running rustc Child here; the full compile
-    // action retrieves it and waits for completion.
-    let pipeline_state: Arc<Mutex<PipelineState>> = Arc::new(Mutex::new(PipelineState::new()));
+    let stdout: SharedStdout = Arc::new(Mutex::new(()));
+    let pipeline_state: SharedPipelineState = Arc::new(Mutex::new(PipelineState::new()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
-
-    // Track spawned worker threads so we can join them on shutdown.
     let in_flight: Arc<Mutex<Vec<thread::JoinHandle<()>>>> = Arc::new(Mutex::new(Vec::new()));
 
     for line in stdin.lock().lines() {
@@ -351,46 +624,19 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         }
         request_counter.fetch_add(1, Ordering::SeqCst);
 
-        let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
-            Ok(request) => request,
-            Err(e) => {
-                // Try to extract requestId so we can send an error response
-                // rather than leaving Bazel hanging on the missing response.
-                if let Some(request_id) = extract_request_id_from_raw_line(&line) {
-                    append_worker_lifecycle_log(&format!(
-                        "pid={} thread={} request_parse_error request_id={} bytes={} error={}",
-                        current_pid(),
-                        current_thread_label(),
-                        request_id,
-                        line.len(),
-                        e
-                    ));
-                    let response =
-                        build_response(1, &format!("worker protocol parse error: {e}"), request_id);
-                    let _ = write_worker_response(&stdout, &response);
-                }
-                continue;
-            }
+        let request = match parse_request_line(&line, &stdout) {
+            Some(request) => request,
+            None => continue,
         };
-        let request = match WorkRequestContext::from_json(&request) {
-            Ok(ctx) => ctx,
+        let request_kind = match classify_request(&startup_args, &request) {
+            Ok(kind) => kind,
             Err(e) => {
-                let request_id = extract_request_id(&request);
-                let response = build_response(1, &e, request_id);
+                let response = build_response(1, &e.to_string(), request.request_id);
                 let _ = write_worker_response(&stdout, &response);
                 continue;
             }
         };
-        append_worker_lifecycle_log(&format!(
-            "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
-            current_pid(),
-            current_thread_label(),
-            request.request_id,
-            request.cancel,
-            crate_name_from_args(&request.arguments).unwrap_or("-"),
-            emit_arg_from_args(&request.arguments).unwrap_or("-"),
-            pipeline_key_from_args(&request.arguments).unwrap_or("-"),
-        ));
+        log_request_received(&request, &request_kind);
 
         if worker_is_shutting_down() {
             let response = build_shutdown_response(request.request_id);
@@ -398,223 +644,47 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             continue;
         }
 
-        if request.request_id == 0 {
-            // Singleplex: process inline on the main thread (backward-compatible).
-            let mut full_args = startup_args.clone();
-            full_args.extend(request.arguments.clone());
-            relocate_pw_flags(&mut full_args);
+        if request.request_id.is_singleplex() {
+            execute_singleplex_request(&self_path, &startup_args, &request, &stdout)?;
+            continue;
+        }
 
-            // Workers run in execroot without sandboxing. Bazel marks action outputs
-            // read-only after each successful action. Make them writable first.
-            prepare_outputs(&full_args);
+        if request.cancel {
+            let _ = try_handle_cancel_request(&request, &stdout, &pipeline_state);
+            continue;
+        }
 
-            let (exit_code, output) = run_request(&self_path, full_args)?;
-
-            let response = build_response(exit_code, &output, request.request_id);
-            write_worker_response(&stdout, &response)?;
-            append_worker_lifecycle_log(&format!(
-                "pid={} thread={} request_complete request_id={} exit_code={} output_bytes={} mode=singleplex",
-                current_pid(),
-                current_thread_label(),
-                request.request_id,
-                exit_code,
-                output.len(),
-            ));
-        } else {
-            let stdout = Arc::clone(&stdout);
-
-            // Cancel request: Bazel no longer needs the result for this requestId.
-            // Respond with wasCancelled=true immediately if we haven't already responded.
-            //
-            // For pipelined requests, `kill_pipelined_request` kills the background
-            // rustc process to avoid wasting CPU. For non-pipelined requests (normal
-            // subprocess via `run_request`/`run_sandboxed_request`), the subprocess
-            // continues running — `Command::output()` provides no kill handle. The
-            // claim_flag prevents a duplicate response; the only cost is wasted CPU
-            // until the subprocess exits naturally. This is consistent with Bazel's
-            // best-effort cancellation semantics.
-            if request.cancel {
-                // Look up the flag for this in-flight request.
-                let flag = lock_or_recover(&pipeline_state)
-                    .get_claim_flag(request.request_id);
-                if let Some(flag) = flag {
-                    // Try to claim the response slot atomically.
-                    if !flag.swap(true, Ordering::SeqCst) {
-                        // We claimed it — kill any associated background rustc
-                        // to avoid wasting CPU when the remote leg wins.
-                        kill_pipelined_request(&pipeline_state, request.request_id);
-                        let response = build_cancel_response(request.request_id);
-                        let _ = write_worker_response(&stdout, &response);
-                    }
-                    // If swap returned true, the worker thread already sent the normal
-                    // response before we could cancel — nothing more to do.
-                }
-                // If the flag is not found, the request already completed and cleaned up.
-                continue;
-            }
-
-            // Register claim flag and pre-register pipelined requests in PipelineState
-            // before they become cancel-acknowledgeable. For pipelined requests, also
-            // creates the pipeline entry so the cancel handler can find them immediately.
-            let claim_flag = if let Some(key) = pipeline_key_from_args(&request.arguments) {
-                lock_or_recover(&pipeline_state).pre_register(
-                    request.request_id,
-                    key.to_string(),
-                )
-            } else {
-                lock_or_recover(&pipeline_state).register_claim(request.request_id)
-            };
-
-            // Multiplex: dispatch to a new thread. Bazel bounds concurrency via
-            // --worker_max_multiplex_instances (default: 8), so no in-process
-            // thread pool is needed.
+        let claim_flag = register_request(&pipeline_state, request.request_id, &request_kind);
+        let handle = std::thread::spawn({
             let self_path = self_path.clone();
             let startup_args = startup_args.clone();
+            let request = request.clone();
+            let request_kind = request_kind.clone();
+            let stdout = Arc::clone(&stdout);
             let pipeline_state = Arc::clone(&pipeline_state);
             let state_roots = Arc::clone(&state_roots);
-            let request = request.clone();
-
-            let handle = std::thread::spawn(move || {
-                append_worker_lifecycle_log(&format!(
-                    "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
-                    current_pid(),
-                    current_thread_label(),
-                    request.request_id,
-                    crate_name_from_args(&request.arguments).unwrap_or("-"),
-                    emit_arg_from_args(&request.arguments).unwrap_or("-"),
-                    pipeline_key_from_args(&request.arguments).unwrap_or("-"),
-                ));
-                if worker_is_shutting_down() {
-                    if !claim_flag.swap(true, Ordering::SeqCst) {
-                        let response = build_shutdown_response(request.request_id);
-                        let _ = write_worker_response(&stdout, &response);
-                    }
-                    lock_or_recover(&pipeline_state).remove_claim(request.request_id);
-                    append_worker_lifecycle_log(&format!(
-                        "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
-                        current_pid(),
-                        current_thread_label(),
-                        request.request_id,
-                        claim_flag.load(Ordering::SeqCst),
-                    ));
-                    return;
-                }
-                let (exit_code, output) =
-                    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let mut full_args = startup_args;
-                        full_args.extend(request.arguments.clone());
-                        relocate_pw_flags(&mut full_args);
-
-                        let sandbox_opt = request.sandbox_dir.clone();
-
-                        // Make output files writable (Bazel marks previous outputs read-only).
-                        match sandbox_opt {
-                            Some(ref dir) => {
-                                prepare_outputs_sandboxed(&full_args, dir);
-                            }
-                            None => prepare_outputs(&full_args),
-                        }
-
-                        // Check for pipelining mode flags (--pipelining-metadata,
-                        // --pipelining-full, --pipelining-key=<key>). When present these
-                        // are handled specially; otherwise fall through to a normal subprocess.
-                        let pipelining = detect_pipelining_mode(&full_args);
-
-                        // If cancel already claimed this request, bail out without starting rustc.
-                        if claim_flag.load(Ordering::SeqCst) {
-                            if let PipeliningMode::Metadata { ref key }
-                                | PipeliningMode::Full { ref key } = pipelining
-                            {
-                                lock_or_recover(&pipeline_state).cleanup(key, request.request_id);
-                            }
-                            return (0, String::new());
-                        }
-
-                        match pipelining {
-                            PipeliningMode::Metadata { key } => {
-                                let result = handle_pipelining_metadata(
-                                    &request,
-                                    full_args,
-                                    key.clone(),
-                                    &state_roots,
-                                    &pipeline_state,
-                                );
-                                // Clean up the PreRegistered entry if metadata failed early
-                                // (before it transitioned to MetadataRunning).
-                                if result.0 != 0 {
-                                    lock_or_recover(&pipeline_state)
-                                        .cleanup(&key, request.request_id);
-                                }
-                                result
-                            }
-                            PipeliningMode::Full { key } => handle_pipelining_full(
-                                &request,
-                                full_args,
-                                key,
-                                &pipeline_state,
-                                &self_path,
-                            ),
-                            PipeliningMode::None => match sandbox_opt {
-                                Some(ref dir) => run_sandboxed_request(&self_path, full_args, dir)
-                                    .unwrap_or_else(|e| {
-                                        (1, format!("sandboxed worker error: {e}"))
-                                    }),
-                                None => run_request(&self_path, full_args)
-                                    .unwrap_or_else(|e| (1, format!("worker thread error: {e}"))),
-                            },
-                        }
-                    })) {
-                        Ok(result) => result,
-                        Err(_) => (1, "internal error: worker thread panicked".to_string()),
-                    };
-
-                // Remove our claim flag regardless of who sends the response.
-                // This keeps the map from growing indefinitely and allows request_id
-                // to be reused in the next build.
-                lock_or_recover(&pipeline_state).remove_claim(request.request_id);
-
-                // Only send a response if a cancel acknowledgment hasn't already been sent.
-                if !claim_flag.swap(true, Ordering::SeqCst) {
-                    let response = build_response(exit_code, &output, request.request_id);
-                    let _ = write_worker_response(&stdout, &response);
-                }
-                append_worker_lifecycle_log(&format!(
-                    "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
-                    current_pid(),
-                    current_thread_label(),
-                    request.request_id,
-                    exit_code,
-                    output.len(),
-                    claim_flag.load(Ordering::SeqCst),
-                ));
-            });
-            lock_or_recover(&in_flight).push(handle);
-        }
+            let claim_flag = Arc::clone(&claim_flag);
+            move || {
+                run_request_thread(
+                    self_path,
+                    startup_args,
+                    request,
+                    request_kind,
+                    stdout,
+                    pipeline_state,
+                    state_roots,
+                    claim_flag,
+                )
+            }
+        });
+        lock_or_recover(&in_flight).push(handle);
     }
 
     begin_worker_shutdown("stdin_eof");
-
-    // Kill all in-flight pipeline children, then join worker threads.
-    {
-        let cancelled_entries = lock_or_recover(&pipeline_state).drain_all();
-        for entry in cancelled_entries {
-            entry.kill();
-        }
+    for entry in lock_or_recover(&pipeline_state).drain_all() {
+        entry.kill();
     }
-    {
-        let handles: Vec<_> = lock_or_recover(&in_flight).drain(..).collect();
-        let deadline = Instant::now() + Duration::from_secs(10);
-        for handle in handles {
-            let remaining = deadline.saturating_duration_since(Instant::now());
-            if remaining.is_zero() {
-                break;
-            }
-            // std::thread::JoinHandle has no timed join, so just join.
-            // Pipeline children are already killed above, so threads should
-            // unblock quickly. The 10s deadline is a safety net.
-            let _ = handle.join();
-        }
-    }
+    join_in_flight_threads(&in_flight);
 
     append_worker_lifecycle_log(&format!(
         "pid={} event=stdin_eof thread={} requests_seen={}",
@@ -629,16 +699,18 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
 #[cfg(test)]
 mod test {
     use super::pipeline::{
-        apply_substs, build_rustc_env, expand_rustc_args, extract_rmeta_path,
-        find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs,
-        rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags,
-        BackgroundRustc, CancelledEntry, PipelineState,
+        apply_substs, build_rustc_env, detect_pipelining_mode, expand_rustc_args,
+        extract_rmeta_path, find_out_dir_in_expanded, parse_pw_args,
+        prepare_expanded_rustc_outputs, rewrite_out_dir_in_expanded, scan_pipelining_flags,
+        strip_pipelining_flags, BackgroundRustc, CancelledEntry, FullRequestAction,
+        PipelineState, RequestKind, StoreBackgroundResult,
     };
     use super::protocol::{
         extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
         WorkRequestInput,
     };
     use super::sandbox::resolve_sandbox_path;
+    use super::types::{OutputDir, PipelineKey, RequestId};
     #[cfg(unix)]
     use super::sandbox::{
         copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
@@ -654,13 +726,13 @@ mod test {
     #[test]
     fn test_extract_request_id_present() {
         let req = parse_json(r#"{"requestId": 42, "arguments": []}"#);
-        assert_eq!(extract_request_id(&req), 42);
+        assert_eq!(extract_request_id(&req), RequestId(42));
     }
 
     #[test]
     fn test_extract_request_id_missing() {
         let req = parse_json(r#"{"arguments": []}"#);
-        assert_eq!(extract_request_id(&req), 0);
+        assert_eq!(extract_request_id(&req), RequestId(0));
     }
 
     #[test]
@@ -681,7 +753,7 @@ mod test {
 
     #[test]
     fn test_build_response_sanitizes_control_characters() {
-        let response = build_response(1, "hello\u{0}world\u{7}", 9);
+        let response = build_response(1, "hello\u{0}world\u{7}", RequestId(9));
         let parsed = parse_json(&response);
         let JsonValue::Object(map) = parsed else {
             panic!("expected object response");
@@ -774,7 +846,7 @@ mod test {
 
     #[test]
     fn test_build_response_success() {
-        let response = build_response(0, "", 0);
+        let response = build_response(0, "", RequestId(0));
         assert_eq!(response, r#"{"exitCode":0,"output":"","requestId":0}"#);
         let parsed = parse_json(&response);
         if let JsonValue::Object(map) = parsed {
@@ -787,7 +859,7 @@ mod test {
 
     #[test]
     fn test_build_response_failure() {
-        let response = build_response(1, "error: type mismatch", 0);
+        let response = build_response(1, "error: type mismatch", RequestId(0));
         let parsed = parse_json(&response);
         if let JsonValue::Object(map) = parsed {
             assert!(matches!(map.get("exitCode"), Some(JsonValue::Number(n)) if *n == 1.0));
@@ -804,7 +876,7 @@ mod test {
         let args = vec!["--subst".to_string(), "pwd=/work".to_string()];
         assert!(matches!(
             detect_pipelining_mode(&args),
-            PipeliningMode::None
+            RequestKind::NonPipelined
         ));
     }
 
@@ -815,7 +887,7 @@ mod test {
             "--pipelining-key=my_crate_abc123".to_string(),
         ];
         match detect_pipelining_mode(&args) {
-            PipeliningMode::Metadata { key } => assert_eq!(key, "my_crate_abc123"),
+            RequestKind::Metadata { key } => assert_eq!(key.as_str(), "my_crate_abc123"),
             other => panic!(
                 "expected Metadata, got {:?}",
                 std::mem::discriminant(&other)
@@ -830,7 +902,7 @@ mod test {
             "--pipelining-key=my_crate_abc123".to_string(),
         ];
         match detect_pipelining_mode(&args) {
-            PipeliningMode::Full { key } => assert_eq!(key, "my_crate_abc123"),
+            RequestKind::Full { key } => assert_eq!(key.as_str(), "my_crate_abc123"),
             other => panic!("expected Full, got {:?}", std::mem::discriminant(&other)),
         }
     }
@@ -841,7 +913,7 @@ mod test {
         let args = vec!["--pipelining-metadata".to_string()];
         assert!(matches!(
             detect_pipelining_mode(&args),
-            PipeliningMode::None
+            RequestKind::NonPipelined
         ));
     }
 
@@ -860,8 +932,35 @@ mod test {
     #[test]
     fn test_pipeline_state_take_for_full_empty() {
         let mut state = PipelineState::new();
-        // Verify that take_for_full on an empty state returns None.
-        assert!(state.take_for_full("nonexistent", 1).is_none());
+        let key = PipelineKey("nonexistent".to_string());
+        let _flag = state.register_full(RequestId(1), key.clone());
+        assert!(matches!(
+            state.claim_for_full(&key, RequestId(1)),
+            FullRequestAction::Fallback
+        ));
+    }
+
+    #[test]
+    fn test_request_kind_parse_in_dir_reads_relative_paramfile() {
+        use std::fs;
+
+        let dir = std::env::temp_dir().join("pw_request_kind_relative_paramfile");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let paramfile = dir.join("rustc.params");
+        fs::write(
+            &paramfile,
+            "--crate-name=foo\n--pipelining-full\n--pipelining-key=foo_key\n",
+        )
+        .unwrap();
+
+        let args = vec!["--".to_string(), "rustc".to_string(), "@rustc.params".to_string()];
+        match RequestKind::parse_in_dir(&args, &dir) {
+            RequestKind::Full { key } => assert_eq!(key.as_str(), "foo_key"),
+            other => panic!("expected full request, got {:?}", other),
+        }
+
+        let _ = fs::remove_dir_all(&dir);
     }
 
     // --- Tests for new helpers added in the worker-key fix ---
@@ -947,7 +1046,7 @@ mod test {
         ];
 
         match detect_pipelining_mode(&args) {
-            PipeliningMode::Metadata { key } => assert_eq!(key, "foo_abc123"),
+            RequestKind::Metadata { key } => assert_eq!(key.as_str(), "foo_abc123"),
             other => panic!(
                 "expected Metadata, got {:?}",
                 std::mem::discriminant(&other)
@@ -1037,7 +1136,8 @@ mod test {
         let msg = result.unwrap_err();
         assert!(
             msg.contains("--experimental_worker_multiplex_sandboxing"),
-            "error should mention the flag: {msg}"
+            "error should mention the flag: {}",
+            msg
         );
     }
 
@@ -1084,7 +1184,8 @@ mod test {
         let dir_str = dir.to_string_lossy().into_owned();
         let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, dir_str);
         let req = parse_json(&json);
-        assert_eq!(extract_sandbox_dir(&req), Ok(Some(dir_str)));
+        let result = extract_sandbox_dir(&req).unwrap();
+        assert_eq!(result.as_ref().map(|sd| sd.as_str()), Some(dir_str.as_str()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1101,7 +1202,8 @@ mod test {
         let escaped = dir_str.replace('\\', "\\\\");
         let json = format!(r#"{{"requestId": 1, "sandboxDir": "{}"}}"#, escaped);
         let req = parse_json(&json);
-        assert_eq!(extract_sandbox_dir(&req), Ok(Some(dir_str)));
+        let result = extract_sandbox_dir(&req).unwrap();
+        assert_eq!(result.as_ref().map(|sd| sd.as_str()), Some(dir_str.as_str()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1151,7 +1253,7 @@ mod test {
 
     #[test]
     fn test_build_cancel_response() {
-        let response = build_cancel_response(7);
+        let response = build_cancel_response(RequestId(7));
         assert_eq!(
             response,
             r#"{"exitCode":0,"output":"","requestId":7,"wasCancelled":true}"#
@@ -1272,7 +1374,8 @@ mod test {
             Some(stable_status.to_str().unwrap()),
             Some(volatile_status.to_str().unwrap()),
             &[("pwd".to_string(), "/real/execroot".to_string())],
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             env.get("STAMPED"),
@@ -1285,7 +1388,7 @@ mod test {
 
     #[test]
     fn test_build_shutdown_response() {
-        let response = build_shutdown_response(11);
+        let response = build_shutdown_response(RequestId(11));
         assert_eq!(
             response,
             r#"{"exitCode":1,"output":"worker shutting down","requestId":11}"#
@@ -1338,7 +1441,8 @@ mod test {
             &sandbox_dir.display().to_string(),
             out_rel,
             "_pipeline",
-        );
+        )
+        .unwrap();
 
         let dest = sandbox_dir
             .join(out_rel)
@@ -1367,7 +1471,8 @@ mod test {
         fs::write(pipeline_dir.join("libfoo.rmeta"), b"fake rmeta").unwrap();
         fs::write(pipeline_dir.join("libfoo.d"), b"fake dep-info").unwrap();
 
-        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel);
+        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel)
+            .unwrap();
 
         let dest = sandbox_dir.join(out_rel);
         assert!(dest.join("libfoo.rlib").exists());
@@ -1395,7 +1500,8 @@ mod test {
         let src = pipeline_dir.join("libfoo.rlib");
         fs::write(&src, b"fake rlib").unwrap();
 
-        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel);
+        copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel)
+            .unwrap();
 
         let dest = sandbox_dir.join(out_rel).join("libfoo.rlib");
         assert!(dest.exists());
@@ -1527,20 +1633,24 @@ mod test {
             stderr_drain: std::thread::spawn(|| String::new()),
             pipeline_root_dir: std::path::PathBuf::from("/tmp"),
             pipeline_output_dir: std::path::PathBuf::from("/tmp"),
-            original_out_dir: String::from("/tmp"),
+            original_out_dir: OutputDir("/tmp".to_string()),
         }
     }
 
     #[test]
     fn test_pipeline_state_store_and_cancel_metadata_phase() {
         let mut state = PipelineState::new();
-        let _flag = state.pre_register(42, "key1".to_string());
+        let key = PipelineKey("key1".to_string());
+        let _flag = state.register_metadata(RequestId(42), key.clone());
         let bg = make_test_bg();
-        assert!(state.store("key1", bg).is_none(), "store should succeed");
+        assert!(matches!(
+            state.store_metadata(&key, RequestId(42), bg),
+            StoreBackgroundResult::Stored
+        ));
         assert!(state.has_entry("key1"));
         assert!(state.has_request(42));
 
-        let cancelled = state.cancel_by_request_id(42);
+        let cancelled = state.cancel_by_request_id(RequestId(42));
         assert!(cancelled.kill(), "cancel should kill the child");
         assert!(state.is_empty(), "state should be empty after cancel");
     }
@@ -1548,25 +1658,27 @@ mod test {
     #[test]
     fn test_pipeline_state_take_for_full_then_cancel() {
         let mut state = PipelineState::new();
-        let _meta_flag = state.pre_register(42, "key1".to_string());
+        let key = PipelineKey("key1".to_string());
+        let _meta_flag = state.register_metadata(RequestId(42), key.clone());
         let bg = make_test_bg();
-        assert!(state.store("key1", bg).is_none());
+        assert!(matches!(
+            state.store_metadata(&key, RequestId(42), bg),
+            StoreBackgroundResult::Stored
+        ));
 
-        // Simulate full request arriving
-        let _full_flag = state.pre_register(99, "key1".to_string());
-        let (mut taken, child_reaped) = state
-            .take_for_full("key1", 99)
-            .expect("take_for_full should return the BackgroundRustc");
+        let _full_flag = state.register_full(RequestId(99), key.clone());
+        let (mut taken, child_reaped) = match state.claim_for_full(&key, RequestId(99)) {
+            FullRequestAction::Background(bg, child_reaped) => (bg, child_reaped),
+            other => panic!("expected background handoff, got {:?}", std::mem::discriminant(&other)),
+        };
 
-        // After take_for_full: entry is FullWaiting, request_index maps 99 (not 42).
         assert!(state.has_entry("key1"));
         assert!(state.has_request(99));
         assert!(!state.has_request(42));
 
-        // Cancel via the full-phase path (FullWaiting — PID-guarded kill).
         #[cfg(unix)]
         {
-            let cancelled = state.cancel_by_request_id(99);
+            let cancelled = state.cancel_by_request_id(RequestId(99));
             assert!(cancelled.kill(), "cancel should kill via PID for full phase");
             assert!(state.is_empty(), "state should be empty after cancel");
         }
@@ -1583,20 +1695,20 @@ mod test {
     #[test]
     fn test_pipeline_state_cancel_nonexistent_request() {
         let mut state = PipelineState::new();
-        let cancelled = state.cancel_by_request_id(999);
+        let cancelled = state.cancel_by_request_id(RequestId(999));
         assert!(!cancelled.kill(), "cancel should return false for unknown request_id");
     }
 
     #[test]
     fn test_pipeline_state_pre_register_and_cancel() {
         let mut state = PipelineState::new();
-        let _flag = state.pre_register(42, "key1".to_string());
+        let _flag = state.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
         assert!(state.has_request(42));
         assert!(state.has_entry("key1"));
         assert!(state.has_claim(42));
 
         // No process stored yet — cancel should not kill (no child).
-        let cancelled = state.cancel_by_request_id(42);
+        let cancelled = state.cancel_by_request_id(RequestId(42));
         assert!(!cancelled.kill(), "cancel should return false when no process was stored");
         // Entry is cleaned up.
         assert!(!state.has_entry("key1"));
@@ -1606,10 +1718,10 @@ mod test {
     #[test]
     fn test_pipeline_state_cleanup_removes_all_entries() {
         let mut state = PipelineState::new();
-        let _flag = state.pre_register(42, "key1".to_string());
+        let _flag = state.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
         assert!(state.has_request(42));
         assert!(state.has_claim(42));
-        state.cleanup("key1", 42);
+        state.cleanup(&PipelineKey("key1".to_string()), RequestId(42));
         assert!(state.is_empty(), "state should be empty after cleanup");
         assert!(!state.has_claim(42), "claim should be removed after cleanup");
     }
@@ -1617,73 +1729,72 @@ mod test {
     #[test]
     fn test_pipeline_state_register_claim_non_pipelined() {
         let mut state = PipelineState::new();
-        let flag = state.register_claim(42);
+        let flag = state.register_non_pipelined(RequestId(42));
         assert!(state.has_claim(42));
         assert!(!state.has_entry("any_key"));
         assert!(!flag.load(Ordering::SeqCst));
-        state.remove_claim(42);
+        state.remove_claim(RequestId(42));
         assert!(!state.has_claim(42));
     }
 
     #[test]
     fn test_pipeline_state_get_claim_flag() {
         let mut state = PipelineState::new();
-        assert!(state.get_claim_flag(42).is_none());
-        let flag = state.register_claim(42);
-        let retrieved = state.get_claim_flag(42).expect("should find claim flag");
+        assert!(state.get_claim_flag(RequestId(42)).is_none());
+        let flag = state.register_non_pipelined(RequestId(42));
+        let retrieved = state.get_claim_flag(RequestId(42)).expect("should find claim flag");
         assert!(Arc::ptr_eq(&flag, &retrieved));
     }
 
-    /// Demonstrates the stale-entry bug: if pre_register is called but
-    /// cleanup is NOT called on error, the entry persists and a second
-    /// pre_register for the same key silently overwrites it, leaving
-    /// a dangling request_index entry for the old request_id.
     #[test]
-    fn test_stale_preregistered_entry_leaves_dangling_request_index() {
+    fn test_fallback_claim_rejects_late_metadata_store() {
         let mut state = PipelineState::new();
-        let _flag = state.pre_register(42, "key1".to_string());
+        let key = PipelineKey("key1".to_string());
+        let _full_flag = state.register_full(RequestId(99), key.clone());
+        assert!(matches!(
+            state.claim_for_full(&key, RequestId(99)),
+            FullRequestAction::Fallback
+        ));
+
+        let _late_flag = state.register_metadata(RequestId(42), key.clone());
+        let late_bg = make_test_bg();
+        let rejected = match state.store_metadata(&key, RequestId(42), late_bg) {
+            StoreBackgroundResult::Rejected(bg) => bg,
+            _ => panic!("late metadata store should be rejected after fallback claim"),
+        };
+
         assert!(state.has_entry("key1"));
+        assert!(state.has_request(99));
         assert!(state.has_request(42));
 
-        // BUG PATH: no cleanup() called (simulates metadata handler error).
-        // A second pre_register for the same key overwrites the entry, but
-        // the old request_index entry (42 → "key1") is NOT removed.
-        let _flag2 = state.pre_register(99, "key1".to_string());
-        assert!(
-            state.has_request(42),
-            "without cleanup, old request_index entry 42 dangles"
-        );
-        assert!(state.has_request(99));
+        state.discard_request(RequestId(42));
+        assert!(state.has_entry("key1"));
+        assert!(!state.has_request(42));
 
-        // FIX PATH: cleanup before re-register removes both entry and index.
-        state.cleanup("key1", 99);
-        // But request 42 is still dangling! Only full cleanup fixes it.
-        assert!(
-            state.has_request(42),
-            "request 42 was never cleaned up — this is the leak"
-        );
-        // Manual cleanup of the leaked entry.
-        state.remove_claim(42);
+        let mut rejected = rejected;
+        let _ = rejected.child.kill();
+        let _ = rejected.child.wait();
+        let _ = rejected.stderr_drain.join();
+
+        let cancelled = state.cancel_by_request_id(RequestId(99));
+        assert!(!cancelled.kill());
+        assert!(state.is_empty());
     }
 
-    /// Verifies that cleanup() before re-register leaves no dangling state.
     #[test]
-    fn test_cleanup_before_reregister_prevents_stale_entries() {
+    fn test_cleanup_key_fully_removes_late_metadata_mappings() {
         let mut state = PipelineState::new();
-        let _flag = state.pre_register(42, "key1".to_string());
-
-        // FIX: cleanup on error before any re-register.
-        state.cleanup("key1", 42);
+        let key = PipelineKey("key1".to_string());
+        let _flag = state.register_full(RequestId(99), key.clone());
+        let _late_flag = state.register_metadata(RequestId(42), key.clone());
+        assert!(matches!(
+            state.claim_for_full(&key, RequestId(99)),
+            FullRequestAction::Fallback
+        ));
+        let _ = state.cleanup_key_fully(&key);
         assert!(!state.has_entry("key1"));
         assert!(!state.has_request(42));
-        assert!(!state.has_claim(42));
-
-        // Now re-register works cleanly.
-        let _flag2 = state.pre_register(99, "key1".to_string());
-        assert!(state.has_entry("key1"));
-        assert!(state.has_request(99));
-        assert!(!state.has_request(42), "old request_id must not reappear");
-        state.cleanup("key1", 99);
+        assert!(!state.has_request(99));
     }
 
     /// Regression: CancelledEntry::PidOnly used raw kill(pid, SIGKILL) without
@@ -1721,7 +1832,7 @@ mod test {
     #[test]
     fn test_build_response_preserves_warnings_on_success() {
         let warning = "warning: unused variable `x`";
-        let response = build_response(0, warning, 42);
+        let response = build_response(0, warning, RequestId(42));
         let parsed = parse_json(&response);
         let JsonValue::Object(map) = parsed else {
             panic!("expected object response");

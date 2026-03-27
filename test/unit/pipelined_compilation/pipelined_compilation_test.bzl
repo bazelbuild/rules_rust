@@ -1,4 +1,33 @@
-"""Unittests for rust rules."""
+"""Unittests for rust rules.
+
+Test matrix — pipelining mode × test layer:
+
+  Hollow-rlib pipelining uses -Zno-codegen (two actions, two rustc processes).
+  Worker pipelining uses a single rustc process per crate (metadata + full).
+  -Zno-codegen does NOT change SVH, so hollow rlibs are SVH-compatible by design.
+  However, non-deterministic proc macros (e.g. HashMap iteration) run independently
+  in each rustc process, which CAN cause SVH mismatch with any two-process approach.
+
+                          │ no pipelining     │ hollow-rlib           │ worker pipelining
+                          │ (pipeline=false)  │ (pipeline=true,       │ (pipeline=true,
+                          │                   │  worker=false)        │  worker=true)
+──────────────────────────┼───────────────────┼───────────────────────┼──────────────────────────
+Action graph (analysis)   │ (baseline: no     │ second_lib_test       │ worker_pipelining_
+                          │  RustcMetadata    │ bin_test              │   second_lib_test
+                          │  action created)  │ hollow_rlib_env_test  │
+                          │                   │ rmeta_*_custom_rule_* │
+                          │                   │ rmeta_not_produced_*  │
+──────────────────────────┼───────────────────┼───────────────────────┼──────────────────────────
+Artifact determinism      │ (precondition in  │ (covered by analysis: │ test_pipelined_matches_
+(process_wrapper_test)    │  pipelined test)  │  hollow_rlib_env_test │   standalone (main.rs)
+                          │                   │  verifies consistent  │
+                          │                   │  flags / RUSTC_BOOT-  │
+                          │                   │  STRAP across actions)│
+──────────────────────────┼───────────────────┼───────────────────────┼──────────────────────────
+E2E nondet proc macro     │ nondeterministic_ │ svh_mismatch_test     │ nondeterministic_
+(sh_tests / rust_test)    │ test.sh Phase 2   │ (flaky: nondet proc   │   test.sh Phase 1
+                          │                   │  macro in 2 processes)│
+"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_proc_macro", "rust_test")
@@ -456,24 +485,31 @@ def _custom_rule_test(generate_metadata, suffix):
     ]
 
 def _svh_mismatch_test():
-    """Creates a rust_test demonstrating SVH mismatch with non-deterministic proc macros.
+    """Creates a rust_test using a non-deterministic proc macro (HashMap iteration).
 
-    Without pipelining (default): each library is compiled exactly once, SVH
-    is consistent across the dependency graph, and the test builds and passes.
+    This target graph is used by worker_pipelining_nondeterministic_test.sh to
+    verify SVH consistency across pipelining modes.
 
-    With pipelining (//rust/settings:pipelined_compilation=true): rules_rust
-    compiles svh_lib twice in separate rustc invocations — once for the hollow
-    metadata (.rmeta), once for the full .rlib. Because the proc macro uses
-    HashMap with OS-seeded randomness, these two invocations typically produce
-    different token streams and therefore different SVH values. The consumer is
-    compiled against the hollow .rmeta (recording SVH_1); when rustc links the
-    test binary against the full .rlib (SVH_2), it detects SVH_1 ≠ SVH_2 and
-    fails with E0460. The test is therefore expected to FAIL TO BUILD most of
-    the time (~99.2% with 5 HashMap entries) when pipelining is enabled.
+    Without pipelining (default): each library is compiled exactly once, so SVH
+    is trivially consistent and the build always succeeds.
+
+    With hollow-rlib pipelining (pipeline=true, worker=false): each library is
+    compiled by two separate rustc processes (one with -Zno-codegen for the hollow
+    rlib, one for the full rlib). The -Zno-codegen flag itself does NOT change SVH,
+    but the non-deterministic proc macro runs independently in each process. Because
+    the macro iterates a HashMap with OS-seeded randomness, the two invocations
+    typically produce different token streams and therefore different SVH values.
+    The consumer compiles against the hollow rlib (recording SVH_1); when rustc
+    links against the full rlib (SVH_2), it detects SVH_1 ≠ SVH_2 and fails with
+    E0460. This is expected to FAIL most of the time (~99.2% with 5 HashMap entries).
+
+    With worker pipelining (pipeline=true, worker=true): each library is compiled
+    by a single rustc process, so the proc macro runs once and SVH is always
+    consistent. The build always succeeds.
 
     The test is marked flaky because the SVH mismatch is non-deterministic:
-    on rare occasions (~0.8%) both rustc invocations produce the same HashMap
-    iteration order and the build succeeds even with pipelining enabled.
+    on rare occasions (~0.8%) both rustc processes happen to iterate the HashMap
+    in the same order and the build succeeds even without worker pipelining.
     """
 
     rust_proc_macro(

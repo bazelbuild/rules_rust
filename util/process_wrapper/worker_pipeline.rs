@@ -14,99 +14,7 @@
 
 //! Pipelining state and handlers for the persistent worker.
 //!
-//! # Architecture: Single-rustc Pipelining
-//!
-//! Each crate is compiled by a single rustc invocation that produces both `.rmeta`
-//! (metadata, encoding type/trait information for downstream crates) and `.rlib`
-//! (the full compiled artifact including object code).  Rustc emits `.rmeta` at the
-//! boundary between analysis and codegen — specifically in `encode_and_write_metadata`
-//! inside `passes.rs`, before `codegen_crate` is called — so downstream crates can
-//! begin their own compilation as soon as the metadata is flushed.
-//!
-//! This module implements a two-phase split of that single rustc invocation across
-//! two Bazel worker requests:
-//!
-//! 1. **Metadata request** (`--pipelining-metadata --pipelining-key=<key>`):
-//!    Spawns rustc as a background child process.  A dedicated thread reads rustc's
-//!    stdout line-by-line and blocks until it sees the sentinel that signals `.rmeta`
-//!    has been written to disk.  At that point a [`WorkResponse`] is sent back to
-//!    Bazel so downstream actions can start immediately, while the child continues
-//!    running codegen in the background.
-//!
-//! 2. **Full request** (`--pipelining-full --pipelining-key=<key>`):
-//!    Retrieves the still-running child from [`PipelineState`] by key and waits for
-//!    it to exit.  Copies outputs from the pipeline output directory back into the
-//!    Bazel sandbox before sending the final [`WorkResponse`].
-//!
-//! # Sandbox Contract Compliance
-//!
-//! Bazel's persistent-worker sandbox contract has two rules:
-//!
-//! **Rule 1 — all I/O goes through `sandbox_dir`.**
-//! Satisfied by setting the worker process's `cwd` to `sandbox_dir` so that every
-//! relative path resolves inside the sandbox.  Outputs that must persist across the
-//! two requests (`.rmeta`, `.rlib`, `.d` files, etc.) are redirected to a
-//! worker-owned directory outside Bazel control:
-//! `_pw_state/pipeline/<key>/outputs/`.  The full handler copies them back into the
-//! sandbox before returning.
-//!
-//! **Rule 2 — no file access after the [`WorkResponse`] is sent.**
-//! The metadata response is sent before codegen begins.  After that point the
-//! background rustc process continues running, but it does NOT access any sandbox
-//! input files because:
-//!
-//! - Source files are read once into `Arc<String>` entries in rustc's `SourceMap`
-//!   during parsing, before `.rmeta` is emitted.
-//!   See: <https://github.com/rust-lang/rust/blob/main/compiler/rustc_span/src/source_map.rs>
-//! - Dependency `.rmeta` files are memory-mapped once during the "resolve crate"
-//!   phase, also before codegen.
-//!   See: <https://rustc-dev-guide.rust-lang.org/backend/libs-and-metadata.html>
-//! - Proc macros are fully expanded during the parsing/expansion phase, before
-//!   `.rmeta` is written.
-//!   See: <https://github.com/rust-lang/rust/issues/60988>
-//!
-//! This has been empirically verified via strace on rustc 1.94.0: zero `open`/`read`
-//! syscalls to sandbox input paths are observed after `.rmeta` is written.
-//! See the regression test:
-//! `test/unit/pipelined_compilation/strace_rustc_post_metadata_test.sh`
-//!
-//! # Caveats
-//!
-//! - **Undocumented rustc internals.** The ordering guarantee (all sandbox reads
-//!   complete before `.rmeta` emission) is an observable consequence of rustc's
-//!   current pass ordering, not a documented API contract.  A future rustc refactor
-//!   (e.g. parallel front-end, lazy source loading) could break this assumption.
-//!   The strace test provides a regression signal.
-//!
-//! - **Incremental compilation.** The incremental cache directory must reside
-//!   outside the Bazel sandbox (e.g. in `_pw_state/`) so it persists across both
-//!   requests and across rebuilds.  Enabling incremental inside the sandbox causes
-//!   cache misses and potential corruption.
-//!
-//! - **No precedent.** Spanning background work across two separate Bazel worker
-//!   requests is not an officially supported pattern.  This implementation is
-//!   experimental and may interact unexpectedly with Bazel features such as dynamic
-//!   execution, worker cancellation, or future sandboxing policy changes.
-//!
-//! # Cancellation
-//!
-//! [`PipelineState`] maintains a `request_index`: a `HashMap` from active Bazel
-//! request IDs to pipeline keys.  This index enables the cancel handler to locate
-//! the correct in-flight pipeline entry when Bazel sends a cancel signal.
-//!
-//! Invariants:
-//!
-//! - A pipeline entry is registered in `request_index` **before** the metadata
-//!   [`WorkResponse`] is sent (i.e., before the request becomes cancel-acknowledgeable).
-//! - Ownership of a pipeline entry transfers atomically from the metadata handler to
-//!   the full handler: the metadata handler inserts the entry; the full handler
-//!   removes it.
-//! - After a cancel response is sent, the background rustc child is killed (or the
-//!   request has already completed and the child has exited normally).
-//!
-//! See the "Cancellation Direction" section of the consolidated worker-pipelining
-//! plan at `thoughts/shared/plans/2026-03-25-consolidated-worker-pipelining-plan.md`
-//! for the rationale behind these invariants.
+//! See `DESIGN.md` in this directory for the protocol and sandbox rationale.
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
@@ -128,64 +36,112 @@ use super::sandbox::{
     make_path_writable, prepare_outputs, resolve_relative_to, run_request,
     run_sandboxed_request,
 };
+use super::types::{OutputDir, PipelineKey, RequestId};
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
 
-/// Pipelining mode for a worker request, parsed from process_wrapper flags.
-pub(crate) enum PipeliningMode {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RequestKind {
     /// No pipelining flags present — handle as a normal subprocess request.
-    None,
+    NonPipelined,
     /// `--pipelining-metadata --pipelining-key=<key>` present.
     /// Start a full rustc, return as soon as `.rmeta` is ready, cache the Child.
-    Metadata { key: String },
+    Metadata { key: PipelineKey },
     /// `--pipelining-full --pipelining-key=<key>` present.
     /// Retrieve the cached Child from PipelineState and wait for it to finish.
-    Full { key: String },
+    Full { key: PipelineKey },
 }
 
-/// Lifecycle phase of a single pipelined compilation.
-///
-///   PreRegistered ──store()──> MetadataRunning ──take_for_full()──> FullWaiting ──cleanup()──> (removed)
-///   Any phase ──cancel_by_request_id()──> (removed, child killed if applicable)
-pub(super) enum PipelinePhase {
-    /// Main thread registered the request; worker thread not yet spawned rustc.
-    PreRegistered {
-        metadata_request_id: i64,
-    },
+impl RequestKind {
+    #[cfg(test)]
+    pub(crate) fn parse(args: &[String]) -> Self {
+        let base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        Self::parse_in_dir(args, &base_dir)
+    }
 
-    /// Rustc spawned, .rmeta emitted, metadata response sent. Background codegen continues.
+    pub(crate) fn parse_in_dir(args: &[String], base_dir: &std::path::Path) -> Self {
+        // First pass: check direct args (fast path).
+        let (mut is_metadata, mut is_full, mut key) =
+            scan_pipelining_flags(args.iter().map(String::as_str));
+
+        // Second pass: if not found yet, read @paramfiles from the rustc args
+        // (everything after "--").
+        if !is_metadata && !is_full {
+            let sep_pos = args.iter().position(|a| a == "--");
+            let rustc_args = match sep_pos {
+                Some(pos) => &args[pos + 1..],
+                None => &[][..],
+            };
+            for arg in rustc_args {
+                if let Some(path) = arg.strip_prefix('@') {
+                    let resolved = resolve_relative_to(path, base_dir);
+                    if let Ok(content) = std::fs::read_to_string(&resolved) {
+                        let (m, f, k) = scan_pipelining_flags(content.lines());
+                        is_metadata |= m;
+                        is_full |= f;
+                        if k.is_some() {
+                            key = k;
+                        }
+                        if is_metadata || is_full {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        match (is_metadata, is_full, key) {
+            (true, _, Some(k)) => RequestKind::Metadata { key: PipelineKey(k) },
+            (_, true, Some(k)) => RequestKind::Full { key: PipelineKey(k) },
+            _ => RequestKind::NonPipelined,
+        }
+    }
+
+    /// Returns the pipeline key if this is a pipelined request.
+    pub(crate) fn key(&self) -> Option<&PipelineKey> {
+        match self {
+            RequestKind::Metadata { key } | RequestKind::Full { key } => Some(key),
+            RequestKind::NonPipelined => None,
+        }
+    }
+}
+
+pub(super) enum PipelinePhase {
+    PreRegistered {
+        metadata_request_id: RequestId,
+    },
     MetadataRunning {
-        metadata_request_id: i64,
+        metadata_request_id: RequestId,
         bg: BackgroundRustc,
         pid: u32,
     },
-
-    /// Full handler took BackgroundRustc; waiting for child exit + output copy.
-    /// PID retained for cancel-via-signal, guarded by `child_reaped` to prevent
-    /// killing a recycled PID after the full handler has called `child.wait()`.
     FullWaiting {
         #[allow(dead_code)]
-        full_request_id: i64,
+        full_request_id: RequestId,
         pid: u32,
-        /// Set to `true` by the full handler immediately after `child.wait()`
-        /// returns. The cancel handler checks this before sending a raw signal.
         child_reaped: Arc<AtomicBool>,
+    },
+    FallbackRunning {
+        full_request_id: RequestId,
     },
 }
 
-/// Result of cancelling a pipeline entry. The blocking kill/wait/join must
-/// happen **outside** the `PipelineState` lock to avoid holding the mutex
-/// during I/O.
 pub(super) enum CancelledEntry {
-    /// Request ID was not found in the pipeline.
     NotFound,
-    /// Entry existed but had no running child (PreRegistered or missing).
     NoChild,
-    /// We own the BackgroundRustc — kill + wait + join the child.
     OwnedChild(BackgroundRustc),
-    /// Child was taken by the full handler; only the PID remains for raw kill.
-    /// The `child_reaped` flag prevents killing a recycled PID after the full
-    /// handler has already waited on the child.
     PidOnly(u32, Arc<AtomicBool>),
+}
+
+pub(super) enum StoreBackgroundResult {
+    Stored,
+    Replaced(BackgroundRustc),
+    Rejected(BackgroundRustc),
+}
+
+pub(super) enum FullRequestAction {
+    Background(BackgroundRustc, Arc<AtomicBool>),
+    Fallback,
+    Busy,
 }
 
 impl CancelledEntry {
@@ -237,7 +193,7 @@ pub(super) struct BackgroundRustc {
     /// Original `--out-dir` value (before rewriting to `pipeline_output_dir`).
     /// Used by the full handler to copy outputs from the persistent dir to the
     /// correct sandbox-relative location.
-    pub(super) original_out_dir: String,
+    pub(super) original_out_dir: OutputDir,
 }
 
 /// In-process store of background rustc processes for worker-managed pipelining.
@@ -252,12 +208,12 @@ pub(super) struct BackgroundRustc {
 /// cancel/completion race prevention into a single data structure.
 pub(crate) struct PipelineState {
     /// Pipeline key → current phase.
-    entries: HashMap<String, PipelinePhase>,
+    entries: HashMap<PipelineKey, PipelinePhase>,
     /// Reverse index: request_id → pipeline key (for O(1) cancel lookup).
-    request_index: HashMap<i64, String>,
+    request_index: HashMap<RequestId, PipelineKey>,
     /// Claim flags for ALL in-flight requests (pipelined + non-pipelined).
     /// Whoever atomically swaps the flag first sends the WorkResponse.
-    claim_flags: HashMap<i64, Arc<AtomicBool>>,
+    claim_flags: HashMap<RequestId, Arc<AtomicBool>>,
 }
 
 impl PipelineState {
@@ -269,19 +225,17 @@ impl PipelineState {
         }
     }
 
-    /// Register a non-pipelined request's claim flag.
-    pub(crate) fn register_claim(&mut self, request_id: i64) -> Arc<AtomicBool> {
+    pub(crate) fn register_non_pipelined(&mut self, request_id: RequestId) -> Arc<AtomicBool> {
         let flag = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&flag));
         flag
     }
 
-    /// (none) → PreRegistered. Returns claim flag.
-    ///
-    /// For metadata requests, creates a new PreRegistered entry.
-    /// For full requests (entry already exists as MetadataRunning), just
-    /// registers the claim flag and request_index mapping.
-    pub(crate) fn pre_register(&mut self, request_id: i64, key: String) -> Arc<AtomicBool> {
+    pub(crate) fn register_metadata(
+        &mut self,
+        request_id: RequestId,
+        key: PipelineKey,
+    ) -> Arc<AtomicBool> {
         let flag = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&flag));
         self.request_index.insert(request_id, key.clone());
@@ -293,135 +247,210 @@ impl PipelineState {
         flag
     }
 
-    /// Stores a background rustc in the pipeline entry.
-    ///
-    /// Handles two cases:
-    /// - PreRegistered → MetadataRunning (normal first-time store)
-    /// - MetadataRunning → MetadataRunning (Bazel retried the metadata action;
-    ///   the old child is returned for the caller to kill outside the lock)
-    ///
-    /// Returns `Some(bg)` if the new child could not be stored (entry was
-    /// removed by cancel) or if an old child was replaced (retry). The caller
-    /// must kill the returned BackgroundRustc **after releasing the lock**.
-    pub(super) fn store(&mut self, key: &str, bg: BackgroundRustc) -> Option<BackgroundRustc> {
+    pub(crate) fn register_full(&mut self, request_id: RequestId, key: PipelineKey) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        self.claim_flags.insert(request_id, Arc::clone(&flag));
+        self.request_index.insert(request_id, key);
+        flag
+    }
+
+    pub(super) fn store_metadata(
+        &mut self,
+        key: &PipelineKey,
+        request_id: RequestId,
+        bg: BackgroundRustc,
+    ) -> StoreBackgroundResult {
         let pid = bg.child.id();
         if let Some(entry) = self.entries.get_mut(key) {
             match entry {
-                PipelinePhase::PreRegistered {
-                    metadata_request_id,
-                } => {
-                    let req_id = *metadata_request_id;
+                PipelinePhase::PreRegistered { metadata_request_id } => {
+                    let old_req = *metadata_request_id;
                     *entry = PipelinePhase::MetadataRunning {
-                        metadata_request_id: req_id,
+                        metadata_request_id: request_id,
                         bg,
                         pid,
                     };
-                    return None;
+                    if old_req != request_id {
+                        self.request_index.remove(&old_req);
+                    }
+                    return StoreBackgroundResult::Stored;
                 }
-                PipelinePhase::MetadataRunning {
-                    metadata_request_id,
-                    ..
-                } => {
-                    // Bazel retried the metadata action (same key). Replace the
-                    // old child with the new one; return the old for cleanup.
-                    let req_id = *metadata_request_id;
+                PipelinePhase::MetadataRunning { metadata_request_id, .. } => {
+                    let old_req = *metadata_request_id;
                     let old = std::mem::replace(
                         entry,
                         PipelinePhase::MetadataRunning {
-                            metadata_request_id: req_id,
+                            metadata_request_id: request_id,
                             bg,
                             pid,
                         },
                     );
+                    if old_req != request_id {
+                        self.request_index.remove(&old_req);
+                    }
                     if let PipelinePhase::MetadataRunning { bg: old_bg, .. } = old {
-                        return Some(old_bg);
+                        return StoreBackgroundResult::Replaced(old_bg);
                     }
                     unreachable!();
                 }
-                _ => {}
+                PipelinePhase::FullWaiting { .. } | PipelinePhase::FallbackRunning { .. } => {}
             }
         }
-        // Entry was removed (cancelled) or in unexpected phase.
-        Some(bg)
+        StoreBackgroundResult::Rejected(bg)
     }
 
-    /// MetadataRunning → FullWaiting. Returns BackgroundRustc and a
-    /// `child_reaped` flag for the full handler to set after `child.wait()`.
-    pub(super) fn take_for_full(
+    pub(super) fn claim_for_full(
         &mut self,
-        key: &str,
-        full_request_id: i64,
-    ) -> Option<(BackgroundRustc, Arc<AtomicBool>)> {
-        let entry = self.entries.get_mut(key)?;
-        if let PipelinePhase::MetadataRunning {
-            metadata_request_id,
-            pid,
-            ..
-        } = entry
-        {
-            let old_req = *metadata_request_id;
-            let pid_val = *pid;
-            let child_reaped = Arc::new(AtomicBool::new(false));
-            let old = std::mem::replace(
-                entry,
-                PipelinePhase::FullWaiting {
-                    full_request_id,
-                    pid: pid_val,
-                    child_reaped: Arc::clone(&child_reaped),
-                },
-            );
-            self.request_index.remove(&old_req);
-            // full_request_id is already in request_index from pre_register
-            if let PipelinePhase::MetadataRunning { bg, .. } = old {
-                Some((bg, child_reaped))
-            } else {
-                unreachable!()
+        key: &PipelineKey,
+        full_request_id: RequestId,
+    ) -> FullRequestAction {
+        if let Some(entry) = self.entries.get_mut(key) {
+            match entry {
+                PipelinePhase::MetadataRunning { metadata_request_id, pid, .. } => {
+                    let old_req = *metadata_request_id;
+                    let pid_val = *pid;
+                    let child_reaped = Arc::new(AtomicBool::new(false));
+                    let old = std::mem::replace(
+                        entry,
+                        PipelinePhase::FullWaiting {
+                            full_request_id,
+                            pid: pid_val,
+                            child_reaped: Arc::clone(&child_reaped),
+                        },
+                    );
+                    self.request_index.remove(&old_req);
+                    if let PipelinePhase::MetadataRunning { bg, .. } = old {
+                        FullRequestAction::Background(bg, child_reaped)
+                    } else {
+                        unreachable!()
+                    }
+                }
+                PipelinePhase::PreRegistered { metadata_request_id } => {
+                    self.request_index.remove(metadata_request_id);
+                    *entry = PipelinePhase::FallbackRunning { full_request_id };
+                    FullRequestAction::Fallback
+                }
+                PipelinePhase::FullWaiting { .. } | PipelinePhase::FallbackRunning { .. } => {
+                    FullRequestAction::Busy
+                }
             }
         } else {
-            None
+            self.entries
+                .insert(key.clone(), PipelinePhase::FallbackRunning { full_request_id });
+            FullRequestAction::Fallback
         }
     }
 
-    /// Terminal: remove entry entirely.
-    pub(super) fn cleanup(&mut self, key: &str, request_id: i64) {
+    pub(super) fn cleanup(&mut self, key: &PipelineKey, request_id: RequestId) {
         self.entries.remove(key);
         self.request_index.remove(&request_id);
         self.claim_flags.remove(&request_id);
     }
 
-    /// Remove a claim flag (called when a worker thread finishes).
-    pub(super) fn remove_claim(&mut self, request_id: i64) {
+    pub(super) fn cleanup_key_fully(
+        &mut self,
+        key: &PipelineKey,
+    ) -> Option<BackgroundRustc> {
+        let bg = match self.entries.remove(key) {
+            Some(PipelinePhase::MetadataRunning { bg, .. }) => Some(bg),
+            _ => None,
+        };
+        self.remove_key_mappings(key, None);
+        bg
+    }
+
+    pub(super) fn discard_request(&mut self, request_id: RequestId) {
+        self.request_index.remove(&request_id);
         self.claim_flags.remove(&request_id);
     }
 
-    /// Get a clone of the claim flag for a request.
-    pub(super) fn get_claim_flag(&self, request_id: i64) -> Option<Arc<AtomicBool>> {
+    pub(super) fn remove_claim(&mut self, request_id: RequestId) {
+        self.claim_flags.remove(&request_id);
+    }
+
+    pub(super) fn get_claim_flag(&self, request_id: RequestId) -> Option<Arc<AtomicBool>> {
         self.claim_flags.get(&request_id).cloned()
     }
 
-    /// Cancel a pipelined request. Removes the entry and returns a
-    /// [`CancelledEntry`] describing what cleanup is needed. The caller
-    /// must perform the blocking kill/wait/join **after releasing the lock**
-    /// to avoid holding the mutex during I/O.
-    pub(super) fn cancel_by_request_id(&mut self, request_id: i64) -> CancelledEntry {
-        let key = match self.request_index.remove(&request_id) {
+    pub(super) fn cancel_by_request_id(&mut self, request_id: RequestId) -> CancelledEntry {
+        let key = match self.request_index.get(&request_id).cloned() {
             Some(k) => k,
             None => return CancelledEntry::NotFound,
         };
-        match self.entries.remove(&key) {
-            Some(PipelinePhase::PreRegistered { .. }) => CancelledEntry::NoChild,
-            Some(PipelinePhase::MetadataRunning { bg, .. }) => {
-                CancelledEntry::OwnedChild(bg)
-            }
-            Some(PipelinePhase::FullWaiting {
-                pid, child_reaped, ..
-            }) => CancelledEntry::PidOnly(pid, child_reaped),
-            None => CancelledEntry::NoChild,
+
+        enum CancelAction {
+            NoChild,
+            RemovePreregistered,
+            RemoveMetadataRunning { remove_all_mappings: bool },
+            RemoveFullWaiting,
+            RemoveFallback,
         }
+
+        let action = match self.entries.get(&key) {
+            None => CancelAction::NoChild,
+            Some(PipelinePhase::PreRegistered { metadata_request_id }) => {
+                if *metadata_request_id == request_id {
+                    CancelAction::RemovePreregistered
+                } else {
+                    CancelAction::NoChild
+                }
+            }
+            Some(PipelinePhase::MetadataRunning { metadata_request_id, .. }) => {
+                CancelAction::RemoveMetadataRunning {
+                    remove_all_mappings: *metadata_request_id != request_id,
+                }
+            }
+            Some(PipelinePhase::FullWaiting { full_request_id, .. }) => {
+                if *full_request_id == request_id {
+                    CancelAction::RemoveFullWaiting
+                } else {
+                    CancelAction::NoChild
+                }
+            }
+            Some(PipelinePhase::FallbackRunning { full_request_id }) => {
+                if *full_request_id == request_id {
+                    CancelAction::RemoveFallback
+                } else {
+                    CancelAction::NoChild
+                }
+            }
+        };
+
+        let cancelled = match action {
+            CancelAction::NoChild => CancelledEntry::NoChild,
+            CancelAction::RemovePreregistered => {
+                self.entries.remove(&key);
+                CancelledEntry::NoChild
+            }
+            CancelAction::RemoveMetadataRunning { remove_all_mappings } => {
+                let remove_entry = self.entries.remove(&key);
+                if remove_all_mappings {
+                    self.remove_key_mappings(&key, None);
+                }
+                match remove_entry {
+                    Some(PipelinePhase::MetadataRunning { bg, .. }) => CancelledEntry::OwnedChild(bg),
+                    _ => CancelledEntry::NoChild,
+                }
+            }
+            CancelAction::RemoveFullWaiting => {
+                self.remove_key_mappings(&key, None);
+                match self.entries.remove(&key) {
+                    Some(PipelinePhase::FullWaiting { pid, child_reaped, .. }) => {
+                        CancelledEntry::PidOnly(pid, child_reaped)
+                    }
+                    _ => CancelledEntry::NoChild,
+                }
+            }
+            CancelAction::RemoveFallback => {
+                self.entries.remove(&key);
+                self.remove_key_mappings(&key, None);
+                CancelledEntry::NoChild
+            }
+        };
+        self.discard_request(request_id);
+        cancelled
     }
 
-    /// Drain all pipeline entries for shutdown. Returns all entries that
-    /// have running children so the caller can kill them outside the lock.
     pub(super) fn drain_all(&mut self) -> Vec<CancelledEntry> {
         let mut result = Vec::new();
         for (_key, entry) in self.entries.drain() {
@@ -435,10 +464,29 @@ impl PipelineState {
                 } => {
                     result.push(CancelledEntry::PidOnly(pid, child_reaped));
                 }
+                PipelinePhase::FallbackRunning { .. } => {}
             }
         }
         self.request_index.clear();
         result
+    }
+
+    fn remove_key_mappings(&mut self, key: &PipelineKey, keep: Option<RequestId>) {
+        let request_ids: Vec<_> = self
+            .request_index
+            .iter()
+            .filter_map(|(request_id, indexed_key)| {
+                if indexed_key == key && Some(*request_id) != keep {
+                    Some(*request_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for request_id in request_ids {
+            self.request_index.remove(&request_id);
+            self.claim_flags.remove(&request_id);
+        }
     }
 
     // --- Test accessors ---
@@ -450,7 +498,7 @@ impl PipelineState {
 
     #[cfg(test)]
     pub(super) fn has_entry(&self, key: &str) -> bool {
-        self.entries.contains_key(key)
+        self.entries.contains_key(&PipelineKey(key.to_string()))
     }
 
     #[cfg(test)]
@@ -460,12 +508,12 @@ impl PipelineState {
 
     #[cfg(test)]
     pub(super) fn has_request(&self, id: i64) -> bool {
-        self.request_index.contains_key(&id)
+        self.request_index.contains_key(&RequestId(id))
     }
 
     #[cfg(test)]
     pub(super) fn has_claim(&self, id: i64) -> bool {
-        self.claim_flags.contains_key(&id)
+        self.claim_flags.contains_key(&RequestId(id))
     }
 }
 
@@ -482,6 +530,7 @@ pub(super) struct ParsedPwArgs {
     pub(super) stable_status_file: Option<String>,
     pub(super) volatile_status_file: Option<String>,
     pub(super) output_file: Option<String>,
+    pub(super) rustc_output_format: Option<String>,
 }
 
 /// Pipeline context for worker-managed pipelining.
@@ -519,53 +568,14 @@ impl WorkerStateRoots {
         Ok(Self { pipeline_root })
     }
 
-    pub(crate) fn pipeline_dir(&self, key: &str) -> PathBuf {
-        self.pipeline_root.join(key)
+    pub(crate) fn pipeline_dir(&self, key: &PipelineKey) -> PathBuf {
+        self.pipeline_root.join(key.as_str())
     }
 }
 
-/// Parses pipelining mode from worker request arguments.
-///
-/// Pipelining flags live in `rustc_flags` (the @paramfile) so both
-/// RustcMetadata and Rustc actions have identical startup args (same worker
-/// key). This function checks both direct args and any @paramfile content
-/// found after the `--` separator.
-pub(crate) fn detect_pipelining_mode(args: &[String]) -> PipeliningMode {
-    // First pass: check direct args (handles the no-paramfile case and is fast).
-    let (mut is_metadata, mut is_full, mut key) =
-        scan_pipelining_flags(args.iter().map(String::as_str));
-
-    // Second pass: if not found yet, read @paramfiles from the rustc args
-    // (everything after "--"). With always_use_param_file, pipelining flags
-    // are inside the @paramfile rather than in direct args.
-    if !is_metadata && !is_full {
-        let sep_pos = args.iter().position(|a| a == "--");
-        let rustc_args = match sep_pos {
-            Some(pos) => &args[pos + 1..],
-            None => &[][..],
-        };
-        for arg in rustc_args {
-            if let Some(path) = arg.strip_prefix('@') {
-                if let Ok(content) = std::fs::read_to_string(path) {
-                    let (m, f, k) = scan_pipelining_flags(content.lines());
-                    is_metadata |= m;
-                    is_full |= f;
-                    if k.is_some() {
-                        key = k;
-                    }
-                    if is_metadata || is_full {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    match (is_metadata, is_full, key) {
-        (true, _, Some(k)) => PipeliningMode::Metadata { key: k },
-        (_, true, Some(k)) => PipeliningMode::Full { key: k },
-        _ => PipeliningMode::None,
-    }
+#[cfg(test)]
+pub(crate) fn detect_pipelining_mode(args: &[String]) -> RequestKind {
+    RequestKind::parse(args)
 }
 
 /// Scans an iterator of argument strings for pipelining flags.
@@ -660,6 +670,7 @@ pub(super) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> Parsed
         stable_status_file: None,
         volatile_status_file: None,
         output_file: None,
+        rustc_output_format: None,
     };
     let mut i = 0;
     while i < pw_args.len() {
@@ -703,6 +714,12 @@ pub(super) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> Parsed
                     i += 1;
                 }
             }
+            "--rustc-output-format" => {
+                if let Some(val) = pw_args.get(i + 1) {
+                    parsed.rustc_output_format = Some(val.clone());
+                    i += 1;
+                }
+            }
             _ => {}
         }
         i += 1;
@@ -711,35 +728,39 @@ pub(super) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> Parsed
 }
 
 /// Builds the environment map: inherit current process + env files + apply substitutions.
+///
+/// Returns `Err` if any env-file or stamp-file cannot be read, aligning with
+/// the standalone path's error behavior (Finding 5 fix).
 pub(super) fn build_rustc_env(
     env_files: &[String],
     stable_status_file: Option<&str>,
     volatile_status_file: Option<&str>,
     subst: &[(String, String)],
-) -> HashMap<String, String> {
+) -> Result<HashMap<String, String>, String> {
     let mut env: HashMap<String, String> = std::env::vars().collect();
     for path in env_files {
-        if let Ok(content) = std::fs::read_to_string(path) {
-            for line in content.lines() {
-                if line.is_empty() {
-                    continue;
-                }
-                if let Some((k, v)) = line.split_once('=') {
-                    env.insert(k.to_owned(), v.to_owned());
-                }
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| format!("failed to read env-file '{}': {}", path, e))?;
+        for line in content.lines() {
+            if line.is_empty() {
+                continue;
             }
+            let (k, v) = line.split_once('=').ok_or_else(|| {
+                format!("env-file '{}': invalid line (no '='): {}", path, line)
+            })?;
+            env.insert(k.to_owned(), v.to_owned());
         }
     }
-    let stable_stamp_mappings: Vec<(String, String)> = stable_status_file
-        .map(|path| read_stamp_status_to_array(path.to_owned()))
-        .transpose()
-        .unwrap_or_default()
-        .unwrap_or_default();
-    let volatile_stamp_mappings: Vec<(String, String)> = volatile_status_file
-        .map(|path| read_stamp_status_to_array(path.to_owned()))
-        .transpose()
-        .unwrap_or_default()
-        .unwrap_or_default();
+    let stable_stamp_mappings: Vec<(String, String)> = match stable_status_file {
+        Some(path) => read_stamp_status_to_array(path.to_owned())
+            .map_err(|e| format!("failed to read stable-status '{}': {}", path, e))?,
+        None => vec![],
+    };
+    let volatile_stamp_mappings: Vec<(String, String)> = match volatile_status_file {
+        Some(path) => read_stamp_status_to_array(path.to_owned())
+            .map_err(|e| format!("failed to read volatile-status '{}': {}", path, e))?,
+        None => vec![],
+    };
     for (k, v) in stable_stamp_mappings
         .iter()
         .chain(volatile_stamp_mappings.iter())
@@ -751,7 +772,7 @@ pub(super) fn build_rustc_env(
     for val in env.values_mut() {
         crate::util::apply_substitutions(val, subst);
     }
-    env
+    Ok(env)
 }
 
 /// Prepares rustc arguments: expand @paramfiles, apply substitutions, strip
@@ -762,7 +783,7 @@ pub(super) fn prepare_rustc_args(
     rustc_and_after: &[String],
     pw_args: &ParsedPwArgs,
     execroot_dir: &std::path::Path,
-) -> Result<(Vec<String>, String), (i32, String)> {
+) -> Result<(Vec<String>, OutputDir), (i32, String)> {
     let mut rustc_args = expand_rustc_args(rustc_and_after, &pw_args.subst, execroot_dir);
     if rustc_args.is_empty() {
         return Err((
@@ -773,16 +794,16 @@ pub(super) fn prepare_rustc_args(
 
     // Append args from --arg-file files (e.g. build script output: --cfg=..., -L ...).
     for path in &pw_args.arg_files {
-        if let Ok(content) = std::fs::read_to_string(path) {
-            for line in content.lines() {
-                if !line.is_empty() {
-                    rustc_args.push(apply_substs(line, &pw_args.subst));
-                }
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| (1, format!("failed to read arg-file '{}': {}", path, e)))?;
+        for line in content.lines() {
+            if !line.is_empty() {
+                rustc_args.push(apply_substs(line, &pw_args.subst));
             }
         }
     }
 
-    let original_out_dir = find_out_dir_in_expanded(&rustc_args).unwrap_or_default();
+    let original_out_dir = OutputDir(find_out_dir_in_expanded(&rustc_args).unwrap_or_default());
 
     Ok((rustc_args, original_out_dir))
 }
@@ -925,14 +946,12 @@ pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
 /// worker-owned directory to prevent inter-request interference.
 pub(super) fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
-    key: &str,
+    key: &PipelineKey,
     request: &WorkRequestContext,
 ) -> Result<PipelineContext, (i32, String)> {
     let root_dir = state_roots.pipeline_dir(key);
 
-    // Create the pipeline root and outputs dir.
-    // Clear any leftover outputs from a previous failed run for this key.
-    let outputs_dir = root_dir.join("outputs");
+    let outputs_dir = root_dir.join(format!("outputs-{}", request.request_id));
     if let Err(e) = std::fs::remove_dir_all(&outputs_dir) {
         if e.kind() != std::io::ErrorKind::NotFound {
             return Err((
@@ -960,22 +979,8 @@ pub(super) fn create_pipeline_context(
         )
     })?;
 
-    // Two modes for determining rustc's CWD:
-    //
-    // SANDBOXED: Use sandbox_dir directly as CWD. All relative paths in rustc
-    // args (--extern, -Ldependency, source files) resolve against sandbox_dir
-    // where Bazel placed the inputs. This satisfies Rule 1 of the multiplex
-    // sandbox contract ("use sandbox_dir as prefix for all reads and writes").
-    // After .rmeta emission, background rustc only writes to --out-dir
-    // (redirected to persistent pipeline dir), so sandbox cleanup after the
-    // metadata response doesn't affect it (verified via strace — Gate 0).
-    //
-    // UNSANDBOXED: Use the worker's real execroot as CWD.
-    let execroot_dir = if let Some(sandbox_dir) = request.sandbox_dir.as_deref() {
-        // Make absolute WITHOUT canonicalizing — canonicalize() follows symlinks
-        // inside the sandbox back to the real execroot, which defeats the purpose.
-        // We need the sandbox path itself so rustc reads through sandbox_dir.
-        let sandbox_path = std::path::Path::new(sandbox_dir);
+    let execroot_dir = if let Some(ref sandbox_dir) = request.sandbox_dir {
+        let sandbox_path = sandbox_dir.as_path();
         if sandbox_path.is_absolute() {
             sandbox_path.to_path_buf()
         } else {
@@ -1006,22 +1011,10 @@ pub(super) fn create_pipeline_context(
 // Pipelining handlers
 // ---------------------------------------------------------------------------
 
-/// Handles a `--pipelining-metadata` request (sandboxed or unsandboxed).
-///
-/// Starts a full rustc with `--emit=dep-info,metadata,link --json=artifacts`,
-/// reads stderr until the `{"artifact":"...rmeta","emit":"metadata"}` JSON
-/// notification appears, stores the running Child in PipelineState, and returns
-/// success immediately so Bazel can unblock downstream rlib compiles.
-///
-/// Two modes:
-/// - **Sandboxed**: rustc runs from `sandbox_dir` directly. All relative paths
-///   in args resolve against the sandbox where Bazel placed inputs. Compliant
-///   with the Bazel multiplex sandbox contract (Rule 1: all reads via sandbox_dir).
-/// - **Unsandboxed**: rustc runs from the real execroot.
 pub(crate) fn handle_pipelining_metadata(
     request: &WorkRequestContext,
     args: Vec<String>,
-    key: String,
+    key: PipelineKey,
     state_roots: &WorkerStateRoots,
     pipeline_state: &Arc<Mutex<PipelineState>>,
 ) -> (i32, String) {
@@ -1036,20 +1029,11 @@ pub(crate) fn handle_pipelining_metadata(
         return (1, "pipelining: no rustc executable after '--'".to_string());
     }
 
-    // Note: we intentionally do NOT drain completed entries here. Background rustc
-    // entries must remain in PipelineState until handle_pipelining_full() takes them,
-    // even if the child has already exited (fast-compiling crates often finish codegen
-    // before the full action arrives). Entries are cleaned up by take() in the full
-    // handler, or persist harmlessly until worker exit for orphaned entries.
-
     let ctx = match create_pipeline_context(state_roots, &key, request) {
         Ok(v) => v,
         Err(e) => return e,
     };
 
-    // execroot_dir is already canonicalized (absolute) in both sandboxed and
-    // unsandboxed modes, so ${pwd} substitution produces correct absolute paths
-    // for env vars like OUT_DIR=${pwd}/bazel-out/...
     let raw_pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
     let pw_args = ParsedPwArgs {
         subst: raw_pw_args.subst,
@@ -1084,18 +1068,22 @@ pub(crate) fn handle_pipelining_metadata(
         output_file: raw_pw_args.output_file.map(|path| {
             let base = request
                 .sandbox_dir
-                .as_deref()
-                .map(std::path::Path::new)
+                .as_ref()
+                .map(|sd| sd.as_path())
                 .unwrap_or(ctx.execroot_dir.as_path());
             resolve_relative_to(&path, base).display().to_string()
         }),
+        rustc_output_format: raw_pw_args.rustc_output_format,
     };
-    let env = build_rustc_env(
+    let env = match build_rustc_env(
         &pw_args.env_files,
         pw_args.stable_status_file.as_deref(),
         pw_args.volatile_status_file.as_deref(),
         &pw_args.subst,
-    );
+    ) {
+        Ok(env) => env,
+        Err(e) => return (1, format!("pipelining: {e}")),
+    };
 
     let (rustc_args, original_out_dir) =
         match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
@@ -1103,12 +1091,7 @@ pub(crate) fn handle_pipelining_metadata(
             Err(e) => return e,
         };
 
-    // Redirect --out-dir to our persistent directory so rustc writes all outputs
-    // (.rlib, .d) there instead of the Bazel-managed out-dir.
     let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
-    // Also redirect --emit=metadata=<path> to the outputs dir so the .rmeta is
-    // written alongside other outputs in the persistent pipeline dir, not in the
-    // real execroot where it could conflict with concurrent builds.
     let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
     prepare_expanded_rustc_outputs(&rustc_args);
     append_pipeline_log(
@@ -1152,8 +1135,6 @@ pub(crate) fn handle_pipelining_metadata(
         _consolidated_dir_guard = Some(unified_dir);
     }
 
-    // Spawn rustc with the prepared env and args.
-    // On Windows, write args to a response file to avoid CreateProcessW length limits.
     let mut cmd = Command::new(&rustc_args[0]);
     #[cfg(windows)]
     {
@@ -1195,52 +1176,40 @@ pub(crate) fn handle_pipelining_metadata(
         let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
 
         if let Some(rmeta_path_str) = extract_rmeta_path(trimmed) {
-            // Resolve the rmeta path relative to rustc's CWD (ctx.execroot_dir)
-            // to get an absolute path, since the worker process has a different CWD.
             let rmeta_resolved = resolve_relative_to(&rmeta_path_str, &ctx.execroot_dir);
             let rmeta_resolved_str = rmeta_resolved.display().to_string();
             append_pipeline_log(
                 &ctx.root_dir,
                 &format!("metadata rmeta ready: {}", rmeta_resolved_str),
             );
-            // Copy .rmeta to the declared output location (_pipeline/ subdirectory).
-            match request.sandbox_dir.as_ref() {
+            let copy_err = match request.sandbox_dir.as_ref() {
                 Some(dir) => {
                     copy_output_to_sandbox(
                         &rmeta_resolved_str,
-                        dir,
-                        &original_out_dir,
+                        dir.as_str(),
+                        original_out_dir.as_str(),
                         "_pipeline",
-                    );
+                    ).err().map(|e| format!("pipelining: rmeta materialization failed: {e}"))
                 }
                 None => {
-                    let rmeta_src = &rmeta_resolved;
-                    if let Some(filename) = rmeta_src.file_name() {
-                        let dest_pipeline =
-                            std::path::Path::new(&original_out_dir).join("_pipeline");
-                        let _ = std::fs::create_dir_all(&dest_pipeline);
-                        let dest = dest_pipeline.join(filename);
-                        // Skip copy if source and dest resolve to the same file.
-                        let same_file = rmeta_src
-                            .canonicalize()
-                            .ok()
-                            .zip(dest.canonicalize().ok())
-                            .is_some_and(|(a, b)| a == b);
-                        if !same_file {
-                            let _ = std::fs::copy(rmeta_src, &dest);
-                        }
-                    }
+                    copy_rmeta_unsandboxed(&rmeta_resolved, original_out_dir.as_str(), &ctx.root_dir)
                 }
+            };
+            if let Some(err_msg) = copy_err {
+                let _ = child.kill();
+                let _ = child.wait();
+                return (1, err_msg);
             }
-            // .rmeta is ready! Spawn a drain thread to prevent pipe buffer deadlock.
+            let drain_format = pw_args.rustc_output_format.clone();
             let drain = thread::spawn(move || {
+                let fmt = drain_format.as_deref();
                 let mut remaining = String::new();
                 let mut buf = String::new();
                 while reader.read_line(&mut buf).unwrap_or(0) > 0 {
                     let l = buf.trim_end_matches('\n').trim_end_matches('\r');
                     if let Ok(json) = l.parse::<JsonValue>() {
-                        if let Some(rendered) = extract_rendered_diagnostic(&json) {
-                            remaining.push_str(&rendered);
+                        if let Some(diag) = extract_diagnostic_for_format(&json, l, fmt) {
+                            remaining.push_str(&diag);
                             remaining.push('\n');
                         }
                     }
@@ -1250,8 +1219,9 @@ pub(crate) fn handle_pipelining_metadata(
             });
 
             let diagnostics_before = diagnostics.clone();
-            let orphan = lock_or_recover(pipeline_state).store(
+            let store_result = lock_or_recover(pipeline_state).store_metadata(
                 &key,
+                request.request_id,
                 BackgroundRustc {
                     child,
                     diagnostics_before,
@@ -1261,7 +1231,14 @@ pub(crate) fn handle_pipelining_metadata(
                     original_out_dir,
                 },
             );
-            // Kill orphaned background rustc outside the lock.
+            let orphan = match store_result {
+                StoreBackgroundResult::Stored => None,
+                StoreBackgroundResult::Replaced(bg) => Some(bg),
+                StoreBackgroundResult::Rejected(bg) => {
+                    lock_or_recover(pipeline_state).discard_request(request.request_id);
+                    Some(bg)
+                }
+            };
             if let Some(mut orphan) = orphan {
                 let _ = orphan.child.kill();
                 let _ = orphan.child.wait();
@@ -1275,8 +1252,12 @@ pub(crate) fn handle_pipelining_metadata(
         }
 
         if let Ok(json) = trimmed.parse::<JsonValue>() {
-            if let Some(rendered) = extract_rendered_diagnostic(&json) {
-                diagnostics.push_str(&rendered);
+            if let Some(diag) = extract_diagnostic_for_format(
+                &json,
+                trimmed,
+                pw_args.rustc_output_format.as_deref(),
+            ) {
+                diagnostics.push_str(&diag);
                 diagnostics.push('\n');
             }
         }
@@ -1295,68 +1276,51 @@ pub(crate) fn handle_pipelining_metadata(
     (exit_code, diagnostics)
 }
 
-/// Handles a `--pipelining-full` request (sandboxed or unsandboxed).
-///
-/// Looks up the background rustc by pipeline key. If found, waits for it to
-/// finish and copies outputs to the correct location. If not found (worker was
-/// restarted), falls back to running rustc normally as a one-shot compilation.
 pub(crate) fn handle_pipelining_full(
     request: &WorkRequestContext,
     args: Vec<String>,
-    key: String,
+    key: PipelineKey,
     pipeline_state: &Arc<Mutex<PipelineState>>,
     self_path: &std::path::Path,
 ) -> (i32, String) {
-    let taken = lock_or_recover(pipeline_state).take_for_full(&key, request.request_id);
+    let action = lock_or_recover(pipeline_state).claim_for_full(&key, request.request_id);
 
-    match taken {
-        Some((mut bg, child_reaped)) => {
+    match action {
+        FullRequestAction::Background(mut bg, child_reaped) => {
             append_pipeline_log(&bg.pipeline_root_dir, &format!("full start key={}", key));
-            // Join the drain thread first (avoids deadlock: child blocks on stderr
-            // write if the pipe buffer fills up before we drain it).
             let remaining = bg.stderr_drain.join().unwrap_or_default();
             let all_diagnostics = bg.diagnostics_before + &remaining;
 
             let wait_result = bg.child.wait();
-            // Mark the child as reaped immediately so the cancel handler
-            // won't send SIGKILL to a potentially-recycled PID.
             child_reaped.store(true, Ordering::SeqCst);
 
             match wait_result {
                 Ok(status) => {
                     let exit_code = status.code().unwrap_or(1);
                     if exit_code == 0 {
-                        // Copy all outputs from the persistent pipeline dir.
-                        match request.sandbox_dir.as_ref() {
+                        let copy_result = match request.sandbox_dir.as_ref() {
                             Some(dir) => {
                                 copy_all_outputs_to_sandbox(
                                     &bg.pipeline_output_dir,
-                                    dir,
-                                    &bg.original_out_dir,
-                                );
+                                    dir.as_str(),
+                                    bg.original_out_dir.as_str(),
+                                ).map(|_| ())
+                                .map_err(|e| format!("pipelining: output materialization failed: {e}"))
                             }
                             None => {
-                                let dest_dir = std::path::Path::new(&bg.original_out_dir);
-                                let _ = std::fs::create_dir_all(dest_dir);
-                                if let Ok(entries) = std::fs::read_dir(&bg.pipeline_output_dir) {
-                                    for entry in entries.flatten() {
-                                        if let Ok(meta) = entry.metadata() {
-                                            if meta.is_file() {
-                                                let dest = dest_dir.join(entry.file_name());
-                                                let same_file = entry
-                                                    .path()
-                                                    .canonicalize()
-                                                    .ok()
-                                                    .zip(dest.canonicalize().ok())
-                                                    .is_some_and(|(a, b)| a == b);
-                                                if !same_file {
-                                                    let _ = std::fs::copy(entry.path(), &dest);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                copy_outputs_unsandboxed(
+                                    &bg.pipeline_output_dir,
+                                    bg.original_out_dir.as_path(),
+                                )
                             }
+                        };
+                        if let Err(e) = copy_result {
+                            append_pipeline_log(
+                                &bg.pipeline_root_dir,
+                                &format!("full output copy error: {e}"),
+                            );
+                            lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+                            return (1, format!("{all_diagnostics}\n{e}"));
                         }
                     }
                     append_pipeline_log(
@@ -1377,7 +1341,7 @@ pub(crate) fn handle_pipelining_full(
                 }
             }
         }
-        None => {
+        FullRequestAction::Fallback => {
             let worker_state_root = std::env::current_dir()
                 .ok()
                 .map(|cwd| cwd.join("_pw_state").join("fallback.log"));
@@ -1394,12 +1358,9 @@ pub(crate) fn handle_pipelining_full(
                     );
                 }
             }
-            // No cached process found (worker was restarted between the metadata
-            // and full actions, or metadata was a cache hit). Fall back to a normal
-            // one-shot compilation.
             let filtered_args = strip_pipelining_flags(&args);
             let result = match request.sandbox_dir.as_ref() {
-                Some(dir) => run_sandboxed_request(self_path, filtered_args, dir)
+                Some(dir) => run_sandboxed_request(self_path, filtered_args, dir.as_str())
                     .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
                 None => {
                     prepare_outputs(&filtered_args);
@@ -1407,9 +1368,18 @@ pub(crate) fn handle_pipelining_full(
                         .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
                 }
             };
-            lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+            let orphaned_bg = lock_or_recover(pipeline_state).cleanup_key_fully(&key);
+            if let Some(mut bg) = orphaned_bg {
+                let _ = bg.child.kill();
+                let _ = bg.child.wait();
+                let _ = bg.stderr_drain.join();
+            }
             result
         }
+        FullRequestAction::Busy => (
+            1,
+            format!("pipelining: full request already active for key {key}"),
+        ),
     }
 }
 
@@ -1418,7 +1388,7 @@ pub(crate) fn handle_pipelining_full(
 /// Uses `PipelineState::cancel_by_request_id` to remove the entry under the
 /// lock, then performs blocking kill/wait/join **after** releasing the lock
 /// to avoid holding the mutex during I/O.
-pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: i64) {
+pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: RequestId) {
     // Remove the entry under the lock (fast, O(1) HashMap ops).
     let cancelled = lock_or_recover(pipeline_state).cancel_by_request_id(request_id);
     // Blocking kill/wait/join happens here, outside the lock.
@@ -1430,6 +1400,73 @@ pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>,
             request_id,
         ));
     }
+}
+
+/// Copies all regular files from `src_dir` to `dest_dir` (unsandboxed path).
+///
+/// Skips same-file copies (when src and dest resolve to the same inode).
+/// Returns an error if any file operation fails.
+/// Copies a single .rmeta file to the `_pipeline/` subdirectory of out_dir (unsandboxed).
+/// Returns `Some(error_message)` on failure, `None` on success.
+fn copy_rmeta_unsandboxed(
+    rmeta_src: &std::path::Path,
+    original_out_dir: &str,
+    root_dir: &std::path::Path,
+) -> Option<String> {
+    let filename = rmeta_src.file_name()?;
+    let dest_pipeline = std::path::Path::new(original_out_dir).join("_pipeline");
+    if let Err(e) = std::fs::create_dir_all(&dest_pipeline) {
+        append_pipeline_log(root_dir, &format!("failed to create _pipeline dir: {e}"));
+        return Some(format!("pipelining: failed to create _pipeline dir: {e}"));
+    }
+    let dest = dest_pipeline.join(filename);
+    let same_file = rmeta_src
+        .canonicalize()
+        .ok()
+        .zip(dest.canonicalize().ok())
+        .is_some_and(|(a, b)| a == b);
+    if !same_file {
+        if let Err(e) = std::fs::copy(rmeta_src, &dest) {
+            return Some(format!("pipelining: failed to copy rmeta: {e}"));
+        }
+    }
+    None
+}
+
+/// Copies all regular files from `src_dir` to `dest_dir` (unsandboxed path).
+fn copy_outputs_unsandboxed(
+    src_dir: &std::path::Path,
+    dest_dir: &std::path::Path,
+) -> Result<(), String> {
+    std::fs::create_dir_all(dest_dir)
+        .map_err(|e| format!("pipelining: failed to create output dir: {e}"))?;
+    let entries = std::fs::read_dir(src_dir)
+        .map_err(|e| format!("pipelining: failed to read pipeline dir: {e}"))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("pipelining: dir entry error: {e}"))?;
+        let meta = entry.metadata().map_err(|e| {
+            format!("pipelining: metadata error for {}: {e}", entry.path().display())
+        })?;
+        if meta.is_file() {
+            let dest = dest_dir.join(entry.file_name());
+            let same_file = entry
+                .path()
+                .canonicalize()
+                .ok()
+                .zip(dest.canonicalize().ok())
+                .is_some_and(|(a, b)| a == b);
+            if !same_file {
+                std::fs::copy(entry.path(), &dest).map_err(|e| {
+                    format!(
+                        "pipelining: failed to copy {} to {}: {e}",
+                        entry.path().display(),
+                        dest.display(),
+                    )
+                })?;
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Extracts the artifact path from an rmeta artifact notification JSON line.
@@ -1456,6 +1493,30 @@ pub(super) fn extract_rendered_diagnostic(json: &JsonValue) -> Option<String> {
         }
     }
     None
+}
+
+/// Format-aware diagnostic extraction.
+///
+/// When `format` is `"json"`, passes through the full JSON line for diagnostic
+/// messages (those containing a `"rendered"` key). Otherwise, extracts only the
+/// rendered text. This matches the standalone path's behavior in `rustc.rs`.
+pub(super) fn extract_diagnostic_for_format(
+    json: &JsonValue,
+    line: &str,
+    format: Option<&str>,
+) -> Option<String> {
+    match format {
+        Some("json") => {
+            // Pass through full JSON for diagnostic messages.
+            if let JsonValue::Object(ref map) = json {
+                if map.contains_key("rendered") {
+                    return Some(line.to_string());
+                }
+            }
+            None
+        }
+        _ => extract_rendered_diagnostic(json),
+    }
 }
 
 pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
