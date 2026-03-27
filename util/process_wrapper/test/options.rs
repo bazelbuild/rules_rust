@@ -152,6 +152,130 @@ fn test_prepare_param_file_strips_and_collects_relocated_pw_flags() {
 }
 
 #[test]
+fn test_expand_args_inline_matches_standalone_prepare_args_for_nested_paramfiles() {
+    let read_files = HashMap::<String, Vec<String>>::from([
+        (
+            "root.params".to_string(),
+            vec![
+                "--crate-name=foo".to_string(),
+                "@nested.params".to_string(),
+                "src/lib.rs".to_string(),
+            ],
+        ),
+        (
+            "nested.params".to_string(),
+            vec![
+                "--env-file".to_string(),
+                "build.env".to_string(),
+                "--arg-file".to_string(),
+                "build.args".to_string(),
+                "--output-file".to_string(),
+                "diag.txt".to_string(),
+                "--rustc-output-format".to_string(),
+                "json".to_string(),
+                "--stable-status-file".to_string(),
+                "stable.txt".to_string(),
+                "--volatile-status-file".to_string(),
+                "volatile.txt".to_string(),
+                "--pipelining-metadata".to_string(),
+                "--pipelining-rlib-path=${pwd}/out/libfoo.rlib".to_string(),
+                "@leaf.params".to_string(),
+            ],
+        ),
+        (
+            "leaf.params".to_string(),
+            vec![
+                "--out-dir=${pwd}/out".to_string(),
+                "--cfg=leaf_cfg".to_string(),
+            ],
+        ),
+    ]);
+    let mut written_files = HashMap::<String, String>::new();
+    let mut standalone_read = |filename: &str| -> Result<Vec<String>, OptionError> {
+        read_files
+            .get(filename)
+            .cloned()
+            .ok_or_else(|| OptionError::Generic(format!("file not found: {}", filename)))
+    };
+    let mut write_file = |filename: &str, content: &str| -> Result<(), OptionError> {
+        match written_files.get_mut(filename) {
+            Some(existing) => {
+                existing.push('\n');
+                existing.push_str(content);
+            }
+            None => {
+                written_files.insert(filename.to_owned(), content.to_owned());
+            }
+        }
+        Ok(())
+    };
+    let args = vec!["rustc".to_string(), "@root.params".to_string()];
+    let subst_mappings = vec![("pwd".to_string(), "/work".to_string())];
+
+    let (standalone_args, standalone_relocated) = prepare_args(
+        args.clone(),
+        &subst_mappings,
+        true,
+        Some(&mut standalone_read),
+        Some(&mut write_file),
+    )
+    .unwrap();
+
+    let mut worker_read = |filename: &str| -> Result<Vec<String>, OptionError> {
+        read_files
+            .get(filename)
+            .cloned()
+            .ok_or_else(|| OptionError::Generic(format!("file not found: {}", filename)))
+    };
+    let (worker_args, worker_meta) =
+        expand_args_inline(&args, &subst_mappings, true, Some(&mut worker_read), false).unwrap();
+
+    assert_eq!(
+        standalone_args,
+        vec![
+            "rustc".to_string(),
+            "@root.params.expanded".to_string(),
+            "-Zallow-features=".to_string(),
+        ]
+    );
+    let mut reconstructed = vec!["rustc".to_string()];
+    reconstructed.extend(
+        written_files["root.params.expanded"]
+            .lines()
+            .map(str::to_owned),
+    );
+    reconstructed.push("-Zallow-features=".to_string());
+    assert_eq!(worker_args, reconstructed);
+    assert_eq!(worker_meta.relocated, standalone_relocated);
+    assert_eq!(standalone_relocated.env_files, vec!["build.env"]);
+    assert_eq!(standalone_relocated.arg_files, vec!["build.args"]);
+    assert_eq!(
+        standalone_relocated.output_file.as_deref(),
+        Some("diag.txt")
+    );
+    assert_eq!(
+        standalone_relocated.rustc_output_format.as_deref(),
+        Some("json")
+    );
+    assert_eq!(
+        standalone_relocated.stable_status_file.as_deref(),
+        Some("stable.txt")
+    );
+    assert_eq!(
+        standalone_relocated.volatile_status_file.as_deref(),
+        Some("volatile.txt")
+    );
+    assert_eq!(
+        standalone_relocated.pipelining_mode,
+        Some(SubprocessPipeliningMode::Metadata)
+    );
+    assert_eq!(
+        standalone_relocated.pipelining_rlib_path.as_deref(),
+        Some("/work/out/libfoo.rlib")
+    );
+}
+
+#[test]
 fn resolve_external_path_non_rs_unchanged() {
     let arg = "external/some_repo/src/lib.txt";
     let result = resolve_external_path(arg);

@@ -19,6 +19,7 @@ mod rustc;
 mod util;
 mod worker;
 
+#[cfg(windows)]
 use std::collections::HashMap;
 #[cfg(windows)]
 use std::collections::VecDeque;
@@ -29,8 +30,6 @@ use std::path::PathBuf;
 use std::process::{exit, Command, Stdio};
 #[cfg(windows)]
 use std::time::{SystemTime, UNIX_EPOCH};
-
-use tinyjson::JsonValue;
 
 use crate::options::{options, Options, SubprocessPipeliningMode};
 use crate::output::{process_output, LineOutput};
@@ -57,44 +56,54 @@ macro_rules! debug_log {
     };
 }
 
-#[cfg(windows)]
-struct TemporaryFileGuard {
-    path: Option<PathBuf>,
+enum TemporaryPath {
+    File(PathBuf),
+    Directory(PathBuf),
 }
 
-#[cfg(windows)]
-impl TemporaryFileGuard {
-    fn new(path: Option<PathBuf>) -> Self {
-        Self { path }
-    }
-
-    fn take(&mut self) -> Option<PathBuf> {
-        self.path.take()
-    }
+struct TemporaryPathGuard {
+    paths: Vec<TemporaryPath>,
 }
 
-#[cfg(windows)]
-impl Drop for TemporaryFileGuard {
-    fn drop(&mut self) {
-        if let Some(path) = self.path.take() {
-            // May be a file (argfile) or directory (consolidated deps dir).
-            let _ = fs::remove_dir_all(&path);
+impl TemporaryPathGuard {
+    fn new() -> Self {
+        Self { paths: Vec::new() }
+    }
+
+    fn track_file(&mut self, path: PathBuf) {
+        self.paths.push(TemporaryPath::File(path));
+    }
+
+    fn track_directory(&mut self, path: PathBuf) {
+        self.paths.push(TemporaryPath::Directory(path));
+    }
+
+    fn cleanup(&mut self) {
+        for path in self.paths.drain(..).rev() {
+            match path {
+                TemporaryPath::File(path) => {
+                    let _ = fs::remove_file(path);
+                }
+                TemporaryPath::Directory(path) => {
+                    let _ = fs::remove_dir_all(path);
+                }
+            }
         }
     }
 }
 
-#[cfg(not(windows))]
-struct TemporaryFileGuard;
-
-#[cfg(not(windows))]
-impl TemporaryFileGuard {
-    fn new(_: Option<PathBuf>) -> Self {
-        TemporaryFileGuard
+impl Drop for TemporaryPathGuard {
+    fn drop(&mut self) {
+        self.cleanup();
     }
+}
 
-    fn take(&mut self) -> Option<PathBuf> {
-        None
+fn cleanup_expanded_paramfiles(paths: &[PathBuf]) {
+    let mut cleanup = TemporaryPathGuard::new();
+    for path in paths {
+        cleanup.track_file(path.clone());
     }
+    cleanup.cleanup();
 }
 
 #[cfg(windows)]
@@ -369,39 +378,8 @@ fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperE
     Ok(CacheSeedOutcome::NotFound)
 }
 
-fn json_warning(line: &str) -> JsonValue {
-    JsonValue::Object(HashMap::from([
-        (
-            "$message_type".to_string(),
-            JsonValue::String("diagnostic".to_string()),
-        ),
-        ("message".to_string(), JsonValue::String(line.to_string())),
-        ("code".to_string(), JsonValue::Null),
-        (
-            "level".to_string(),
-            JsonValue::String("warning".to_string()),
-        ),
-        ("spans".to_string(), JsonValue::Array(Vec::new())),
-        ("children".to_string(), JsonValue::Array(Vec::new())),
-        ("rendered".to_string(), JsonValue::String(line.to_string())),
-    ]))
-}
-
-fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, String> {
-    // LLVM can emit lines that look like the following, and these will be interspersed
-    // with the regular JSON output. Arguably, rustc should be fixed not to emit lines
-    // like these (or to convert them to JSON), but for now we convert them to JSON
-    // ourselves.
-    if line.contains("is not a recognized feature for this target (ignoring feature)")
-        || line.starts_with(" WARN ")
-    {
-        if let Ok(json_str) = json_warning(&line).stringify() {
-            line = json_str;
-        } else {
-            return Ok(LineOutput::Skip);
-        }
-    }
-    rustc::process_json(line, format)
+fn process_line(line: String, format: ErrorFormat) -> Result<LineOutput, String> {
+    rustc::process_stderr_line(line, format)
 }
 
 /// Core standalone compilation logic extracted from main().
@@ -411,7 +389,13 @@ fn process_line(mut line: String, format: ErrorFormat) -> Result<LineOutput, Str
 pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError> {
     let (child_arguments, dep_argfile_cleanup) =
         consolidate_dependency_search_paths(&opts.child_arguments)?;
-    let mut temp_file_guard = TemporaryFileGuard::new(dep_argfile_cleanup);
+    let mut temp_path_guard = TemporaryPathGuard::new();
+    for path in &opts.temporary_expanded_paramfiles {
+        temp_path_guard.track_file(path.clone());
+    }
+    if let Some(path) = dep_argfile_cleanup {
+        temp_path_guard.track_directory(path);
+    }
     let cwd = std::env::current_dir().map_err(|e| {
         ProcessWrapperError(format!("unable to read current working directory: {e}"))
     })?;
@@ -515,11 +499,6 @@ pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError>
         }
     }
 
-    if let Some(path) = temp_file_guard.take() {
-        // Consolidated dependency dir: remove the whole directory tree.
-        let _ = fs::remove_dir_all(&path);
-    }
-
     Ok(code)
 }
 
@@ -560,6 +539,7 @@ fn main() -> Result<(), ProcessWrapperError> {
                         ))
                     })?;
                 }
+                cleanup_expanded_paramfiles(&opts.temporary_expanded_paramfiles);
                 exit(0);
             }
             eprintln!(concat!(

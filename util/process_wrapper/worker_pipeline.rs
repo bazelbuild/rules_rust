@@ -26,8 +26,12 @@ use std::thread;
 
 use tinyjson::JsonValue;
 
-use crate::options::{is_pipelining_flag, is_relocated_pw_flag};
-use crate::util::read_stamp_status_with_context;
+use crate::options::{
+    build_child_environment, expand_args_inline, is_pipelining_flag, is_relocated_pw_flag,
+    parse_pw_args as parse_shared_pw_args, NormalizedRustcMetadata, OptionError, ParsedPwArgs,
+    RelocatedPwFlags, SubprocessPipeliningMode,
+};
+use crate::rustc::RustcStderrPolicy;
 use crate::ProcessWrapperError;
 
 use super::protocol::WorkRequestContext;
@@ -59,35 +63,29 @@ impl RequestKind {
     }
 
     pub(crate) fn parse_in_dir(args: &[String], base_dir: &std::path::Path) -> Self {
-        // First pass: check direct args (fast path).
-        let (mut is_metadata, mut is_full, mut key) =
+        let (direct_metadata, direct_full, direct_key) =
             scan_pipelining_flags(args.iter().map(String::as_str));
-
-        // Second pass: if not found yet, read @paramfiles from the rustc args
-        // (everything after "--").
-        if !is_metadata && !is_full {
-            let sep_pos = args.iter().position(|a| a == "--");
-            let rustc_args = match sep_pos {
-                Some(pos) => &args[pos + 1..],
-                None => &[][..],
-            };
-            for arg in rustc_args {
-                if let Some(path) = arg.strip_prefix('@') {
-                    let resolved = resolve_request_relative_path(path, Some(base_dir));
-                    if let Ok(content) = std::fs::read_to_string(&resolved) {
-                        let (m, f, k) = scan_pipelining_flags(content.lines());
-                        is_metadata |= m;
-                        is_full |= f;
-                        if k.is_some() {
-                            key = k;
-                        }
-                        if is_metadata || is_full {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        let sep_pos = args.iter().position(|a| a == "--");
+        let rustc_args = match sep_pos {
+            Some(pos) => &args[pos + 1..],
+            None => &[][..],
+        };
+        let parsed_pw_args =
+            parse_shared_pw_args(sep_pos.map(|pos| &args[..pos]).unwrap_or(&[]), base_dir);
+        let nested = expand_rustc_args_with_metadata(
+            rustc_args,
+            &parsed_pw_args.subst,
+            parsed_pw_args.require_explicit_unstable_features,
+            base_dir,
+        )
+        .ok()
+        .map(|(_, metadata)| metadata)
+        .unwrap_or_default();
+        let is_metadata = direct_metadata
+            || nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Metadata);
+        let is_full =
+            direct_full || nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Full);
+        let key = direct_key.or(nested.pipelining_key);
 
         match (is_metadata, is_full, key) {
             (true, _, Some(k)) => RequestKind::Metadata {
@@ -519,11 +517,6 @@ impl PipelineState {
     // --- Test accessors ---
 
     #[cfg(test)]
-    pub(super) fn entry_count(&self) -> usize {
-        self.entries.len()
-    }
-
-    #[cfg(test)]
     pub(super) fn has_entry(&self, key: &str) -> bool {
         self.entries.contains_key(&PipelineKey(key.to_string()))
     }
@@ -547,17 +540,6 @@ impl PipelineState {
 #[cfg(unix)]
 extern "C" {
     fn kill(pid: i32, sig: i32) -> i32;
-}
-
-/// Parsed process_wrapper arguments from before the `--` separator.
-pub(super) struct ParsedPwArgs {
-    pub(super) subst: Vec<(String, String)>,
-    pub(super) env_files: Vec<String>,
-    pub(super) arg_files: Vec<String>,
-    pub(super) stable_status_file: Option<String>,
-    pub(super) volatile_status_file: Option<String>,
-    pub(super) output_file: Option<String>,
-    pub(super) rustc_output_format: Option<String>,
 }
 
 /// Pipeline context for worker-managed pipelining.
@@ -689,69 +671,32 @@ pub(super) fn relocate_pw_flags(args: &mut Vec<String>) {
 
 /// Parses process_wrapper flags from the pre-`--` portion of args.
 pub(super) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
-    let current_dir = pwd.to_string_lossy().into_owned();
-    let mut parsed = ParsedPwArgs {
-        subst: Vec::new(),
-        env_files: Vec::new(),
-        arg_files: Vec::new(),
-        stable_status_file: None,
-        volatile_status_file: None,
-        output_file: None,
-        rustc_output_format: None,
-    };
-    let mut i = 0;
-    while i < pw_args.len() {
-        match pw_args[i].as_str() {
-            "--subst" => {
-                if let Some(kv) = pw_args.get(i + 1) {
-                    if let Some((k, v)) = kv.split_once('=') {
-                        let resolved = if v == "${pwd}" { &current_dir } else { v };
-                        parsed.subst.push((k.to_owned(), resolved.to_owned()));
-                    }
-                    i += 1;
-                }
-            }
-            "--env-file" => {
-                if let Some(path) = pw_args.get(i + 1) {
-                    parsed.env_files.push(path.clone());
-                    i += 1;
-                }
-            }
-            "--arg-file" => {
-                if let Some(path) = pw_args.get(i + 1) {
-                    parsed.arg_files.push(path.clone());
-                    i += 1;
-                }
-            }
-            "--output-file" => {
-                if let Some(path) = pw_args.get(i + 1) {
-                    parsed.output_file = Some(path.clone());
-                    i += 1;
-                }
-            }
-            "--stable-status-file" => {
-                if let Some(path) = pw_args.get(i + 1) {
-                    parsed.stable_status_file = Some(path.clone());
-                    i += 1;
-                }
-            }
-            "--volatile-status-file" => {
-                if let Some(path) = pw_args.get(i + 1) {
-                    parsed.volatile_status_file = Some(path.clone());
-                    i += 1;
-                }
-            }
-            "--rustc-output-format" => {
-                if let Some(val) = pw_args.get(i + 1) {
-                    parsed.rustc_output_format = Some(val.clone());
-                    i += 1;
-                }
-            }
-            _ => {}
-        }
-        i += 1;
-    }
-    parsed
+    parse_shared_pw_args(pw_args, pwd)
+}
+
+fn read_args_file_in_dir(
+    path: &str,
+    base_dir: &std::path::Path,
+) -> Result<Vec<String>, OptionError> {
+    let resolved = resolve_request_relative_path(path, Some(base_dir));
+    let resolved = resolved.display().to_string();
+    crate::util::read_file_to_array(&resolved).map_err(OptionError::Generic)
+}
+
+fn expand_rustc_args_with_metadata(
+    rustc_and_after: &[String],
+    subst: &[(String, String)],
+    require_explicit_unstable_features: bool,
+    execroot_dir: &std::path::Path,
+) -> Result<(Vec<String>, NormalizedRustcMetadata), OptionError> {
+    let mut read_file = |path: &str| read_args_file_in_dir(path, execroot_dir);
+    expand_args_inline(
+        rustc_and_after,
+        subst,
+        require_explicit_unstable_features,
+        Some(&mut read_file),
+        true,
+    )
 }
 
 /// Builds the environment map: inherit current process + env files + apply substitutions.
@@ -764,52 +709,25 @@ pub(super) fn build_rustc_env(
     volatile_status_file: Option<&str>,
     subst: &[(String, String)],
 ) -> Result<HashMap<String, String>, String> {
-    let mut env: HashMap<String, String> = std::env::vars().collect();
-    for path in env_files {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| format!("failed to read env-file '{}': {}", path, e))?;
-        for line in content.lines() {
-            if line.is_empty() {
-                continue;
-            }
-            let (k, v) = line
-                .split_once('=')
-                .ok_or_else(|| format!("env-file '{}': invalid line (no '='): {}", path, line))?;
-            env.insert(k.to_owned(), v.to_owned());
-        }
-    }
-    let stable_stamp_mappings: Vec<(String, String)> = match stable_status_file {
-        Some(path) => read_stamp_status_with_context(path, "stable-status")?,
-        None => vec![],
-    };
-    let volatile_stamp_mappings: Vec<(String, String)> = match volatile_status_file {
-        Some(path) => read_stamp_status_with_context(path, "volatile-status")?,
-        None => vec![],
-    };
-    for (k, v) in stable_stamp_mappings
-        .iter()
-        .chain(volatile_stamp_mappings.iter())
-    {
-        for val in env.values_mut() {
-            *val = val.replace(&format!("{{{k}}}"), v);
-        }
-    }
-    for val in env.values_mut() {
-        crate::util::apply_substitutions(val, subst);
-    }
-    Ok(env)
+    build_child_environment(env_files, stable_status_file, volatile_status_file, subst)
 }
 
 /// Prepares rustc arguments: expand @paramfiles, apply substitutions, strip
 /// pipelining flags, and append args from --arg-file files.
 ///
-/// Returns `(rustc_args, original_out_dir)` on success.
+/// Returns `(rustc_args, original_out_dir, relocated_pw_flags)` on success.
 pub(super) fn prepare_rustc_args(
     rustc_and_after: &[String],
     pw_args: &ParsedPwArgs,
     execroot_dir: &std::path::Path,
-) -> Result<(Vec<String>, OutputDir), (i32, String)> {
-    let mut rustc_args = expand_rustc_args(rustc_and_after, &pw_args.subst, execroot_dir);
+) -> Result<(Vec<String>, OutputDir, RelocatedPwFlags), (i32, String)> {
+    let (mut rustc_args, metadata) = expand_rustc_args_with_metadata(
+        rustc_and_after,
+        &pw_args.subst,
+        pw_args.require_explicit_unstable_features,
+        execroot_dir,
+    )
+    .map_err(|e| (1, format!("pipelining: {e}")))?;
     if rustc_args.is_empty() {
         return Err((
             1,
@@ -818,19 +736,67 @@ pub(super) fn prepare_rustc_args(
     }
 
     // Append args from --arg-file files (e.g. build script output: --cfg=..., -L ...).
-    for path in &pw_args.arg_files {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| (1, format!("failed to read arg-file '{}': {}", path, e)))?;
-        for line in content.lines() {
-            if !line.is_empty() {
-                rustc_args.push(apply_substs(line, &pw_args.subst));
-            }
+    let mut arg_files = pw_args.arg_files.clone();
+    arg_files.extend(metadata.relocated.arg_files.iter().cloned());
+    for path in arg_files {
+        let resolved = resolve_request_relative_path(&path, Some(execroot_dir));
+        let resolved = resolved.display().to_string();
+        let lines = crate::util::read_file_to_array(&resolved)
+            .map_err(|e| (1, format!("failed to read arg-file '{}': {}", resolved, e)))?;
+        for line in lines {
+            rustc_args.push(apply_substs(&line, &pw_args.subst));
         }
     }
 
     let original_out_dir = OutputDir(find_out_dir_in_expanded(&rustc_args).unwrap_or_default());
 
-    Ok((rustc_args, original_out_dir))
+    Ok((rustc_args, original_out_dir, metadata.relocated))
+}
+
+fn resolve_pw_args_for_request(
+    mut pw_args: ParsedPwArgs,
+    request: &WorkRequestContext,
+    execroot_dir: &std::path::Path,
+) -> ParsedPwArgs {
+    pw_args.env_files = pw_args
+        .env_files
+        .into_iter()
+        .map(|path| {
+            resolve_request_relative_path(&path, Some(execroot_dir))
+                .display()
+                .to_string()
+        })
+        .collect();
+    pw_args.arg_files = pw_args
+        .arg_files
+        .into_iter()
+        .map(|path| {
+            resolve_request_relative_path(&path, Some(execroot_dir))
+                .display()
+                .to_string()
+        })
+        .collect();
+    pw_args.stable_status_file = pw_args.stable_status_file.map(|path| {
+        resolve_request_relative_path(&path, Some(execroot_dir))
+            .display()
+            .to_string()
+    });
+    pw_args.volatile_status_file = pw_args.volatile_status_file.map(|path| {
+        resolve_request_relative_path(&path, Some(execroot_dir))
+            .display()
+            .to_string()
+    });
+    pw_args.output_file = pw_args.output_file.map(|path| {
+        let base = request
+            .sandbox_dir
+            .as_ref()
+            .map(|sd| sd.as_path())
+            .unwrap_or(execroot_dir);
+        resolve_request_relative_path(&path, Some(base))
+            .display()
+            .to_string()
+    });
+    pw_args
 }
 
 /// Applies `${key}` → `value` substitution mappings to a single argument string.
@@ -850,45 +816,20 @@ pub(super) fn apply_substs(arg: &str, subst: &[(String, String)]) -> String {
 /// pipelining protocol flags (`--pipelining-metadata`, `--pipelining-key=*`) that
 /// rustc doesn't understand. By expanding and filtering here we avoid passing
 /// unknown flags to rustc.
+#[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn expand_rustc_args(
     rustc_and_after: &[String],
     subst: &[(String, String)],
     execroot_dir: &std::path::Path,
 ) -> Vec<String> {
-    let mut result = Vec::new();
-    for raw in rustc_and_after {
-        let arg = apply_substs(raw, subst);
-        if let Some(path) = arg.strip_prefix('@') {
-            let resolved_path = resolve_request_relative_path(path, Some(execroot_dir));
-            match std::fs::read_to_string(&resolved_path) {
-                Ok(content) => {
-                    for line in content.lines() {
-                        if line.is_empty() {
-                            continue;
-                        }
-                        let line = apply_substs(line, subst);
-                        if !is_pipelining_flag(&line) {
-                            let resolved = crate::options::resolve_external_path(&line);
-                            result.push(resolved.into_owned());
-                        }
-                    }
-                }
-                Err(_) => {
-                    // Can't read the paramfile — pass it through and let rustc error.
-                    if !is_pipelining_flag(&arg) {
-                        result.push(arg);
-                    }
-                }
-            }
-        } else if !is_pipelining_flag(&arg) {
-            let resolved = crate::options::resolve_external_path(&arg);
-            result.push(match resolved {
-                std::borrow::Cow::Borrowed(_) => arg,
-                std::borrow::Cow::Owned(s) => s,
-            });
-        }
-    }
-    result
+    expand_rustc_args_with_metadata(rustc_and_after, subst, false, execroot_dir)
+        .map(|(args, _)| args)
+        .unwrap_or_else(|_| {
+            rustc_and_after
+                .iter()
+                .map(|arg| apply_substs(arg, subst))
+                .collect()
+        })
 }
 
 /// Searches already-expanded rustc args for `--out-dir=<path>`.
@@ -1058,49 +999,14 @@ pub(crate) fn handle_pipelining_metadata(
         Err(e) => return e,
     };
 
-    let raw_pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
-    let pw_args = ParsedPwArgs {
-        subst: raw_pw_args.subst,
-        env_files: raw_pw_args
-            .env_files
-            .into_iter()
-            .map(|path| {
-                resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
-                    .display()
-                    .to_string()
-            })
-            .collect(),
-        arg_files: raw_pw_args
-            .arg_files
-            .into_iter()
-            .map(|path| {
-                resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
-                    .display()
-                    .to_string()
-            })
-            .collect(),
-        stable_status_file: raw_pw_args.stable_status_file.map(|path| {
-            resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
-                .display()
-                .to_string()
-        }),
-        volatile_status_file: raw_pw_args.volatile_status_file.map(|path| {
-            resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
-                .display()
-                .to_string()
-        }),
-        output_file: raw_pw_args.output_file.map(|path| {
-            let base = request
-                .sandbox_dir
-                .as_ref()
-                .map(|sd| sd.as_path())
-                .unwrap_or(ctx.execroot_dir.as_path());
-            resolve_request_relative_path(&path, Some(base))
-                .display()
-                .to_string()
-        }),
-        rustc_output_format: raw_pw_args.rustc_output_format,
-    };
+    let mut pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
+    let (rustc_args, original_out_dir, relocated) =
+        match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
+            Ok(v) => v,
+            Err(e) => return e,
+        };
+    pw_args.merge_relocated(relocated);
+    let pw_args = resolve_pw_args_for_request(pw_args, request, &ctx.execroot_dir);
     let env = match build_rustc_env(
         &pw_args.env_files,
         pw_args.stable_status_file.as_deref(),
@@ -1110,12 +1016,6 @@ pub(crate) fn handle_pipelining_metadata(
         Ok(env) => env,
         Err(e) => return (1, format!("pipelining: {e}")),
     };
-
-    let (rustc_args, original_out_dir) =
-        match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
-            Ok(v) => v,
-            Err(e) => return e,
-        };
 
     let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
     let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
@@ -1185,6 +1085,8 @@ pub(crate) fn handle_pipelining_metadata(
     let stderr = child.stderr.take().expect("stderr was piped");
     let mut reader = BufReader::new(stderr);
     let mut diagnostics = String::new();
+    let mut diagnostics_policy =
+        RustcStderrPolicy::from_option_str(pw_args.rustc_output_format.as_deref());
 
     loop {
         let mut line = String::new();
@@ -1193,6 +1095,11 @@ pub(crate) fn handle_pipelining_metadata(
             Err(_) => break,
             Ok(_) => {}
         }
+
+        if let Some(output) = diagnostics_policy.process_line(&line) {
+            diagnostics.push_str(&output);
+        }
+
         let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
 
         if let Some(rmeta_path_str) = extract_rmeta_path(trimmed) {
@@ -1223,18 +1130,13 @@ pub(crate) fn handle_pipelining_metadata(
                 let _ = child.wait();
                 return (1, err_msg);
             }
-            let drain_format = pw_args.rustc_output_format.clone();
+            let mut drain_policy = diagnostics_policy;
             let drain = thread::spawn(move || {
-                let fmt = drain_format.as_deref();
                 let mut remaining = String::new();
                 let mut buf = String::new();
                 while reader.read_line(&mut buf).unwrap_or(0) > 0 {
-                    let l = buf.trim_end_matches('\n').trim_end_matches('\r');
-                    if let Ok(json) = l.parse::<JsonValue>() {
-                        if let Some(diag) = extract_diagnostic_for_format(&json, l, fmt) {
-                            remaining.push_str(&diag);
-                            remaining.push('\n');
-                        }
+                    if let Some(output) = drain_policy.process_line(&buf) {
+                        remaining.push_str(&output);
                     }
                     buf.clear();
                 }
@@ -1272,17 +1174,6 @@ pub(crate) fn handle_pipelining_metadata(
                 let _ = std::fs::write(path, &diagnostics);
             }
             return (0, diagnostics);
-        }
-
-        if let Ok(json) = trimmed.parse::<JsonValue>() {
-            if let Some(diag) = extract_diagnostic_for_format(
-                &json,
-                trimmed,
-                pw_args.rustc_output_format.as_deref(),
-            ) {
-                diagnostics.push_str(&diag);
-                diagnostics.push('\n');
-            }
         }
     }
 
@@ -1509,40 +1400,6 @@ pub(super) fn extract_rmeta_path(line: &str) -> Option<String> {
         }
     }
     None
-}
-
-/// Extracts the `"rendered"` field from a rustc JSON diagnostic message.
-pub(super) fn extract_rendered_diagnostic(json: &JsonValue) -> Option<String> {
-    if let JsonValue::Object(ref map) = json {
-        if let Some(JsonValue::String(rendered)) = map.get("rendered") {
-            return Some(rendered.clone());
-        }
-    }
-    None
-}
-
-/// Format-aware diagnostic extraction.
-///
-/// When `format` is `"json"`, passes through the full JSON line for diagnostic
-/// messages (those containing a `"rendered"` key). Otherwise, extracts only the
-/// rendered text. This matches the standalone path's behavior in `rustc.rs`.
-pub(super) fn extract_diagnostic_for_format(
-    json: &JsonValue,
-    line: &str,
-    format: Option<&str>,
-) -> Option<String> {
-    match format {
-        Some("json") => {
-            // Pass through full JSON for diagnostic messages.
-            if let JsonValue::Object(ref map) = json {
-                if map.contains_key("rendered") {
-                    return Some(line.to_string());
-                }
-            }
-            None
-        }
-        _ => extract_rendered_diagnostic(json),
-    }
 }
 
 pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {

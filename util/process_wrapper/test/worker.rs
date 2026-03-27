@@ -1,6 +1,6 @@
 use super::pipeline::{
     apply_substs, build_rustc_env, detect_pipelining_mode, expand_rustc_args, extract_rmeta_path,
-    find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs,
+    find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs, prepare_rustc_args,
     rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags, BackgroundRustc,
     CancelledEntry, FullRequestAction, PipelineState, RequestKind, StoreBackgroundResult,
 };
@@ -390,6 +390,34 @@ fn test_detect_pipelining_mode_from_paramfile() {
 }
 
 #[test]
+fn test_detect_pipelining_mode_from_nested_paramfile() {
+    let tmp = std::env::temp_dir().join("pw_test_detect_nested_paramfile");
+    let outer = tmp.join("outer.params");
+    let nested = tmp.join("nested.params");
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+    std::fs::write(&outer, "--crate-name=foo\n@nested.params\n").unwrap();
+    std::fs::write(
+        &nested,
+        "--pipelining-full\n--pipelining-key=foo_nested_key\n",
+    )
+    .unwrap();
+
+    let args = vec![
+        "--".to_string(),
+        "/path/to/rustc".to_string(),
+        "@outer.params".to_string(),
+    ];
+
+    match RequestKind::parse_in_dir(&args, &tmp) {
+        RequestKind::Full { key } => assert_eq!(key.as_str(), "foo_nested_key"),
+        other => panic!("expected Full, got {:?}", std::mem::discriminant(&other)),
+    }
+
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
 fn test_expand_rustc_args_strips_pipelining_flags() {
     use std::io::Write;
     let tmp = std::env::temp_dir().join("pw_test_expand_rustc");
@@ -415,6 +443,73 @@ fn test_expand_rustc_args_strips_pipelining_flags() {
     // Pipelining flags must be stripped.
     assert!(!expanded.contains(&"--pipelining-metadata".to_string()));
     assert!(!expanded.iter().any(|a| a.starts_with("--pipelining-key=")));
+
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_prepare_rustc_args_collects_nested_relocated_flags() {
+    let tmp = std::env::temp_dir().join("pw_test_prepare_rustc_args_nested");
+    let outer = tmp.join("outer.params");
+    let nested = tmp.join("nested.params");
+    let arg_file = tmp.join("build.args");
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+    std::fs::write(&outer, "@nested.params\n--crate-name=foo\n").unwrap();
+    std::fs::write(
+        &nested,
+        "\
+--env-file
+build.env
+--arg-file
+build.args
+--output-file
+diag.txt
+--rustc-output-format
+rendered
+--stable-status-file
+stable.txt
+--volatile-status-file
+volatile.txt
+--out-dir=${pwd}/out
+",
+    )
+    .unwrap();
+    std::fs::write(&arg_file, "--cfg=nested_arg\n").unwrap();
+
+    let pw_args = parse_pw_args(
+        &[
+            "--subst".to_string(),
+            "pwd=/work".to_string(),
+            "--require-explicit-unstable-features".to_string(),
+            "true".to_string(),
+        ],
+        &tmp,
+    );
+    let rustc_and_after = vec!["rustc".to_string(), "@outer.params".to_string()];
+    let (rustc_args, out_dir, relocated) =
+        prepare_rustc_args(&rustc_and_after, &pw_args, &tmp).unwrap();
+
+    assert_eq!(
+        rustc_args,
+        vec![
+            "rustc".to_string(),
+            "--out-dir=/work/out".to_string(),
+            "--crate-name=foo".to_string(),
+            "-Zallow-features=".to_string(),
+            "--cfg=nested_arg".to_string(),
+        ]
+    );
+    assert_eq!(out_dir.as_str(), "/work/out");
+    assert_eq!(relocated.env_files, vec!["build.env"]);
+    assert_eq!(relocated.arg_files, vec!["build.args"]);
+    assert_eq!(relocated.output_file.as_deref(), Some("diag.txt"));
+    assert_eq!(relocated.rustc_output_format.as_deref(), Some("rendered"));
+    assert_eq!(relocated.stable_status_file.as_deref(), Some("stable.txt"));
+    assert_eq!(
+        relocated.volatile_status_file.as_deref(),
+        Some("volatile.txt")
+    );
 
     let _ = std::fs::remove_dir_all(&tmp);
 }

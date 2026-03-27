@@ -1,4 +1,5 @@
 use super::*;
+use tinyjson::JsonValue;
 
 fn parse_json(json_str: &str) -> Result<JsonValue, String> {
     json_str.parse::<JsonValue>().map_err(|e| e.to_string())
@@ -196,6 +197,68 @@ fn test_ensure_cache_loopback_from_args() -> Result<(), String> {
 
     assert_eq!(loopback, Some(cache_root.join("repos/v1/cache")));
     assert_eq!(loopback_target, cache_root);
+    Ok(())
+}
+
+#[test]
+fn test_run_standalone_cleans_up_expanded_paramfiles() -> Result<(), String> {
+    let crate_dir = setup_test_crate("cleanup_expanded_paramfiles");
+    let out_dir = crate_dir.join("out");
+    let paramfile = crate_dir.join("cleanup_expanded_paramfiles.params");
+    fs::create_dir_all(&out_dir).map_err(|e| e.to_string())?;
+    fs::write(
+        &paramfile,
+        format!(
+            "--crate-type=lib\n--edition=2021\n--crate-name=cleanup_test\n--emit=metadata\n--out-dir={}\n{}\n",
+            out_dir.display(),
+            crate_dir.join("lib.rs").display(),
+        ),
+    )
+    .map_err(|e| e.to_string())?;
+
+    let expanded_paramfile = std::env::temp_dir().join(format!(
+        "pw_expanded_{}_{}",
+        std::process::id(),
+        paramfile
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| "paramfile basename was not utf-8".to_string())?,
+    ));
+    let _ = fs::remove_file(&expanded_paramfile);
+
+    let opts = crate::options::options_from_args(vec![
+        "process_wrapper".to_string(),
+        "--".to_string(),
+        resolve_rustc().display().to_string(),
+        format!("@{}", paramfile.display()),
+    ])
+    .map_err(|e| e.to_string())?;
+
+    assert_eq!(
+        opts.temporary_expanded_paramfiles,
+        vec![expanded_paramfile.clone()]
+    );
+    assert!(
+        expanded_paramfile.exists(),
+        "expected expanded paramfile at {}",
+        expanded_paramfile.display()
+    );
+
+    let code = run_standalone(&opts).map_err(|e| e.to_string())?;
+    let compiled_metadata = fs::read_dir(&out_dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|entry| entry.ok())
+        .any(|entry| entry.path().extension().is_some_and(|ext| ext == "rmeta"));
+
+    let _ = fs::remove_dir_all(&crate_dir);
+
+    assert_eq!(code, 0);
+    assert!(compiled_metadata, "expected rustc to emit an .rmeta file");
+    assert!(
+        !expanded_paramfile.exists(),
+        "expected expanded paramfile cleanup for {}",
+        expanded_paramfile.display()
+    );
     Ok(())
 }
 
