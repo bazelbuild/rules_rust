@@ -13,9 +13,11 @@ use super::sandbox::resolve_request_relative_path;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
+use super::invocation::{InvocationDirs, RustcInvocation};
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
+use std::path::PathBuf;
 use tinyjson::JsonValue;
 
 fn parse_json(s: &str) -> JsonValue {
@@ -1308,4 +1310,40 @@ fn test_build_response_preserves_warnings_on_success() {
         output, warning,
         "build_response should preserve warnings on success (exit_code=0)"
     );
+}
+
+// ---------------------------------------------------------------------------
+// RustcInvocation tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_invocation_pending_to_running() {
+    let inv = RustcInvocation::new();
+    assert!(inv.is_pending());
+}
+
+#[test]
+fn test_invocation_completed_via_transition() {
+    let inv = RustcInvocation::new();
+    inv.transition_to_completed(
+        0,
+        "all good".to_string(),
+        InvocationDirs {
+            pipeline_output_dir: PathBuf::from("/tmp/out"),
+            pipeline_root_dir: PathBuf::from("/tmp/root"),
+            original_out_dir: OutputDir::default(),
+        },
+    );
+    let result = inv.wait_for_completion();
+    assert!(result.is_ok());
+    let completion = result.unwrap();
+    assert_eq!(completion.exit_code, 0);
+    assert_eq!(completion.diagnostics, "all good");
+}
+
+#[test]
+fn test_invocation_shutdown_from_pending() {
+    let inv = RustcInvocation::new();
+    inv.request_shutdown();
+    assert!(inv.is_shutting_down_or_terminal());
 }

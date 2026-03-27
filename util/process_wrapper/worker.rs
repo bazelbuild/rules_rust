@@ -24,6 +24,8 @@ pub(crate) mod protocol;
 pub(crate) mod sandbox;
 #[path = "worker_types.rs"]
 pub(crate) mod types;
+#[path = "worker_invocation.rs"]
+pub(crate) mod invocation;
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
