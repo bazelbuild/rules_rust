@@ -1347,3 +1347,104 @@ fn test_invocation_shutdown_from_pending() {
     inv.request_shutdown();
     assert!(inv.is_shutting_down_or_terminal());
 }
+
+// ---------------------------------------------------------------------------
+// spawn_pipelined_monitor tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_monitor_thread_pipelined_completes() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+
+    let child = Command::new("sh")
+        .arg("-c")
+        .arg(r#"echo '{"artifact":"/tmp/test.rmeta","emit":"metadata"}' >&2; exit 0"#)
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let dirs = InvocationDirs {
+        pipeline_output_dir: PathBuf::from("/tmp"),
+        pipeline_root_dir: PathBuf::from("/tmp"),
+        original_out_dir: OutputDir::default(),
+    };
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_pipelined_monitor(&inv, child, dirs.clone(), None);
+
+    let meta = inv.wait_for_metadata();
+    assert!(meta.is_ok(), "metadata should be ready");
+
+    let result = inv.wait_for_completion();
+    assert!(result.is_ok(), "invocation should complete");
+    assert_eq!(result.unwrap().exit_code, 0);
+
+    handle.join().expect("monitor thread should not panic");
+}
+
+#[test]
+fn test_monitor_thread_failure_before_rmeta() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+
+    let child = Command::new("sh")
+        .arg("-c")
+        .arg("echo 'error: something broke' >&2; exit 1")
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let dirs = InvocationDirs {
+        pipeline_output_dir: PathBuf::from("/tmp"),
+        pipeline_root_dir: PathBuf::from("/tmp"),
+        original_out_dir: OutputDir::default(),
+    };
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_pipelined_monitor(&inv, child, dirs, None);
+
+    let meta = inv.wait_for_metadata();
+    assert!(meta.is_err());
+
+    handle.join().expect("monitor thread should not panic");
+}
+
+#[test]
+#[cfg(unix)]
+fn test_monitor_thread_shutdown_kills_child() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+
+    // sleep produces no stderr output, so read_line blocks until child is killed.
+    let child = Command::new("sleep")
+        .arg("60")
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let dirs = InvocationDirs {
+        pipeline_output_dir: PathBuf::from("/tmp"),
+        pipeline_root_dir: PathBuf::from("/tmp"),
+        original_out_dir: OutputDir::default(),
+    };
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_pipelined_monitor(&inv, child, dirs, None);
+
+    // Give monitor thread time to start reading stderr.
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Request shutdown — this sends SIGTERM to the child, unblocking read_line.
+    inv.request_shutdown();
+
+    // wait_for_completion should return failure.
+    let result = inv.wait_for_completion();
+    assert!(result.is_err());
+
+    // Monitor thread should exit promptly.
+    handle.join().expect("monitor thread should not panic");
+}

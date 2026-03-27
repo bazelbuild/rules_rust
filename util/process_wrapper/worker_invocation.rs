@@ -18,13 +18,16 @@
 //! is given to the monitor thread that owns the `Child` process and drives state
 //! transitions via condvar notifications.
 
+use std::io::BufRead;
 use std::path::PathBuf;
 use std::process::Child;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
+use super::pipeline::extract_rmeta_path;
 use super::types::OutputDir;
+use crate::rustc::RustcStderrPolicy;
 
 // ---------------------------------------------------------------------------
 // Data types
@@ -437,4 +440,103 @@ impl MonitorHandle {
         };
         cvar.notify_all();
     }
+}
+
+// ---------------------------------------------------------------------------
+// spawn_pipelined_monitor — monitor thread for a pipelined rustc invocation
+// ---------------------------------------------------------------------------
+
+/// Spawn a monitor thread that owns the rustc child process and drives state
+/// transitions on the `RustcInvocation`.
+///
+/// The thread reads stderr line-by-line, processes diagnostics, detects the
+/// rmeta artifact notification, and transitions through Running → MetadataReady
+/// → Completed (or Failed). On shutdown request, the child is killed via
+/// `graceful_kill`.
+pub(crate) fn spawn_pipelined_monitor(
+    invocation: &RustcInvocation,
+    mut child: Child,
+    dirs: InvocationDirs,
+    rustc_output_format: Option<String>,
+) -> std::thread::JoinHandle<()> {
+    let monitor = invocation.monitor_handle();
+    let pid = child.id();
+    let stderr = child
+        .stderr
+        .take()
+        .expect("child must be spawned with Stdio::piped() stderr");
+
+    monitor.transition_to_running(pid, dirs.clone());
+
+    std::thread::spawn(move || {
+        let reader = std::io::BufReader::new(stderr);
+        let mut policy =
+            RustcStderrPolicy::from_option_str(rustc_output_format.as_deref());
+
+        let mut diagnostics = String::new();
+        let mut metadata_emitted = false;
+        let mut diagnostics_before = String::new();
+
+        for line_result in reader.lines() {
+            let line = match line_result {
+                Ok(l) => l,
+                Err(_) => break,
+            };
+
+            let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
+
+            // Check for rmeta artifact notification before processing as diagnostic.
+            if !metadata_emitted {
+                if let Some(_rmeta_path) = extract_rmeta_path(trimmed) {
+                    metadata_emitted = true;
+                    diagnostics_before = diagnostics.clone();
+                    monitor.transition_to_metadata_ready(
+                        pid,
+                        diagnostics_before.clone(),
+                        dirs.clone(),
+                    );
+                    // Don't add the artifact JSON line to diagnostics output.
+                    continue;
+                }
+            } else {
+                // After metadata, still skip artifact lines from diagnostics.
+                if extract_rmeta_path(trimmed).is_some() {
+                    continue;
+                }
+            }
+
+            if let Some(processed) = policy.process_line(trimmed) {
+                if !diagnostics.is_empty() {
+                    diagnostics.push('\n');
+                }
+                diagnostics.push_str(&processed);
+            }
+        }
+
+        // stderr EOF — child has closed its stderr (likely exiting).
+        if monitor.is_shutdown_requested() {
+            graceful_kill(&mut child);
+            monitor.transition_to_failed(-1, "shutdown requested".to_string());
+            return;
+        }
+
+        let exit_code = match child.wait() {
+            Ok(status) => status.code().unwrap_or(-1),
+            Err(_) => -1,
+        };
+
+        if exit_code == 0 && metadata_emitted {
+            monitor.transition_to_completed(exit_code, diagnostics, dirs);
+        } else {
+            // If we never emitted metadata but exit_code == 0, that's still
+            // a failure from the pipelining perspective (no rmeta produced).
+            // However, treat exit_code == 0 without metadata as completed
+            // to allow non-pipelined rustc to work through this path.
+            if exit_code == 0 {
+                monitor.transition_to_completed(exit_code, diagnostics, dirs);
+            } else {
+                monitor.transition_to_failed(exit_code, diagnostics);
+            }
+        }
+    })
 }
