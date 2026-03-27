@@ -163,12 +163,8 @@ pub(super) fn copy_output_to_sandbox(
         .join(original_out_dir)
         .join(dest_subdir);
     let dest = dest_dir.join(filename);
-    let hardlinked = materialize_output_file(src_path, &dest).map_err(|cause| {
-        MaterializeError {
-            path: dest,
-            cause,
-        }
-    })?;
+    let hardlinked = materialize_output_file(src_path, &dest)
+        .map_err(|cause| MaterializeError { path: dest, cause })?;
     stats.files = 1;
     if hardlinked {
         stats.hardlinked_files = 1;
@@ -204,13 +200,8 @@ pub(super) fn copy_all_outputs_to_sandbox(
         })?;
         if meta.is_file() {
             let dest = dest_dir.join(entry.file_name());
-            let hardlinked =
-                materialize_output_file(&entry.path(), &dest).map_err(|cause| {
-                    MaterializeError {
-                        path: dest,
-                        cause,
-                    }
-                })?;
+            let hardlinked = materialize_output_file(&entry.path(), &dest)
+                .map_err(|cause| MaterializeError { path: dest, cause })?;
             stats.files += 1;
             if hardlinked {
                 stats.hardlinked_files += 1;
@@ -232,7 +223,12 @@ pub(super) fn run_sandboxed_request(
     sandbox_dir: &str,
 ) -> Result<(i32, String), ProcessWrapperError> {
     let _ = seed_sandbox_cache_root(std::path::Path::new(sandbox_dir));
-    run_request_with_current_dir(self_path, arguments, Some(sandbox_dir), "sandboxed subprocess")
+    run_request_with_current_dir(
+        self_path,
+        arguments,
+        Some(sandbox_dir),
+        "sandboxed subprocess",
+    )
 }
 
 /// Resolves `path` relative to `sandbox_dir` if it is not absolute.

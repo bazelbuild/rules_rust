@@ -33,8 +33,7 @@ use crate::ProcessWrapperError;
 use super::protocol::WorkRequestContext;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable,
-    make_path_writable, prepare_outputs, resolve_relative_to, run_request,
-    run_sandboxed_request,
+    make_path_writable, prepare_outputs, resolve_relative_to, run_request, run_sandboxed_request,
 };
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
@@ -90,8 +89,12 @@ impl RequestKind {
         }
 
         match (is_metadata, is_full, key) {
-            (true, _, Some(k)) => RequestKind::Metadata { key: PipelineKey(k) },
-            (_, true, Some(k)) => RequestKind::Full { key: PipelineKey(k) },
+            (true, _, Some(k)) => RequestKind::Metadata {
+                key: PipelineKey(k),
+            },
+            (_, true, Some(k)) => RequestKind::Full {
+                key: PipelineKey(k),
+            },
             _ => RequestKind::NonPipelined,
         }
     }
@@ -247,7 +250,11 @@ impl PipelineState {
         flag
     }
 
-    pub(crate) fn register_full(&mut self, request_id: RequestId, key: PipelineKey) -> Arc<AtomicBool> {
+    pub(crate) fn register_full(
+        &mut self,
+        request_id: RequestId,
+        key: PipelineKey,
+    ) -> Arc<AtomicBool> {
         let flag = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&flag));
         self.request_index.insert(request_id, key);
@@ -263,7 +270,9 @@ impl PipelineState {
         let pid = bg.child.id();
         if let Some(entry) = self.entries.get_mut(key) {
             match entry {
-                PipelinePhase::PreRegistered { metadata_request_id } => {
+                PipelinePhase::PreRegistered {
+                    metadata_request_id,
+                } => {
                     let old_req = *metadata_request_id;
                     *entry = PipelinePhase::MetadataRunning {
                         metadata_request_id: request_id,
@@ -275,7 +284,10 @@ impl PipelineState {
                     }
                     return StoreBackgroundResult::Stored;
                 }
-                PipelinePhase::MetadataRunning { metadata_request_id, .. } => {
+                PipelinePhase::MetadataRunning {
+                    metadata_request_id,
+                    ..
+                } => {
                     let old_req = *metadata_request_id;
                     let old = std::mem::replace(
                         entry,
@@ -306,7 +318,11 @@ impl PipelineState {
     ) -> FullRequestAction {
         if let Some(entry) = self.entries.get_mut(key) {
             match entry {
-                PipelinePhase::MetadataRunning { metadata_request_id, pid, .. } => {
+                PipelinePhase::MetadataRunning {
+                    metadata_request_id,
+                    pid,
+                    ..
+                } => {
                     let old_req = *metadata_request_id;
                     let pid_val = *pid;
                     let child_reaped = Arc::new(AtomicBool::new(false));
@@ -325,7 +341,9 @@ impl PipelineState {
                         unreachable!()
                     }
                 }
-                PipelinePhase::PreRegistered { metadata_request_id } => {
+                PipelinePhase::PreRegistered {
+                    metadata_request_id,
+                } => {
                     self.request_index.remove(metadata_request_id);
                     *entry = PipelinePhase::FallbackRunning { full_request_id };
                     FullRequestAction::Fallback
@@ -335,8 +353,10 @@ impl PipelineState {
                 }
             }
         } else {
-            self.entries
-                .insert(key.clone(), PipelinePhase::FallbackRunning { full_request_id });
+            self.entries.insert(
+                key.clone(),
+                PipelinePhase::FallbackRunning { full_request_id },
+            );
             FullRequestAction::Fallback
         }
     }
@@ -347,10 +367,7 @@ impl PipelineState {
         self.claim_flags.remove(&request_id);
     }
 
-    pub(super) fn cleanup_key_fully(
-        &mut self,
-        key: &PipelineKey,
-    ) -> Option<BackgroundRustc> {
+    pub(super) fn cleanup_key_fully(&mut self, key: &PipelineKey) -> Option<BackgroundRustc> {
         let bg = match self.entries.remove(key) {
             Some(PipelinePhase::MetadataRunning { bg, .. }) => Some(bg),
             _ => None,
@@ -388,19 +405,24 @@ impl PipelineState {
 
         let action = match self.entries.get(&key) {
             None => CancelAction::NoChild,
-            Some(PipelinePhase::PreRegistered { metadata_request_id }) => {
+            Some(PipelinePhase::PreRegistered {
+                metadata_request_id,
+            }) => {
                 if *metadata_request_id == request_id {
                     CancelAction::RemovePreregistered
                 } else {
                     CancelAction::NoChild
                 }
             }
-            Some(PipelinePhase::MetadataRunning { metadata_request_id, .. }) => {
-                CancelAction::RemoveMetadataRunning {
-                    remove_all_mappings: *metadata_request_id != request_id,
-                }
-            }
-            Some(PipelinePhase::FullWaiting { full_request_id, .. }) => {
+            Some(PipelinePhase::MetadataRunning {
+                metadata_request_id,
+                ..
+            }) => CancelAction::RemoveMetadataRunning {
+                remove_all_mappings: *metadata_request_id != request_id,
+            },
+            Some(PipelinePhase::FullWaiting {
+                full_request_id, ..
+            }) => {
                 if *full_request_id == request_id {
                     CancelAction::RemoveFullWaiting
                 } else {
@@ -422,22 +444,26 @@ impl PipelineState {
                 self.entries.remove(&key);
                 CancelledEntry::NoChild
             }
-            CancelAction::RemoveMetadataRunning { remove_all_mappings } => {
+            CancelAction::RemoveMetadataRunning {
+                remove_all_mappings,
+            } => {
                 let remove_entry = self.entries.remove(&key);
                 if remove_all_mappings {
                     self.remove_key_mappings(&key, None);
                 }
                 match remove_entry {
-                    Some(PipelinePhase::MetadataRunning { bg, .. }) => CancelledEntry::OwnedChild(bg),
+                    Some(PipelinePhase::MetadataRunning { bg, .. }) => {
+                        CancelledEntry::OwnedChild(bg)
+                    }
                     _ => CancelledEntry::NoChild,
                 }
             }
             CancelAction::RemoveFullWaiting => {
                 self.remove_key_mappings(&key, None);
                 match self.entries.remove(&key) {
-                    Some(PipelinePhase::FullWaiting { pid, child_reaped, .. }) => {
-                        CancelledEntry::PidOnly(pid, child_reaped)
-                    }
+                    Some(PipelinePhase::FullWaiting {
+                        pid, child_reaped, ..
+                    }) => CancelledEntry::PidOnly(pid, child_reaped),
                     _ => CancelledEntry::NoChild,
                 }
             }
@@ -745,9 +771,9 @@ pub(super) fn build_rustc_env(
             if line.is_empty() {
                 continue;
             }
-            let (k, v) = line.split_once('=').ok_or_else(|| {
-                format!("env-file '{}': invalid line (no '='): {}", path, line)
-            })?;
+            let (k, v) = line
+                .split_once('=')
+                .ok_or_else(|| format!("env-file '{}': invalid line (no '='): {}", path, line))?;
             env.insert(k.to_owned(), v.to_owned());
         }
     }
@@ -984,9 +1010,8 @@ pub(super) fn create_pipeline_context(
         if sandbox_path.is_absolute() {
             sandbox_path.to_path_buf()
         } else {
-            let cwd = std::env::current_dir().map_err(|e| {
-                (1, format!("pipelining: failed to get worker CWD: {e}"))
-            })?;
+            let cwd = std::env::current_dir()
+                .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
             cwd.join(sandbox_path)
         }
     } else {
@@ -1119,10 +1144,7 @@ pub(crate) fn handle_pipelining_metadata(
         let unified_dir = ctx.root_dir.join("deps");
         let _ = std::fs::remove_dir_all(&unified_dir);
         if let Err(e) = std::fs::create_dir_all(&unified_dir) {
-            return (
-                1,
-                format!("pipelining: failed to create deps dir: {e}"),
-            );
+            return (1, format!("pipelining: failed to create deps dir: {e}"));
         }
 
         let dep_dirs: Vec<PathBuf> = rustc_args
@@ -1141,10 +1163,7 @@ pub(crate) fn handle_pipelining_metadata(
         let response_file_path = ctx.root_dir.join("metadata_rustc.args");
         let content = rustc_args[1..].join("\n");
         if let Err(e) = std::fs::write(&response_file_path, &content) {
-            return (
-                1,
-                format!("pipelining: failed to write response file: {e}"),
-            );
+            return (1, format!("pipelining: failed to write response file: {e}"));
         }
         cmd.arg(format!("@{}", response_file_path.display()));
     }
@@ -1183,17 +1202,19 @@ pub(crate) fn handle_pipelining_metadata(
                 &format!("metadata rmeta ready: {}", rmeta_resolved_str),
             );
             let copy_err = match request.sandbox_dir.as_ref() {
-                Some(dir) => {
-                    copy_output_to_sandbox(
-                        &rmeta_resolved_str,
-                        dir.as_str(),
-                        original_out_dir.as_str(),
-                        "_pipeline",
-                    ).err().map(|e| format!("pipelining: rmeta materialization failed: {e}"))
-                }
-                None => {
-                    copy_rmeta_unsandboxed(&rmeta_resolved, original_out_dir.as_str(), &ctx.root_dir)
-                }
+                Some(dir) => copy_output_to_sandbox(
+                    &rmeta_resolved_str,
+                    dir.as_str(),
+                    original_out_dir.as_str(),
+                    "_pipeline",
+                )
+                .err()
+                .map(|e| format!("pipelining: rmeta materialization failed: {e}")),
+                None => copy_rmeta_unsandboxed(
+                    &rmeta_resolved,
+                    original_out_dir.as_str(),
+                    &ctx.root_dir,
+                ),
             };
             if let Some(err_msg) = copy_err {
                 let _ = child.kill();
@@ -1299,20 +1320,17 @@ pub(crate) fn handle_pipelining_full(
                     let exit_code = status.code().unwrap_or(1);
                     if exit_code == 0 {
                         let copy_result = match request.sandbox_dir.as_ref() {
-                            Some(dir) => {
-                                copy_all_outputs_to_sandbox(
-                                    &bg.pipeline_output_dir,
-                                    dir.as_str(),
-                                    bg.original_out_dir.as_str(),
-                                ).map(|_| ())
-                                .map_err(|e| format!("pipelining: output materialization failed: {e}"))
-                            }
-                            None => {
-                                copy_outputs_unsandboxed(
-                                    &bg.pipeline_output_dir,
-                                    bg.original_out_dir.as_path(),
-                                )
-                            }
+                            Some(dir) => copy_all_outputs_to_sandbox(
+                                &bg.pipeline_output_dir,
+                                dir.as_str(),
+                                bg.original_out_dir.as_str(),
+                            )
+                            .map(|_| ())
+                            .map_err(|e| format!("pipelining: output materialization failed: {e}")),
+                            None => copy_outputs_unsandboxed(
+                                &bg.pipeline_output_dir,
+                                bg.original_out_dir.as_path(),
+                            ),
                         };
                         if let Err(e) = copy_result {
                             append_pipeline_log(
@@ -1388,7 +1406,10 @@ pub(crate) fn handle_pipelining_full(
 /// Uses `PipelineState::cancel_by_request_id` to remove the entry under the
 /// lock, then performs blocking kill/wait/join **after** releasing the lock
 /// to avoid holding the mutex during I/O.
-pub(super) fn kill_pipelined_request(pipeline_state: &Arc<Mutex<PipelineState>>, request_id: RequestId) {
+pub(super) fn kill_pipelined_request(
+    pipeline_state: &Arc<Mutex<PipelineState>>,
+    request_id: RequestId,
+) {
     // Remove the entry under the lock (fast, O(1) HashMap ops).
     let cancelled = lock_or_recover(pipeline_state).cancel_by_request_id(request_id);
     // Blocking kill/wait/join happens here, outside the lock.
@@ -1445,7 +1466,10 @@ fn copy_outputs_unsandboxed(
     for entry in entries {
         let entry = entry.map_err(|e| format!("pipelining: dir entry error: {e}"))?;
         let meta = entry.metadata().map_err(|e| {
-            format!("pipelining: metadata error for {}: {e}", entry.path().display())
+            format!(
+                "pipelining: metadata error for {}: {e}",
+                entry.path().display()
+            )
         })?;
         if meta.is_file() {
             let dest = dest_dir.join(entry.file_name());
