@@ -14,6 +14,7 @@ use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
 use super::invocation::{InvocationDirs, RustcInvocation};
+use super::registry::RequestRegistry;
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
@@ -1527,4 +1528,57 @@ fn test_cancel_non_pipelined_kills_child() {
     assert!(result.is_err());
 
     handle.join().expect("monitor thread should not panic");
+}
+
+// ---------------------------------------------------------------------------
+// RequestRegistry tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_registry_register_metadata_creates_invocation() {
+    let mut reg = RequestRegistry::new();
+    let (flag, inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    assert!(!flag.load(Ordering::SeqCst));
+    assert!(inv.is_pending());
+    assert!(reg.has_invocation("key1"));
+}
+
+#[test]
+fn test_registry_register_full_finds_existing_invocation() {
+    let mut reg = RequestRegistry::new();
+    let (_flag1, _inv1) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let (_flag2, inv2) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
+    assert!(inv2.is_some(), "full should find existing invocation");
+}
+
+#[test]
+fn test_registry_register_full_no_invocation_returns_none() {
+    let mut reg = RequestRegistry::new();
+    let (_flag, inv) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
+    assert!(inv.is_none());
+}
+
+#[test]
+fn test_registry_cancel_shuts_down_invocation() {
+    let mut reg = RequestRegistry::new();
+    let (_flag, inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.cancel(RequestId(42));
+    assert!(inv.is_shutting_down_or_terminal());
+}
+
+#[test]
+fn test_registry_shutdown_all() {
+    let mut reg = RequestRegistry::new();
+    let (_f1, inv1) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let (_f2, _inv2) = reg.register_metadata(RequestId(43), PipelineKey("key2".to_string()));
+    reg.shutdown_all();
+    assert!(inv1.is_shutting_down_or_terminal());
+}
+
+#[test]
+fn test_registry_remove_request_preserves_invocation() {
+    let mut reg = RequestRegistry::new();
+    let (_f1, _inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.remove_request(RequestId(42));
+    assert!(reg.has_invocation("key1"), "invocation should persist");
 }

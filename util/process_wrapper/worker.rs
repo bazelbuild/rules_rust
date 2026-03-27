@@ -26,6 +26,8 @@ pub(crate) mod sandbox;
 pub(crate) mod types;
 #[path = "worker_invocation.rs"]
 pub(crate) mod invocation;
+#[path = "worker_registry.rs"]
+pub(crate) mod registry;
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
