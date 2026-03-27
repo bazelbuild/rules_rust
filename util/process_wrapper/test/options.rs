@@ -1,5 +1,20 @@
 use super::*;
 
+fn unique_test_dir(prefix: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!(
+        "{}_{}_{}",
+        prefix,
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
+
 #[test]
 fn test_enforce_allow_features_flag_user_didnt_say() {
     let args = vec!["rustc".to_string()];
@@ -156,4 +171,56 @@ fn resolve_external_path_no_junction_unchanged() {
     let arg = "external/nonexistent_repo_12345/src/lib.rs";
     let result = resolve_external_path(arg);
     assert_eq!(&*result, arg);
+}
+
+#[test]
+fn test_options_missing_stable_status_returns_error() {
+    let tmp = unique_test_dir("pw_test_missing_stable_status");
+    let missing = tmp.join("stable-status.txt");
+
+    let err = options_from_args(vec![
+        "process_wrapper".to_string(),
+        "--stable-status-file".to_string(),
+        missing.display().to_string(),
+        "--".to_string(),
+        "rustc".to_string(),
+    ])
+    .unwrap_err();
+
+    match err {
+        OptionError::Generic(message) => {
+            assert!(message.contains("failed to read stable-status"));
+            assert!(message.contains(&missing.display().to_string()));
+        }
+        other => panic!("expected generic error, got {:?}", other),
+    }
+
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn test_options_malformed_volatile_status_returns_error() {
+    let tmp = unique_test_dir("pw_test_malformed_volatile_status");
+    let volatile_status = tmp.join("volatile-status.txt");
+    std::fs::write(&volatile_status, "BUILD_USER\n").unwrap();
+
+    let err = options_from_args(vec![
+        "process_wrapper".to_string(),
+        "--volatile-status-file".to_string(),
+        volatile_status.display().to_string(),
+        "--".to_string(),
+        "rustc".to_string(),
+    ])
+    .unwrap_err();
+
+    match err {
+        OptionError::Generic(message) => {
+            assert!(message.contains("failed to read volatile-status"));
+            assert!(message.contains(&volatile_status.display().to_string()));
+            assert!(message.contains("wrong workspace status file format"));
+        }
+        other => panic!("expected generic error, got {:?}", other),
+    }
+
+    let _ = std::fs::remove_dir_all(&tmp);
 }

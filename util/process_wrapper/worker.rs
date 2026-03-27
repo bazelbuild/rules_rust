@@ -41,7 +41,7 @@ use protocol::{
     build_cancel_response, build_response, build_shutdown_response, extract_request_id,
     extract_request_id_from_raw_line, WorkRequestContext,
 };
-use sandbox::{prepare_outputs, prepare_outputs_sandboxed, run_request, run_sandboxed_request};
+use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request, run_sandboxed_request};
 use types::RequestId;
 
 // ---------------------------------------------------------------------------
@@ -349,11 +349,18 @@ fn log_request_thread_start(request: &WorkRequestContext, kind: &RequestKind) {
     ));
 }
 
-fn prepare_request_outputs(full_args: &[String], sandbox_dir: Option<&str>) {
-    match sandbox_dir {
-        Some(dir) => prepare_outputs_sandboxed(full_args, dir),
+fn prepare_request_outputs(
+    full_args: &[String],
+    request: &WorkRequestContext,
+) -> Result<(), ProcessWrapperError> {
+    match request.sandbox_dir.as_ref() {
+        Some(_) => {
+            let base_dir = request_base_dir(request)?;
+            prepare_outputs_in_dir(full_args, &base_dir);
+        }
         None => prepare_outputs(full_args),
     }
+    Ok(())
 }
 
 fn run_non_pipelined_request(
@@ -467,10 +474,9 @@ fn execute_request(
     claim_flag: &Arc<AtomicBool>,
 ) -> (i32, String) {
     let full_args = build_full_args(startup_args, &request.arguments);
-    prepare_request_outputs(
-        &full_args,
-        request.sandbox_dir.as_ref().map(|dir| dir.as_str()),
-    );
+    if let Err(e) = prepare_request_outputs(&full_args, request) {
+        return (1, format!("worker thread error: {e}"));
+    }
 
     if claim_flag.load(Ordering::SeqCst) {
         discard_pending_request(pipeline_state, request_kind, request.request_id);

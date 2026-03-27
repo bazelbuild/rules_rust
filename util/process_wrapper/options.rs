@@ -64,6 +64,10 @@ pub(crate) struct Options {
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
+    options_from_args(env::args().collect())
+}
+
+fn options_from_args(raw_args: Vec<String>) -> Result<Options, OptionError> {
     // Process argument list until -- is encountered.
     // Everything after is sent to the child process.
     let mut subst_mapping_raw = None;
@@ -125,10 +129,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         &mut require_explicit_unstable_features,
     );
 
-    let mut child_args = match flags
-        .parse(env::args().collect())
-        .map_err(OptionError::FlagError)?
-    {
+    let mut child_args = match flags.parse(raw_args).map_err(OptionError::FlagError)? {
         ParseOutcome::Help(help) => {
             eprintln!("{help}");
             exit(0);
@@ -212,10 +213,18 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     // Merge relocated stamp files with startup stamp files.
     let stable_status_file = relocated.stable_status_file.or(stable_status_file_raw);
     let volatile_status_file = relocated.volatile_status_file.or(volatile_status_file_raw);
-    let stable_stamp_mappings =
-        stable_status_file.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-    let volatile_stamp_mappings =
-        volatile_status_file.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
+    let stable_stamp_mappings = stable_status_file
+        .map(|path| {
+            read_stamp_status_with_context(&path, "stable-status").map_err(OptionError::Generic)
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let volatile_stamp_mappings = volatile_status_file
+        .map(|path| {
+            read_stamp_status_with_context(&path, "volatile-status").map_err(OptionError::Generic)
+        })
+        .transpose()?
+        .unwrap_or_default();
 
     // Override output_file and rustc_output_format if relocated versions found.
     let output_file = relocated.output_file.or(output_file);

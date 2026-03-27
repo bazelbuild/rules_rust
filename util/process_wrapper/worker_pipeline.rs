@@ -27,13 +27,14 @@ use std::thread;
 use tinyjson::JsonValue;
 
 use crate::options::{is_pipelining_flag, is_relocated_pw_flag};
-use crate::util::read_stamp_status_to_array;
+use crate::util::read_stamp_status_with_context;
 use crate::ProcessWrapperError;
 
 use super::protocol::WorkRequestContext;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, make_dir_files_writable,
-    make_path_writable, prepare_outputs, resolve_relative_to, run_request, run_sandboxed_request,
+    make_path_writable, prepare_outputs, resolve_request_relative_path, run_request,
+    run_sandboxed_request,
 };
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::{append_worker_lifecycle_log, current_pid, lock_or_recover};
@@ -72,7 +73,7 @@ impl RequestKind {
             };
             for arg in rustc_args {
                 if let Some(path) = arg.strip_prefix('@') {
-                    let resolved = resolve_relative_to(path, base_dir);
+                    let resolved = resolve_request_relative_path(path, Some(base_dir));
                     if let Ok(content) = std::fs::read_to_string(&resolved) {
                         let (m, f, k) = scan_pipelining_flags(content.lines());
                         is_metadata |= m;
@@ -778,13 +779,11 @@ pub(super) fn build_rustc_env(
         }
     }
     let stable_stamp_mappings: Vec<(String, String)> = match stable_status_file {
-        Some(path) => read_stamp_status_to_array(path.to_owned())
-            .map_err(|e| format!("failed to read stable-status '{}': {}", path, e))?,
+        Some(path) => read_stamp_status_with_context(path, "stable-status")?,
         None => vec![],
     };
     let volatile_stamp_mappings: Vec<(String, String)> = match volatile_status_file {
-        Some(path) => read_stamp_status_to_array(path.to_owned())
-            .map_err(|e| format!("failed to read volatile-status '{}': {}", path, e))?,
+        Some(path) => read_stamp_status_with_context(path, "volatile-status")?,
         None => vec![],
     };
     for (k, v) in stable_stamp_mappings
@@ -860,7 +859,7 @@ pub(super) fn expand_rustc_args(
     for raw in rustc_and_after {
         let arg = apply_substs(raw, subst);
         if let Some(path) = arg.strip_prefix('@') {
-            let resolved_path = resolve_relative_to(path, execroot_dir);
+            let resolved_path = resolve_request_relative_path(path, Some(execroot_dir));
             match std::fs::read_to_string(&resolved_path) {
                 Ok(content) => {
                     for line in content.lines() {
@@ -1066,7 +1065,7 @@ pub(crate) fn handle_pipelining_metadata(
             .env_files
             .into_iter()
             .map(|path| {
-                resolve_relative_to(&path, &ctx.execroot_dir)
+                resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
                     .display()
                     .to_string()
             })
@@ -1075,18 +1074,18 @@ pub(crate) fn handle_pipelining_metadata(
             .arg_files
             .into_iter()
             .map(|path| {
-                resolve_relative_to(&path, &ctx.execroot_dir)
+                resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
                     .display()
                     .to_string()
             })
             .collect(),
         stable_status_file: raw_pw_args.stable_status_file.map(|path| {
-            resolve_relative_to(&path, &ctx.execroot_dir)
+            resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
                 .display()
                 .to_string()
         }),
         volatile_status_file: raw_pw_args.volatile_status_file.map(|path| {
-            resolve_relative_to(&path, &ctx.execroot_dir)
+            resolve_request_relative_path(&path, Some(&ctx.execroot_dir))
                 .display()
                 .to_string()
         }),
@@ -1096,7 +1095,9 @@ pub(crate) fn handle_pipelining_metadata(
                 .as_ref()
                 .map(|sd| sd.as_path())
                 .unwrap_or(ctx.execroot_dir.as_path());
-            resolve_relative_to(&path, base).display().to_string()
+            resolve_request_relative_path(&path, Some(base))
+                .display()
+                .to_string()
         }),
         rustc_output_format: raw_pw_args.rustc_output_format,
     };
@@ -1195,7 +1196,8 @@ pub(crate) fn handle_pipelining_metadata(
         let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
 
         if let Some(rmeta_path_str) = extract_rmeta_path(trimmed) {
-            let rmeta_resolved = resolve_relative_to(&rmeta_path_str, &ctx.execroot_dir);
+            let rmeta_resolved =
+                resolve_request_relative_path(&rmeta_path_str, Some(&ctx.execroot_dir));
             let rmeta_resolved_str = rmeta_resolved.display().to_string();
             append_pipeline_log(
                 &ctx.root_dir,

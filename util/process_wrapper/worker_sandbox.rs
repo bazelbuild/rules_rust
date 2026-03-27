@@ -30,6 +30,16 @@ pub(super) fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> Pat
     }
 }
 
+pub(super) fn resolve_request_relative_path(
+    path: &str,
+    request_base_dir: Option<&std::path::Path>,
+) -> PathBuf {
+    match request_base_dir {
+        Some(base_dir) => resolve_relative_to(path, base_dir),
+        None => PathBuf::from(path),
+    }
+}
+
 pub(super) fn materialize_output_file(
     src: &std::path::Path,
     dest: &std::path::Path,
@@ -231,19 +241,6 @@ pub(super) fn run_sandboxed_request(
     )
 }
 
-/// Resolves `path` relative to `sandbox_dir` if it is not absolute.
-pub(super) fn resolve_sandbox_path(path: &str, sandbox_dir: &str) -> String {
-    let p = std::path::Path::new(path);
-    if p.is_absolute() {
-        path.to_string()
-    } else {
-        std::path::Path::new(sandbox_dir)
-            .join(p)
-            .to_string_lossy()
-            .into_owned()
-    }
-}
-
 /// Ensures output files in rustc's `--out-dir` are writable before each request.
 ///
 /// Workers run in execroot without sandboxing. Bazel marks action outputs
@@ -261,25 +258,27 @@ pub(super) fn prepare_outputs(args: &[String]) {
     prepare_outputs_impl(args, None);
 }
 
-/// Like `prepare_outputs` but resolves relative `--out-dir` paths against
-/// `sandbox_dir` before making files writable.
-pub(super) fn prepare_outputs_sandboxed(args: &[String], sandbox_dir: &str) {
-    prepare_outputs_impl(args, Some(sandbox_dir));
+pub(super) fn prepare_outputs_in_dir(args: &[String], request_base_dir: &std::path::Path) {
+    prepare_outputs_impl(args, Some(request_base_dir));
 }
 
-fn prepare_outputs_impl(args: &[String], sandbox_dir: Option<&str>) {
+fn prepare_outputs_impl(args: &[String], request_base_dir: Option<&std::path::Path>) {
     let mut out_dirs: Vec<String> = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
         if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            out_dirs.push(resolve_out_dir(dir, sandbox_dir));
+            out_dirs.push(
+                resolve_request_relative_path(dir, request_base_dir)
+                    .display()
+                    .to_string(),
+            );
         } else if let Some(flagfile_path) = arg.strip_prefix('@') {
-            scan_file_for_out_dir(flagfile_path, sandbox_dir, &mut out_dirs);
+            scan_file_for_out_dir(flagfile_path, request_base_dir, &mut out_dirs);
         } else if arg == "--arg-file" {
             if let Some(path) = args.get(i + 1) {
-                scan_file_for_out_dir(path, sandbox_dir, &mut out_dirs);
+                scan_file_for_out_dir(path, request_base_dir, &mut out_dirs);
                 i += 1;
             }
         }
@@ -293,29 +292,25 @@ fn prepare_outputs_impl(args: &[String], sandbox_dir: Option<&str>) {
     }
 }
 
-fn resolve_out_dir(dir: &str, sandbox_dir: Option<&str>) -> String {
-    match sandbox_dir {
-        Some(base) => resolve_sandbox_path(dir, base),
-        None => dir.to_string(),
-    }
-}
-
 /// Reads `path` line-by-line, collecting any `--out-dir=<dir>` values.
-/// When `sandbox_dir` is `Some`, resolves found paths against it.
+/// When `request_base_dir` is `Some`, resolves both the paramfile path and any
+/// discovered output directories against it.
 pub(super) fn scan_file_for_out_dir(
     path: &str,
-    sandbox_dir: Option<&str>,
+    request_base_dir: Option<&std::path::Path>,
     out_dirs: &mut Vec<String>,
 ) {
-    let Ok(content) = std::fs::read_to_string(path) else {
+    let path = resolve_request_relative_path(path, request_base_dir);
+    let Ok(content) = std::fs::read_to_string(&path) else {
         return;
     };
     for line in content.lines() {
         if let Some(dir) = line.strip_prefix("--out-dir=") {
-            match sandbox_dir {
-                Some(sd) => out_dirs.push(resolve_sandbox_path(dir, sd)),
-                None => out_dirs.push(dir.to_string()),
-            }
+            out_dirs.push(
+                resolve_request_relative_path(dir, request_base_dir)
+                    .display()
+                    .to_string(),
+            );
         }
     }
 }

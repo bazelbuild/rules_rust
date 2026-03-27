@@ -8,7 +8,7 @@ use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
     WorkRequestInput,
 };
-use super::sandbox::resolve_sandbox_path;
+use super::sandbox::resolve_request_relative_path;
 #[cfg(unix)]
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
@@ -115,6 +115,36 @@ fn test_prepare_outputs_arg_file() {
 
     let args = vec!["--arg-file".to_string(), arg_file.display().to_string()];
     prepare_outputs(&args);
+
+    assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
+    let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[cfg(unix)]
+fn test_prepare_outputs_sandboxed_relative_paramfile() {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = std::env::temp_dir().join("pw_test_prepare_sandboxed_relative_paramfile");
+    let sandbox_dir = tmp.join("sandbox");
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(&sandbox_dir).unwrap();
+
+    let out_dir = sandbox_dir.join("out");
+    fs::create_dir_all(&out_dir).unwrap();
+    let file_path = out_dir.join("libfoo.rmeta");
+    fs::write(&file_path, b"content").unwrap();
+    let mut perms = fs::metadata(&file_path).unwrap().permissions();
+    perms.set_mode(0o444);
+    fs::set_permissions(&file_path, perms).unwrap();
+    assert!(fs::metadata(&file_path).unwrap().permissions().readonly());
+
+    let paramfile = sandbox_dir.join("rustc.params");
+    fs::write(&paramfile, "--out-dir=out\n--crate-name=foo\n").unwrap();
+
+    let args = vec!["@rustc.params".to_string()];
+    prepare_outputs_in_dir(&args, &sandbox_dir);
 
     assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
     let _ = fs::remove_dir_all(&tmp);
@@ -583,22 +613,37 @@ fn test_build_cancel_response() {
 #[test]
 #[cfg(unix)]
 fn test_resolve_sandbox_path_relative_unix() {
-    let result = resolve_sandbox_path("bazel-out/k8/bin/pkg", "/sandbox/42");
-    assert_eq!(result, "/sandbox/42/bazel-out/k8/bin/pkg");
+    let result = resolve_request_relative_path(
+        "bazel-out/k8/bin/pkg",
+        Some(std::path::Path::new("/sandbox/42")),
+    );
+    assert_eq!(
+        result,
+        std::path::PathBuf::from("/sandbox/42/bazel-out/k8/bin/pkg")
+    );
 }
 
 #[test]
 #[cfg(windows)]
 fn test_resolve_sandbox_path_relative_windows() {
     // On Windows, Path::join produces backslash separators.
-    let result = resolve_sandbox_path("bazel-out/k8/bin/pkg", "/sandbox/42");
-    assert_eq!(result, "/sandbox/42\\bazel-out/k8/bin/pkg");
+    let result = resolve_request_relative_path(
+        "bazel-out/k8/bin/pkg",
+        Some(std::path::Path::new("/sandbox/42")),
+    );
+    assert_eq!(
+        result,
+        std::path::PathBuf::from("/sandbox/42").join("bazel-out/k8/bin/pkg")
+    );
 }
 
 #[test]
 fn test_resolve_sandbox_path_absolute() {
-    let result = resolve_sandbox_path("/absolute/path/out", "/sandbox/42");
-    assert_eq!(result, "/absolute/path/out");
+    let result = resolve_request_relative_path(
+        "/absolute/path/out",
+        Some(std::path::Path::new("/sandbox/42")),
+    );
+    assert_eq!(result, std::path::PathBuf::from("/absolute/path/out"));
 }
 
 #[test]
