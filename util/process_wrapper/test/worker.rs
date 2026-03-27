@@ -1448,3 +1448,83 @@ fn test_monitor_thread_shutdown_kills_child() {
     // Monitor thread should exit promptly.
     handle.join().expect("monitor thread should not panic");
 }
+
+// ---------------------------------------------------------------------------
+// spawn_non_pipelined_monitor tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_monitor_thread_non_pipelined_completes() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+
+    let child = Command::new("sh")
+        .arg("-c")
+        .arg("echo 'hello' >&2; echo 'world'; exit 0")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_non_pipelined_monitor(&inv, child);
+
+    let result = inv.wait_for_completion();
+    assert!(result.is_ok());
+    let completion = result.unwrap();
+    assert_eq!(completion.exit_code, 0);
+    assert!(completion.diagnostics.contains("hello"), "should capture stderr");
+    assert!(completion.diagnostics.contains("world"), "should capture stdout");
+
+    handle.join().expect("monitor thread should not panic");
+}
+
+#[test]
+fn test_monitor_thread_non_pipelined_fails() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+
+    let child = Command::new("sh")
+        .arg("-c")
+        .arg("echo 'error msg' >&2; exit 1")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_non_pipelined_monitor(&inv, child);
+
+    let result = inv.wait_for_completion();
+    assert!(result.is_err());
+    let failure = result.unwrap_err();
+    assert_eq!(failure.exit_code, 1);
+    assert!(failure.diagnostics.contains("error msg"), "should capture stderr on failure");
+
+    handle.join().expect("monitor thread should not panic");
+}
+
+#[test]
+#[cfg(unix)]
+fn test_cancel_non_pipelined_kills_child() {
+    use std::process::{Command, Stdio};
+    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+
+    let child = Command::new("sleep")
+        .arg("60")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let inv = RustcInvocation::new();
+    let handle = spawn_non_pipelined_monitor(&inv, child);
+
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    inv.request_shutdown();
+
+    let result = inv.wait_for_completion();
+    assert!(result.is_err());
+
+    handle.join().expect("monitor thread should not panic");
+}

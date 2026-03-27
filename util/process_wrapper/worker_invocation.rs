@@ -47,6 +47,7 @@ pub(crate) struct MetadataResult {
 }
 
 /// Returned from `wait_for_completion` on success.
+#[derive(Debug)]
 pub(crate) struct CompletionResult {
     pub exit_code: i32,
     pub diagnostics: String,
@@ -440,6 +441,70 @@ impl MonitorHandle {
         };
         cvar.notify_all();
     }
+}
+
+// ---------------------------------------------------------------------------
+// spawn_non_pipelined_monitor — monitor thread for a non-pipelined invocation
+// ---------------------------------------------------------------------------
+
+/// Spawn a monitor thread for a non-pipelined subprocess (e.g. nested
+/// process_wrapper). The thread blocks on `wait_with_output()`, then
+/// transitions to Completed or Failed based on the exit code.
+///
+/// On shutdown, `request_shutdown()` sends SIGTERM to the child PID (stored in
+/// the Running state), which causes `wait_with_output()` to return. The monitor
+/// then detects the shutdown flag and transitions to Failed.
+pub(crate) fn spawn_non_pipelined_monitor(
+    invocation: &RustcInvocation,
+    child: Child,
+) -> std::thread::JoinHandle<()> {
+    let monitor = invocation.monitor_handle();
+    let pid = child.id();
+
+    // Non-pipelined invocations don't use pipeline dirs — use dummy values.
+    let dirs = InvocationDirs {
+        pipeline_output_dir: PathBuf::new(),
+        pipeline_root_dir: PathBuf::new(),
+        original_out_dir: OutputDir::default(),
+    };
+
+    monitor.transition_to_running(pid, dirs.clone());
+
+    std::thread::spawn(move || {
+        let output = child.wait_with_output();
+
+        if monitor.is_shutdown_requested() {
+            monitor.transition_to_failed(-1, "shutdown requested".to_string());
+            return;
+        }
+
+        match output {
+            Ok(output) => {
+                let exit_code = output.status.code().unwrap_or(-1);
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let mut diagnostics = String::new();
+                if !stderr.is_empty() {
+                    diagnostics.push_str(&stderr);
+                }
+                if !stdout.is_empty() {
+                    if !diagnostics.is_empty() {
+                        diagnostics.push('\n');
+                    }
+                    diagnostics.push_str(&stdout);
+                }
+
+                if exit_code == 0 {
+                    monitor.transition_to_completed(exit_code, diagnostics, dirs);
+                } else {
+                    monitor.transition_to_failed(exit_code, diagnostics);
+                }
+            }
+            Err(e) => {
+                monitor.transition_to_failed(-1, format!("wait_with_output failed: {}", e));
+            }
+        }
+    })
 }
 
 // ---------------------------------------------------------------------------
