@@ -1582,3 +1582,91 @@ fn test_registry_remove_request_preserves_invocation() {
     reg.remove_request(RequestId(42));
     assert!(reg.has_invocation("key1"), "invocation should persist");
 }
+
+// ---------------------------------------------------------------------------
+// Regression tests for unified request lifecycle (AGENT_TODO.md items)
+// ---------------------------------------------------------------------------
+
+/// Regression: old cleanup(key, request_id) would delete the pipeline entry
+/// even when the phase had moved on (e.g., full request claimed it).
+/// New behavior: remove_request only removes request metadata, not the invocation.
+#[test]
+fn test_metadata_cleanup_preserves_invocation_for_full() {
+    let mut reg = RequestRegistry::new();
+    let key = PipelineKey("key1".to_string());
+    let (_meta_flag, _inv) = reg.register_metadata(RequestId(42), key.clone());
+    let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
+    assert!(full_inv.is_some(), "full should find the invocation");
+
+    // Metadata request completes — remove its request metadata.
+    reg.remove_request(RequestId(42));
+
+    // Invocation must still exist for the full request.
+    assert!(reg.has_invocation("key1"));
+    assert!(reg.get_claim_flag(RequestId(99)).is_some());
+}
+
+/// Regression: skipped metadata request (claim flag swapped before execution)
+/// would call discard_pending_request which could destroy the pipeline entry.
+#[test]
+fn test_metadata_skip_cleanup_preserves_invocation() {
+    let mut reg = RequestRegistry::new();
+    let key = PipelineKey("key1".to_string());
+    let (_flag, _inv) = reg.register_metadata(RequestId(42), key.clone());
+
+    // Simulate skip: just remove the request.
+    reg.remove_request(RequestId(42));
+
+    // Invocation persists — it was created by register_metadata.
+    assert!(reg.has_invocation("key1"));
+}
+
+/// Regression: cleanup_after_panic called cleanup_key_fully for Metadata panics,
+/// which would destroy a FullWaiting entry and orphan the rustc child.
+/// New behavior: panic calls request_shutdown on the invocation. The invocation
+/// and the full request's registry entry remain valid.
+#[test]
+fn test_abort_metadata_panic_preserves_full_invocation() {
+    let mut reg = RequestRegistry::new();
+    let key = PipelineKey("key1".to_string());
+    let (_meta_flag, inv) = reg.register_metadata(RequestId(42), key.clone());
+    let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
+    assert!(full_inv.is_some());
+
+    // Simulate metadata panic: shutdown invocation + remove request.
+    inv.request_shutdown();
+    reg.remove_request(RequestId(42));
+
+    // Invocation still in registry (for full request to discover it failed).
+    assert!(reg.has_invocation("key1"));
+    // Full request's claim flag still active.
+    assert!(reg.get_claim_flag(RequestId(99)).is_some());
+}
+
+/// Regression: graceful_kill should send SIGTERM first, giving the child a
+/// chance to clean up before resorting to SIGKILL.
+#[test]
+#[cfg(unix)]
+fn test_graceful_kill_sigterm_then_sigkill() {
+    use std::process::Command;
+    use std::time::Instant;
+    use super::invocation::graceful_kill;
+
+    // Spawn a process that traps SIGTERM and exits cleanly.
+    let mut child = Command::new("sh")
+        .arg("-c")
+        .arg("trap 'exit 0' TERM; sleep 60")
+        .spawn()
+        .unwrap();
+
+    let start = Instant::now();
+    graceful_kill(&mut child);
+    let elapsed = start.elapsed();
+
+    // Should have exited quickly via SIGTERM (not waited 500ms for SIGKILL).
+    assert!(
+        elapsed.as_millis() < 400,
+        "graceful_kill should exit quickly when SIGTERM is handled: {}ms",
+        elapsed.as_millis()
+    );
+}
