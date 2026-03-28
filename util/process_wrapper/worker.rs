@@ -28,6 +28,8 @@ pub(crate) mod types;
 pub(crate) mod invocation;
 #[path = "worker_registry.rs"]
 pub(crate) mod registry;
+#[path = "worker_request.rs"]
+pub(crate) mod request;
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -45,6 +47,8 @@ use protocol::{
     build_cancel_response, build_response, build_shutdown_response, extract_request_id,
     extract_request_id_from_raw_line, WorkRequestContext,
 };
+use registry::{RequestRegistry, SharedRequestRegistry};
+use request::BazelRequest;
 use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request, run_sandboxed_request};
 use types::RequestId;
 
@@ -574,6 +578,94 @@ fn run_request_thread(
     ));
 }
 
+/// Request thread using BazelRequest delegation layer.
+///
+/// CLEANUP: Once all handlers are migrated to use RustcInvocation, this
+/// replaces `run_request_thread` and the `pipeline_state` parameter is removed.
+fn run_request_thread_v2(
+    self_path: std::path::PathBuf,
+    startup_args: Vec<String>,
+    request: WorkRequestContext,
+    bazel_request: BazelRequest,
+    stdout: SharedStdout,
+    pipeline_state: SharedPipelineState,
+    registry: SharedRequestRegistry,
+    state_roots: Arc<WorkerStateRoots>,
+    claim_flag: Arc<AtomicBool>,
+) {
+    log_request_thread_start(&request, &bazel_request.kind);
+
+    if worker_is_shutting_down() {
+        if !claim_flag.swap(true, Ordering::SeqCst) {
+            let response = build_shutdown_response(request.request_id);
+            let _ = write_worker_response(&stdout, &response);
+        }
+        discard_pending_request(&pipeline_state, &bazel_request.kind, request.request_id);
+        lock_or_recover(&registry).remove_request(request.request_id);
+        append_worker_lifecycle_log(&format!(
+            "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
+            current_pid(),
+            current_thread_label(),
+            request.request_id,
+            claim_flag.load(Ordering::SeqCst),
+        ));
+        return;
+    }
+
+    let (exit_code, output) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let full_args = build_full_args(&startup_args, &request.arguments);
+        if let Err(e) = prepare_request_outputs(&full_args, &request) {
+            return (1, format!("worker thread error: {e}"));
+        }
+
+        if claim_flag.load(Ordering::SeqCst) {
+            discard_pending_request(&pipeline_state, &bazel_request.kind, request.request_id);
+            lock_or_recover(&registry).remove_request(request.request_id);
+            return (0, String::new());
+        }
+
+        match &bazel_request.kind {
+            RequestKind::Metadata { .. } => {
+                bazel_request.execute_metadata(&request, full_args, &state_roots, &pipeline_state)
+            }
+            RequestKind::Full { .. } => {
+                bazel_request.execute_full(&request, full_args, &pipeline_state, &self_path)
+            }
+            RequestKind::NonPipelined => bazel_request.execute_non_pipelined(
+                full_args,
+                &self_path,
+                request.sandbox_dir.as_ref().map(|d| d.as_str()),
+            ),
+        }
+    })) {
+        Ok(result) => result,
+        Err(_) => {
+            cleanup_after_panic(&pipeline_state, &bazel_request.kind, request.request_id);
+            if let Some(inv) = &bazel_request.invocation {
+                inv.request_shutdown();
+            }
+            lock_or_recover(&registry).remove_request(request.request_id);
+            (1, "internal error: worker thread panicked".to_string())
+        }
+    };
+
+    lock_or_recover(&pipeline_state).remove_claim(request.request_id);
+    lock_or_recover(&registry).remove_request(request.request_id);
+    if !claim_flag.swap(true, Ordering::SeqCst) {
+        let response = build_response(exit_code, &output, request.request_id);
+        let _ = write_worker_response(&stdout, &response);
+    }
+    append_worker_lifecycle_log(&format!(
+        "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
+        current_pid(),
+        current_thread_label(),
+        request.request_id,
+        exit_code,
+        output.len(),
+        claim_flag.load(Ordering::SeqCst),
+    ));
+}
+
 fn join_in_flight_threads(in_flight: &Arc<Mutex<Vec<thread::JoinHandle<()>>>>) {
     let handles: Vec<_> = lock_or_recover(in_flight).drain(..).collect();
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -600,6 +692,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let stdin = io::stdin();
     let stdout: SharedStdout = Arc::new(Mutex::new(()));
     let pipeline_state: SharedPipelineState = Arc::new(Mutex::new(PipelineState::new()));
+    let registry: SharedRequestRegistry = Arc::new(Mutex::new(RequestRegistry::new()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
     let in_flight: Arc<Mutex<Vec<thread::JoinHandle<()>>>> = Arc::new(Mutex::new(Vec::new()));
 
@@ -659,11 +752,32 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         }
 
         if request.cancel {
+            // CLEANUP: Once handlers are migrated, cancel via registry only.
             let _ = try_handle_cancel_request(&request, &stdout, &pipeline_state);
+            lock_or_recover(&registry).cancel(request.request_id);
             continue;
         }
 
+        // Register in both old PipelineState (for delegation) and new RequestRegistry.
         let claim_flag = register_request(&pipeline_state, request.request_id, &request_kind);
+        let invocation = {
+            let mut reg = lock_or_recover(&registry);
+            match &request_kind {
+                RequestKind::Metadata { key } => {
+                    let (_flag, inv) = reg.register_metadata(request.request_id, key.clone());
+                    Some(inv)
+                }
+                RequestKind::Full { key } => {
+                    let (_flag, inv) = reg.register_full(request.request_id, key.clone());
+                    inv
+                }
+                RequestKind::NonPipelined => {
+                    let _flag = reg.register_non_pipelined(request.request_id);
+                    None
+                }
+            }
+        };
+        let bazel_request = BazelRequest::new(request.request_id, request_kind.clone(), invocation);
         let handle = std::thread::spawn({
             let self_path = self_path.clone();
             let startup_args = startup_args.clone();
@@ -671,16 +785,18 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let request_kind = request_kind.clone();
             let stdout = Arc::clone(&stdout);
             let pipeline_state = Arc::clone(&pipeline_state);
+            let registry = Arc::clone(&registry);
             let state_roots = Arc::clone(&state_roots);
             let claim_flag = Arc::clone(&claim_flag);
             move || {
-                run_request_thread(
+                run_request_thread_v2(
                     self_path,
                     startup_args,
                     request,
-                    request_kind,
+                    bazel_request,
                     stdout,
                     pipeline_state,
+                    registry,
                     state_roots,
                     claim_flag,
                 )
@@ -690,9 +806,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     }
 
     begin_worker_shutdown("stdin_eof");
+    // CLEANUP: Once handlers are migrated, shutdown via registry only.
     for entry in lock_or_recover(&pipeline_state).drain_all() {
         entry.kill();
     }
+    lock_or_recover(&registry).shutdown_all();
     join_in_flight_threads(&in_flight);
 
     append_worker_lifecycle_log(&format!(
