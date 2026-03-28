@@ -380,6 +380,27 @@ fn run_request_with_current_dir(
     Ok(collect_subprocess_output(output))
 }
 
+/// Spawns a process_wrapper subprocess and returns the Child handle.
+/// The caller is responsible for waiting on the child.
+pub(super) fn spawn_request(
+    self_path: &std::path::Path,
+    arguments: Vec<String>,
+    current_dir: Option<&str>,
+    context: &str,
+) -> Result<std::process::Child, ProcessWrapperError> {
+    let mut command = Command::new(self_path);
+    command
+        .args(&arguments)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(dir) = current_dir {
+        command.current_dir(dir);
+    }
+    command
+        .spawn()
+        .map_err(|e| ProcessWrapperError(format!("failed to spawn {context}: {e}")))
+}
+
 fn collect_subprocess_output(output: std::process::Output) -> (i32, String) {
     let exit_code = output.status.code().unwrap_or(1);
     let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();

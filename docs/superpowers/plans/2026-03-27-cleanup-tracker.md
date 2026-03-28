@@ -4,8 +4,8 @@ Items to address after the delegation layer is wired and tests pass.
 
 ## Phase 2: Migrate handler internals to RustcInvocation
 
-- [ ] **execute_metadata**: Replace `handle_pipelining_metadata` internals with `spawn_pipelined_monitor` + `invocation.wait_for_metadata()`. Remove inline stderr reading loop, `BackgroundRustc` storage, `store_metadata` call.
-- [ ] **execute_full**: Replace `handle_pipelining_full` internals with `invocation.wait_for_completion()`. Remove `claim_for_full`, `BackgroundRustc` extraction, `cleanup(key, request_id)` calls.
+- [x] **execute_metadata**: Uses `spawn_pipelined_monitor` + `invocation.wait_for_metadata()`. Done in `ee42958dc`.
+- [x] **execute_full**: Uses `invocation.wait_for_completion()` + output copy. Done in `ee42958dc`.
 - [ ] **execute_non_pipelined**: Replace `run_non_pipelined_request` with `spawn_non_pipelined_monitor` + `invocation.wait_for_completion()`. Remove `Command::output()` blocking pattern.
 
 ## Phase 3: Remove old code

@@ -350,20 +350,35 @@ impl BazelRequest {
 
     /// Execute a non-pipelined multiplex request.
     ///
-    /// CLEANUP: Currently delegates to the existing `Command::output()` pattern.
-    /// Will be migrated to use `spawn_non_pipelined_monitor` +
-    /// `invocation.wait_for_completion()` for cancellability.
+    /// Spawns the subprocess, starts a monitor thread for cancellability,
+    /// waits for completion, and returns the output.
     pub(super) fn execute_non_pipelined(
         &self,
         full_args: Vec<String>,
         self_path: &std::path::Path,
         sandbox_dir: Option<&str>,
+        registry: &SharedRequestRegistry,
     ) -> (i32, String) {
-        match sandbox_dir {
-            Some(dir) => run_sandboxed_request(self_path, full_args, dir)
-                .unwrap_or_else(|e| (1, format!("sandboxed worker error: {e}"))),
-            None => run_request(self_path, full_args)
-                .unwrap_or_else(|e| (1, format!("worker thread error: {e}"))),
+        use super::invocation::spawn_non_pipelined_monitor;
+        use super::sandbox::spawn_request;
+
+        let context = if sandbox_dir.is_some() { "sandboxed subprocess" } else { "subprocess" };
+        if let Some(dir) = sandbox_dir {
+            let _ = super::sandbox::seed_sandbox_cache_root(std::path::Path::new(dir));
+        }
+
+        let child = match spawn_request(self_path, full_args, sandbox_dir, context) {
+            Ok(c) => c,
+            Err(e) => return (1, format!("worker thread error: {e}")),
+        };
+
+        let invocation = Arc::new(RustcInvocation::new());
+        let monitor = spawn_non_pipelined_monitor(&invocation, child);
+        lock_or_recover(registry).store_monitor(monitor);
+
+        match invocation.wait_for_completion() {
+            Ok(completion) => (completion.exit_code, completion.diagnostics),
+            Err(failure) => (failure.exit_code, failure.diagnostics),
         }
     }
 }

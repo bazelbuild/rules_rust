@@ -635,6 +635,7 @@ fn run_request_thread_v2(
                 full_args,
                 &self_path,
                 request.sandbox_dir.as_ref().map(|d| d.as_str()),
+                &registry,
             ),
         }
     })) {
