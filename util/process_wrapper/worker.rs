@@ -39,17 +39,14 @@ use std::time::{Duration, Instant};
 
 use crate::ProcessWrapperError;
 
-use pipeline::{
-    handle_pipelining_full, handle_pipelining_metadata, kill_pipelined_request, relocate_pw_flags,
-    PipelineState, RequestKind, WorkerStateRoots,
-};
+use pipeline::{relocate_pw_flags, RequestKind, WorkerStateRoots};
 use protocol::{
     build_cancel_response, build_response, build_shutdown_response, extract_request_id,
     extract_request_id_from_raw_line, WorkRequestContext,
 };
 use registry::{RequestRegistry, SharedRequestRegistry};
 use request::BazelRequest;
-use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request, run_sandboxed_request};
+use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request};
 use types::RequestId;
 
 // ---------------------------------------------------------------------------
@@ -256,7 +253,6 @@ fn write_all_stdout_fd(bytes: &[u8]) -> io::Result<()> {
 }
 
 type SharedStdout = Arc<Mutex<()>>;
-type SharedPipelineState = Arc<Mutex<PipelineState>>;
 
 fn startup_args() -> Vec<String> {
     std::env::args()
@@ -371,19 +367,6 @@ fn prepare_request_outputs(
     Ok(())
 }
 
-fn run_non_pipelined_request(
-    self_path: &std::path::Path,
-    full_args: Vec<String>,
-    sandbox_dir: Option<&str>,
-) -> (i32, String) {
-    match sandbox_dir {
-        Some(dir) => run_sandboxed_request(self_path, full_args, dir)
-            .unwrap_or_else(|e| (1, format!("sandboxed worker error: {e}"))),
-        None => run_request(self_path, full_args)
-            .unwrap_or_else(|e| (1, format!("worker thread error: {e}"))),
-    }
-}
-
 fn execute_singleplex_request(
     self_path: &std::path::Path,
     startup_args: &[String],
@@ -404,178 +387,6 @@ fn execute_singleplex_request(
         output.len(),
     ));
     Ok(())
-}
-
-fn try_handle_cancel_request(
-    request: &WorkRequestContext,
-    stdout: &SharedStdout,
-    pipeline_state: &SharedPipelineState,
-) -> bool {
-    let flag = lock_or_recover(pipeline_state).get_claim_flag(request.request_id);
-    let Some(flag) = flag else {
-        return true;
-    };
-    if !flag.swap(true, Ordering::SeqCst) {
-        kill_pipelined_request(pipeline_state, request.request_id);
-        let response = build_cancel_response(request.request_id);
-        let _ = write_worker_response(stdout, &response);
-    }
-    true
-}
-
-fn register_request(
-    pipeline_state: &SharedPipelineState,
-    request_id: RequestId,
-    kind: &RequestKind,
-) -> Arc<AtomicBool> {
-    let mut state = lock_or_recover(pipeline_state);
-    match kind {
-        RequestKind::Metadata { key } => state.register_metadata(request_id, key.clone()),
-        RequestKind::Full { key } => state.register_full(request_id, key.clone()),
-        RequestKind::NonPipelined => state.register_non_pipelined(request_id),
-    }
-}
-
-fn discard_pending_request(
-    pipeline_state: &SharedPipelineState,
-    request_kind: &RequestKind,
-    request_id: RequestId,
-) {
-    let mut state = lock_or_recover(pipeline_state);
-    match request_kind {
-        RequestKind::Metadata { key } => state.cleanup(key, request_id),
-        RequestKind::Full { .. } | RequestKind::NonPipelined => state.discard_request(request_id),
-    }
-}
-
-fn cleanup_after_panic(
-    pipeline_state: &SharedPipelineState,
-    request_kind: &RequestKind,
-    request_id: RequestId,
-) {
-    let orphan = {
-        let mut state = lock_or_recover(pipeline_state);
-        match request_kind {
-            RequestKind::Metadata { key } | RequestKind::Full { key } => {
-                state.cleanup_key_fully(key)
-            }
-            RequestKind::NonPipelined => {
-                state.discard_request(request_id);
-                None
-            }
-        }
-    };
-    if let Some(mut bg) = orphan {
-        let _ = bg.child.kill();
-        let _ = bg.child.wait();
-        let _ = bg.stderr_drain.join();
-    }
-}
-
-fn execute_request(
-    self_path: &std::path::Path,
-    startup_args: &[String],
-    request: &WorkRequestContext,
-    request_kind: &RequestKind,
-    pipeline_state: &SharedPipelineState,
-    state_roots: &Arc<WorkerStateRoots>,
-    claim_flag: &Arc<AtomicBool>,
-) -> (i32, String) {
-    let full_args = build_full_args(startup_args, &request.arguments);
-    if let Err(e) = prepare_request_outputs(&full_args, request) {
-        return (1, format!("worker thread error: {e}"));
-    }
-
-    if claim_flag.load(Ordering::SeqCst) {
-        discard_pending_request(pipeline_state, request_kind, request.request_id);
-        return (0, String::new());
-    }
-
-    match request_kind {
-        RequestKind::Metadata { key } => {
-            let result = handle_pipelining_metadata(
-                request,
-                full_args,
-                key.clone(),
-                state_roots,
-                pipeline_state,
-            );
-            if result.0 != 0 {
-                lock_or_recover(pipeline_state).cleanup(key, request.request_id);
-            }
-            result
-        }
-        RequestKind::Full { key } => {
-            handle_pipelining_full(request, full_args, key.clone(), pipeline_state, self_path)
-        }
-        RequestKind::NonPipelined => run_non_pipelined_request(
-            self_path,
-            full_args,
-            request.sandbox_dir.as_ref().map(|dir| dir.as_str()),
-        ),
-    }
-}
-
-fn run_request_thread(
-    self_path: std::path::PathBuf,
-    startup_args: Vec<String>,
-    request: WorkRequestContext,
-    request_kind: RequestKind,
-    stdout: SharedStdout,
-    pipeline_state: SharedPipelineState,
-    state_roots: Arc<WorkerStateRoots>,
-    claim_flag: Arc<AtomicBool>,
-) {
-    log_request_thread_start(&request, &request_kind);
-
-    if worker_is_shutting_down() {
-        if !claim_flag.swap(true, Ordering::SeqCst) {
-            let response = build_shutdown_response(request.request_id);
-            let _ = write_worker_response(&stdout, &response);
-        }
-        discard_pending_request(&pipeline_state, &request_kind, request.request_id);
-        append_worker_lifecycle_log(&format!(
-            "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
-            current_pid(),
-            current_thread_label(),
-            request.request_id,
-            claim_flag.load(Ordering::SeqCst),
-        ));
-        return;
-    }
-
-    let (exit_code, output) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        execute_request(
-            &self_path,
-            &startup_args,
-            &request,
-            &request_kind,
-            &pipeline_state,
-            &state_roots,
-            &claim_flag,
-        )
-    })) {
-        Ok(result) => result,
-        Err(_) => {
-            cleanup_after_panic(&pipeline_state, &request_kind, request.request_id);
-            (1, "internal error: worker thread panicked".to_string())
-        }
-    };
-
-    lock_or_recover(&pipeline_state).remove_claim(request.request_id);
-    if !claim_flag.swap(true, Ordering::SeqCst) {
-        let response = build_response(exit_code, &output, request.request_id);
-        let _ = write_worker_response(&stdout, &response);
-    }
-    append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
-        current_pid(),
-        current_thread_label(),
-        request.request_id,
-        exit_code,
-        output.len(),
-        claim_flag.load(Ordering::SeqCst),
-    ));
 }
 
 /// Request thread using BazelRequest + RustcInvocation.
