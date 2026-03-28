@@ -16,28 +16,29 @@
 //!
 //! `BazelRequest` wraps a `WorkRequestContext` with its classified `RequestKind`
 //! and an optional `RustcInvocation` reference. It provides `execute_*` methods
-//! that dispatch to the appropriate handler.
-//!
-//! **Current state (delegation layer):** The execute methods delegate to the
-//! existing handler functions in `worker_pipeline.rs`. These will be migrated
-//! to use `RustcInvocation` + monitor threads in a follow-up.
+//! that use `RustcInvocation` + monitor threads for pipelined requests and
+//! delegate to subprocess execution for non-pipelined requests.
 
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 
-use super::invocation::RustcInvocation;
+use super::invocation::{spawn_pipelined_monitor, InvocationDirs, RustcInvocation};
 use super::pipeline::{
-    handle_pipelining_full, handle_pipelining_metadata, RequestKind, WorkerStateRoots,
+    append_pipeline_log, build_rustc_env, copy_outputs_unsandboxed, copy_rmeta_unsandboxed,
+    create_pipeline_context, maybe_cleanup_pipeline_dir, parse_pw_args, prepare_expanded_rustc_outputs,
+    prepare_rustc_args, resolve_pw_args_for_request, rewrite_emit_metadata_path,
+    rewrite_out_dir_in_expanded, strip_pipelining_flags, RequestKind, WorkerStateRoots,
 };
 use super::protocol::WorkRequestContext;
-use super::registry::RequestRegistry;
-use super::sandbox::{run_request, run_sandboxed_request};
-use super::types::{PipelineKey, RequestId, SandboxDir};
+use super::registry::SharedRequestRegistry;
+use super::sandbox::{
+    copy_all_outputs_to_sandbox, copy_output_to_sandbox, prepare_outputs,
+    resolve_request_relative_path, run_request, run_sandboxed_request,
+};
+use super::types::{PipelineKey, RequestId};
+use super::lock_or_recover;
 
 /// Thread-local request context. Not stored in the registry.
-///
-/// Created on the main thread when a work request arrives, then moved to the
-/// request thread. Holds an optional reference to the `RustcInvocation` for
-/// pipelined requests.
 pub(super) struct BazelRequest {
     pub(super) request_id: RequestId,
     pub(super) kind: RequestKind,
@@ -60,44 +61,291 @@ impl BazelRequest {
 
     /// Execute a pipelined metadata request.
     ///
-    /// CLEANUP: Currently delegates to `handle_pipelining_metadata` which uses
-    /// the old `PipelineState` + `BackgroundRustc` path. Will be migrated to
-    /// use `spawn_pipelined_monitor` + `invocation.wait_for_metadata()`.
+    /// Spawns rustc, starts a monitor thread, waits for metadata readiness,
+    /// copies the .rmeta output, and returns diagnostics.
     pub(super) fn execute_metadata(
         &self,
         request: &WorkRequestContext,
         full_args: Vec<String>,
         state_roots: &WorkerStateRoots,
-        pipeline_state: &Arc<Mutex<super::pipeline::PipelineState>>,
+        registry: &SharedRequestRegistry,
     ) -> (i32, String) {
         let key = match &self.kind {
             RequestKind::Metadata { key } => key.clone(),
             _ => return (1, "execute_metadata called for non-metadata request".to_string()),
         };
-        let result = handle_pipelining_metadata(request, full_args, key.clone(), state_roots, pipeline_state);
-        if result.0 != 0 {
-            super::lock_or_recover(pipeline_state).cleanup(&key, request.request_id);
+
+        // --- Arg parsing (same as old handle_pipelining_metadata) ---
+        let filtered = strip_pipelining_flags(&full_args);
+        let sep = filtered.iter().position(|a| a == "--");
+        let (pw_raw, rustc_and_after) = match sep {
+            Some(pos) => (&filtered[..pos], &filtered[pos + 1..]),
+            None => return (1, "pipelining: no '--' separator in args".to_string()),
+        };
+        if rustc_and_after.is_empty() {
+            return (1, "pipelining: no rustc executable after '--'".to_string());
         }
-        result
+
+        let ctx = match create_pipeline_context(state_roots, &key, request) {
+            Ok(v) => v,
+            Err(e) => return e,
+        };
+
+        let mut pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
+        let (rustc_args, original_out_dir, relocated) =
+            match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+        pw_args.merge_relocated(relocated);
+        let pw_args = resolve_pw_args_for_request(pw_args, request, &ctx.execroot_dir);
+        let env = match build_rustc_env(
+            &pw_args.env_files,
+            pw_args.stable_status_file.as_deref(),
+            pw_args.volatile_status_file.as_deref(),
+            &pw_args.subst,
+        ) {
+            Ok(env) => env,
+            Err(e) => return (1, format!("pipelining: {e}")),
+        };
+
+        let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
+        let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
+        prepare_expanded_rustc_outputs(&rustc_args);
+        append_pipeline_log(
+            &ctx.root_dir,
+            &format!(
+                "metadata start request_id={} key={} sandbox_dir={:?} execroot={} outputs={}",
+                request.request_id, key, request.sandbox_dir,
+                ctx.execroot_dir.display(), ctx.outputs_dir.display(),
+            ),
+        );
+
+        // --- Windows response file handling ---
+        #[cfg(windows)]
+        let _consolidated_dir_guard: Option<std::path::PathBuf>;
+        #[cfg(windows)]
+        let mut rustc_args = rustc_args;
+        #[cfg(windows)]
+        {
+            let unified_dir = ctx.root_dir.join("deps");
+            let _ = std::fs::remove_dir_all(&unified_dir);
+            if let Err(e) = std::fs::create_dir_all(&unified_dir) {
+                return (1, format!("pipelining: failed to create deps dir: {e}"));
+            }
+            let dep_dirs: Vec<std::path::PathBuf> = rustc_args
+                .iter()
+                .filter_map(|a| a.strip_prefix("-Ldependency=").map(std::path::PathBuf::from))
+                .collect();
+            crate::util::consolidate_deps_into(&dep_dirs, &unified_dir);
+            rustc_args.retain(|a| !a.starts_with("-Ldependency="));
+            rustc_args.push(format!("-Ldependency={}", unified_dir.display()));
+            _consolidated_dir_guard = Some(unified_dir);
+        }
+
+        // --- Spawn rustc ---
+        let mut cmd = Command::new(&rustc_args[0]);
+        #[cfg(windows)]
+        {
+            let response_file_path = ctx.root_dir.join("metadata_rustc.args");
+            let content = rustc_args[1..].join("\n");
+            if let Err(e) = std::fs::write(&response_file_path, &content) {
+                return (1, format!("pipelining: failed to write response file: {e}"));
+            }
+            cmd.arg(format!("@{}", response_file_path.display()));
+        }
+        #[cfg(not(windows))]
+        {
+            cmd.args(&rustc_args[1..]);
+        }
+        cmd.env_clear()
+            .envs(&env)
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .current_dir(&ctx.execroot_dir);
+        let child = match cmd.spawn() {
+            Ok(c) => c,
+            Err(e) => return (1, format!("pipelining: failed to spawn rustc: {e}")),
+        };
+
+        // --- Start monitor thread ---
+        let dirs = InvocationDirs {
+            pipeline_output_dir: ctx.outputs_dir.clone(),
+            pipeline_root_dir: ctx.root_dir.clone(),
+            original_out_dir,
+        };
+
+        let invocation = self.invocation.as_ref().expect(
+            "metadata request must have an invocation from register_metadata",
+        );
+
+        let original_out_dir = dirs.original_out_dir.clone();
+        let monitor_handle = spawn_pipelined_monitor(
+            invocation,
+            child,
+            dirs,
+            pw_args.rustc_output_format.clone(),
+        );
+        lock_or_recover(registry).store_invocation(
+            key.clone(),
+            Arc::clone(invocation),
+            monitor_handle,
+        );
+
+        // --- Wait for metadata readiness ---
+        match invocation.wait_for_metadata() {
+            Ok(meta) => {
+                // Copy .rmeta to the declared output location.
+                if let Some(rmeta_path_str) = &meta.rmeta_path {
+                    let rmeta_resolved = resolve_request_relative_path(
+                        rmeta_path_str,
+                        Some(&ctx.execroot_dir),
+                    );
+                    let rmeta_resolved_str = rmeta_resolved.display().to_string();
+                    append_pipeline_log(
+                        &ctx.root_dir,
+                        &format!("metadata rmeta ready: {}", rmeta_resolved_str),
+                    );
+                    let copy_err = match request.sandbox_dir.as_ref() {
+                        Some(dir) => copy_output_to_sandbox(
+                            &rmeta_resolved_str,
+                            dir.as_str(),
+                            original_out_dir.as_str(),
+                            "_pipeline",
+                        )
+                        .err()
+                        .map(|e| format!("pipelining: rmeta materialization failed: {e}")),
+                        None => copy_rmeta_unsandboxed(
+                            &rmeta_resolved,
+                            original_out_dir.as_str(),
+                            &ctx.root_dir,
+                        ),
+                    };
+                    if let Some(err_msg) = copy_err {
+                        invocation.request_shutdown();
+                        return (1, err_msg);
+                    }
+                }
+                append_pipeline_log(&ctx.root_dir, &format!("metadata stored key={}", key));
+                if let Some(ref path) = pw_args.output_file {
+                    let _ = std::fs::write(path, &meta.diagnostics_before);
+                }
+                (0, meta.diagnostics_before)
+            }
+            Err(failure) => {
+                maybe_cleanup_pipeline_dir(
+                    &ctx.root_dir,
+                    true,
+                    "metadata rustc failed",
+                );
+                if let Some(ref path) = pw_args.output_file {
+                    let _ = std::fs::write(path, &failure.diagnostics);
+                }
+                (failure.exit_code, failure.diagnostics)
+            }
+        }
     }
 
     /// Execute a pipelined full (codegen) request.
     ///
-    /// CLEANUP: Currently delegates to `handle_pipelining_full` which uses
-    /// `claim_for_full` + `BackgroundRustc` extraction. Will be migrated to
-    /// use `invocation.wait_for_completion()`.
+    /// Waits for the invocation to complete, copies outputs, returns diagnostics.
+    /// Falls back to a full subprocess if no invocation exists.
     pub(super) fn execute_full(
         &self,
         request: &WorkRequestContext,
         full_args: Vec<String>,
-        pipeline_state: &Arc<Mutex<super::pipeline::PipelineState>>,
+        registry: &SharedRequestRegistry,
         self_path: &std::path::Path,
     ) -> (i32, String) {
         let key = match &self.kind {
             RequestKind::Full { key } => key.clone(),
             _ => return (1, "execute_full called for non-full request".to_string()),
         };
-        handle_pipelining_full(request, full_args, key, pipeline_state, self_path)
+
+        let invocation = match &self.invocation {
+            Some(inv) => Arc::clone(inv),
+            None => {
+                return self.execute_fallback(request, full_args, self_path, &key, registry);
+            }
+        };
+
+        match invocation.wait_for_completion() {
+            Ok(completion) => {
+                if completion.exit_code == 0 {
+                    let copy_result = match request.sandbox_dir.as_ref() {
+                        Some(dir) => copy_all_outputs_to_sandbox(
+                            &completion.dirs.pipeline_output_dir,
+                            dir.as_str(),
+                            completion.dirs.original_out_dir.as_str(),
+                        )
+                        .map(|_| ())
+                        .map_err(|e| format!("pipelining: output materialization failed: {e}")),
+                        None => copy_outputs_unsandboxed(
+                            &completion.dirs.pipeline_output_dir,
+                            completion.dirs.original_out_dir.as_path(),
+                        ),
+                    };
+                    if let Err(e) = copy_result {
+                        append_pipeline_log(
+                            &completion.dirs.pipeline_root_dir,
+                            &format!("full output copy error: {e}"),
+                        );
+                        return (1, format!("{}\n{e}", completion.diagnostics));
+                    }
+                }
+                append_pipeline_log(
+                    &completion.dirs.pipeline_root_dir,
+                    &format!("full done key={} exit_code={}", key, completion.exit_code),
+                );
+                maybe_cleanup_pipeline_dir(
+                    &completion.dirs.pipeline_root_dir,
+                    completion.exit_code != 0,
+                    "full action failed",
+                );
+                (completion.exit_code, completion.diagnostics)
+            }
+            Err(failure) => {
+                // Invocation failed or was shut down — try fallback.
+                self.execute_fallback(request, full_args, self_path, &key, registry)
+            }
+        }
+    }
+
+    fn execute_fallback(
+        &self,
+        request: &WorkRequestContext,
+        args: Vec<String>,
+        self_path: &std::path::Path,
+        key: &PipelineKey,
+        _registry: &SharedRequestRegistry,
+    ) -> (i32, String) {
+        let worker_state_root = std::env::current_dir()
+            .ok()
+            .map(|cwd| cwd.join("_pw_state").join("fallback.log"));
+        if let Some(path) = worker_state_root {
+            if let Ok(mut file) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+            {
+                use std::io::Write;
+                let _ = writeln!(
+                    file,
+                    "full missing bg request_id={} key={} sandbox_dir={:?}",
+                    request.request_id, key, request.sandbox_dir
+                );
+            }
+        }
+        let filtered = strip_pipelining_flags(&args);
+        match request.sandbox_dir.as_ref() {
+            Some(dir) => run_sandboxed_request(self_path, filtered, dir.as_str())
+                .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
+            None => {
+                prepare_outputs(&filtered);
+                run_request(self_path, filtered)
+                    .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
+            }
+        }
     }
 
     /// Execute a non-pipelined multiplex request.

@@ -753,7 +753,7 @@ pub(super) fn prepare_rustc_args(
     Ok((rustc_args, original_out_dir, metadata.relocated))
 }
 
-fn resolve_pw_args_for_request(
+pub(super) fn resolve_pw_args_for_request(
     mut pw_args: ParsedPwArgs,
     request: &WorkRequestContext,
     execroot_dir: &std::path::Path,
@@ -1322,7 +1322,7 @@ pub(super) fn kill_pipelined_request(
 /// Returns an error if any file operation fails.
 /// Copies a single .rmeta file to the `_pipeline/` subdirectory of out_dir (unsandboxed).
 /// Returns `Some(error_message)` on failure, `None` on success.
-fn copy_rmeta_unsandboxed(
+pub(super) fn copy_rmeta_unsandboxed(
     rmeta_src: &std::path::Path,
     original_out_dir: &str,
     root_dir: &std::path::Path,
@@ -1348,7 +1348,7 @@ fn copy_rmeta_unsandboxed(
 }
 
 /// Copies all regular files from `src_dir` to `dest_dir` (unsandboxed path).
-fn copy_outputs_unsandboxed(
+pub(super) fn copy_outputs_unsandboxed(
     src_dir: &std::path::Path,
     dest_dir: &std::path::Path,
 ) -> Result<(), String> {

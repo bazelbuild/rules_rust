@@ -44,6 +44,8 @@ pub(crate) struct InvocationDirs {
 /// Returned from `wait_for_metadata` on success.
 pub(crate) struct MetadataResult {
     pub diagnostics_before: String,
+    /// Path to the .rmeta artifact (from rustc's artifact notification).
+    pub rmeta_path: Option<String>,
 }
 
 /// Returned from `wait_for_completion` on success.
@@ -75,6 +77,7 @@ pub(crate) enum InvocationState {
     MetadataReady {
         pid: u32,
         diagnostics_before: String,
+        rmeta_path: Option<String>,
         dirs: InvocationDirs,
     },
     Completed {
@@ -181,12 +184,14 @@ impl RustcInvocation {
         loop {
             match &*state {
                 InvocationState::MetadataReady {
-                    diagnostics_before, ..
+                    diagnostics_before,
+                    rmeta_path,
+                    ..
                 } => {
-                    let result = MetadataResult {
+                    return Ok(MetadataResult {
                         diagnostics_before: diagnostics_before.clone(),
-                    };
-                    return Ok(result);
+                        rmeta_path: rmeta_path.clone(),
+                    });
                 }
                 InvocationState::Completed {
                     exit_code,
@@ -196,6 +201,7 @@ impl RustcInvocation {
                     if *exit_code == 0 {
                         return Ok(MetadataResult {
                             diagnostics_before: diagnostics.clone(),
+                            rmeta_path: None, // Completed without MetadataReady phase.
                         });
                     } else {
                         return Err(FailureResult {
@@ -403,6 +409,7 @@ impl MonitorHandle {
         &self,
         pid: u32,
         diagnostics_before: String,
+        rmeta_path: Option<String>,
         dirs: InvocationDirs,
     ) -> bool {
         let (lock, cvar) = &*self.inner;
@@ -413,6 +420,7 @@ impl MonitorHandle {
         *state = InvocationState::MetadataReady {
             pid,
             diagnostics_before,
+            rmeta_path,
             dirs,
         };
         cvar.notify_all();
@@ -552,12 +560,13 @@ pub(crate) fn spawn_pipelined_monitor(
 
             // Check for rmeta artifact notification before processing as diagnostic.
             if !metadata_emitted {
-                if let Some(_rmeta_path) = extract_rmeta_path(trimmed) {
+                if let Some(rmeta_path) = extract_rmeta_path(trimmed) {
                     metadata_emitted = true;
                     diagnostics_before = diagnostics.clone();
                     monitor.transition_to_metadata_ready(
                         pid,
                         diagnostics_before.clone(),
+                        Some(rmeta_path),
                         dirs.clone(),
                     );
                     // Don't add the artifact JSON line to diagnostics output.

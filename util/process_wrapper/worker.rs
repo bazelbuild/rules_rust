@@ -626,10 +626,10 @@ fn run_request_thread_v2(
 
         match &bazel_request.kind {
             RequestKind::Metadata { .. } => {
-                bazel_request.execute_metadata(&request, full_args, &state_roots, &pipeline_state)
+                bazel_request.execute_metadata(&request, full_args, &state_roots, &registry)
             }
             RequestKind::Full { .. } => {
-                bazel_request.execute_full(&request, full_args, &pipeline_state, &self_path)
+                bazel_request.execute_full(&request, full_args, &registry, &self_path)
             }
             RequestKind::NonPipelined => bazel_request.execute_non_pipelined(
                 full_args,
