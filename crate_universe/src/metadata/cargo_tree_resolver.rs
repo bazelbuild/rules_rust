@@ -16,6 +16,7 @@ use url::Url;
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
 use crate::select::{Select, SelectableScalar};
+use crate::splicing::symlink_external_path_deps;
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
 
@@ -515,6 +516,56 @@ impl TreeResolver {
                 })?;
             }
         }
+
+        // Handle external path dependencies in the root manifest and workspace members
+        let root_manifest = cargo_toml::Manifest::from_path(pristine_manifest_path.as_std_path())
+            .with_context(|| {
+                format!(
+                    "Failed to read manifest at {} for external path deps",
+                    pristine_manifest_path
+                )
+            })?;
+
+        symlink_external_path_deps(
+            &root_manifest,
+            pristine_root.as_std_path(),
+            pristine_root.as_std_path(),
+            output_dir,
+        )?;
+
+        // Handle workspace members
+        if let Some(workspace) = &root_manifest.workspace {
+            for member_glob in &workspace.members {
+                let member_paths = glob::glob(pristine_root.join(member_glob).as_str())
+                    .with_context(|| format!("Invalid glob pattern for workspace member: {}", member_glob))?
+                    .filter_map(|r| r.ok());
+
+                for member_path in member_paths {
+                    let member_manifest_path = if member_path.is_dir() {
+                        member_path.join("Cargo.toml")
+                    } else {
+                        member_path
+                    };
+
+                    if member_manifest_path.exists() {
+                        if let Ok(member_manifest) =
+                            cargo_toml::Manifest::from_path(&member_manifest_path)
+                        {
+                            let member_dir = member_manifest_path
+                                .parent()
+                                .expect("Member manifest should have a parent directory");
+                            symlink_external_path_deps(
+                                &member_manifest,
+                                member_dir,
+                                pristine_root.as_std_path(),
+                                output_dir,
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
+
         std::fs::copy(
             pristine_root.join("Cargo.lock"),
             output_dir.join("Cargo.lock"),
