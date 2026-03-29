@@ -79,11 +79,52 @@ def _transitive_data_not_in_compile_inputs_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _transitive_compile_data_not_in_compile_inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    rustc_action = None
+    for action in target.actions:
+        if action.mnemonic == "Rustc":
+            rustc_action = action
+            break
+
+    asserts.false(env, rustc_action == None, "Expected a Rustc action")
+
+    compile_data_inputs = [i for i in rustc_action.inputs.to_list() if "transitive_compile_data_dep.txt" in i.path]
+    asserts.equals(
+        env,
+        0,
+        len(compile_data_inputs),
+        "Expected transitive compile_data dep file to NOT appear in Rustc action inputs, but found: " +
+        str([i.path for i in compile_data_inputs]),
+    )
+
+    return analysistest.end(env)
+
+def _data_propagates_to_runfiles_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    runfiles = target[DefaultInfo].default_runfiles
+    runfile_paths = [f.short_path for f in runfiles.files.to_list()]
+
+    asserts.true(
+        env,
+        any([p for p in runfile_paths if "transitive_data_dep.txt" in p]),
+        "Expected transitive data dep file to appear in runfiles, but got: " +
+        str(runfile_paths),
+    )
+
+    return analysistest.end(env)
+
 compile_data_propagates_to_crate_info_test = analysistest.make(_compile_data_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_to_crate_info_test = analysistest.make(_wrapper_rule_propagates_to_crate_info_test_impl)
 wrapper_rule_propagates_and_joins_compile_data_test = analysistest.make(_wrapper_rule_propagates_and_joins_compile_data_test_impl)
 compile_data_propagates_to_rust_doc_test = analysistest.make(_compile_data_propagates_to_rust_doc_test_impl)
 transitive_data_not_in_compile_inputs_test = analysistest.make(_transitive_data_not_in_compile_inputs_test_impl)
+transitive_compile_data_not_in_compile_inputs_test = analysistest.make(_transitive_compile_data_not_in_compile_inputs_test_impl)
+data_propagates_to_runfiles_test = analysistest.make(_data_propagates_to_runfiles_test_impl)
 
 def _define_test_targets():
     rust_library(
@@ -193,6 +234,41 @@ def _define_test_targets():
         edition = "2021",
     )
 
+    write_file(
+        name = "transitive_compile_data_dep_file",
+        out = "transitive_compile_data_dep.txt",
+        content = ["transitive compile data dep", ""],
+        newline = "unix",
+    )
+
+    write_file(
+        name = "lib_with_compile_data_src",
+        out = "lib_with_compile_data.rs",
+        content = ["pub fn hello() {}", ""],
+        newline = "unix",
+    )
+
+    rust_library(
+        name = "lib_with_compile_data",
+        srcs = [":lib_with_compile_data.rs"],
+        compile_data = [":transitive_compile_data_dep.txt"],
+        edition = "2021",
+    )
+
+    write_file(
+        name = "lib_depending_on_compile_data_src",
+        out = "lib_depending_on_compile_data.rs",
+        content = ["extern crate lib_with_compile_data;", ""],
+        newline = "unix",
+    )
+
+    rust_library(
+        name = "lib_depending_on_compile_data",
+        srcs = [":lib_depending_on_compile_data.rs"],
+        deps = [":lib_with_compile_data"],
+        edition = "2021",
+    )
+
 def compile_data_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -227,6 +303,16 @@ def compile_data_test_suite(name):
         target_under_test = ":lib_depending_on_data",
     )
 
+    transitive_compile_data_not_in_compile_inputs_test(
+        name = "transitive_compile_data_not_in_compile_inputs_test",
+        target_under_test = ":lib_depending_on_compile_data",
+    )
+
+    data_propagates_to_runfiles_test(
+        name = "data_propagates_to_runfiles_test",
+        target_under_test = ":lib_depending_on_data",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -235,5 +321,7 @@ def compile_data_test_suite(name):
             ":wrapper_rule_propagates_and_joins_compile_data_test",
             ":compile_data_propagates_to_rust_doc_test",
             ":transitive_data_not_in_compile_inputs_test",
+            ":transitive_compile_data_not_in_compile_inputs_test",
+            ":data_propagates_to_runfiles_test",
         ],
     )
