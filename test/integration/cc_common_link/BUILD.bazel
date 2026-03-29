@@ -4,12 +4,48 @@ load(
     "rust_binary",
     "rust_library",
     "rust_shared_library",
+    "rust_library_group",
     "rust_test",
 )
 
 cc_library(
     name = "cclinkstampdep",
     linkstamp = "cclinkstampdep.cc",
+)
+
+rust_library(
+    name = "deep_dep",
+    srcs = ["deep_dep.rs"],
+    edition = "2021",
+)
+
+# Test to make sure library groups work with cc_common_link
+# If library groups aren't traversed, you get `undefined reference to `deep_dep::deep_dep'`
+# link errors for the crates that use the group and reference `deep_dep` when they would
+# otherwise work without cc_common_link.
+rust_library_group(
+    name = "dep_group",
+    deps = [":deep_dep"],
+)
+
+rust_library(
+    name = "very_nested_dep",
+    srcs = ["very_nested_dep.rs"],
+    edition = "2021",
+)
+
+rust_library_group(
+    name = "nested_dep_group",
+    deps = [":very_nested_dep"],
+)
+
+# Same thing happens with libraries. Without group traversal compiling the library
+# results in `undefined reference to `very_nested_dep::very_nested_dep'`.
+rust_library(
+    name = "nesting_dep",
+    srcs = ["nesting_dep.rs"],
+    deps = [":nested_dep_group"],
+    edition = "2021",
 )
 
 rust_library(
@@ -25,6 +61,8 @@ rust_binary(
     deps = [
         ":cclinkstampdep",
         ":rdep",
+        ":dep_group",
+        ":nesting_dep",
     ],
 )
 
