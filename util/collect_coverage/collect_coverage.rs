@@ -12,7 +12,6 @@
 //! - `COVERAGE_DIR``: Directory containing metadata files needed for coverage collection (e.g. gcda files, profraw).
 //! - `COVERAGE_OUTPUT_FILE`: The coverage action output path.
 //! - `ROOT`: Location from where the code coverage collection was invoked.
-//! - `RUNFILES_DIR`: Location of the test's runfiles.
 //! - `VERBOSE_COVERAGE`: Print debug info from the coverage scripts
 //!
 //! The script looks in $COVERAGE_DIR for the Rust metadata coverage files
@@ -24,6 +23,8 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
+
+use runfiles::{rlocation, Runfiles};
 
 macro_rules! debug_log {
     ($($arg:tt)*) => {
@@ -47,9 +48,12 @@ fn find_metadata_file(execroot: &Path, runfiles_dir: &Path, path: &str) -> PathB
 }
 
 fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
+    let test_binary_var = env::var("RULES_RUST_TEST_BINARY_OVERRIDE")
+        .or(env::var("TEST_BINARY"))
+        .unwrap();
     let test_binary = runfiles_dir
         .join(env::var("TEST_WORKSPACE").unwrap())
-        .join(env::var("TEST_BINARY").unwrap());
+        .join(&test_binary_var);
 
     if !test_binary.exists() {
         let configuration = runfiles_dir
@@ -70,9 +74,7 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
                 path
             });
 
-        let test_binary = execroot
-            .join(configuration)
-            .join(env::var("TEST_BINARY").unwrap());
+        let test_binary = execroot.join(configuration).join(test_binary_var);
 
         debug_log!(
             "TEST_BINARY is not found in runfiles. Falling back to: {}",
@@ -88,11 +90,8 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
 fn main() {
     let coverage_dir = PathBuf::from(env::var("COVERAGE_DIR").unwrap());
     let execroot = PathBuf::from(env::var("ROOT").unwrap());
-    let mut runfiles_dir = PathBuf::from(env::var("RUNFILES_DIR").unwrap());
-
-    if !runfiles_dir.is_absolute() {
-        runfiles_dir = execroot.join(runfiles_dir);
-    }
+    let runfiles = Runfiles::create().unwrap();
+    let runfiles_dir = rlocation!(runfiles, "").expect("Failed to locate runfile dir");
 
     debug_log!("ROOT: {}", execroot.display());
     debug_log!("RUNFILES_DIR: {}", runfiles_dir.display());
