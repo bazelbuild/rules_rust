@@ -1,9 +1,9 @@
 platform(
     name = "linux_x86_64_musl",
     constraint_values = [
-        "@//linker_config:musl",
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
+        "@platforms_contrib//libc:musl",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11,9 +11,9 @@ platform(
 platform(
     name = "linux_arm64_musl",
     constraint_values = [
-        "@//linker_config:musl",
         "@platforms//cpu:arm64",
         "@platforms//os:linux",
+        "@platforms_contrib//libc:musl",
     ],
     visibility = ["//visibility:public"],
 )

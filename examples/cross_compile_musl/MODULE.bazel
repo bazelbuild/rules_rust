@@ -10,8 +10,15 @@ local_path_override(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms_contrib", version = "0.3.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+git_override(
+    module_name = "platforms_contrib",
+    branch = "fmeum/libc",
+    remote = "https://github.com/bazel-contrib/platforms_contrib.git",
+)
 
 RUST_EDITION = "2021"
 
@@ -23,84 +30,41 @@ rust.toolchain(
     versions = [RUST_VERSION],
 )
 
-# This overrides a default rust_repository_set created by rust_register_toolchain.
-# It must be named exactly this.
-# Each exec triple needs one of these calls per target triple it supports.
-# The first call needs all of the attrs, the subsequent calls should only set name, target_triple, and target_compatible_with.
+# Register musl target triples for each exec host.
+# target_compatible_with is not needed here because triple_to_constraint_set
+# now emits @platforms_contrib//libc:musl for musl triples (and glibc for gnu)
+# which is sufficient to distinguish the toolchains.
 rust.repository_set(
     name = "rust_linux_x86_64",
     edition = RUST_EDITION,
     exec_triple = "x86_64-unknown-linux-gnu",
-    target_compatible_with = [
-        "@//linker_config:unknown",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
-    target_triple = "x86_64-unknown-linux-gnu",
+    target_triple = "aarch64-unknown-linux-musl",
     versions = [RUST_VERSION],
 )
 rust.repository_set(
     name = "rust_linux_x86_64",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:arm64",
-        "@platforms//os:linux",
-    ],
-    target_triple = "aarch64-unknown-linux-musl",
-)
-rust.repository_set(
-    name = "rust_linux_x86_64",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
     target_triple = "x86_64-unknown-linux-musl",
 )
-
-# We don't need to register a repository_set for exec_triple == target_triple if we're not customising it in any way:
-# one will get registered by default.
-# But we do for the Linux case above, because we want to add the "@//linker_config:unknown" constraint in that case.
 rust.repository_set(
     name = "rust_darwin_x86_64",
     edition = RUST_EDITION,
     exec_triple = "x86_64-apple-darwin",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
     target_triple = "x86_64-unknown-linux-musl",
     versions = [RUST_VERSION],
 )
 rust.repository_set(
     name = "rust_darwin_x86_64",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:arm64",
-        "@platforms//os:linux",
-    ],
     target_triple = "aarch64-unknown-linux-musl",
 )
 rust.repository_set(
     name = "rust_darwin_aarch64",
     edition = RUST_EDITION,
     exec_triple = "aarch64-apple-darwin",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
     target_triple = "x86_64-unknown-linux-musl",
     versions = [RUST_VERSION],
 )
 rust.repository_set(
     name = "rust_darwin_aarch64",
-    target_compatible_with = [
-        "@//linker_config:musl",
-        "@platforms//cpu:arm64",
-        "@platforms//os:linux",
-    ],
     target_triple = "aarch64-unknown-linux-musl",
 )
 use_repo(rust, "rust_toolchains")
@@ -125,5 +89,5 @@ bazel_dep(name = "toolchains_musl", version = "0.1.20", dev_dependency = True)
 
 toolchains_musl = use_extension("@toolchains_musl//:toolchains_musl.bzl", "toolchains_musl", dev_dependency = True)
 toolchains_musl.config(
-    extra_target_compatible_with = ["@//linker_config:musl"],
+    extra_target_compatible_with = ["@platforms_contrib//libc:musl"],
 )

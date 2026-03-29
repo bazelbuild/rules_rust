@@ -29,10 +29,12 @@ load("//rust/platform:triple.bzl", "get_host_triple")
 SUPPORTED_PLATFORM_TRIPLES = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",
+    "aarch64-unknown-linux-musl",
     "wasm32-unknown-unknown",
     "wasm32-wasip1",
     "x86_64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
     "x86_64-unknown-nixos-gnu",
 ]
 
