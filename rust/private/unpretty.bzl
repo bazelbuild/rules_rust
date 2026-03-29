@@ -185,12 +185,14 @@ def _rust_unpretty_aspect_impl(target, ctx):
         if crate_info.is_test:
             rust_flags = get_rust_test_flags(ctx.rule.attr)
 
+        rustc_tool_path = (toolchain.sysroot_path + "/bin/rustc") if toolchain.sysroot_path else toolchain.rustc.path
+
         args, env = construct_arguments(
             ctx = ctx,
             attr = ctx.rule.attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool_path = rustc_tool_path,
             cc_toolchain = cc_toolchain,
             feature_configuration = feature_configuration,
             crate_info = crate_info,
