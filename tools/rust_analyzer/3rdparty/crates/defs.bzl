@@ -634,6 +634,9 @@ def crate_repositories():
     maybe(
         http_archive,
         name = "rrra__io-lifetimes-1.0.11",
+        patches = [
+            "@rules_rust//tools/rust_analyzer/3rdparty/patches:io-lifetimes-determinism.patch",
+        ],
         sha256 = "eae7b9aee968036d54dce06cebaefd919e4472e753296daccd6d344e3e2df0c2",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/io-lifetimes/1.0.11/download"],
@@ -774,6 +777,9 @@ def crate_repositories():
     maybe(
         http_archive,
         name = "rrra__rustix-0.37.23",
+        patches = [
+            "@rules_rust//tools/rust_analyzer/3rdparty/patches:rustix-determinism.patch",
+        ],
         sha256 = "4d69718bf81c6127a49dc64e44a742e8bb9213c0ff8869a22c308f84c1d4ab06",
         type = "tar.gz",
         urls = ["https://static.crates.io/crates/rustix/0.37.23/download"],

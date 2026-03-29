@@ -585,7 +585,7 @@ CRATES_VENDOR_ATTRS = {
     ),
     "splicing_config": attr.string(
         doc = (
-            "The configuration flags to use for splicing Cargo maniests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
+            "The configuration flags to use for splicing Cargo manifests. Use `//crate_universe:defs.bzl\\%rsplicing_config` to " +
             "generate the value for this field. If unset, the defaults defined there will be used."
         ),
     ),
