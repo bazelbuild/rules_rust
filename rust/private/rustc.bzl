@@ -858,6 +858,7 @@ def collect_inputs(
         build_info = build_info,
         dep_info = dep_info,
         include_link_flags = include_link_flags,
+        include_transitive_data = not toolchain._incompatible_do_not_include_transitive_data_in_compile_inputs,
     )
 
     # TODO(parkmycar): Cleanup the handling of lint_files here.
@@ -1994,13 +1995,15 @@ def add_edition_flags(args, crate):
 def _process_build_scripts(
         build_info,
         dep_info,
-        include_link_flags = True):
+        include_link_flags = True,
+        include_transitive_data = False):
     """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
         build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
+        include_transitive_data (bool, optional): Whether to include transitive data dependencies in compile inputs.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -2010,7 +2013,9 @@ def _process_build_scripts(
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
     direct_inputs = []
-    transitive_inputs = [dep_info.link_search_path_files, dep_info.transitive_data]
+    transitive_inputs = [dep_info.link_search_path_files]
+    if include_transitive_data:
+        transitive_inputs.append(dep_info.transitive_data)
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -2037,6 +2042,7 @@ def _process_build_scripts(
     for dep_build_info in dep_info.transitive_build_infos.to_list():
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
+        transitive_inputs.append(dep_build_info.compile_data)
 
     out_dir_compile_inputs = depset(
         direct_inputs,
