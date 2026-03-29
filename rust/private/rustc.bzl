@@ -2261,9 +2261,20 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
                 "-Clink-arg=-l{}".format(get_lib_name(artifact)),
             ]
     elif _is_dylib(lib):
-        return [
-            "-ldylib=%s" % get_lib_name(artifact),
-        ]
+        lib_file_name = artifact.basename
+        if for_windows or for_darwin:
+            use_lib_name = True
+        else:
+            use_lib_name = (lib_file_name.startswith("lib") and lib_file_name.endswith(".so"))
+
+        if use_lib_name:
+            return [
+                "-ldylib=%s" % get_lib_name(artifact),
+            ]
+        else:
+            return [
+                "-Clink-arg=-l:{}".format(lib_file_name),
+            ]
 
     return []
 
