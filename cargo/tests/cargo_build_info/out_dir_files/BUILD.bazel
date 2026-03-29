@@ -1,0 +1,17 @@
+load("//cargo:defs.bzl", "cargo_build_info")
+load("//rust:defs.bzl", "rust_test")
+
+cargo_build_info(
+    name = "build_info",
+    out_dir_files = {
+        "config.txt": '["nested/config.txt"]',
+        "greeting.txt": '["greeting.txt"]',
+    },
+)
+
+rust_test(
+    name = "out_dir_files_test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_info"],
+)

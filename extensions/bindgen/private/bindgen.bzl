@@ -30,6 +30,14 @@ load("@rules_rust//rust/private:rustc.bzl", "get_linker_and_args")
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:utils.bzl", "find_cc_toolchain", "get_lib_name_default", "get_preferred_artifact")
 
+BindgenInfo = provider(
+    doc = "Information from a `rust_bindgen` target, providing the generated bindings and original `CcInfo`.",
+    fields = {
+        "cc_info": "CcInfo: The original CcInfo from the cc_lib target (before any stripping by merge_cc_lib_objects_into_rlib).",
+        "output": "File: The generated .rs bindings file.",
+    },
+)
+
 # TODO(hlopko): use the more robust logic from rustc.bzl also here, through a reasonable API.
 def _get_libs_for_static_executable(dep):
     """find the libraries used for linking a static executable.
@@ -423,6 +431,10 @@ def _rust_bindgen_impl(ctx):
         providers = [cc_lib[CcInfo]]
 
     return providers + [
+        BindgenInfo(
+            cc_info = cc_lib[CcInfo],
+            output = output,
+        ),
         OutputGroupInfo(
             bindgen_bindings = depset([output]),
             bindgen_c_thunks = depset(([c_output] if wrap_static_fns else [])),

@@ -32,6 +32,12 @@ filegroup(
 
 # Workspace Member Dependencies
 alias(
+    name = "bzip2-0.3.3",
+    actual = "@basic_sys__bzip2-0.3.3//:bzip2",
+    tags = ["manual"],
+)
+
+alias(
     name = "bzip2",
     actual = "@basic_sys__bzip2-0.3.3//:bzip2",
     tags = ["manual"],
