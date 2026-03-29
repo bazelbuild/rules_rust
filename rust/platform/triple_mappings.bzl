@@ -32,8 +32,8 @@ SUPPORTED_T1_PLATFORM_TRIPLES = {
     "x86_64-pc-windows-msvc": _support(std = True, host_tools = True),
     "x86_64-unknown-linux-gnu": _support(std = True, host_tools = True),
     "x86_64-unknown-nixos-gnu": _support(std = True, host_tools = True),  # Same as `x86_64-unknown-linux-gnu` but with `@platforms//os:nixos`.
-    # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
-    # and others using existing @platforms// config_values
+    # N.B. These windows-gnu "alternative" envs are not supported, as bazel cannot
+    # distinguish between MSVC and MinGW using existing @platforms// config_values.
     #
     #"i686-pc-windows-gnu",
     #"x86_64-pc-windows-gnu",
@@ -48,6 +48,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-linux-musl": _support(std = True, host_tools = True),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "arm-unknown-linux-musleabi": _support(std = True, host_tools = True),
@@ -55,11 +56,15 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
+    "i686-unknown-linux-musl": _support(std = True, host_tools = True),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "powerpc-unknown-linux-musl": _support(std = True, host_tools = True),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
+    "riscv64gc-unknown-linux-musl": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "s390x-unknown-linux-musl": _support(std = True, host_tools = True),
     "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
@@ -74,6 +79,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "x86_64-unknown-linux-musl": _support(std = True, host_tools = True),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
     "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }
@@ -268,8 +274,10 @@ _SYSTEM_TO_STDLIB_LINKFLAGS = {
     "fuchsia": ["-lzircon", "-lfdio"],
     "illumos": ["-lsocket", "-lposix4", "-lpthread", "-lresolv", "-lnsl", "-lumem"],
     "ios": ["-lSystem", "-lobjc", "-Wl,-framework,Security", "-Wl,-framework,Foundation", "-lresolv"],
-    # TODO: This ignores musl. Longer term what does Bazel think about musl?
-    "linux": ["-ldl", "-lpthread"],
+    "linux": {
+        None: ["-ldl", "-lpthread"],
+        "musl": [],
+    },
     "macos": ["-lSystem", "-lresolv"],
     "nacl": [],
     "netbsd": ["-lpthread", "-lrt"],
@@ -340,11 +348,6 @@ def abi_to_constraints(abi, *, arch = None, system = None):
 
     all_abi_constraints = []
 
-    # add constraints for MUSL static compilation and linking
-    # to separate the MUSL from the non-MUSL toolchain on x86_64
-    # if abi == "musl" and system == "linux" and arch == "x86_64":
-    # all_abi_constraints.append("//rust/platform/constraints:musl_on")
-
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:
         if arch == "x86_64" or abi == "sim":
@@ -352,8 +355,11 @@ def abi_to_constraints(abi, *, arch = None, system = None):
         else:
             all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
 
-    # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
-    # figure out how they're doing this
+    if abi:
+        if abi.startswith("musl"):
+            all_abi_constraints.append("@platforms_contrib//libc:musl")
+        elif abi.startswith("gnu"):
+            all_abi_constraints.append("@platforms_contrib//libc:glibc")
     return all_abi_constraints
 
 def triple_to_system(target_triple):
@@ -410,8 +416,15 @@ def system_to_staticlib_ext(system):
 def system_to_binary_ext(system):
     return _SYSTEM_TO_BINARY_EXT[system]
 
-def system_to_stdlib_linkflags(system):
-    return _SYSTEM_TO_STDLIB_LINKFLAGS[system]
+def system_to_stdlib_linkflags(system, abi = None):
+    flags = _SYSTEM_TO_STDLIB_LINKFLAGS[system]
+    if type(flags) == "list":
+        return flags
+    if abi:
+        for prefix, abi_flags in flags.items():
+            if prefix and abi.startswith(prefix):
+                return abi_flags
+    return flags.get(None, [])
 
 def triple_to_constraint_set(target_triple):
     """Returns a set of constraints for a given platform triple
