@@ -53,6 +53,14 @@ load(
     "relativize",
 )
 
+def _file_dirname(file):
+    """Returns the dirname of a file.
+
+    Used as a ``map_each`` callback so that Bazel can apply path mapping
+    (``--experimental_output_paths=strip``) to the resulting string.
+    """
+    return file.dirname
+
 # This feature is disabled unless one of the dependencies is a cc_library.
 # Authors of C++ toolchains can place linker flags that should only be applied
 # when linking with C objects in a feature with this name, or require this
@@ -419,6 +427,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     Returns:
         tuple: A tuple of the following items:
             - (str): The tool path for given action.
+            - (File or None): The linker File object for path mapping, or None when the cc_toolchain provides the linker.
             - (bool): Whether or not the linker is a direct driver (e.g. `ld`) vs a wrapper (e.g. `gcc`).
             - (sequence): A flattened command line flags for given action.
             - (dict): Environment variables to be set for given action.
@@ -426,6 +435,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
     user_link_flags = get_cc_user_link_flags(ctx)
 
     ld = None
+    ld_file = None  # File object for path mapping, when available
     ld_is_direct_driver = False
     link_args = []
     link_env = {}
@@ -473,7 +483,8 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
         ld_is_direct_driver = False
 
     if not ld or toolchain.linker_preference == "rust":
-        ld = toolchain.linker.path
+        ld_file = toolchain.linker
+        ld = ld_file.path
         ld_is_direct_driver = toolchain.linker_type == "direct"
 
         # When using rust-lld directly, we still need library search paths from cc_toolchain
@@ -539,7 +550,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
             for element in link_env["LIB"].split(";")
         ])
 
-    return ld, ld_is_direct_driver, link_args, link_env
+    return ld, ld_file, ld_is_direct_driver, link_args, link_env
 
 def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -727,7 +738,7 @@ def collect_inputs(
     Returns:
         tuple: A tuple: A tuple of the following items:
             - (list): A list of all build info `OUT_DIR` File objects
-            - (str): The `OUT_DIR` of the current build info
+            - (File): The `OUT_DIR` tree artifact of the current build info, or None
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flag files from the current build info
             - (list[File]): Linkstamp outputs
@@ -1000,8 +1011,16 @@ def construct_arguments(
     components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
+    # Pass OUT_DIR via --set-env so it goes through Bazel's path mapping
+    # (--experimental_output_paths=strip).  The env dict is NOT path-mapped;
+    # only Args objects are.  out_dir is a tree artifact (directory File).
     if out_dir != None:
-        env["OUT_DIR"] = "${pwd}/" + out_dir
+        process_wrapper_flags.add_all(
+            [out_dir],
+            before_each = "--set-env",
+            format_each = "OUT_DIR=${pwd}/%s",
+            expand_directories = False,
+        )
 
     # Arguments for launching rustc from the process wrapper
     rustc_path = ctx.actions.args()
@@ -1048,9 +1067,9 @@ def construct_arguments(
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
         if crate_info.rustc_rmeta_output:
-            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
-        process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+        process_wrapper_flags.add("--output-file", crate_info.rustc_output)
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -1066,7 +1085,7 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        rustc_flags.add(output_dir, format = "--out-dir=%s")
+        rustc_flags.add_all([crate_info.output], map_each = _file_dirname, format_each = "--out-dir=%s")
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1095,8 +1114,9 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    # Tell Rustc where to find the standard library (or libcore)
-    rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
+    # Tell Rustc where to find the standard library (or libcore).
+    # Use map_each for path mapping (--experimental_output_paths=strip).
+    rustc_flags.add_all(toolchain.rust_std_paths, map_each = _file_dirname, before_each = "-L", uniquify = True)
     rustc_flags.add_all(rust_flags, map_each = map_flag)
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
@@ -1123,7 +1143,7 @@ def construct_arguments(
             else:
                 rpaths = depset()
 
-            ld, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
+            ld, ld_file, ld_is_direct_driver, link_args, link_env = get_linker_and_args(
                 ctx,
                 crate_info.type,
                 toolchain,
@@ -1134,7 +1154,7 @@ def construct_arguments(
             )
 
             env.update(link_env)
-            rustc_flags.add(ld, format = "--codegen=linker=%s")
+            rustc_flags.add(ld_file if ld_file else ld, format = "--codegen=linker=%s")
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574
@@ -1525,6 +1545,7 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            execution_requirements = {"supports-path-mapping": "1"},
         )
         if args_metadata:
             ctx.actions.run(
@@ -1542,6 +1563,7 @@ def rustc_compile_action(
                     "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
+                execution_requirements = {"supports-path-mapping": "1"},
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
@@ -1563,6 +1585,7 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            execution_requirements = {"supports-path-mapping": "1"},
         )
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
@@ -2026,7 +2049,7 @@ def _process_build_scripts(
     # We include the direct dep build_info because crates which use cargo build scripts may need to e.g. include_str! a generated file.
     if build_info:
         if build_info.out_dir:
-            out_dir = build_info.out_dir.path
+            out_dir = build_info.out_dir
             direct_inputs.append(build_info.out_dir)
         build_env_file = build_info.rustc_env
         if build_info.flags:
