@@ -1,9 +1,14 @@
 load(":apple_platform_test.bzl", "apple_platform_test_suite")
+load(":libc_platform_test.bzl", "libc_platform_test_suite")
 load(":platform_triple_test.bzl", "platform_triple_test_suite")
 load(":wasi_platform_test.bzl", "wasi_platform_test_suite")
 
 apple_platform_test_suite(
     name = "apple_platform_test_suite",
+)
+
+libc_platform_test_suite(
+    name = "libc_platform_test_suite",
 )
 
 platform_triple_test_suite(
