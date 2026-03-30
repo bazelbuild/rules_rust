@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -59,10 +59,30 @@ impl<'a> SplicerKind<'a> {
         manifests: &'a BTreeMap<Utf8PathBuf, Manifest>,
         splicing_manifest: &'a SplicingManifest,
     ) -> Result<Self> {
-        let workspace_roots: HashSet<Utf8PathBuf> =
+        let mut workspace_roots: HashSet<Utf8PathBuf> =
             manifests.keys().filter_map(parent_workspace).collect();
         if workspace_roots.len() > 1 {
-            bail!("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces: {}", workspace_roots.iter().map(|wr| wr.to_string()).collect::<Vec<_>>().join(", "));
+            // When a main_manifest is provided, we can disambiguate by keeping only
+            // the workspace root that is an ancestor of the main manifest. Foreign
+            // workspace roots (e.g. from external path deps) are dropped. Their
+            // crates are handled via symlinks during splicing.
+            if let Some(main) = &splicing_manifest.main_manifest {
+                let before_count = workspace_roots.len();
+                workspace_roots.retain(|root| {
+                    let root_dir = root.parent().unwrap_or(root.as_path());
+                    main.starts_with(root_dir)
+                });
+                if workspace_roots.len() != 1 {
+                    bail!("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces: {}", manifests.keys().filter_map(parent_workspace).collect::<HashSet<_>>().iter().map(|wr| wr.to_string()).collect::<Vec<_>>().join(", "));
+                }
+                let dropped = before_count - 1;
+                eprintln!(
+                    "INFO: Ignoring {} foreign workspace root(s); using main manifest: {}",
+                    dropped, main
+                );
+            } else {
+                bail!("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces: {}", workspace_roots.iter().map(|wr| wr.to_string()).collect::<Vec<_>>().join(", "));
+            }
         }
 
         if let Some((path, manifest)) = workspace_roots
@@ -158,15 +178,61 @@ impl<'a> SplicerKind<'a> {
             .parent()
             .expect("Every manifest should have a parent directory");
 
+        // Nest the workspace inside the temp dir at the same depth relative to
+        // the Bazel repo root. This ensures that external path dependencies
+        // using `../` resolve to paths *inside* the temp dir rather than
+        // escaping into unwritable system directories.
+        let nested_ws_dir = if let Some(rel) = pathdiff::diff_paths(
+            manifest_dir.as_str(),
+            nonhermetic_root_bazel_workspace_dir.as_str(),
+        ) {
+            if !rel.to_string_lossy().starts_with("..") {
+                let nested =
+                    workspace_dir.join(Utf8Path::from_path(&rel).unwrap_or(Utf8Path::new("")));
+                fs::create_dir_all(nested.as_std_path())?;
+                nested
+            } else {
+                workspace_dir.to_path_buf()
+            }
+        } else {
+            workspace_dir.to_path_buf()
+        };
+
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
             manifest_dir.as_std_path(),
-            workspace_dir.as_std_path(),
+            nested_ws_dir.as_std_path(),
             Some(IGNORE_LIST),
         )?;
 
+        // Symlink any path dependencies that live outside the workspace root
+        symlink_external_path_deps(
+            path.as_std_path(),
+            manifest_dir.as_std_path(),
+            nested_ws_dir.as_std_path(),
+        )?;
+
+        // Also handle workspace members' external path deps
+        if let Some(ref workspace) = manifest.workspace {
+            for member_pattern in &workspace.members {
+                let glob_pattern = manifest_dir.join(member_pattern).to_string();
+                if let Ok(entries) = glob::glob(&glob_pattern) {
+                    for entry in entries.flatten() {
+                        let member_manifest = entry.join("Cargo.toml");
+                        if member_manifest.exists() {
+                            symlink_external_path_deps(
+                                &member_manifest,
+                                manifest_dir.as_std_path(),
+                                nested_ws_dir.as_std_path(),
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
+
         // Optionally install the cargo config after contents have been symlinked
-        Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
+        Self::setup_cargo_config(&splicing_manifest.cargo_config, nested_ws_dir.as_std_path())?;
 
         // Add any additional dependencies to the root package
         if !splicing_manifest.direct_packages.is_empty() {
@@ -177,7 +243,7 @@ impl<'a> SplicerKind<'a> {
             )?;
         }
 
-        let root_manifest_path = workspace_dir.join("Cargo.toml");
+        let root_manifest_path = nested_ws_dir.join("Cargo.toml");
         let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
@@ -203,15 +269,40 @@ impl<'a> SplicerKind<'a> {
             .parent()
             .expect("Every manifest should have a parent directory");
 
+        // Nest the package inside the temp dir at the same depth relative to
+        // the Bazel repo root (same rationale as splice_workspace).
+        let nested_dir = if let Some(rel) = pathdiff::diff_paths(
+            manifest_dir.as_str(),
+            nonhermetic_root_bazel_workspace_dir.as_str(),
+        ) {
+            if !rel.to_string_lossy().starts_with("..") {
+                let nested =
+                    workspace_dir.join(Utf8Path::from_path(&rel).unwrap_or(Utf8Path::new("")));
+                fs::create_dir_all(nested.as_std_path())?;
+                nested
+            } else {
+                workspace_dir.to_path_buf()
+            }
+        } else {
+            workspace_dir.to_path_buf()
+        };
+
         // Link the sources of the root manifest into the new workspace
         symlink_roots(
             manifest_dir.as_std_path(),
-            workspace_dir.as_std_path(),
+            nested_dir.as_std_path(),
             Some(IGNORE_LIST),
         )?;
 
+        // Symlink any path dependencies that live outside the package root
+        symlink_external_path_deps(
+            path.as_std_path(),
+            manifest_dir.as_std_path(),
+            nested_dir.as_std_path(),
+        )?;
+
         // Optionally install the cargo config after contents have been symlinked
-        Self::setup_cargo_config(&splicing_manifest.cargo_config, workspace_dir.as_std_path())?;
+        Self::setup_cargo_config(&splicing_manifest.cargo_config, nested_dir.as_std_path())?;
 
         // Ensure the root package manifest has a populated `workspace` member
         let mut manifest = (*manifest).clone();
@@ -229,7 +320,7 @@ impl<'a> SplicerKind<'a> {
             )?;
         }
 
-        let root_manifest_path = workspace_dir.join("Cargo.toml");
+        let root_manifest_path = nested_dir.join("Cargo.toml");
         let member_manifests = BTreeMap::from([(*path, String::new())]);
 
         // Write the generated metadata to the manifest
@@ -669,6 +760,158 @@ pub(crate) fn symlink_roots(
     Ok(())
 }
 
+/// Resolve `..` components in a path without requiring the path to exist on disk.
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut result = Vec::new();
+    for component in path.components() {
+        match component {
+            Component::ParentDir => {
+                // map_or used instead of is_none_or for compatibility with older Rust versions
+                #[allow(unknown_lints, clippy::unnecessary_map_or)]
+                if result.last().map_or(true, |c| *c == Component::ParentDir) {
+                    result.push(Component::ParentDir);
+                } else {
+                    result.pop();
+                }
+            }
+            Component::CurDir => {}
+            other => result.push(other),
+        }
+    }
+    result.iter().collect()
+}
+
+/// Extract path strings from a `DepsSet`.
+fn collect_path_deps_from_deps(deps: &cargo_toml::DepsSet) -> Vec<String> {
+    deps.values()
+        .filter_map(|dep| dep.detail().and_then(|d| d.path.clone()))
+        .collect()
+}
+
+/// Collect all path dependency strings from a manifest (deps, dev-deps, build-deps,
+/// target-specific deps, and patch sections).
+fn collect_path_deps_from_manifest(manifest: &cargo_toml::Manifest) -> Vec<String> {
+    let mut paths = Vec::new();
+    paths.extend(collect_path_deps_from_deps(&manifest.dependencies));
+    paths.extend(collect_path_deps_from_deps(&manifest.dev_dependencies));
+    paths.extend(collect_path_deps_from_deps(&manifest.build_dependencies));
+
+    for target in manifest.target.values() {
+        paths.extend(collect_path_deps_from_deps(&target.dependencies));
+        paths.extend(collect_path_deps_from_deps(&target.dev_dependencies));
+        paths.extend(collect_path_deps_from_deps(&target.build_dependencies));
+    }
+
+    for registry_deps in manifest.patch.values() {
+        paths.extend(collect_path_deps_from_deps(registry_deps));
+    }
+
+    if let Some(ref workspace) = manifest.workspace {
+        paths.extend(collect_path_deps_from_deps(&workspace.dependencies));
+    }
+
+    paths
+}
+
+/// For each path dependency in the manifest that escapes `workspace_root` (via `..`),
+/// create a symlink in the destination tree so that the relative path still resolves.
+pub(crate) fn symlink_external_path_deps(
+    manifest_path: &Path,
+    workspace_root: &Path,
+    dest_workspace_root: &Path,
+) -> Result<()> {
+    let manifest = cargo_toml::Manifest::from_path(manifest_path)
+        .with_context(|| format!("Failed to parse manifest at {}", manifest_path.display()))?;
+    let dep_paths = collect_path_deps_from_manifest(&manifest);
+
+    let manifest_dir = manifest_path
+        .parent()
+        .expect("manifest path should have a parent");
+    let manifest_rel = pathdiff::diff_paths(manifest_dir, workspace_root)
+        .unwrap_or_else(|| manifest_dir.to_path_buf());
+
+    for dep_path in dep_paths {
+        let dep = Path::new(&dep_path);
+        if dep.is_absolute() {
+            continue;
+        }
+        let relative_from_ws = normalize_path(&manifest_rel.join(dep));
+        // Only handle deps that escape the workspace root (start with `..`)
+        if relative_from_ws.components().next() != Some(Component::ParentDir) {
+            continue;
+        }
+
+        let actual_source = manifest_dir
+            .join(dep)
+            .canonicalize()
+            .with_context(|| format!("Failed to canonicalize external path dep: {dep_path}"))?;
+
+        let dest_manifest_dir = dest_workspace_root.join(&manifest_rel);
+        let dest_dep_path = normalize_path(&dest_manifest_dir.join(dep));
+
+        // If the dep belongs to a foreign Cargo workspace, symlink the entire
+        // foreign workspace root directory instead of just the crate dir. This
+        // allows Cargo to walk up and find the workspace root (needed to resolve
+        // `workspace = true` inherited dependencies).
+        let dep_manifest = actual_source.join("Cargo.toml");
+        let symlink_done = if dep_manifest.exists() {
+            if let Some(foreign_ws_root) = parent_workspace(
+                &Utf8PathBuf::from_path_buf(dep_manifest)
+                    .unwrap_or_else(|p| Utf8PathBuf::from(p.to_string_lossy().as_ref())),
+            ) {
+                let foreign_ws_dir = foreign_ws_root
+                    .parent()
+                    .expect("workspace root should have a parent");
+                // Compute where the foreign workspace root sits in the dest tree
+                if let Some(rel_from_dep_to_ws) = pathdiff::diff_paths(
+                    foreign_ws_dir.as_str(),
+                    actual_source.to_string_lossy().as_ref(),
+                ) {
+                    let dest_foreign_ws_dir =
+                        normalize_path(&dest_dep_path.join(&rel_from_dep_to_ws));
+                    if !dest_foreign_ws_dir.exists() {
+                        if let Some(parent) = dest_foreign_ws_dir.parent() {
+                            fs::create_dir_all(parent)?;
+                        }
+                        symlink(foreign_ws_dir.as_std_path(), &dest_foreign_ws_dir).with_context(
+                            || {
+                                format!(
+                                    "Failed to symlink foreign workspace root dir: {} -> {}",
+                                    foreign_ws_dir,
+                                    dest_foreign_ws_dir.display()
+                                )
+                            },
+                        )?;
+                    }
+                    true // The crate dir is now accessible through the workspace symlink
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        // If we didn't symlink via the foreign workspace root, symlink the crate
+        // directory directly (standalone crate with no parent workspace).
+        if !symlink_done && !dest_dep_path.exists() {
+            if let Some(parent) = dest_dep_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            symlink(&actual_source, &dest_dep_path).with_context(|| {
+                format!(
+                    "Failed to symlink external path dep: {} -> {}",
+                    actual_source.display(),
+                    dest_dep_path.display()
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -1085,7 +1328,7 @@ mod test {
     }
 
     #[test]
-    fn splice_workspace_report_external_workspace_members() {
+    fn splice_workspace_report_external_workspace_members_without_main_manifest() {
         let (mut splicing_manifest, _cache_dir) = mock_splicing_manifest_with_workspace();
 
         // Add a new package from an existing external workspace
@@ -1135,6 +1378,9 @@ mod test {
             Label::from_str("@remote_dep//external_workspace_member:Cargo.toml").unwrap(),
         );
 
+        // Without main_manifest set, splicing should fail
+        assert!(splicing_manifest.main_manifest.is_none());
+
         // Splice the workspace
         let workspace_root = tempfile::tempdir().unwrap();
         let workspace_manifest =
@@ -1150,6 +1396,75 @@ mod test {
             err_str
                 .contains("When splicing manifests, manifests are not allowed to from from different workspaces. Saw manifests which belong to the following workspaces:")
                 && err_str.contains(external_workspace_root.path().to_string_lossy().as_ref())
+        );
+    }
+
+    #[test]
+    fn splice_workspace_allows_foreign_workspace_with_main_manifest() {
+        let (mut splicing_manifest, cache_dir) = mock_splicing_manifest_with_workspace();
+
+        // Add a new package from an existing external workspace
+        let external_workspace_root = tempfile::tempdir().unwrap();
+        let external_manifest = Utf8PathBuf::try_from(
+            external_workspace_root
+                .as_ref()
+                .join("external_workspace_member")
+                .join("Cargo.toml"),
+        )
+        .unwrap();
+        fs::create_dir_all(external_manifest.parent().unwrap()).unwrap();
+
+        fs::write(
+            external_workspace_root.as_ref().join("Cargo.toml"),
+            textwrap::dedent(
+                r#"
+                [workspace]
+                [package]
+                name = "external_workspace_root"
+                version = "0.0.1"
+
+                [lib]
+                path = "lib.rs"
+                "#,
+            ),
+        )
+        .unwrap();
+
+        fs::write(
+            &external_manifest,
+            textwrap::dedent(
+                r#"
+                [package]
+                name = "external_workspace_member"
+                version = "0.0.1"
+
+                [lib]
+                path = "lib.rs"
+                "#,
+            ),
+        )
+        .unwrap();
+
+        splicing_manifest.manifests.insert(
+            external_manifest.clone(),
+            Label::from_str("@remote_dep//external_workspace_member:Cargo.toml").unwrap(),
+        );
+
+        let primary_root =
+            Utf8PathBuf::try_from(cache_dir.as_ref().join("root_pkg").join("Cargo.toml")).unwrap();
+        splicing_manifest.main_manifest = Some(primary_root);
+
+        // Splice the workspace — should succeed now
+        let workspace_root = tempfile::tempdir().unwrap();
+        let workspace_manifest =
+            Splicer::new(tempdir_utf8pathbuf(&workspace_root), splicing_manifest)
+                .unwrap()
+                .splice_workspace(Utf8Path::new("/doesnotexist/unused/repo/root"));
+
+        assert!(
+            workspace_manifest.is_ok(),
+            "Expected splicing to succeed with main_manifest set, but got: {:?}",
+            workspace_manifest.err()
         );
     }
 

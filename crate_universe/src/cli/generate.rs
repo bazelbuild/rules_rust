@@ -286,7 +286,14 @@ fn write_paths_to_track<
     let source_annotation_manifests: BTreeSet<_> = source_annotations
         .filter_map(|v| {
             if let SourceAnnotation::Path { path } = v {
-                Some(path.join("Cargo.toml"))
+                let abs = if path.is_relative() {
+                    nonhermetic_root_bazel_workspace_dir
+                        .join(path)
+                        .join("Cargo.toml")
+                } else {
+                    path.join("Cargo.toml")
+                };
+                Some(abs)
             } else {
                 None
             }
