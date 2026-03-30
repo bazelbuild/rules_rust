@@ -193,9 +193,18 @@ impl BazelRequest {
         );
 
         // --- Wait for metadata readiness ---
+        // The monitor thread detects the rmeta artifact notification and
+        // transitions to MetadataReady. We then copy the .rmeta file here
+        // in the request thread. There is a small timing gap between
+        // detection and copy, but this is safe because:
+        //   1. The rmeta lives in _pw_state/pipeline/<key>/, which is
+        //      worker-owned and not subject to Bazel sandbox cleanup.
+        //   2. We haven't sent the WorkResponse yet, so Bazel doesn't
+        //      know metadata is ready and can't act on it.
+        //   3. Rustc doesn't overwrite .rmeta after emitting the artifact
+        //      notification — post-rmeta work is codegen only.
         match invocation.wait_for_metadata() {
             Ok(meta) => {
-                // Copy .rmeta to the declared output location.
                 if let Some(rmeta_path_str) = &meta.rmeta_path {
                     let rmeta_resolved = resolve_request_relative_path(
                         rmeta_path_str,
