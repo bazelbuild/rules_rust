@@ -1,0 +1,34 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_info")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen")
+
+cc_library(
+    name = "aws_lc_wrapper_cc",
+    hdrs = ["rust_wrapper.h"],
+    deps = ["@aws-lc//:crypto"],
+)
+
+rust_bindgen(
+    name = "aws_lc_sys_bindings",
+    bindgen_flags = [
+        "--rustified-enum=point_conversion_form_t",
+        "--default-macro-constant-type=signed",
+        "--no-derive-default",
+        "--enable-function-attribute-detection",
+        "--use-core",
+        "--allowlist-file=.*openssl/[^/]+\\.h",
+        "--allowlist-file=.*rust_wrapper\\.h",
+    ],
+    cc_lib = ":aws_lc_wrapper_cc",
+    header = "rust_wrapper.h",
+)
+
+cargo_build_info(
+    name = "aws_lc_sys_bs",
+    cc_lib = ":aws_lc_wrapper_cc",
+    dep_env = {"INCLUDE": "src/generated-include"},
+    links = "aws_lc",
+    out_dir_files = {"bindings.rs": ":aws_lc_sys_bindings"},
+    rustc_flags = ["--cfg=use_bindgen_pregenerated"],
+    visibility = ["//visibility:public"],
+)

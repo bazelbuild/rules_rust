@@ -1,0 +1,3 @@
+load(":cargo_build_info_test.bzl", "cargo_build_info_test_suite")
+
+cargo_build_info_test_suite(name = "cargo_build_info_test_suite")

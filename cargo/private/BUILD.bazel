@@ -3,6 +3,13 @@ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("//rust:defs.bzl", "rust_binary")
 
 rust_binary(
+    name = "cargo_build_info_runner",
+    srcs = ["cargo_build_info_runner.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+rust_binary(
     name = "copy_file",
     srcs = ["copy_file.rs"],
     edition = "2021",
@@ -39,6 +46,9 @@ copy_file(
 
 bzl_library(
     name = "bzl_lib",
-    srcs = glob(["**/*.bzl"]),
+    srcs = glob(["*.bzl"]),
+    deps = [
+        "@rules_cc//cc/common",
+    ],
     visibility = ["//:__subpackages__"],
 )
