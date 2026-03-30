@@ -1180,9 +1180,9 @@ def construct_arguments(
             ):
                 if ld_is_direct_driver:
                     rustc_flags.add("--codegen=link-arg=-oso_prefix")
-                    rustc_flags.add("${output_base}/", format = "--codegen=link-arg=%s")
+                    rustc_flags.add("${pwd}/", format = "--codegen=link-arg=%s")
                 else:
-                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${output_base}/")
+                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
 
         _add_native_link_flags(
             rustc_flags,
