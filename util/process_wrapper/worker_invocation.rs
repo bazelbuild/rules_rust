@@ -25,7 +25,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
-use super::pipeline::extract_rmeta_path;
+use tinyjson::JsonValue;
+
 use super::types::OutputDir;
 use crate::rustc::RustcStderrPolicy;
 
@@ -513,6 +514,26 @@ pub(crate) fn spawn_non_pipelined_monitor(
             }
         }
     })
+}
+
+// ---------------------------------------------------------------------------
+// Artifact detection
+// ---------------------------------------------------------------------------
+
+/// Extracts the artifact path from an rmeta artifact notification JSON line.
+/// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
+/// `None` for all other lines.
+pub(crate) fn extract_rmeta_path(line: &str) -> Option<String> {
+    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>() {
+        if let (Some(JsonValue::String(artifact)), Some(JsonValue::String(emit))) =
+            (map.get("artifact"), map.get("emit"))
+        {
+            if artifact.ends_with(".rmeta") && emit == "metadata" {
+                return Some(artifact.clone());
+            }
+        }
+    }
+    None
 }
 
 // ---------------------------------------------------------------------------

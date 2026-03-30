@@ -1,8 +1,9 @@
 use super::pipeline::{
-    apply_substs, build_rustc_env, detect_pipelining_mode, expand_rustc_args, extract_rmeta_path,
+    apply_substs, build_rustc_env, detect_pipelining_mode, expand_rustc_args,
     find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs, prepare_rustc_args,
     rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags, RequestKind,
 };
+use super::invocation::{extract_rmeta_path, InvocationDirs, RustcInvocation};
 use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
     WorkRequestInput,
@@ -12,7 +13,6 @@ use super::sandbox::resolve_request_relative_path;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
-use super::invocation::{InvocationDirs, RustcInvocation};
 use super::registry::RequestRegistry;
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;

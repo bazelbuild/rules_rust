@@ -20,8 +20,6 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
 
-use tinyjson::JsonValue;
-
 use crate::options::{
     build_child_environment, expand_args_inline, is_pipelining_flag, is_relocated_pw_flag,
     parse_pw_args as parse_shared_pw_args, NormalizedRustcMetadata, OptionError, ParsedPwArgs,
@@ -98,9 +96,6 @@ impl RequestKind {
         }
     }
 }
-
-
-
 
 /// Pipeline context for worker-managed pipelining.
 ///
@@ -600,22 +595,6 @@ pub(super) fn copy_outputs_unsandboxed(
         }
     }
     Ok(())
-}
-
-/// Extracts the artifact path from an rmeta artifact notification JSON line.
-/// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
-/// `None` for all other lines.
-pub(super) fn extract_rmeta_path(line: &str) -> Option<String> {
-    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>() {
-        if let (Some(JsonValue::String(artifact)), Some(JsonValue::String(emit))) =
-            (map.get("artifact"), map.get("emit"))
-        {
-            if artifact.ends_with(".rmeta") && emit == "metadata" {
-                return Some(artifact.clone());
-            }
-        }
-    }
-    None
 }
 
 pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
