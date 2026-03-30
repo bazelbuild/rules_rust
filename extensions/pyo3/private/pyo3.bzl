@@ -153,7 +153,7 @@ def _py_pyo3_library_impl(ctx):
             runfiles = ctx.runfiles(
                 files = [ext],
                 transitive_files = depset(files, transitive = [crate_info.data]),
-            ),
+            ).merge(ctx.attr.extension[DefaultInfo].default_runfiles),
         ),
         PyInfo(
             imports = _get_imports(ctx, ctx.attr.imports),

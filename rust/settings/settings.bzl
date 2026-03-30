@@ -535,6 +535,15 @@ def incompatible_do_not_include_data_in_compile_data():
         issue = "https://github.com/bazelbuild/rules_rust/issues/2977",
     )
 
+# buildifier: disable=unnamed-macro
+def incompatible_do_not_include_transitive_data_in_compile_inputs():
+    """A flag to control whether transitive data dependencies are included in compile inputs."""
+    incompatible_flag(
+        name = "incompatible_do_not_include_transitive_data_in_compile_inputs",
+        build_setting_default = True,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3915",
+    )
+
 def codegen_units():
     """The default value for `--codegen-units` which also affects resource allocation for rustc actions.
 

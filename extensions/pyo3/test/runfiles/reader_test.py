@@ -50,6 +50,13 @@ class RunfilesTest(unittest.TestCase):
             "La-Li-Lu-Le-Lo", data_file.read_text(encoding="utf-8").strip()
         )
 
+    def test_rust_library_data_via_pyo3(self) -> None:
+        """A test which reads transitive rust_library data through pyo3."""
+
+        result = reader.read_transitive_data()
+        self.assertIsInstance(result, str)
+        self.assertEqual("Transitive helper data from rust_library.", result.strip())
+
 
 if __name__ == "__main__":
     unittest.main()

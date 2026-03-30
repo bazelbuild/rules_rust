@@ -623,6 +623,7 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
+        _incompatible_do_not_include_transitive_data_in_compile_inputs = ctx.attr._incompatible_do_not_include_transitive_data_in_compile_inputs[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
         _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
@@ -865,6 +866,10 @@ rust_toolchain = rule(
         "_incompatible_do_not_include_data_in_compile_data": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
             doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
+        ),
+        "_incompatible_do_not_include_transitive_data_in_compile_inputs": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
+            doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),
