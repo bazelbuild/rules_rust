@@ -147,28 +147,37 @@ fn main() {
         .arg("-format=lcov")
         .arg("-instr-profile")
         .arg(&profdata_file)
-        .arg("-ignore-filename-regex='.*external/.+'")
-        .arg("-ignore-filename-regex='/tmp/.+'")
-        .arg(format!("-path-equivalence=.,'{}'", execroot.display()))
+        .arg("-ignore-filename-regex=.*external/.+")
+        .arg("-ignore-filename-regex=/tmp/.+")
+        .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
         .stdout(process::Stdio::piped());
 
     debug_log!("Spawning {:#?}", llvm_cov_cmd);
-    let child = llvm_cov_cmd
-        .spawn()
+    let output = llvm_cov_cmd
+        .stderr(process::Stdio::piped())
+        .output()
         .expect("Failed to spawn llvm-cov process");
 
-    let output = child.wait_with_output().expect("llvm-cov process failed");
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "llvm-cov export failed with status {}: {}",
+            output.status, stderr
+        );
+        process::exit(output.status.code().unwrap_or(1));
+    }
 
-    // Parse the child process's stdout to a string now that it's complete.
     debug_log!("Parsing llvm-cov output");
     let report_str = std::str::from_utf8(&output.stdout).expect("Failed to parse llvm-cov output");
 
     debug_log!("Writing output to {}", coverage_output_file.display());
+    let execroot_prefix = format!("{}/", execroot.display());
     fs::write(
         coverage_output_file,
         report_str
             .replace("#/proc/self/cwd/", "")
+            .replace(&execroot_prefix, "")
             .replace(&execroot.display().to_string(), ""),
     )
     .unwrap();
