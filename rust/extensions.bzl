@@ -98,6 +98,8 @@ def _rust_impl(module_ctx):
     for toolchain in toolchains:
         if toolchain.extra_rustc_flags and toolchain.extra_rustc_flags_triples:
             fail("Cannot define both extra_rustc_flags and extra_rustc_flags_triples")
+        if toolchain.extra_exec_rustc_flags and toolchain.extra_exec_rustc_flags_triples:
+            fail("Cannot define both extra_exec_rustc_flags and extra_exec_rustc_flags_triples")
         if len(toolchain.versions) == 0:
             # If the root module has asked for rules_rust to not register default
             # toolchains, an empty repository named `rust_toolchains` is created
@@ -106,13 +108,14 @@ def _rust_impl(module_ctx):
             _empty_repository(name = "rust_toolchains")
         else:
             extra_rustc_flags = toolchain.extra_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_rustc_flags_triples
+            extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags if toolchain.extra_rustc_flags else toolchain.extra_exec_rustc_flags_triples
 
             rust_register_toolchains(
                 hub_name = "rust_toolchains",
                 dev_components = toolchain.dev_components,
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
-                extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
+                extra_exec_rustc_flags = extra_exec_rustc_flags,
                 allocator_library = toolchain.allocator_library,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
@@ -212,6 +215,9 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         ),
         "extra_exec_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in exec configuration",
+        ),
+        "extra_exec_rustc_flags_triples": attr.string_list_dict(
+            doc = "Extra flags to pass to rustc in exec configuration. Key is the triple, value is the flag.",
         ),
         "extra_rustc_flags": attr.string_list(
             doc = "Extra flags to pass to rustc in non-exec configuration",
