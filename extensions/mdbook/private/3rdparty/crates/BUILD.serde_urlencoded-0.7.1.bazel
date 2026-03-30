@@ -100,7 +100,7 @@ rust_library(
     version = "0.7.1",
     deps = [
         "@rmdbi__form_urlencoded-1.2.2//:form_urlencoded",
-        "@rmdbi__itoa-1.0.17//:itoa",
+        "@rmdbi__itoa-1.0.18//:itoa",
         "@rmdbi__ryu-1.0.23//:ryu",
         "@rmdbi__serde-1.0.228//:serde",
     ],

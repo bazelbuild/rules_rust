@@ -311,7 +311,7 @@ _NORMAL_ALIASES = {
 _NORMAL_DEV_DEPENDENCIES = {
     "vendor_remote_manifests": {
         _COMMON_CONDITION: {
-            "tempfile": Label("@cvm//:tempfile-3.26.0"),
+            "tempfile": Label("@cvm//:tempfile-3.27.0"),
             "tokio-test": Label("@cvm//:tokio-test-0.4.5"),
         },
     },
@@ -394,6 +394,7 @@ _CONDITIONS = {
     "cfg(any(target_os = \"haiku\", target_os = \"redox\", target_os = \"nto\", target_os = \"aix\"))": ["@rules_rust//rust/platform:aarch64-unknown-nto-qnx710"],
     "cfg(any(target_os = \"ios\", target_os = \"visionos\", target_os = \"watchos\", target_os = \"tvos\"))": ["@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-macabi", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-apple-ios-macabi"],
     "cfg(any(target_os = \"macos\", target_os = \"openbsd\", target_os = \"vita\", target_os = \"emscripten\"))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:wasm32-unknown-emscripten", "@rules_rust//rust/platform:x86_64-apple-darwin"],
+    "cfg(any(unix, target_os = \"hermit\", target_os = \"wasi\"))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-macabi", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-unknown-fuchsia", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu", "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:arm-unknown-linux-musleabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:wasm32-unknown-emscripten", "@rules_rust//rust/platform:wasm32-wasip1", "@rules_rust//rust/platform:wasm32-wasip1-threads", "@rules_rust//rust/platform:wasm32-wasip2", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-apple-ios-macabi", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-fuchsia", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "cfg(any(unix, target_os = \"wasi\"))": ["@rules_rust//rust/platform:aarch64-apple-darwin", "@rules_rust//rust/platform:aarch64-apple-ios", "@rules_rust//rust/platform:aarch64-apple-ios-macabi", "@rules_rust//rust/platform:aarch64-apple-ios-sim", "@rules_rust//rust/platform:aarch64-linux-android", "@rules_rust//rust/platform:aarch64-unknown-fuchsia", "@rules_rust//rust/platform:aarch64-unknown-linux-gnu", "@rules_rust//rust/platform:aarch64-unknown-nixos-gnu", "@rules_rust//rust/platform:aarch64-unknown-nto-qnx710", "@rules_rust//rust/platform:arm-unknown-linux-gnueabi", "@rules_rust//rust/platform:arm-unknown-linux-musleabi", "@rules_rust//rust/platform:armv7-linux-androideabi", "@rules_rust//rust/platform:armv7-unknown-linux-gnueabi", "@rules_rust//rust/platform:i686-apple-darwin", "@rules_rust//rust/platform:i686-linux-android", "@rules_rust//rust/platform:i686-unknown-freebsd", "@rules_rust//rust/platform:i686-unknown-linux-gnu", "@rules_rust//rust/platform:powerpc-unknown-linux-gnu", "@rules_rust//rust/platform:riscv64gc-unknown-linux-gnu", "@rules_rust//rust/platform:s390x-unknown-linux-gnu", "@rules_rust//rust/platform:wasm32-unknown-emscripten", "@rules_rust//rust/platform:wasm32-wasip1", "@rules_rust//rust/platform:wasm32-wasip1-threads", "@rules_rust//rust/platform:wasm32-wasip2", "@rules_rust//rust/platform:x86_64-apple-darwin", "@rules_rust//rust/platform:x86_64-apple-ios", "@rules_rust//rust/platform:x86_64-apple-ios-macabi", "@rules_rust//rust/platform:x86_64-linux-android", "@rules_rust//rust/platform:x86_64-unknown-freebsd", "@rules_rust//rust/platform:x86_64-unknown-fuchsia", "@rules_rust//rust/platform:x86_64-unknown-linux-gnu", "@rules_rust//rust/platform:x86_64-unknown-nixos-gnu"],
     "cfg(target_os = \"hermit\")": [],
     "cfg(target_os = \"netbsd\")": [],
@@ -595,12 +596,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__itoa-1.0.17",
-        sha256 = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2",
+        name = "cvm__itoa-1.0.18",
+        sha256 = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/itoa/1.0.17/download"],
-        strip_prefix = "itoa-1.0.17",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.itoa-1.0.17.bazel"),
+        urls = ["https://static.crates.io/crates/itoa/1.0.18/download"],
+        strip_prefix = "itoa-1.0.18",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.itoa-1.0.18.bazel"),
     )
 
     maybe(
@@ -615,12 +616,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__libc-0.2.182",
-        sha256 = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112",
+        name = "cvm__libc-0.2.183",
+        sha256 = "b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/libc/0.2.182/download"],
-        strip_prefix = "libc-0.2.182",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.libc-0.2.182.bazel"),
+        urls = ["https://static.crates.io/crates/libc/0.2.183/download"],
+        strip_prefix = "libc-0.2.183",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.libc-0.2.183.bazel"),
     )
 
     maybe(
@@ -665,22 +666,22 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__mio-1.1.1",
-        sha256 = "a69bcab0ad47271a0234d9422b131806bf3968021e5dc9328caf2d4cd58557fc",
+        name = "cvm__mio-1.2.0",
+        sha256 = "50b7e5b27aa02a74bac8c3f23f448f8d87ff11f92d3aac1a6ed369ee08cc56c1",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/mio/1.1.1/download"],
-        strip_prefix = "mio-1.1.1",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.mio-1.1.1.bazel"),
+        urls = ["https://static.crates.io/crates/mio/1.2.0/download"],
+        strip_prefix = "mio-1.2.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.mio-1.2.0.bazel"),
     )
 
     maybe(
         http_archive,
-        name = "cvm__once_cell-1.21.3",
-        sha256 = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d",
+        name = "cvm__once_cell-1.21.4",
+        sha256 = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/once_cell/1.21.3/download"],
-        strip_prefix = "once_cell-1.21.3",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.once_cell-1.21.3.bazel"),
+        urls = ["https://static.crates.io/crates/once_cell/1.21.4/download"],
+        strip_prefix = "once_cell-1.21.4",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.once_cell-1.21.4.bazel"),
     )
 
     maybe(
@@ -895,12 +896,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "cvm__tempfile-3.26.0",
-        sha256 = "82a72c767771b47409d2345987fda8628641887d5466101319899796367354a0",
+        name = "cvm__tempfile-3.27.0",
+        sha256 = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/tempfile/3.26.0/download"],
-        strip_prefix = "tempfile-3.26.0",
-        build_file = Label("//vendor_remote_manifests/crates:BUILD.tempfile-3.26.0.bazel"),
+        urls = ["https://static.crates.io/crates/tempfile/3.27.0/download"],
+        strip_prefix = "tempfile-3.27.0",
+        build_file = Label("//vendor_remote_manifests/crates:BUILD.tempfile-3.27.0.bazel"),
     )
 
     maybe(
@@ -1126,6 +1127,6 @@ def crate_repositories():
     return [
         struct(repo = "cvm__serde_yaml-0.9.34-deprecated", is_dev_dep = False),
         struct(repo = "cvm__tokio-1.50.0", is_dev_dep = False),
-        struct(repo = "cvm__tempfile-3.26.0", is_dev_dep = True),
+        struct(repo = "cvm__tempfile-3.27.0", is_dev_dep = True),
         struct(repo = "cvm__tokio-test-0.4.5", is_dev_dep = True),
     ]
