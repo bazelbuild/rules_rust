@@ -11,6 +11,10 @@ toolchain_type(
     name = "toolchain_type",
 )
 
+toolchain_type(
+    name = "miri_toolchain_type",
+)
+
 alias(
     name = "toolchain",
     actual = "toolchain_type",

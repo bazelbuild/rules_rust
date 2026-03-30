@@ -34,6 +34,11 @@ load(
     _rust_lint_config = "rust_lint_config",
 )
 load(
+    "//rust/private:miri.bzl",
+    _miri_binary = "miri_binary",
+    _miri_test = "miri_test",
+)
+load(
     "//rust/private:rust.bzl",
     _rust_binary = "rust_binary",
     _rust_library = "rust_library",
@@ -101,6 +106,12 @@ rust_test = _rust_test
 
 rust_test_suite = _rust_test_suite
 # See @rules_rust//rust/private:rust.bzl for a complete description.
+
+miri_test = _miri_test
+# See @rules_rust//rust/private:miri.bzl for a complete description.
+
+miri_binary = _miri_binary
+# See @rules_rust//rust/private:miri.bzl for a complete description.
 
 rust_doc = _rust_doc
 # See @rules_rust//rust/private:rustdoc.bzl for a complete description.
