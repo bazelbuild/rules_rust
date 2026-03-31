@@ -641,6 +641,12 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
+            build_script_env_files: SelectSet::new(
+                attrs
+                    .map(|attrs| attrs.build_script_env_files.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
             rustc_flags: SelectList::new(
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
