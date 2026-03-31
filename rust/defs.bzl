@@ -107,6 +107,8 @@ rust_test = _rust_test
 rust_test_suite = _rust_test_suite
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
+# Miri rules wrap already-declared Rust targets so they can reuse the existing
+# crate graph instead of re-encoding the full rust_* rule surface.
 miri_test = _miri_test
 # See @rules_rust//rust/private:miri.bzl for a complete description.
 

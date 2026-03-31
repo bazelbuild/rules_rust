@@ -994,6 +994,9 @@ allowing platform-specific linker selection while ensuring the selected linker i
 )
 
 def _rust_miri_toolchain_impl(ctx):
+    # The Miri launcher needs both the driver and a prebuilt sysroot available
+    # in runfiles; the anchor file gives it a stable way to locate that sysroot
+    # directory at runtime.
     sysroot_anchor = ctx.file.sysroot_anchor
     sysroot_path = sysroot_anchor.dirname
     sysroot_short_path, _, _ = sysroot_anchor.short_path.rpartition("/")
@@ -1022,15 +1025,17 @@ rust_miri_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
+        # Miri is executed at test/run time, so shared libraries and other
+        # runtime-only files must ride along in the toolchain runfiles as well.
+        "runtime_files": attr.label(
+            allow_files = True,
+        ),
         "sysroot_anchor": attr.label(
             mandatory = True,
             allow_single_file = True,
         ),
         "sysroot_files": attr.label(
             mandatory = True,
-            allow_files = True,
-        ),
-        "runtime_files": attr.label(
             allow_files = True,
         ),
     },

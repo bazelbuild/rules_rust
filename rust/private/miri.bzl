@@ -33,6 +33,8 @@ def _shell_quote(value):
     return "'{}'".format(value.replace("'", "'\"'\"'"))
 
 def _crate_from_target(target):
+    # Wrapper rules accept either a normal crate target or a rust_test target;
+    # tests store the executable harness in test_crate_info.crate.
     if rust_common.crate_info in target:
         return target[rust_common.crate_info]
     return target[rust_common.test_crate_info].crate
@@ -59,6 +61,9 @@ def _target_flag_lines(ctx, toolchain):
     return ["TARGET_FLAG={}".format(_shell_quote(toolchain.target_flag_value))]
 
 def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags):
+    # The generated launcher reconstructs a rustc-shaped direct Miri invocation
+    # from the analyzed Bazel crate graph; this keeps Cargo out of the runtime
+    # path and lets Bazel stay the source of truth for dependencies.
     toolchain = find_toolchain(ctx)
     crate_type = "bin" if is_test else crate.type
 
@@ -66,8 +71,14 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
         fail("miri_binary requires a wrapped `rust_binary`-like target. {} has crate type {}".format(ctx.attr.crate.label, crate.type))
 
     if dep_info.transitive_noncrates.to_list():
+        # The current launcher only knows how to feed Rust crate artifacts to
+        # Miri. Mixed Rust/native graphs need extra modeling that this V1 does
+        # not implement yet.
         fail("{} depends on native linker inputs. Direct `miri` execution is only supported for pure-Rust dependency graphs right now.".format(ctx.attr.crate.label))
 
+    # Pass direct Rust dependencies as explicit --extern flags and transitive
+    # crate outputs as -Ldependency search paths, mirroring the rustc command
+    # line shape that Miri expects.
     extern_specs = []
     for dep in dep_info.direct_crates.to_list():
         dep_crate = _crate_info_for_extern(dep)
@@ -96,6 +107,8 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
         "",
         "set -euo pipefail",
         "",
+        # Resolve runtime inputs out of Bazel runfiles so the launcher works
+        # the same under `bazel run`, `bazel test`, and direct execution.
         "MIRI=$(rlocation {})".format(_shell_quote(rlocationpath(miri_toolchain.miri, ctx.workspace_name))),
         "CRATE_ROOT=$(rlocation {})".format(_shell_quote(rlocationpath(crate.root, ctx.workspace_name))),
         "SYSROOT=$(dirname \"$(rlocation {})\")".format(_shell_quote(rlocationpath(miri_toolchain.sysroot_anchor, ctx.workspace_name))),
@@ -160,6 +173,8 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
     ])
     if is_test:
         lines.extend([
+            # Tests are executed through the standard libtest harness, so the
+            # launcher forwards Bazel test filtering after the `--` separator.
             'cmd+=("--" "--test-threads=1")',
             'if [[ -n "${TESTBRIDGE_TEST_ONLY:-}" ]]; then',
             '  cmd+=("${TESTBRIDGE_TEST_ONLY}")',
@@ -190,6 +205,9 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
     return "\n".join(lines)
 
 def _miri_impl(ctx, *, is_test):
+    # The wrapped Rust target is already re-analyzed in Miri mode by the rule
+    # transition; this implementation only has to assemble the final launcher
+    # over that rebuilt crate graph.
     toolchain = find_toolchain(ctx)
     miri_toolchain = ctx.toolchains[str(Label("//rust:miri_toolchain_type"))]
     if not miri_toolchain:
@@ -212,6 +230,8 @@ def _miri_impl(ctx, *, is_test):
         is_executable = True,
     )
 
+    # Include both compile-time Rust artifacts and the Bazel test harness
+    # scripts so the generated launcher behaves like a normal Bazel executable.
     runfiles = ctx.runfiles(
         transitive_files = depset(
             transitive = [
@@ -263,6 +283,8 @@ _MIRI_COMMON_ATTRS = {
     "env_inherit": attr.string_list(
         doc = "Runtime environment variables to inherit from the outer test/run environment.",
     ),
+    # `miri_flags` affect the Miri driver itself, while `miri_args` are passed
+    # through to the interpreted test harness or binary after the `--` split.
     "miri_args": attr.string_list(
         doc = "Arguments baked into the generated launcher and forwarded after the libtest/program separator.",
     ),
@@ -280,15 +302,17 @@ _MIRI_COMMON_ATTRS = {
     "_bash_runfiles": attr.label(
         default = Label("@bazel_tools//tools/bash/runfiles"),
     ),
-    "_test_setup": attr.label(
-        default = Label("@bazel_tools//tools/test:test_setup"),
-    ),
     "_bazel_test_setup_script": attr.label(
         default = Label("@bazel_tools//tools/test:test-setup.sh"),
         allow_single_file = True,
     ),
+    "_test_setup": attr.label(
+        default = Label("@bazel_tools//tools/test:test_setup"),
+    ),
 }
 
+# V1 keeps the public surface small: users wrap an existing rust_test target
+# instead of re-declaring srcs/deps on a parallel Miri-only rule.
 miri_test = rule(
     implementation = _miri_test_impl,
     executable = True,
@@ -308,6 +332,7 @@ miri_test = rule(
     """),
 )
 
+# `miri_binary` mirrors the same wrapper approach for runnable binary crates.
 miri_binary = rule(
     implementation = _miri_binary_impl,
     executable = True,

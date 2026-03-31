@@ -15,6 +15,8 @@
 """Shared Miri configuration helpers."""
 
 def _miri_transition_impl(settings, attr):
+    # Re-analyze the wrapped Rust target in a Miri-specific configuration while
+    # preserving the existing target platform unless the caller overrides it.
     return {
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
         "//rust/private:miri_enabled": True,
@@ -32,6 +34,8 @@ miri_transition = transition(
 )
 
 def rlocationpath(file, workspace_name):
+    # Generated launchers run from Bazel runfiles, so they need a stable
+    # rlocation path even when the file comes from an external repository.
     if file.short_path.startswith("../"):
         return file.short_path[len("../"):]
 

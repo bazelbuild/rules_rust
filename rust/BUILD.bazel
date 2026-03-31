@@ -11,6 +11,8 @@ toolchain_type(
     name = "toolchain_type",
 )
 
+# Miri needs a separate toolchain contract because it brings a different
+# driver binary, sysroot, and runtime closure than normal rustc compilation.
 toolchain_type(
     name = "miri_toolchain_type",
 )
