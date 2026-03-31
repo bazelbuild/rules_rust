@@ -197,6 +197,11 @@ def _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation
         return True
     return False
 
+def miri_should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode):
+    # Keep the direct Miri launcher consistent with the normal Rust link path
+    # when choosing between PIC and non-PIC native libraries.
+    return _should_use_pic(cc_toolchain, feature_configuration, crate_type, compilation_mode)
+
 def _is_proc_macro(crate_info):
     return "proc-macro" in (crate_info.type, crate_info.wrapped_crate_type)
 
@@ -373,6 +378,11 @@ def _collect_libs_from_linker_inputs(linker_inputs, use_pic):
         for li in linker_inputs
         for lib in li.libraries
     ]
+
+def miri_collect_libs_from_linker_inputs(linker_inputs, use_pic):
+    # The direct Miri launcher needs the same native library artifacts staged in
+    # runfiles as normal Rust linking would stage in the sandbox.
+    return _collect_libs_from_linker_inputs(linker_inputs, use_pic)
 
 def get_cc_user_link_flags(ctx):
     """Get the current target's linkopt flags

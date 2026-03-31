@@ -16,7 +16,12 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:miri_config.bzl", "miri_transition", "rlocationpath")
-load("//rust/private:utils.bzl", "dedent", "find_toolchain")
+load(
+    "//rust/private:rustc.bzl",
+    "miri_collect_libs_from_linker_inputs",
+    "miri_should_use_pic",
+)
+load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
 
 _RUNFILES_BASH_INIT = """# --- begin runfiles.bash initialization v3 ---
 set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
@@ -60,6 +65,31 @@ def _target_flag_lines(ctx, toolchain):
 
     return ["TARGET_FLAG={}".format(_shell_quote(toolchain.target_flag_value))]
 
+def _native_runfiles(ctx, crate, dep_info):
+    linker_inputs = dep_info.transitive_noncrates.to_list()
+    if not linker_inputs:
+        return depset()
+
+    cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    if cc_toolchain:
+        use_pic = miri_should_use_pic(cc_toolchain, feature_configuration, crate.type, ctx.var["COMPILATION_MODE"])
+        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration) if crate.type in ["dylib", "cdylib"] else cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+    else:
+        use_pic = False
+        runtime_libs = depset()
+
+    # Even when Miri interprets the Rust crate directly, mixed Rust/native
+    # targets still need their native inputs present in runfiles so any
+    # rustc-level link metadata and runtime discovery has a chance to resolve.
+    return depset(
+        direct = miri_collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
+            additional_input
+            for linker_input in linker_inputs
+            for additional_input in linker_input.additional_inputs
+        ],
+        transitive = [runtime_libs],
+    )
+
 def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags):
     # The generated launcher reconstructs a rustc-shaped direct Miri invocation
     # from the analyzed Bazel crate graph; this keeps Cargo out of the runtime
@@ -70,11 +100,9 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
     if not is_test and crate.type != "bin":
         fail("miri_binary requires a wrapped `rust_binary`-like target. {} has crate type {}".format(ctx.attr.crate.label, crate.type))
 
-    if dep_info.transitive_noncrates.to_list():
-        # The current launcher only knows how to feed Rust crate artifacts to
-        # Miri. Mixed Rust/native graphs need extra modeling that this V1 does
-        # not implement yet.
-        fail("{} depends on native linker inputs. Direct `miri` execution is only supported for pure-Rust dependency graphs right now.".format(ctx.attr.crate.label))
+    # Native linker inputs are staged separately in runfiles, but the launcher
+    # still reconstructs only the Rust-facing driver arguments here because the
+    # direct Miri path does not go through Cargo's native-link orchestration.
 
     # Pass direct Rust dependencies as explicit --extern flags and transitive
     # crate outputs as -Ldependency search paths, mirroring the rustc command
@@ -117,6 +145,10 @@ def _script_content(ctx, *, crate, dep_info, miri_toolchain, is_test, miri_flags
     lines.extend([
         "",
         "export CARGO_MANIFEST_DIR=$(dirname \"${CRATE_ROOT}\")",
+        # Expose a stable runtime marker so interpreted code can detect the
+        # direct Bazel-backed Miri path even when dependencies were compiled by
+        # rustc rather than the `miri` driver itself.
+        "export RULES_RUST_MIRI=1",
         "export REPOSITORY_NAME={}".format(_shell_quote(ctx.label.workspace_name)),
     ])
     lines.extend(rustc_env_exports)
@@ -215,6 +247,7 @@ def _miri_impl(ctx, *, is_test):
 
     crate = _crate_from_target(ctx.attr.crate)
     dep_info = ctx.attr.crate[rust_common.dep_info]
+    native_runfiles = _native_runfiles(ctx, crate, dep_info)
 
     script = ctx.actions.declare_file(ctx.label.name + (".miri_test.sh" if is_test else ".miri_binary.sh"))
     ctx.actions.write(
@@ -240,6 +273,7 @@ def _miri_impl(ctx, *, is_test):
                 dep_info.transitive_crate_outputs,
                 dep_info.transitive_proc_macro_data,
                 dep_info.transitive_data,
+                native_runfiles,
                 toolchain.all_files,
                 miri_toolchain.all_files,
                 ctx.attr._bash_runfiles[DefaultInfo].files,
@@ -247,7 +281,7 @@ def _miri_impl(ctx, *, is_test):
                 ctx.attr._bazel_test_setup_script[DefaultInfo].files,
             ],
         ),
-    ).merge(ctx.attr._test_setup[DefaultInfo].default_runfiles)
+    ).merge(ctx.attr._bash_runfiles[DefaultInfo].default_runfiles).merge(ctx.attr._test_setup[DefaultInfo].default_runfiles)
 
     return [
         DefaultInfo(executable = script, runfiles = runfiles),
@@ -316,12 +350,14 @@ _MIRI_COMMON_ATTRS = {
 miri_test = rule(
     implementation = _miri_test_impl,
     executable = True,
+    fragments = ["cpp"],
     test = True,
     attrs = _MIRI_COMMON_ATTRS,
     cfg = miri_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         str(Label("//rust:miri_toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Executes an existing Rust target under the direct `miri` driver.
@@ -336,11 +372,13 @@ miri_test = rule(
 miri_binary = rule(
     implementation = _miri_binary_impl,
     executable = True,
+    fragments = ["cpp"],
     attrs = _MIRI_COMMON_ATTRS,
     cfg = miri_transition,
     toolchains = [
         str(Label("//rust:toolchain_type")),
         str(Label("//rust:miri_toolchain_type")),
+        config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
     doc = dedent("""\
         Executes an existing `rust_binary`-like target under the direct `miri` driver.
