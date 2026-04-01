@@ -18,7 +18,7 @@
 //! key is expected) and make function signatures self-documenting.
 
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Identifies a pipelining pipeline — the crate being compiled.
 /// Derived from `--pipelining-key=<value>` in rustc args.
@@ -99,29 +99,5 @@ impl fmt::Display for OutputDir {
 impl Default for OutputDir {
     fn default() -> Self {
         OutputDir(String::new())
-    }
-}
-
-/// Error type for output materialization failures.
-#[derive(Debug)]
-pub struct MaterializeError {
-    pub path: PathBuf,
-    pub cause: std::io::Error,
-}
-
-impl fmt::Display for MaterializeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "failed to materialize '{}': {}",
-            self.path.display(),
-            self.cause
-        )
-    }
-}
-
-impl std::error::Error for MaterializeError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.cause)
     }
 }

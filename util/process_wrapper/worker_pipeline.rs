@@ -17,6 +17,7 @@
 //! See `DESIGN.md` in this directory for the protocol and sandbox rationale.
 
 use std::collections::HashMap;
+use std::fmt;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -116,6 +117,31 @@ pub(super) struct OutputMaterializationStats {
     pub(super) files: usize,
     pub(super) hardlinked_files: usize,
     pub(super) copied_files: usize,
+}
+
+/// Error type for failures when copying artifacts from the pipeline
+/// directory to the declared Bazel output location.
+#[derive(Debug)]
+pub(super) struct MaterializeError {
+    pub(super) path: PathBuf,
+    pub(super) cause: std::io::Error,
+}
+
+impl fmt::Display for MaterializeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "failed to materialize '{}': {}",
+            self.path.display(),
+            self.cause
+        )
+    }
+}
+
+impl std::error::Error for MaterializeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.cause)
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -17,8 +17,7 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use super::pipeline::OutputMaterializationStats;
-use super::types::MaterializeError;
+use super::pipeline::{MaterializeError, OutputMaterializationStats};
 use crate::ProcessWrapperError;
 
 /// Returns `true` if both paths resolve to the same inode after canonicalization.
