@@ -32,6 +32,8 @@ pub(crate) mod sandbox;
 pub(crate) mod types;
 #[path = "worker_invocation.rs"]
 pub(crate) mod invocation;
+#[path = "worker_rustc.rs"]
+pub(crate) mod rustc_driver;
 #[path = "worker_registry.rs"]
 pub(crate) mod registry;
 #[path = "worker_request.rs"]

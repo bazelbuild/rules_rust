@@ -1208,7 +1208,8 @@ fn test_invocation_shutdown_from_pending() {
 #[test]
 fn test_rustc_thread_pipelined_completes() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use super::invocation::InvocationDirs;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1237,7 +1238,8 @@ fn test_rustc_thread_pipelined_completes() {
 #[test]
 fn test_rustc_thread_failure_before_rmeta() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use super::invocation::InvocationDirs;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1266,7 +1268,8 @@ fn test_rustc_thread_failure_before_rmeta() {
 #[cfg(unix)]
 fn test_rustc_thread_shutdown_kills_child() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use super::invocation::InvocationDirs;
 
     // sleep produces no stderr output, so read_line blocks until child is killed.
     let child = Command::new("sleep")
@@ -1302,7 +1305,7 @@ fn test_rustc_thread_shutdown_kills_child() {
 #[test]
 fn test_rustc_thread_non_pipelined_completes() {
     use std::process::{Command, Stdio};
-    use super::invocation::spawn_non_pipelined_rustc;
+    use super::rustc_driver::spawn_non_pipelined_rustc;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1325,7 +1328,7 @@ fn test_rustc_thread_non_pipelined_completes() {
 #[test]
 fn test_rustc_thread_non_pipelined_fails() {
     use std::process::{Command, Stdio};
-    use super::invocation::spawn_non_pipelined_rustc;
+    use super::rustc_driver::spawn_non_pipelined_rustc;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1348,7 +1351,7 @@ fn test_rustc_thread_non_pipelined_fails() {
 #[cfg(unix)]
 fn test_cancel_non_pipelined_kills_child() {
     use std::process::{Command, Stdio};
-    use super::invocation::spawn_non_pipelined_rustc;
+    use super::rustc_driver::spawn_non_pipelined_rustc;
 
     let child = Command::new("sleep")
         .arg("60")

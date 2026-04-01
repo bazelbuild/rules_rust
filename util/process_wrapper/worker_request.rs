@@ -23,7 +23,8 @@ use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
-use super::invocation::{spawn_pipelined_rustc, InvocationDirs, RustcInvocation};
+use super::invocation::{InvocationDirs, RustcInvocation};
+use super::rustc_driver::spawn_pipelined_rustc;
 use super::args::{
     build_rustc_env, prepare_expanded_rustc_outputs, prepare_rustc_args,
     resolve_pw_args_for_request, rewrite_emit_metadata_path, rewrite_out_dir_in_expanded,
@@ -350,7 +351,7 @@ impl RequestExecutor {
         sandbox_dir: Option<&str>,
     ) -> (i32, String) {
         use super::exec::spawn_request;
-        use super::invocation::spawn_non_pipelined_rustc;
+        use super::rustc_driver::spawn_non_pipelined_rustc;
 
         let context = if sandbox_dir.is_some() {
             "sandboxed subprocess"
