@@ -20,7 +20,7 @@ use std::fmt;
 use std::io::Write;
 use std::path::PathBuf;
 
-use crate::options::{parse_pw_args as parse_shared_pw_args, SubprocessPipeliningMode};
+use crate::options::{parse_pw_args, SubprocessPipeliningMode};
 use crate::ProcessWrapperError;
 
 use super::args::{expand_rustc_args_with_metadata, scan_pipelining_flags};
@@ -52,15 +52,19 @@ impl RequestKind {
     }
 
     pub(crate) fn parse_in_dir(args: &[String], base_dir: &std::path::Path) -> Self {
-        let (direct_metadata, direct_full, direct_key) =
-            scan_pipelining_flags(args.iter().map(String::as_str));
+        let direct = scan_pipelining_flags(args.iter().map(String::as_str));
+        if !matches!(direct, RequestKind::NonPipelined) {
+            return direct;
+        }
+
+        // Direct args had no pipelining flags — check inside @paramfiles.
         let sep_pos = args.iter().position(|a| a == "--");
         let rustc_args = match sep_pos {
             Some(pos) => &args[pos + 1..],
             None => &[][..],
         };
         let parsed_pw_args =
-            parse_shared_pw_args(sep_pos.map(|pos| &args[..pos]).unwrap_or(&[]), base_dir);
+            parse_pw_args(sep_pos.map(|pos| &args[..pos]).unwrap_or(&[]), base_dir);
         let nested = expand_rustc_args_with_metadata(
             rustc_args,
             &parsed_pw_args.subst,
@@ -70,11 +74,12 @@ impl RequestKind {
         .ok()
         .map(|(_, metadata)| metadata)
         .unwrap_or_default();
-        let is_metadata = direct_metadata
-            || nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Metadata);
+
+        let is_metadata =
+            nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Metadata);
         let is_full =
-            direct_full || nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Full);
-        let key = direct_key.or(nested.pipelining_key);
+            nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Full);
+        let key = nested.pipelining_key;
 
         match (is_metadata, is_full, key) {
             (true, _, Some(k)) => RequestKind::Metadata {
@@ -152,7 +157,9 @@ impl WorkerStateRoots {
     /// (the Bazel execroot). This directory persists across builds for the
     /// lifetime of the worker process. Individual pipeline subdirectories are
     /// cleaned up by `maybe_cleanup_pipeline_dir` after each compilation.
-    /// The root `_pw_state/` directory itself is removed by `bazel clean`.
+    /// The root `_pw_state/` directory itself is left to Bazel-managed
+    /// execroot cleanup (for example `bazel clean --expunge` or output-base
+    /// deletion).
     pub(crate) fn ensure() -> Result<Self, ProcessWrapperError> {
         let pipeline_root = PathBuf::from("_pw_state/pipeline");
         std::fs::create_dir_all(&pipeline_root).map_err(|e| {

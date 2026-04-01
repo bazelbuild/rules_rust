@@ -19,20 +19,21 @@ use std::collections::HashMap;
 
 use crate::options::{
     build_child_environment, expand_args_inline, is_pipelining_flag, is_relocated_pw_flag,
-    parse_pw_args as parse_shared_pw_args, NormalizedRustcMetadata, OptionError, ParsedPwArgs,
+    NormalizedRustcMetadata, OptionError, ParsedPwArgs,
     RelocatedPwFlags,
 };
+use crate::ProcessWrapperError;
 
 use super::exec::{make_dir_files_writable, make_path_writable, resolve_request_relative_path};
-use super::pipeline::pipelining_err;
+use super::pipeline::{pipelining_err, RequestKind};
 use super::protocol::ParsedWorkRequest;
-use super::types::OutputDir;
+use super::types::{OutputDir, PipelineKey};
 
-/// Scans an iterator of argument strings for pipelining flags.
-/// Returns `(is_metadata, is_full, pipeline_key)`.
+/// Scans an iterator of argument strings for pipelining flags and returns a
+/// classified `RequestKind`.
 pub(super) fn scan_pipelining_flags<'a>(
     iter: impl Iterator<Item = &'a str>,
-) -> (bool, bool, Option<String>) {
+) -> RequestKind {
     let mut is_metadata = false;
     let mut is_full = false;
     let mut key: Option<String> = None;
@@ -45,7 +46,15 @@ pub(super) fn scan_pipelining_flags<'a>(
             key = Some(k.to_string());
         }
     }
-    (is_metadata, is_full, key)
+    match (is_metadata, is_full, key) {
+        (true, _, Some(k)) => RequestKind::Metadata {
+            key: PipelineKey(k),
+        },
+        (_, true, Some(k)) => RequestKind::Full {
+            key: PipelineKey(k),
+        },
+        _ => RequestKind::NonPipelined,
+    }
 }
 
 /// Strips pipelining protocol flags from a direct arg list.
@@ -60,59 +69,77 @@ pub(super) fn strip_pipelining_flags(args: &[String]) -> Vec<String> {
         .collect()
 }
 
-/// Move process_wrapper flags that appear after `--` to before it.
-///
-/// When worker pipelining is active, per-action flags like `--output-file`
-/// are placed in the @paramfile (so all actions share the same WorkerKey).
-/// After the worker concatenates startup_args + request.arguments, these
-/// flags end up after the `--` separator.  Both the subprocess path
-/// (`options.rs`) and the pipelining path (`parse_pw_args`) expect them
-/// before `--`, so we relocate them here.
-pub(super) fn relocate_pw_flags(args: &mut Vec<String>) {
-    let sep_pos = match args.iter().position(|a| a == "--") {
-        Some(pos) => pos,
-        None => return,
-    };
+/// The two halves of startup args, split at `--`.
+pub(super) struct StartupLayout {
+    /// Process-wrapper flags before `--` (e.g. `["--subst", "pwd=${pwd}"]`).
+    pub(super) pw_args: Vec<String>,
+    /// Child-program prefix after `--` (e.g. `["/path/to/rustc"]`).
+    pub(super) child_prefix: Vec<String>,
+}
 
-    // Collect indices of relocated pw flags (and their values) after --.
-    let mut to_relocate: Vec<String> = Vec::new();
-    let mut remove_indices: Vec<usize> = Vec::new();
-    let mut i = sep_pos + 1;
-    while i < args.len() {
-        if is_relocated_pw_flag(&args[i]) {
-            remove_indices.push(i);
-            to_relocate.push(args[i].clone());
-            if i + 1 < args.len() {
-                remove_indices.push(i + 1);
-                to_relocate.push(args[i + 1].clone());
+/// Splits startup args at the `--` boundary.
+///
+/// Returns `Err` if `--` is not present (startup args always contain the
+/// separator since flags.rs places it there during process_wrapper startup).
+pub(super) fn split_startup_args(startup_args: &[String]) -> Result<StartupLayout, ProcessWrapperError> {
+    let sep = startup_args
+        .iter()
+        .position(|a| a == "--")
+        .ok_or_else(|| ProcessWrapperError("startup args missing '--' separator".into()))?;
+    Ok(StartupLayout {
+        pw_args: startup_args[..sep].to_vec(),
+        child_prefix: startup_args[sep + 1..].to_vec(),
+    })
+}
+
+/// Separates process_wrapper flags from child args in the per-request argument list.
+///
+/// When worker pipelining is active, per-action pw flags like `--output-file`
+/// end up in request.arguments (so all actions share the same WorkerKey).
+/// This function extracts them, leaving only child-program (rustc) args and
+/// pipelining flags in the remainder.
+pub(super) fn extract_direct_request_pw_flags(request_args: &[String]) -> (Vec<String>, Vec<String>) {
+    let mut remaining = Vec::new();
+    let mut pw_pairs = Vec::new();
+    let mut i = 0;
+    while i < request_args.len() {
+        if is_relocated_pw_flag(&request_args[i]) {
+            pw_pairs.push(request_args[i].clone());
+            if i + 1 < request_args.len() {
+                pw_pairs.push(request_args[i + 1].clone());
                 i += 2;
             } else {
                 i += 1;
             }
         } else {
+            remaining.push(request_args[i].clone());
             i += 1;
         }
     }
-
-    if to_relocate.is_empty() {
-        return;
-    }
-
-    // Remove from after -- in reverse order to preserve indices.
-    for &idx in remove_indices.iter().rev() {
-        args.remove(idx);
-    }
-
-    // Insert before -- (which may have shifted after removals).
-    let sep_pos = args.iter().position(|a| a == "--").unwrap_or(0);
-    for (offset, flag) in to_relocate.into_iter().enumerate() {
-        args.insert(sep_pos + offset, flag);
-    }
+    (remaining, pw_pairs)
 }
 
-/// Parses process_wrapper flags from the pre-`--` portion of args.
-pub(super) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> ParsedPwArgs {
-    parse_shared_pw_args(pw_args, pwd)
+/// Assembles canonical argv from startup args and per-request args.
+///
+/// Builds: `startup_pw_args + direct_pw_pairs + ["--"] + child_prefix + remaining_child_args`
+///
+/// This replaces the old concat-then-fixup approach (`build_full_args` +
+/// `relocate_pw_flags`) with a single structured assembly step.
+pub(super) fn assemble_request_argv(
+    startup_args: &[String],
+    request_args: &[String],
+) -> Result<Vec<String>, ProcessWrapperError> {
+    let layout = split_startup_args(startup_args)?;
+    let (remaining_child, direct_pw) = extract_direct_request_pw_flags(request_args);
+    let mut argv = Vec::with_capacity(
+        layout.pw_args.len() + direct_pw.len() + 1 + layout.child_prefix.len() + remaining_child.len(),
+    );
+    argv.extend(layout.pw_args);
+    argv.extend(direct_pw);
+    argv.push("--".into());
+    argv.extend(layout.child_prefix);
+    argv.extend(remaining_child);
+    Ok(argv)
 }
 
 fn read_args_file_in_dir(

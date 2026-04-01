@@ -47,7 +47,7 @@ use logging::{
     append_worker_lifecycle_log, current_pid, current_thread_label, install_worker_panic_hook,
     log_request_received, log_request_thread_start, WorkerLifecycleGuard,
 };
-use args::relocate_pw_flags;
+use args::assemble_request_argv;
 use pipeline::{RequestKind, WorkerStateRoots};
 use protocol::{
     build_cancel_response, build_response, extract_request_id,
@@ -167,11 +167,11 @@ fn startup_args() -> Vec<String> {
         .collect()
 }
 
-fn build_full_args(startup_args: &[String], request_args: &[String]) -> Vec<String> {
-    let mut full_args = startup_args.to_vec();
-    full_args.extend_from_slice(request_args);
-    relocate_pw_flags(&mut full_args);
-    full_args
+fn build_full_args(
+    startup_args: &[String],
+    request_args: &[String],
+) -> Result<Vec<String>, ProcessWrapperError> {
+    assemble_request_argv(startup_args, request_args)
 }
 
 fn request_base_dir(
@@ -193,7 +193,7 @@ fn classify_request(
     startup_args: &[String],
     request: &ParsedWorkRequest,
 ) -> Result<RequestKind, ProcessWrapperError> {
-    let full_args = build_full_args(startup_args, &request.arguments);
+    let full_args = build_full_args(startup_args, &request.arguments)?;
     let base_dir = request_base_dir(request)?;
     Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
 }
@@ -250,7 +250,7 @@ fn execute_singleplex_request(
     request: &ParsedWorkRequest,
     stdout: &SharedStdout,
 ) -> Result<(), ProcessWrapperError> {
-    let full_args = build_full_args(startup_args, &request.arguments);
+    let full_args = build_full_args(startup_args, &request.arguments)?;
     prepare_outputs(&full_args);
     let (exit_code, output) = run_request(self_path, full_args)?;
     let response = build_response(exit_code, &output, request.request_id);
@@ -290,7 +290,10 @@ fn run_request_thread(
     }
 
     let (exit_code, output) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let full_args = build_full_args(&startup_args, &request.arguments);
+        let full_args = match build_full_args(&startup_args, &request.arguments) {
+            Ok(args) => args,
+            Err(e) => return (1, format!("worker thread error: {e}")),
+        };
         if let Err(e) = prepare_request_outputs(&full_args, &request) {
             return (1, format!("worker thread error: {e}"));
         }

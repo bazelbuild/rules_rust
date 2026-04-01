@@ -1,8 +1,10 @@
 use super::args::{
-    apply_substs, build_rustc_env, expand_rustc_args, find_out_dir_in_expanded, parse_pw_args,
-    prepare_expanded_rustc_outputs, prepare_rustc_args, rewrite_out_dir_in_expanded,
-    scan_pipelining_flags, strip_pipelining_flags,
+    apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args,
+    extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_expanded_rustc_outputs,
+    prepare_rustc_args, rewrite_out_dir_in_expanded, scan_pipelining_flags,
+    split_startup_args, strip_pipelining_flags,
 };
+use crate::options::parse_pw_args;
 use super::pipeline::{detect_pipelining_mode, RequestKind};
 use super::invocation::{InvocationDirs, RustcInvocation};
 use super::protocol::{
@@ -318,35 +320,34 @@ fn test_apply_substs() {
 
 #[test]
 fn test_scan_pipelining_flags_metadata() {
-    let (is_metadata, is_full, key) = scan_pipelining_flags(
+    match scan_pipelining_flags(
         ["--pipelining-metadata", "--pipelining-key=foo_abc"]
             .iter()
             .copied(),
-    );
-    assert!(is_metadata);
-    assert!(!is_full);
-    assert_eq!(key, Some("foo_abc".to_string()));
+    ) {
+        RequestKind::Metadata { key } => assert_eq!(key.as_str(), "foo_abc"),
+        other => panic!("expected Metadata, got {:?}", other),
+    }
 }
 
 #[test]
 fn test_scan_pipelining_flags_full() {
-    let (is_metadata, is_full, key) = scan_pipelining_flags(
+    match scan_pipelining_flags(
         ["--pipelining-full", "--pipelining-key=bar_xyz"]
             .iter()
             .copied(),
-    );
-    assert!(!is_metadata);
-    assert!(is_full);
-    assert_eq!(key, Some("bar_xyz".to_string()));
+    ) {
+        RequestKind::Full { key } => assert_eq!(key.as_str(), "bar_xyz"),
+        other => panic!("expected Full, got {:?}", other),
+    }
 }
 
 #[test]
 fn test_scan_pipelining_flags_none() {
-    let (is_metadata, is_full, key) =
-        scan_pipelining_flags(["--emit=link", "--crate-name=foo"].iter().copied());
-    assert!(!is_metadata);
-    assert!(!is_full);
-    assert_eq!(key, None);
+    assert_eq!(
+        scan_pipelining_flags(["--emit=link", "--crate-name=foo"].iter().copied()),
+        RequestKind::NonPipelined
+    );
 }
 
 #[test]
@@ -966,23 +967,25 @@ fn test_seed_sandbox_cache_root() {
     let _ = fs::remove_dir_all(&tmp);
 }
 
-// --- relocate_pw_flags tests ---
+// --- assemble_request_argv tests ---
 
 #[test]
-fn test_relocate_pw_flags_moves_output_file_before_separator() {
-    let mut args = vec![
+fn test_assemble_request_argv_one_relocated_flag() {
+    let startup: Vec<String> = vec![
         "--subst".into(),
         "pwd=${pwd}".into(),
         "--".into(),
         "/path/to/rustc".into(),
+    ];
+    let request: Vec<String> = vec![
         "--output-file".into(),
         "bazel-out/foo/libbar.rmeta".into(),
         "src/lib.rs".into(),
         "--crate-name=foo".into(),
     ];
-    relocate_pw_flags(&mut args);
+    let result = assemble_request_argv(&startup, &request).unwrap();
     assert_eq!(
-        args,
+        result,
         vec![
             "--subst",
             "pwd=${pwd}",
@@ -997,12 +1000,14 @@ fn test_relocate_pw_flags_moves_output_file_before_separator() {
 }
 
 #[test]
-fn test_relocate_pw_flags_moves_multiple_flags() {
-    let mut args = vec![
+fn test_assemble_request_argv_multiple_relocated_flags() {
+    let startup: Vec<String> = vec![
         "--subst".into(),
         "pwd=${pwd}".into(),
         "--".into(),
         "/path/to/rustc".into(),
+    ];
+    let request: Vec<String> = vec![
         "--output-file".into(),
         "out.rmeta".into(),
         "--rustc-output-format".into(),
@@ -1017,40 +1022,128 @@ fn test_relocate_pw_flags_moves_multiple_flags() {
         "volatile.status".into(),
         "src/lib.rs".into(),
     ];
-    relocate_pw_flags(&mut args);
-    let sep = args.iter().position(|a| a == "--").unwrap();
+    let result = assemble_request_argv(&startup, &request).unwrap();
+    let sep = result.iter().position(|a| a == "--").unwrap();
     // All pw flags should be before --
-    assert!(args[..sep].contains(&"--output-file".to_string()));
-    assert!(args[..sep].contains(&"--rustc-output-format".to_string()));
-    assert!(args[..sep].contains(&"--env-file".to_string()));
-    assert!(args[..sep].contains(&"--arg-file".to_string()));
-    assert!(args[..sep].contains(&"--stable-status-file".to_string()));
-    assert!(args[..sep].contains(&"--volatile-status-file".to_string()));
+    assert!(result[..sep].contains(&"--output-file".to_string()));
+    assert!(result[..sep].contains(&"--rustc-output-format".to_string()));
+    assert!(result[..sep].contains(&"--env-file".to_string()));
+    assert!(result[..sep].contains(&"--arg-file".to_string()));
+    assert!(result[..sep].contains(&"--stable-status-file".to_string()));
+    assert!(result[..sep].contains(&"--volatile-status-file".to_string()));
     // Rustc args should be after --
-    assert!(args[sep + 1..].contains(&"/path/to/rustc".to_string()));
-    assert!(args[sep + 1..].contains(&"src/lib.rs".to_string()));
+    assert!(result[sep + 1..].contains(&"/path/to/rustc".to_string()));
+    assert!(result[sep + 1..].contains(&"src/lib.rs".to_string()));
 }
 
 #[test]
-fn test_relocate_pw_flags_noop_when_no_flags() {
-    let mut args = vec![
+fn test_assemble_request_argv_no_relocated_flags() {
+    let startup: Vec<String> = vec![
         "--subst".into(),
         "pwd=${pwd}".into(),
         "--".into(),
         "/path/to/rustc".into(),
-        "src/lib.rs".into(),
     ];
-    let expected = args.clone();
-    relocate_pw_flags(&mut args);
-    assert_eq!(args, expected);
+    let request: Vec<String> = vec!["src/lib.rs".into()];
+    let result = assemble_request_argv(&startup, &request).unwrap();
+    assert_eq!(
+        result,
+        vec!["--subst", "pwd=${pwd}", "--", "/path/to/rustc", "src/lib.rs"]
+    );
 }
 
 #[test]
-fn test_relocate_pw_flags_noop_when_no_separator() {
-    let mut args = vec!["--output-file".into(), "foo".into()];
-    let expected = args.clone();
-    relocate_pw_flags(&mut args);
-    assert_eq!(args, expected);
+fn test_assemble_request_argv_no_separator_is_error() {
+    let startup: Vec<String> = vec!["--output-file".into(), "foo".into()];
+    let request: Vec<String> = vec!["src/lib.rs".into()];
+    assert!(assemble_request_argv(&startup, &request).is_err());
+}
+
+// --- mixed regression tests ---
+
+#[test]
+fn test_assemble_direct_request_pw_flags_interleaved_with_rustc_args() {
+    let startup: Vec<String> = vec!["--subst".into(), "pwd=${pwd}".into(), "--".into(), "rustc".into()];
+    let request: Vec<String> = vec![
+        "--output-file".into(),
+        "out.rmeta".into(),
+        "--crate-name=foo".into(),
+        "--env-file".into(),
+        "env.txt".into(),
+        "-Copt-level=2".into(),
+    ];
+    let result = assemble_request_argv(&startup, &request).unwrap();
+    let sep = result.iter().position(|a| a == "--").unwrap();
+    // pw flags before --
+    assert!(result[..sep].contains(&"--output-file".to_string()));
+    assert!(result[..sep].contains(&"out.rmeta".to_string()));
+    assert!(result[..sep].contains(&"--env-file".to_string()));
+    assert!(result[..sep].contains(&"env.txt".to_string()));
+    // rustc args after --
+    let after = &result[sep + 1..];
+    assert!(after.contains(&"rustc".to_string()));
+    assert!(after.contains(&"--crate-name=foo".to_string()));
+    assert!(after.contains(&"-Copt-level=2".to_string()));
+    // pw flags NOT after --
+    assert!(!after.contains(&"--output-file".to_string()));
+    assert!(!after.contains(&"--env-file".to_string()));
+}
+
+#[test]
+fn test_assemble_pipelining_flags_stay_after_separator() {
+    let startup: Vec<String> = vec!["--subst".into(), "pwd=${pwd}".into(), "--".into(), "rustc".into()];
+    let request: Vec<String> = vec![
+        "--pipelining-metadata".into(),
+        "--pipelining-key=abc123".into(),
+        "--output-file".into(),
+        "out.rmeta".into(),
+        "src/lib.rs".into(),
+    ];
+    let result = assemble_request_argv(&startup, &request).unwrap();
+    let sep = result.iter().position(|a| a == "--").unwrap();
+    // Pipelining flags are NOT pw flags, so they stay after --
+    let after = &result[sep + 1..];
+    assert!(after.contains(&"--pipelining-metadata".to_string()));
+    assert!(after.contains(&"--pipelining-key=abc123".to_string()));
+    // But --output-file IS a pw flag, so it goes before --
+    assert!(result[..sep].contains(&"--output-file".to_string()));
+}
+
+#[test]
+fn test_extract_direct_request_pw_flags_basic() {
+    let request: Vec<String> = vec![
+        "--output-file".into(),
+        "out.rmeta".into(),
+        "--crate-name=foo".into(),
+        "--stable-status-file".into(),
+        "stable.txt".into(),
+    ];
+    let (remaining, pw) = extract_direct_request_pw_flags(&request);
+    assert_eq!(remaining, vec!["--crate-name=foo"]);
+    assert_eq!(
+        pw,
+        vec!["--output-file", "out.rmeta", "--stable-status-file", "stable.txt"]
+    );
+}
+
+#[test]
+fn test_split_startup_args_basic() {
+    let args: Vec<String> = vec![
+        "--subst".into(),
+        "pwd=${pwd}".into(),
+        "--".into(),
+        "/path/to/rustc".into(),
+        "-v".into(),
+    ];
+    let layout = split_startup_args(&args).unwrap();
+    assert_eq!(layout.pw_args, vec!["--subst", "pwd=${pwd}"]);
+    assert_eq!(layout.child_prefix, vec!["/path/to/rustc", "-v"]);
+}
+
+#[test]
+fn test_split_startup_args_no_separator_is_error() {
+    let args: Vec<String> = vec!["--subst".into(), "pwd=${pwd}".into()];
+    assert!(split_startup_args(&args).is_err());
 }
 
 /// Regression: build_response blanked output for exit_code==0, silently
