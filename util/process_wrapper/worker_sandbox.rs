@@ -21,6 +21,15 @@ use super::pipeline::OutputMaterializationStats;
 use super::types::MaterializeError;
 use crate::ProcessWrapperError;
 
+/// Returns `true` if both paths resolve to the same inode after canonicalization.
+/// Returns `false` if either path doesn't exist or can't be canonicalized.
+pub(super) fn is_same_file(a: &std::path::Path, b: &std::path::Path) -> bool {
+    match (a.canonicalize(), b.canonicalize()) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
+}
+
 pub(super) fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
     let path = std::path::Path::new(path);
     if path.is_absolute() {
@@ -51,10 +60,8 @@ pub(super) fn materialize_output_file(
     // Skip if src and dest resolve to the same file (e.g., when rustc writes
     // directly into the sandbox via --emit=metadata=<relative-path> and the
     // copy destination is the same location). Removing dest would delete src.
-    if let (Ok(a), Ok(b)) = (src.canonicalize(), dest.canonicalize()) {
-        if a == b {
-            return Ok(false);
-        }
+    if is_same_file(src, dest) {
+        return Ok(false);
     }
 
     if dest.exists() {
