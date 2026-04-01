@@ -25,7 +25,7 @@ use std::thread;
 use std::time::Instant;
 
 use super::pipeline::RequestKind;
-use super::protocol::WorkRequestContext;
+use super::protocol::ParsedWorkRequest;
 
 pub(crate) fn current_pid() -> u32 {
     std::process::id()
@@ -124,7 +124,7 @@ fn pipeline_key_label(kind: &RequestKind) -> &str {
     kind.key().map(|key| key.as_str()).unwrap_or("-")
 }
 
-pub(crate) fn log_request_received(request: &WorkRequestContext, kind: &RequestKind) {
+pub(crate) fn log_request_received(request: &ParsedWorkRequest, kind: &RequestKind) {
     append_worker_lifecycle_log(&format!(
         "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
         current_pid(),
@@ -137,7 +137,7 @@ pub(crate) fn log_request_received(request: &WorkRequestContext, kind: &RequestK
     ));
 }
 
-pub(crate) fn log_request_thread_start(request: &WorkRequestContext, kind: &RequestKind) {
+pub(crate) fn log_request_thread_start(request: &ParsedWorkRequest, kind: &RequestKind) {
     append_worker_lifecycle_log(&format!(
         "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
         current_pid(),

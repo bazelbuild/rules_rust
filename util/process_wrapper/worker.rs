@@ -46,7 +46,7 @@ use logging::{
 use pipeline::{relocate_pw_flags, RequestKind, WorkerStateRoots};
 use protocol::{
     build_cancel_response, build_response, extract_request_id,
-    extract_request_id_from_raw_line, WorkRequestContext,
+    extract_request_id_from_raw_line, ParsedWorkRequest,
 };
 use registry::{RequestRegistry, SharedRequestRegistry};
 use request::RequestExecutor;
@@ -169,7 +169,7 @@ fn build_full_args(startup_args: &[String], request_args: &[String]) -> Vec<Stri
 }
 
 fn request_base_dir(
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
 ) -> Result<std::path::PathBuf, ProcessWrapperError> {
     if let Some(sandbox_dir) = request.sandbox_dir.as_ref() {
         if sandbox_dir.as_path().is_absolute() {
@@ -185,14 +185,14 @@ fn request_base_dir(
 
 fn classify_request(
     startup_args: &[String],
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
 ) -> Result<RequestKind, ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments);
     let base_dir = request_base_dir(request)?;
     Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
 }
 
-fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestContext> {
+fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<ParsedWorkRequest> {
     let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
         Ok(request) => request,
         Err(e) => {
@@ -213,7 +213,7 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestCo
         }
     };
 
-    match WorkRequestContext::from_json(&request) {
+    match ParsedWorkRequest::from_json(&request) {
         Ok(ctx) => Some(ctx),
         Err(e) => {
             let request_id = extract_request_id(&request);
@@ -226,7 +226,7 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestCo
 
 fn prepare_request_outputs(
     full_args: &[String],
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
 ) -> Result<(), ProcessWrapperError> {
     match request.sandbox_dir.as_ref() {
         Some(_) => {
@@ -241,7 +241,7 @@ fn prepare_request_outputs(
 fn execute_singleplex_request(
     self_path: &std::path::Path,
     startup_args: &[String],
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
     stdout: &SharedStdout,
 ) -> Result<(), ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments);
@@ -264,7 +264,7 @@ fn execute_singleplex_request(
 fn run_request_thread(
     self_path: std::path::PathBuf,
     startup_args: Vec<String>,
-    request: WorkRequestContext,
+    request: ParsedWorkRequest,
     request_executor: RequestExecutor,
     stdout: SharedStdout,
     registry: SharedRequestRegistry,

@@ -30,7 +30,7 @@ use super::pipeline::{
     rewrite_emit_metadata_path, rewrite_out_dir_in_expanded, strip_pipelining_flags, RequestKind,
     WorkerStateRoots,
 };
-use super::protocol::WorkRequestContext;
+use super::protocol::ParsedWorkRequest;
 use super::registry::SharedRequestRegistry;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, prepare_outputs,
@@ -56,7 +56,7 @@ impl RequestExecutor {
     /// copies the .rmeta output, and returns diagnostics.
     pub(super) fn execute_metadata(
         &self,
-        request: &WorkRequestContext,
+        request: &ParsedWorkRequest,
         full_args: Vec<String>,
         state_roots: &WorkerStateRoots,
         registry: &SharedRequestRegistry,
@@ -253,7 +253,7 @@ impl RequestExecutor {
     /// Falls back to a full subprocess if no invocation exists.
     pub(super) fn execute_full(
         &self,
-        request: &WorkRequestContext,
+        request: &ParsedWorkRequest,
         full_args: Vec<String>,
         self_path: &std::path::Path,
     ) -> (i32, String) {
@@ -313,7 +313,7 @@ impl RequestExecutor {
 
     fn execute_fallback(
         &self,
-        request: &WorkRequestContext,
+        request: &ParsedWorkRequest,
         args: Vec<String>,
         self_path: &std::path::Path,
         key: &PipelineKey,

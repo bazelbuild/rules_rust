@@ -27,7 +27,7 @@ use crate::options::{
 };
 use crate::ProcessWrapperError;
 
-use super::protocol::WorkRequestContext;
+use super::protocol::ParsedWorkRequest;
 use super::sandbox::{
     make_dir_files_writable, make_path_writable, resolve_request_relative_path,
 };
@@ -315,7 +315,7 @@ pub(super) fn prepare_rustc_args(
 
 pub(super) fn resolve_pw_args_for_request(
     mut pw_args: ParsedPwArgs,
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
     execroot_dir: &std::path::Path,
 ) -> ParsedPwArgs {
     pw_args.env_files = pw_args
@@ -376,7 +376,7 @@ pub(super) fn apply_substs(arg: &str, subst: &[(String, String)]) -> String {
 /// pipelining protocol flags (`--pipelining-metadata`, `--pipelining-key=*`) that
 /// rustc doesn't understand. By expanding and filtering here we avoid passing
 /// unknown flags to rustc.
-#[cfg_attr(not(test), allow(dead_code))]
+#[cfg(test)]
 pub(super) fn expand_rustc_args(
     rustc_and_after: &[String],
     subst: &[(String, String)],
@@ -394,12 +394,8 @@ pub(super) fn expand_rustc_args(
 
 /// Searches already-expanded rustc args for `--out-dir=<path>`.
 pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
-    for arg in args {
-        if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            return Some(dir.to_string());
-        }
-    }
-    None
+    args.iter()
+        .find_map(|arg| arg.strip_prefix("--out-dir=").map(|d| d.to_string()))
 }
 
 /// Returns a copy of `args` where `--out-dir=<old>` is replaced by
@@ -473,7 +469,7 @@ pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
 pub(super) fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
     key: &PipelineKey,
-    request: &WorkRequestContext,
+    request: &ParsedWorkRequest,
 ) -> Result<PipelineContext, (i32, String)> {
     let root_dir = state_roots.pipeline_dir(key);
 
@@ -532,11 +528,9 @@ pub(super) fn create_pipeline_context(
     })
 }
 
-/// Copies all regular files from `src_dir` to `dest_dir` (unsandboxed path).
+/// Copies a single .rmeta file to the `_pipeline/` subdirectory of out_dir (unsandboxed).
 ///
 /// Skips same-file copies (when src and dest resolve to the same inode).
-/// Returns an error if any file operation fails.
-/// Copies a single .rmeta file to the `_pipeline/` subdirectory of out_dir (unsandboxed).
 /// Returns `Some(error_message)` on failure, `None` on success.
 pub(super) fn copy_rmeta_unsandboxed(
     rmeta_src: &std::path::Path,
@@ -550,12 +544,7 @@ pub(super) fn copy_rmeta_unsandboxed(
         return Some(format!("pipelining: failed to create _pipeline dir: {e}"));
     }
     let dest = dest_pipeline.join(filename);
-    let same_file = rmeta_src
-        .canonicalize()
-        .ok()
-        .zip(dest.canonicalize().ok())
-        .is_some_and(|(a, b)| a == b);
-    if !same_file {
+    if !super::sandbox::is_same_file(rmeta_src, &dest) {
         if let Err(e) = std::fs::copy(rmeta_src, &dest) {
             return Some(format!("pipelining: failed to copy rmeta: {e}"));
         }
@@ -582,13 +571,7 @@ pub(super) fn copy_outputs_unsandboxed(
         })?;
         if meta.is_file() {
             let dest = dest_dir.join(entry.file_name());
-            let same_file = entry
-                .path()
-                .canonicalize()
-                .ok()
-                .zip(dest.canonicalize().ok())
-                .is_some_and(|(a, b)| a == b);
-            if !same_file {
+            if !super::sandbox::is_same_file(&entry.path(), &dest) {
                 std::fs::copy(entry.path(), &dest).map_err(|e| {
                     format!(
                         "pipelining: failed to copy {} to {}: {e}",

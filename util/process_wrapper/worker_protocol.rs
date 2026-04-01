@@ -26,14 +26,14 @@ pub(crate) struct WorkRequestInput {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct WorkRequestContext {
+pub(crate) struct ParsedWorkRequest {
     pub(crate) request_id: RequestId,
     pub(crate) arguments: Vec<String>,
     pub(crate) sandbox_dir: Option<SandboxDir>,
     pub(crate) cancel: bool,
 }
 
-impl WorkRequestContext {
+impl ParsedWorkRequest {
     pub(super) fn from_json(request: &JsonValue) -> Result<Self, String> {
         Ok(Self {
             request_id: extract_request_id(request),
