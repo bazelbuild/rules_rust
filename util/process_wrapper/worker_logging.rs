@@ -111,40 +111,37 @@ pub(crate) fn install_worker_panic_hook() {
     });
 }
 
-fn crate_name_from_args(args: &[String]) -> Option<&str> {
-    args.iter()
-        .find_map(|arg| arg.strip_prefix("--crate-name="))
-}
-
-fn emit_arg_from_args(args: &[String]) -> Option<&str> {
-    args.iter().find_map(|arg| arg.strip_prefix("--emit="))
+fn extract_arg<'a>(args: &'a [String], prefix: &str) -> Option<&'a str> {
+    args.iter().find_map(|arg| arg.strip_prefix(prefix))
 }
 
 fn pipeline_key_label(kind: &RequestKind) -> &str {
     kind.key().map(|key| key.as_str()).unwrap_or("-")
 }
 
-pub(crate) fn log_request_received(request: &ParsedWorkRequest, kind: &RequestKind) {
+fn log_request_event(event: &str, request: &ParsedWorkRequest, kind: &RequestKind, extra: &str) {
     append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
+        "pid={} thread={} {} request_id={}{} crate={} emit={} pipeline_key={}",
         current_pid(),
         current_thread_label(),
+        event,
         request.request_id,
-        request.cancel,
-        crate_name_from_args(&request.arguments).unwrap_or("-"),
-        emit_arg_from_args(&request.arguments).unwrap_or("-"),
+        extra,
+        extract_arg(&request.arguments, "--crate-name=").unwrap_or("-"),
+        extract_arg(&request.arguments, "--emit=").unwrap_or("-"),
         pipeline_key_label(kind),
     ));
 }
 
+pub(crate) fn log_request_received(request: &ParsedWorkRequest, kind: &RequestKind) {
+    log_request_event(
+        "request_received",
+        request,
+        kind,
+        &format!(" cancel={}", request.cancel),
+    );
+}
+
 pub(crate) fn log_request_thread_start(request: &ParsedWorkRequest, kind: &RequestKind) {
-    append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
-        current_pid(),
-        current_thread_label(),
-        request.request_id,
-        crate_name_from_args(&request.arguments).unwrap_or("-"),
-        emit_arg_from_args(&request.arguments).unwrap_or("-"),
-        pipeline_key_label(kind),
-    ));
+    log_request_event("request_thread_start", request, kind, "");
 }

@@ -24,6 +24,7 @@ use crate::options::{
 };
 
 use super::exec::{make_dir_files_writable, make_path_writable, resolve_request_relative_path};
+use super::pipeline::pipelining_err;
 use super::protocol::ParsedWorkRequest;
 use super::types::OutputDir;
 
@@ -167,12 +168,9 @@ pub(super) fn prepare_rustc_args(
         pw_args.require_explicit_unstable_features,
         execroot_dir,
     )
-    .map_err(|e| (1, format!("pipelining: {e}")))?;
+    .map_err(|e| pipelining_err(e))?;
     if rustc_args.is_empty() {
-        return Err((
-            1,
-            "pipelining: no rustc arguments after expansion".to_string(),
-        ));
+        return Err(pipelining_err("no rustc arguments after expansion"));
     }
 
     // Append args from --arg-file files (e.g. build script output: --cfg=..., -L ...).
@@ -193,48 +191,43 @@ pub(super) fn prepare_rustc_args(
     Ok((rustc_args, original_out_dir, metadata.relocated))
 }
 
+fn resolve_paths(paths: Vec<String>, base: &std::path::Path) -> Vec<String> {
+    paths
+        .into_iter()
+        .map(|p| {
+            resolve_request_relative_path(&p, Some(base))
+                .display()
+                .to_string()
+        })
+        .collect()
+}
+
+fn resolve_path(path: String, base: &std::path::Path) -> String {
+    resolve_request_relative_path(&path, Some(base))
+        .display()
+        .to_string()
+}
+
 pub(super) fn resolve_pw_args_for_request(
     mut pw_args: ParsedPwArgs,
     request: &ParsedWorkRequest,
     execroot_dir: &std::path::Path,
 ) -> ParsedPwArgs {
-    pw_args.env_files = pw_args
-        .env_files
-        .into_iter()
-        .map(|path| {
-            resolve_request_relative_path(&path, Some(execroot_dir))
-                .display()
-                .to_string()
-        })
-        .collect();
-    pw_args.arg_files = pw_args
-        .arg_files
-        .into_iter()
-        .map(|path| {
-            resolve_request_relative_path(&path, Some(execroot_dir))
-                .display()
-                .to_string()
-        })
-        .collect();
-    pw_args.stable_status_file = pw_args.stable_status_file.map(|path| {
-        resolve_request_relative_path(&path, Some(execroot_dir))
-            .display()
-            .to_string()
-    });
-    pw_args.volatile_status_file = pw_args.volatile_status_file.map(|path| {
-        resolve_request_relative_path(&path, Some(execroot_dir))
-            .display()
-            .to_string()
-    });
+    pw_args.env_files = resolve_paths(pw_args.env_files, execroot_dir);
+    pw_args.arg_files = resolve_paths(pw_args.arg_files, execroot_dir);
+    pw_args.stable_status_file = pw_args
+        .stable_status_file
+        .map(|p| resolve_path(p, execroot_dir));
+    pw_args.volatile_status_file = pw_args
+        .volatile_status_file
+        .map(|p| resolve_path(p, execroot_dir));
     pw_args.output_file = pw_args.output_file.map(|path| {
         let base = request
             .sandbox_dir
             .as_ref()
             .map(|sd| sd.as_path())
             .unwrap_or(execroot_dir);
-        resolve_request_relative_path(&path, Some(base))
-            .display()
-            .to_string()
+        resolve_path(path, base)
     });
     pw_args
 }

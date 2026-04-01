@@ -28,6 +28,10 @@ use super::exec::is_same_file;
 use super::protocol::ParsedWorkRequest;
 use super::types::PipelineKey;
 
+pub(super) fn pipelining_err(msg: impl std::fmt::Display) -> (i32, String) {
+    (1, format!("pipelining: {msg}"))
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum RequestKind {
     /// No pipelining flags present — handle as a normal subprocess request.
@@ -183,29 +187,17 @@ pub(super) fn create_pipeline_context(
     let outputs_dir = root_dir.join(format!("outputs-{}", request.request_id));
     if let Err(e) = std::fs::remove_dir_all(&outputs_dir) {
         if e.kind() != std::io::ErrorKind::NotFound {
-            return Err((
-                1,
-                format!("pipelining: failed to clear pipeline outputs dir: {e}"),
-            ));
+            return Err(pipelining_err(format_args!(
+                "failed to clear pipeline outputs dir: {e}"
+            )));
         }
     }
-    std::fs::create_dir_all(&outputs_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to create pipeline outputs dir: {e}"),
-        )
-    })?;
-    let root_dir = std::fs::canonicalize(root_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to resolve pipeline dir: {e}"),
-        )
-    })?;
+    std::fs::create_dir_all(&outputs_dir)
+        .map_err(|e| pipelining_err(format_args!("failed to create pipeline outputs dir: {e}")))?;
+    let root_dir = std::fs::canonicalize(root_dir)
+        .map_err(|e| pipelining_err(format_args!("failed to resolve pipeline dir: {e}")))?;
     let outputs_dir = std::fs::canonicalize(outputs_dir).map_err(|e| {
-        (
-            1,
-            format!("pipelining: failed to resolve pipeline outputs dir: {e}"),
-        )
+        pipelining_err(format_args!("failed to resolve pipeline outputs dir: {e}"))
     })?;
 
     let execroot_dir = if let Some(ref sandbox_dir) = request.sandbox_dir {
@@ -214,18 +206,14 @@ pub(super) fn create_pipeline_context(
             sandbox_path.to_path_buf()
         } else {
             let cwd = std::env::current_dir()
-                .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
+                .map_err(|e| pipelining_err(format_args!("failed to get worker CWD: {e}")))?;
             cwd.join(sandbox_path)
         }
     } else {
         let cwd = std::env::current_dir()
-            .map_err(|e| (1, format!("pipelining: failed to get worker CWD: {e}")))?;
-        std::fs::canonicalize(cwd).map_err(|e| {
-            (
-                1,
-                format!("pipelining: failed to canonicalize worker CWD: {e}"),
-            )
-        })?
+            .map_err(|e| pipelining_err(format_args!("failed to get worker CWD: {e}")))?;
+        std::fs::canonicalize(cwd)
+            .map_err(|e| pipelining_err(format_args!("failed to canonicalize worker CWD: {e}")))?
     };
 
     Ok(PipelineContext {

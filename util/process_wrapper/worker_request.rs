@@ -31,7 +31,8 @@ use super::args::{
 };
 use super::pipeline::{
     append_pipeline_log, copy_outputs_unsandboxed, copy_rmeta_unsandboxed,
-    create_pipeline_context, maybe_cleanup_pipeline_dir, RequestKind, WorkerStateRoots,
+    create_pipeline_context, maybe_cleanup_pipeline_dir, pipelining_err, RequestKind,
+    WorkerStateRoots,
 };
 use super::protocol::ParsedWorkRequest;
 use super::registry::SharedRequestCoordinator;
@@ -203,8 +204,8 @@ impl RequestExecutor {
                     );
                     let copy_err = match request.sandbox_dir.as_ref() {
                         Some(dir) => copy_output_to_sandbox(
-                            &rmeta_resolved_str,
-                            dir.as_str(),
+                            &rmeta_resolved,
+                            dir.as_path(),
                             original_out_dir.as_str(),
                             "_pipeline",
                         )
@@ -265,7 +266,7 @@ impl RequestExecutor {
                     let copy_result = match request.sandbox_dir.as_ref() {
                         Some(dir) => copy_all_outputs_to_sandbox(
                             &completion.dirs.pipeline_output_dir,
-                            dir.as_str(),
+                            dir.as_path(),
                             completion.dirs.original_out_dir.as_str(),
                         )
                         .map(|_| ())
@@ -388,10 +389,10 @@ fn prepare_metadata_invocation(
     let sep = filtered.iter().position(|a| a == "--");
     let (pw_raw, rustc_and_after) = match sep {
         Some(pos) => (&filtered[..pos], &filtered[pos + 1..]),
-        None => return Err((1, "pipelining: no '--' separator in args".to_string())),
+        None => return Err(pipelining_err("no '--' separator in args")),
     };
     if rustc_and_after.is_empty() {
-        return Err((1, "pipelining: no rustc executable after '--'".to_string()));
+        return Err(pipelining_err("no rustc executable after '--'"));
     }
 
     let ctx = create_pipeline_context(state_roots, key, request)?;
@@ -407,7 +408,7 @@ fn prepare_metadata_invocation(
         pw_args.volatile_status_file.as_deref(),
         &pw_args.subst,
     )
-    .map_err(|e| (1i32, format!("pipelining: {e}")))?;
+    .map_err(|e| pipelining_err(e))?;
 
     let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
     let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);

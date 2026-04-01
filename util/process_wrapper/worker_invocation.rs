@@ -111,15 +111,45 @@ impl InvocationState {
         }
     }
 
-    /// Consume this state and return its `dirs`, or a default if the variant has none.
-    fn into_dirs(self) -> InvocationDirs {
+    /// Extract dirs from the current state, leaving `Pending` in place.
+    /// Returns default dirs for states that don't carry them.
+    fn take_dirs(&mut self) -> InvocationDirs {
         match self {
             InvocationState::Running { dirs, .. }
             | InvocationState::MetadataReady { dirs, .. }
-            | InvocationState::Completed { dirs, .. } => dirs,
+            | InvocationState::Completed { dirs, .. } => {
+                std::mem::take(dirs)
+            }
             InvocationState::Pending
             | InvocationState::Failed { .. }
             | InvocationState::ShuttingDown => InvocationDirs::default(),
+        }
+    }
+
+    /// Convert a failure/shutdown state to `FailureOutput`.
+    /// Returns `None` for non-failure states.
+    fn as_failure(&self) -> Option<FailureOutput> {
+        match self {
+            InvocationState::Completed {
+                exit_code,
+                diagnostics,
+                ..
+            } if *exit_code != 0 => Some(FailureOutput {
+                exit_code: *exit_code,
+                diagnostics: diagnostics.clone(),
+            }),
+            InvocationState::Failed {
+                exit_code,
+                diagnostics,
+            } => Some(FailureOutput {
+                exit_code: *exit_code,
+                diagnostics: diagnostics.clone(),
+            }),
+            InvocationState::ShuttingDown => Some(FailureOutput {
+                exit_code: -1,
+                diagnostics: "shutdown requested".to_string(),
+            }),
+            _ => None,
         }
     }
 
@@ -143,23 +173,8 @@ impl InvocationState {
                 diagnostics_before: diagnostics.clone(),
                 rmeta_path: None,
             })),
-            InvocationState::Completed {
-                exit_code,
-                diagnostics,
-                ..
-            }
-            | InvocationState::Failed {
-                exit_code,
-                diagnostics,
-            } => Some(Err(FailureOutput {
-                exit_code: *exit_code,
-                diagnostics: diagnostics.clone(),
-            })),
-            InvocationState::ShuttingDown => Some(Err(FailureOutput {
-                exit_code: -1,
-                diagnostics: "shutdown requested".to_string(),
-            })),
             InvocationState::Pending | InvocationState::Running { .. } => None,
+            _ => self.as_failure().map(Err),
         }
     }
 
@@ -176,20 +191,10 @@ impl InvocationState {
                 diagnostics: diagnostics.clone(),
                 dirs: dirs.clone(),
             })),
-            InvocationState::Failed {
-                exit_code,
-                diagnostics,
-            } => Some(Err(FailureOutput {
-                exit_code: *exit_code,
-                diagnostics: diagnostics.clone(),
-            })),
-            InvocationState::ShuttingDown => Some(Err(FailureOutput {
-                exit_code: -1,
-                diagnostics: "shutdown requested".to_string(),
-            })),
             InvocationState::Pending
             | InvocationState::Running { .. }
             | InvocationState::MetadataReady { .. } => None,
+            _ => self.as_failure().map(Err),
         }
     }
 }
@@ -310,12 +315,12 @@ impl RustcInvocation {
         if matches!(*state, InvocationState::ShuttingDown) {
             return false;
         }
-        let old = std::mem::replace(&mut *state, InvocationState::Pending);
+        let dirs = state.take_dirs();
         *state = InvocationState::MetadataReady {
             pid,
             diagnostics_before,
             rmeta_path,
-            dirs: old.into_dirs(),
+            dirs,
         };
         self.cvar.notify_all();
         true
@@ -330,11 +335,11 @@ impl RustcInvocation {
             if matches!(*state, InvocationState::ShuttingDown) {
                 return;
             }
-            let old = std::mem::replace(&mut *state, InvocationState::Pending);
+            let dirs = state.take_dirs();
             *state = InvocationState::Completed {
                 exit_code,
                 diagnostics,
-                dirs: old.into_dirs(),
+                dirs,
             };
         } else {
             *state = InvocationState::Failed {

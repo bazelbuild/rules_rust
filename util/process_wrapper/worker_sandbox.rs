@@ -14,8 +14,6 @@
 
 //! Sandbox helpers for the persistent worker.
 
-use std::path::PathBuf;
-
 use super::exec::{materialize_output_file, prepare_outputs_impl, run_request_with_current_dir};
 use super::pipeline::{MaterializeError, OutputMaterializationStats};
 use crate::ProcessWrapperError;
@@ -93,18 +91,17 @@ pub(super) fn seed_sandbox_cache_root(
 /// Used after the metadata action to make the `.rmeta` file visible to Bazel
 /// inside the sandbox before the sandbox is cleaned up.
 pub(super) fn copy_output_to_sandbox(
-    src: &str,
-    sandbox_dir: &str,
+    src: &std::path::Path,
+    sandbox_dir: &std::path::Path,
     original_out_dir: &str,
     dest_subdir: &str,
 ) -> Result<OutputMaterializationStats, MaterializeError> {
     let mut stats = OutputMaterializationStats::default();
-    let src_path = std::path::Path::new(src);
-    let filename = match src_path.file_name() {
+    let filename = match src.file_name() {
         Some(n) => n,
         None => {
             return Err(MaterializeError {
-                path: src_path.to_path_buf(),
+                path: src.to_path_buf(),
                 cause: std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     "source path has no filename",
@@ -112,11 +109,9 @@ pub(super) fn copy_output_to_sandbox(
             });
         }
     };
-    let dest_dir = std::path::Path::new(sandbox_dir)
-        .join(original_out_dir)
-        .join(dest_subdir);
+    let dest_dir = sandbox_dir.join(original_out_dir).join(dest_subdir);
     let dest = dest_dir.join(filename);
-    let hardlinked = materialize_output_file(src_path, &dest)
+    let hardlinked = materialize_output_file(src, &dest)
         .map_err(|cause| MaterializeError { path: dest, cause })?;
     stats.files = 1;
     if hardlinked {
@@ -132,19 +127,19 @@ pub(super) fn copy_output_to_sandbox(
 /// Used by the full action to move the `.rlib` (and `.d`, etc.) from the
 /// persistent directory into the sandbox before responding to Bazel.
 pub(super) fn copy_all_outputs_to_sandbox(
-    pipeline_dir: &PathBuf,
-    sandbox_dir: &str,
+    pipeline_dir: &std::path::Path,
+    sandbox_dir: &std::path::Path,
     original_out_dir: &str,
 ) -> Result<OutputMaterializationStats, MaterializeError> {
-    let dest_dir = std::path::Path::new(sandbox_dir).join(original_out_dir);
+    let dest_dir = sandbox_dir.join(original_out_dir);
     let mut stats = OutputMaterializationStats::default();
     let entries = std::fs::read_dir(pipeline_dir).map_err(|cause| MaterializeError {
-        path: pipeline_dir.clone(),
+        path: pipeline_dir.to_path_buf(),
         cause,
     })?;
     for entry in entries {
         let entry = entry.map_err(|cause| MaterializeError {
-            path: pipeline_dir.clone(),
+            path: pipeline_dir.to_path_buf(),
             cause,
         })?;
         let meta = entry.metadata().map_err(|cause| MaterializeError {

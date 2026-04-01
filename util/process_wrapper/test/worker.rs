@@ -870,8 +870,8 @@ fn test_copy_output_to_sandbox() {
     fs::write(&rmeta_path, b"fake rmeta content").unwrap();
 
     copy_output_to_sandbox(
-        &rmeta_path.display().to_string(),
-        &sandbox_dir.display().to_string(),
+        &rmeta_path,
+        &sandbox_dir,
         out_rel,
         "_pipeline",
     )
@@ -904,7 +904,7 @@ fn test_copy_all_outputs_to_sandbox() {
     fs::write(pipeline_dir.join("libfoo.rmeta"), b"fake rmeta").unwrap();
     fs::write(pipeline_dir.join("libfoo.d"), b"fake dep-info").unwrap();
 
-    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel)
+    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel)
         .unwrap();
 
     let dest = sandbox_dir.join(out_rel);
@@ -932,7 +932,7 @@ fn test_copy_all_outputs_to_sandbox_prefers_hardlinks() {
     let src = pipeline_dir.join("libfoo.rlib");
     fs::write(&src, b"fake rlib").unwrap();
 
-    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir.display().to_string(), out_rel)
+    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel)
         .unwrap();
 
     let dest = sandbox_dir.join(out_rel).join("libfoo.rlib");

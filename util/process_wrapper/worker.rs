@@ -429,16 +429,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         }
 
         if request.cancel {
-            let flag = registry
-                .lock()
-                .expect("request registry mutex poisoned")
-                .get_claim_flag(request.request_id);
-            if let Some(flag) = flag {
+            let mut reg = registry.lock().expect("request registry mutex poisoned");
+            if let Some(flag) = reg.get_claim_flag(request.request_id) {
                 if !flag.swap(true, Ordering::SeqCst) {
-                    registry
-                        .lock()
-                        .expect("request registry mutex poisoned")
-                        .cancel(request.request_id);
+                    reg.cancel(request.request_id);
+                    drop(reg);
                     let response = build_cancel_response(request.request_id);
                     let _ = write_worker_response(&stdout, &response);
                 }
@@ -467,7 +462,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         // Request threads are detached (handle dropped). Bazel shuts down workers
         // via SIGTERM with no drain phase, so there's no opportunity to join.
         // Process exit is the cleanup mechanism.
-        drop(std::thread::spawn({
+        let _ = std::thread::spawn({
             let self_path = self_path.clone();
             let startup_args = startup_args.clone();
             let request = request.clone();
@@ -487,7 +482,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     claim_flag,
                 )
             }
-        }));
+        });
     }
 
     begin_worker_shutdown("stdin_eof");
