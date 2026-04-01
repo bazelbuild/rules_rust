@@ -23,8 +23,8 @@ use std::path::PathBuf;
 use std::process::Child;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
-use std::time::Duration;
 
+use super::exec::{graceful_kill, send_sigterm};
 use super::types::OutputDir;
 use crate::rustc::RustcStderrPolicy;
 
@@ -191,51 +191,6 @@ impl InvocationState {
             | InvocationState::Running { .. }
             | InvocationState::MetadataReady { .. } => None,
         }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Platform-specific kill helpers
-// ---------------------------------------------------------------------------
-
-#[cfg(unix)]
-unsafe extern "C" {
-    fn kill(pid: i32, sig: i32) -> i32;
-}
-
-#[cfg(unix)]
-fn send_sigterm(pid: u32) {
-    if pid > i32::MAX as u32 {
-        return; // Prevent wrapping to negative (process group kill).
-    }
-    unsafe {
-        kill(pid as i32, 15); // SIGTERM
-    }
-}
-
-#[cfg(not(unix))]
-fn send_sigterm(_pid: u32) {
-    // No SIGTERM on non-Unix; graceful_kill will use Child::kill().
-}
-
-/// Send SIGTERM, poll try_wait for 500ms (10 x 50ms), then SIGKILL + wait.
-pub(crate) fn graceful_kill(child: &mut Child) {
-    #[cfg(unix)]
-    {
-        send_sigterm(child.id());
-        for _ in 0..10 {
-            match child.try_wait() {
-                Ok(Some(_)) => return,
-                _ => std::thread::sleep(Duration::from_millis(50)),
-            }
-        }
-        let _ = child.kill();
-        let _ = child.wait();
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = child.kill();
-        let _ = child.wait();
     }
 }
 

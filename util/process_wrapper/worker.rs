@@ -22,6 +22,8 @@ pub(crate) mod logging;
 pub(crate) mod pipeline;
 #[path = "worker_protocol.rs"]
 pub(crate) mod protocol;
+#[path = "worker_exec.rs"]
+pub(crate) mod exec;
 #[path = "worker_sandbox.rs"]
 pub(crate) mod sandbox;
 #[path = "worker_types.rs"]
@@ -50,7 +52,8 @@ use protocol::{
 };
 use registry::{RequestCoordinator, SharedRequestCoordinator};
 use request::RequestExecutor;
-use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request};
+use exec::{prepare_outputs, run_request};
+use sandbox::prepare_outputs_in_dir;
 
 // ---------------------------------------------------------------------------
 // Worker lifecycle and signal handling

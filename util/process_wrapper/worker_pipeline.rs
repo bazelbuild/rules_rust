@@ -29,9 +29,7 @@ use crate::options::{
 use crate::ProcessWrapperError;
 
 use super::protocol::ParsedWorkRequest;
-use super::sandbox::{
-    make_dir_files_writable, make_path_writable, resolve_request_relative_path,
-};
+use super::exec::{make_dir_files_writable, make_path_writable, resolve_request_relative_path};
 use super::types::{OutputDir, PipelineKey};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -570,7 +568,7 @@ pub(super) fn copy_rmeta_unsandboxed(
         return Some(format!("pipelining: failed to create _pipeline dir: {e}"));
     }
     let dest = dest_pipeline.join(filename);
-    if !super::sandbox::is_same_file(rmeta_src, &dest) {
+    if !super::exec::is_same_file(rmeta_src, &dest) {
         if let Err(e) = std::fs::copy(rmeta_src, &dest) {
             return Some(format!("pipelining: failed to copy rmeta: {e}"));
         }
@@ -597,7 +595,7 @@ pub(super) fn copy_outputs_unsandboxed(
         })?;
         if meta.is_file() {
             let dest = dest_dir.join(entry.file_name());
-            if !super::sandbox::is_same_file(&entry.path(), &dest) {
+            if !super::exec::is_same_file(&entry.path(), &dest) {
                 std::fs::copy(entry.path(), &dest).map_err(|e| {
                     format!(
                         "pipelining: failed to copy {} to {}: {e}",

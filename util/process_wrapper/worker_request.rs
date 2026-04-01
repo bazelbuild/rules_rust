@@ -32,9 +32,9 @@ use super::pipeline::{
 };
 use super::protocol::ParsedWorkRequest;
 use super::registry::SharedRequestCoordinator;
+use super::exec::{prepare_outputs, resolve_request_relative_path, run_request};
 use super::sandbox::{
-    copy_all_outputs_to_sandbox, copy_output_to_sandbox, prepare_outputs,
-    resolve_request_relative_path, run_request, run_sandboxed_request,
+    copy_all_outputs_to_sandbox, copy_output_to_sandbox, run_sandboxed_request,
 };
 use super::types::PipelineKey;
 
@@ -357,8 +357,8 @@ impl RequestExecutor {
         self_path: &std::path::Path,
         sandbox_dir: Option<&str>,
     ) -> (i32, String) {
+        use super::exec::spawn_request;
         use super::invocation::spawn_non_pipelined_rustc;
-        use super::sandbox::spawn_request;
 
         let context = if sandbox_dir.is_some() {
             "sandboxed subprocess"

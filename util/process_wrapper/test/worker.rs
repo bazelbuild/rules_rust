@@ -8,7 +8,7 @@ use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
     WorkRequestInput,
 };
-use super::sandbox::resolve_request_relative_path;
+use super::exec::resolve_request_relative_path;
 #[cfg(unix)]
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
@@ -1411,7 +1411,7 @@ fn test_abort_metadata_panic_preserves_full_invocation() {
 fn test_graceful_kill_sigterm_then_sigkill() {
     use std::process::Command;
     use std::time::Instant;
-    use super::invocation::graceful_kill;
+    use super::exec::graceful_kill;
 
     // Spawn a process that traps SIGTERM and exits cleanly.
     let mut child = Command::new("sh")
