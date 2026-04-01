@@ -174,27 +174,14 @@ fn build_full_args(
     assemble_request_argv(startup_args, request_args)
 }
 
-fn request_base_dir(
-    request: &ParsedWorkRequest,
-) -> Result<std::path::PathBuf, ProcessWrapperError> {
-    if let Some(sandbox_dir) = request.sandbox_dir.as_ref() {
-        if sandbox_dir.as_path().is_absolute() {
-            return Ok(sandbox_dir.as_path().to_path_buf());
-        }
-        return std::env::current_dir()
-            .map(|cwd| cwd.join(sandbox_dir.as_path()))
-            .map_err(|e| ProcessWrapperError(format!("failed to resolve worker cwd: {e}")));
-    }
-    std::env::current_dir()
-        .map_err(|e| ProcessWrapperError(format!("failed to resolve worker cwd: {e}")))
-}
-
 fn classify_request(
     startup_args: &[String],
     request: &ParsedWorkRequest,
 ) -> Result<RequestKind, ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments)?;
-    let base_dir = request_base_dir(request)?;
+    let base_dir = request
+        .base_dir()
+        .map_err(ProcessWrapperError)?;
     Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
 }
 
@@ -236,7 +223,7 @@ fn prepare_request_outputs(
 ) -> Result<(), ProcessWrapperError> {
     match request.sandbox_dir.as_ref() {
         Some(_) => {
-            let base_dir = request_base_dir(request)?;
+            let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
             prepare_outputs_in_dir(full_args, &base_dir);
         }
         None => prepare_outputs(full_args),

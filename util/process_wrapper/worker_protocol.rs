@@ -14,6 +14,8 @@
 
 //! JSON worker protocol types and helpers.
 
+use std::path::PathBuf;
+
 use tinyjson::JsonValue;
 
 use super::types::{RequestId, SandboxDir};
@@ -41,6 +43,36 @@ impl ParsedWorkRequest {
             sandbox_dir: extract_sandbox_dir(request)?,
             cancel: extract_cancel(request),
         })
+    }
+
+    /// Resolves the base directory for this request.
+    ///
+    /// When sandboxed, returns the absolute sandbox directory path.
+    /// When unsandboxed, returns the worker's current working directory.
+    pub(crate) fn base_dir(&self) -> Result<PathBuf, String> {
+        if let Some(sandbox_dir) = self.sandbox_dir.as_ref() {
+            if sandbox_dir.as_path().is_absolute() {
+                return Ok(sandbox_dir.as_path().to_path_buf());
+            }
+            return std::env::current_dir()
+                .map(|cwd| cwd.join(sandbox_dir.as_path()))
+                .map_err(|e| format!("failed to resolve worker cwd: {e}"));
+        }
+        std::env::current_dir().map_err(|e| format!("failed to resolve worker cwd: {e}"))
+    }
+
+    /// Like [`base_dir`], but canonicalizes the unsandboxed path to resolve symlinks.
+    ///
+    /// Used by pipelining to get a stable execroot path. Sandbox paths are returned
+    /// as-is since the sandbox directory itself is the canonical root.
+    pub(crate) fn base_dir_canonicalized(&self) -> Result<PathBuf, String> {
+        let dir = self.base_dir()?;
+        if self.sandbox_dir.is_some() {
+            Ok(dir)
+        } else {
+            std::fs::canonicalize(&dir)
+                .map_err(|e| format!("failed to canonicalize worker CWD: {e}"))
+        }
     }
 }
 

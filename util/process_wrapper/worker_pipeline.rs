@@ -207,21 +207,9 @@ pub(super) fn create_pipeline_context(
         pipelining_err(format_args!("failed to resolve pipeline outputs dir: {e}"))
     })?;
 
-    let execroot_dir = if let Some(ref sandbox_dir) = request.sandbox_dir {
-        let sandbox_path = sandbox_dir.as_path();
-        if sandbox_path.is_absolute() {
-            sandbox_path.to_path_buf()
-        } else {
-            let cwd = std::env::current_dir()
-                .map_err(|e| pipelining_err(format_args!("failed to get worker CWD: {e}")))?;
-            cwd.join(sandbox_path)
-        }
-    } else {
-        let cwd = std::env::current_dir()
-            .map_err(|e| pipelining_err(format_args!("failed to get worker CWD: {e}")))?;
-        std::fs::canonicalize(cwd)
-            .map_err(|e| pipelining_err(format_args!("failed to canonicalize worker CWD: {e}")))?
-    };
+    let execroot_dir = request
+        .base_dir_canonicalized()
+        .map_err(|e| pipelining_err(format_args!("{e}")))?;
 
     Ok(PipelineContext {
         root_dir,
