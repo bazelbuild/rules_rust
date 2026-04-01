@@ -72,6 +72,7 @@ impl LintGroup {
         let level = match level {
             LintLevel::Allow => "allow",
             LintLevel::Warn => "warn",
+            LintLevel::ForceWarn => "force-warn",
             LintLevel::Forbid => "forbid",
             LintLevel::Deny => "deny",
         };
@@ -86,10 +87,7 @@ impl LintGroup {
 
 /// Returns the lints priority. It is needed in order to sort the lints according to their importance.
 fn lint_priority(lint: &cargo_toml::Lint) -> i32 {
-    match lint {
-        cargo_toml::Lint::Detailed { level: _, priority } => priority.unwrap_or(0),
-        cargo_toml::Lint::Simple(_) => 0,
-    }
+    lint.priority.into()
 }
 
 /// Formats the given lint set for the given group into CLI format.
@@ -117,11 +115,7 @@ fn format_lint_set<'a>(
     });
 
     let formatted = lints.into_iter().map(|(name, lint)| {
-        let level = match lint {
-            cargo_toml::Lint::Detailed { level, priority: _ } => level,
-            cargo_toml::Lint::Simple(level) => level,
-        };
-        group.format_cli_arg(name, *level)
+        group.format_cli_arg(name, lint.level)
     });
 
     Some(formatted)
@@ -146,17 +140,17 @@ fn generate_lints_info(
     ];
 
     let lints = match &crate_manifest.lints {
-        Some(lints) if lints.workspace => {
+        cargo_toml::Inheritable::Inherited => {
             let workspace = workspace_manifest
                 .as_ref()
                 .and_then(|manifest| manifest.workspace.as_ref())
                 .ok_or({
                     "manifest inherits lints from the workspace, but no workspace manifest provided"
                 })?;
-            workspace.lints.as_ref()
+            Some(&workspace.lints)
         }
-        Some(lints) => Some(&lints.groups),
-        None => None,
+        cargo_toml::Inheritable::Set(groups) if !groups.is_empty() => Some(groups),
+        cargo_toml::Inheritable::Set(_) => None,
     };
 
     for (group, path) in groups {
@@ -291,57 +285,22 @@ mod test {
     fn format_lint_set() {
         assert!(super::format_lint_set(None, &super::LintGroup::Rustc).is_none());
 
+        let lint = |level, priority| Lint { level, priority, config: Default::default() };
         let lints_map: BTreeMap<String, BTreeMap<String, Lint>> = BTreeMap::from_iter([(
             "clippy".into(),
             BTreeMap::from_iter([
-                ("rustc_allow".into(), Lint::Simple(LintLevel::Allow)),
-                ("rustc_forbid".into(), Lint::Simple(LintLevel::Forbid)),
-                ("clippy_warn".into(), Lint::Simple(LintLevel::Warn)),
-                (
-                    "rustdoc_forbid".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Forbid,
-                        priority: Some(20),
-                    },
-                ),
-                ("rustc_warn".into(), Lint::Simple(LintLevel::Warn)),
-                (
-                    "rustc_deny".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Deny,
-                        priority: Some(-2),
-                    },
-                ),
-                ("rustdoc_deny".into(), Lint::Simple(LintLevel::Deny)),
-                ("rustdoc_allow".into(), Lint::Simple(LintLevel::Allow)),
-                (
-                    "clippy_forbid".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Forbid,
-                        priority: Some(-1),
-                    },
-                ),
-                (
-                    "clippy_deny".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Deny,
-                        priority: Some(-1),
-                    },
-                ),
-                (
-                    "rustc_deny_without_priority".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Deny,
-                        priority: None,
-                    },
-                ),
-                (
-                    "rustc_deny_without_priority2".into(),
-                    Lint::Detailed {
-                        level: LintLevel::Deny,
-                        priority: Some(0),
-                    },
-                ),
+                ("rustc_allow".into(), lint(LintLevel::Allow, 0)),
+                ("rustc_forbid".into(), lint(LintLevel::Forbid, 0)),
+                ("clippy_warn".into(), lint(LintLevel::Warn, 0)),
+                ("rustdoc_forbid".into(), lint(LintLevel::Forbid, 20)),
+                ("rustc_warn".into(), lint(LintLevel::Warn, 0)),
+                ("rustc_deny".into(), lint(LintLevel::Deny, -2)),
+                ("rustdoc_deny".into(), lint(LintLevel::Deny, 0)),
+                ("rustdoc_allow".into(), lint(LintLevel::Allow, 0)),
+                ("clippy_forbid".into(), lint(LintLevel::Forbid, -1)),
+                ("clippy_deny".into(), lint(LintLevel::Deny, -1)),
+                ("rustc_deny_without_priority".into(), lint(LintLevel::Deny, 0)),
+                ("rustc_deny_without_priority2".into(), lint(LintLevel::Deny, 0)),
             ]),
         )]);
 
@@ -373,25 +332,10 @@ mod test {
     #[test]
     fn lint_priority() {
         // Test different lint priority scenarios
-        let simple_lint = Lint::Simple(LintLevel::Allow);
-        assert_eq!(super::lint_priority(&simple_lint), 0);
+        let lint = |priority| Lint { level: LintLevel::Allow, priority, config: Default::default() };
 
-        let detailed_no_priority = Lint::Detailed {
-            level: LintLevel::Allow,
-            priority: None,
-        };
-        assert_eq!(super::lint_priority(&detailed_no_priority), 0);
-
-        let detailed_with_priority = Lint::Detailed {
-            level: LintLevel::Allow,
-            priority: Some(5),
-        };
-        assert_eq!(super::lint_priority(&detailed_with_priority), 5);
-
-        let detailed_negative_priority = Lint::Detailed {
-            level: LintLevel::Allow,
-            priority: Some(-3),
-        };
-        assert_eq!(super::lint_priority(&detailed_negative_priority), -3);
+        assert_eq!(super::lint_priority(&lint(0)), 0);
+        assert_eq!(super::lint_priority(&lint(5)), 5);
+        assert_eq!(super::lint_priority(&lint(-3)), -3);
     }
 }
