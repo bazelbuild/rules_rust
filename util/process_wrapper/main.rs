@@ -15,6 +15,7 @@
 mod flags;
 mod options;
 mod output;
+mod pw_args;
 mod rustc;
 mod util;
 mod worker;
