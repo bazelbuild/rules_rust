@@ -14,7 +14,7 @@
 
 //! Per-request context for Bazel work requests.
 //!
-//! `BazelRequest` pairs a request ID with its classified `RequestKind` and an
+//! `RequestExecutor` pairs a request ID with its classified `RequestKind` and an
 //! optional shared `RustcInvocation`. It provides `execute_*` methods that use
 //! `RustcInvocation` + rustc threads for pipelined requests and delegate to
 //! subprocess execution for non-pipelined requests.
@@ -39,13 +39,13 @@ use super::sandbox::{
 use super::types::PipelineKey;
 
 /// Per-request context, owned by the request thread. Not stored in the registry.
-pub(super) struct BazelRequest {
+pub(super) struct RequestExecutor {
     pub(super) kind: RequestKind,
     /// Shared invocation for pipelined requests. None for non-pipelined.
     pub(super) invocation: Option<Arc<RustcInvocation>>,
 }
 
-impl BazelRequest {
+impl RequestExecutor {
     pub(super) fn new(kind: RequestKind, invocation: Option<Arc<RustcInvocation>>) -> Self {
         Self { kind, invocation }
     }

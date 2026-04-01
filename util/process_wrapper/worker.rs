@@ -49,7 +49,7 @@ use protocol::{
     extract_request_id_from_raw_line, WorkRequestContext,
 };
 use registry::{RequestRegistry, SharedRequestRegistry};
-use request::BazelRequest;
+use request::RequestExecutor;
 use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request};
 
 // ---------------------------------------------------------------------------
@@ -260,18 +260,18 @@ fn execute_singleplex_request(
     Ok(())
 }
 
-/// Request thread using BazelRequest + RustcInvocation.
+/// Request thread using RequestExecutor + RustcInvocation.
 fn run_request_thread(
     self_path: std::path::PathBuf,
     startup_args: Vec<String>,
     request: WorkRequestContext,
-    bazel_request: BazelRequest,
+    request_executor: RequestExecutor,
     stdout: SharedStdout,
     registry: SharedRequestRegistry,
     state_roots: Arc<WorkerStateRoots>,
     claim_flag: Arc<AtomicBool>,
 ) {
-    log_request_thread_start(&request, &bazel_request.kind);
+    log_request_thread_start(&request, &request_executor.kind);
 
     // Process-level shutdown: Bazel has sent SIGTERM and won't read responses.
     // Just clean up and exit — no point sending a response into a dead pipe.
@@ -297,14 +297,14 @@ fn run_request_thread(
             return (0, String::new());
         }
 
-        match &bazel_request.kind {
+        match &request_executor.kind {
             RequestKind::Metadata { .. } => {
-                bazel_request.execute_metadata(&request, full_args, &state_roots, &registry)
+                request_executor.execute_metadata(&request, full_args, &state_roots, &registry)
             }
             RequestKind::Full { .. } => {
-                bazel_request.execute_full(&request, full_args, &self_path)
+                request_executor.execute_full(&request, full_args, &self_path)
             }
-            RequestKind::NonPipelined => bazel_request.execute_non_pipelined(
+            RequestKind::NonPipelined => request_executor.execute_non_pipelined(
                 full_args,
                 &self_path,
                 request.sandbox_dir.as_ref().map(|d| d.as_str()),
@@ -315,10 +315,10 @@ fn run_request_thread(
         Err(_) => {
             let mut reg = registry.lock().expect("request registry mutex poisoned");
             // Shut down via registry (covers both metadata and full requests).
-            if let Some(inv) = &bazel_request.invocation {
+            if let Some(inv) = &request_executor.invocation {
                 inv.request_shutdown();
             }
-            if let Some(key) = bazel_request.kind.key() {
+            if let Some(key) = request_executor.kind.key() {
                 if let Some(inv) = reg.get_invocation(key) {
                     inv.request_shutdown();
                 }
@@ -335,8 +335,8 @@ fn run_request_thread(
         // Full and non-pipelined requests are the last consumer of an
         // invocation — remove it to prevent stale entries accumulating
         // across builds in this long-lived worker process.
-        if let Some(key) = bazel_request.kind.key() {
-            if !matches!(bazel_request.kind, RequestKind::Metadata { .. }) {
+        if let Some(key) = request_executor.kind.key() {
+            if !matches!(request_executor.kind, RequestKind::Metadata { .. }) {
                 reg.remove_invocation(key);
             }
         }
@@ -370,7 +370,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
 
     let stdin = io::stdin();
     let stdout: SharedStdout = Arc::new(Mutex::new(()));
-    let registry: SharedRequestRegistry = Arc::new(Mutex::new(RequestRegistry::new()));
+    let registry: SharedRequestRegistry = Arc::new(Mutex::new(RequestRegistry::default()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
 
     for line in stdin.lock().lines() {
@@ -457,7 +457,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 }
             }
         };
-        let bazel_request = BazelRequest::new(request_kind.clone(), invocation);
+        let request_executor = RequestExecutor::new(request_kind.clone(), invocation);
         // Request threads are detached (handle dropped). Bazel shuts down workers
         // via SIGTERM with no drain phase, so there's no opportunity to join.
         // Process exit is the cleanup mechanism.
@@ -474,7 +474,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     self_path,
                     startup_args,
                     request,
-                    bazel_request,
+                    request_executor,
                     stdout,
                     registry,
                     state_roots,
