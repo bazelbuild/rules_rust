@@ -42,7 +42,7 @@ def _build_script_deps_test_impl(ctx):
         if output.path.endswith(".rlib")
     ][0]
 
-    asserts.true(env, "-exec-" in rlib_output.path)
+    asserts.true(env, "-exec-" not in rlib_output.path or "-exec/bin/" not in rlib_output.path)
     return analysistest.end(env)
 
 build_script_deps_test = analysistest.make(

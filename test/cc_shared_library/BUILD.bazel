@@ -27,6 +27,10 @@ cc_test(
     name = "test",
     srcs = ["main.c"],
     dynamic_deps = [":shared"],
+    env = {
+        # TODO: https://github.com/bazelbuild/rules_cc/issues/613
+        "IGNORE_COVERAGE_COLLECTION_FAILURES": "1",
+    },
     linkstatic = True,
     deps = [":c_lib"],
 )
