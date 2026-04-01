@@ -31,7 +31,7 @@ use super::pipeline::{
     WorkerStateRoots,
 };
 use super::protocol::ParsedWorkRequest;
-use super::registry::SharedRequestRegistry;
+use super::registry::SharedRequestCoordinator;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, prepare_outputs,
     resolve_request_relative_path, run_request, run_sandboxed_request,
@@ -59,7 +59,7 @@ impl RequestExecutor {
         request: &ParsedWorkRequest,
         full_args: Vec<String>,
         state_roots: &WorkerStateRoots,
-        registry: &SharedRequestRegistry,
+        registry: &SharedRequestCoordinator,
     ) -> (i32, String) {
         let key = match &self.kind {
             RequestKind::Metadata { key } => key.clone(),

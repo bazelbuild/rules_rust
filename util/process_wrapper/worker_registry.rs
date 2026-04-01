@@ -14,9 +14,9 @@
 
 //! Central registry of all in-flight requests and shared invocations.
 //!
-//! `RequestRegistry` replaces the old `PipelineState` as the single owner of
+//! `RequestCoordinator` replaces the old `PipelineState` as the single owner of
 //! invocation lifecycles, claim flags, and request-to-pipeline mappings. It is
-//! wrapped in `Arc<Mutex<..>>` (`SharedRequestRegistry`) for thread-safe access
+//! wrapped in `Arc<Mutex<..>>` (`SharedRequestCoordinator`) for thread-safe access
 //! from the reader thread, request threads, and signal handlers.
 
 use std::collections::HashMap;
@@ -26,8 +26,8 @@ use std::sync::{Arc, Mutex};
 use super::invocation::RustcInvocation;
 use super::types::{PipelineKey, RequestId};
 
-/// Thread-safe shared handle to the `RequestRegistry`.
-pub(crate) type SharedRequestRegistry = Arc<Mutex<RequestRegistry>>;
+/// Thread-safe shared handle to the `RequestCoordinator`.
+pub(crate) type SharedRequestCoordinator = Arc<Mutex<RequestCoordinator>>;
 
 /// Central owner of all invocations and request metadata.
 ///
@@ -36,7 +36,8 @@ pub(crate) type SharedRequestRegistry = Arc<Mutex<RequestRegistry>>;
 /// drain phase, so there is no opportunity to join threads gracefully — process
 /// exit is the only cleanup that matters. This avoids unbounded `JoinHandle`
 /// accumulation in long-lived workers that persist across many builds.
-pub(crate) struct RequestRegistry {
+#[derive(Default)]
+pub(crate) struct RequestCoordinator {
     /// Pipeline key -> shared invocation.
     invocations: HashMap<PipelineKey, Arc<RustcInvocation>>,
     /// request_id -> pipeline key (pipelined requests, for O(1) cancel lookup).
@@ -45,15 +46,7 @@ pub(crate) struct RequestRegistry {
     claim_flags: HashMap<RequestId, Arc<AtomicBool>>,
 }
 
-impl RequestRegistry {
-    pub fn new() -> Self {
-        RequestRegistry {
-            invocations: HashMap::new(),
-            request_index: HashMap::new(),
-            claim_flags: HashMap::new(),
-        }
-    }
-
+impl RequestCoordinator {
     /// Register a metadata request. Records the key mapping and claim flag.
     /// The invocation is NOT created here — it is created by
     /// `spawn_pipelined_rustc` and inserted via `insert_invocation` after

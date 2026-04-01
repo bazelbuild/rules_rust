@@ -437,8 +437,8 @@ impl RustcInvocation {
     }
 }
 
-// No Drop impl — cleanup is driven explicitly by `RequestRegistry::cancel()`
-// and `RequestRegistry::shutdown_all()`, which call `request_shutdown()`.
+// No Drop impl — cleanup is driven explicitly by `RequestCoordinator::cancel()`
+// and `RequestCoordinator::shutdown_all()`, which call `request_shutdown()`.
 
 // ---------------------------------------------------------------------------
 // spawn_non_pipelined_rustc — rustc thread for a non-pipelined invocation
@@ -498,6 +498,16 @@ pub(crate) fn spawn_non_pipelined_rustc(child: Child) -> Arc<RustcInvocation> {
 // Artifact detection
 // ---------------------------------------------------------------------------
 
+/// Processes a single stderr line through the policy and appends to diagnostics.
+fn accumulate_diagnostic(line: &str, policy: &mut RustcStderrPolicy, diagnostics: &mut String) {
+    if let Some(processed) = policy.process_line(line) {
+        if !diagnostics.is_empty() {
+            diagnostics.push('\n');
+        }
+        diagnostics.push_str(&processed);
+    }
+}
+
 /// Extracts the artifact path from an rmeta artifact notification JSON line.
 /// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
 /// `None` for all other lines.
@@ -549,15 +559,6 @@ pub(crate) fn spawn_pipelined_rustc(
         let mut policy = RustcStderrPolicy::from_option_str(rustc_output_format.as_deref());
 
         let mut diagnostics = String::new();
-        let mut accumulate_diagnostics = |line: &str, policy: &mut RustcStderrPolicy| {
-            if let Some(processed) = policy.process_line(line) {
-                if !diagnostics.is_empty() {
-                    diagnostics.push('\n');
-                }
-                diagnostics.push_str(&processed);
-            }
-        };
-
         let mut lines = reader.lines().map_while(Result::ok);
 
         // Phase 1: process lines until metadata (.rmeta) is emitted.
@@ -570,7 +571,7 @@ pub(crate) fn spawn_pipelined_rustc(
                 );
                 break;
             }
-            accumulate_diagnostics(&line, &mut policy);
+            accumulate_diagnostic(&line, &mut policy, &mut diagnostics);
         }
 
         // Phase 2: process remaining lines (codegen diagnostics).
@@ -578,7 +579,7 @@ pub(crate) fn spawn_pipelined_rustc(
             if extract_rmeta_path(&line).is_some() {
                 continue;
             }
-            accumulate_diagnostics(&line, &mut policy);
+            accumulate_diagnostic(&line, &mut policy, &mut diagnostics);
         }
 
         // stderr EOF — child has closed its stderr (likely exiting).

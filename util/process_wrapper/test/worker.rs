@@ -13,7 +13,7 @@ use super::sandbox::resolve_request_relative_path;
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
-use super::registry::RequestRegistry;
+use super::registry::RequestCoordinator;
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
@@ -1272,12 +1272,12 @@ fn test_cancel_non_pipelined_kills_child() {
 }
 
 // ---------------------------------------------------------------------------
-// RequestRegistry tests
+// RequestCoordinator tests
 // ---------------------------------------------------------------------------
 
 #[test]
 fn test_registry_register_metadata_records_claim() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     assert!(!flag.load(Ordering::SeqCst));
     // No invocation until insert_invocation is called.
@@ -1286,7 +1286,7 @@ fn test_registry_register_metadata_records_claim() {
 
 #[test]
 fn test_registry_insert_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     let inv = Arc::new(RustcInvocation::new());
     reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
@@ -1296,7 +1296,7 @@ fn test_registry_insert_invocation() {
 
 #[test]
 fn test_registry_register_full_finds_existing_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let _flag1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
     let (_flag2, inv2) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
@@ -1305,14 +1305,14 @@ fn test_registry_register_full_finds_existing_invocation() {
 
 #[test]
 fn test_registry_register_full_no_invocation_returns_none() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let (_flag, inv) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
     assert!(inv.is_none());
 }
 
 #[test]
 fn test_registry_cancel_shuts_down_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     let inv = Arc::new(RustcInvocation::new());
     reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
@@ -1322,7 +1322,7 @@ fn test_registry_cancel_shuts_down_invocation() {
 
 #[test]
 fn test_registry_shutdown_all() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     let inv1 = Arc::new(RustcInvocation::new());
     reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv1));
@@ -1334,7 +1334,7 @@ fn test_registry_shutdown_all() {
 
 #[test]
 fn test_registry_remove_request_preserves_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
     reg.remove_request(RequestId(42));
@@ -1350,7 +1350,7 @@ fn test_registry_remove_request_preserves_invocation() {
 /// New behavior: remove_request only removes request metadata, not the invocation.
 #[test]
 fn test_metadata_cleanup_preserves_invocation_for_full() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
     let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
     reg.insert_invocation(key.clone(), Arc::new(RustcInvocation::new()));
@@ -1369,7 +1369,7 @@ fn test_metadata_cleanup_preserves_invocation_for_full() {
 /// would call discard_pending_request which could destroy the pipeline entry.
 #[test]
 fn test_metadata_skip_cleanup_no_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
     let _flag = reg.register_metadata(RequestId(42), key.clone());
 
@@ -1385,7 +1385,7 @@ fn test_metadata_skip_cleanup_no_invocation() {
 /// and the full request's registry entry remain valid.
 #[test]
 fn test_abort_metadata_panic_preserves_full_invocation() {
-    let mut reg = RequestRegistry::new();
+    let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
     let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
     let inv = Arc::new(RustcInvocation::new());

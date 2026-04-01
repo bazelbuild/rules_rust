@@ -48,7 +48,7 @@ use protocol::{
     build_cancel_response, build_response, extract_request_id,
     extract_request_id_from_raw_line, ParsedWorkRequest,
 };
-use registry::{RequestRegistry, SharedRequestRegistry};
+use registry::{RequestCoordinator, SharedRequestCoordinator};
 use request::RequestExecutor;
 use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request};
 
@@ -267,7 +267,7 @@ fn run_request_thread(
     request: ParsedWorkRequest,
     request_executor: RequestExecutor,
     stdout: SharedStdout,
-    registry: SharedRequestRegistry,
+    registry: SharedRequestCoordinator,
     state_roots: Arc<WorkerStateRoots>,
     claim_flag: Arc<AtomicBool>,
 ) {
@@ -370,7 +370,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
 
     let stdin = io::stdin();
     let stdout: SharedStdout = Arc::new(Mutex::new(()));
-    let registry: SharedRequestRegistry = Arc::new(Mutex::new(RequestRegistry::default()));
+    let registry: SharedRequestCoordinator = Arc::new(Mutex::new(RequestCoordinator::default()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
 
     for line in stdin.lock().lines() {
