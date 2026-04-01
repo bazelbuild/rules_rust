@@ -95,7 +95,7 @@ rust_library(
     }),
     version = "0.8.20",
     deps = [
-        "@rrc__serde-1.0.217//:serde",
+        "@rrc__serde-1.0.228//:serde",
         "@rrc__serde_spanned-0.6.8//:serde_spanned",
         "@rrc__toml_datetime-0.6.8//:toml_datetime",
         "@rrc__toml_edit-0.22.24//:toml_edit",

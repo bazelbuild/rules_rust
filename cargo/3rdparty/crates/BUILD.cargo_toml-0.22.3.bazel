@@ -88,9 +88,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.20.5",
+    version = "0.22.3",
     deps = [
-        "@rrc__serde-1.0.217//:serde",
-        "@rrc__toml-0.8.20//:toml",
+        "@rrc__serde-1.0.228//:serde",
+        "@rrc__toml-0.9.12-spec-1.1.0//:toml",
     ],
 )

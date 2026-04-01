@@ -11,7 +11,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 package(default_visibility = ["//visibility:public"])
 
 rust_library(
-    name = "erased_serde",
+    name = "indexmap",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,7 +29,8 @@ rust_library(
         ],
     ),
     crate_features = [
-        "alloc",
+        "default",
+        "std",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -38,7 +39,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=erased-serde",
+        "crate-name=indexmap",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,9 +92,9 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.5",
+    version = "2.13.0",
     deps = [
-        "@rrc__serde-1.0.228//:serde",
-        "@rrc__typeid-1.0.2//:typeid",
+        "@rrc__equivalent-1.0.1//:equivalent",
+        "@rrc__hashbrown-0.16.1//:hashbrown",
     ],
 )
