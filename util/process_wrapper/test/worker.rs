@@ -1,8 +1,9 @@
-use super::pipeline::{
-    apply_substs, build_rustc_env, detect_pipelining_mode, expand_rustc_args,
-    find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs, prepare_rustc_args,
-    rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags, RequestKind,
+use super::args::{
+    apply_substs, build_rustc_env, expand_rustc_args, find_out_dir_in_expanded, parse_pw_args,
+    prepare_expanded_rustc_outputs, prepare_rustc_args, rewrite_out_dir_in_expanded,
+    scan_pipelining_flags, strip_pipelining_flags,
 };
+use super::pipeline::{detect_pipelining_mode, RequestKind};
 use super::invocation::{InvocationDirs, RustcInvocation};
 use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,

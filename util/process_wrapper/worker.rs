@@ -20,6 +20,8 @@
 pub(crate) mod logging;
 #[path = "worker_pipeline.rs"]
 pub(crate) mod pipeline;
+#[path = "worker_args.rs"]
+pub(crate) mod args;
 #[path = "worker_protocol.rs"]
 pub(crate) mod protocol;
 #[path = "worker_exec.rs"]
@@ -45,7 +47,8 @@ use logging::{
     append_worker_lifecycle_log, current_pid, current_thread_label, install_worker_panic_hook,
     log_request_received, log_request_thread_start, WorkerLifecycleGuard,
 };
-use pipeline::{relocate_pw_flags, RequestKind, WorkerStateRoots};
+use args::relocate_pw_flags;
+use pipeline::{RequestKind, WorkerStateRoots};
 use protocol::{
     build_cancel_response, build_response, extract_request_id,
     extract_request_id_from_raw_line, ParsedWorkRequest,

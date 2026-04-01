@@ -23,12 +23,14 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 
 use super::invocation::{spawn_pipelined_rustc, InvocationDirs, RustcInvocation};
+use super::args::{
+    build_rustc_env, parse_pw_args, prepare_expanded_rustc_outputs, prepare_rustc_args,
+    resolve_pw_args_for_request, rewrite_emit_metadata_path, rewrite_out_dir_in_expanded,
+    strip_pipelining_flags,
+};
 use super::pipeline::{
-    append_pipeline_log, build_rustc_env, copy_outputs_unsandboxed, copy_rmeta_unsandboxed,
-    create_pipeline_context, maybe_cleanup_pipeline_dir, parse_pw_args,
-    prepare_expanded_rustc_outputs, prepare_rustc_args, resolve_pw_args_for_request,
-    rewrite_emit_metadata_path, rewrite_out_dir_in_expanded, strip_pipelining_flags, RequestKind,
-    WorkerStateRoots,
+    append_pipeline_log, copy_outputs_unsandboxed, copy_rmeta_unsandboxed,
+    create_pipeline_context, maybe_cleanup_pipeline_dir, RequestKind, WorkerStateRoots,
 };
 use super::protocol::ParsedWorkRequest;
 use super::registry::SharedRequestCoordinator;
