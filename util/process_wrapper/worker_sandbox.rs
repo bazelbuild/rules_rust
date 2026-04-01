@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Sandbox helpers for the persistent worker.
+//! Sandbox-specific worker helpers.
 
-use super::exec::{materialize_output_file, prepare_outputs_impl, run_request_with_current_dir};
+use super::exec::{materialize_output_file, run_request_with_current_dir};
 use super::pipeline::{MaterializeError, OutputMaterializationStats};
 use crate::ProcessWrapperError;
 
@@ -86,10 +86,7 @@ pub(super) fn seed_sandbox_cache_root(
     Ok(())
 }
 
-/// Copies the file at `src` into `<sandbox_dir>/<original_out_dir>/<dest_subdir>/`.
-///
-/// Used after the metadata action to make the `.rmeta` file visible to Bazel
-/// inside the sandbox before the sandbox is cleaned up.
+/// Copies `src` into the request sandbox under `original_out_dir/dest_subdir`.
 pub(super) fn copy_output_to_sandbox(
     src: &std::path::Path,
     sandbox_dir: &std::path::Path,
@@ -122,10 +119,7 @@ pub(super) fn copy_output_to_sandbox(
     Ok(stats)
 }
 
-/// Copies all regular files from `pipeline_dir` into `<sandbox_dir>/<original_out_dir>/`.
-///
-/// Used by the full action to move the `.rlib` (and `.d`, etc.) from the
-/// persistent directory into the sandbox before responding to Bazel.
+/// Copies all regular files from `pipeline_dir` into the request sandbox.
 pub(super) fn copy_all_outputs_to_sandbox(
     pipeline_dir: &std::path::Path,
     sandbox_dir: &std::path::Path,
@@ -161,10 +155,7 @@ pub(super) fn copy_all_outputs_to_sandbox(
     Ok(stats)
 }
 
-/// Like `run_request` but sets `current_dir(sandbox_dir)` on the subprocess.
-///
-/// When Bazel provides a `sandboxDir`, setting the subprocess CWD to it makes
-/// all relative paths in arguments resolve correctly within the sandbox.
+/// Runs a subprocess with `sandbox_dir` as its current directory.
 pub(super) fn run_sandboxed_request(
     self_path: &std::path::Path,
     arguments: Vec<String>,
@@ -179,6 +170,3 @@ pub(super) fn run_sandboxed_request(
     )
 }
 
-pub(super) fn prepare_outputs_in_dir(args: &[String], request_base_dir: &std::path::Path) {
-    prepare_outputs_impl(args, Some(request_base_dir));
-}

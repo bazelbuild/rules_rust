@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! General subprocess execution, file utilities, and process management
-//! for the persistent worker.
-//!
-//! Functions here are used by both sandboxed and non-sandboxed code paths.
-//! Sandbox-specific logic stays in worker_sandbox.rs.
+//! Shared subprocess and filesystem helpers for the persistent worker.
 
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
 use crate::ProcessWrapperError;
-
-// ---------------------------------------------------------------------------
-// Platform-specific kill helpers
-// ---------------------------------------------------------------------------
 
 #[cfg(unix)]
 unsafe extern "C" {
@@ -45,7 +37,7 @@ pub(super) fn send_sigterm(pid: u32) {
 
 #[cfg(not(unix))]
 pub(super) fn send_sigterm(_pid: u32) {
-    // No SIGTERM on non-Unix; graceful_kill will use Child::kill().
+    // Non-Unix falls back to `Child::kill()` in `graceful_kill`.
 }
 
 /// Send SIGTERM, poll try_wait for 500ms (10 x 50ms), then SIGKILL + wait.
@@ -68,10 +60,6 @@ pub(crate) fn graceful_kill(child: &mut Child) {
         let _ = child.wait();
     }
 }
-
-// ---------------------------------------------------------------------------
-// Path utilities
-// ---------------------------------------------------------------------------
 
 /// Returns `true` if both paths resolve to the same inode after canonicalization.
 /// Returns `false` if either path doesn't exist or can't be canonicalized.
@@ -109,9 +97,7 @@ pub(super) fn materialize_output_file(
         std::fs::create_dir_all(parent)?;
     }
 
-    // Skip if src and dest resolve to the same file (e.g., when rustc writes
-    // directly into the sandbox via --emit=metadata=<relative-path> and the
-    // copy destination is the same location). Removing dest would delete src.
+    // Avoid deleting the source when rustc already wrote to the destination.
     if is_same_file(src, dest) {
         return Ok(false);
     }
@@ -136,33 +122,20 @@ pub(super) fn materialize_output_file(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Output writability helpers
-// ---------------------------------------------------------------------------
-
-/// Ensures output files in rustc's `--out-dir` are writable before each request.
+/// Makes files under each discovered `--out-dir` writable before a request runs.
 ///
-/// Workers run in execroot without sandboxing. Bazel marks action outputs
-/// read-only after each successful action, and the disk cache hardlinks them
-/// as read-only. With pipelined compilation, two separate actions (RustcMetadata
-/// and Rustc) both write to the same `.rmeta` path. After the first succeeds,
-/// Bazel makes its output read-only; the second worker request then fails with
-/// "output file ... is not writeable".
+/// Bazel can leave prior outputs read-only, especially when metadata and full
+/// actions reuse the same paths. This scans direct args, `--arg-file`, and
+/// `@flagfile` contents.
 ///
-/// This function scans `args` for `--out-dir=<dir>` — both inline and inside any
-/// `--arg-file <path>` (process_wrapper's own arg-file mechanism) or `@flagfile`
-/// (Bazel's param file convention) — and makes all regular files in those
-/// directories writable.
-pub(super) fn prepare_outputs(args: &[String]) {
-    prepare_outputs_impl(args, None);
-}
-
-pub(super) fn prepare_outputs_impl(args: &[String], request_base_dir: Option<&std::path::Path>) {
+/// When `request_base_dir` is `Some`, relative paths in args are resolved against
+/// that directory (used for sandboxed requests). When `None`, paths resolve
+/// against the current working directory.
+pub(super) fn prepare_outputs(args: &[String], request_base_dir: Option<&std::path::Path>) {
     let mut out_dirs: Vec<String> = Vec::new();
 
-    let mut i = 0;
-    while i < args.len() {
-        let arg = &args[i];
+    let mut args_iter = args.iter().peekable();
+    while let Some(arg) = args_iter.next() {
         if let Some(dir) = arg.strip_prefix("--out-dir=") {
             out_dirs.push(
                 resolve_request_relative_path(dir, request_base_dir)
@@ -172,12 +145,11 @@ pub(super) fn prepare_outputs_impl(args: &[String], request_base_dir: Option<&st
         } else if let Some(flagfile_path) = arg.strip_prefix('@') {
             scan_file_for_out_dir(flagfile_path, request_base_dir, &mut out_dirs);
         } else if arg == "--arg-file" {
-            if let Some(path) = args.get(i + 1) {
+            if let Some(path) = args_iter.peek() {
                 scan_file_for_out_dir(path, request_base_dir, &mut out_dirs);
-                i += 1;
+                args_iter.next();
             }
         }
-        i += 1;
     }
 
     for out_dir in out_dirs {
@@ -187,9 +159,7 @@ pub(super) fn prepare_outputs_impl(args: &[String], request_base_dir: Option<&st
     }
 }
 
-/// Reads `path` line-by-line, collecting any `--out-dir=<dir>` values.
-/// When `request_base_dir` is `Some`, resolves both the paramfile path and any
-/// discovered output directories against it.
+/// Reads `path` and collects any `--out-dir=<dir>` values.
 pub(super) fn scan_file_for_out_dir(
     path: &str,
     request_base_dir: Option<&std::path::Path>,
@@ -210,7 +180,7 @@ pub(super) fn scan_file_for_out_dir(
     }
 }
 
-/// Makes all regular files in `dir` writable (removes read-only bit).
+/// Makes all regular files in `dir` writable.
 pub(super) fn make_dir_files_writable(dir: &str) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
@@ -243,15 +213,28 @@ pub(super) fn make_path_writable(path: &std::path::Path) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Subprocess execution
-// ---------------------------------------------------------------------------
+pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
+    for arg in args {
+        if let Some(dir) = arg.strip_prefix("--out-dir=") {
+            make_dir_files_writable(dir);
+            let pipeline_dir = format!("{dir}/_pipeline");
+            make_dir_files_writable(&pipeline_dir);
+            continue;
+        }
 
-/// Executes a single WorkRequest by spawning process_wrapper with the given
-/// arguments. Returns (exit_code, combined_output).
-///
-/// The spawned process runs with the worker's environment and working directory
-/// (Bazel's execroot), so incremental compilation caches see stable paths.
+        let Some(emit) = arg.strip_prefix("--emit=") else {
+            continue;
+        };
+        for part in emit.split(',') {
+            let Some((_, path)) = part.split_once('=') else {
+                continue;
+            };
+            make_path_writable(std::path::Path::new(path));
+        }
+    }
+}
+
+/// Runs one process_wrapper subprocess and returns its exit code and output.
 pub(super) fn run_request(
     self_path: &std::path::Path,
     arguments: Vec<String>,

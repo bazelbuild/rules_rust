@@ -49,20 +49,17 @@ fn read_to_array(reader: impl Read) -> Result<Vec<String>, String> {
         if line.is_empty() {
             continue;
         }
-        // a \ at the end of a line allows us to escape the new line break,
-        // \\ yields a single \, so \\\ translates to a single \ and a new line
-        // escape
+        // Odd trailing backslashes escape the newline; even counts do not.
         let end_backslash_count = line.chars().rev().take_while(|&c| c == '\\').count();
-        // a 0 or even number of backslashes do not lead to a new line escape
         let escape = end_backslash_count % 2 == 1;
-        //  remove backslashes and add back two for every one
+        // Keep escaped newlines and collapse escaped backslashes.
         let l = line.trim_end_matches('\\');
         escaped_line.push_str(l);
         for _ in 0..end_backslash_count / 2 {
             escaped_line.push('\\');
         }
         if escape {
-            // we add a newline as we expect a line after this
+            // Preserve the logical newline for the next physical line.
             escaped_line.push('\n');
         } else {
             ret.push(escaped_line);
@@ -85,14 +82,10 @@ fn stamp_status_to_array(reader: impl Read) -> Result<Vec<(String, String)>, Str
         .collect()
 }
 
-/// Consolidates files from multiple `-Ldependency` directories into a single
-/// `unified_dir` using hard links (with copy fallback). This works around
-/// Windows rustc's ~32K search-path buffer limit that causes E0463 when many
-/// transitive `-Ldependency` entries are present.
+/// Consolidates `-Ldependency` contents into one directory on Windows.
 ///
-/// Returns the number of files linked/copied. Skips directories that don't
-/// exist (e.g. action-cache artifacts not yet materialized) and duplicate
-/// filenames (first occurrence wins, case-insensitive on Windows).
+/// Returns the number of files linked or copied, skipping missing directories
+/// and duplicate filenames.
 #[cfg(windows)]
 pub(crate) fn consolidate_deps_into(
     dependency_dirs: &[impl AsRef<std::path::Path>],
@@ -155,12 +148,9 @@ pub(crate) fn consolidate_deps_into(
     count
 }
 
-/// Applies `${key}` → `value` substitution mappings to `s`.
+/// Applies `${key}` -> `value` substitutions to `s`.
 ///
-/// On Windows, `std::fs::canonicalize` produces `\\?\` verbatim paths where
-/// forward slashes are literal, not separators. After substituting a value
-/// that contains `\\?\`, any remaining `/` in the result would break path
-/// resolution. This step can be omitted on other platforms.
+/// On Windows, also normalizes `/` after verbatim-path substitutions.
 pub(crate) fn apply_substitutions(s: &mut String, subst: &[(String, String)]) {
     for (k, v) in subst {
         *s = s.replace(&format!("${{{k}}}"), v);

@@ -169,16 +169,8 @@ fn get_dependency_search_paths_from_args(
     })
 }
 
-// On Windows, rustc's internal search-path buffer appears to be limited to
-// ~32K characters. With many transitive dependencies (400+ `-Ldependency`
-// entries), the cumulative path length exceeds this limit and rustc silently
-// fails to resolve crates, reporting E0463 ("can't find crate"). This applies
-// even if the -Ldependencies are passed via @argfile.
-//
-// Fix: hard-link all rlib/rmeta files from all `-Ldependency` directories
-// into a single consolidated directory, replacing hundreds of search paths
-// with one. Hard links share the same inode/content so rustc sees identical
-// SVH values and E0460 (SVH mismatch) does not occur.
+// On Windows, collapse many `-Ldependency` entries into one directory to stay
+// under rustc's search-path limits.
 #[cfg(windows)]
 fn consolidate_dependency_search_paths(
     args: &[String],
@@ -246,11 +238,7 @@ enum CacheSeedOutcome {
 }
 
 fn cache_root_from_execroot_ancestor(cwd: &std::path::Path) -> Option<PathBuf> {
-    // Walk up from cwd looking for a sibling "cache" directory at each level.
-    // Skip directories named "execroot" — cache is never inside execroot itself,
-    // but its parent (e.g. <output_base>) typically has a sibling "cache" dir.
-    // Typical Bazel layout: <output_base>/execroot/_main/ (cwd)
-    //                       <output_base>/cache/          (target)
+    // Walk upward looking for the output-base `cache` directory.
     for ancestor in cwd.ancestors() {
         if ancestor.file_name().is_some_and(|name| name == "execroot") {
             continue;
@@ -379,10 +367,7 @@ fn process_line(line: String, format: ErrorFormat) -> Result<LineOutput, String>
     rustc::process_stderr_line(line, format)
 }
 
-/// Core standalone compilation logic extracted from main().
-///
-/// Spawns the child process (rustc) with the given options, processes stderr
-/// output, handles touch_file/copy_output on success, and returns the exit code.
+/// Runs the standalone process_wrapper path.
 pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError> {
     let (child_arguments, dep_argfile_cleanup) =
         consolidate_dependency_search_paths(&opts.child_arguments)?;
@@ -463,7 +448,7 @@ pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError>
             move |line| process_line(line, format),
         )
     } else {
-        // Process output normally by forwarding stderr
+        // No rustc-specific processing; forward stderr unchanged.
         process_output(
             &mut child_stderr,
             stderr.as_mut(),
@@ -500,16 +485,15 @@ pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError>
 }
 
 fn main() -> Result<(), ProcessWrapperError> {
-    // Check if Bazel is invoking us as a persistent worker.
+    // Worker mode has its own entry point.
     if std::env::args().any(|a| a == "--persistent_worker") {
         return worker::worker_main();
     }
 
     let opts = options().map_err(|e| ProcessWrapperError(e.to_string()))?;
 
-    // Outside worker mode, a pipelining-full action can reuse the metadata action's
-    // side-effect `.rlib` if it is still present; otherwise we fall back to a normal
-    // standalone rustc invocation. See `util/process_wrapper/DESIGN.md`.
+    // Outside worker mode, a full pipelining action can no-op if the metadata
+    // action already produced the `.rlib`.
     if opts.pipelining_mode == Some(SubprocessPipeliningMode::Full) {
         if let Some(ref rlib_path) = opts.pipelining_rlib_path {
             if std::path::Path::new(rlib_path).exists() {
@@ -517,7 +501,6 @@ fn main() -> Result<(), ProcessWrapperError> {
                     "pipelining no-op: .rlib already exists at {}, skipping rustc",
                     rlib_path
                 );
-                // Handle post-success actions that the normal path would do.
                 if let Some(ref tf) = opts.touch_file {
                     OpenOptions::new()
                         .create(true)
@@ -555,8 +538,7 @@ fn main() -> Result<(), ProcessWrapperError> {
 
     let code = run_standalone(&opts)?;
 
-    // When a pipelining-full action fails outside a worker (the warning above
-    // was already printed), repeat the fix suggestion next to the error output.
+    // Repeat the fix suggestion next to the actual failure.
     if code != 0
         && opts.pipelining_mode == Some(SubprocessPipeliningMode::Full)
         && opts
@@ -574,12 +556,6 @@ fn main() -> Result<(), ProcessWrapperError> {
     exit(code)
 }
 
-/// Pipelining test coverage overview (see also pipelined_compilation_test.bzl):
-///
-///   no pipelining          → precondition check inside test_pipelined_matches_standalone
-///   hollow-rlib            → covered by analysis tests (hollow_rlib_env_test verifies
-///                            consistent flags; -Zno-codegen does not change SVH)
-///   worker pipelining      → test_pipelined_matches_standalone (artifact determinism)
 #[cfg(test)]
 #[path = "test/main.rs"]
 mod test;

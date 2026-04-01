@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Shared process_wrapper argument normalization.
-//!
-//! Types and functions in this module are used by both the standalone execution
-//! path (`options.rs`) and the persistent worker path (`worker_args.rs`).
+//! Shared process_wrapper argument normalization for standalone and worker code.
 
 use std::collections::HashMap;
 use std::fmt;
 
 use crate::util::*;
-
-// ---------------------------------------------------------------------------
-// Error types
-// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 pub(crate) enum OptionError {
@@ -41,19 +34,11 @@ impl fmt::Display for OptionError {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Pipelining mode
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SubprocessPipeliningMode {
     Metadata,
     Full,
 }
-
-// ---------------------------------------------------------------------------
-// Parsed PW args
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ParsedPwArgs {
@@ -159,10 +144,6 @@ pub(crate) fn parse_pw_args(pw_args: &[String], pwd: &std::path::Path) -> Parsed
     parsed
 }
 
-// ---------------------------------------------------------------------------
-// Relocated PW flags
-// ---------------------------------------------------------------------------
-
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub(crate) struct RelocatedPwFlags {
     pub(crate) env_files: Vec<String>,
@@ -200,10 +181,6 @@ impl RelocatedPwFlags {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Normalized rustc metadata
-// ---------------------------------------------------------------------------
-
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub(crate) struct NormalizedRustcMetadata {
     pub(crate) has_allow_features: bool,
@@ -211,18 +188,11 @@ pub(crate) struct NormalizedRustcMetadata {
     pub(crate) pipelining_key: Option<String>,
 }
 
-// ---------------------------------------------------------------------------
-// Flag predicates
-// ---------------------------------------------------------------------------
-
 pub(crate) fn is_allow_features_flag(arg: &str) -> bool {
     arg.starts_with("-Zallow-features=") || arg.starts_with("allow-features=")
 }
 
-/// Returns true for worker-pipelining protocol flags that should never be
-/// forwarded to rustc. These flags live in the @paramfile (rustc_flags) so
-/// both RustcMetadata and Rustc actions share identical startup args (same
-/// worker key). They must be stripped before the args reach rustc.
+/// Returns true for worker pipelining protocol flags that should not reach rustc.
 pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
     arg == "--pipelining-metadata"
         || arg == "--pipelining-full"
@@ -230,14 +200,9 @@ pub(crate) fn is_pipelining_flag(arg: &str) -> bool {
         || arg.starts_with("--pipelining-rlib-path=")
 }
 
-/// Returns true if `arg` is a process_wrapper flag that may appear in the
-/// @paramfile when worker pipelining is active.  These flags are placed in
-/// the paramfile (per-request args) instead of startup args so that all
-/// worker actions share the same WorkerKey.  They must be stripped before the
-/// expanded paramfile reaches rustc.
+/// Returns true for process_wrapper flags that may be relocated into a paramfile.
 ///
-/// Unlike pipelining flags (which are standalone), these flags consume the
-/// *next* argument as their value, so the caller must skip it too.
+/// These flags take the next argument as their value.
 pub(crate) fn is_relocated_pw_flag(arg: &str) -> bool {
     arg == "--output-file"
         || arg == "--rustc-output-format"
@@ -247,17 +212,10 @@ pub(crate) fn is_relocated_pw_flag(arg: &str) -> bool {
         || arg == "--volatile-status-file"
 }
 
-// ---------------------------------------------------------------------------
-// External path resolution
-// ---------------------------------------------------------------------------
-
-/// On Windows, resolve `.rs` source file paths that pass through junctions
-/// containing relative symlinks.  Windows cannot resolve chained reparse
-/// points (junction -> relative symlink -> symlink) in a single traversal,
-/// causing rustc to fail with ERROR_PATH_NOT_FOUND.
+/// On Windows, resolves `.rs` paths under `external/` through junctions with
+/// relative symlinks.
 ///
-/// Only resolves paths ending in `.rs` to avoid changing crate identity
-/// for `--extern` and `-L` paths (which would cause crate version mismatches).
+/// Other paths are left alone so crate identity does not change.
 #[cfg(windows)]
 pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
     use std::borrow::Cow;
@@ -287,16 +245,12 @@ pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
     Cow::Owned(resolved.join(remainder).to_string_lossy().into_owned())
 }
 
-/// No-op on non-Windows: returns the argument unchanged without allocating.
+/// Returns the original argument on non-Windows platforms.
 #[cfg(not(windows))]
 #[inline]
 pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
     std::borrow::Cow::Borrowed(arg)
 }
-
-// ---------------------------------------------------------------------------
-// Arg normalization internals
-// ---------------------------------------------------------------------------
 
 fn record_pipelining_flag(arg: &str, metadata: &mut NormalizedRustcMetadata) -> bool {
     if !is_pipelining_flag(arg) {
@@ -385,10 +339,6 @@ pub(crate) fn normalize_args_recursive(
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// expand_args_inline — worker-path arg expansion
-// ---------------------------------------------------------------------------
-
 pub(crate) fn expand_args_inline(
     args: &[String],
     subst_mappings: &[(String, String)],
@@ -423,10 +373,6 @@ pub(crate) fn expand_args_inline(
     Ok((expanded, metadata))
 }
 
-// ---------------------------------------------------------------------------
-// Environment building
-// ---------------------------------------------------------------------------
-
 fn env_from_files(paths: &[String]) -> Result<HashMap<String, String>, String> {
     let mut env_vars = HashMap::new();
     for path in paths {
@@ -448,12 +394,9 @@ pub(crate) fn environment_block(
     volatile_stamp_mappings: &[(String, String)],
     subst_mappings: &[(String, String)],
 ) -> HashMap<String, String> {
-    // Taking all environment variables from the current process
-    // and sending them down to the child process
+    // Start from the current process environment.
     let mut environment_variables: HashMap<String, String> = std::env::vars().collect();
-    // Have the last values added take precedence over the first.
-    // This is simpler than needing to track duplicates and explicitly override
-    // them.
+    // Later sources override earlier ones.
     environment_variables.extend(environment_file_block);
     for (f, replace_with) in &[stable_stamp_mappings, volatile_stamp_mappings].concat() {
         for value in environment_variables.values_mut() {

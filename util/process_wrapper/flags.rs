@@ -146,7 +146,7 @@ impl<'a> Flags<'a> {
         let mut argv_iter = argv.into_iter().peekable();
         let program_name = argv_iter.next().ok_or(FlagParseError::ProgramNameMissing)?;
 
-        // To check if a non-repeated flag has been set already.
+        // Track single-use flags.
         let mut seen_single_flags = HashSet::<String>::new();
 
         while let Some(flag) = argv_iter.next() {
@@ -190,7 +190,7 @@ fn consume_args<I: Iterator<Item = String>>(
     argv_iter: &mut Peekable<I>,
 ) -> Vec<String> {
     if flag == "--" {
-        // If we have found --, the rest of the iterator is just returned as-is.
+        // After `--`, forward everything unchanged.
         argv_iter.collect()
     } else {
         let mut args = vec![];

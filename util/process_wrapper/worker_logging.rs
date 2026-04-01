@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Worker lifecycle logging utilities.
-//!
-//! All structured logging for the persistent worker process is centralized here.
-//! Log entries are appended to `_pw_state/worker_lifecycle.log` as key-value
-//! pairs for easy extraction by tooling.
+//! Lifecycle logging helpers for persistent-worker debugging.
 
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -24,8 +20,8 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
 
-use super::pipeline::RequestKind;
-use super::protocol::ParsedWorkRequest;
+use super::request::WorkRequest;
+use super::request::RequestKind;
 
 pub(crate) fn current_pid() -> u32 {
     std::process::id()
@@ -39,6 +35,19 @@ pub(crate) fn append_worker_lifecycle_log(message: &str) {
     let root = std::path::Path::new("_pw_state");
     let _ = std::fs::create_dir_all(root);
     let path = root.join("worker_lifecycle.log");
+    let mut file = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(_) => return,
+    };
+    let _ = writeln!(file, "{message}");
+}
+
+pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
+    let path = pipeline_root.join("pipeline.log");
     let mut file = match std::fs::OpenOptions::new()
         .create(true)
         .append(true)
@@ -87,7 +96,6 @@ impl Drop for WorkerLifecycleGuard {
             uptime.as_millis(),
             requests,
         ));
-        // Structured summary line for easy extraction by benchmark tooling.
         append_worker_lifecycle_log(&format!(
             "worker_exit pid={} requests_handled={} uptime_s={:.1}",
             self.pid,
@@ -119,7 +127,7 @@ fn pipeline_key_label(kind: &RequestKind) -> &str {
     kind.key().map(|key| key.as_str()).unwrap_or("-")
 }
 
-fn log_request_event(event: &str, request: &ParsedWorkRequest, kind: &RequestKind, extra: &str) {
+fn log_request_event(event: &str, request: &WorkRequest, kind: &RequestKind, extra: &str) {
     append_worker_lifecycle_log(&format!(
         "pid={} thread={} {} request_id={}{} crate={} emit={} pipeline_key={}",
         current_pid(),
@@ -133,7 +141,7 @@ fn log_request_event(event: &str, request: &ParsedWorkRequest, kind: &RequestKin
     ));
 }
 
-pub(crate) fn log_request_received(request: &ParsedWorkRequest, kind: &RequestKind) {
+pub(crate) fn log_request_received(request: &WorkRequest, kind: &RequestKind) {
     log_request_event(
         "request_received",
         request,
@@ -142,6 +150,6 @@ pub(crate) fn log_request_received(request: &ParsedWorkRequest, kind: &RequestKi
     );
 }
 
-pub(crate) fn log_request_thread_start(request: &ParsedWorkRequest, kind: &RequestKind) {
+pub(crate) fn log_request_thread_start(request: &WorkRequest, kind: &RequestKind) {
     log_request_event("request_thread_start", request, kind, "");
 }

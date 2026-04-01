@@ -9,8 +9,7 @@ use crate::flags::{Flags, ParseOutcome};
 use crate::rustc;
 use crate::util::*;
 
-// Re-export shared types and functions from pw_args so that existing
-// `crate::options::Foo` imports continue to work throughout the codebase.
+// Re-export shared parsing helpers through `crate::options`.
 pub(crate) use crate::pw_args::{
     build_child_environment, expand_args_inline, is_allow_features_flag, is_pipelining_flag,
     is_relocated_pw_flag, normalize_args_recursive, parse_pw_args, resolve_external_path,
@@ -20,37 +19,21 @@ pub(crate) use crate::pw_args::{
 
 #[derive(Debug)]
 pub(crate) struct Options {
-    // Contains the path to the child executable
     pub(crate) executable: String,
-    // Contains arguments for the child process fetched from files.
     pub(crate) child_arguments: Vec<String>,
-    // Temporary standalone-mode paramfiles that should be removed after the
-    // child process completes.
+    // Standalone-expanded paramfiles to remove after the child exits.
     pub(crate) temporary_expanded_paramfiles: Vec<PathBuf>,
-    // Contains environment variables for the child process fetched from files.
     pub(crate) child_environment: HashMap<String, String>,
-    // If set, create the specified file after the child process successfully
-    // terminated its execution.
     pub(crate) touch_file: Option<String>,
-    // If set to (source, dest) copies the source file to dest.
     pub(crate) copy_output: Option<(String, String)>,
-    // If set, redirects the child process stdout to this file.
     pub(crate) stdout_file: Option<String>,
-    // If set, redirects the child process stderr to this file.
     pub(crate) stderr_file: Option<String>,
-    // If set, also logs all unprocessed output from the rustc output to this file.
-    // Meant to be used to get json output out of rustc for tooling usage.
+    // Raw stderr copy before line-by-line rustc processing.
     pub(crate) output_file: Option<String>,
-    // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
-    // Worker pipelining mode detected from @paramfile flags.
-    // Set when --pipelining-metadata or --pipelining-full is found.
-    // None when running outside of worker pipelining.
+    // Worker pipelining mode discovered in paramfile flags.
     pub(crate) pipelining_mode: Option<SubprocessPipeliningMode>,
-    // The expected .rlib output path, passed via --pipelining-rlib-path=<path>
-    // in the @paramfile. Used by the local-mode no-op optimization: if this
-    // file already exists (produced as a side-effect by the metadata action's
-    // rustc invocation), the full action can skip running rustc entirely.
+    // Side-effect `.rlib` used by the standalone full-action no-op path.
     pub(crate) pipelining_rlib_path: Option<String>,
 }
 
@@ -82,8 +65,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
 }
 
 pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, OptionError> {
-    // Process argument list until -- is encountered.
-    // Everything after is sent to the child process.
+    // Flags stop at `--`; everything after goes to the child.
     let mut subst_mapping_raw = None;
     let mut stable_status_file_raw = None;
     let mut volatile_status_file_raw = None;
@@ -171,7 +153,6 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
             Ok((key.to_owned(), v))
         })
         .collect::<Result<Vec<(String, String)>, OptionError>>()?;
-    // Process --copy-output
     let copy_output = copy_output_raw
         .map(|co| {
             if co.len() != 2 {
@@ -194,9 +175,7 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
     let require_explicit_unstable_features =
         require_explicit_unstable_features.is_some_and(|s| s == "true");
 
-    // Expand @paramfiles and collect any relocated PW flags found inside them.
-    // This must happen before environment_block() so that relocated --env-file
-    // and --stable/volatile-status-file values are incorporated.
+    // Expand @paramfiles before building the environment so relocated flags apply.
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     child_args.append(&mut file_arguments);
     let mut temporary_expanded_paramfiles = TemporaryExpandedParamFiles::default();
@@ -209,12 +188,9 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
         &mut temporary_expanded_paramfiles,
     )?;
 
-    // Merge relocated env-files from @paramfile with those from startup args.
     let mut env_files = env_file_raw.unwrap_or_default();
     env_files.extend(relocated.env_files);
 
-    // Merge relocated arg-files: append their contents to child_args,
-    // applying ${pwd} and other substitutions to each line.
     let mut child_args = child_args;
     if !relocated.arg_files.is_empty() {
         for arg in args_from_file(relocated.arg_files)? {
@@ -224,11 +200,9 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
         }
     }
 
-    // Merge relocated stamp files with startup stamp files.
     let stable_status_file = relocated.stable_status_file.or(stable_status_file_raw);
     let volatile_status_file = relocated.volatile_status_file.or(volatile_status_file_raw);
 
-    // Override output_file and rustc_output_format if relocated versions found.
     let output_file = relocated.output_file.or(output_file);
     let rustc_output_format_raw = relocated.rustc_output_format.or(rustc_output_format_raw);
 
@@ -242,8 +216,6 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
         })
         .transpose()?;
 
-    // Prepare the environment variables, unifying those read from files with the ones
-    // of the current process.
     let vars = build_child_environment(
         &env_files,
         stable_status_file.as_deref(),
@@ -252,7 +224,6 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
     )
     .map_err(OptionError::Generic)?;
 
-    // Split the executable path from the rest of the arguments.
     let (exec_path, args) = child_args.split_first().ok_or_else(|| {
         OptionError::Generic(
             "at least one argument after -- is required (the child process path)".to_owned(),
@@ -289,11 +260,7 @@ fn args_from_file(paths: Vec<String>) -> Result<Vec<String>, OptionError> {
     Ok(args)
 }
 
-/// Apply substitutions to the given param file.
-/// Returns `(has_allow_features, relocated_pw_flags)`.
-/// Relocated PW flags (--env-file, --output-file, etc.) are collected into
-/// `RelocatedPwFlags` so the caller can apply them, rather than being silently
-/// discarded.
+/// Expands one paramfile and returns its allow-features bit plus relocated flags.
 fn prepare_param_file(
     filename: &str,
     subst_mappings: &[(String, String)],
@@ -313,10 +280,7 @@ fn prepare_param_file(
     Ok((metadata.has_allow_features, metadata.relocated))
 }
 
-/// Apply substitutions to the provided arguments, recursing into param files.
-/// Returns `(processed_args, relocated_pw_flags)` — any process_wrapper flags
-/// found inside `@paramfile`s are collected rather than discarded so the caller
-/// can apply them.
+/// Expands arguments recursively through any `@paramfile` references.
 #[cfg(test)]
 #[allow(clippy::type_complexity)]
 fn prepare_args(
@@ -359,9 +323,7 @@ fn prepare_args_internal(
         let mut arg = arg;
         crate::util::apply_substitutions(&mut arg, subst_mappings);
         if let Some(param_file) = arg.strip_prefix('@') {
-            // Write the expanded paramfile to a temp directory to avoid issues
-            // with sandbox filesystems where bazel-out symlinks may prevent the
-            // expanded file from being visible to the child process.
+            // Write expanded paramfiles to a temp location the child can always read.
             let expanded_file = match write_file {
                 Some(_) => format!("{param_file}.expanded"),
                 None => {
@@ -406,7 +368,7 @@ fn prepare_args_internal(
                 }
             };
 
-            // Note that substitutions may also apply to the param file path!
+            // Substitutions also apply to the paramfile path.
             let (file, (allowed, pf_relocated)) = prepare_param_file(
                 param_file,
                 subst_mappings,

@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Newtype wrappers for domain values used throughout the worker pipelining code.
-//!
-//! These types prevent mismatched pairs (e.g. passing a request ID where a pipeline
-//! key is expected) and make function signatures self-documenting.
+//! Strongly typed worker identifiers and paths.
 
 use std::fmt;
 use std::path::Path;
 
-/// Identifies a pipelining pipeline — the crate being compiled.
-/// Derived from `--pipelining-key=<value>` in rustc args.
+/// Key from `--pipelining-key=...`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PipelineKey(pub String);
 
@@ -37,14 +33,12 @@ impl fmt::Display for PipelineKey {
     }
 }
 
-/// Bazel worker request ID. Unique within a build invocation.
-///
-/// Singleplex requests use ID 0; multiplex requests use positive IDs.
+/// Bazel worker request id. `0` is singleplex.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RequestId(pub i64);
 
 impl RequestId {
-    /// Returns true for singleplex requests (requestId == 0).
+    /// Returns true when `requestId == 0`.
     pub fn is_singleplex(&self) -> bool {
         self.0 == 0
     }
@@ -56,7 +50,7 @@ impl fmt::Display for RequestId {
     }
 }
 
-/// Bazel sandbox directory path (from WorkRequest.sandbox_dir).
+/// Path from `WorkRequest.sandbox_dir`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandboxDir(pub String);
 
@@ -76,7 +70,7 @@ impl fmt::Display for SandboxDir {
     }
 }
 
-/// The --out-dir value for rustc output placement.
+/// rustc `--out-dir` value.
 #[derive(Debug, Clone)]
 pub struct OutputDir(pub String);
 

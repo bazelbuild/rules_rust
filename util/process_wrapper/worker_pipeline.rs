@@ -12,105 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Pipelining state and handlers for the persistent worker.
-//!
-//! See `DESIGN.md` in this directory for the protocol and sandbox rationale.
+//! Pipelining helpers for the persistent worker.
 
 use std::fmt;
-use std::io::Write;
 use std::path::PathBuf;
 
-use crate::options::{parse_pw_args, SubprocessPipeliningMode};
 use crate::ProcessWrapperError;
 
-use super::args::{expand_rustc_args_with_metadata, scan_pipelining_flags};
 use super::exec::is_same_file;
-use super::protocol::ParsedWorkRequest;
+use super::logging::append_pipeline_log;
+use super::request::WorkRequest;
 use super::types::PipelineKey;
 
 pub(super) fn pipelining_err(msg: impl std::fmt::Display) -> (i32, String) {
     (1, format!("pipelining: {msg}"))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum RequestKind {
-    /// No pipelining flags present — handle as a normal subprocess request.
-    NonPipelined,
-    /// `--pipelining-metadata --pipelining-key=<key>` present.
-    /// Start a full rustc, return as soon as `.rmeta` is ready, cache the Child.
-    Metadata { key: PipelineKey },
-    /// `--pipelining-full --pipelining-key=<key>` present.
-    /// Retrieve the cached Child from PipelineState and wait for it to finish.
-    Full { key: PipelineKey },
-}
-
-impl RequestKind {
-    #[cfg(test)]
-    pub(crate) fn parse(args: &[String]) -> Self {
-        let base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        Self::parse_in_dir(args, &base_dir)
-    }
-
-    pub(crate) fn parse_in_dir(args: &[String], base_dir: &std::path::Path) -> Self {
-        let direct = scan_pipelining_flags(args.iter().map(String::as_str));
-        if !matches!(direct, RequestKind::NonPipelined) {
-            return direct;
-        }
-
-        // Direct args had no pipelining flags — check inside @paramfiles.
-        let sep_pos = args.iter().position(|a| a == "--");
-        let rustc_args = match sep_pos {
-            Some(pos) => &args[pos + 1..],
-            None => &[][..],
-        };
-        let parsed_pw_args =
-            parse_pw_args(sep_pos.map(|pos| &args[..pos]).unwrap_or(&[]), base_dir);
-        let nested = expand_rustc_args_with_metadata(
-            rustc_args,
-            &parsed_pw_args.subst,
-            parsed_pw_args.require_explicit_unstable_features,
-            base_dir,
-        )
-        .ok()
-        .map(|(_, metadata)| metadata)
-        .unwrap_or_default();
-
-        let is_metadata =
-            nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Metadata);
-        let is_full =
-            nested.relocated.pipelining_mode == Some(SubprocessPipeliningMode::Full);
-        let key = nested.pipelining_key;
-
-        match (is_metadata, is_full, key) {
-            (true, _, Some(k)) => RequestKind::Metadata {
-                key: PipelineKey(k),
-            },
-            (_, true, Some(k)) => RequestKind::Full {
-                key: PipelineKey(k),
-            },
-            _ => RequestKind::NonPipelined,
-        }
-    }
-
-    /// Returns the pipeline key if this is a pipelined request.
-    pub(crate) fn key(&self) -> Option<&PipelineKey> {
-        match self {
-            RequestKind::Metadata { key } | RequestKind::Full { key } => Some(key),
-            RequestKind::NonPipelined => None,
-        }
-    }
-}
-
-/// Pipeline context for worker-managed pipelining.
-///
-/// Two modes:
-/// - **Unsandboxed**: uses the real execroot as rustc's CWD.
-/// - **Sandboxed**: uses the Bazel-provided `sandbox_dir` as CWD, keeping all
-///   reads rooted in the sandbox per the multiplex sandbox contract.
+/// Directories used for one worker-managed pipelined request.
 pub(super) struct PipelineContext {
     pub(super) root_dir: PathBuf,
-    /// Directory used as rustc's CWD and for resolving relative paths.
-    /// Sandboxed: absolute `sandbox_dir`. Unsandboxed: canonicalized real execroot.
+    /// rustc working directory and base for resolving relative paths.
     pub(super) execroot_dir: PathBuf,
     pub(super) outputs_dir: PathBuf,
 }
@@ -122,8 +43,7 @@ pub(super) struct OutputMaterializationStats {
     pub(super) copied_files: usize,
 }
 
-/// Error type for failures when copying artifacts from the pipeline
-/// directory to the declared Bazel output location.
+/// Error returned when pipeline outputs cannot be materialized.
 #[derive(Debug)]
 pub(super) struct MaterializeError {
     pub(super) path: PathBuf,
@@ -153,13 +73,7 @@ pub(crate) struct WorkerStateRoots {
 }
 
 impl WorkerStateRoots {
-    /// Create the `_pw_state/pipeline/` directory tree in the worker's CWD
-    /// (the Bazel execroot). This directory persists across builds for the
-    /// lifetime of the worker process. Individual pipeline subdirectories are
-    /// cleaned up by `maybe_cleanup_pipeline_dir` after each compilation.
-    /// The root `_pw_state/` directory itself is left to Bazel-managed
-    /// execroot cleanup (for example `bazel clean --expunge` or output-base
-    /// deletion).
+    /// Ensures `_pw_state/pipeline` exists in the worker execroot.
     pub(crate) fn ensure() -> Result<Self, ProcessWrapperError> {
         let pipeline_root = PathBuf::from("_pw_state/pipeline");
         std::fs::create_dir_all(&pipeline_root).map_err(|e| {
@@ -173,21 +87,11 @@ impl WorkerStateRoots {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn detect_pipelining_mode(args: &[String]) -> RequestKind {
-    RequestKind::parse(args)
-}
-
-/// Creates a pipeline context for worker-managed pipelining.
-///
-/// When sandboxed, uses sandbox_dir as rustc's CWD so all reads go through the
-/// sandbox (Bazel multiplex sandbox contract compliance). When unsandboxed, uses
-/// the real execroot. In both cases, outputs are redirected to a persistent
-/// worker-owned directory to prevent inter-request interference.
+/// Creates the directories and working paths for one pipelined request.
 pub(super) fn create_pipeline_context(
     state_roots: &WorkerStateRoots,
     key: &PipelineKey,
-    request: &ParsedWorkRequest,
+    request: &WorkRequest,
 ) -> Result<PipelineContext, (i32, String)> {
     let root_dir = state_roots.pipeline_dir(key);
 
@@ -203,9 +107,8 @@ pub(super) fn create_pipeline_context(
         .map_err(|e| pipelining_err(format_args!("failed to create pipeline outputs dir: {e}")))?;
     let root_dir = std::fs::canonicalize(root_dir)
         .map_err(|e| pipelining_err(format_args!("failed to resolve pipeline dir: {e}")))?;
-    let outputs_dir = std::fs::canonicalize(outputs_dir).map_err(|e| {
-        pipelining_err(format_args!("failed to resolve pipeline outputs dir: {e}"))
-    })?;
+    let outputs_dir = std::fs::canonicalize(outputs_dir)
+        .map_err(|e| pipelining_err(format_args!("failed to resolve pipeline outputs dir: {e}")))?;
 
     let execroot_dir = request
         .base_dir_canonicalized()
@@ -218,10 +121,7 @@ pub(super) fn create_pipeline_context(
     })
 }
 
-/// Copies a single .rmeta file to the `_pipeline/` subdirectory of out_dir (unsandboxed).
-///
-/// Skips same-file copies (when src and dest resolve to the same inode).
-/// Returns `Some(error_message)` on failure, `None` on success.
+/// Copies `.rmeta` into `<out_dir>/_pipeline` for unsandboxed requests.
 pub(super) fn copy_rmeta_unsandboxed(
     rmeta_src: &std::path::Path,
     original_out_dir: &str,
@@ -242,7 +142,7 @@ pub(super) fn copy_rmeta_unsandboxed(
     None
 }
 
-/// Copies all regular files from `src_dir` to `dest_dir` (unsandboxed path).
+/// Copies all regular files from `src_dir` to `dest_dir`.
 pub(super) fn copy_outputs_unsandboxed(
     src_dir: &std::path::Path,
     dest_dir: &std::path::Path,
@@ -273,19 +173,6 @@ pub(super) fn copy_outputs_unsandboxed(
         }
     }
     Ok(())
-}
-
-pub(super) fn append_pipeline_log(pipeline_root: &std::path::Path, message: &str) {
-    let path = pipeline_root.join("pipeline.log");
-    let mut file = match std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
-    {
-        Ok(file) => file,
-        Err(_) => return,
-    };
-    let _ = writeln!(file, "{message}");
 }
 
 pub(super) fn maybe_cleanup_pipeline_dir(

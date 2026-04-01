@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! JSON worker protocol types and helpers.
-
-use std::path::PathBuf;
+//! Bazel JSON worker wire-format helpers.
 
 use tinyjson::JsonValue;
 
+use super::request::WorkRequest;
 use super::types::{RequestId, SandboxDir};
 
 #[cfg(test)]
@@ -27,53 +26,14 @@ pub(crate) struct WorkRequestInput {
     pub(crate) digest: Option<String>,
 }
 
-#[derive(Clone, Debug)]
-pub(crate) struct ParsedWorkRequest {
-    pub(crate) request_id: RequestId,
-    pub(crate) arguments: Vec<String>,
-    pub(crate) sandbox_dir: Option<SandboxDir>,
-    pub(crate) cancel: bool,
-}
-
-impl ParsedWorkRequest {
-    pub(super) fn from_json(request: &JsonValue) -> Result<Self, String> {
-        Ok(Self {
-            request_id: extract_request_id(request),
-            arguments: extract_arguments(request),
-            sandbox_dir: extract_sandbox_dir(request)?,
-            cancel: extract_cancel(request),
-        })
-    }
-
-    /// Resolves the base directory for this request.
-    ///
-    /// When sandboxed, returns the absolute sandbox directory path.
-    /// When unsandboxed, returns the worker's current working directory.
-    pub(crate) fn base_dir(&self) -> Result<PathBuf, String> {
-        if let Some(sandbox_dir) = self.sandbox_dir.as_ref() {
-            if sandbox_dir.as_path().is_absolute() {
-                return Ok(sandbox_dir.as_path().to_path_buf());
-            }
-            return std::env::current_dir()
-                .map(|cwd| cwd.join(sandbox_dir.as_path()))
-                .map_err(|e| format!("failed to resolve worker cwd: {e}"));
-        }
-        std::env::current_dir().map_err(|e| format!("failed to resolve worker cwd: {e}"))
-    }
-
-    /// Like [`base_dir`], but canonicalizes the unsandboxed path to resolve symlinks.
-    ///
-    /// Used by pipelining to get a stable execroot path. Sandbox paths are returned
-    /// as-is since the sandbox directory itself is the canonical root.
-    pub(crate) fn base_dir_canonicalized(&self) -> Result<PathBuf, String> {
-        let dir = self.base_dir()?;
-        if self.sandbox_dir.is_some() {
-            Ok(dir)
-        } else {
-            std::fs::canonicalize(&dir)
-                .map_err(|e| format!("failed to canonicalize worker CWD: {e}"))
-        }
-    }
+/// Parses a JSON WorkRequest into a `WorkRequest`.
+pub(super) fn parse_work_request(request: &JsonValue) -> Result<WorkRequest, String> {
+    Ok(WorkRequest {
+        request_id: extract_request_id(request),
+        arguments: extract_arguments(request),
+        sandbox_dir: extract_sandbox_dir(request)?,
+        cancel: extract_cancel(request),
+    })
 }
 
 pub(super) fn extract_request_id_from_raw_line(line: &str) -> Option<RequestId> {
@@ -121,17 +81,10 @@ pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
     vec![]
 }
 
-/// Extracts the `sandboxDir` field from a WorkRequest.
+/// Extracts `sandboxDir` and rejects unusable sandbox directories.
 ///
-/// Returns `Ok(Some(dir))` if a usable sandbox directory is provided,
-/// `Ok(None)` if the field is absent, or `Err` if a `sandboxDir` was provided
-/// but the directory does not exist or is empty (unpopulated).
-///
-/// The error case indicates a misconfiguration: `--experimental_worker_multiplex_sandboxing`
-/// is enabled but the platform has no sandbox support (e.g. Windows). Rather than
-/// silently falling back — which would cause subtle pipelining failures when
-/// rustc's CWD is set to an empty sandbox — we surface a clear error directing
-/// the user to fix their Bazel configuration.
+/// An unusable directory usually means multiplex sandboxing is enabled on a
+/// platform without sandbox support.
 pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<SandboxDir>, String> {
     if let JsonValue::Object(map) = request {
         if let Some(JsonValue::String(dir)) = map.get("sandboxDir") {
@@ -159,12 +112,7 @@ pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<SandboxD
     Ok(None)
 }
 
-/// A sandbox directory is usable if it exists and contains at least one entry.
-///
-/// On platforms with real sandbox support (Linux), Bazel populates the directory
-/// with symlinks into the real execroot before sending the WorkRequest. On
-/// Windows, the directory may be created but left empty because there is no
-/// sandboxing implementation — an empty directory is not a usable sandbox.
+/// Returns true when Bazel populated the sandbox directory.
 fn sandbox_dir_is_usable(dir: &str) -> bool {
     match std::fs::read_dir(dir) {
         Ok(mut entries) => entries.next().is_some(),

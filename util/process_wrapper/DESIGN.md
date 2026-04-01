@@ -169,7 +169,7 @@ The worker code is organized into single-responsibility modules:
 | Module | File | Responsibility |
 |--------|------|---------------|
 | `types` | `worker_types.rs` | Domain newtypes: `PipelineKey`, `RequestId`, `SandboxDir`, `OutputDir` |
-| `protocol` | `worker_protocol.rs` | Bazel JSON wire protocol: parse `ParsedWorkRequest`, build `WorkResponse` |
+| `protocol` | `worker_protocol.rs` | Bazel JSON wire protocol: parse `WorkRequest`, build `WorkResponse` |
 | `args` | `worker_args.rs` | Arg parsing, expansion, rewriting, env building |
 | `pipeline` | `worker_pipeline.rs` | Request classification (`RequestKind`), pipeline directory lifecycle, output materialization |
 | `exec` | `worker_exec.rs` | Subprocess spawning, file utilities, permissions, process kill helpers |

@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! State machine for a single rustc invocation lifecycle.
-//!
-//! `RustcInvocation` is shared (via `Arc`) between request threads and a
-//! rustc thread. The rustc thread owns the `Child` process and drives
-//! state transitions via condvar notifications.
+//! Shared state for a single rustc invocation.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -24,10 +20,6 @@ use std::sync::{Condvar, Mutex};
 
 use super::exec::send_sigterm;
 use super::types::OutputDir;
-
-// ---------------------------------------------------------------------------
-// Data types
-// ---------------------------------------------------------------------------
 
 /// Directories associated with a pipelined invocation.
 #[derive(Clone, Debug, Default)]
@@ -58,10 +50,6 @@ pub(crate) struct FailureOutput {
     pub exit_code: i32,
     pub diagnostics: String,
 }
-
-// ---------------------------------------------------------------------------
-// State enum
-// ---------------------------------------------------------------------------
 
 /// The lifecycle state of a single rustc invocation.
 pub(crate) enum InvocationState {
@@ -108,8 +96,7 @@ impl InvocationState {
         }
     }
 
-    /// Extract dirs from the current state, leaving `Pending` in place.
-    /// Returns default dirs for states that don't carry them.
+    /// Takes the directories from states that carry them.
     fn take_dirs(&mut self) -> InvocationDirs {
         match self {
             InvocationState::Running { dirs, .. }
@@ -123,8 +110,7 @@ impl InvocationState {
         }
     }
 
-    /// Convert a failure/shutdown state to `FailureOutput`.
-    /// Returns `None` for non-failure states.
+    /// Converts failed or shutting-down states to `FailureOutput`.
     fn as_failure(&self) -> Option<FailureOutput> {
         match self {
             InvocationState::Completed {
@@ -150,8 +136,7 @@ impl InvocationState {
         }
     }
 
-    /// If the state is ready for a metadata response, convert to a result.
-    /// Returns `None` for non-terminal, non-metadata-ready states (Pending, Running).
+    /// Returns a metadata result once the state can produce one.
     fn as_metadata_result(&self) -> Option<Result<MetadataOutput, FailureOutput>> {
         match self {
             InvocationState::MetadataReady {
@@ -175,8 +160,7 @@ impl InvocationState {
         }
     }
 
-    /// If the state is terminal, convert to a completion result.
-    /// Returns `None` for non-terminal states (Pending, Running, MetadataReady).
+    /// Returns a completion result once the state is terminal.
     fn as_completion_result(&self) -> Option<Result<CompletionOutput, FailureOutput>> {
         match self {
             InvocationState::Completed {
@@ -196,15 +180,9 @@ impl InvocationState {
     }
 }
 
-// ---------------------------------------------------------------------------
-// RustcInvocation — shared handle
-// ---------------------------------------------------------------------------
-
-/// Shared handle to an invocation's lifecycle.
+/// Shared handle to an invocation lifecycle.
 ///
-/// Always used behind `Arc<RustcInvocation>`. The rustc thread holds a clone
-/// of that `Arc` for driving state transitions; request threads use
-/// `wait_for_metadata` / `wait_for_completion` to block on progress.
+/// Request threads wait on it while the rustc thread drives transitions.
 pub(crate) struct RustcInvocation {
     state: Mutex<InvocationState>,
     cvar: Condvar,
@@ -220,11 +198,7 @@ impl RustcInvocation {
         }
     }
 
-    /// Block until metadata is ready, the invocation completes, or shutdown is requested.
-    ///
-    /// If the invocation went directly to `Completed` with exit_code == 0 (e.g. the
-    /// full compilation finished before we got scheduled), we return Ok with the
-    /// diagnostics as `diagnostics_before`.
+    /// Waits until metadata is ready, the invocation finishes, or shutdown is requested.
     pub fn wait_for_metadata(&self) -> Result<MetadataOutput, FailureOutput> {
         let mut state = self
             .state
@@ -241,7 +215,7 @@ impl RustcInvocation {
         }
     }
 
-    /// Block until the invocation reaches a terminal state (Completed/Failed/ShuttingDown).
+    /// Waits until the invocation reaches a terminal state.
     pub fn wait_for_completion(&self) -> Result<CompletionOutput, FailureOutput> {
         let mut state = self
             .state
@@ -258,8 +232,7 @@ impl RustcInvocation {
         }
     }
 
-    /// Request graceful shutdown. Transitions to ShuttingDown and sends SIGTERM
-    /// to the child process if one is running.
+    /// Requests shutdown and sends SIGTERM to any running child process.
     pub fn request_shutdown(&self) {
         self.shutdown_requested.store(true, Ordering::SeqCst);
         let mut state = self
@@ -267,21 +240,17 @@ impl RustcInvocation {
             .lock()
             .expect("rustc invocation state mutex poisoned");
         if state.is_terminal() {
-            return; // Already done — nothing to shut down.
+            return;
         }
         let pid = state.pid();
         *state = InvocationState::ShuttingDown;
         self.cvar.notify_all();
         drop(state);
-        // Send SIGTERM outside the lock to unblock any blocking read_line in rustc thread.
+        // Send SIGTERM outside the lock so the rustc thread can unblock.
         if let Some(pid) = pid {
             send_sigterm(pid);
         }
     }
-
-    // -----------------------------------------------------------------------
-    // Rustc-thread transition methods
-    // -----------------------------------------------------------------------
 
     pub(crate) fn is_shutdown_requested(&self) -> bool {
         self.shutdown_requested.load(Ordering::SeqCst)
@@ -347,10 +316,6 @@ impl RustcInvocation {
         self.cvar.notify_all();
     }
 
-    // -----------------------------------------------------------------------
-    // Test-only accessors
-    // -----------------------------------------------------------------------
-
     #[cfg(test)]
     pub fn is_pending(&self) -> bool {
         matches!(
@@ -376,7 +341,7 @@ impl RustcInvocation {
         )
     }
 
-    /// Test helper: directly transition to Completed (bypasses rustc thread).
+    /// Test helper that sets the state to `Completed`.
     #[cfg(test)]
     pub fn force_completed(&self, exit_code: i32, diagnostics: String, dirs: InvocationDirs) {
         let mut state = self
@@ -392,5 +357,4 @@ impl RustcInvocation {
     }
 }
 
-// No Drop impl — cleanup is driven explicitly by `RequestCoordinator::cancel()`
-// and `RequestCoordinator::shutdown_all()`, which call `request_shutdown()`.
+// Cleanup is driven explicitly by `RequestCoordinator`.

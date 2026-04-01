@@ -12,32 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Bazel JSON persistent worker protocol implementation.
-//!
-//! See `DESIGN.md` in this directory for the worker/pipelining protocol notes.
+//! Bazel JSON persistent worker implementation.
 
+#[path = "worker_args.rs"]
+pub(crate) mod args;
+#[path = "worker_exec.rs"]
+pub(crate) mod exec;
+#[path = "worker_invocation.rs"]
+pub(crate) mod invocation;
 #[path = "worker_logging.rs"]
 pub(crate) mod logging;
 #[path = "worker_pipeline.rs"]
 pub(crate) mod pipeline;
-#[path = "worker_args.rs"]
-pub(crate) mod args;
 #[path = "worker_protocol.rs"]
 pub(crate) mod protocol;
-#[path = "worker_exec.rs"]
-pub(crate) mod exec;
-#[path = "worker_sandbox.rs"]
-pub(crate) mod sandbox;
-#[path = "worker_types.rs"]
-pub(crate) mod types;
-#[path = "worker_invocation.rs"]
-pub(crate) mod invocation;
-#[path = "worker_rustc.rs"]
-pub(crate) mod rustc_driver;
 #[path = "worker_registry.rs"]
 pub(crate) mod registry;
 #[path = "worker_request.rs"]
 pub(crate) mod request;
+#[path = "worker_rustc.rs"]
+pub(crate) mod rustc_driver;
+#[path = "worker_sandbox.rs"]
+pub(crate) mod sandbox;
+#[path = "worker_types.rs"]
+pub(crate) mod types;
 
 use std::io::{self, BufRead};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -45,24 +43,19 @@ use std::sync::{Arc, Mutex};
 
 use crate::ProcessWrapperError;
 
+use args::assemble_request_argv;
+use exec::{prepare_outputs, run_request};
 use logging::{
     append_worker_lifecycle_log, current_pid, current_thread_label, install_worker_panic_hook,
     log_request_received, log_request_thread_start, WorkerLifecycleGuard,
 };
-use args::assemble_request_argv;
-use pipeline::{RequestKind, WorkerStateRoots};
+use pipeline::WorkerStateRoots;
 use protocol::{
-    build_cancel_response, build_response, extract_request_id,
-    extract_request_id_from_raw_line, ParsedWorkRequest,
+    build_cancel_response, build_response, extract_request_id, extract_request_id_from_raw_line,
+    parse_work_request,
 };
 use registry::{RequestCoordinator, SharedRequestCoordinator};
-use request::RequestExecutor;
-use exec::{prepare_outputs, run_request};
-use sandbox::prepare_outputs_in_dir;
-
-// ---------------------------------------------------------------------------
-// Worker lifecycle and signal handling
-// ---------------------------------------------------------------------------
+use request::{RequestExecutor, RequestKind, WorkRequest};
 
 static WORKER_SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
 
@@ -99,7 +92,7 @@ extern "C" fn worker_signal_handler(_signum: i32) {
     WORKER_SHUTTING_DOWN.store(true, Ordering::SeqCst);
     unsafe {
         close(0);
-    } // close stdin to unblock main loop
+    } // Unblock the reader loop.
 }
 
 #[cfg(unix)]
@@ -112,10 +105,6 @@ fn install_worker_signal_handlers() {
 
 #[cfg(not(unix))]
 fn install_worker_signal_handlers() {}
-
-// ---------------------------------------------------------------------------
-// Helper functions used in worker_main
-// ---------------------------------------------------------------------------
 
 fn write_worker_response(
     stdout: &Arc<Mutex<()>>,
@@ -178,16 +167,14 @@ fn build_full_args(
 
 fn classify_request(
     startup_args: &[String],
-    request: &ParsedWorkRequest,
+    request: &WorkRequest,
 ) -> Result<RequestKind, ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments)?;
-    let base_dir = request
-        .base_dir()
-        .map_err(ProcessWrapperError)?;
+    let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
     Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
 }
 
-fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<ParsedWorkRequest> {
+fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequest> {
     let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
         Ok(request) => request,
         Err(e) => {
@@ -208,7 +195,7 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<ParsedWorkReq
         }
     };
 
-    match ParsedWorkRequest::from_json(&request) {
+    match parse_work_request(&request) {
         Ok(ctx) => Some(ctx),
         Err(e) => {
             let request_id = extract_request_id(&request);
@@ -221,26 +208,25 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<ParsedWorkReq
 
 fn prepare_request_outputs(
     full_args: &[String],
-    request: &ParsedWorkRequest,
+    request: &WorkRequest,
 ) -> Result<(), ProcessWrapperError> {
-    match request.sandbox_dir.as_ref() {
-        Some(_) => {
-            let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
-            prepare_outputs_in_dir(full_args, &base_dir);
-        }
-        None => prepare_outputs(full_args),
-    }
+    let base_dir = request
+        .sandbox_dir
+        .as_ref()
+        .map(|_| request.base_dir().map_err(ProcessWrapperError))
+        .transpose()?;
+    prepare_outputs(full_args, base_dir.as_deref());
     Ok(())
 }
 
 fn execute_singleplex_request(
     self_path: &std::path::Path,
     startup_args: &[String],
-    request: &ParsedWorkRequest,
+    request: &WorkRequest,
     stdout: &SharedStdout,
 ) -> Result<(), ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments)?;
-    prepare_outputs(&full_args);
+    prepare_outputs(&full_args, None);
     let (exit_code, output) = run_request(self_path, full_args)?;
     let response = build_response(exit_code, &output, request.request_id);
     write_worker_response(stdout, &response)?;
@@ -255,26 +241,24 @@ fn execute_singleplex_request(
     Ok(())
 }
 
-/// Request thread using RequestExecutor + RustcInvocation.
+/// Runs one multiplex request on a detached thread.
 fn run_request_thread(
     self_path: std::path::PathBuf,
     startup_args: Vec<String>,
-    request: ParsedWorkRequest,
+    request: WorkRequest,
     request_executor: RequestExecutor,
     stdout: SharedStdout,
     registry: SharedRequestCoordinator,
     state_roots: Arc<WorkerStateRoots>,
-    claim_flag: Arc<AtomicBool>,
 ) {
     log_request_thread_start(&request, &request_executor.kind);
 
-    // Process-level shutdown: Bazel has sent SIGTERM and won't read responses.
-    // Just clean up and exit — no point sending a response into a dead pipe.
+    // Once shutdown starts, just clean up; Bazel will not read more responses.
     if worker_is_shutting_down() {
         registry
             .lock()
             .expect("request registry mutex poisoned")
-            .remove_request(request.request_id);
+            .requests.remove(&request.request_id);
         return;
     }
 
@@ -287,11 +271,12 @@ fn run_request_thread(
             return (1, format!("worker thread error: {e}"));
         }
 
-        if claim_flag.load(Ordering::SeqCst) {
-            registry
-                .lock()
-                .expect("request registry mutex poisoned")
-                .remove_request(request.request_id);
+        // If the request was already cancelled, bail out before running rustc.
+        if !registry
+            .lock()
+            .expect("request registry mutex poisoned")
+            .requests.contains_key(&request.request_id)
+        {
             return (0, String::new());
         }
 
@@ -311,46 +296,44 @@ fn run_request_thread(
     })) {
         Ok(result) => result,
         Err(_) => {
-            let mut reg = registry.lock().expect("request registry mutex poisoned");
-            // Shut down via registry (covers both metadata and full requests).
+            let reg = registry.lock().expect("request registry mutex poisoned");
+            // Also shut down any shared invocation.
             if let Some(inv) = &request_executor.invocation {
                 inv.request_shutdown();
             }
             if let Some(key) = request_executor.kind.key() {
-                if let Some(inv) = reg.get_invocation(key) {
+                if let Some(inv) = reg.invocations.get(key) {
                     inv.request_shutdown();
                 }
             }
-            reg.remove_request(request.request_id);
             drop(reg);
             (1, "internal error: worker thread panicked".to_string())
         }
     };
 
-    {
+    // Claim the right to respond, then clean up invocation state.
+    let should_respond = {
         let mut reg = registry.lock().expect("request registry mutex poisoned");
-        reg.remove_request(request.request_id);
-        // Full and non-pipelined requests are the last consumer of an
-        // invocation — remove it to prevent stale entries accumulating
-        // across builds in this long-lived worker process.
+        let claimed = reg.requests.remove(&request.request_id).is_some();
         if let Some(key) = request_executor.kind.key() {
             if !matches!(request_executor.kind, RequestKind::Metadata { .. }) {
-                reg.remove_invocation(key);
+                reg.invocations.remove(key);
             }
         }
-    }
-    if !claim_flag.swap(true, Ordering::SeqCst) {
+        claimed
+    };
+    if should_respond {
         let response = build_response(exit_code, &output, request.request_id);
         let _ = write_worker_response(&stdout, &response);
     }
     append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} claimed={}",
+        "pid={} thread={} request_thread_complete request_id={} exit_code={} output_bytes={} responded={}",
         current_pid(),
         current_thread_label(),
         request.request_id,
         exit_code,
         output.len(),
-        claim_flag.load(Ordering::SeqCst),
+        should_respond,
     ));
 }
 
@@ -421,39 +404,24 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         }
 
         if request.cancel {
-            let mut reg = registry.lock().expect("request registry mutex poisoned");
-            if let Some(flag) = reg.get_claim_flag(request.request_id) {
-                if !flag.swap(true, Ordering::SeqCst) {
-                    reg.cancel(request.request_id);
-                    drop(reg);
-                    let response = build_cancel_response(request.request_id);
-                    let _ = write_worker_response(&stdout, &response);
-                }
+            let should_respond = registry
+                .lock()
+                .expect("request registry mutex poisoned")
+                .cancel(request.request_id);
+            if should_respond {
+                let response = build_cancel_response(request.request_id);
+                let _ = write_worker_response(&stdout, &response);
             }
             continue;
         }
 
-        let (claim_flag, invocation) = {
+        let invocation = {
             let mut reg = registry.lock().expect("request registry mutex poisoned");
-            match &request_kind {
-                RequestKind::Metadata { key } => {
-                    let flag = reg.register_metadata(request.request_id, key.clone());
-                    (flag, None)
-                }
-                RequestKind::Full { key } => {
-                    let (flag, inv) = reg.register_full(request.request_id, key.clone());
-                    (flag, inv)
-                }
-                RequestKind::NonPipelined => {
-                    let flag = reg.register_non_pipelined(request.request_id);
-                    (flag, None)
-                }
-            }
+            reg.requests.insert(request.request_id, request_kind.key().cloned());
+            request_kind.key().and_then(|k| reg.invocations.get(k).map(Arc::clone))
         };
         let request_executor = RequestExecutor::new(request_kind.clone(), invocation);
-        // Request threads are detached (handle dropped). Bazel shuts down workers
-        // via SIGTERM with no drain phase, so there's no opportunity to join.
-        // Process exit is the cleanup mechanism.
+        // Request threads are detached; worker shutdown is process-driven.
         let _ = std::thread::spawn({
             let self_path = self_path.clone();
             let startup_args = startup_args.clone();
@@ -461,7 +429,6 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let stdout = Arc::clone(&stdout);
             let registry = Arc::clone(&registry);
             let state_roots = Arc::clone(&state_roots);
-            let claim_flag = Arc::clone(&claim_flag);
             move || {
                 run_request_thread(
                     self_path,
@@ -471,7 +438,6 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     stdout,
                     registry,
                     state_roots,
-                    claim_flag,
                 )
             }
         });

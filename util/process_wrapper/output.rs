@@ -16,9 +16,7 @@ use std::error;
 use std::fmt;
 use std::io::{self, prelude::*};
 
-/// LineOutput tells process_output what to do when a line is processed.
-/// If a Message is returned, it will be written to write_end, if
-/// Skip is returned nothing will be printed and execution continues.
+/// Output action for one processed line.
 #[derive(Debug)]
 pub(crate) enum LineOutput {
     Message(String),
@@ -56,14 +54,10 @@ impl From<String> for ProcessError {
 
 pub(crate) type ProcessResult = Result<(), ProcessError>;
 
-/// If this is Err we assume there were issues processing the line.
-/// We will print the error returned and all following lines without
-/// any more processing.
+/// Per-line processing result.
 pub(crate) type LineResult = Result<LineOutput, String>;
 
-/// process_output reads lines from read_end and invokes process_line on each.
-/// Depending on the result of process_line, the modified message may be written
-/// to write_end.
+/// Reads lines from `read_end` and forwards processed output to `output_write_end`.
 pub(crate) fn process_output<F>(
     read_end: &mut dyn Read,
     output_write_end: &mut dyn Write,
@@ -76,8 +70,7 @@ where
     let mut reader = io::BufReader::new(read_end);
     let mut output_writer = io::LineWriter::new(output_write_end);
     let mut file_writer = opt_file_write_end.map(io::LineWriter::new);
-    // If there was an error parsing a line failed_on contains the offending line
-    // and the error message.
+    // Preserve the first failing line and its error.
     let mut failed_on: Option<(String, String)> = None;
     loop {
         let mut line = String::new();
@@ -98,8 +91,7 @@ where
         };
     }
 
-    // If we encountered an error processing a line we want to flush the rest of
-    // reader into writer and return the error.
+    // Flush the rest of the stream unchanged after the first processing error.
     if let Some((line, msg)) = failed_on {
         output_writer.write_all(line.as_bytes())?;
         io::copy(&mut reader, &mut output_writer)?;

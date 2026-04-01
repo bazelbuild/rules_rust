@@ -12,28 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Argument parsing, expansion, rewriting, and environment building
-//! for the persistent worker.
+//! Argument parsing and rewriting for the persistent worker.
 
 use std::collections::HashMap;
 
 use crate::options::{
     build_child_environment, expand_args_inline, is_pipelining_flag, is_relocated_pw_flag,
-    NormalizedRustcMetadata, OptionError, ParsedPwArgs,
-    RelocatedPwFlags,
+    NormalizedRustcMetadata, OptionError, ParsedPwArgs, RelocatedPwFlags,
 };
 use crate::ProcessWrapperError;
 
-use super::exec::{make_dir_files_writable, make_path_writable, resolve_request_relative_path};
-use super::pipeline::{pipelining_err, RequestKind};
-use super::protocol::ParsedWorkRequest;
+use super::exec::resolve_request_relative_path;
+use super::pipeline::pipelining_err;
+use super::request::WorkRequest;
+use super::request::RequestKind;
 use super::types::{OutputDir, PipelineKey};
 
 /// Scans an iterator of argument strings for pipelining flags and returns a
 /// classified `RequestKind`.
-pub(super) fn scan_pipelining_flags<'a>(
-    iter: impl Iterator<Item = &'a str>,
-) -> RequestKind {
+pub(super) fn scan_pipelining_flags<'a>(iter: impl Iterator<Item = &'a str>) -> RequestKind {
     let mut is_metadata = false;
     let mut is_full = false;
     let mut key: Option<String> = None;
@@ -58,10 +55,6 @@ pub(super) fn scan_pipelining_flags<'a>(
 }
 
 /// Strips pipelining protocol flags from a direct arg list.
-///
-/// Used for the full-action fallback path (where pipelining flags may appear
-/// in direct args if no @paramfile was used). When flags are in a @paramfile,
-/// `options.rs` `prepare_param_file` handles stripping during expansion.
 pub(super) fn strip_pipelining_flags(args: &[String]) -> Vec<String> {
     args.iter()
         .filter(|a| !is_pipelining_flag(a))
@@ -69,7 +62,7 @@ pub(super) fn strip_pipelining_flags(args: &[String]) -> Vec<String> {
         .collect()
 }
 
-/// The two halves of startup args, split at `--`.
+/// Startup args split at `--`.
 pub(super) struct StartupLayout {
     /// Process-wrapper flags before `--` (e.g. `["--subst", "pwd=${pwd}"]`).
     pub(super) pw_args: Vec<String>,
@@ -78,10 +71,9 @@ pub(super) struct StartupLayout {
 }
 
 /// Splits startup args at the `--` boundary.
-///
-/// Returns `Err` if `--` is not present (startup args always contain the
-/// separator since flags.rs places it there during process_wrapper startup).
-pub(super) fn split_startup_args(startup_args: &[String]) -> Result<StartupLayout, ProcessWrapperError> {
+pub(super) fn split_startup_args(
+    startup_args: &[String],
+) -> Result<StartupLayout, ProcessWrapperError> {
     let sep = startup_args
         .iter()
         .position(|a| a == "--")
@@ -92,13 +84,10 @@ pub(super) fn split_startup_args(startup_args: &[String]) -> Result<StartupLayou
     })
 }
 
-/// Separates process_wrapper flags from child args in the per-request argument list.
-///
-/// When worker pipelining is active, per-action pw flags like `--output-file`
-/// end up in request.arguments (so all actions share the same WorkerKey).
-/// This function extracts them, leaving only child-program (rustc) args and
-/// pipelining flags in the remainder.
-pub(super) fn extract_direct_request_pw_flags(request_args: &[String]) -> (Vec<String>, Vec<String>) {
+/// Splits per-request process_wrapper flags from child args.
+pub(super) fn extract_direct_request_pw_flags(
+    request_args: &[String],
+) -> (Vec<String>, Vec<String>) {
     let mut remaining = Vec::new();
     let mut pw_pairs = Vec::new();
     let mut i = 0;
@@ -119,12 +108,7 @@ pub(super) fn extract_direct_request_pw_flags(request_args: &[String]) -> (Vec<S
     (remaining, pw_pairs)
 }
 
-/// Assembles canonical argv from startup args and per-request args.
-///
-/// Builds: `startup_pw_args + direct_pw_pairs + ["--"] + child_prefix + remaining_child_args`
-///
-/// This replaces the old concat-then-fixup approach (`build_full_args` +
-/// `relocate_pw_flags`) with a single structured assembly step.
+/// Combines startup args with per-request args into the final argv.
 pub(super) fn assemble_request_argv(
     startup_args: &[String],
     request_args: &[String],
@@ -132,7 +116,11 @@ pub(super) fn assemble_request_argv(
     let layout = split_startup_args(startup_args)?;
     let (remaining_child, direct_pw) = extract_direct_request_pw_flags(request_args);
     let mut argv = Vec::with_capacity(
-        layout.pw_args.len() + direct_pw.len() + 1 + layout.child_prefix.len() + remaining_child.len(),
+        layout.pw_args.len()
+            + direct_pw.len()
+            + 1
+            + layout.child_prefix.len()
+            + remaining_child.len(),
     );
     argv.extend(layout.pw_args);
     argv.extend(direct_pw);
@@ -167,10 +155,7 @@ pub(super) fn expand_rustc_args_with_metadata(
     )
 }
 
-/// Builds the environment map: inherit current process + env files + apply substitutions.
-///
-/// Returns `Err` if any env-file or stamp-file cannot be read, aligning with
-/// the standalone path's error behavior (Finding 5 fix).
+/// Builds the rustc environment from inherited vars, env files, and substitutions.
 pub(super) fn build_rustc_env(
     env_files: &[String],
     stable_status_file: Option<&str>,
@@ -200,7 +185,7 @@ pub(super) fn prepare_rustc_args(
         return Err(pipelining_err("no rustc arguments after expansion"));
     }
 
-    // Append args from --arg-file files (e.g. build script output: --cfg=..., -L ...).
+    // Append args from any `--arg-file` inputs.
     let mut arg_files = pw_args.arg_files.clone();
     arg_files.extend(metadata.relocated.arg_files.iter().cloned());
     for path in arg_files {
@@ -237,7 +222,7 @@ fn resolve_path(path: String, base: &std::path::Path) -> String {
 
 pub(super) fn resolve_pw_args_for_request(
     mut pw_args: ParsedPwArgs,
-    request: &ParsedWorkRequest,
+    request: &WorkRequest,
     execroot_dir: &std::path::Path,
 ) -> ParsedPwArgs {
     pw_args.env_files = resolve_paths(pw_args.env_files, execroot_dir);
@@ -259,10 +244,7 @@ pub(super) fn resolve_pw_args_for_request(
     pw_args
 }
 
-/// Applies `${key}` → `value` substitution mappings to a single argument string.
-///
-/// Delegates to [`crate::util::apply_substitutions`], which couples substitution
-/// with Windows verbatim path normalization so callers cannot forget it.
+/// Applies substitutions to one argument string.
 pub(super) fn apply_substs(arg: &str, subst: &[(String, String)]) -> String {
     let mut a = arg.to_owned();
     crate::util::apply_substitutions(&mut a, subst);
@@ -337,25 +319,4 @@ pub(super) fn rewrite_emit_metadata_path(
             }
         })
         .collect()
-}
-
-pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
-    for arg in args {
-        if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            make_dir_files_writable(dir);
-            let pipeline_dir = format!("{dir}/_pipeline");
-            make_dir_files_writable(&pipeline_dir);
-            continue;
-        }
-
-        let Some(emit) = arg.strip_prefix("--emit=") else {
-            continue;
-        };
-        for part in emit.split(',') {
-            let Some((_, path)) = part.split_once('=') else {
-                continue;
-            };
-            make_path_writable(std::path::Path::new(path));
-        }
-    }
 }

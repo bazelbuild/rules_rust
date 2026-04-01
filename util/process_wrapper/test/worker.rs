@@ -1,11 +1,12 @@
 use super::args::{
     apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args,
-    extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_expanded_rustc_outputs,
-    prepare_rustc_args, rewrite_out_dir_in_expanded, scan_pipelining_flags,
-    split_startup_args, strip_pipelining_flags,
+    extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_rustc_args,
+    rewrite_out_dir_in_expanded, scan_pipelining_flags, split_startup_args,
+    strip_pipelining_flags,
 };
+use super::exec::prepare_expanded_rustc_outputs;
 use crate::options::parse_pw_args;
-use super::pipeline::{detect_pipelining_mode, RequestKind};
+use super::request::{detect_pipelining_mode, RequestKind};
 use super::invocation::{InvocationDirs, RustcInvocation};
 use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
@@ -87,7 +88,7 @@ fn test_prepare_outputs_inline_out_dir() {
     assert!(fs::metadata(&file_path).unwrap().permissions().readonly());
 
     let args = vec![format!("--out-dir={}", dir.display())];
-    prepare_outputs(&args);
+    prepare_outputs(&args, None);
 
     assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
     let _ = fs::remove_dir_all(&dir);
@@ -121,7 +122,7 @@ fn test_prepare_outputs_arg_file() {
     .unwrap();
 
     let args = vec!["--arg-file".to_string(), arg_file.display().to_string()];
-    prepare_outputs(&args);
+    prepare_outputs(&args, None);
 
     assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
     let _ = fs::remove_dir_all(&tmp);
@@ -151,7 +152,7 @@ fn test_prepare_outputs_sandboxed_relative_paramfile() {
     fs::write(&paramfile, "--out-dir=out\n--crate-name=foo\n").unwrap();
 
     let args = vec!["@rustc.params".to_string()];
-    prepare_outputs_in_dir(&args, &sandbox_dir);
+    prepare_outputs(&args, Some(sandbox_dir.as_path()));
 
     assert!(!fs::metadata(&file_path).unwrap().permissions().readonly());
     let _ = fs::remove_dir_all(&tmp);
@@ -1374,69 +1375,72 @@ fn test_cancel_non_pipelined_kills_child() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_registry_register_metadata_records_claim() {
+fn test_registry_register_tracks_request() {
     let mut reg = RequestCoordinator::default();
-    let flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
-    assert!(!flag.load(Ordering::SeqCst));
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    assert!(reg.requests.contains_key(&RequestId(42)));
     // No invocation until insert_invocation is called.
-    assert!(!reg.has_invocation("key1"));
+    assert!(!reg.invocations.contains_key(&PipelineKey("key1".to_string())));
 }
 
 #[test]
 fn test_registry_insert_invocation() {
     let mut reg = RequestCoordinator::default();
-    let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv = Arc::new(RustcInvocation::new());
-    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
-    assert!(reg.has_invocation("key1"));
+    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
+    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
     assert!(inv.is_pending());
 }
 
 #[test]
-fn test_registry_register_full_finds_existing_invocation() {
+fn test_registry_full_finds_existing_invocation() {
     let mut reg = RequestCoordinator::default();
-    let _flag1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
-    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
-    let (_flag2, inv2) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
-    assert!(inv2.is_some(), "full should find existing invocation");
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
+    reg.requests.insert(RequestId(99), Some(PipelineKey("key1".to_string())));
+    assert!(reg.invocations.get(&PipelineKey("key1".to_string())).is_some());
 }
 
 #[test]
-fn test_registry_register_full_no_invocation_returns_none() {
-    let mut reg = RequestCoordinator::default();
-    let (_flag, inv) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
-    assert!(inv.is_none());
+fn test_registry_get_invocation_returns_none_when_missing() {
+    let reg = RequestCoordinator::default();
+    assert!(reg.invocations.get(&PipelineKey("key1".to_string())).is_none());
 }
 
 #[test]
 fn test_registry_cancel_shuts_down_invocation() {
     let mut reg = RequestCoordinator::default();
-    let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv = Arc::new(RustcInvocation::new());
-    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
-    reg.cancel(RequestId(42));
+    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
+    assert!(reg.cancel(RequestId(42)));
     assert!(inv.is_shutting_down_or_terminal());
+    // Second cancel returns false — already claimed.
+    assert!(!reg.cancel(RequestId(42)));
 }
 
 #[test]
 fn test_registry_shutdown_all() {
     let mut reg = RequestCoordinator::default();
-    let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv1 = Arc::new(RustcInvocation::new());
-    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv1));
-    let _f2 = reg.register_metadata(RequestId(43), PipelineKey("key2".to_string()));
-    reg.insert_invocation(PipelineKey("key2".to_string()), Arc::new(RustcInvocation::new()));
+    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv1));
+    reg.requests.insert(RequestId(43), Some(PipelineKey("key2".to_string())));
+    reg.invocations.insert(PipelineKey("key2".to_string()), Arc::new(RustcInvocation::new()));
     reg.shutdown_all();
     assert!(inv1.is_shutting_down_or_terminal());
 }
 
 #[test]
-fn test_registry_remove_request_preserves_invocation() {
+fn test_registry_request_removal_preserves_invocation() {
     let mut reg = RequestCoordinator::default();
-    let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
-    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
-    reg.remove_request(RequestId(42));
-    assert!(reg.has_invocation("key1"), "invocation should persist");
+    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
+    assert!(reg.requests.remove(&RequestId(42)).is_some());
+    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())), "invocation should persist");
+    // Second claim returns false.
+    assert!(reg.requests.remove(&RequestId(42)).is_none());
 }
 
 // ---------------------------------------------------------------------------
@@ -1445,36 +1449,35 @@ fn test_registry_remove_request_preserves_invocation() {
 
 /// Regression: old cleanup(key, request_id) would delete the pipeline entry
 /// even when the phase had moved on (e.g., full request claimed it).
-/// New behavior: remove_request only removes request metadata, not the invocation.
+/// New behavior: removing a request from the map does not remove the invocation.
 #[test]
 fn test_metadata_cleanup_preserves_invocation_for_full() {
     let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
-    let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
-    reg.insert_invocation(key.clone(), Arc::new(RustcInvocation::new()));
-    let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
-    assert!(full_inv.is_some(), "full should find the invocation");
+    reg.requests.insert(RequestId(42), Some(key.clone()));
+    reg.invocations.insert(key.clone(), Arc::new(RustcInvocation::new()));
+    reg.requests.insert(RequestId(99), Some(key.clone()));
+    assert!(reg.invocations.get(&key).is_some(), "full should find the invocation");
 
-    // Metadata request completes — remove its request metadata.
-    reg.remove_request(RequestId(42));
+    // Metadata request completes — claim its response.
+    assert!(reg.requests.remove(&RequestId(42)).is_some());
 
     // Invocation must still exist for the full request.
-    assert!(reg.has_invocation("key1"));
-    assert!(reg.get_claim_flag(RequestId(99)).is_some());
+    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    assert!(reg.requests.contains_key(&RequestId(99)));
 }
 
-/// Regression: skipped metadata request (claim flag swapped before execution)
+/// Regression: skipped metadata request (cancelled before execution)
 /// would call discard_pending_request which could destroy the pipeline entry.
 #[test]
 fn test_metadata_skip_cleanup_no_invocation() {
     let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
-    let _flag = reg.register_metadata(RequestId(42), key.clone());
+    reg.requests.insert(RequestId(42), Some(key.clone()));
 
-    // Simulate skip: just remove the request.
-    // No invocation was ever inserted (rustc never spawned).
-    reg.remove_request(RequestId(42));
-    assert!(!reg.has_invocation("key1"));
+    // Simulate skip: claim the response (no rustc ever spawned).
+    assert!(reg.requests.remove(&RequestId(42)).is_some());
+    assert!(!reg.invocations.contains_key(&PipelineKey("key1".to_string())));
 }
 
 /// Regression: cleanup_after_panic called cleanup_key_fully for Metadata panics,
@@ -1485,20 +1488,20 @@ fn test_metadata_skip_cleanup_no_invocation() {
 fn test_abort_metadata_panic_preserves_full_invocation() {
     let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
-    let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
+    reg.requests.insert(RequestId(42), Some(key.clone()));
     let inv = Arc::new(RustcInvocation::new());
-    reg.insert_invocation(key.clone(), Arc::clone(&inv));
-    let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
-    assert!(full_inv.is_some());
+    reg.invocations.insert(key.clone(), Arc::clone(&inv));
+    reg.requests.insert(RequestId(99), Some(key.clone()));
+    assert!(reg.invocations.get(&key).is_some());
 
-    // Simulate metadata panic: shutdown invocation + remove request.
+    // Simulate metadata panic: shutdown invocation + claim response.
     inv.request_shutdown();
-    reg.remove_request(RequestId(42));
+    assert!(reg.requests.remove(&RequestId(42)).is_some());
 
     // Invocation still in registry (for full request to discover it failed).
-    assert!(reg.has_invocation("key1"));
-    // Full request's claim flag still active.
-    assert!(reg.get_claim_flag(RequestId(99)).is_some());
+    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    // Full request still active.
+    assert!(reg.requests.contains_key(&RequestId(99)));
 }
 
 /// Regression: graceful_kill should send SIGTERM first, giving the child a

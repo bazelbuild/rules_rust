@@ -138,11 +138,9 @@ pub(crate) fn process_stderr_line(mut line: String, error_format: ErrorFormat) -
     process_json(line, error_format)
 }
 
-/// process_rustc_json takes an output line from rustc configured with
-/// --error-format=json, parses the json and returns the appropriate output
-/// according to the original --error-format supplied.
-/// Only diagnostics with a rendered message are returned.
-/// Returns an errors if parsing json fails.
+/// Parses one rustc JSON line and returns the requested output form.
+///
+/// Non-diagnostic messages are skipped. Invalid JSON returns an error.
 pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResult {
     let parsed: JsonValue = line
         .parse()
@@ -161,17 +159,12 @@ fn output_based_on_error_format(
     error_format: ErrorFormat,
 ) -> LineOutput {
     match error_format {
-        // If the output should be json, we just forward the messages as-is
-        // using `line`.
         ErrorFormat::Json => LineOutput::Message(line),
-        // Otherwise we return the rendered field.
         ErrorFormat::Rendered => LineOutput::Message(rendered),
     }
 }
 
-/// Extracts the artifact path from an rmeta artifact notification JSON line.
-/// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
-/// `None` for all other lines.
+/// Extracts `.rmeta` artifact paths from rustc JSON notifications.
 pub(crate) fn extract_rmeta_path(line: &str) -> Option<String> {
     if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>()
         && let Some(JsonValue::String(artifact)) = map.get("artifact")
