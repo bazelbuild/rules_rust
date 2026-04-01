@@ -76,7 +76,10 @@ impl Cargo {
     /// Returns the output of running `cargo version`, trimming any leading or trailing whitespace.
     /// This function performs normalisation to work around `<https://github.com/rust-lang/cargo/issues/10547>`
     pub(crate) fn full_version(&self) -> Result<String> {
-        let mut full_version = self.full_version.lock().unwrap();
+        let mut full_version = self
+            .full_version
+            .lock()
+            .expect("cargo full_version mutex poisoned");
         if full_version.is_none() {
             let observed_version = Digest::bin_version(&self.path)?;
             *full_version = Some(observed_version);

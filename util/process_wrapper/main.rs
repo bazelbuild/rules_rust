@@ -240,7 +240,7 @@ fn symlink_dir(src: &std::path::Path, dest: &std::path::Path) -> Result<(), std:
 
 enum CacheSeedOutcome {
     AlreadyPresent,
-    Seeded { _source: PathBuf },
+    Seeded,
     NotFound,
 }
 
@@ -341,9 +341,7 @@ fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperE
                 e
             ))
         })?;
-        return Ok(CacheSeedOutcome::Seeded {
-            _source: cache_root,
-        });
+        return Ok(CacheSeedOutcome::Seeded);
     }
 
     for entry in fs::read_dir(&cwd).map_err(|e| {
@@ -368,9 +366,7 @@ fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperE
                         e
                     ))
                 })?;
-                return Ok(CacheSeedOutcome::Seeded {
-                    _source: ancestor.to_path_buf(),
-                });
+                return Ok(CacheSeedOutcome::Seeded);
             }
         }
     }

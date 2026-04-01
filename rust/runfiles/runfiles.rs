@@ -430,7 +430,8 @@ mod test {
     {
         let mtx = GLOBAL_MUTEX.get_or_init(|| Mutex::new(0));
 
-        // Ignore poisoning as it's expected to be another test failing an assertion.
+        // Test-only helper: ignore poisoning so one failed assertion does not
+        // cascade into unrelated env-mocking tests.
         let _guard = mtx.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // track the original state of the environment.
