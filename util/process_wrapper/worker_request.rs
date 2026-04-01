@@ -23,7 +23,7 @@ use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
-use super::invocation::{InvocationDirs, RustcInvocation};
+use super::invocation::{InvocationDirs, MetadataOutput, RustcInvocation};
 use super::rustc_driver::spawn_pipelined_rustc;
 use super::args::{
     build_rustc_env, prepare_expanded_rustc_outputs, prepare_rustc_args,
@@ -93,97 +93,26 @@ impl RequestExecutor {
             Ok(r) => r,
             Err(e) => return e,
         };
-        let MetadataInvocationReady {
-            rustc_args,
-            env,
-            ctx,
-            original_out_dir,
-            pw_args,
-        } = ready;
 
         append_pipeline_log(
-            &ctx.root_dir,
+            &ready.ctx.root_dir,
             &format!(
                 "metadata start request_id={} key={} sandbox_dir={:?} execroot={} outputs={}",
                 request.request_id,
                 key,
                 request.sandbox_dir,
-                ctx.execroot_dir.display(),
-                ctx.outputs_dir.display(),
+                ready.ctx.execroot_dir.display(),
+                ready.ctx.outputs_dir.display(),
             ),
         );
 
-        // --- Windows response file handling ---
-        #[cfg(windows)]
-        let _consolidated_dir_guard: Option<std::path::PathBuf>;
-        #[cfg(windows)]
-        let mut rustc_args = rustc_args;
-        #[cfg(windows)]
-        {
-            let unified_dir = ctx.root_dir.join("deps");
-            let _ = std::fs::remove_dir_all(&unified_dir);
-            if let Err(e) = std::fs::create_dir_all(&unified_dir) {
-                return (1, format!("pipelining: failed to create deps dir: {e}"));
-            }
-            let dep_dirs: Vec<std::path::PathBuf> = rustc_args
-                .iter()
-                .filter_map(|a| {
-                    a.strip_prefix("-Ldependency=")
-                        .map(std::path::PathBuf::from)
-                })
-                .collect();
-            crate::util::consolidate_deps_into(&dep_dirs, &unified_dir);
-            rustc_args.retain(|a| !a.starts_with("-Ldependency="));
-            rustc_args.push(format!("-Ldependency={}", unified_dir.display()));
-            _consolidated_dir_guard = Some(unified_dir);
-        }
+        let (invocation, original_out_dir, ctx, pw_args) =
+            match spawn_metadata_rustc(ready, &key, registry) {
+                Ok(result) => result,
+                Err(e) => return e,
+            };
 
-        // --- Spawn rustc ---
-        let mut cmd = Command::new(&rustc_args[0]);
-        #[cfg(windows)]
-        {
-            let response_file_path = ctx.root_dir.join("metadata_rustc.args");
-            let content = rustc_args[1..].join("\n");
-            if let Err(e) = std::fs::write(&response_file_path, &content) {
-                return (1, format!("pipelining: failed to write response file: {e}"));
-            }
-            cmd.arg(format!("@{}", response_file_path.display()));
-        }
-        #[cfg(not(windows))]
-        {
-            cmd.args(&rustc_args[1..]);
-        }
-        cmd.env_clear()
-            .envs(&env)
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .current_dir(&ctx.execroot_dir);
-        let child = match cmd.spawn() {
-            Ok(c) => c,
-            Err(e) => return (1, format!("pipelining: failed to spawn rustc: {e}")),
-        };
-
-        // --- Start rustc thread ---
-        let dirs = InvocationDirs {
-            pipeline_output_dir: ctx.outputs_dir.clone(),
-            pipeline_root_dir: ctx.root_dir.clone(),
-            original_out_dir,
-        };
-
-        let original_out_dir = dirs.original_out_dir.clone();
-        let invocation =
-            spawn_pipelined_rustc(child, dirs, pw_args.rustc_output_format.clone());
-
-        // Insert into registry so the full request can find it.
-        // This is the only point where an invocation enters the registry,
-        // guaranteeing that any invocation found by register_full has a
-        // running rustc behind it (no stuck-Pending deadlocks).
-        registry
-            .lock()
-            .expect("request registry mutex poisoned")
-            .insert_invocation(key.clone(), Arc::clone(&invocation));
-
-        // --- Wait for metadata readiness ---
+        // Wait for metadata readiness.
         // The rustc thread detects the rmeta artifact notification and
         // transitions to MetadataReady. We then copy the .rmeta file here
         // in the request thread. There is a small timing gap between
@@ -195,41 +124,15 @@ impl RequestExecutor {
         //   3. Rustc doesn't overwrite .rmeta after emitting the artifact
         //      notification — post-rmeta work is codegen only.
         match invocation.wait_for_metadata() {
-            Ok(meta) => {
-                if let Some(rmeta_path_str) = &meta.rmeta_path {
-                    let rmeta_resolved =
-                        resolve_request_relative_path(rmeta_path_str, Some(&ctx.execroot_dir));
-                    let rmeta_resolved_str = rmeta_resolved.display().to_string();
-                    append_pipeline_log(
-                        &ctx.root_dir,
-                        &format!("metadata rmeta ready: {}", rmeta_resolved_str),
-                    );
-                    let copy_err = match request.sandbox_dir.as_ref() {
-                        Some(dir) => copy_output_to_sandbox(
-                            &rmeta_resolved,
-                            dir.as_path(),
-                            original_out_dir.as_str(),
-                            "_pipeline",
-                        )
-                        .err()
-                        .map(|e| format!("pipelining: rmeta materialization failed: {e}")),
-                        None => copy_rmeta_unsandboxed(
-                            &rmeta_resolved,
-                            original_out_dir.as_str(),
-                            &ctx.root_dir,
-                        ),
-                    };
-                    if let Some(err_msg) = copy_err {
-                        invocation.request_shutdown();
-                        return (1, err_msg);
-                    }
-                }
-                append_pipeline_log(&ctx.root_dir, &format!("metadata stored key={}", key));
-                if let Some(ref path) = pw_args.output_file {
-                    let _ = std::fs::write(path, &meta.diagnostics_before);
-                }
-                (0, meta.diagnostics_before)
-            }
+            Ok(meta) => materialize_metadata(
+                meta,
+                &invocation,
+                &ctx,
+                request,
+                &original_out_dir,
+                &key,
+                &pw_args,
+            ),
             Err(failure) => {
                 maybe_cleanup_pipeline_dir(&ctx.root_dir, true, "metadata rustc failed");
                 if let Some(ref path) = pw_args.output_file {
@@ -423,4 +326,139 @@ fn prepare_metadata_invocation(
         original_out_dir,
         pw_args,
     })
+}
+
+/// Spawns the rustc child process for a metadata invocation and registers it
+/// in the shared coordinator.
+///
+/// Handles Windows-specific dependency consolidation and response-file writing.
+/// Returns the running invocation, the original out-dir, the pipeline context,
+/// and the parsed PW args for use by the materialization phase.
+fn spawn_metadata_rustc(
+    ready: MetadataInvocationReady,
+    key: &PipelineKey,
+    registry: &SharedRequestCoordinator,
+) -> Result<(Arc<RustcInvocation>, OutputDir, PipelineContext, ParsedPwArgs), (i32, String)> {
+    let MetadataInvocationReady {
+        rustc_args,
+        env,
+        ctx,
+        original_out_dir,
+        pw_args,
+    } = ready;
+
+    // --- Windows response file handling ---
+    #[cfg(windows)]
+    let _consolidated_dir_guard: Option<std::path::PathBuf>;
+    #[cfg(windows)]
+    let mut rustc_args = rustc_args;
+    #[cfg(windows)]
+    {
+        let unified_dir = ctx.root_dir.join("deps");
+        let _ = std::fs::remove_dir_all(&unified_dir);
+        if let Err(e) = std::fs::create_dir_all(&unified_dir) {
+            return Err((1, format!("pipelining: failed to create deps dir: {e}")));
+        }
+        let dep_dirs: Vec<std::path::PathBuf> = rustc_args
+            .iter()
+            .filter_map(|a| {
+                a.strip_prefix("-Ldependency=")
+                    .map(std::path::PathBuf::from)
+            })
+            .collect();
+        crate::util::consolidate_deps_into(&dep_dirs, &unified_dir);
+        rustc_args.retain(|a| !a.starts_with("-Ldependency="));
+        rustc_args.push(format!("-Ldependency={}", unified_dir.display()));
+        _consolidated_dir_guard = Some(unified_dir);
+    }
+
+    // --- Spawn rustc ---
+    let mut cmd = Command::new(&rustc_args[0]);
+    #[cfg(windows)]
+    {
+        let response_file_path = ctx.root_dir.join("metadata_rustc.args");
+        let content = rustc_args[1..].join("\n");
+        if let Err(e) = std::fs::write(&response_file_path, &content) {
+            return Err((1, format!("pipelining: failed to write response file: {e}")));
+        }
+        cmd.arg(format!("@{}", response_file_path.display()));
+    }
+    #[cfg(not(windows))]
+    {
+        cmd.args(&rustc_args[1..]);
+    }
+    cmd.env_clear()
+        .envs(&env)
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .current_dir(&ctx.execroot_dir);
+    let child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(e) => return Err((1, format!("pipelining: failed to spawn rustc: {e}"))),
+    };
+
+    // --- Start rustc thread ---
+    let dirs = InvocationDirs {
+        pipeline_output_dir: ctx.outputs_dir.clone(),
+        pipeline_root_dir: ctx.root_dir.clone(),
+        original_out_dir,
+    };
+
+    let original_out_dir = dirs.original_out_dir.clone();
+    let invocation = spawn_pipelined_rustc(child, dirs, pw_args.rustc_output_format.clone());
+
+    // Insert into registry so the full request can find it.
+    // This is the only point where an invocation enters the registry,
+    // guaranteeing that any invocation found by register_full has a
+    // running rustc behind it (no stuck-Pending deadlocks).
+    registry
+        .lock()
+        .expect("request registry mutex poisoned")
+        .insert_invocation(key.clone(), Arc::clone(&invocation));
+
+    Ok((invocation, original_out_dir, ctx, pw_args))
+}
+
+/// Copies the .rmeta output and writes diagnostics after metadata is ready.
+fn materialize_metadata(
+    meta: MetadataOutput,
+    invocation: &RustcInvocation,
+    ctx: &PipelineContext,
+    request: &ParsedWorkRequest,
+    original_out_dir: &OutputDir,
+    key: &PipelineKey,
+    pw_args: &ParsedPwArgs,
+) -> (i32, String) {
+    if let Some(rmeta_path_str) = &meta.rmeta_path {
+        let rmeta_resolved =
+            resolve_request_relative_path(rmeta_path_str, Some(&ctx.execroot_dir));
+        append_pipeline_log(
+            &ctx.root_dir,
+            &format!("metadata rmeta ready: {}", rmeta_resolved.display()),
+        );
+        let copy_err = match request.sandbox_dir.as_ref() {
+            Some(dir) => copy_output_to_sandbox(
+                &rmeta_resolved,
+                dir.as_path(),
+                original_out_dir.as_str(),
+                "_pipeline",
+            )
+            .err()
+            .map(|e| format!("pipelining: rmeta materialization failed: {e}")),
+            None => copy_rmeta_unsandboxed(
+                &rmeta_resolved,
+                original_out_dir.as_str(),
+                &ctx.root_dir,
+            ),
+        };
+        if let Some(err_msg) = copy_err {
+            invocation.request_shutdown();
+            return (1, err_msg);
+        }
+    }
+    append_pipeline_log(&ctx.root_dir, &format!("metadata stored key={}", key));
+    if let Some(ref path) = pw_args.output_file {
+        let _ = std::fs::write(path, &meta.diagnostics_before);
+    }
+    (0, meta.diagnostics_before)
 }
