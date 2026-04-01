@@ -4,12 +4,12 @@ For cross compilation, you have to specify a custom platform to let Bazel know t
 
 The example code is setup to cross compile from the following hosts to the the following targets using Rust and the LLVM toolchain:
 
-* {linux, x86_64} -> {linux, aarch64}
-* {linux, aarch64} -> {linux, x86_64}
-* {darwin, x86_64} -> {linux, x86_64}
-* {darwin, x86_64} -> {linux, aarch64}
-* {darwin, aarch64 (Apple Silicon)} -> {linux, x86_64}
-* {darwin, aarch64 (Apple Silicon)} -> {linux, aarch64}
+- {linux, x86_64} -> {linux, aarch64}
+- {linux, aarch64} -> {linux, x86_64}
+- {darwin, x86_64} -> {linux, x86_64}
+- {darwin, x86_64} -> {linux, aarch64}
+- {darwin, aarch64 (Apple Silicon)} -> {linux, x86_64}
+- {darwin, aarch64 (Apple Silicon)} -> {linux, aarch64}
 
 Cross compilation from Linux to Apple may work, but has not been tested.
 
@@ -21,16 +21,13 @@ or
 
 `bazel build //:hello_world_aarch64`
 
-
 You can also build all targets at once:
-
 
 `bazel build //...`
 
 And you can run all test with:
 
 `bazel test //...`
-
 
 ## Setup
 
@@ -61,9 +58,9 @@ Next, you have to configure the LLVM toolchain because rules_rust still needs a 
 Suppose you want to compile a Rust binary that supports linux on both, X86 and ARM.
 In that case, you have to configure three LLVM targets:
 
-1) LLVM for the host
-2) LLVM for X86 (x86_64)
-3) LLVM for ARM (aarch64)
+1. LLVM for the host
+2. LLVM for X86 (x86_64)
+3. LLVM for ARM (aarch64)
 
 For the host LLVM, you just specify a LLVM version and then register the toolchain as usual. The target LLVM toolchains, however, have dependencies on system libraries for the target platform. Therefore, it is required to download a so- called sysroot that contains a root file system with all those system libraries for the specific target platform. To do so, please add the following to your MODULE.bazel
 
@@ -130,7 +127,6 @@ For simplicity, all toolchains are pinned to LLVM version 16 because it is one o
 
 If you face difficulties with building LLVM on older linux distros or your CI,
 please take a look at the [LLVM Troubleshooting guide](README_LLVM_Troubleshooting) for known issues.
-
 
 **Rust Toolchain Configuration**
 

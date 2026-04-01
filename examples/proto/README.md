@@ -6,15 +6,11 @@ all binary targets apply optimization from the [compiler optimization example](.
 
 To run the example with Cargo, open one terminal and start the server with:
 
-`
-cargo run --bin grpc_server
-`
+`cargo run --bin grpc_server`
 
 And, in a second terminal, to run the client:
 
-`
-cargo run --bin grpc_client
-`
+`cargo run --bin grpc_client`
 
 The equivalent Bazel targets are:
 
@@ -33,6 +29,7 @@ While the Tonic toolchain works out of the box when its dependencies are matched
 Prost requires a custom toolchain that you have to define.
 
 The setup requires three steps to complete:
+
 1. Configure rules and dependencies in MODULE.bazel
 2. Configure a custom Prost toolchain
 3. Register custom Prost toolchain.
@@ -49,35 +46,16 @@ In your MODULE.bazel, you add the following:
 # https://github.com/bazelbuild/rules_proto/releases
 bazel_dep(name = "rules_proto", version = "7.1.0")
 # https://registry.bazel.build/modules/protobuf
-bazel_dep(name = "protobuf", version = "29.1", repo_name = "com_google_protobuf")
-# rules for LLVM
-# https://github.com/bazel-contrib/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
 
-# 1 Register LLVM
-###############################################################################
-# L L V M
-# https://github.com/bazel-contrib/toolchains_llvm/blob/master/tests/MODULE.bazel
-###############################################################################
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-LLVM_VERSIONS = { "": "16.0.0",}
-
-# LLVM toolchain.
-llvm.toolchain(
-    name = "llvm_toolchain",
-    llvm_versions = LLVM_VERSIONS,
-)
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
-register_toolchains("@llvm_toolchain//:all")
-
-# 2 Register Proto toolchain
+# 1 Register Proto toolchain
 ###############################################################################
 # Proto toolchain
 register_toolchains("@rules_rust_prost//:default_prost_toolchain")
 
 # Custom Prost toolchain will be added later. See next section
 
-# 3 Register proto / prost / tonic crates
+# 2 Register proto / prost / tonic crates
 ###############################################################################
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
@@ -128,9 +106,9 @@ use_repo(crate, "crates")
 Configuring a custom Prost toolchain is straightforward, you create a new folder with an empty BUILD.bazl file, and add
 the toolchain definition.
 As your Bazel setup grows over time, it is a best practice to put all custom macros, rules, and toolchains in a
-dedicated folder, for example: `build/`.
+dedicated folder, for example: `tools/`.
 
-Suppose you have your BUILD.bazl file in `build/prost_toolchain/BUILD.bazel`, then add the following content:
+Suppose you have your BUILD.bazel file in `tools/prost_toolchain/BUILD.bazel`, then add the following content:
 
 ```starlark
 load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
@@ -171,7 +149,7 @@ toolchain(
 The Prost and Tonic dependencies are pulled from the previously configured
 crate dependencies in the MODULE file. With this custom toolchain in place, the last step is to register it.
 
-### 3. Register custom Prost toolchain.
+### 3. Register custom Prost toolchain
 
 In your MODULE.bazel file, locate your toolchains and add the following entry right below the proto toolchain.
 
@@ -182,10 +160,10 @@ In your MODULE.bazel file, locate your toolchains and add the following entry ri
 register_toolchains("@rules_rust_prost//:default_prost_toolchain")
 
 # Custom Prost toolchain
-register_toolchains("@//build/prost_toolchain")
+register_toolchains("//tools/prost_toolchain")
 ```
 
-Pay attention to the path, `build/prost_toolchain` because if your toolchain
+Pay attention to the path, `tools/prost_toolchain` because if your toolchain
 is in a different folder, you have to update this path to make the build work.
 
 ## Usage
@@ -216,4 +194,4 @@ rust_prost_library(
 ```
 
 From there, you
-just [follow the target documentation](https://bazelbuild.github.io/rules_rust/rust_proto.html#rust_proto_library).
+just [follow the target documentation](https://bazelbuild.github.io/rules_rust/rust_prost.html).
