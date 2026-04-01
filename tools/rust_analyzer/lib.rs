@@ -109,7 +109,7 @@ fn generate_crate_info(
         .arg("--norun_validations")
         .arg("--remote_download_all")
         .arg(format!(
-            "--aspects={rules_rust}//rust:defs.bzl%rust_analyzer_aspect"
+            "--aspects={rules_rust}//tools/rust_analyzer:defs.bzl%rust_analyzer_aspect"
         ))
         .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src")
         .args(targets)

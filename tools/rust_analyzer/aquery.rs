@@ -104,7 +104,7 @@ pub fn get_crate_specs(
         .arg("--include_aspects")
         .arg("--include_artifacts")
         .arg(format!(
-            "--aspects={rules_rust_name}//rust:defs.bzl%rust_analyzer_aspect"
+            "--aspects={rules_rust_name}//tools/rust_analyzer:defs.bzl%rust_analyzer_aspect"
         ))
         .arg("--output_groups=rust_analyzer_crate_spec")
         .arg(format!(
