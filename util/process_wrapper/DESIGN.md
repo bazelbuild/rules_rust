@@ -12,8 +12,8 @@ The worker entrypoint is `worker::worker_main()`. It:
 
 - reads one JSON `WorkRequest` per line from stdin
 - classifies the request as non-pipelined, metadata, or full
-- registers the request in `PipelineState` before it becomes cancelable
-- dispatches multiplex requests onto background threads
+- registers the request in `RequestCoordinator` before it becomes cancelable
+- dispatches multiplex requests onto background threads via `RequestExecutor`
 - serializes `WorkResponse` writes to stdout
 
 ## Request Kinds
@@ -35,33 +35,32 @@ execroot:
 This avoids the earlier split where pre-registration and execution could
 disagree about whether a request was pipelined.
 
-## Pipeline State Machine
+## Request Coordination and Invocation Lifecycle
 
-`PipelineState` tracks three data structures:
+`RequestCoordinator` (in `worker_registry.rs`) tracks three data structures:
 
-- `entries`: pipeline key to active phase
-- `request_index`: request id to pipeline key
-- `claim_flags`: request id to atomic "response already claimed" flag
+- `invocations`: pipeline key → `Arc<RustcInvocation>`
+- `request_index`: request id → pipeline key
+- `claim_flags`: request id → atomic "response already claimed" flag
 
-The important phases are:
+Each `RustcInvocation` (in `worker_invocation.rs`) is a shared condvar-based
+state machine with these states:
 
-- `PreRegistered`: metadata request is known but rustc has not been stored yet
-- `MetadataRunning`: background rustc is alive and owned by the metadata path
-- `FullWaiting`: full request has taken the child and is waiting for exit
-- `FallbackRunning`: full request claimed the key for standalone fallback, so
-  late metadata stores must be rejected
+- `Pending`: invocation created but rustc not yet started
+- `Running`: rustc child is alive, being driven by a background thread
+- `MetadataReady`: `.rmeta` has been emitted; metadata handler can be unblocked
+- `Completed`: rustc exited successfully; full handler can be unblocked
+- `Failed`: rustc exited with non-zero code
+- `ShuttingDown`: shutdown was requested; all waiters receive an error
 
-The critical invariant is that ownership transfers happen under the
-`PipelineState` mutex. Two cases matter:
+The metadata handler spawns rustc, creates a `RustcInvocation` via
+`spawn_pipelined_rustc`, and inserts it into the coordinator. The full handler
+retrieves that shared invocation and calls `wait_for_completion`. If no
+invocation exists yet, the full handler falls back to a standalone subprocess.
 
-1. Metadata to full handoff:
-   `MetadataRunning -> FullWaiting`
-2. Missing background child:
-   `PreRegistered|Absent -> FallbackRunning`
-
-That second transition prevents the old race where a full request started a
-fallback compile and a late metadata thread stored a background rustc at the
-same time.
+The critical invariant is that invocation insertion and retrieval happen under
+the coordinator's mutex. The coordinator also arbitrates cancel/completion
+races via atomic claim flags, ensuring only one response is sent per request.
 
 ## Retry and Cancellation
 
@@ -74,12 +73,12 @@ has changed.
 
 Cancellation is best-effort:
 
-- non-pipelined requests only suppress duplicate responses
-- pipelined requests can kill the owned background child or signal the PID held
-  by `FullWaiting`
+- non-pipelined requests only suppress duplicate responses via claim flags
+- pipelined requests call `RustcInvocation::request_shutdown()`, which
+  transitions to `ShuttingDown` and sends SIGTERM to the child process
 
 `claim_flags` are the response-level guard. `request_index` is the lookup table
-that lets cancellation find the current pipeline entry.
+that lets cancellation find the associated invocation.
 
 ## Sandbox Contract
 
@@ -124,9 +123,9 @@ There are two relevant worker paths:
 
 - Non-pipelined requests re-exec `process_wrapper` via `run_request()`, so they
   share the standalone path by construction.
-- Pipelined requests diverge: `handle_pipelining_metadata()` spawns rustc
-  directly, rewrites output locations into `_pw_state`, and
-  `handle_pipelining_full()` later joins that background compile and
+- Pipelined requests diverge: `RequestExecutor::execute_metadata()` spawns
+  rustc directly, rewrites output locations into `_pw_state`, and
+  `RequestExecutor::execute_full()` later joins that background compile and
   materializes artifacts.
 
 That second path is where determinism matters most. The same rustc flags used by
@@ -145,8 +144,9 @@ The test harness relies on a few implementation hooks:
 
 - `run_standalone(&Options)` factors the standalone execution path out of
   `main()` so tests can invoke it without exiting the process.
-- `worker::{pipeline, protocol, sandbox, types}` are `pub(crate)` so unit tests
-  can drive the pipelined handlers directly.
+- Worker submodules (`pipeline`, `args`, `exec`, `sandbox`, `invocation`,
+  `registry`, `protocol`, `types`, `logging`, `request`) are `pub(crate)` so
+  unit tests can drive the pipelined handlers directly.
 - `RUST_TEST_THREADS=1` is set for `process_wrapper_test` because the pipelined
   determinism test temporarily changes the process current working directory.
 
@@ -155,13 +155,29 @@ The core regression test is `test_pipelined_matches_standalone()` in
 
 1. compiles a trivial crate twice with standalone rustc to prove the baseline is
    itself deterministic for the chosen flags
-2. runs the same crate through `handle_pipelining_metadata()` and
-   `handle_pipelining_full()`
+2. runs the same crate through `execute_metadata()` and `execute_full()`
 3. compares both `.rlib` and `.rmeta` bytes between standalone and worker
 
 The `.rmeta` comparison is as important as the `.rlib` comparison because
 downstream crates compile against metadata first; a metadata mismatch can expose
 different SVH or type information even if the final archive happens to link.
+
+## Module Structure
+
+The worker code is organized into single-responsibility modules:
+
+| Module | File | Responsibility |
+|--------|------|---------------|
+| `types` | `worker_types.rs` | Domain newtypes: `PipelineKey`, `RequestId`, `SandboxDir`, `OutputDir` |
+| `protocol` | `worker_protocol.rs` | Bazel JSON wire protocol: parse `ParsedWorkRequest`, build `WorkResponse` |
+| `args` | `worker_args.rs` | Arg parsing, expansion, rewriting, env building |
+| `pipeline` | `worker_pipeline.rs` | Request classification (`RequestKind`), pipeline directory lifecycle, output materialization |
+| `exec` | `worker_exec.rs` | Subprocess spawning, file utilities, permissions, process kill helpers |
+| `sandbox` | `worker_sandbox.rs` | Sandbox-specific: cache seeding, sandboxed copies, sandboxed execution |
+| `invocation` | `worker_invocation.rs` | `RustcInvocation` state machine, `spawn_pipelined_rustc` / `spawn_non_pipelined_rustc` |
+| `registry` | `worker_registry.rs` | `RequestCoordinator`: invocation tracking, claim flags, cancel arbitration |
+| `request` | `worker_request.rs` | `RequestExecutor`: dispatch to metadata/full/fallback/non-pipelined paths |
+| `logging` | `worker_logging.rs` | Structured lifecycle logging, `WorkerLifecycleGuard` |
 
 Current coverage splits across layers:
 
