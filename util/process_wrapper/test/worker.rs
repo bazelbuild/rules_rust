@@ -3,7 +3,7 @@ use super::pipeline::{
     find_out_dir_in_expanded, parse_pw_args, prepare_expanded_rustc_outputs, prepare_rustc_args,
     rewrite_out_dir_in_expanded, scan_pipelining_flags, strip_pipelining_flags, RequestKind,
 };
-use super::invocation::{extract_rmeta_path, InvocationDirs, RustcInvocation};
+use super::invocation::{InvocationDirs, RustcInvocation};
 use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
     WorkRequestInput,
@@ -17,6 +17,7 @@ use super::registry::RequestCoordinator;
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
+use crate::rustc::extract_rmeta_path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tinyjson::JsonValue;

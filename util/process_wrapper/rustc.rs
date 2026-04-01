@@ -169,6 +169,22 @@ fn output_based_on_error_format(
     }
 }
 
+/// Extracts the artifact path from an rmeta artifact notification JSON line.
+/// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
+/// `None` for all other lines.
+pub(crate) fn extract_rmeta_path(line: &str) -> Option<String> {
+    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>()
+        && let Some(JsonValue::String(artifact)) = map.get("artifact")
+        && let Some(JsonValue::String(emit)) = map.get("emit")
+        && artifact.ends_with(".rmeta")
+        && emit == "metadata"
+    {
+        Some(artifact.clone())
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 #[path = "test/rustc.rs"]
 mod test;

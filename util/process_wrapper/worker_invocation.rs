@@ -25,8 +25,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
-use tinyjson::JsonValue;
-
 use super::types::OutputDir;
 use crate::rustc::RustcStderrPolicy;
 
@@ -508,22 +506,6 @@ fn accumulate_diagnostic(line: &str, policy: &mut RustcStderrPolicy, diagnostics
     }
 }
 
-/// Extracts the artifact path from an rmeta artifact notification JSON line.
-/// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
-/// `None` for all other lines.
-pub(crate) fn extract_rmeta_path(line: &str) -> Option<String> {
-    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>()
-        && let Some(JsonValue::String(artifact)) = map.get("artifact")
-        && let Some(JsonValue::String(emit)) = map.get("emit")
-        && artifact.ends_with(".rmeta")
-        && emit == "metadata"
-    {
-        Some(artifact.clone())
-    } else {
-        None
-    }
-}
-
 // ---------------------------------------------------------------------------
 // spawn_pipelined_rustc — rustc thread for a pipelined invocation
 // ---------------------------------------------------------------------------
@@ -563,7 +545,7 @@ pub(crate) fn spawn_pipelined_rustc(
 
         // Phase 1: process lines until metadata (.rmeta) is emitted.
         for line in lines.by_ref() {
-            if let Some(rmeta_path) = extract_rmeta_path(&line) {
+            if let Some(rmeta_path) = crate::rustc::extract_rmeta_path(&line) {
                 invocation.transition_to_metadata_ready(
                     pid,
                     diagnostics.clone(),
@@ -576,7 +558,7 @@ pub(crate) fn spawn_pipelined_rustc(
 
         // Phase 2: process remaining lines (codegen diagnostics).
         for line in lines {
-            if extract_rmeta_path(&line).is_some() {
+            if crate::rustc::extract_rmeta_path(&line).is_some() {
                 continue;
             }
             accumulate_diagnostic(&line, &mut policy, &mut diagnostics);
