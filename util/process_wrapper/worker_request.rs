@@ -19,6 +19,7 @@
 //! `RustcInvocation` + rustc threads for pipelined requests and delegate to
 //! subprocess execution for non-pipelined requests.
 
+use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
@@ -39,6 +40,18 @@ use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, run_sandboxed_request,
 };
 use super::types::PipelineKey;
+use super::pipeline::PipelineContext;
+use super::types::OutputDir;
+use crate::options::ParsedPwArgs;
+
+/// All prepared state needed to spawn a metadata rustc invocation.
+struct MetadataInvocationReady {
+    rustc_args: Vec<String>,
+    env: HashMap<String, String>,
+    ctx: PipelineContext,
+    original_out_dir: OutputDir,
+    pw_args: ParsedPwArgs,
+}
 
 /// Per-request context, owned by the request thread. Not stored in the registry.
 pub(super) struct RequestExecutor {
@@ -73,43 +86,18 @@ impl RequestExecutor {
             }
         };
 
-        // --- Arg parsing (same as old handle_pipelining_metadata) ---
-        let filtered = strip_pipelining_flags(&full_args);
-        let sep = filtered.iter().position(|a| a == "--");
-        let (pw_raw, rustc_and_after) = match sep {
-            Some(pos) => (&filtered[..pos], &filtered[pos + 1..]),
-            None => return (1, "pipelining: no '--' separator in args".to_string()),
-        };
-        if rustc_and_after.is_empty() {
-            return (1, "pipelining: no rustc executable after '--'".to_string());
-        }
-
-        let ctx = match create_pipeline_context(state_roots, &key, request) {
-            Ok(v) => v,
+        let ready = match prepare_metadata_invocation(&key, full_args, request, state_roots) {
+            Ok(r) => r,
             Err(e) => return e,
         };
+        let MetadataInvocationReady {
+            rustc_args,
+            env,
+            ctx,
+            original_out_dir,
+            pw_args,
+        } = ready;
 
-        let mut pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
-        let (rustc_args, original_out_dir, relocated) =
-            match prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir) {
-                Ok(v) => v,
-                Err(e) => return e,
-            };
-        pw_args.merge_relocated(relocated);
-        let pw_args = resolve_pw_args_for_request(pw_args, request, &ctx.execroot_dir);
-        let env = match build_rustc_env(
-            &pw_args.env_files,
-            pw_args.stable_status_file.as_deref(),
-            pw_args.volatile_status_file.as_deref(),
-            &pw_args.subst,
-        ) {
-            Ok(env) => env,
-            Err(e) => return (1, format!("pipelining: {e}")),
-        };
-
-        let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
-        let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
-        prepare_expanded_rustc_outputs(&rustc_args);
         append_pipeline_log(
             &ctx.root_dir,
             &format!(
@@ -386,4 +374,50 @@ impl RequestExecutor {
             Err(failure) => (failure.exit_code, failure.diagnostics),
         }
     }
+}
+
+/// Prepares all arguments, environment, and pipeline context for a metadata
+/// rustc invocation. Extracts the arg-parsing phase from execute_metadata.
+fn prepare_metadata_invocation(
+    key: &PipelineKey,
+    full_args: Vec<String>,
+    request: &ParsedWorkRequest,
+    state_roots: &WorkerStateRoots,
+) -> Result<MetadataInvocationReady, (i32, String)> {
+    let filtered = strip_pipelining_flags(&full_args);
+    let sep = filtered.iter().position(|a| a == "--");
+    let (pw_raw, rustc_and_after) = match sep {
+        Some(pos) => (&filtered[..pos], &filtered[pos + 1..]),
+        None => return Err((1, "pipelining: no '--' separator in args".to_string())),
+    };
+    if rustc_and_after.is_empty() {
+        return Err((1, "pipelining: no rustc executable after '--'".to_string()));
+    }
+
+    let ctx = create_pipeline_context(state_roots, key, request)?;
+
+    let mut pw_args = parse_pw_args(pw_raw, &ctx.execroot_dir);
+    let (rustc_args, original_out_dir, relocated) =
+        prepare_rustc_args(rustc_and_after, &pw_args, &ctx.execroot_dir)?;
+    pw_args.merge_relocated(relocated);
+    let pw_args = resolve_pw_args_for_request(pw_args, request, &ctx.execroot_dir);
+    let env = build_rustc_env(
+        &pw_args.env_files,
+        pw_args.stable_status_file.as_deref(),
+        pw_args.volatile_status_file.as_deref(),
+        &pw_args.subst,
+    )
+    .map_err(|e| (1i32, format!("pipelining: {e}")))?;
+
+    let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
+    let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
+    prepare_expanded_rustc_outputs(&rustc_args);
+
+    Ok(MetadataInvocationReady {
+        rustc_args,
+        env,
+        ctx,
+        original_out_dir,
+        pw_args,
+    })
 }
