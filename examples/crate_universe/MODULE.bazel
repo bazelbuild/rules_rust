@@ -16,7 +16,7 @@ local_path_override(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.2.8")
+bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
@@ -561,7 +561,7 @@ using_cxx = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 using_cxx.spec(
     package = "cxx",
     repositories = ["using_cxx"],
-    version = "1.0.109",
+    version = "1.0.194",
 )
 using_cxx.splicing_config(
     repositories = ["using_cxx"],
@@ -588,20 +588,23 @@ rust_binary(
     name = "cxxbridge-cmd",
     srcs = glob(["src/**/*.rs"]),
     aliases = aliases(),
-    compile_data = [
-        "src/gen/include/cxx.h",
-    ],
+    compile_data = glob(["src/gen/**"]),
     edition = "2021",
+    rustc_env = {
+        "CARGO_PKG_VERSION_MAJOR": "1",
+        "CARGO_PKG_VERSION_MINOR": "0",
+        "CARGO_PKG_VERSION_PATCH": "194",
+    },
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
         normal = True,
     ),
 )
     """,
-    sha256 = "d93600487d429c8bf013ee96719af4e62e809ac57fc4cac24f17cf58e4526009",
-    strip_prefix = "cxxbridge-cmd-1.0.109",
+    sha256 = "d0956799fa8678d4c50eed028f2de1c0552ae183c76e976cf7ca8c4e36a7c328",
+    strip_prefix = "cxxbridge-cmd-1.0.194",
     type = "tar.gz",
-    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.109.crate"],
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.194.crate"],
 )
 
 cxxbridge_cmd_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
