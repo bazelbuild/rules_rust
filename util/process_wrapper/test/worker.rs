@@ -18,6 +18,7 @@ use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tinyjson::JsonValue;
 
 fn parse_json(s: &str) -> JsonValue {
@@ -826,15 +827,6 @@ fn test_build_rustc_env_applies_stamp_and_subst_mappings() {
 }
 
 #[test]
-fn test_build_shutdown_response() {
-    let response = build_shutdown_response(RequestId(11));
-    assert_eq!(
-        response,
-        r#"{"exitCode":1,"output":"worker shutting down","requestId":11}"#
-    );
-}
-
-#[test]
 fn test_begin_worker_shutdown_sets_flag() {
     WORKER_SHUTTING_DOWN.store(false, Ordering::SeqCst);
     begin_worker_shutdown("test");
@@ -1091,7 +1083,7 @@ fn test_invocation_pending_to_running() {
 #[test]
 fn test_invocation_completed_via_transition() {
     let inv = RustcInvocation::new();
-    inv.transition_to_completed(
+    inv.force_completed(
         0,
         "all good".to_string(),
         InvocationDirs {
@@ -1115,13 +1107,13 @@ fn test_invocation_shutdown_from_pending() {
 }
 
 // ---------------------------------------------------------------------------
-// spawn_pipelined_monitor tests
+// spawn_pipelined_rustc tests
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_monitor_thread_pipelined_completes() {
+fn test_rustc_thread_pipelined_completes() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1137,8 +1129,7 @@ fn test_monitor_thread_pipelined_completes() {
         original_out_dir: OutputDir::default(),
     };
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_pipelined_monitor(&inv, child, dirs.clone(), None);
+    let inv = spawn_pipelined_rustc(child, dirs.clone(), None);
 
     let meta = inv.wait_for_metadata();
     assert!(meta.is_ok(), "metadata should be ready");
@@ -1146,14 +1137,12 @@ fn test_monitor_thread_pipelined_completes() {
     let result = inv.wait_for_completion();
     assert!(result.is_ok(), "invocation should complete");
     assert_eq!(result.unwrap().exit_code, 0);
-
-    handle.join().expect("monitor thread should not panic");
 }
 
 #[test]
-fn test_monitor_thread_failure_before_rmeta() {
+fn test_rustc_thread_failure_before_rmeta() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1169,20 +1158,20 @@ fn test_monitor_thread_failure_before_rmeta() {
         original_out_dir: OutputDir::default(),
     };
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_pipelined_monitor(&inv, child, dirs, None);
+    let inv = spawn_pipelined_rustc(child, dirs, None);
 
     let meta = inv.wait_for_metadata();
     assert!(meta.is_err());
 
-    handle.join().expect("monitor thread should not panic");
+    // wait_for_completion ensures the thread finishes.
+    let _ = inv.wait_for_completion();
 }
 
 #[test]
 #[cfg(unix)]
-fn test_monitor_thread_shutdown_kills_child() {
+fn test_rustc_thread_shutdown_kills_child() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_pipelined_monitor, InvocationDirs};
+    use super::invocation::{spawn_pipelined_rustc, InvocationDirs};
 
     // sleep produces no stderr output, so read_line blocks until child is killed.
     let child = Command::new("sleep")
@@ -1198,10 +1187,9 @@ fn test_monitor_thread_shutdown_kills_child() {
         original_out_dir: OutputDir::default(),
     };
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_pipelined_monitor(&inv, child, dirs, None);
+    let inv = spawn_pipelined_rustc(child, dirs, None);
 
-    // Give monitor thread time to start reading stderr.
+    // Give rustc thread time to start reading stderr.
     std::thread::sleep(std::time::Duration::from_millis(50));
 
     // Request shutdown — this sends SIGTERM to the child, unblocking read_line.
@@ -1210,19 +1198,16 @@ fn test_monitor_thread_shutdown_kills_child() {
     // wait_for_completion should return failure.
     let result = inv.wait_for_completion();
     assert!(result.is_err());
-
-    // Monitor thread should exit promptly.
-    handle.join().expect("monitor thread should not panic");
 }
 
 // ---------------------------------------------------------------------------
-// spawn_non_pipelined_monitor tests
+// spawn_non_pipelined_rustc tests
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_monitor_thread_non_pipelined_completes() {
+fn test_rustc_thread_non_pipelined_completes() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+    use super::invocation::spawn_non_pipelined_rustc;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1232,8 +1217,7 @@ fn test_monitor_thread_non_pipelined_completes() {
         .spawn()
         .unwrap();
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_non_pipelined_monitor(&inv, child);
+    let inv = spawn_non_pipelined_rustc(child);
 
     let result = inv.wait_for_completion();
     assert!(result.is_ok());
@@ -1241,14 +1225,12 @@ fn test_monitor_thread_non_pipelined_completes() {
     assert_eq!(completion.exit_code, 0);
     assert!(completion.diagnostics.contains("hello"), "should capture stderr");
     assert!(completion.diagnostics.contains("world"), "should capture stdout");
-
-    handle.join().expect("monitor thread should not panic");
 }
 
 #[test]
-fn test_monitor_thread_non_pipelined_fails() {
+fn test_rustc_thread_non_pipelined_fails() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+    use super::invocation::spawn_non_pipelined_rustc;
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1258,23 +1240,20 @@ fn test_monitor_thread_non_pipelined_fails() {
         .spawn()
         .unwrap();
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_non_pipelined_monitor(&inv, child);
+    let inv = spawn_non_pipelined_rustc(child);
 
     let result = inv.wait_for_completion();
     assert!(result.is_err());
     let failure = result.unwrap_err();
     assert_eq!(failure.exit_code, 1);
     assert!(failure.diagnostics.contains("error msg"), "should capture stderr on failure");
-
-    handle.join().expect("monitor thread should not panic");
 }
 
 #[test]
 #[cfg(unix)]
 fn test_cancel_non_pipelined_kills_child() {
     use std::process::{Command, Stdio};
-    use super::invocation::{spawn_non_pipelined_monitor, RustcInvocation};
+    use super::invocation::spawn_non_pipelined_rustc;
 
     let child = Command::new("sleep")
         .arg("60")
@@ -1283,16 +1262,13 @@ fn test_cancel_non_pipelined_kills_child() {
         .spawn()
         .unwrap();
 
-    let inv = RustcInvocation::new();
-    let handle = spawn_non_pipelined_monitor(&inv, child);
+    let inv = spawn_non_pipelined_rustc(child);
 
     std::thread::sleep(std::time::Duration::from_millis(50));
     inv.request_shutdown();
 
     let result = inv.wait_for_completion();
     assert!(result.is_err());
-
-    handle.join().expect("monitor thread should not panic");
 }
 
 // ---------------------------------------------------------------------------
@@ -1300,18 +1276,29 @@ fn test_cancel_non_pipelined_kills_child() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_registry_register_metadata_creates_invocation() {
+fn test_registry_register_metadata_records_claim() {
     let mut reg = RequestRegistry::new();
-    let (flag, inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
     assert!(!flag.load(Ordering::SeqCst));
-    assert!(inv.is_pending());
+    // No invocation until insert_invocation is called.
+    assert!(!reg.has_invocation("key1"));
+}
+
+#[test]
+fn test_registry_insert_invocation() {
+    let mut reg = RequestRegistry::new();
+    let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let inv = Arc::new(RustcInvocation::new());
+    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
     assert!(reg.has_invocation("key1"));
+    assert!(inv.is_pending());
 }
 
 #[test]
 fn test_registry_register_full_finds_existing_invocation() {
     let mut reg = RequestRegistry::new();
-    let (_flag1, _inv1) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let _flag1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
     let (_flag2, inv2) = reg.register_full(RequestId(99), PipelineKey("key1".to_string()));
     assert!(inv2.is_some(), "full should find existing invocation");
 }
@@ -1326,7 +1313,9 @@ fn test_registry_register_full_no_invocation_returns_none() {
 #[test]
 fn test_registry_cancel_shuts_down_invocation() {
     let mut reg = RequestRegistry::new();
-    let (_flag, inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let _flag = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let inv = Arc::new(RustcInvocation::new());
+    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv));
     reg.cancel(RequestId(42));
     assert!(inv.is_shutting_down_or_terminal());
 }
@@ -1334,8 +1323,11 @@ fn test_registry_cancel_shuts_down_invocation() {
 #[test]
 fn test_registry_shutdown_all() {
     let mut reg = RequestRegistry::new();
-    let (_f1, inv1) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
-    let (_f2, _inv2) = reg.register_metadata(RequestId(43), PipelineKey("key2".to_string()));
+    let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let inv1 = Arc::new(RustcInvocation::new());
+    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::clone(&inv1));
+    let _f2 = reg.register_metadata(RequestId(43), PipelineKey("key2".to_string()));
+    reg.insert_invocation(PipelineKey("key2".to_string()), Arc::new(RustcInvocation::new()));
     reg.shutdown_all();
     assert!(inv1.is_shutting_down_or_terminal());
 }
@@ -1343,7 +1335,8 @@ fn test_registry_shutdown_all() {
 #[test]
 fn test_registry_remove_request_preserves_invocation() {
     let mut reg = RequestRegistry::new();
-    let (_f1, _inv) = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    let _f1 = reg.register_metadata(RequestId(42), PipelineKey("key1".to_string()));
+    reg.insert_invocation(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
     reg.remove_request(RequestId(42));
     assert!(reg.has_invocation("key1"), "invocation should persist");
 }
@@ -1359,7 +1352,8 @@ fn test_registry_remove_request_preserves_invocation() {
 fn test_metadata_cleanup_preserves_invocation_for_full() {
     let mut reg = RequestRegistry::new();
     let key = PipelineKey("key1".to_string());
-    let (_meta_flag, _inv) = reg.register_metadata(RequestId(42), key.clone());
+    let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
+    reg.insert_invocation(key.clone(), Arc::new(RustcInvocation::new()));
     let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
     assert!(full_inv.is_some(), "full should find the invocation");
 
@@ -1374,16 +1368,15 @@ fn test_metadata_cleanup_preserves_invocation_for_full() {
 /// Regression: skipped metadata request (claim flag swapped before execution)
 /// would call discard_pending_request which could destroy the pipeline entry.
 #[test]
-fn test_metadata_skip_cleanup_preserves_invocation() {
+fn test_metadata_skip_cleanup_no_invocation() {
     let mut reg = RequestRegistry::new();
     let key = PipelineKey("key1".to_string());
-    let (_flag, _inv) = reg.register_metadata(RequestId(42), key.clone());
+    let _flag = reg.register_metadata(RequestId(42), key.clone());
 
     // Simulate skip: just remove the request.
+    // No invocation was ever inserted (rustc never spawned).
     reg.remove_request(RequestId(42));
-
-    // Invocation persists — it was created by register_metadata.
-    assert!(reg.has_invocation("key1"));
+    assert!(!reg.has_invocation("key1"));
 }
 
 /// Regression: cleanup_after_panic called cleanup_key_fully for Metadata panics,
@@ -1394,7 +1387,9 @@ fn test_metadata_skip_cleanup_preserves_invocation() {
 fn test_abort_metadata_panic_preserves_full_invocation() {
     let mut reg = RequestRegistry::new();
     let key = PipelineKey("key1".to_string());
-    let (_meta_flag, inv) = reg.register_metadata(RequestId(42), key.clone());
+    let _meta_flag = reg.register_metadata(RequestId(42), key.clone());
+    let inv = Arc::new(RustcInvocation::new());
+    reg.insert_invocation(key.clone(), Arc::clone(&inv));
     let (_full_flag, full_inv) = reg.register_full(RequestId(99), key.clone());
     assert!(full_inv.is_some());
 

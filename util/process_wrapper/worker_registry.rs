@@ -22,7 +22,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread;
 
 use super::invocation::RustcInvocation;
 use super::types::{PipelineKey, RequestId};
@@ -31,11 +30,15 @@ use super::types::{PipelineKey, RequestId};
 pub(crate) type SharedRequestRegistry = Arc<Mutex<RequestRegistry>>;
 
 /// Central owner of all invocations and request metadata.
+///
+/// Thread handles (both request threads and rustc threads) are detached at
+/// spawn rather than stored here. Bazel shuts down workers via SIGTERM with no
+/// drain phase, so there is no opportunity to join threads gracefully — process
+/// exit is the only cleanup that matters. This avoids unbounded `JoinHandle`
+/// accumulation in long-lived workers that persist across many builds.
 pub(crate) struct RequestRegistry {
     /// Pipeline key -> shared invocation.
     invocations: HashMap<PipelineKey, Arc<RustcInvocation>>,
-    /// Monitor thread handles for join during shutdown.
-    monitors: Vec<thread::JoinHandle<()>>,
     /// request_id -> pipeline key (pipelined requests, for O(1) cancel lookup).
     request_index: HashMap<RequestId, PipelineKey>,
     /// Claim flags for ALL in-flight requests (cancel/completion race prevention).
@@ -46,29 +49,37 @@ impl RequestRegistry {
     pub fn new() -> Self {
         RequestRegistry {
             invocations: HashMap::new(),
-            monitors: Vec::new(),
             request_index: HashMap::new(),
             claim_flags: HashMap::new(),
         }
     }
 
-    /// Register a metadata request. Creates the invocation if it doesn't exist.
-    /// Returns the claim flag and the shared invocation.
+    /// Register a metadata request. Records the key mapping and claim flag.
+    /// The invocation is NOT created here — it is created by
+    /// `spawn_pipelined_rustc` and inserted via `insert_invocation` after
+    /// rustc is successfully spawned. This ensures no invocation exists in
+    /// the registry unless rustc is actually running, preventing deadlocks
+    /// where a full request waits on a Pending invocation that will never
+    /// transition.
     pub fn register_metadata(
         &mut self,
         request_id: RequestId,
         key: PipelineKey,
-    ) -> (Arc<AtomicBool>, Arc<RustcInvocation>) {
+    ) -> Arc<AtomicBool> {
         let claim = Arc::new(AtomicBool::new(false));
         self.claim_flags.insert(request_id, Arc::clone(&claim));
-        self.request_index.insert(request_id, key.clone());
+        self.request_index.insert(request_id, key);
+        claim
+    }
 
-        let inv = self
-            .invocations
-            .entry(key)
-            .or_insert_with(|| Arc::new(RustcInvocation::new()));
+    /// Insert an invocation into the registry after rustc has been spawned.
+    pub fn insert_invocation(&mut self, key: PipelineKey, inv: Arc<RustcInvocation>) {
+        self.invocations.insert(key, inv);
+    }
 
-        (claim, Arc::clone(inv))
+    /// Look up an invocation by key (e.g. for shutdown on panic).
+    pub fn get_invocation(&self, key: &PipelineKey) -> Option<Arc<RustcInvocation>> {
+        self.invocations.get(key).map(Arc::clone)
     }
 
     /// Register a full (codegen) request. Returns the existing invocation if
@@ -95,22 +106,6 @@ impl RequestRegistry {
         claim
     }
 
-    /// Store an invocation and its monitor thread handle.
-    pub fn store_invocation(
-        &mut self,
-        key: PipelineKey,
-        invocation: Arc<RustcInvocation>,
-        monitor: thread::JoinHandle<()>,
-    ) {
-        self.invocations.insert(key, invocation);
-        self.monitors.push(monitor);
-    }
-
-    /// Store a monitor thread handle only (for non-pipelined requests).
-    pub fn store_monitor(&mut self, monitor: thread::JoinHandle<()>) {
-        self.monitors.push(monitor);
-    }
-
     /// Cancel a request: swap its claim flag, shut down the associated
     /// invocation (if pipelined), and remove request mappings.
     pub fn cancel(&mut self, request_id: RequestId) {
@@ -131,13 +126,12 @@ impl RequestRegistry {
         self.claim_flags.remove(&request_id);
     }
 
-    /// Shut down all invocations and join all monitor threads.
+    /// Shut down all invocations. Rustc threads are detached and will
+    /// exit when their rustc process terminates (via SIGTERM from
+    /// `request_shutdown`). Process exit handles final cleanup.
     pub fn shutdown_all(&mut self) {
         for inv in self.invocations.values() {
             inv.request_shutdown();
-        }
-        for handle in self.monitors.drain(..) {
-            let _ = handle.join();
         }
         self.invocations.clear();
         self.request_index.clear();

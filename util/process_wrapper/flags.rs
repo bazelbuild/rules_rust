@@ -30,9 +30,9 @@ pub(crate) enum FlagParseError {
 impl fmt::Display for FlagParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::UnknownFlag(ref flag) => write!(f, "unknown flag \"{flag}\""),
-            Self::ValueMissing(ref flag) => write!(f, "flag \"{flag}\" missing parameter(s)"),
-            Self::ProvidedMultipleTimes(ref flag) => {
+            Self::UnknownFlag(flag) => write!(f, "unknown flag \"{flag}\""),
+            Self::ValueMissing(flag) => write!(f, "flag \"{flag}\" missing parameter(s)"),
+            Self::ProvidedMultipleTimes(flag) => {
                 write!(f, "flag \"{flag}\" can only appear once")
             }
             Self::ProgramNameMissing => {

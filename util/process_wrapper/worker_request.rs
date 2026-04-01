@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Thread-local request context for Bazel work requests.
+//! Per-request context for Bazel work requests.
 //!
-//! `BazelRequest` wraps a `WorkRequestContext` with its classified `RequestKind`
-//! and an optional `RustcInvocation` reference. It provides `execute_*` methods
-//! that use `RustcInvocation` + monitor threads for pipelined requests and
-//! delegate to subprocess execution for non-pipelined requests.
+//! `BazelRequest` pairs a request ID with its classified `RequestKind` and an
+//! optional shared `RustcInvocation`. It provides `execute_*` methods that use
+//! `RustcInvocation` + rustc threads for pipelined requests and delegate to
+//! subprocess execution for non-pipelined requests.
 
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use super::invocation::{spawn_pipelined_monitor, InvocationDirs, RustcInvocation};
+use super::invocation::{spawn_pipelined_rustc, InvocationDirs, RustcInvocation};
 use super::pipeline::{
     append_pipeline_log, build_rustc_env, copy_outputs_unsandboxed, copy_rmeta_unsandboxed,
-    create_pipeline_context, maybe_cleanup_pipeline_dir, parse_pw_args, prepare_expanded_rustc_outputs,
-    prepare_rustc_args, resolve_pw_args_for_request, rewrite_emit_metadata_path,
-    rewrite_out_dir_in_expanded, strip_pipelining_flags, RequestKind, WorkerStateRoots,
+    create_pipeline_context, maybe_cleanup_pipeline_dir, parse_pw_args,
+    prepare_expanded_rustc_outputs, prepare_rustc_args, resolve_pw_args_for_request,
+    rewrite_emit_metadata_path, rewrite_out_dir_in_expanded, strip_pipelining_flags, RequestKind,
+    WorkerStateRoots,
 };
 use super::protocol::WorkRequestContext;
 use super::registry::SharedRequestRegistry;
@@ -35,33 +36,23 @@ use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, prepare_outputs,
     resolve_request_relative_path, run_request, run_sandboxed_request,
 };
-use super::types::{PipelineKey, RequestId};
-use super::lock_or_recover;
+use super::types::PipelineKey;
 
-/// Thread-local request context. Not stored in the registry.
+/// Per-request context, owned by the request thread. Not stored in the registry.
 pub(super) struct BazelRequest {
-    pub(super) request_id: RequestId,
     pub(super) kind: RequestKind,
     /// Shared invocation for pipelined requests. None for non-pipelined.
     pub(super) invocation: Option<Arc<RustcInvocation>>,
 }
 
 impl BazelRequest {
-    pub(super) fn new(
-        request_id: RequestId,
-        kind: RequestKind,
-        invocation: Option<Arc<RustcInvocation>>,
-    ) -> Self {
-        Self {
-            request_id,
-            kind,
-            invocation,
-        }
+    pub(super) fn new(kind: RequestKind, invocation: Option<Arc<RustcInvocation>>) -> Self {
+        Self { kind, invocation }
     }
 
     /// Execute a pipelined metadata request.
     ///
-    /// Spawns rustc, starts a monitor thread, waits for metadata readiness,
+    /// Spawns rustc, starts a rustc thread, waits for metadata readiness,
     /// copies the .rmeta output, and returns diagnostics.
     pub(super) fn execute_metadata(
         &self,
@@ -72,7 +63,12 @@ impl BazelRequest {
     ) -> (i32, String) {
         let key = match &self.kind {
             RequestKind::Metadata { key } => key.clone(),
-            _ => return (1, "execute_metadata called for non-metadata request".to_string()),
+            _ => {
+                return (
+                    1,
+                    "execute_metadata called for non-metadata request".to_string(),
+                )
+            }
         };
 
         // --- Arg parsing (same as old handle_pipelining_metadata) ---
@@ -116,8 +112,11 @@ impl BazelRequest {
             &ctx.root_dir,
             &format!(
                 "metadata start request_id={} key={} sandbox_dir={:?} execroot={} outputs={}",
-                request.request_id, key, request.sandbox_dir,
-                ctx.execroot_dir.display(), ctx.outputs_dir.display(),
+                request.request_id,
+                key,
+                request.sandbox_dir,
+                ctx.execroot_dir.display(),
+                ctx.outputs_dir.display(),
             ),
         );
 
@@ -135,7 +134,10 @@ impl BazelRequest {
             }
             let dep_dirs: Vec<std::path::PathBuf> = rustc_args
                 .iter()
-                .filter_map(|a| a.strip_prefix("-Ldependency=").map(std::path::PathBuf::from))
+                .filter_map(|a| {
+                    a.strip_prefix("-Ldependency=")
+                        .map(std::path::PathBuf::from)
+                })
                 .collect();
             crate::util::consolidate_deps_into(&dep_dirs, &unified_dir);
             rustc_args.retain(|a| !a.starts_with("-Ldependency="));
@@ -168,32 +170,28 @@ impl BazelRequest {
             Err(e) => return (1, format!("pipelining: failed to spawn rustc: {e}")),
         };
 
-        // --- Start monitor thread ---
+        // --- Start rustc thread ---
         let dirs = InvocationDirs {
             pipeline_output_dir: ctx.outputs_dir.clone(),
             pipeline_root_dir: ctx.root_dir.clone(),
             original_out_dir,
         };
 
-        let invocation = self.invocation.as_ref().expect(
-            "metadata request must have an invocation from register_metadata",
-        );
-
         let original_out_dir = dirs.original_out_dir.clone();
-        let monitor_handle = spawn_pipelined_monitor(
-            invocation,
-            child,
-            dirs,
-            pw_args.rustc_output_format.clone(),
-        );
-        lock_or_recover(registry).store_invocation(
-            key.clone(),
-            Arc::clone(invocation),
-            monitor_handle,
-        );
+        let invocation =
+            spawn_pipelined_rustc(child, dirs, pw_args.rustc_output_format.clone());
+
+        // Insert into registry so the full request can find it.
+        // This is the only point where an invocation enters the registry,
+        // guaranteeing that any invocation found by register_full has a
+        // running rustc behind it (no stuck-Pending deadlocks).
+        registry
+            .lock()
+            .expect("request registry mutex poisoned")
+            .insert_invocation(key.clone(), Arc::clone(&invocation));
 
         // --- Wait for metadata readiness ---
-        // The monitor thread detects the rmeta artifact notification and
+        // The rustc thread detects the rmeta artifact notification and
         // transitions to MetadataReady. We then copy the .rmeta file here
         // in the request thread. There is a small timing gap between
         // detection and copy, but this is safe because:
@@ -206,10 +204,8 @@ impl BazelRequest {
         match invocation.wait_for_metadata() {
             Ok(meta) => {
                 if let Some(rmeta_path_str) = &meta.rmeta_path {
-                    let rmeta_resolved = resolve_request_relative_path(
-                        rmeta_path_str,
-                        Some(&ctx.execroot_dir),
-                    );
+                    let rmeta_resolved =
+                        resolve_request_relative_path(rmeta_path_str, Some(&ctx.execroot_dir));
                     let rmeta_resolved_str = rmeta_resolved.display().to_string();
                     append_pipeline_log(
                         &ctx.root_dir,
@@ -242,11 +238,7 @@ impl BazelRequest {
                 (0, meta.diagnostics_before)
             }
             Err(failure) => {
-                maybe_cleanup_pipeline_dir(
-                    &ctx.root_dir,
-                    true,
-                    "metadata rustc failed",
-                );
+                maybe_cleanup_pipeline_dir(&ctx.root_dir, true, "metadata rustc failed");
                 if let Some(ref path) = pw_args.output_file {
                     let _ = std::fs::write(path, &failure.diagnostics);
                 }
@@ -263,7 +255,6 @@ impl BazelRequest {
         &self,
         request: &WorkRequestContext,
         full_args: Vec<String>,
-        registry: &SharedRequestRegistry,
         self_path: &std::path::Path,
     ) -> (i32, String) {
         let key = match &self.kind {
@@ -274,7 +265,7 @@ impl BazelRequest {
         let invocation = match &self.invocation {
             Some(inv) => Arc::clone(inv),
             None => {
-                return self.execute_fallback(request, full_args, self_path, &key, registry);
+                return self.execute_fallback(request, full_args, self_path, &key);
             }
         };
 
@@ -313,9 +304,9 @@ impl BazelRequest {
                 );
                 (completion.exit_code, completion.diagnostics)
             }
-            Err(failure) => {
+            Err(_) => {
                 // Invocation failed or was shut down — try fallback.
-                self.execute_fallback(request, full_args, self_path, &key, registry)
+                self.execute_fallback(request, full_args, self_path, &key)
             }
         }
     }
@@ -326,7 +317,6 @@ impl BazelRequest {
         args: Vec<String>,
         self_path: &std::path::Path,
         key: &PipelineKey,
-        _registry: &SharedRequestRegistry,
     ) -> (i32, String) {
         let worker_state_root = std::env::current_dir()
             .ok()
@@ -359,19 +349,22 @@ impl BazelRequest {
 
     /// Execute a non-pipelined multiplex request.
     ///
-    /// Spawns the subprocess, starts a monitor thread for cancellability,
+    /// Spawns the subprocess, starts a rustc thread for cancellability,
     /// waits for completion, and returns the output.
     pub(super) fn execute_non_pipelined(
         &self,
         full_args: Vec<String>,
         self_path: &std::path::Path,
         sandbox_dir: Option<&str>,
-        registry: &SharedRequestRegistry,
     ) -> (i32, String) {
-        use super::invocation::spawn_non_pipelined_monitor;
+        use super::invocation::spawn_non_pipelined_rustc;
         use super::sandbox::spawn_request;
 
-        let context = if sandbox_dir.is_some() { "sandboxed subprocess" } else { "subprocess" };
+        let context = if sandbox_dir.is_some() {
+            "sandboxed subprocess"
+        } else {
+            "subprocess"
+        };
         if let Some(dir) = sandbox_dir {
             let _ = super::sandbox::seed_sandbox_cache_root(std::path::Path::new(dir));
         }
@@ -381,9 +374,10 @@ impl BazelRequest {
             Err(e) => return (1, format!("worker thread error: {e}")),
         };
 
-        let invocation = Arc::new(RustcInvocation::new());
-        let monitor = spawn_non_pipelined_monitor(&invocation, child);
-        lock_or_recover(registry).store_monitor(monitor);
+        // This invocation is local to the request thread — not stored in the
+        // registry. Cancellation only prevents the response (via claim flag);
+        // the child process runs to completion.
+        let invocation = spawn_non_pipelined_rustc(child);
 
         match invocation.wait_for_completion() {
             Ok(completion) => (completion.exit_code, completion.diagnostics),

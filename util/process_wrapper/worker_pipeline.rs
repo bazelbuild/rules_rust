@@ -31,7 +31,7 @@ use super::protocol::WorkRequestContext;
 use super::sandbox::{
     make_dir_files_writable, make_path_writable, resolve_request_relative_path,
 };
-use super::types::{OutputDir, PipelineKey, RequestId};
+use super::types::{OutputDir, PipelineKey};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum RequestKind {
@@ -124,6 +124,11 @@ pub(crate) struct WorkerStateRoots {
 }
 
 impl WorkerStateRoots {
+    /// Create the `_pw_state/pipeline/` directory tree in the worker's CWD
+    /// (the Bazel execroot). This directory persists across builds for the
+    /// lifetime of the worker process. Individual pipeline subdirectories are
+    /// cleaned up by `maybe_cleanup_pipeline_dir` after each compilation.
+    /// The root `_pw_state/` directory itself is removed by `bazel clean`.
     pub(crate) fn ensure() -> Result<Self, ProcessWrapperError> {
         let pipeline_root = PathBuf::from("_pw_state/pipeline");
         std::fs::create_dir_all(&pipeline_root).map_err(|e| {

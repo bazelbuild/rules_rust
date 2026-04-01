@@ -18,6 +18,7 @@ use tinyjson::JsonValue;
 
 use super::types::{RequestId, SandboxDir};
 
+#[cfg(test)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct WorkRequestInput {
     pub(crate) path: String,
@@ -29,7 +30,6 @@ pub(crate) struct WorkRequestContext {
     pub(crate) request_id: RequestId,
     pub(crate) arguments: Vec<String>,
     pub(crate) sandbox_dir: Option<SandboxDir>,
-    pub(crate) inputs: Vec<WorkRequestInput>,
     pub(crate) cancel: bool,
 }
 
@@ -39,7 +39,6 @@ impl WorkRequestContext {
             request_id: extract_request_id(request),
             arguments: extract_arguments(request),
             sandbox_dir: extract_sandbox_dir(request)?,
-            inputs: extract_inputs(request),
             cancel: extract_cancel(request),
         })
     }
@@ -141,6 +140,7 @@ fn sandbox_dir_is_usable(dir: &str) -> bool {
     }
 }
 
+#[cfg(test)]
 /// Extracts the `inputs` array from a WorkRequest.
 pub(super) fn extract_inputs(request: &JsonValue) -> Vec<WorkRequestInput> {
     let mut result = Vec::new();
@@ -201,10 +201,6 @@ pub(super) fn build_cancel_response(request_id: RequestId) -> String {
         json_string_literal(""),
         request_id.0
     )
-}
-
-pub(super) fn build_shutdown_response(request_id: RequestId) -> String {
-    build_response(1, "worker shutting down", request_id)
 }
 
 pub(super) fn sanitize_response_output(output: &str) -> String {

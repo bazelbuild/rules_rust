@@ -16,6 +16,8 @@
 //!
 //! See `DESIGN.md` in this directory for the worker/pipelining protocol notes.
 
+#[path = "worker_logging.rs"]
+pub(crate) mod logging;
 #[path = "worker_pipeline.rs"]
 pub(crate) mod pipeline;
 #[path = "worker_protocol.rs"]
@@ -31,47 +33,28 @@ pub(crate) mod registry;
 #[path = "worker_request.rs"]
 pub(crate) mod request;
 
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::{Duration, Instant};
 
 use crate::ProcessWrapperError;
 
+use logging::{
+    append_worker_lifecycle_log, current_pid, current_thread_label, install_worker_panic_hook,
+    log_request_received, log_request_thread_start, WorkerLifecycleGuard,
+};
 use pipeline::{relocate_pw_flags, RequestKind, WorkerStateRoots};
 use protocol::{
-    build_cancel_response, build_response, build_shutdown_response, extract_request_id,
+    build_cancel_response, build_response, extract_request_id,
     extract_request_id_from_raw_line, WorkRequestContext,
 };
 use registry::{RequestRegistry, SharedRequestRegistry};
 use request::BazelRequest;
 use sandbox::{prepare_outputs, prepare_outputs_in_dir, run_request};
-use types::RequestId;
 
 // ---------------------------------------------------------------------------
 // Worker lifecycle and signal handling
 // ---------------------------------------------------------------------------
-
-/// Locks a mutex, recovering from poisoning instead of panicking.
-///
-/// If a worker thread panics while holding a mutex, the mutex becomes
-/// "poisoned". Rather than cascading the panic to all other threads,
-/// we recover the inner value — the data is still valid because
-/// `catch_unwind` prevents partial updates from escaping.
-fn lock_or_recover<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
-fn current_pid() -> u32 {
-    std::process::id()
-}
-
-fn current_thread_label() -> String {
-    format!("{:?}", thread::current().id())
-}
 
 static WORKER_SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
 
@@ -85,22 +68,7 @@ unsafe extern "C" {
     fn write(fd: i32, buf: *const std::ffi::c_void, count: usize) -> isize;
 }
 
-fn append_worker_lifecycle_log(message: &str) {
-    let root = std::path::Path::new("_pw_state");
-    let _ = std::fs::create_dir_all(root);
-    let path = root.join("worker_lifecycle.log");
-    let mut file = match std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
-    {
-        Ok(file) => file,
-        Err(_) => return,
-    };
-    let _ = writeln!(file, "{message}");
-}
-
-fn worker_is_shutting_down() -> bool {
+pub(crate) fn worker_is_shutting_down() -> bool {
     WORKER_SHUTTING_DOWN.load(Ordering::SeqCst)
 }
 
@@ -137,85 +105,17 @@ fn install_worker_signal_handlers() {
 #[cfg(not(unix))]
 fn install_worker_signal_handlers() {}
 
-struct WorkerLifecycleGuard {
-    pid: u32,
-    start: Instant,
-    request_counter: Arc<AtomicUsize>,
-}
-
-impl WorkerLifecycleGuard {
-    fn new(argv: &[String], request_counter: &Arc<AtomicUsize>) -> Self {
-        let pid = current_pid();
-        let cwd = std::env::current_dir()
-            .map(|cwd| cwd.display().to_string())
-            .unwrap_or_else(|_| "<cwd-error>".to_string());
-        append_worker_lifecycle_log(&format!(
-            "pid={} event=start thread={} cwd={} argv_len={}",
-            pid,
-            current_thread_label(),
-            cwd,
-            argv.len(),
-        ));
-        Self {
-            pid,
-            start: Instant::now(),
-            request_counter: Arc::clone(request_counter),
-        }
-    }
-}
-
-impl Drop for WorkerLifecycleGuard {
-    fn drop(&mut self) {
-        let uptime = self.start.elapsed();
-        let requests = self.request_counter.load(Ordering::SeqCst);
-        append_worker_lifecycle_log(&format!(
-            "pid={} event=exit uptime_ms={} requests_seen={}",
-            self.pid,
-            uptime.as_millis(),
-            requests,
-        ));
-        // Structured summary line for easy extraction by benchmark tooling.
-        append_worker_lifecycle_log(&format!(
-            "worker_exit pid={} requests_handled={} uptime_s={:.1}",
-            self.pid,
-            requests,
-            uptime.as_secs_f64(),
-        ));
-    }
-}
-
-fn install_worker_panic_hook() {
-    static ONCE: std::sync::Once = std::sync::Once::new();
-    ONCE.call_once(|| {
-        std::panic::set_hook(Box::new(|info| {
-            append_worker_lifecycle_log(&format!(
-                "pid={} event=panic thread={} info={}",
-                current_pid(),
-                current_thread_label(),
-                info
-            ));
-        }));
-    });
-}
-
 // ---------------------------------------------------------------------------
 // Helper functions used in worker_main
 // ---------------------------------------------------------------------------
-
-fn crate_name_from_args(args: &[String]) -> Option<&str> {
-    args.iter()
-        .find_map(|arg| arg.strip_prefix("--crate-name="))
-}
-
-fn emit_arg_from_args(args: &[String]) -> Option<&str> {
-    args.iter().find_map(|arg| arg.strip_prefix("--emit="))
-}
 
 fn write_worker_response(
     stdout: &Arc<Mutex<()>>,
     response: &str,
 ) -> Result<(), ProcessWrapperError> {
-    let _guard = lock_or_recover(stdout);
+    let _guard = stdout
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     write_all_stdout_fd(response.as_bytes())
         .and_then(|_| write_all_stdout_fd(b"\n"))
         .map_err(|e| ProcessWrapperError(format!("failed to write WorkResponse: {e}")))?;
@@ -292,10 +192,6 @@ fn classify_request(
     Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
 }
 
-fn pipeline_key_label(kind: &RequestKind) -> &str {
-    kind.key().map(|key| key.as_str()).unwrap_or("-")
-}
-
 fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestContext> {
     let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
         Ok(request) => request,
@@ -326,31 +222,6 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequestCo
             None
         }
     }
-}
-
-fn log_request_received(request: &WorkRequestContext, kind: &RequestKind) {
-    append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_received request_id={} cancel={} crate={} emit={} pipeline_key={}",
-        current_pid(),
-        current_thread_label(),
-        request.request_id,
-        request.cancel,
-        crate_name_from_args(&request.arguments).unwrap_or("-"),
-        emit_arg_from_args(&request.arguments).unwrap_or("-"),
-        pipeline_key_label(kind),
-    ));
-}
-
-fn log_request_thread_start(request: &WorkRequestContext, kind: &RequestKind) {
-    append_worker_lifecycle_log(&format!(
-        "pid={} thread={} request_thread_start request_id={} crate={} emit={} pipeline_key={}",
-        current_pid(),
-        current_thread_label(),
-        request.request_id,
-        crate_name_from_args(&request.arguments).unwrap_or("-"),
-        emit_arg_from_args(&request.arguments).unwrap_or("-"),
-        pipeline_key_label(kind),
-    ));
 }
 
 fn prepare_request_outputs(
@@ -390,7 +261,7 @@ fn execute_singleplex_request(
 }
 
 /// Request thread using BazelRequest + RustcInvocation.
-fn run_request_thread_v2(
+fn run_request_thread(
     self_path: std::path::PathBuf,
     startup_args: Vec<String>,
     request: WorkRequestContext,
@@ -402,19 +273,13 @@ fn run_request_thread_v2(
 ) {
     log_request_thread_start(&request, &bazel_request.kind);
 
+    // Process-level shutdown: Bazel has sent SIGTERM and won't read responses.
+    // Just clean up and exit — no point sending a response into a dead pipe.
     if worker_is_shutting_down() {
-        if !claim_flag.swap(true, Ordering::SeqCst) {
-            let response = build_shutdown_response(request.request_id);
-            let _ = write_worker_response(&stdout, &response);
-        }
-        lock_or_recover(&registry).remove_request(request.request_id);
-        append_worker_lifecycle_log(&format!(
-            "pid={} thread={} request_thread_skipped_for_shutdown request_id={} claimed={}",
-            current_pid(),
-            current_thread_label(),
-            request.request_id,
-            claim_flag.load(Ordering::SeqCst),
-        ));
+        registry
+            .lock()
+            .expect("request registry mutex poisoned")
+            .remove_request(request.request_id);
         return;
     }
 
@@ -425,7 +290,10 @@ fn run_request_thread_v2(
         }
 
         if claim_flag.load(Ordering::SeqCst) {
-            lock_or_recover(&registry).remove_request(request.request_id);
+            registry
+                .lock()
+                .expect("request registry mutex poisoned")
+                .remove_request(request.request_id);
             return (0, String::new());
         }
 
@@ -434,27 +302,45 @@ fn run_request_thread_v2(
                 bazel_request.execute_metadata(&request, full_args, &state_roots, &registry)
             }
             RequestKind::Full { .. } => {
-                bazel_request.execute_full(&request, full_args, &registry, &self_path)
+                bazel_request.execute_full(&request, full_args, &self_path)
             }
             RequestKind::NonPipelined => bazel_request.execute_non_pipelined(
                 full_args,
                 &self_path,
                 request.sandbox_dir.as_ref().map(|d| d.as_str()),
-                &registry,
             ),
         }
     })) {
         Ok(result) => result,
         Err(_) => {
+            let mut reg = registry.lock().expect("request registry mutex poisoned");
+            // Shut down via registry (covers both metadata and full requests).
             if let Some(inv) = &bazel_request.invocation {
                 inv.request_shutdown();
             }
-            lock_or_recover(&registry).remove_request(request.request_id);
+            if let Some(key) = bazel_request.kind.key() {
+                if let Some(inv) = reg.get_invocation(key) {
+                    inv.request_shutdown();
+                }
+            }
+            reg.remove_request(request.request_id);
+            drop(reg);
             (1, "internal error: worker thread panicked".to_string())
         }
     };
 
-    lock_or_recover(&registry).remove_request(request.request_id);
+    {
+        let mut reg = registry.lock().expect("request registry mutex poisoned");
+        reg.remove_request(request.request_id);
+        // Full and non-pipelined requests are the last consumer of an
+        // invocation — remove it to prevent stale entries accumulating
+        // across builds in this long-lived worker process.
+        if let Some(key) = bazel_request.kind.key() {
+            if !matches!(bazel_request.kind, RequestKind::Metadata { .. }) {
+                reg.remove_invocation(key);
+            }
+        }
+    }
     if !claim_flag.swap(true, Ordering::SeqCst) {
         let response = build_response(exit_code, &output, request.request_id);
         let _ = write_worker_response(&stdout, &response);
@@ -468,17 +354,6 @@ fn run_request_thread_v2(
         output.len(),
         claim_flag.load(Ordering::SeqCst),
     ));
-}
-
-fn join_in_flight_threads(in_flight: &Arc<Mutex<Vec<thread::JoinHandle<()>>>>) {
-    let handles: Vec<_> = lock_or_recover(in_flight).drain(..).collect();
-    let deadline = Instant::now() + Duration::from_secs(10);
-    for handle in handles {
-        if deadline.saturating_duration_since(Instant::now()).is_zero() {
-            break;
-        }
-        let _ = handle.join();
-    }
 }
 
 pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
@@ -497,7 +372,6 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let stdout: SharedStdout = Arc::new(Mutex::new(()));
     let registry: SharedRequestRegistry = Arc::new(Mutex::new(RequestRegistry::new()));
     let state_roots = Arc::new(WorkerStateRoots::ensure()?);
-    let in_flight: Arc<Mutex<Vec<thread::JoinHandle<()>>>> = Arc::new(Mutex::new(Vec::new()));
 
     for line in stdin.lock().lines() {
         let line = match line {
@@ -543,22 +417,22 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         };
         log_request_received(&request, &request_kind);
 
-        if worker_is_shutting_down() {
-            let response = build_shutdown_response(request.request_id);
-            let _ = write_worker_response(&stdout, &response);
-            continue;
-        }
-
         if request.request_id.is_singleplex() {
             execute_singleplex_request(&self_path, &startup_args, &request, &stdout)?;
             continue;
         }
 
         if request.cancel {
-            let flag = lock_or_recover(&registry).get_claim_flag(request.request_id);
+            let flag = registry
+                .lock()
+                .expect("request registry mutex poisoned")
+                .get_claim_flag(request.request_id);
             if let Some(flag) = flag {
                 if !flag.swap(true, Ordering::SeqCst) {
-                    lock_or_recover(&registry).cancel(request.request_id);
+                    registry
+                        .lock()
+                        .expect("request registry mutex poisoned")
+                        .cancel(request.request_id);
                     let response = build_cancel_response(request.request_id);
                     let _ = write_worker_response(&stdout, &response);
                 }
@@ -567,11 +441,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
         }
 
         let (claim_flag, invocation) = {
-            let mut reg = lock_or_recover(&registry);
+            let mut reg = registry.lock().expect("request registry mutex poisoned");
             match &request_kind {
                 RequestKind::Metadata { key } => {
-                    let (flag, inv) = reg.register_metadata(request.request_id, key.clone());
-                    (flag, Some(inv))
+                    let flag = reg.register_metadata(request.request_id, key.clone());
+                    (flag, None)
                 }
                 RequestKind::Full { key } => {
                     let (flag, inv) = reg.register_full(request.request_id, key.clone());
@@ -583,8 +457,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                 }
             }
         };
-        let bazel_request = BazelRequest::new(request.request_id, request_kind.clone(), invocation);
-        let handle = std::thread::spawn({
+        let bazel_request = BazelRequest::new(request_kind.clone(), invocation);
+        // Request threads are detached (handle dropped). Bazel shuts down workers
+        // via SIGTERM with no drain phase, so there's no opportunity to join.
+        // Process exit is the cleanup mechanism.
+        drop(std::thread::spawn({
             let self_path = self_path.clone();
             let startup_args = startup_args.clone();
             let request = request.clone();
@@ -593,7 +470,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             let state_roots = Arc::clone(&state_roots);
             let claim_flag = Arc::clone(&claim_flag);
             move || {
-                run_request_thread_v2(
+                run_request_thread(
                     self_path,
                     startup_args,
                     request,
@@ -604,13 +481,14 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
                     claim_flag,
                 )
             }
-        });
-        lock_or_recover(&in_flight).push(handle);
+        }));
     }
 
     begin_worker_shutdown("stdin_eof");
-    lock_or_recover(&registry).shutdown_all();
-    join_in_flight_threads(&in_flight);
+    registry
+        .lock()
+        .expect("request registry mutex poisoned")
+        .shutdown_all();
 
     append_worker_lifecycle_log(&format!(
         "pid={} event=stdin_eof thread={} requests_seen={}",

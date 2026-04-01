@@ -14,9 +14,9 @@
 
 //! State machine for a single rustc invocation lifecycle.
 //!
-//! `RustcInvocation` is the shared handle held by request threads; `MonitorHandle`
-//! is given to the monitor thread that owns the `Child` process and drives state
-//! transitions via condvar notifications.
+//! `RustcInvocation` is shared (via `Arc`) between request threads and a
+//! rustc thread. The rustc thread owns the `Child` process and drives
+//! state transitions via condvar notifications.
 
 use std::io::BufRead;
 use std::path::PathBuf;
@@ -35,7 +35,7 @@ use crate::rustc::RustcStderrPolicy;
 // ---------------------------------------------------------------------------
 
 /// Directories associated with a pipelined invocation.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct InvocationDirs {
     pub pipeline_output_dir: PathBuf,
     pub pipeline_root_dir: PathBuf,
@@ -43,7 +43,7 @@ pub(crate) struct InvocationDirs {
 }
 
 /// Returned from `wait_for_metadata` on success.
-pub(crate) struct MetadataResult {
+pub(crate) struct MetadataOutput {
     pub diagnostics_before: String,
     /// Path to the .rmeta artifact (from rustc's artifact notification).
     pub rmeta_path: Option<String>,
@@ -51,7 +51,7 @@ pub(crate) struct MetadataResult {
 
 /// Returned from `wait_for_completion` on success.
 #[derive(Debug)]
-pub(crate) struct CompletionResult {
+pub(crate) struct CompletionOutput {
     pub exit_code: i32,
     pub diagnostics: String,
     pub dirs: InvocationDirs,
@@ -59,7 +59,7 @@ pub(crate) struct CompletionResult {
 
 /// Returned from wait methods on failure.
 #[derive(Debug)]
-pub(crate) struct FailureResult {
+pub(crate) struct FailureOutput {
     pub exit_code: i32,
     pub diagnostics: String,
 }
@@ -102,6 +102,98 @@ impl InvocationState {
                 | InvocationState::ShuttingDown
         )
     }
+
+    /// Returns the child PID if the state has one (Running or MetadataReady).
+    fn pid(&self) -> Option<u32> {
+        match self {
+            InvocationState::Running { pid, .. } | InvocationState::MetadataReady { pid, .. } => {
+                Some(*pid)
+            }
+            _ => None,
+        }
+    }
+
+    /// Consume this state and return its `dirs`, or a default if the variant has none.
+    fn into_dirs(self) -> InvocationDirs {
+        match self {
+            InvocationState::Running { dirs, .. }
+            | InvocationState::MetadataReady { dirs, .. }
+            | InvocationState::Completed { dirs, .. } => dirs,
+            InvocationState::Pending
+            | InvocationState::Failed { .. }
+            | InvocationState::ShuttingDown => InvocationDirs::default(),
+        }
+    }
+
+    /// If the state is ready for a metadata response, convert to a result.
+    /// Returns `None` for non-terminal, non-metadata-ready states (Pending, Running).
+    fn as_metadata_result(&self) -> Option<Result<MetadataOutput, FailureOutput>> {
+        match self {
+            InvocationState::MetadataReady {
+                diagnostics_before,
+                rmeta_path,
+                ..
+            } => Some(Ok(MetadataOutput {
+                diagnostics_before: diagnostics_before.clone(),
+                rmeta_path: rmeta_path.clone(),
+            })),
+            InvocationState::Completed {
+                exit_code: 0,
+                diagnostics,
+                ..
+            } => Some(Ok(MetadataOutput {
+                diagnostics_before: diagnostics.clone(),
+                rmeta_path: None,
+            })),
+            InvocationState::Completed {
+                exit_code,
+                diagnostics,
+                ..
+            }
+            | InvocationState::Failed {
+                exit_code,
+                diagnostics,
+            } => Some(Err(FailureOutput {
+                exit_code: *exit_code,
+                diagnostics: diagnostics.clone(),
+            })),
+            InvocationState::ShuttingDown => Some(Err(FailureOutput {
+                exit_code: -1,
+                diagnostics: "shutdown requested".to_string(),
+            })),
+            InvocationState::Pending | InvocationState::Running { .. } => None,
+        }
+    }
+
+    /// If the state is terminal, convert to a completion result.
+    /// Returns `None` for non-terminal states (Pending, Running, MetadataReady).
+    fn as_completion_result(&self) -> Option<Result<CompletionOutput, FailureOutput>> {
+        match self {
+            InvocationState::Completed {
+                exit_code,
+                diagnostics,
+                dirs,
+            } => Some(Ok(CompletionOutput {
+                exit_code: *exit_code,
+                diagnostics: diagnostics.clone(),
+                dirs: dirs.clone(),
+            })),
+            InvocationState::Failed {
+                exit_code,
+                diagnostics,
+            } => Some(Err(FailureOutput {
+                exit_code: *exit_code,
+                diagnostics: diagnostics.clone(),
+            })),
+            InvocationState::ShuttingDown => Some(Err(FailureOutput {
+                exit_code: -1,
+                diagnostics: "shutdown requested".to_string(),
+            })),
+            InvocationState::Pending
+            | InvocationState::Running { .. }
+            | InvocationState::MetadataReady { .. } => None,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -109,12 +201,15 @@ impl InvocationState {
 // ---------------------------------------------------------------------------
 
 #[cfg(unix)]
-extern "C" {
+unsafe extern "C" {
     fn kill(pid: i32, sig: i32) -> i32;
 }
 
 #[cfg(unix)]
 fn send_sigterm(pid: u32) {
+    if pid > i32::MAX as u32 {
+        return; // Prevent wrapping to negative (process group kill).
+    }
     unsafe {
         kill(pid as i32, 15); // SIGTERM
     }
@@ -129,9 +224,7 @@ fn send_sigterm(_pid: u32) {
 pub(crate) fn graceful_kill(child: &mut Child) {
     #[cfg(unix)]
     {
-        unsafe {
-            kill(child.id() as i32, 15); // SIGTERM
-        }
+        send_sigterm(child.id());
         for _ in 0..10 {
             match child.try_wait() {
                 Ok(Some(_)) => return,
@@ -152,25 +245,23 @@ pub(crate) fn graceful_kill(child: &mut Child) {
 // RustcInvocation — shared handle
 // ---------------------------------------------------------------------------
 
-/// Shared handle to an invocation's lifecycle, held by request threads.
+/// Shared handle to an invocation's lifecycle.
+///
+/// Always used behind `Arc<RustcInvocation>`. The rustc thread holds a clone
+/// of that `Arc` for driving state transitions; request threads use
+/// `wait_for_metadata` / `wait_for_completion` to block on progress.
 pub(crate) struct RustcInvocation {
-    inner: Arc<(Mutex<InvocationState>, Condvar)>,
-    shutdown_requested: Arc<AtomicBool>,
+    state: Mutex<InvocationState>,
+    cvar: Condvar,
+    shutdown_requested: AtomicBool,
 }
 
 impl RustcInvocation {
     pub fn new() -> Self {
         RustcInvocation {
-            inner: Arc::new((Mutex::new(InvocationState::Pending), Condvar::new())),
-            shutdown_requested: Arc::new(AtomicBool::new(false)),
-        }
-    }
-
-    /// Create a `MonitorHandle` for the monitor thread.
-    pub fn monitor_handle(&self) -> MonitorHandle {
-        MonitorHandle {
-            inner: Arc::clone(&self.inner),
-            shutdown_requested: Arc::clone(&self.shutdown_requested),
+            state: Mutex::new(InvocationState::Pending),
+            cvar: Condvar::new(),
+            shutdown_requested: AtomicBool::new(false),
         }
     }
 
@@ -179,98 +270,36 @@ impl RustcInvocation {
     /// If the invocation went directly to `Completed` with exit_code == 0 (e.g. the
     /// full compilation finished before we got scheduled), we return Ok with the
     /// diagnostics as `diagnostics_before`.
-    pub fn wait_for_metadata(&self) -> Result<MetadataResult, FailureResult> {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
+    pub fn wait_for_metadata(&self) -> Result<MetadataOutput, FailureOutput> {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
         loop {
-            match &*state {
-                InvocationState::MetadataReady {
-                    diagnostics_before,
-                    rmeta_path,
-                    ..
-                } => {
-                    return Ok(MetadataResult {
-                        diagnostics_before: diagnostics_before.clone(),
-                        rmeta_path: rmeta_path.clone(),
-                    });
-                }
-                InvocationState::Completed {
-                    exit_code,
-                    diagnostics,
-                    ..
-                } => {
-                    if *exit_code == 0 {
-                        return Ok(MetadataResult {
-                            diagnostics_before: diagnostics.clone(),
-                            rmeta_path: None, // Completed without MetadataReady phase.
-                        });
-                    } else {
-                        return Err(FailureResult {
-                            exit_code: *exit_code,
-                            diagnostics: diagnostics.clone(),
-                        });
-                    }
-                }
-                InvocationState::Failed {
-                    exit_code,
-                    diagnostics,
-                } => {
-                    return Err(FailureResult {
-                        exit_code: *exit_code,
-                        diagnostics: diagnostics.clone(),
-                    });
-                }
-                InvocationState::ShuttingDown => {
-                    return Err(FailureResult {
-                        exit_code: -1,
-                        diagnostics: "shutdown requested".to_string(),
-                    });
-                }
-                InvocationState::Pending | InvocationState::Running { .. } => {
-                    state = cvar.wait(state).unwrap();
-                }
+            if let Some(result) = state.as_metadata_result() {
+                return result;
             }
+            state = self
+                .cvar
+                .wait(state)
+                .expect("rustc invocation state mutex poisoned while waiting");
         }
     }
 
     /// Block until the invocation reaches a terminal state (Completed/Failed/ShuttingDown).
-    pub fn wait_for_completion(&self) -> Result<CompletionResult, FailureResult> {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
+    pub fn wait_for_completion(&self) -> Result<CompletionOutput, FailureOutput> {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
         loop {
-            match &*state {
-                InvocationState::Completed {
-                    exit_code,
-                    diagnostics,
-                    dirs,
-                } => {
-                    return Ok(CompletionResult {
-                        exit_code: *exit_code,
-                        diagnostics: diagnostics.clone(),
-                        dirs: dirs.clone(),
-                    });
-                }
-                InvocationState::Failed {
-                    exit_code,
-                    diagnostics,
-                } => {
-                    return Err(FailureResult {
-                        exit_code: *exit_code,
-                        diagnostics: diagnostics.clone(),
-                    });
-                }
-                InvocationState::ShuttingDown => {
-                    return Err(FailureResult {
-                        exit_code: -1,
-                        diagnostics: "shutdown requested".to_string(),
-                    });
-                }
-                InvocationState::Pending
-                | InvocationState::Running { .. }
-                | InvocationState::MetadataReady { .. } => {
-                    state = cvar.wait(state).unwrap();
-                }
+            if let Some(result) = state.as_completion_result() {
+                return result;
             }
+            state = self
+                .cvar
+                .wait(state)
+                .expect("rustc invocation state mutex poisoned while waiting");
         }
     }
 
@@ -278,25 +307,89 @@ impl RustcInvocation {
     /// to the child process if one is running.
     pub fn request_shutdown(&self) {
         self.shutdown_requested.store(true, Ordering::SeqCst);
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
         if state.is_terminal() {
             return; // Already done — nothing to shut down.
         }
-        // Extract PID before overwriting state.
-        let pid = match &*state {
-            InvocationState::Running { pid, .. } | InvocationState::MetadataReady { pid, .. } => {
-                Some(*pid)
-            }
-            _ => None,
-        };
+        let pid = state.pid();
         *state = InvocationState::ShuttingDown;
-        cvar.notify_all();
+        self.cvar.notify_all();
         drop(state);
-        // Send SIGTERM outside the lock to unblock any blocking read_line in monitor.
+        // Send SIGTERM outside the lock to unblock any blocking read_line in rustc thread.
         if let Some(pid) = pid {
             send_sigterm(pid);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Rustc-thread transition methods
+    // -----------------------------------------------------------------------
+
+    fn is_shutdown_requested(&self) -> bool {
+        self.shutdown_requested.load(Ordering::SeqCst)
+    }
+
+    fn transition_to_running(&self, pid: u32, dirs: InvocationDirs) {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
+        if matches!(*state, InvocationState::ShuttingDown) {
+            return;
+        }
+        *state = InvocationState::Running { pid, dirs };
+        self.cvar.notify_all();
+    }
+
+    fn transition_to_metadata_ready(
+        &self,
+        pid: u32,
+        diagnostics_before: String,
+        rmeta_path: Option<String>,
+    ) -> bool {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
+        if matches!(*state, InvocationState::ShuttingDown) {
+            return false;
+        }
+        let old = std::mem::replace(&mut *state, InvocationState::Pending);
+        *state = InvocationState::MetadataReady {
+            pid,
+            diagnostics_before,
+            rmeta_path,
+            dirs: old.into_dirs(),
+        };
+        self.cvar.notify_all();
+        true
+    }
+
+    fn transition_to_finished(&self, exit_code: i32, diagnostics: String) {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
+        if exit_code == 0 {
+            if matches!(*state, InvocationState::ShuttingDown) {
+                return;
+            }
+            let old = std::mem::replace(&mut *state, InvocationState::Pending);
+            *state = InvocationState::Completed {
+                exit_code,
+                diagnostics,
+                dirs: old.into_dirs(),
+            };
+        } else {
+            *state = InvocationState::Failed {
+                exit_code,
+                diagnostics,
+            };
+        }
+        self.cvar.notify_all();
     }
 
     // -----------------------------------------------------------------------
@@ -305,14 +398,21 @@ impl RustcInvocation {
 
     #[cfg(test)]
     pub fn is_pending(&self) -> bool {
-        let (lock, _) = &*self.inner;
-        matches!(*lock.lock().unwrap(), InvocationState::Pending)
+        matches!(
+            *self
+                .state
+                .lock()
+                .expect("rustc invocation state mutex poisoned"),
+            InvocationState::Pending
+        )
     }
 
     #[cfg(test)]
     pub fn is_shutting_down_or_terminal(&self) -> bool {
-        let (lock, _) = &*self.inner;
-        let state = lock.lock().unwrap();
+        let state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
         matches!(
             *state,
             InvocationState::ShuttingDown
@@ -321,173 +421,54 @@ impl RustcInvocation {
         )
     }
 
-    /// Test helper: directly transition to Completed (bypasses monitor).
+    /// Test helper: directly transition to Completed (bypasses rustc thread).
     #[cfg(test)]
-    pub fn transition_to_completed(
-        &self,
-        exit_code: i32,
-        diagnostics: String,
-        dirs: InvocationDirs,
-    ) {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
+    pub fn force_completed(&self, exit_code: i32, diagnostics: String, dirs: InvocationDirs) {
+        let mut state = self
+            .state
+            .lock()
+            .expect("rustc invocation state mutex poisoned");
         *state = InvocationState::Completed {
             exit_code,
             diagnostics,
             dirs,
         };
-        cvar.notify_all();
-    }
-
-    #[cfg(test)]
-    pub fn inner_arc(&self) -> &Arc<(Mutex<InvocationState>, Condvar)> {
-        &self.inner
+        self.cvar.notify_all();
     }
 }
 
-impl Clone for RustcInvocation {
-    fn clone(&self) -> Self {
-        RustcInvocation {
-            inner: Arc::clone(&self.inner),
-            shutdown_requested: Arc::clone(&self.shutdown_requested),
-        }
-    }
-}
-
-impl Drop for RustcInvocation {
-    fn drop(&mut self) {
-        // Only act if we hold the last external reference (besides MonitorHandle copies).
-        // Always try to transition to ShuttingDown if not already terminal.
-        let (lock, cvar) = &*self.inner;
-        if let Ok(mut state) = lock.lock() {
-            if !state.is_terminal() {
-                let pid = match &*state {
-                    InvocationState::Running { pid, .. }
-                    | InvocationState::MetadataReady { pid, .. } => Some(*pid),
-                    _ => None,
-                };
-                *state = InvocationState::ShuttingDown;
-                cvar.notify_all();
-                drop(state);
-                if let Some(pid) = pid {
-                    send_sigterm(pid);
-                }
-            }
-        }
-    }
-}
+// No Drop impl — cleanup is driven explicitly by `RequestRegistry::cancel()`
+// and `RequestRegistry::shutdown_all()`, which call `request_shutdown()`.
 
 // ---------------------------------------------------------------------------
-// MonitorHandle — given to the monitor thread
+// spawn_non_pipelined_rustc — rustc thread for a non-pipelined invocation
 // ---------------------------------------------------------------------------
 
-/// Handle given to the monitor thread for driving state transitions.
-pub(crate) struct MonitorHandle {
-    inner: Arc<(Mutex<InvocationState>, Condvar)>,
-    shutdown_requested: Arc<AtomicBool>,
-}
-
-impl MonitorHandle {
-    /// Check if shutdown has been requested.
-    pub fn is_shutdown_requested(&self) -> bool {
-        self.shutdown_requested.load(Ordering::SeqCst)
-    }
-
-    /// Transition from Pending to Running. No-op if ShuttingDown.
-    pub fn transition_to_running(&self, pid: u32, dirs: InvocationDirs) {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
-        if matches!(*state, InvocationState::ShuttingDown) {
-            return;
-        }
-        *state = InvocationState::Running { pid, dirs };
-        cvar.notify_all();
-    }
-
-    /// Transition to MetadataReady. Returns false if ShuttingDown (metadata
-    /// notification was too late).
-    pub fn transition_to_metadata_ready(
-        &self,
-        pid: u32,
-        diagnostics_before: String,
-        rmeta_path: Option<String>,
-        dirs: InvocationDirs,
-    ) -> bool {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
-        if matches!(*state, InvocationState::ShuttingDown) {
-            return false;
-        }
-        *state = InvocationState::MetadataReady {
-            pid,
-            diagnostics_before,
-            rmeta_path,
-            dirs,
-        };
-        cvar.notify_all();
-        true
-    }
-
-    /// Transition to Completed. Always overwrites (terminal state).
-    pub fn transition_to_completed(&self, exit_code: i32, diagnostics: String, dirs: InvocationDirs) {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
-        *state = InvocationState::Completed {
-            exit_code,
-            diagnostics,
-            dirs,
-        };
-        cvar.notify_all();
-    }
-
-    /// Transition to Failed. Always overwrites (terminal state).
-    pub fn transition_to_failed(&self, exit_code: i32, diagnostics: String) {
-        let (lock, cvar) = &*self.inner;
-        let mut state = lock.lock().unwrap();
-        *state = InvocationState::Failed {
-            exit_code,
-            diagnostics,
-        };
-        cvar.notify_all();
-    }
-}
-
-// ---------------------------------------------------------------------------
-// spawn_non_pipelined_monitor — monitor thread for a non-pipelined invocation
-// ---------------------------------------------------------------------------
-
-/// Spawn a monitor thread for a non-pipelined subprocess (e.g. nested
-/// process_wrapper). The thread blocks on `wait_with_output()`, then
+/// Spawn a thread for a non-pipelined subprocess (e.g. nested
+/// process_wrapper). Creates a new `RustcInvocation`, transitions it to
+/// Running, then spawns a thread that blocks on `wait_with_output()` and
 /// transitions to Completed or Failed based on the exit code.
 ///
 /// On shutdown, `request_shutdown()` sends SIGTERM to the child PID (stored in
-/// the Running state), which causes `wait_with_output()` to return. The monitor
-/// then detects the shutdown flag and transitions to Failed.
-pub(crate) fn spawn_non_pipelined_monitor(
-    invocation: &RustcInvocation,
-    child: Child,
-) -> std::thread::JoinHandle<()> {
-    let monitor = invocation.monitor_handle();
+/// the Running state), which causes `wait_with_output()` to return. The rustc
+/// thread then detects the shutdown flag and transitions to Failed.
+pub(crate) fn spawn_non_pipelined_rustc(child: Child) -> Arc<RustcInvocation> {
+    let invocation = Arc::new(RustcInvocation::new());
     let pid = child.id();
 
-    // Non-pipelined invocations don't use pipeline dirs — use dummy values.
-    let dirs = InvocationDirs {
-        pipeline_output_dir: PathBuf::new(),
-        pipeline_root_dir: PathBuf::new(),
-        original_out_dir: OutputDir::default(),
-    };
+    // Non-pipelined invocations don't use pipeline dirs — use defaults.
+    invocation.transition_to_running(pid, InvocationDirs::default());
 
-    monitor.transition_to_running(pid, dirs.clone());
-
+    let ret = Arc::clone(&invocation);
     std::thread::spawn(move || {
         let output = child.wait_with_output();
 
-        if monitor.is_shutdown_requested() {
-            monitor.transition_to_failed(-1, "shutdown requested".to_string());
+        if invocation.is_shutdown_requested() {
+            invocation.transition_to_finished(-1, "shutdown requested".to_string());
             return;
         }
 
-        match output {
+        let (exit_code, diagnostics) = match output {
             Ok(output) => {
                 let exit_code = output.status.code().unwrap_or(-1);
                 let stdout = String::from_utf8_lossy(&output.stdout);
@@ -502,18 +483,15 @@ pub(crate) fn spawn_non_pipelined_monitor(
                     }
                     diagnostics.push_str(&stdout);
                 }
+                (exit_code, diagnostics)
+            }
+            Err(e) => (-1, format!("wait_with_output failed: {}", e)),
+        };
 
-                if exit_code == 0 {
-                    monitor.transition_to_completed(exit_code, diagnostics, dirs);
-                } else {
-                    monitor.transition_to_failed(exit_code, diagnostics);
-                }
-            }
-            Err(e) => {
-                monitor.transition_to_failed(-1, format!("wait_with_output failed: {}", e));
-            }
-        }
-    })
+        invocation.transition_to_finished(exit_code, diagnostics);
+    });
+
+    ret
 }
 
 // ---------------------------------------------------------------------------
@@ -524,94 +502,89 @@ pub(crate) fn spawn_non_pipelined_monitor(
 /// Returns `Some(path)` for `{"artifact":"path/to/lib.rmeta","emit":"metadata"}`,
 /// `None` for all other lines.
 pub(crate) fn extract_rmeta_path(line: &str) -> Option<String> {
-    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>() {
-        if let (Some(JsonValue::String(artifact)), Some(JsonValue::String(emit))) =
-            (map.get("artifact"), map.get("emit"))
-        {
-            if artifact.ends_with(".rmeta") && emit == "metadata" {
-                return Some(artifact.clone());
-            }
-        }
+    if let Ok(JsonValue::Object(ref map)) = line.parse::<JsonValue>()
+        && let Some(JsonValue::String(artifact)) = map.get("artifact")
+        && let Some(JsonValue::String(emit)) = map.get("emit")
+        && artifact.ends_with(".rmeta")
+        && emit == "metadata"
+    {
+        Some(artifact.clone())
+    } else {
+        None
     }
-    None
 }
 
 // ---------------------------------------------------------------------------
-// spawn_pipelined_monitor — monitor thread for a pipelined rustc invocation
+// spawn_pipelined_rustc — rustc thread for a pipelined invocation
 // ---------------------------------------------------------------------------
 
-/// Spawn a monitor thread that owns the rustc child process and drives state
-/// transitions on the `RustcInvocation`.
+/// Spawn a thread that owns the rustc child process and drives state
+/// transitions on a new `RustcInvocation`.
+///
+/// Creates the invocation internally and returns it (like
+/// `spawn_non_pipelined_rustc`). The caller should insert the returned
+/// invocation into the registry so that the full request can find it.
 ///
 /// The thread reads stderr line-by-line, processes diagnostics, detects the
 /// rmeta artifact notification, and transitions through Running → MetadataReady
 /// → Completed (or Failed). On shutdown request, the child is killed via
 /// `graceful_kill`.
-pub(crate) fn spawn_pipelined_monitor(
-    invocation: &RustcInvocation,
+pub(crate) fn spawn_pipelined_rustc(
     mut child: Child,
     dirs: InvocationDirs,
     rustc_output_format: Option<String>,
-) -> std::thread::JoinHandle<()> {
-    let monitor = invocation.monitor_handle();
+) -> Arc<RustcInvocation> {
+    let invocation = Arc::new(RustcInvocation::new());
     let pid = child.id();
     let stderr = child
         .stderr
         .take()
         .expect("child must be spawned with Stdio::piped() stderr");
 
-    monitor.transition_to_running(pid, dirs.clone());
+    invocation.transition_to_running(pid, dirs);
 
+    let ret = Arc::clone(&invocation);
     std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stderr);
-        let mut policy =
-            RustcStderrPolicy::from_option_str(rustc_output_format.as_deref());
+        let mut policy = RustcStderrPolicy::from_option_str(rustc_output_format.as_deref());
 
         let mut diagnostics = String::new();
-        let mut metadata_emitted = false;
-        let mut diagnostics_before = String::new();
-
-        for line_result in reader.lines() {
-            let line = match line_result {
-                Ok(l) => l,
-                Err(_) => break,
-            };
-
-            let trimmed = line.trim_end_matches('\n').trim_end_matches('\r');
-
-            // Check for rmeta artifact notification before processing as diagnostic.
-            if !metadata_emitted {
-                if let Some(rmeta_path) = extract_rmeta_path(trimmed) {
-                    metadata_emitted = true;
-                    diagnostics_before = diagnostics.clone();
-                    monitor.transition_to_metadata_ready(
-                        pid,
-                        diagnostics_before.clone(),
-                        Some(rmeta_path),
-                        dirs.clone(),
-                    );
-                    // Don't add the artifact JSON line to diagnostics output.
-                    continue;
-                }
-            } else {
-                // After metadata, still skip artifact lines from diagnostics.
-                if extract_rmeta_path(trimmed).is_some() {
-                    continue;
-                }
-            }
-
-            if let Some(processed) = policy.process_line(trimmed) {
+        let mut accumulate_diagnostics = |line: &str, policy: &mut RustcStderrPolicy| {
+            if let Some(processed) = policy.process_line(line) {
                 if !diagnostics.is_empty() {
                     diagnostics.push('\n');
                 }
                 diagnostics.push_str(&processed);
             }
+        };
+
+        let mut lines = reader.lines().map_while(Result::ok);
+
+        // Phase 1: process lines until metadata (.rmeta) is emitted.
+        for line in lines.by_ref() {
+            if let Some(rmeta_path) = extract_rmeta_path(&line) {
+                invocation.transition_to_metadata_ready(
+                    pid,
+                    diagnostics.clone(),
+                    Some(rmeta_path),
+                );
+                break;
+            }
+            accumulate_diagnostics(&line, &mut policy);
+        }
+
+        // Phase 2: process remaining lines (codegen diagnostics).
+        for line in lines {
+            if extract_rmeta_path(&line).is_some() {
+                continue;
+            }
+            accumulate_diagnostics(&line, &mut policy);
         }
 
         // stderr EOF — child has closed its stderr (likely exiting).
-        if monitor.is_shutdown_requested() {
+        if invocation.is_shutdown_requested() {
             graceful_kill(&mut child);
-            monitor.transition_to_failed(-1, "shutdown requested".to_string());
+            invocation.transition_to_finished(-1, "shutdown requested".to_string());
             return;
         }
 
@@ -620,18 +593,8 @@ pub(crate) fn spawn_pipelined_monitor(
             Err(_) => -1,
         };
 
-        if exit_code == 0 && metadata_emitted {
-            monitor.transition_to_completed(exit_code, diagnostics, dirs);
-        } else {
-            // If we never emitted metadata but exit_code == 0, that's still
-            // a failure from the pipelining perspective (no rmeta produced).
-            // However, treat exit_code == 0 without metadata as completed
-            // to allow non-pipelined rustc to work through this path.
-            if exit_code == 0 {
-                monitor.transition_to_completed(exit_code, diagnostics, dirs);
-            } else {
-                monitor.transition_to_failed(exit_code, diagnostics);
-            }
-        }
-    })
+        invocation.transition_to_finished(exit_code, diagnostics);
+    });
+
+    ret
 }

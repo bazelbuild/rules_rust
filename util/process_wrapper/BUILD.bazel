@@ -36,7 +36,7 @@ rust_binary_without_process_wrapper(
         "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on": "@rules_rust//ffi/rs:allocator_libraries_with_mangling_support_without_process_wrapper",
         "//conditions:default": "@rules_rust//ffi/rs:empty_allocator_libraries",
     }),
-    edition = "2018",
+    edition = "2024",
     # To ensure the process wrapper is produced deterministically
     # debug info, which is known to sometimes have host specific
     # paths embedded in this section, is stripped out.
@@ -58,7 +58,7 @@ rust_test_without_process_wrapper_test(
         "//rust/toolchain:current_rust_stdlib_files",
         "//rust/toolchain:current_rustc_files",
     ],
-    edition = "2018",
+    edition = "2024",
     env = {
         # test_pipelined_matches_standalone changes process CWD which races
         # with other tests if run in parallel.
