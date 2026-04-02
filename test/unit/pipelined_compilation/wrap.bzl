@@ -40,12 +40,23 @@ def _wrap_impl(ctx):
         lib_hash = output_hash,
         extension = ".rlib",
     )
-    rust_metadata_name = "{prefix}{name}-{lib_hash}{extension}".format(
-        prefix = "lib",
-        name = crate_name,
-        lib_hash = output_hash,
-        extension = ".rmeta",
-    )
+
+    # Use -hollow.rlib extension (not .rmeta) so rustc reads it as an rlib archive
+    # containing optimized MIR. See rust/private/rust.bzl for the same logic.
+    # The hollow rlib is placed in a "_hollow/" subdirectory to avoid the full rlib
+    # and hollow rlib appearing in the same -Ldependency= search directory, which
+    # would cause E0463 "can't find crate" errors due to ambiguous crate candidates.
+    metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, crate_type) and ctx.attr.generate_metadata
+    if metadata_supports_pipelining:
+        rust_metadata_name = "_hollow/lib{name}-{lib_hash}-hollow.rlib".format(
+            name = crate_name,
+            lib_hash = output_hash,
+        )
+    else:
+        rust_metadata_name = "lib{name}-{lib_hash}.rmeta".format(
+            name = crate_name,
+            lib_hash = output_hash,
+        )
 
     tgt = ctx.attr.target
     deps = [DepVariantInfo(
@@ -73,8 +84,7 @@ def _wrap_impl(ctx):
             aliases = {},
             output = rust_lib,
             metadata = rust_metadata,
-            metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, crate_type) and
-                                           ctx.attr.generate_metadata,
+            metadata_supports_pipelining = metadata_supports_pipelining,
             owner = ctx.label,
             edition = "2018",
             compile_data = depset([]),
