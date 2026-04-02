@@ -393,9 +393,9 @@ pub(crate) fn build_child_environment(
     let mut environment_variables: HashMap<String, String> = std::env::vars().collect();
     // Later sources override earlier ones.
     environment_variables.extend(environment_file_block);
-    for (f, replace_with) in &[&stable_stamp_mappings[..], &volatile_stamp_mappings[..]].concat() {
+    for (f, replace_with) in stable_stamp_mappings.iter().chain(&volatile_stamp_mappings) {
+        let from = format!("{{{f}}}");
         for value in environment_variables.values_mut() {
-            let from = format!("{{{f}}}");
             let new = value.replace(from.as_str(), replace_with);
             *value = new;
         }

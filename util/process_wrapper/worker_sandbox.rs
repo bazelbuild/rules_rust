@@ -155,5 +155,3 @@ pub(super) fn copy_all_outputs_to_sandbox(
     }
     Ok(stats)
 }
-
-

@@ -164,5 +164,3 @@ fn setup_test_crate(name: &str) -> std::path::PathBuf {
     .unwrap();
     dir
 }
-
-

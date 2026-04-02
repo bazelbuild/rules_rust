@@ -16,7 +16,6 @@ use std::collections::{BTreeMap, HashSet};
 use std::error::Error;
 use std::fmt;
 use std::fmt::Write;
-use std::iter::Peekable;
 use std::mem::take;
 
 #[derive(Debug, Clone)]

@@ -178,7 +178,7 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     child_args.append(&mut file_arguments);
     let mut temporary_expanded_paramfiles = TemporaryExpandedParamFiles::default();
-    let (child_args, relocated) = prepare_args_internal(
+    let (mut child_args, relocated) = prepare_args_internal(
         child_args,
         &subst_mappings,
         require_explicit_unstable_features,
@@ -189,8 +189,6 @@ pub(crate) fn options_from_args(raw_args: Vec<String>) -> Result<Options, Option
 
     let mut env_files = env_file_raw.unwrap_or_default();
     env_files.extend(relocated.env_files);
-
-    let mut child_args = child_args;
     if !relocated.arg_files.is_empty() {
         for arg in args_from_file(relocated.arg_files)? {
             let mut arg = arg;

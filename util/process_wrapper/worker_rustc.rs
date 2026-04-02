@@ -23,6 +23,7 @@ use super::invocation::{InvocationDirs, RustcInvocation};
 use crate::rustc::RustcStderrPolicy;
 
 /// Spawns a thread that waits on a non-pipelined child process.
+#[cfg(test)]
 pub(crate) fn spawn_non_pipelined_rustc(child: Child) -> Arc<RustcInvocation> {
     let invocation = Arc::new(RustcInvocation::new());
     let pid = child.id();
@@ -87,19 +88,10 @@ pub(crate) fn spawn_pipelined_rustc(
         // Read until rustc reports the `.rmeta` artifact.
         for line in lines.by_ref() {
             if let Some(rmeta_path) = crate::rustc::extract_rmeta_path(&line) {
-                invocation.transition_to_metadata_ready(
-                    pid,
-                    diagnostics.clone(),
-                    Some(rmeta_path),
-                );
+                invocation.transition_to_metadata_ready(pid, diagnostics.clone(), Some(rmeta_path));
                 break;
             }
-            if let Some(processed) = policy.process_line(&line) {
-                if !diagnostics.is_empty() {
-                    diagnostics.push('\n');
-                }
-                diagnostics.push_str(&processed);
-            }
+            append_diagnostic(&mut diagnostics, &mut policy, &line);
         }
 
         // Drain the remaining diagnostics after metadata.
@@ -107,12 +99,7 @@ pub(crate) fn spawn_pipelined_rustc(
             if crate::rustc::extract_rmeta_path(&line).is_some() {
                 continue;
             }
-            if let Some(processed) = policy.process_line(&line) {
-                if !diagnostics.is_empty() {
-                    diagnostics.push('\n');
-                }
-                diagnostics.push_str(&processed);
-            }
+            append_diagnostic(&mut diagnostics, &mut policy, &line);
         }
 
         // stderr closed; rustc is likely exiting.
@@ -131,4 +118,13 @@ pub(crate) fn spawn_pipelined_rustc(
     });
 
     ret
+}
+
+fn append_diagnostic(buf: &mut String, policy: &mut RustcStderrPolicy, line: &str) {
+    if let Some(processed) = policy.process_line(line) {
+        if !buf.is_empty() {
+            buf.push('\n');
+        }
+        buf.push_str(&processed);
+    }
 }

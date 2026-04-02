@@ -323,9 +323,6 @@ impl RequestExecutor {
         self_path: &std::path::Path,
         sandbox_dir: Option<&str>,
     ) -> (i32, String) {
-        use super::exec::spawn_request;
-        use super::rustc_driver::spawn_non_pipelined_rustc;
-
         let context = if sandbox_dir.is_some() {
             "sandboxed subprocess"
         } else {
@@ -335,19 +332,10 @@ impl RequestExecutor {
             let _ = super::sandbox::seed_sandbox_cache_root(std::path::Path::new(dir));
         }
 
-        let child = match spawn_request(self_path, full_args, sandbox_dir, context) {
-            Ok(c) => c,
-            Err(e) => return (1, format!("worker thread error: {e}")),
-        };
-
-        // This invocation stays local to the request thread. Cancellation only
-        // suppresses the response.
-        let invocation = spawn_non_pipelined_rustc(child);
-
-        match invocation.wait_for_completion() {
-            Ok(completion) => (completion.exit_code, completion.diagnostics),
-            Err(failure) => (failure.exit_code, failure.diagnostics),
-        }
+        // Non-pipelined requests run synchronously; cancellation only
+        // suppresses the response (handled by the caller).
+        run_request(self_path, full_args, sandbox_dir, context)
+            .unwrap_or_else(|e| (1, format!("worker thread error: {e}")))
     }
 }
 

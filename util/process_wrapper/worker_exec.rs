@@ -16,6 +16,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+#[cfg(unix)]
 use std::time::Duration;
 
 use crate::ProcessWrapperError;

@@ -25,8 +25,7 @@ use crate::ProcessWrapperError;
 
 use super::exec::{resolve_request_relative_path, ExpandedRustcOutputs};
 use super::pipeline::pipelining_err;
-use super::request::RequestKind;
-use super::request::WorkRequest;
+use super::request::{RequestKind, WorkRequest};
 use super::types::{OutputDir, PipelineKey};
 
 /// Scans an iterator of argument strings for pipelining flags and returns a
@@ -275,9 +274,7 @@ pub(super) fn resolve_pw_args_for_request(
     };
     pw_args.env_files = resolve_paths(pw_args.env_files, execroot_dir);
     pw_args.arg_files = resolve_paths(pw_args.arg_files, execroot_dir);
-    pw_args.stable_status_file = pw_args
-        .stable_status_file
-        .map(|p| resolve(p, execroot_dir));
+    pw_args.stable_status_file = pw_args.stable_status_file.map(|p| resolve(p, execroot_dir));
     pw_args.volatile_status_file = pw_args
         .volatile_status_file
         .map(|p| resolve(p, execroot_dir));
@@ -304,5 +301,3 @@ pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
     args.iter()
         .find_map(|arg| arg.strip_prefix("--out-dir=").map(|d| d.to_string()))
 }
-
-

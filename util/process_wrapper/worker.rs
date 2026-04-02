@@ -37,6 +37,8 @@ pub(crate) mod types;
 
 use std::collections::HashMap;
 use std::io::{self, BufRead};
+#[cfg(not(unix))]
+use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -194,13 +196,6 @@ fn write_all_stdout_fd(bytes: &[u8]) -> io::Result<()> {
 
 type SharedStdout = Arc<Mutex<()>>;
 
-fn build_full_args(
-    startup_args: &[String],
-    request_args: &[String],
-) -> Result<Vec<String>, ProcessWrapperError> {
-    assemble_request_argv(startup_args, request_args)
-}
-
 fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequest> {
     let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
         Ok(request) => request,
@@ -252,7 +247,7 @@ fn execute_singleplex_request(
     request: &WorkRequest,
     stdout: &SharedStdout,
 ) -> Result<(), ProcessWrapperError> {
-    let full_args = build_full_args(startup_args, &request.arguments)?;
+    let full_args = assemble_request_argv(startup_args, &request.arguments)?;
     prepare_outputs(&full_args, None);
     let (exit_code, output) = run_request(self_path, full_args, None, "process_wrapper subprocess")?;
     let response = build_response(exit_code, &output, request.request_id);
@@ -290,18 +285,17 @@ fn run_request_thread(
     }
 
     let (exit_code, output) = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let full_args = match build_full_args(&startup_args, &request.arguments) {
+        let full_args = match assemble_request_argv(&startup_args, &request.arguments) {
             Ok(args) => args,
             Err(e) => return (1, format!("worker thread error: {e}")),
         };
-        let base_dir = match request
-            .sandbox_dir
-            .as_ref()
-            .map(|_| request.base_dir())
-            .transpose()
-        {
-            Ok(dir) => dir,
-            Err(e) => return (1, format!("worker thread error: {e}")),
+        let base_dir = if request.sandbox_dir.is_some() {
+            match request.base_dir() {
+                Ok(dir) => Some(dir),
+                Err(e) => return (1, format!("worker thread error: {e}")),
+            }
+        } else {
+            None
         };
         prepare_outputs(&full_args, base_dir.as_deref());
 
@@ -425,7 +419,7 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             Some(request) => request,
             None => continue,
         };
-        let request_kind = match build_full_args(&startup_args, &request.arguments)
+        let request_kind = match assemble_request_argv(&startup_args, &request.arguments)
             .and_then(|full_args| {
                 let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
                 Ok(RequestKind::parse_in_dir(&full_args, &base_dir))

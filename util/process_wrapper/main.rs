@@ -34,7 +34,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::options::{options, Options, SubprocessPipeliningMode};
 use crate::output::{process_output, LineOutput};
-use crate::rustc::ErrorFormat;
 #[cfg(windows)]
 use crate::util::read_file_to_array;
 
@@ -355,10 +354,6 @@ fn seed_cache_root_for_current_dir() -> Result<CacheSeedOutcome, ProcessWrapperE
     Ok(CacheSeedOutcome::NotFound)
 }
 
-fn process_line(line: String, format: ErrorFormat) -> Result<LineOutput, String> {
-    rustc::process_stderr_line(line, format)
-}
-
 /// Runs the standalone process_wrapper path.
 pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError> {
     let (child_arguments, dep_argfile_cleanup) =
@@ -437,7 +432,7 @@ pub(crate) fn run_standalone(opts: &Options) -> Result<i32, ProcessWrapperError>
             &mut child_stderr,
             stderr.as_mut(),
             output_file.as_mut(),
-            move |line| process_line(line, format),
+            move |line| rustc::process_stderr_line(line, format),
         )
     } else {
         // No rustc-specific processing; forward stderr unchanged.

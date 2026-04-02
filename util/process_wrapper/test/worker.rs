@@ -1,22 +1,20 @@
 use super::args::{
     apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args_with_metadata,
     extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_rustc_args,
-    rewrite_expanded_rustc_outputs, scan_pipelining_flags,
-    split_startup_args, strip_pipelining_flags,
+    rewrite_expanded_rustc_outputs, scan_pipelining_flags, split_startup_args,
+    strip_pipelining_flags,
 };
 use super::exec::resolve_request_relative_path;
 use super::exec::{prepare_expanded_rustc_outputs, ExpandedRustcOutputs};
 use super::invocation::RustcInvocation;
-use super::protocol::{
-    extract_arguments, extract_cancel, extract_request_id, extract_sandbox_dir,
-};
-use super::RequestCoordinator;
+use super::protocol::{extract_arguments, extract_cancel, extract_request_id, extract_sandbox_dir};
 use super::request::RequestKind;
 #[cfg(unix)]
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
 use super::types::{OutputDir, PipelineKey, RequestId};
+use super::RequestCoordinator;
 use super::*;
 use crate::options::is_pipelining_flag;
 use crate::options::parse_pw_args;
@@ -278,8 +276,14 @@ fn test_apply_substs() {
 #[test]
 fn test_scan_pipelining_flags_table() {
     let cases: &[(&[&str], &str)] = &[
-        (&["--pipelining-metadata", "--pipelining-key=foo_abc"], "Metadata:foo_abc"),
-        (&["--pipelining-full", "--pipelining-key=bar_xyz"], "Full:bar_xyz"),
+        (
+            &["--pipelining-metadata", "--pipelining-key=foo_abc"],
+            "Metadata:foo_abc",
+        ),
+        (
+            &["--pipelining-full", "--pipelining-key=bar_xyz"],
+            "Full:bar_xyz",
+        ),
         (&["--emit=link", "--crate-name=foo"], "NonPipelined"),
         (&["--pipelining-metadata"], "NonPipelined"), // flag but no key
     ];
@@ -374,7 +378,9 @@ fn test_expand_rustc_args_strips_pipelining_flags() {
         format!("@{}", param_path.display()),
     ];
     let subst: Vec<(String, String)> = vec![];
-    let (expanded, _) = expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new(".")).unwrap();
+    let (expanded, _) =
+        expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new("."))
+            .unwrap();
 
     assert_eq!(expanded[0], "/path/to/rustc");
     assert!(expanded.contains(&"--emit=dep-info,metadata,link".to_string()));
@@ -468,7 +474,9 @@ fn test_expand_rustc_args_applies_substs() {
         format!("@{}", param_path.display()),
     ];
     let subst = vec![("pwd".to_string(), "/work".to_string())];
-    let (expanded, _) = expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new(".")).unwrap();
+    let (expanded, _) =
+        expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new("."))
+            .unwrap();
 
     assert!(
         expanded.contains(&"--out-dir=/work/out".to_string()),
@@ -925,9 +933,17 @@ fn test_assemble_request_argv_happy_path() {
     let after = &result[sep + 1..];
 
     // Relocated pw flags are before --
-    for flag in ["--output-file", "--env-file", "--stable-status-file",
-                 "--volatile-status-file", "--rustc-output-format"] {
-        assert!(before.contains(&flag.to_string()), "{flag} should be before --");
+    for flag in [
+        "--output-file",
+        "--env-file",
+        "--stable-status-file",
+        "--volatile-status-file",
+        "--rustc-output-format",
+    ] {
+        assert!(
+            before.contains(&flag.to_string()),
+            "{flag} should be before --"
+        );
     }
 
     // Pipelining flags stay after --
@@ -1035,6 +1051,7 @@ fn test_invocation_shutdown_from_pending() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[cfg(unix)]
 fn test_rustc_thread_pipelined_completes() {
     use super::invocation::InvocationDirs;
     use super::rustc_driver::spawn_pipelined_rustc;
@@ -1065,6 +1082,7 @@ fn test_rustc_thread_pipelined_completes() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_rustc_thread_failure_before_rmeta() {
     use super::invocation::InvocationDirs;
     use super::rustc_driver::spawn_pipelined_rustc;
@@ -1132,6 +1150,7 @@ fn test_rustc_thread_shutdown_kills_child() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[cfg(unix)]
 fn test_rustc_thread_non_pipelined_completes() {
     use super::rustc_driver::spawn_non_pipelined_rustc;
     use std::process::{Command, Stdio};
@@ -1161,6 +1180,7 @@ fn test_rustc_thread_non_pipelined_completes() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_rustc_thread_non_pipelined_fails() {
     use super::rustc_driver::spawn_non_pipelined_rustc;
     use std::process::{Command, Stdio};

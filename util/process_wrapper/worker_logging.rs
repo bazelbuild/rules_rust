@@ -20,8 +20,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
 
-use super::request::WorkRequest;
-use super::request::RequestKind;
+use super::request::{RequestKind, WorkRequest};
 
 pub(crate) fn current_pid() -> u32 {
     std::process::id()
@@ -95,12 +94,6 @@ impl Drop for WorkerLifecycleGuard {
             self.pid,
             uptime.as_millis(),
             requests,
-        ));
-        append_worker_lifecycle_log(&format!(
-            "worker_exit pid={} requests_handled={} uptime_s={:.1}",
-            self.pid,
-            requests,
-            uptime.as_secs_f64(),
         ));
     }
 }
