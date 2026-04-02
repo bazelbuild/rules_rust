@@ -417,12 +417,12 @@ def crate_repositories():
     """
     maybe(
         http_archive,
-        name = "rtvsc__itoa-1.0.17",
-        sha256 = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2",
+        name = "rtvsc__itoa-1.0.18",
+        sha256 = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/itoa/1.0.17/download"],
-        strip_prefix = "itoa-1.0.17",
-        build_file = Label("//test/vscode/3rdparty/crates:BUILD.itoa-1.0.17.bazel"),
+        urls = ["https://static.crates.io/crates/itoa/1.0.18/download"],
+        strip_prefix = "itoa-1.0.18",
+        build_file = Label("//test/vscode/3rdparty/crates:BUILD.itoa-1.0.18.bazel"),
     )
 
     maybe(

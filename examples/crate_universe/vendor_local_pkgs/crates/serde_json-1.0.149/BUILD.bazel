@@ -108,7 +108,7 @@ rust_library(
     }),
     version = "1.0.149",
     deps = [
-        "//vendor_local_pkgs/crates/itoa-1.0.17:itoa",
+        "//vendor_local_pkgs/crates/itoa-1.0.18:itoa",
         "//vendor_local_pkgs/crates/memchr-2.8.0:memchr",
         "//vendor_local_pkgs/crates/serde_core-1.0.228:serde_core",
         "//vendor_local_pkgs/crates/serde_json-1.0.149:build_script_build",
