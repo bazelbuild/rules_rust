@@ -372,28 +372,18 @@ def _cargo_build_script_impl(ctx):
     if not workspace_name:
         workspace_name = ctx.workspace_name
 
-    extra_args = []
-    extra_inputs = []
     extra_output = []
 
     # Relying on runfiles directories is unreliable when passing data to
     # dependent actions. Instead, an explicit directory should be created
     # until more reliable functionality is implemented in Bazel:
     # https://github.com/bazelbuild/bazel/issues/15486
-    incompatible_runfiles_cargo_manifest_dir = ctx.attr._incompatible_runfiles_cargo_manifest_dir[BuildSettingInfo].value
-    if not incompatible_runfiles_cargo_manifest_dir:
-        script_data.append(ctx.attr.script[DefaultInfo].default_runfiles.files)
-        manifest_dir = "{}.runfiles/{}/{}".format(script.path, workspace_name, ctx.label.package)
-    else:
-        runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
-            ctx = ctx,
-            script = ctx.attr.script,
-            retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
-        )
-        manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
-        extra_args.append(runfiles_args)
-        extra_inputs.append(runfiles_inputs)
-        extra_output = [runfiles_dir]
+    runfiles_dir, runfiles_inputs, runfiles_args = _create_runfiles_dir(
+        ctx = ctx,
+        script = ctx.attr.script,
+        retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
+    )
+    manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
 
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
@@ -635,7 +625,7 @@ def _cargo_build_script_impl(ctx):
 
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
-        arguments = [args] + extra_args,
+        arguments = [args, runfiles_args],
         outputs = [
             out_dir,
             env_out,
@@ -643,9 +633,10 @@ def _cargo_build_script_impl(ctx):
             link_flags,
             link_search_paths,
             dep_env_out,
+            runfiles_dir,
         ] + extra_output,
         tools = tools,
-        inputs = depset(build_script_inputs, transitive = extra_inputs),
+        inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
@@ -804,9 +795,6 @@ cargo_build_script = rule(
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_cxx"),
-        ),
-        "_incompatible_runfiles_cargo_manifest_dir": attr.label(
-            default = Label("//cargo/settings:incompatible_runfiles_cargo_manifest_dir"),
         ),
     },
     fragments = ["cpp"],
