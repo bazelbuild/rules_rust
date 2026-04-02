@@ -1,5 +1,26 @@
 use super::*;
 
+#[allow(clippy::type_complexity)]
+fn prepare_args(
+    args: Vec<String>,
+    subst_mappings: &[(String, String)],
+    require_explicit_unstable_features: bool,
+    read_file: Option<&mut dyn FnMut(&str) -> Result<Vec<String>, OptionError>>,
+    write_file: Option<&mut dyn FnMut(&str, &str) -> Result<(), OptionError>>,
+) -> Result<(Vec<String>, RelocatedPwFlags), OptionError> {
+    let mut tmp = TemporaryExpandedParamFiles::default();
+    let prepared = prepare_args_internal(
+        args,
+        subst_mappings,
+        require_explicit_unstable_features,
+        read_file,
+        write_file,
+        &mut tmp,
+    )?;
+    let _ = tmp.into_inner();
+    Ok(prepared)
+}
+
 fn unique_test_dir(prefix: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!(
         "{}_{}_{}",
@@ -228,7 +249,7 @@ fn test_expand_args_inline_matches_standalone_prepare_args_for_nested_paramfiles
             .ok_or_else(|| OptionError::Generic(format!("file not found: {}", filename)))
     };
     let (worker_args, worker_meta) =
-        expand_args_inline(&args, &subst_mappings, true, Some(&mut worker_read), false).unwrap();
+        crate::pw_args::expand_args_inline(&args, &subst_mappings, true, Some(&mut worker_read), false).unwrap();
 
     assert_eq!(
         standalone_args,
@@ -276,25 +297,16 @@ fn test_expand_args_inline_matches_standalone_prepare_args_for_nested_paramfiles
 }
 
 #[test]
-fn resolve_external_path_non_rs_unchanged() {
-    let arg = "external/some_repo/src/lib.txt";
-    let result = resolve_external_path(arg);
-    assert_eq!(&*result, arg);
-}
-
-#[test]
-fn resolve_external_path_non_external_unchanged() {
-    let arg = "src/main.rs";
-    let result = resolve_external_path(arg);
-    assert_eq!(&*result, arg);
-}
-
-#[test]
-fn resolve_external_path_no_junction_unchanged() {
-    // When the junction doesn't exist (read_link fails), returns unchanged.
-    let arg = "external/nonexistent_repo_12345/src/lib.rs";
-    let result = resolve_external_path(arg);
-    assert_eq!(&*result, arg);
+#[cfg(not(windows))]
+fn resolve_external_path_unchanged_on_non_windows() {
+    // On non-Windows, resolve_external_path is a no-op passthrough.
+    for arg in [
+        "external/some_repo/src/lib.txt",
+        "src/main.rs",
+        "external/nonexistent_repo_12345/src/lib.rs",
+    ] {
+        assert_eq!(&*resolve_external_path(arg), arg, "input: {arg}");
+    }
 }
 
 #[test]

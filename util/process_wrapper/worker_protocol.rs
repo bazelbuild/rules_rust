@@ -18,13 +18,6 @@ use tinyjson::JsonValue;
 
 use super::types::{RequestId, SandboxDir};
 
-#[cfg(test)]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct WorkRequestInput {
-    pub(crate) path: String,
-    pub(crate) digest: Option<String>,
-}
-
 /// Extracts the `requestId` field from a WorkRequest (defaults to 0).
 pub(super) fn extract_request_id(request: &JsonValue) -> RequestId {
     if let JsonValue::Object(map) = request
@@ -83,38 +76,6 @@ pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<SandboxD
         ));
     }
     Ok(None)
-}
-
-#[cfg(test)]
-/// Extracts the `inputs` array from a WorkRequest.
-pub(super) fn extract_inputs(request: &JsonValue) -> Vec<WorkRequestInput> {
-    let mut result = Vec::new();
-    let JsonValue::Object(map) = request else {
-        return result;
-    };
-    let Some(JsonValue::Array(inputs)) = map.get("inputs") else {
-        return result;
-    };
-
-    for input in inputs {
-        let JsonValue::Object(obj) = input else {
-            continue;
-        };
-
-        let Some(JsonValue::String(path)) = obj.get("path") else {
-            continue;
-        };
-        let digest = obj.get("digest").and_then(|v| match v {
-            JsonValue::String(d) => Some(d.clone()),
-            _ => None,
-        });
-        result.push(WorkRequestInput {
-            path: path.clone(),
-            digest,
-        });
-    }
-
-    result
 }
 
 /// Extracts the `cancel` field from a WorkRequest (false if absent).

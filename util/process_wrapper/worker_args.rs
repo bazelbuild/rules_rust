@@ -17,9 +17,10 @@
 use std::collections::HashMap;
 
 use crate::options::{
-    build_child_environment, expand_args_inline, is_pipelining_flag, is_relocated_pw_flag,
-    NormalizedRustcMetadata, OptionError, ParsedPwArgs, RelocatedPwFlags,
+    build_child_environment, is_pipelining_flag, is_relocated_pw_flag, NormalizedRustcMetadata,
+    OptionError, ParsedPwArgs, RelocatedPwFlags,
 };
+use crate::pw_args::{normalize_args_recursive, ParamFileReadErrorMode};
 use crate::ProcessWrapperError;
 
 use super::exec::{resolve_request_relative_path, ExpandedRustcOutputs};
@@ -92,19 +93,15 @@ pub(super) fn extract_direct_request_pw_flags(
 ) -> (Vec<String>, Vec<String>) {
     let mut remaining = Vec::new();
     let mut pw_pairs = Vec::new();
-    let mut i = 0;
-    while i < request_args.len() {
-        if is_relocated_pw_flag(&request_args[i]) {
-            pw_pairs.push(request_args[i].clone());
-            if i + 1 < request_args.len() {
-                pw_pairs.push(request_args[i + 1].clone());
-                i += 2;
-            } else {
-                i += 1;
+    let mut iter = request_args.iter();
+    while let Some(arg) = iter.next() {
+        if is_relocated_pw_flag(arg) {
+            pw_pairs.push(arg.clone());
+            if let Some(val) = iter.next() {
+                pw_pairs.push(val.clone());
             }
         } else {
-            remaining.push(request_args[i].clone());
-            i += 1;
+            remaining.push(arg.clone());
         }
     }
     (remaining, pw_pairs)
@@ -117,19 +114,14 @@ pub(super) fn assemble_request_argv(
 ) -> Result<Vec<String>, ProcessWrapperError> {
     let layout = split_startup_args(startup_args)?;
     let (remaining_child, direct_pw) = extract_direct_request_pw_flags(request_args);
-    let mut argv = Vec::with_capacity(
-        layout.pw_args.len()
-            + direct_pw.len()
-            + 1
-            + layout.child_prefix.len()
-            + remaining_child.len(),
-    );
-    argv.extend(layout.pw_args);
-    argv.extend(direct_pw);
-    argv.push("--".into());
-    argv.extend(layout.child_prefix);
-    argv.extend(remaining_child);
-    Ok(argv)
+    Ok([
+        layout.pw_args,
+        direct_pw,
+        vec!["--".into()],
+        layout.child_prefix,
+        remaining_child,
+    ]
+    .concat())
 }
 
 pub(super) fn expand_rustc_args_with_metadata(
@@ -138,19 +130,30 @@ pub(super) fn expand_rustc_args_with_metadata(
     require_explicit_unstable_features: bool,
     execroot_dir: &std::path::Path,
 ) -> Result<(Vec<String>, NormalizedRustcMetadata), OptionError> {
+    let mut metadata = NormalizedRustcMetadata::default();
+    let mut expanded = Vec::new();
     let mut read_file = |path: &str| {
         let resolved = resolve_request_relative_path(path, Some(execroot_dir))
             .display()
             .to_string();
         crate::util::read_file_to_array(&resolved).map_err(OptionError::Generic)
     };
-    expand_args_inline(
-        rustc_and_after,
+    let mut write_arg = |arg: String| {
+        expanded.push(arg);
+        Ok(())
+    };
+    normalize_args_recursive(
+        rustc_and_after.to_vec(),
         subst,
-        require_explicit_unstable_features,
-        Some(&mut read_file),
-        true,
-    )
+        &mut read_file,
+        ParamFileReadErrorMode::PreserveArg,
+        &mut write_arg,
+        &mut metadata,
+    )?;
+    if !metadata.has_allow_features && require_explicit_unstable_features {
+        expanded.push("-Zallow-features=".to_string());
+    }
+    Ok((expanded, metadata))
 }
 
 /// Builds the rustc environment from inherited vars, env files, and substitutions.
@@ -296,49 +299,10 @@ pub(super) fn apply_substs(arg: &str, subst: &[(String, String)]) -> String {
     a
 }
 
-/// Builds the rustc argument list from the post-`--` section of process_wrapper
-/// args, expanding any @paramfile references inline and stripping pipelining flags.
-///
-/// Rustc natively supports @paramfile expansion, but the paramfile may contain
-/// pipelining protocol flags (`--pipelining-metadata`, `--pipelining-key=*`) that
-/// rustc doesn't understand. By expanding and filtering here we avoid passing
-/// unknown flags to rustc.
-#[cfg(test)]
-pub(super) fn expand_rustc_args(
-    rustc_and_after: &[String],
-    subst: &[(String, String)],
-    execroot_dir: &std::path::Path,
-) -> Vec<String> {
-    expand_rustc_args_with_metadata(rustc_and_after, subst, false, execroot_dir)
-        .map(|(args, _)| args)
-        .unwrap_or_else(|_| {
-            rustc_and_after
-                .iter()
-                .map(|arg| apply_substs(arg, subst))
-                .collect()
-        })
-}
-
 /// Searches already-expanded rustc args for `--out-dir=<path>`.
 pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
     args.iter()
         .find_map(|arg| arg.strip_prefix("--out-dir=").map(|d| d.to_string()))
 }
 
-/// Returns a copy of `args` where `--out-dir=<old>` is replaced by
-/// `--out-dir=<new_out_dir>`. Other args are unchanged.
-#[cfg(test)]
-pub(super) fn rewrite_out_dir_in_expanded(
-    args: Vec<String>,
-    new_out_dir: &std::path::Path,
-) -> Vec<String> {
-    args.into_iter()
-        .map(|arg| {
-            if arg.starts_with("--out-dir=") {
-                format!("--out-dir={}", new_out_dir.display())
-            } else {
-                arg
-            }
-        })
-        .collect()
-}
+

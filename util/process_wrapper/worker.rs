@@ -26,8 +26,6 @@ pub(crate) mod logging;
 pub(crate) mod pipeline;
 #[path = "worker_protocol.rs"]
 pub(crate) mod protocol;
-#[path = "worker_registry.rs"]
-pub(crate) mod registry;
 #[path = "worker_request.rs"]
 pub(crate) mod request;
 #[path = "worker_rustc.rs"]
@@ -37,6 +35,7 @@ pub(crate) mod sandbox;
 #[path = "worker_types.rs"]
 pub(crate) mod types;
 
+use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -54,8 +53,52 @@ use protocol::{
     build_cancel_response, build_response, extract_arguments, extract_cancel, extract_request_id,
     extract_sandbox_dir,
 };
-use registry::{RequestCoordinator, SharedRequestCoordinator};
 use request::{RequestExecutor, RequestKind, WorkRequest};
+
+use self::invocation::RustcInvocation;
+use self::types::{PipelineKey, RequestId};
+
+/// Thread-safe shared handle to the `RequestCoordinator`.
+type SharedRequestCoordinator = Arc<Mutex<RequestCoordinator>>;
+
+/// Shared state for request threads and rustc threads.
+#[derive(Default)]
+struct RequestCoordinator {
+    /// Pipeline key -> shared invocation.
+    invocations: HashMap<PipelineKey, Arc<RustcInvocation>>,
+    /// All in-flight requests. Value is `Some(key)` for pipelined requests,
+    /// `None` for non-pipelined. Presence in this map means the request is
+    /// active and no response has been sent yet. Removal IS the atomic claim —
+    /// whoever removes the entry owns the right to send the `WorkResponse`.
+    requests: HashMap<RequestId, Option<PipelineKey>>,
+}
+
+impl RequestCoordinator {
+    /// Cancels a request and shuts down the associated invocation.
+    /// Returns `true` if the cancel was claimed (caller should send the cancel
+    /// response), `false` if the request already completed.
+    fn cancel(&mut self, request_id: RequestId) -> bool {
+        if let Some(maybe_key) = self.requests.remove(&request_id) {
+            if let Some(key) = maybe_key
+                && let Some(inv) = self.invocations.get(&key)
+            {
+                inv.request_shutdown();
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Requests shutdown for all tracked invocations and clears the registry.
+    fn shutdown_all(&mut self) {
+        for inv in self.invocations.values() {
+            inv.request_shutdown();
+        }
+        self.invocations.clear();
+        self.requests.clear();
+    }
+}
 
 static WORKER_SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
 

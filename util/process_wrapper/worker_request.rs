@@ -35,7 +35,7 @@ use super::pipeline::{
     copy_outputs_unsandboxed, copy_rmeta_unsandboxed, create_pipeline_context,
     maybe_cleanup_pipeline_dir, pipelining_err, PipelineContext, WorkerStateRoots,
 };
-use super::registry::SharedRequestCoordinator;
+use super::SharedRequestCoordinator;
 use super::rustc_driver::spawn_pipelined_rustc;
 use super::sandbox::{copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root};
 use super::types::{OutputDir, PipelineKey, RequestId, SandboxDir};
@@ -86,12 +86,6 @@ pub(crate) enum RequestKind {
 }
 
 impl RequestKind {
-    #[cfg(test)]
-    pub(crate) fn parse(args: &[String]) -> Self {
-        let base_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-        Self::parse_in_dir(args, &base_dir)
-    }
-
     pub(crate) fn parse_in_dir(args: &[String], base_dir: &std::path::Path) -> Self {
         let direct = scan_pipelining_flags(args.iter().map(String::as_str));
         if !matches!(direct, RequestKind::NonPipelined) {
@@ -136,11 +130,6 @@ impl RequestKind {
             RequestKind::NonPipelined => None,
         }
     }
-}
-
-#[cfg(test)]
-pub(crate) fn detect_pipelining_mode(args: &[String]) -> RequestKind {
-    RequestKind::parse(args)
 }
 
 /// All prepared state needed to spawn a metadata rustc invocation.

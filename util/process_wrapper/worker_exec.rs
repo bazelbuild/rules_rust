@@ -241,7 +241,7 @@ pub(super) fn run_request(
         .wait_with_output()
         .map_err(|e| ProcessWrapperError(format!("failed to wait on {context}: {e}")))?;
     let exit_code = output.status.code().unwrap_or(1);
-    let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
-    combined.push_str(&String::from_utf8_lossy(&output.stderr));
+    let combined =
+        String::from_utf8_lossy(&output.stdout).into_owned() + &String::from_utf8_lossy(&output.stderr);
     Ok((exit_code, combined))
 }

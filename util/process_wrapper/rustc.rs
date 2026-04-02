@@ -62,14 +62,6 @@ pub(crate) enum RustcStderrPolicy {
 }
 
 impl RustcStderrPolicy {
-    #[cfg(test)]
-    pub(crate) fn new(error_format: Option<ErrorFormat>) -> Self {
-        match error_format {
-            Some(format) => Self::Processed(RustcStderrProcessor::new(format)),
-            None => Self::Raw,
-        }
-    }
-
     pub(crate) fn from_option_str(error_format: Option<&str>) -> Self {
         match error_format {
             Some(value) => Self::Processed(RustcStderrProcessor::new(match value {

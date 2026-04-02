@@ -340,21 +340,6 @@ impl RustcInvocation {
                 | InvocationState::Failed { .. }
         )
     }
-
-    /// Test helper that sets the state to `Completed`.
-    #[cfg(test)]
-    pub fn force_completed(&self, exit_code: i32, diagnostics: String, dirs: InvocationDirs) {
-        let mut state = self
-            .state
-            .lock()
-            .expect("rustc invocation state mutex poisoned");
-        *state = InvocationState::Completed {
-            exit_code,
-            diagnostics,
-            dirs,
-        };
-        self.cvar.notify_all();
-    }
 }
 
 // Cleanup is driven explicitly by `RequestCoordinator`.

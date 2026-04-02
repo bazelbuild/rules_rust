@@ -11,12 +11,11 @@ use crate::util::*;
 
 // Re-export shared parsing helpers through `crate::options`.
 pub(crate) use crate::pw_args::{
-    build_child_environment, expand_args_inline, is_allow_features_flag, is_pipelining_flag,
+    build_child_environment, is_allow_features_flag, is_pipelining_flag,
     is_relocated_pw_flag, normalize_args_recursive, parse_pw_args, resolve_external_path,
     NormalizedRustcMetadata, OptionError, ParamFileReadErrorMode, ParsedPwArgs, RelocatedPwFlags,
     SubprocessPipeliningMode,
 };
-
 #[derive(Debug)]
 pub(crate) struct Options {
     pub(crate) executable: String,
@@ -278,29 +277,6 @@ fn prepare_param_file(
         &mut metadata,
     )?;
     Ok((metadata.has_allow_features, metadata.relocated))
-}
-
-/// Expands arguments recursively through any `@paramfile` references.
-#[cfg(test)]
-#[allow(clippy::type_complexity)]
-fn prepare_args(
-    args: Vec<String>,
-    subst_mappings: &[(String, String)],
-    require_explicit_unstable_features: bool,
-    read_file: Option<&mut dyn FnMut(&str) -> Result<Vec<String>, OptionError>>,
-    write_file: Option<&mut dyn FnMut(&str, &str) -> Result<(), OptionError>>,
-) -> Result<(Vec<String>, RelocatedPwFlags), OptionError> {
-    let mut temporary_expanded_paramfiles = TemporaryExpandedParamFiles::default();
-    let prepared = prepare_args_internal(
-        args,
-        subst_mappings,
-        require_explicit_unstable_features,
-        read_file,
-        write_file,
-        &mut temporary_expanded_paramfiles,
-    )?;
-    let _ = temporary_expanded_paramfiles.into_inner();
-    Ok(prepared)
 }
 
 #[allow(clippy::type_complexity)]

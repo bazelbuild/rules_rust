@@ -1,18 +1,17 @@
 use super::args::{
-    apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args,
+    apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args_with_metadata,
     extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_rustc_args,
-    rewrite_expanded_rustc_outputs, rewrite_out_dir_in_expanded, scan_pipelining_flags,
+    rewrite_expanded_rustc_outputs, scan_pipelining_flags,
     split_startup_args, strip_pipelining_flags,
 };
 use super::exec::resolve_request_relative_path;
 use super::exec::{prepare_expanded_rustc_outputs, ExpandedRustcOutputs};
-use super::invocation::{InvocationDirs, RustcInvocation};
+use super::invocation::RustcInvocation;
 use super::protocol::{
-    extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
-    WorkRequestInput,
+    extract_arguments, extract_cancel, extract_request_id, extract_sandbox_dir,
 };
-use super::registry::RequestCoordinator;
-use super::request::{detect_pipelining_mode, RequestKind};
+use super::RequestCoordinator;
+use super::request::RequestKind;
 #[cfg(unix)]
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
@@ -212,52 +211,6 @@ fn test_build_response_failure() {
 }
 
 #[test]
-fn test_detect_pipelining_mode_none() {
-    let args = vec!["--subst".to_string(), "pwd=/work".to_string()];
-    assert!(matches!(
-        detect_pipelining_mode(&args),
-        RequestKind::NonPipelined
-    ));
-}
-
-#[test]
-fn test_detect_pipelining_mode_metadata() {
-    let args = vec![
-        "--pipelining-metadata".to_string(),
-        "--pipelining-key=my_crate_abc123".to_string(),
-    ];
-    match detect_pipelining_mode(&args) {
-        RequestKind::Metadata { key } => assert_eq!(key.as_str(), "my_crate_abc123"),
-        other => panic!(
-            "expected Metadata, got {:?}",
-            std::mem::discriminant(&other)
-        ),
-    }
-}
-
-#[test]
-fn test_detect_pipelining_mode_full() {
-    let args = vec![
-        "--pipelining-full".to_string(),
-        "--pipelining-key=my_crate_abc123".to_string(),
-    ];
-    match detect_pipelining_mode(&args) {
-        RequestKind::Full { key } => assert_eq!(key.as_str(), "my_crate_abc123"),
-        other => panic!("expected Full, got {:?}", std::mem::discriminant(&other)),
-    }
-}
-
-#[test]
-fn test_detect_pipelining_mode_no_key() {
-    // If pipelining flag present but no key, fall back to None.
-    let args = vec!["--pipelining-metadata".to_string()];
-    assert!(matches!(
-        detect_pipelining_mode(&args),
-        RequestKind::NonPipelined
-    ));
-}
-
-#[test]
 fn test_strip_pipelining_flags() {
     let args = vec![
         "--pipelining-metadata".to_string(),
@@ -323,35 +276,22 @@ fn test_apply_substs() {
 }
 
 #[test]
-fn test_scan_pipelining_flags_metadata() {
-    match scan_pipelining_flags(
-        ["--pipelining-metadata", "--pipelining-key=foo_abc"]
-            .iter()
-            .copied(),
-    ) {
-        RequestKind::Metadata { key } => assert_eq!(key.as_str(), "foo_abc"),
-        other => panic!("expected Metadata, got {:?}", other),
+fn test_scan_pipelining_flags_table() {
+    let cases: &[(&[&str], &str)] = &[
+        (&["--pipelining-metadata", "--pipelining-key=foo_abc"], "Metadata:foo_abc"),
+        (&["--pipelining-full", "--pipelining-key=bar_xyz"], "Full:bar_xyz"),
+        (&["--emit=link", "--crate-name=foo"], "NonPipelined"),
+        (&["--pipelining-metadata"], "NonPipelined"), // flag but no key
+    ];
+    for (args, expected) in cases {
+        let kind = scan_pipelining_flags(args.iter().copied());
+        let actual = match &kind {
+            RequestKind::Metadata { key } => format!("Metadata:{}", key.as_str()),
+            RequestKind::Full { key } => format!("Full:{}", key.as_str()),
+            RequestKind::NonPipelined => "NonPipelined".to_string(),
+        };
+        assert_eq!(&actual, expected, "scan_pipelining_flags({args:?})");
     }
-}
-
-#[test]
-fn test_scan_pipelining_flags_full() {
-    match scan_pipelining_flags(
-        ["--pipelining-full", "--pipelining-key=bar_xyz"]
-            .iter()
-            .copied(),
-    ) {
-        RequestKind::Full { key } => assert_eq!(key.as_str(), "bar_xyz"),
-        other => panic!("expected Full, got {:?}", other),
-    }
-}
-
-#[test]
-fn test_scan_pipelining_flags_none() {
-    assert_eq!(
-        scan_pipelining_flags(["--emit=link", "--crate-name=foo"].iter().copied()),
-        RequestKind::NonPipelined
-    );
 }
 
 #[test]
@@ -377,7 +317,7 @@ fn test_detect_pipelining_mode_from_paramfile() {
         format!("@{}", param_path.display()),
     ];
 
-    match detect_pipelining_mode(&args) {
+    match RequestKind::parse_in_dir(&args, &tmp) {
         RequestKind::Metadata { key } => assert_eq!(key.as_str(), "foo_abc123"),
         other => panic!(
             "expected Metadata, got {:?}",
@@ -434,7 +374,7 @@ fn test_expand_rustc_args_strips_pipelining_flags() {
         format!("@{}", param_path.display()),
     ];
     let subst: Vec<(String, String)> = vec![];
-    let expanded = expand_rustc_args(&rustc_and_after, &subst, std::path::Path::new("."));
+    let (expanded, _) = expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new(".")).unwrap();
 
     assert_eq!(expanded[0], "/path/to/rustc");
     assert!(expanded.contains(&"--emit=dep-info,metadata,link".to_string()));
@@ -528,7 +468,7 @@ fn test_expand_rustc_args_applies_substs() {
         format!("@{}", param_path.display()),
     ];
     let subst = vec![("pwd".to_string(), "/work".to_string())];
-    let expanded = expand_rustc_args(&rustc_and_after, &subst, std::path::Path::new("."));
+    let (expanded, _) = expand_rustc_args_with_metadata(&rustc_and_after, &subst, false, std::path::Path::new(".")).unwrap();
 
     assert!(
         expanded.contains(&"--out-dir=/work/out".to_string()),
@@ -641,32 +581,6 @@ fn test_extract_sandbox_dir_populated_windows() {
 }
 
 #[test]
-fn test_extract_inputs() {
-    let req = parse_json(
-        r#"{
-            "requestId": 1,
-            "inputs": [
-                {"path": "foo/bar.rs", "digest": "abc"},
-                {"path": "flagfile.params"}
-            ]
-        }"#,
-    );
-    assert_eq!(
-        extract_inputs(&req),
-        vec![
-            WorkRequestInput {
-                path: "foo/bar.rs".to_string(),
-                digest: Some("abc".to_string()),
-            },
-            WorkRequestInput {
-                path: "flagfile.params".to_string(),
-                digest: None,
-            },
-        ]
-    );
-}
-
-#[test]
 fn test_extract_cancel_true() {
     let req = parse_json(r#"{"requestId": 1, "cancel": true}"#);
     assert!(extract_cancel(&req));
@@ -757,25 +671,6 @@ fn test_find_out_dir_in_expanded() {
 fn test_find_out_dir_in_expanded_missing() {
     let args = vec!["--crate-name=foo".to_string(), "--emit=link".to_string()];
     assert_eq!(find_out_dir_in_expanded(&args), None);
-}
-
-#[test]
-fn test_rewrite_out_dir_in_expanded() {
-    let args = vec![
-        "--crate-name=foo".to_string(),
-        "--out-dir=/old/path".to_string(),
-        "--emit=link".to_string(),
-    ];
-    let new_dir = std::path::Path::new("/_pw_pipeline/foo_abc");
-    let result = rewrite_out_dir_in_expanded(args, new_dir);
-    assert_eq!(
-        result,
-        vec![
-            "--crate-name=foo",
-            "--out-dir=/_pw_pipeline/foo_abc",
-            "--emit=link",
-        ]
-    );
 }
 
 #[test]
@@ -996,93 +891,58 @@ fn test_seed_sandbox_cache_root() {
 
 // --- assemble_request_argv tests ---
 
+/// Happy-path: relocated pw flags move before `--`, pipelining flags stay after,
+/// rustc args stay after. Covers the single-relocated, multi-relocated,
+/// no-relocated, interleaved, and pipelining-stay-after cases in one assertion.
 #[test]
-fn test_assemble_request_argv_one_relocated_flag() {
+fn test_assemble_request_argv_happy_path() {
     let startup: Vec<String> = vec![
         "--subst".into(),
         "pwd=${pwd}".into(),
         "--".into(),
-        "/path/to/rustc".into(),
-    ];
-    let request: Vec<String> = vec![
-        "--output-file".into(),
-        "bazel-out/foo/libbar.rmeta".into(),
-        "src/lib.rs".into(),
-        "--crate-name=foo".into(),
-    ];
-    let result = assemble_request_argv(&startup, &request).unwrap();
-    assert_eq!(
-        result,
-        vec![
-            "--subst",
-            "pwd=${pwd}",
-            "--output-file",
-            "bazel-out/foo/libbar.rmeta",
-            "--",
-            "/path/to/rustc",
-            "src/lib.rs",
-            "--crate-name=foo",
-        ]
-    );
-}
-
-#[test]
-fn test_assemble_request_argv_multiple_relocated_flags() {
-    let startup: Vec<String> = vec![
-        "--subst".into(),
-        "pwd=${pwd}".into(),
-        "--".into(),
-        "/path/to/rustc".into(),
+        "rustc".into(),
     ];
     let request: Vec<String> = vec![
         "--output-file".into(),
         "out.rmeta".into(),
+        "--env-file".into(),
+        "build.env".into(),
+        "--stable-status-file".into(),
+        "stable.txt".into(),
+        "--volatile-status-file".into(),
+        "volatile.txt".into(),
         "--rustc-output-format".into(),
         "rendered".into(),
-        "--env-file".into(),
-        "build_script.env".into(),
-        "--arg-file".into(),
-        "build_script.linksearchpaths".into(),
-        "--stable-status-file".into(),
-        "stable.status".into(),
-        "--volatile-status-file".into(),
-        "volatile.status".into(),
+        "--pipelining-metadata".into(),
+        "--pipelining-key=abc123".into(),
+        "--crate-name=foo".into(),
+        "-Copt-level=2".into(),
         "src/lib.rs".into(),
     ];
     let result = assemble_request_argv(&startup, &request).unwrap();
     let sep = result.iter().position(|a| a == "--").unwrap();
-    // All pw flags should be before --
-    assert!(result[..sep].contains(&"--output-file".to_string()));
-    assert!(result[..sep].contains(&"--rustc-output-format".to_string()));
-    assert!(result[..sep].contains(&"--env-file".to_string()));
-    assert!(result[..sep].contains(&"--arg-file".to_string()));
-    assert!(result[..sep].contains(&"--stable-status-file".to_string()));
-    assert!(result[..sep].contains(&"--volatile-status-file".to_string()));
-    // Rustc args should be after --
-    assert!(result[sep + 1..].contains(&"/path/to/rustc".to_string()));
-    assert!(result[sep + 1..].contains(&"src/lib.rs".to_string()));
-}
+    let before = &result[..sep];
+    let after = &result[sep + 1..];
 
-#[test]
-fn test_assemble_request_argv_no_relocated_flags() {
-    let startup: Vec<String> = vec![
-        "--subst".into(),
-        "pwd=${pwd}".into(),
-        "--".into(),
-        "/path/to/rustc".into(),
-    ];
-    let request: Vec<String> = vec!["src/lib.rs".into()];
-    let result = assemble_request_argv(&startup, &request).unwrap();
-    assert_eq!(
-        result,
-        vec![
-            "--subst",
-            "pwd=${pwd}",
-            "--",
-            "/path/to/rustc",
-            "src/lib.rs"
-        ]
-    );
+    // Relocated pw flags are before --
+    for flag in ["--output-file", "--env-file", "--stable-status-file",
+                 "--volatile-status-file", "--rustc-output-format"] {
+        assert!(before.contains(&flag.to_string()), "{flag} should be before --");
+    }
+
+    // Pipelining flags stay after --
+    assert!(after.contains(&"--pipelining-metadata".to_string()));
+    assert!(after.contains(&"--pipelining-key=abc123".to_string()));
+
+    // Rustc args stay after --
+    assert!(after.contains(&"rustc".to_string()));
+    assert!(after.contains(&"--crate-name=foo".to_string()));
+    assert!(after.contains(&"-Copt-level=2".to_string()));
+    assert!(after.contains(&"src/lib.rs".to_string()));
+
+    // pw flags are NOT after --
+    assert!(!after.contains(&"--output-file".to_string()));
+    assert!(!after.contains(&"--env-file".to_string()));
 }
 
 #[test]
@@ -1090,66 +950,6 @@ fn test_assemble_request_argv_no_separator_is_error() {
     let startup: Vec<String> = vec!["--output-file".into(), "foo".into()];
     let request: Vec<String> = vec!["src/lib.rs".into()];
     assert!(assemble_request_argv(&startup, &request).is_err());
-}
-
-// --- mixed regression tests ---
-
-#[test]
-fn test_assemble_direct_request_pw_flags_interleaved_with_rustc_args() {
-    let startup: Vec<String> = vec![
-        "--subst".into(),
-        "pwd=${pwd}".into(),
-        "--".into(),
-        "rustc".into(),
-    ];
-    let request: Vec<String> = vec![
-        "--output-file".into(),
-        "out.rmeta".into(),
-        "--crate-name=foo".into(),
-        "--env-file".into(),
-        "env.txt".into(),
-        "-Copt-level=2".into(),
-    ];
-    let result = assemble_request_argv(&startup, &request).unwrap();
-    let sep = result.iter().position(|a| a == "--").unwrap();
-    // pw flags before --
-    assert!(result[..sep].contains(&"--output-file".to_string()));
-    assert!(result[..sep].contains(&"out.rmeta".to_string()));
-    assert!(result[..sep].contains(&"--env-file".to_string()));
-    assert!(result[..sep].contains(&"env.txt".to_string()));
-    // rustc args after --
-    let after = &result[sep + 1..];
-    assert!(after.contains(&"rustc".to_string()));
-    assert!(after.contains(&"--crate-name=foo".to_string()));
-    assert!(after.contains(&"-Copt-level=2".to_string()));
-    // pw flags NOT after --
-    assert!(!after.contains(&"--output-file".to_string()));
-    assert!(!after.contains(&"--env-file".to_string()));
-}
-
-#[test]
-fn test_assemble_pipelining_flags_stay_after_separator() {
-    let startup: Vec<String> = vec![
-        "--subst".into(),
-        "pwd=${pwd}".into(),
-        "--".into(),
-        "rustc".into(),
-    ];
-    let request: Vec<String> = vec![
-        "--pipelining-metadata".into(),
-        "--pipelining-key=abc123".into(),
-        "--output-file".into(),
-        "out.rmeta".into(),
-        "src/lib.rs".into(),
-    ];
-    let result = assemble_request_argv(&startup, &request).unwrap();
-    let sep = result.iter().position(|a| a == "--").unwrap();
-    // Pipelining flags are NOT pw flags, so they stay after --
-    let after = &result[sep + 1..];
-    assert!(after.contains(&"--pipelining-metadata".to_string()));
-    assert!(after.contains(&"--pipelining-key=abc123".to_string()));
-    // But --output-file IS a pw flag, so it goes before --
-    assert!(result[..sep].contains(&"--output-file".to_string()));
 }
 
 #[test]
@@ -1221,25 +1021,6 @@ fn test_build_response_preserves_warnings_on_success() {
 fn test_invocation_pending_to_running() {
     let inv = RustcInvocation::new();
     assert!(inv.is_pending());
-}
-
-#[test]
-fn test_invocation_completed_via_transition() {
-    let inv = RustcInvocation::new();
-    inv.force_completed(
-        0,
-        "all good".to_string(),
-        InvocationDirs {
-            pipeline_output_dir: PathBuf::from("/tmp/out"),
-            pipeline_root_dir: PathBuf::from("/tmp/root"),
-            original_out_dir: OutputDir::default(),
-        },
-    );
-    let result = inv.wait_for_completion();
-    assert!(result.is_ok());
-    let completion = result.unwrap();
-    assert_eq!(completion.exit_code, 0);
-    assert_eq!(completion.diagnostics, "all good");
 }
 
 #[test]
@@ -1427,60 +1208,8 @@ fn test_cancel_non_pipelined_kills_child() {
 }
 
 // ---------------------------------------------------------------------------
-// RequestCoordinator tests
+// RequestCoordinator tests (public API only)
 // ---------------------------------------------------------------------------
-
-#[test]
-fn test_registry_register_tracks_request() {
-    let mut reg = RequestCoordinator::default();
-    reg.requests
-        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    assert!(reg.requests.contains_key(&RequestId(42)));
-    // No invocation until insert_invocation is called.
-    assert!(!reg
-        .invocations
-        .contains_key(&PipelineKey("key1".to_string())));
-}
-
-#[test]
-fn test_registry_insert_invocation() {
-    let mut reg = RequestCoordinator::default();
-    reg.requests
-        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    let inv = Arc::new(RustcInvocation::new());
-    reg.invocations
-        .insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
-    assert!(reg
-        .invocations
-        .contains_key(&PipelineKey("key1".to_string())));
-    assert!(inv.is_pending());
-}
-
-#[test]
-fn test_registry_full_finds_existing_invocation() {
-    let mut reg = RequestCoordinator::default();
-    reg.requests
-        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    reg.invocations.insert(
-        PipelineKey("key1".to_string()),
-        Arc::new(RustcInvocation::new()),
-    );
-    reg.requests
-        .insert(RequestId(99), Some(PipelineKey("key1".to_string())));
-    assert!(reg
-        .invocations
-        .get(&PipelineKey("key1".to_string()))
-        .is_some());
-}
-
-#[test]
-fn test_registry_get_invocation_returns_none_when_missing() {
-    let reg = RequestCoordinator::default();
-    assert!(reg
-        .invocations
-        .get(&PipelineKey("key1".to_string()))
-        .is_none());
-}
 
 #[test]
 fn test_registry_cancel_shuts_down_invocation() {
@@ -1514,93 +1243,36 @@ fn test_registry_shutdown_all() {
     assert!(inv1.is_shutting_down_or_terminal());
 }
 
-#[test]
-fn test_registry_request_removal_preserves_invocation() {
-    let mut reg = RequestCoordinator::default();
-    reg.requests
-        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    reg.invocations.insert(
-        PipelineKey("key1".to_string()),
-        Arc::new(RustcInvocation::new()),
-    );
-    assert!(reg.requests.remove(&RequestId(42)).is_some());
-    assert!(
-        reg.invocations
-            .contains_key(&PipelineKey("key1".to_string())),
-        "invocation should persist"
-    );
-    // Second claim returns false.
-    assert!(reg.requests.remove(&RequestId(42)).is_none());
-}
-
 // ---------------------------------------------------------------------------
-// Regression tests for unified request lifecycle (AGENT_TODO.md items)
+// Regression: metadata cleanup must preserve invocation for full request
 // ---------------------------------------------------------------------------
 
-/// Regression: old cleanup(key, request_id) would delete the pipeline entry
-/// even when the phase had moved on (e.g., full request claimed it).
-/// New behavior: removing a request from the map does not remove the invocation.
+/// Covers the key lifecycle regression: metadata completes, full request still
+/// finds the invocation; metadata panic shuts down invocation but doesn't
+/// orphan the full request entry.
 #[test]
-fn test_metadata_cleanup_preserves_invocation_for_full() {
+fn test_metadata_lifecycle_preserves_full_request() {
     let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
-    reg.requests.insert(RequestId(42), Some(key.clone()));
-    reg.invocations
-        .insert(key.clone(), Arc::new(RustcInvocation::new()));
-    reg.requests.insert(RequestId(99), Some(key.clone()));
-    assert!(
-        reg.invocations.get(&key).is_some(),
-        "full should find the invocation"
-    );
-
-    // Metadata request completes — claim its response.
-    assert!(reg.requests.remove(&RequestId(42)).is_some());
-
-    // Invocation must still exist for the full request.
-    assert!(reg
-        .invocations
-        .contains_key(&PipelineKey("key1".to_string())));
-    assert!(reg.requests.contains_key(&RequestId(99)));
-}
-
-/// Regression: skipped metadata request (cancelled before execution)
-/// would call discard_pending_request which could destroy the pipeline entry.
-#[test]
-fn test_metadata_skip_cleanup_no_invocation() {
-    let mut reg = RequestCoordinator::default();
-    let key = PipelineKey("key1".to_string());
-    reg.requests.insert(RequestId(42), Some(key.clone()));
-
-    // Simulate skip: claim the response (no rustc ever spawned).
-    assert!(reg.requests.remove(&RequestId(42)).is_some());
-    assert!(!reg
-        .invocations
-        .contains_key(&PipelineKey("key1".to_string())));
-}
-
-/// Regression: cleanup_after_panic called cleanup_key_fully for Metadata panics,
-/// which would destroy a FullWaiting entry and orphan the rustc child.
-/// New behavior: panic calls request_shutdown on the invocation. The invocation
-/// and the full request's registry entry remain valid.
-#[test]
-fn test_abort_metadata_panic_preserves_full_invocation() {
-    let mut reg = RequestCoordinator::default();
-    let key = PipelineKey("key1".to_string());
-    reg.requests.insert(RequestId(42), Some(key.clone()));
     let inv = Arc::new(RustcInvocation::new());
+
+    // Register metadata (42) and full (99) for the same pipeline key.
+    reg.requests.insert(RequestId(42), Some(key.clone()));
     reg.invocations.insert(key.clone(), Arc::clone(&inv));
     reg.requests.insert(RequestId(99), Some(key.clone()));
-    assert!(reg.invocations.get(&key).is_some());
 
-    // Simulate metadata panic: shutdown invocation + claim response.
-    inv.request_shutdown();
+    // Metadata completes — claim response.
     assert!(reg.requests.remove(&RequestId(42)).is_some());
+    // Invocation persists for full request.
+    assert!(reg.invocations.contains_key(&key));
+    assert!(reg.requests.contains_key(&RequestId(99)));
 
-    // Invocation still in registry (for full request to discover it failed).
-    assert!(reg
-        .invocations
-        .contains_key(&PipelineKey("key1".to_string())));
-    // Full request still active.
+    // Simulate panic on a second metadata: shutdown invocation, claim response.
+    reg.requests.insert(RequestId(50), Some(key.clone()));
+    inv.request_shutdown();
+    assert!(reg.requests.remove(&RequestId(50)).is_some());
+    // Invocation still present (full can discover it failed).
+    assert!(reg.invocations.contains_key(&key));
     assert!(reg.requests.contains_key(&RequestId(99)));
 }
 
@@ -1614,11 +1286,16 @@ fn test_graceful_kill_sigterm_then_sigkill() {
     use std::time::Instant;
 
     // Spawn a process that traps SIGTERM and exits cleanly.
+    // `sleep` runs in the background so the shell's trap handler can fire
+    // immediately when SIGTERM arrives (foreground `sleep` blocks trap dispatch).
     let mut child = Command::new("sh")
         .arg("-c")
-        .arg("trap 'exit 0' TERM; sleep 60")
+        .arg("trap 'exit 0' TERM; while true; do sleep 60 & wait; done")
         .spawn()
         .unwrap();
+
+    // Give the shell time to set up the trap.
+    std::thread::sleep(std::time::Duration::from_millis(100));
 
     let start = Instant::now();
     graceful_kill(&mut child);

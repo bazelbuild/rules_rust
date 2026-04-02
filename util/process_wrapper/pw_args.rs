@@ -329,6 +329,7 @@ pub(crate) fn normalize_args_recursive(
     Ok(())
 }
 
+#[cfg(test)]
 pub(crate) fn expand_args_inline(
     args: &[String],
     subst_mappings: &[(String, String)],
