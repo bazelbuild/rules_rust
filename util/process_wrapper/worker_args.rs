@@ -22,10 +22,10 @@ use crate::options::{
 };
 use crate::ProcessWrapperError;
 
-use super::exec::resolve_request_relative_path;
+use super::exec::{resolve_request_relative_path, ExpandedRustcOutputs};
 use super::pipeline::pipelining_err;
-use super::request::WorkRequest;
 use super::request::RequestKind;
+use super::request::WorkRequest;
 use super::types::{OutputDir, PipelineKey};
 
 /// Scans an iterator of argument strings for pipelining flags and returns a
@@ -74,13 +74,15 @@ pub(super) struct StartupLayout {
 pub(super) fn split_startup_args(
     startup_args: &[String],
 ) -> Result<StartupLayout, ProcessWrapperError> {
-    let sep = startup_args
-        .iter()
-        .position(|a| a == "--")
-        .ok_or_else(|| ProcessWrapperError("startup args missing '--' separator".into()))?;
+    let mut parts = startup_args.splitn(2, |a| a == "--");
+    let pw_args = parts.next().unwrap().to_vec();
+    let child_prefix = parts
+        .next()
+        .ok_or_else(|| ProcessWrapperError("startup args missing '--' separator".into()))?
+        .to_vec();
     Ok(StartupLayout {
-        pw_args: startup_args[..sep].to_vec(),
-        child_prefix: startup_args[sep + 1..].to_vec(),
+        pw_args,
+        child_prefix,
     })
 }
 
@@ -130,22 +132,18 @@ pub(super) fn assemble_request_argv(
     Ok(argv)
 }
 
-fn read_args_file_in_dir(
-    path: &str,
-    base_dir: &std::path::Path,
-) -> Result<Vec<String>, OptionError> {
-    let resolved = resolve_request_relative_path(path, Some(base_dir));
-    let resolved = resolved.display().to_string();
-    crate::util::read_file_to_array(&resolved).map_err(OptionError::Generic)
-}
-
 pub(super) fn expand_rustc_args_with_metadata(
     rustc_and_after: &[String],
     subst: &[(String, String)],
     require_explicit_unstable_features: bool,
     execroot_dir: &std::path::Path,
 ) -> Result<(Vec<String>, NormalizedRustcMetadata), OptionError> {
-    let mut read_file = |path: &str| read_args_file_in_dir(path, execroot_dir);
+    let mut read_file = |path: &str| {
+        let resolved = resolve_request_relative_path(path, Some(execroot_dir))
+            .display()
+            .to_string();
+        crate::util::read_file_to_array(&resolved).map_err(OptionError::Generic)
+    };
     expand_args_inline(
         rustc_and_after,
         subst,
@@ -203,6 +201,54 @@ pub(super) fn prepare_rustc_args(
     Ok((rustc_args, original_out_dir, metadata.relocated))
 }
 
+/// Rewrites output-related rustc args in one pass and returns the writable
+/// paths needed by `prepare_expanded_rustc_outputs`.
+pub(super) fn rewrite_expanded_rustc_outputs(
+    args: Vec<String>,
+    new_out_dir: &std::path::Path,
+) -> (Vec<String>, ExpandedRustcOutputs) {
+    let mut rewritten = Vec::with_capacity(args.len());
+    let mut outputs = ExpandedRustcOutputs::default();
+    let rewritten_out_dir = new_out_dir.display().to_string();
+
+    for arg in args {
+        if arg.starts_with("--out-dir=") {
+            outputs.out_dir = Some(rewritten_out_dir.clone());
+            rewritten.push(format!("--out-dir={rewritten_out_dir}"));
+            continue;
+        }
+
+        let Some(emit) = arg.strip_prefix("--emit=") else {
+            rewritten.push(arg);
+            continue;
+        };
+
+        let mut rewritten_parts = Vec::new();
+        for part in emit.split(',') {
+            let Some((kind, path)) = part.split_once('=') else {
+                rewritten_parts.push(part.to_owned());
+                continue;
+            };
+
+            let path = if kind == "metadata" {
+                let filename = std::path::Path::new(path)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned();
+                new_out_dir.join(filename).display().to_string()
+            } else {
+                path.to_owned()
+            };
+            outputs.emit_paths.push(path.clone());
+            rewritten_parts.push(format!("{kind}={path}"));
+        }
+        rewritten.push(format!("--emit={}", rewritten_parts.join(",")));
+    }
+
+    (rewritten, outputs)
+}
+
 fn resolve_paths(paths: Vec<String>, base: &std::path::Path) -> Vec<String> {
     paths
         .into_iter()
@@ -214,32 +260,31 @@ fn resolve_paths(paths: Vec<String>, base: &std::path::Path) -> Vec<String> {
         .collect()
 }
 
-fn resolve_path(path: String, base: &std::path::Path) -> String {
-    resolve_request_relative_path(&path, Some(base))
-        .display()
-        .to_string()
-}
-
 pub(super) fn resolve_pw_args_for_request(
     mut pw_args: ParsedPwArgs,
     request: &WorkRequest,
     execroot_dir: &std::path::Path,
 ) -> ParsedPwArgs {
+    let resolve = |path: String, base: &std::path::Path| -> String {
+        resolve_request_relative_path(&path, Some(base))
+            .display()
+            .to_string()
+    };
     pw_args.env_files = resolve_paths(pw_args.env_files, execroot_dir);
     pw_args.arg_files = resolve_paths(pw_args.arg_files, execroot_dir);
     pw_args.stable_status_file = pw_args
         .stable_status_file
-        .map(|p| resolve_path(p, execroot_dir));
+        .map(|p| resolve(p, execroot_dir));
     pw_args.volatile_status_file = pw_args
         .volatile_status_file
-        .map(|p| resolve_path(p, execroot_dir));
+        .map(|p| resolve(p, execroot_dir));
     pw_args.output_file = pw_args.output_file.map(|path| {
         let base = request
             .sandbox_dir
             .as_ref()
             .map(|sd| sd.as_path())
             .unwrap_or(execroot_dir);
-        resolve_path(path, base)
+        resolve(path, base)
     });
     pw_args
 }
@@ -282,6 +327,7 @@ pub(super) fn find_out_dir_in_expanded(args: &[String]) -> Option<String> {
 
 /// Returns a copy of `args` where `--out-dir=<old>` is replaced by
 /// `--out-dir=<new_out_dir>`. Other args are unchanged.
+#[cfg(test)]
 pub(super) fn rewrite_out_dir_in_expanded(
     args: Vec<String>,
     new_out_dir: &std::path::Path,
@@ -290,30 +336,6 @@ pub(super) fn rewrite_out_dir_in_expanded(
         .map(|arg| {
             if arg.starts_with("--out-dir=") {
                 format!("--out-dir={}", new_out_dir.display())
-            } else {
-                arg
-            }
-        })
-        .collect()
-}
-
-/// Rewrites `--emit=metadata=<path>` to write the .rmeta into the pipeline outputs dir.
-/// The original relative path's filename is preserved; only the directory changes.
-pub(super) fn rewrite_emit_metadata_path(
-    args: Vec<String>,
-    outputs_dir: &std::path::Path,
-) -> Vec<String> {
-    args.into_iter()
-        .map(|arg| {
-            if let Some(path_str) = arg.strip_prefix("--emit=metadata=") {
-                let filename = std::path::Path::new(path_str)
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy();
-                format!(
-                    "--emit=metadata={}",
-                    outputs_dir.join(filename.as_ref()).display()
-                )
             } else {
                 arg
             }

@@ -23,8 +23,8 @@ use crate::options::{parse_pw_args, ParsedPwArgs, SubprocessPipeliningMode};
 
 use super::args::{
     build_rustc_env, expand_rustc_args_with_metadata, prepare_rustc_args,
-    resolve_pw_args_for_request, rewrite_emit_metadata_path, rewrite_out_dir_in_expanded,
-    scan_pipelining_flags, strip_pipelining_flags,
+    resolve_pw_args_for_request, rewrite_expanded_rustc_outputs, scan_pipelining_flags,
+    strip_pipelining_flags,
 };
 use super::exec::{
     prepare_expanded_rustc_outputs, prepare_outputs, resolve_request_relative_path, run_request,
@@ -37,7 +37,7 @@ use super::pipeline::{
 };
 use super::registry::SharedRequestCoordinator;
 use super::rustc_driver::spawn_pipelined_rustc;
-use super::sandbox::{copy_all_outputs_to_sandbox, copy_output_to_sandbox, run_sandboxed_request};
+use super::sandbox::{copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root};
 use super::types::{OutputDir, PipelineKey, RequestId, SandboxDir};
 
 /// Fields needed to execute one Bazel work request.
@@ -99,13 +99,10 @@ impl RequestKind {
         }
 
         // No direct pipelining flags; check any expanded paramfiles.
-        let sep_pos = args.iter().position(|a| a == "--");
-        let rustc_args = match sep_pos {
-            Some(pos) => &args[pos + 1..],
-            None => &[][..],
-        };
-        let parsed_pw_args =
-            parse_pw_args(sep_pos.map(|pos| &args[..pos]).unwrap_or(&[]), base_dir);
+        let mut parts = args.splitn(2, |a| a == "--");
+        let pw_raw = parts.next().unwrap();
+        let rustc_args = parts.next().unwrap_or(&[]);
+        let parsed_pw_args = parse_pw_args(pw_raw, base_dir);
         let nested = expand_rustc_args_with_metadata(
             rustc_args,
             &parsed_pw_args.subst,
@@ -317,11 +314,14 @@ impl RequestExecutor {
         }
         let filtered = strip_pipelining_flags(&args);
         match request.sandbox_dir.as_ref() {
-            Some(dir) => run_sandboxed_request(self_path, filtered, dir.as_str())
-                .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}"))),
+            Some(dir) => {
+                let _ = seed_sandbox_cache_root(dir.as_path());
+                run_request(self_path, filtered, Some(dir.as_str()), "sandboxed subprocess")
+                    .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
+            }
             None => {
                 prepare_outputs(&filtered, None);
-                run_request(self_path, filtered)
+                run_request(self_path, filtered, None, "process_wrapper subprocess")
                     .unwrap_or_else(|e| (1, format!("pipelining fallback error: {e}")))
             }
         }
@@ -370,11 +370,11 @@ fn prepare_metadata_invocation(
     state_roots: &WorkerStateRoots,
 ) -> Result<MetadataInvocationReady, (i32, String)> {
     let filtered = strip_pipelining_flags(&full_args);
-    let sep = filtered.iter().position(|a| a == "--");
-    let (pw_raw, rustc_and_after) = match sep {
-        Some(pos) => (&filtered[..pos], &filtered[pos + 1..]),
-        None => return Err(pipelining_err("no '--' separator in args")),
-    };
+    let mut parts = filtered.splitn(2, |a| a == "--");
+    let pw_raw = parts.next().unwrap();
+    let rustc_and_after = parts
+        .next()
+        .ok_or_else(|| pipelining_err("no '--' separator in args"))?;
     if rustc_and_after.is_empty() {
         return Err(pipelining_err("no rustc executable after '--'"));
     }
@@ -394,9 +394,9 @@ fn prepare_metadata_invocation(
     )
     .map_err(|e| pipelining_err(e))?;
 
-    let rustc_args = rewrite_out_dir_in_expanded(rustc_args, &ctx.outputs_dir);
-    let rustc_args = rewrite_emit_metadata_path(rustc_args, &ctx.outputs_dir);
-    prepare_expanded_rustc_outputs(&rustc_args);
+    let (rustc_args, writable_outputs) =
+        rewrite_expanded_rustc_outputs(rustc_args, &ctx.outputs_dir);
+    prepare_expanded_rustc_outputs(&writable_outputs);
 
     Ok(MetadataInvocationReady {
         rustc_args,
@@ -490,7 +490,8 @@ fn spawn_metadata_rustc(
     registry
         .lock()
         .expect("request registry mutex poisoned")
-        .invocations.insert(key.clone(), Arc::clone(&invocation));
+        .invocations
+        .insert(key.clone(), Arc::clone(&invocation));
 
     Ok((invocation, original_out_dir, ctx, pw_args))
 }

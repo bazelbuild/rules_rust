@@ -14,9 +14,10 @@
 
 //! Sandbox-specific worker helpers.
 
-use super::exec::{materialize_output_file, run_request_with_current_dir};
+use super::exec::materialize_output_file;
 use super::pipeline::{MaterializeError, OutputMaterializationStats};
 use crate::ProcessWrapperError;
+
 
 #[cfg(unix)]
 pub(super) fn symlink_path(
@@ -155,18 +156,4 @@ pub(super) fn copy_all_outputs_to_sandbox(
     Ok(stats)
 }
 
-/// Runs a subprocess with `sandbox_dir` as its current directory.
-pub(super) fn run_sandboxed_request(
-    self_path: &std::path::Path,
-    arguments: Vec<String>,
-    sandbox_dir: &str,
-) -> Result<(i32, String), ProcessWrapperError> {
-    let _ = seed_sandbox_cache_root(std::path::Path::new(sandbox_dir));
-    run_request_with_current_dir(
-        self_path,
-        arguments,
-        Some(sandbox_dir),
-        "sandboxed subprocess",
-    )
-}
 

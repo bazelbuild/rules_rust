@@ -1,26 +1,26 @@
 use super::args::{
     apply_substs, assemble_request_argv, build_rustc_env, expand_rustc_args,
     extract_direct_request_pw_flags, find_out_dir_in_expanded, prepare_rustc_args,
-    rewrite_out_dir_in_expanded, scan_pipelining_flags, split_startup_args,
-    strip_pipelining_flags,
+    rewrite_expanded_rustc_outputs, rewrite_out_dir_in_expanded, scan_pipelining_flags,
+    split_startup_args, strip_pipelining_flags,
 };
-use super::exec::prepare_expanded_rustc_outputs;
-use crate::options::parse_pw_args;
-use super::request::{detect_pipelining_mode, RequestKind};
+use super::exec::resolve_request_relative_path;
+use super::exec::{prepare_expanded_rustc_outputs, ExpandedRustcOutputs};
 use super::invocation::{InvocationDirs, RustcInvocation};
 use super::protocol::{
     extract_arguments, extract_cancel, extract_inputs, extract_request_id, extract_sandbox_dir,
     WorkRequestInput,
 };
-use super::exec::resolve_request_relative_path;
+use super::registry::RequestCoordinator;
+use super::request::{detect_pipelining_mode, RequestKind};
 #[cfg(unix)]
 use super::sandbox::{
     copy_all_outputs_to_sandbox, copy_output_to_sandbox, seed_sandbox_cache_root, symlink_path,
 };
-use super::registry::RequestCoordinator;
 use super::types::{OutputDir, PipelineKey, RequestId};
 use super::*;
 use crate::options::is_pipelining_flag;
+use crate::options::parse_pw_args;
 use crate::rustc::extract_rmeta_path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -174,8 +174,11 @@ fn test_prepare_expanded_rustc_outputs_emit_path() {
     fs::set_permissions(&emit_path, perms).unwrap();
     assert!(fs::metadata(&emit_path).unwrap().permissions().readonly());
 
-    let args = vec![format!("--emit=metadata={}", emit_path.display())];
-    prepare_expanded_rustc_outputs(&args);
+    let outputs = ExpandedRustcOutputs {
+        out_dir: None,
+        emit_paths: vec![emit_path.display().to_string()],
+    };
+    prepare_expanded_rustc_outputs(&outputs);
 
     assert!(!fs::metadata(&emit_path).unwrap().permissions().readonly());
     let _ = fs::remove_dir_all(&tmp);
@@ -776,6 +779,37 @@ fn test_rewrite_out_dir_in_expanded() {
 }
 
 #[test]
+fn test_rewrite_expanded_rustc_outputs_collects_writable_paths() {
+    let args = vec![
+        "--crate-name=foo".to_string(),
+        "--out-dir=/old/path".to_string(),
+        "--emit=dep-info=foo.d,metadata=bar/libfoo.rmeta,link".to_string(),
+    ];
+    let new_dir = std::path::Path::new("/_pw_pipeline/foo_abc");
+
+    let (rewritten, outputs) = rewrite_expanded_rustc_outputs(args, new_dir);
+
+    assert_eq!(
+        rewritten,
+        vec![
+            "--crate-name=foo",
+            "--out-dir=/_pw_pipeline/foo_abc",
+            "--emit=dep-info=foo.d,metadata=/_pw_pipeline/foo_abc/libfoo.rmeta,link",
+        ]
+    );
+    assert_eq!(
+        outputs,
+        ExpandedRustcOutputs {
+            out_dir: Some("/_pw_pipeline/foo_abc".to_string()),
+            emit_paths: vec![
+                "foo.d".to_string(),
+                "/_pw_pipeline/foo_abc/libfoo.rmeta".to_string(),
+            ],
+        }
+    );
+}
+
+#[test]
 fn test_parse_pw_args_substitutes_pwd_from_real_execroot() {
     let parsed = parse_pw_args(
         &[
@@ -871,13 +905,7 @@ fn test_copy_output_to_sandbox() {
     let rmeta_path = pipeline_dir.join("libfoo.rmeta");
     fs::write(&rmeta_path, b"fake rmeta content").unwrap();
 
-    copy_output_to_sandbox(
-        &rmeta_path,
-        &sandbox_dir,
-        out_rel,
-        "_pipeline",
-    )
-    .unwrap();
+    copy_output_to_sandbox(&rmeta_path, &sandbox_dir, out_rel, "_pipeline").unwrap();
 
     let dest = sandbox_dir
         .join(out_rel)
@@ -906,8 +934,7 @@ fn test_copy_all_outputs_to_sandbox() {
     fs::write(pipeline_dir.join("libfoo.rmeta"), b"fake rmeta").unwrap();
     fs::write(pipeline_dir.join("libfoo.d"), b"fake dep-info").unwrap();
 
-    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel)
-        .unwrap();
+    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel).unwrap();
 
     let dest = sandbox_dir.join(out_rel);
     assert!(dest.join("libfoo.rlib").exists());
@@ -934,8 +961,7 @@ fn test_copy_all_outputs_to_sandbox_prefers_hardlinks() {
     let src = pipeline_dir.join("libfoo.rlib");
     fs::write(&src, b"fake rlib").unwrap();
 
-    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel)
-        .unwrap();
+    copy_all_outputs_to_sandbox(&pipeline_dir, &sandbox_dir, out_rel).unwrap();
 
     let dest = sandbox_dir.join(out_rel).join("libfoo.rlib");
     assert!(dest.exists());
@@ -1049,7 +1075,13 @@ fn test_assemble_request_argv_no_relocated_flags() {
     let result = assemble_request_argv(&startup, &request).unwrap();
     assert_eq!(
         result,
-        vec!["--subst", "pwd=${pwd}", "--", "/path/to/rustc", "src/lib.rs"]
+        vec![
+            "--subst",
+            "pwd=${pwd}",
+            "--",
+            "/path/to/rustc",
+            "src/lib.rs"
+        ]
     );
 }
 
@@ -1064,7 +1096,12 @@ fn test_assemble_request_argv_no_separator_is_error() {
 
 #[test]
 fn test_assemble_direct_request_pw_flags_interleaved_with_rustc_args() {
-    let startup: Vec<String> = vec!["--subst".into(), "pwd=${pwd}".into(), "--".into(), "rustc".into()];
+    let startup: Vec<String> = vec![
+        "--subst".into(),
+        "pwd=${pwd}".into(),
+        "--".into(),
+        "rustc".into(),
+    ];
     let request: Vec<String> = vec![
         "--output-file".into(),
         "out.rmeta".into(),
@@ -1092,7 +1129,12 @@ fn test_assemble_direct_request_pw_flags_interleaved_with_rustc_args() {
 
 #[test]
 fn test_assemble_pipelining_flags_stay_after_separator() {
-    let startup: Vec<String> = vec!["--subst".into(), "pwd=${pwd}".into(), "--".into(), "rustc".into()];
+    let startup: Vec<String> = vec![
+        "--subst".into(),
+        "pwd=${pwd}".into(),
+        "--".into(),
+        "rustc".into(),
+    ];
     let request: Vec<String> = vec![
         "--pipelining-metadata".into(),
         "--pipelining-key=abc123".into(),
@@ -1123,7 +1165,12 @@ fn test_extract_direct_request_pw_flags_basic() {
     assert_eq!(remaining, vec!["--crate-name=foo"]);
     assert_eq!(
         pw,
-        vec!["--output-file", "out.rmeta", "--stable-status-file", "stable.txt"]
+        vec![
+            "--output-file",
+            "out.rmeta",
+            "--stable-status-file",
+            "stable.txt"
+        ]
     );
 }
 
@@ -1208,9 +1255,9 @@ fn test_invocation_shutdown_from_pending() {
 
 #[test]
 fn test_rustc_thread_pipelined_completes() {
-    use std::process::{Command, Stdio};
-    use super::rustc_driver::spawn_pipelined_rustc;
     use super::invocation::InvocationDirs;
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1238,9 +1285,9 @@ fn test_rustc_thread_pipelined_completes() {
 
 #[test]
 fn test_rustc_thread_failure_before_rmeta() {
-    use std::process::{Command, Stdio};
-    use super::rustc_driver::spawn_pipelined_rustc;
     use super::invocation::InvocationDirs;
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1268,9 +1315,9 @@ fn test_rustc_thread_failure_before_rmeta() {
 #[test]
 #[cfg(unix)]
 fn test_rustc_thread_shutdown_kills_child() {
-    use std::process::{Command, Stdio};
-    use super::rustc_driver::spawn_pipelined_rustc;
     use super::invocation::InvocationDirs;
+    use super::rustc_driver::spawn_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     // sleep produces no stderr output, so read_line blocks until child is killed.
     let child = Command::new("sleep")
@@ -1305,8 +1352,8 @@ fn test_rustc_thread_shutdown_kills_child() {
 
 #[test]
 fn test_rustc_thread_non_pipelined_completes() {
-    use std::process::{Command, Stdio};
     use super::rustc_driver::spawn_non_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1322,14 +1369,20 @@ fn test_rustc_thread_non_pipelined_completes() {
     assert!(result.is_ok());
     let completion = result.unwrap();
     assert_eq!(completion.exit_code, 0);
-    assert!(completion.diagnostics.contains("hello"), "should capture stderr");
-    assert!(completion.diagnostics.contains("world"), "should capture stdout");
+    assert!(
+        completion.diagnostics.contains("hello"),
+        "should capture stderr"
+    );
+    assert!(
+        completion.diagnostics.contains("world"),
+        "should capture stdout"
+    );
 }
 
 #[test]
 fn test_rustc_thread_non_pipelined_fails() {
-    use std::process::{Command, Stdio};
     use super::rustc_driver::spawn_non_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     let child = Command::new("sh")
         .arg("-c")
@@ -1345,14 +1398,17 @@ fn test_rustc_thread_non_pipelined_fails() {
     assert!(result.is_err());
     let failure = result.unwrap_err();
     assert_eq!(failure.exit_code, 1);
-    assert!(failure.diagnostics.contains("error msg"), "should capture stderr on failure");
+    assert!(
+        failure.diagnostics.contains("error msg"),
+        "should capture stderr on failure"
+    );
 }
 
 #[test]
 #[cfg(unix)]
 fn test_cancel_non_pipelined_kills_child() {
-    use std::process::{Command, Stdio};
     use super::rustc_driver::spawn_non_pipelined_rustc;
+    use std::process::{Command, Stdio};
 
     let child = Command::new("sleep")
         .arg("60")
@@ -1377,43 +1433,63 @@ fn test_cancel_non_pipelined_kills_child() {
 #[test]
 fn test_registry_register_tracks_request() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     assert!(reg.requests.contains_key(&RequestId(42)));
     // No invocation until insert_invocation is called.
-    assert!(!reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    assert!(!reg
+        .invocations
+        .contains_key(&PipelineKey("key1".to_string())));
 }
 
 #[test]
 fn test_registry_insert_invocation() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv = Arc::new(RustcInvocation::new());
-    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
-    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    reg.invocations
+        .insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
+    assert!(reg
+        .invocations
+        .contains_key(&PipelineKey("key1".to_string())));
     assert!(inv.is_pending());
 }
 
 #[test]
 fn test_registry_full_finds_existing_invocation() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
-    reg.requests.insert(RequestId(99), Some(PipelineKey("key1".to_string())));
-    assert!(reg.invocations.get(&PipelineKey("key1".to_string())).is_some());
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.invocations.insert(
+        PipelineKey("key1".to_string()),
+        Arc::new(RustcInvocation::new()),
+    );
+    reg.requests
+        .insert(RequestId(99), Some(PipelineKey("key1".to_string())));
+    assert!(reg
+        .invocations
+        .get(&PipelineKey("key1".to_string()))
+        .is_some());
 }
 
 #[test]
 fn test_registry_get_invocation_returns_none_when_missing() {
     let reg = RequestCoordinator::default();
-    assert!(reg.invocations.get(&PipelineKey("key1".to_string())).is_none());
+    assert!(reg
+        .invocations
+        .get(&PipelineKey("key1".to_string()))
+        .is_none());
 }
 
 #[test]
 fn test_registry_cancel_shuts_down_invocation() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv = Arc::new(RustcInvocation::new());
-    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
+    reg.invocations
+        .insert(PipelineKey("key1".to_string()), Arc::clone(&inv));
     assert!(reg.cancel(RequestId(42)));
     assert!(inv.is_shutting_down_or_terminal());
     // Second cancel returns false — already claimed.
@@ -1423,11 +1499,17 @@ fn test_registry_cancel_shuts_down_invocation() {
 #[test]
 fn test_registry_shutdown_all() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
     let inv1 = Arc::new(RustcInvocation::new());
-    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::clone(&inv1));
-    reg.requests.insert(RequestId(43), Some(PipelineKey("key2".to_string())));
-    reg.invocations.insert(PipelineKey("key2".to_string()), Arc::new(RustcInvocation::new()));
+    reg.invocations
+        .insert(PipelineKey("key1".to_string()), Arc::clone(&inv1));
+    reg.requests
+        .insert(RequestId(43), Some(PipelineKey("key2".to_string())));
+    reg.invocations.insert(
+        PipelineKey("key2".to_string()),
+        Arc::new(RustcInvocation::new()),
+    );
     reg.shutdown_all();
     assert!(inv1.is_shutting_down_or_terminal());
 }
@@ -1435,10 +1517,18 @@ fn test_registry_shutdown_all() {
 #[test]
 fn test_registry_request_removal_preserves_invocation() {
     let mut reg = RequestCoordinator::default();
-    reg.requests.insert(RequestId(42), Some(PipelineKey("key1".to_string())));
-    reg.invocations.insert(PipelineKey("key1".to_string()), Arc::new(RustcInvocation::new()));
+    reg.requests
+        .insert(RequestId(42), Some(PipelineKey("key1".to_string())));
+    reg.invocations.insert(
+        PipelineKey("key1".to_string()),
+        Arc::new(RustcInvocation::new()),
+    );
     assert!(reg.requests.remove(&RequestId(42)).is_some());
-    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())), "invocation should persist");
+    assert!(
+        reg.invocations
+            .contains_key(&PipelineKey("key1".to_string())),
+        "invocation should persist"
+    );
     // Second claim returns false.
     assert!(reg.requests.remove(&RequestId(42)).is_none());
 }
@@ -1455,15 +1545,21 @@ fn test_metadata_cleanup_preserves_invocation_for_full() {
     let mut reg = RequestCoordinator::default();
     let key = PipelineKey("key1".to_string());
     reg.requests.insert(RequestId(42), Some(key.clone()));
-    reg.invocations.insert(key.clone(), Arc::new(RustcInvocation::new()));
+    reg.invocations
+        .insert(key.clone(), Arc::new(RustcInvocation::new()));
     reg.requests.insert(RequestId(99), Some(key.clone()));
-    assert!(reg.invocations.get(&key).is_some(), "full should find the invocation");
+    assert!(
+        reg.invocations.get(&key).is_some(),
+        "full should find the invocation"
+    );
 
     // Metadata request completes — claim its response.
     assert!(reg.requests.remove(&RequestId(42)).is_some());
 
     // Invocation must still exist for the full request.
-    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    assert!(reg
+        .invocations
+        .contains_key(&PipelineKey("key1".to_string())));
     assert!(reg.requests.contains_key(&RequestId(99)));
 }
 
@@ -1477,7 +1573,9 @@ fn test_metadata_skip_cleanup_no_invocation() {
 
     // Simulate skip: claim the response (no rustc ever spawned).
     assert!(reg.requests.remove(&RequestId(42)).is_some());
-    assert!(!reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    assert!(!reg
+        .invocations
+        .contains_key(&PipelineKey("key1".to_string())));
 }
 
 /// Regression: cleanup_after_panic called cleanup_key_fully for Metadata panics,
@@ -1499,7 +1597,9 @@ fn test_abort_metadata_panic_preserves_full_invocation() {
     assert!(reg.requests.remove(&RequestId(42)).is_some());
 
     // Invocation still in registry (for full request to discover it failed).
-    assert!(reg.invocations.contains_key(&PipelineKey("key1".to_string())));
+    assert!(reg
+        .invocations
+        .contains_key(&PipelineKey("key1".to_string())));
     // Full request still active.
     assert!(reg.requests.contains_key(&RequestId(99)));
 }
@@ -1509,9 +1609,9 @@ fn test_abort_metadata_panic_preserves_full_invocation() {
 #[test]
 #[cfg(unix)]
 fn test_graceful_kill_sigterm_then_sigkill() {
+    use super::exec::graceful_kill;
     use std::process::Command;
     use std::time::Instant;
-    use super::exec::graceful_kill;
 
     // Spawn a process that traps SIGTERM and exits cleanly.
     let mut child = Command::new("sh")

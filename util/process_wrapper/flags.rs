@@ -124,24 +124,6 @@ impl<'a> Flags<'a> {
         );
     }
 
-    fn help(&self, program_name: String) -> String {
-        let single = self.single.values().map(|fd| fd.to_string());
-        let repeated = self.repeated.values().map(|fd| fd.to_string());
-        let mut all: Vec<String> = single.chain(repeated).collect();
-        all.sort();
-
-        let mut help_text = String::new();
-        writeln!(
-            &mut help_text,
-            "Help for {program_name}: [options] -- [extra arguments]"
-        )
-        .unwrap();
-        for line in all {
-            writeln!(&mut help_text, "\t{line}").unwrap();
-        }
-        help_text
-    }
-
     pub(crate) fn parse(mut self, argv: Vec<String>) -> Result<ParseOutcome, FlagParseError> {
         let mut argv_iter = argv.into_iter().peekable();
         let program_name = argv_iter.next().ok_or(FlagParseError::ProgramNameMissing)?;
@@ -151,14 +133,30 @@ impl<'a> Flags<'a> {
 
         while let Some(flag) = argv_iter.next() {
             if flag == "--help" {
-                return Ok(ParseOutcome::Help(self.help(program_name)));
+                let single = self.single.values().map(|fd| fd.to_string());
+                let repeated = self.repeated.values().map(|fd| fd.to_string());
+                let mut all: Vec<String> = single.chain(repeated).collect();
+                all.sort();
+                let mut help_text = String::new();
+                writeln!(
+                    &mut help_text,
+                    "Help for {program_name}: [options] -- [extra arguments]"
+                )
+                .unwrap();
+                for line in &all {
+                    writeln!(&mut help_text, "\t{line}").unwrap();
+                }
+                return Ok(ParseOutcome::Help(help_text));
             }
             if !flag.starts_with("--") {
                 return Err(FlagParseError::UnknownFlag(flag));
             }
-            let mut args = consume_args(&flag, &mut argv_iter);
             if flag == "--" {
-                return Ok(ParseOutcome::Parsed(args));
+                return Ok(ParseOutcome::Parsed(argv_iter.collect()));
+            }
+            let mut args = vec![];
+            while let Some(arg) = argv_iter.next_if(|s| !s.starts_with("--")) {
+                args.push(arg);
             }
             if args.is_empty() {
                 return Err(FlagParseError::ValueMissing(flag.clone()));
@@ -182,22 +180,6 @@ impl<'a> Flags<'a> {
             return Err(FlagParseError::UnknownFlag(flag));
         }
         Ok(ParseOutcome::Parsed(vec![]))
-    }
-}
-
-fn consume_args<I: Iterator<Item = String>>(
-    flag: &str,
-    argv_iter: &mut Peekable<I>,
-) -> Vec<String> {
-    if flag == "--" {
-        // After `--`, forward everything unchanged.
-        argv_iter.collect()
-    } else {
-        let mut args = vec![];
-        while let Some(arg) = argv_iter.next_if(|s| !s.starts_with("--")) {
-            args.push(arg);
-        }
-        args
     }
 }
 

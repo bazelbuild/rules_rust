@@ -28,16 +28,14 @@ pub(crate) fn read_file_to_array(path: &str) -> Result<Vec<String>, String> {
     read_to_array(file)
 }
 
-pub(crate) fn read_stamp_status_to_array(path: &str) -> Result<Vec<(String, String)>, String> {
-    let file = File::open(path).map_err(|e| e.to_string())?;
-    stamp_status_to_array(file)
-}
-
 pub(crate) fn read_stamp_status_with_context(
     path: &str,
     label: &str,
 ) -> Result<Vec<(String, String)>, String> {
-    read_stamp_status_to_array(path).map_err(|e| format!("failed to read {label} '{}': {e}", path))
+    let file = File::open(path).map_err(|e| {
+        format!("failed to read {label} '{}': {e}", path)
+    })?;
+    stamp_status_to_array(file).map_err(|e| format!("failed to read {label} '{}': {e}", path))
 }
 
 fn read_to_array(reader: impl Read) -> Result<Vec<String>, String> {

@@ -14,7 +14,7 @@
 
 //! Shared subprocess and filesystem helpers for the persistent worker.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
@@ -63,36 +63,31 @@ pub(crate) fn graceful_kill(child: &mut Child) {
 
 /// Returns `true` if both paths resolve to the same inode after canonicalization.
 /// Returns `false` if either path doesn't exist or can't be canonicalized.
-pub(super) fn is_same_file(a: &std::path::Path, b: &std::path::Path) -> bool {
+pub(super) fn is_same_file(a: &Path, b: &Path) -> bool {
     match (a.canonicalize(), b.canonicalize()) {
         (Ok(a), Ok(b)) => a == b,
         _ => false,
     }
 }
 
-pub(super) fn resolve_relative_to(path: &str, base_dir: &std::path::Path) -> PathBuf {
-    let path = std::path::Path::new(path);
-    if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        base_dir.join(path)
-    }
-}
-
 pub(super) fn resolve_request_relative_path(
     path: &str,
-    request_base_dir: Option<&std::path::Path>,
+    request_base_dir: Option<&Path>,
 ) -> PathBuf {
     match request_base_dir {
-        Some(base_dir) => resolve_relative_to(path, base_dir),
+        Some(base_dir) => {
+            let path = Path::new(path);
+            if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                base_dir.join(path)
+            }
+        }
         None => PathBuf::from(path),
     }
 }
 
-pub(super) fn materialize_output_file(
-    src: &std::path::Path,
-    dest: &std::path::Path,
-) -> Result<bool, std::io::Error> {
+pub(super) fn materialize_output_file(src: &Path, dest: &Path) -> Result<bool, std::io::Error> {
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -131,141 +126,93 @@ pub(super) fn materialize_output_file(
 /// When `request_base_dir` is `Some`, relative paths in args are resolved against
 /// that directory (used for sandboxed requests). When `None`, paths resolve
 /// against the current working directory.
-pub(super) fn prepare_outputs(args: &[String], request_base_dir: Option<&std::path::Path>) {
-    let mut out_dirs: Vec<String> = Vec::new();
+pub(super) fn prepare_outputs(args: &[String], request_base_dir: Option<&Path>) {
+    let mut out_dirs: Vec<PathBuf> = Vec::new();
 
     let mut args_iter = args.iter().peekable();
     while let Some(arg) = args_iter.next() {
         if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            out_dirs.push(
-                resolve_request_relative_path(dir, request_base_dir)
-                    .display()
-                    .to_string(),
-            );
+            out_dirs.push(resolve_request_relative_path(dir, request_base_dir));
         } else if let Some(flagfile_path) = arg.strip_prefix('@') {
-            scan_file_for_out_dir(flagfile_path, request_base_dir, &mut out_dirs);
+            let resolved = resolve_request_relative_path(flagfile_path, request_base_dir);
+            out_dirs.extend(scan_file_for_out_dir(&resolved, request_base_dir));
         } else if arg == "--arg-file" {
             if let Some(path) = args_iter.peek() {
-                scan_file_for_out_dir(path, request_base_dir, &mut out_dirs);
+                let resolved = resolve_request_relative_path(path, request_base_dir);
+                out_dirs.extend(scan_file_for_out_dir(&resolved, request_base_dir));
                 args_iter.next();
             }
         }
     }
 
-    for out_dir in out_dirs {
-        make_dir_files_writable(&out_dir);
-        let pipeline_dir = format!("{out_dir}/_pipeline");
-        make_dir_files_writable(&pipeline_dir);
+    for out_dir in &out_dirs {
+        make_dir_files_writable(out_dir);
+        make_dir_files_writable(&out_dir.join("_pipeline"));
     }
 }
 
-/// Reads `path` and collects any `--out-dir=<dir>` values.
+/// Reads a param/arg file and returns any `--out-dir=<dir>` values found.
 pub(super) fn scan_file_for_out_dir(
-    path: &str,
-    request_base_dir: Option<&std::path::Path>,
-    out_dirs: &mut Vec<String>,
-) {
-    let path = resolve_request_relative_path(path, request_base_dir);
-    let Ok(content) = std::fs::read_to_string(&path) else {
-        return;
+    argfile_path: &Path,
+    request_base_dir: Option<&Path>,
+) -> Vec<PathBuf> {
+    let Ok(content) = std::fs::read_to_string(argfile_path) else {
+        return Vec::new();
     };
-    for line in content.lines() {
-        if let Some(dir) = line.strip_prefix("--out-dir=") {
-            out_dirs.push(
-                resolve_request_relative_path(dir, request_base_dir)
-                    .display()
-                    .to_string(),
-            );
-        }
-    }
+    content
+        .lines()
+        .filter_map(|line| line.strip_prefix("--out-dir="))
+        .map(|dir| resolve_request_relative_path(dir, request_base_dir))
+        .collect()
 }
 
 /// Makes all regular files in `dir` writable.
-pub(super) fn make_dir_files_writable(dir: &str) {
+pub(super) fn make_dir_files_writable(dir: &Path) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
     };
     for entry in entries.flatten() {
-        if let Ok(meta) = entry.metadata() {
-            if meta.is_file() {
+        let Ok(meta) = entry.metadata() else {
+            continue;
+        };
+        if !meta.is_file() || !meta.permissions().readonly() {
+            continue;
+        }
+        let mut perms = meta.permissions();
+        perms.set_readonly(false);
+        let _ = std::fs::set_permissions(entry.path(), perms);
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub(super) struct ExpandedRustcOutputs {
+    pub(super) out_dir: Option<String>,
+    pub(super) emit_paths: Vec<String>,
+}
+
+pub(super) fn prepare_expanded_rustc_outputs(outputs: &ExpandedRustcOutputs) {
+    if let Some(dir) = outputs.out_dir.as_deref() {
+        let dir = Path::new(dir);
+        make_dir_files_writable(dir);
+        make_dir_files_writable(&dir.join("_pipeline"));
+    }
+
+    for path in &outputs.emit_paths {
+        let path = Path::new(path);
+        if let Ok(meta) = std::fs::metadata(path) {
+            if meta.is_file() && meta.permissions().readonly() {
                 let mut perms = meta.permissions();
-                if perms.readonly() {
-                    perms.set_readonly(false);
-                    let _ = std::fs::set_permissions(entry.path(), perms);
-                }
+                perms.set_readonly(false);
+                let _ = std::fs::set_permissions(path, perms);
             }
         }
     }
 }
 
-pub(super) fn make_path_writable(path: &std::path::Path) {
-    let Ok(meta) = std::fs::metadata(path) else {
-        return;
-    };
-    if !meta.is_file() {
-        return;
-    }
-
-    let mut perms = meta.permissions();
-    if perms.readonly() {
-        perms.set_readonly(false);
-        let _ = std::fs::set_permissions(path, perms);
-    }
-}
-
-pub(super) fn prepare_expanded_rustc_outputs(args: &[String]) {
-    for arg in args {
-        if let Some(dir) = arg.strip_prefix("--out-dir=") {
-            make_dir_files_writable(dir);
-            let pipeline_dir = format!("{dir}/_pipeline");
-            make_dir_files_writable(&pipeline_dir);
-            continue;
-        }
-
-        let Some(emit) = arg.strip_prefix("--emit=") else {
-            continue;
-        };
-        for part in emit.split(',') {
-            let Some((_, path)) = part.split_once('=') else {
-                continue;
-            };
-            make_path_writable(std::path::Path::new(path));
-        }
-    }
-}
-
-/// Runs one process_wrapper subprocess and returns its exit code and output.
-pub(super) fn run_request(
-    self_path: &std::path::Path,
-    arguments: Vec<String>,
-) -> Result<(i32, String), ProcessWrapperError> {
-    run_request_with_current_dir(self_path, arguments, None, "process_wrapper subprocess")
-}
-
-pub(super) fn run_request_with_current_dir(
-    self_path: &std::path::Path,
-    arguments: Vec<String>,
-    current_dir: Option<&str>,
-    context: &str,
-) -> Result<(i32, String), ProcessWrapperError> {
-    let mut command = Command::new(self_path);
-    command
-        .args(&arguments)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    if let Some(dir) = current_dir {
-        command.current_dir(dir);
-    }
-    let output = command
-        .output()
-        .map_err(|e| ProcessWrapperError(format!("failed to spawn {context}: {e}")))?;
-    Ok(collect_subprocess_output(output))
-}
-
 /// Spawns a process_wrapper subprocess and returns the Child handle.
 /// The caller is responsible for waiting on the child.
 pub(super) fn spawn_request(
-    self_path: &std::path::Path,
+    self_path: &Path,
     arguments: Vec<String>,
     current_dir: Option<&str>,
     context: &str,
@@ -283,9 +230,18 @@ pub(super) fn spawn_request(
         .map_err(|e| ProcessWrapperError(format!("failed to spawn {context}: {e}")))
 }
 
-fn collect_subprocess_output(output: std::process::Output) -> (i32, String) {
+pub(super) fn run_request(
+    self_path: &Path,
+    arguments: Vec<String>,
+    current_dir: Option<&str>,
+    context: &str,
+) -> Result<(i32, String), ProcessWrapperError> {
+    let child = spawn_request(self_path, arguments, current_dir, context)?;
+    let output = child
+        .wait_with_output()
+        .map_err(|e| ProcessWrapperError(format!("failed to wait on {context}: {e}")))?;
     let exit_code = output.status.code().unwrap_or(1);
     let mut combined = String::from_utf8_lossy(&output.stdout).into_owned();
     combined.push_str(&String::from_utf8_lossy(&output.stderr));
-    (exit_code, combined)
+    Ok((exit_code, combined))
 }

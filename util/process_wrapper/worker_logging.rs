@@ -123,10 +123,6 @@ fn extract_arg<'a>(args: &'a [String], prefix: &str) -> Option<&'a str> {
     args.iter().find_map(|arg| arg.strip_prefix(prefix))
 }
 
-fn pipeline_key_label(kind: &RequestKind) -> &str {
-    kind.key().map(|key| key.as_str()).unwrap_or("-")
-}
-
 fn log_request_event(event: &str, request: &WorkRequest, kind: &RequestKind, extra: &str) {
     append_worker_lifecycle_log(&format!(
         "pid={} thread={} {} request_id={}{} crate={} emit={} pipeline_key={}",
@@ -137,7 +133,7 @@ fn log_request_event(event: &str, request: &WorkRequest, kind: &RequestKind, ext
         extra,
         extract_arg(&request.arguments, "--crate-name=").unwrap_or("-"),
         extract_arg(&request.arguments, "--emit=").unwrap_or("-"),
-        pipeline_key_label(kind),
+        kind.key().map(|key| key.as_str()).unwrap_or("-"),
     ));
 }
 

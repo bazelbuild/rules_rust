@@ -134,10 +134,10 @@ pub(super) fn copy_rmeta_unsandboxed(
         return Some(format!("pipelining: failed to create _pipeline dir: {e}"));
     }
     let dest = dest_pipeline.join(filename);
-    if !is_same_file(rmeta_src, &dest) {
-        if let Err(e) = std::fs::copy(rmeta_src, &dest) {
-            return Some(format!("pipelining: failed to copy rmeta: {e}"));
-        }
+    if !is_same_file(rmeta_src, &dest)
+        && let Err(e) = std::fs::copy(rmeta_src, &dest)
+    {
+        return Some(format!("pipelining: failed to copy rmeta: {e}"));
     }
     None
 }

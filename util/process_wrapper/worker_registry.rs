@@ -45,10 +45,10 @@ impl RequestCoordinator {
     /// response), `false` if the request already completed.
     pub fn cancel(&mut self, request_id: RequestId) -> bool {
         if let Some(maybe_key) = self.requests.remove(&request_id) {
-            if let Some(key) = maybe_key {
-                if let Some(inv) = self.invocations.get(&key) {
-                    inv.request_shutdown();
-                }
+            if let Some(key) = maybe_key
+                && let Some(inv) = self.invocations.get(&key)
+            {
+                inv.request_shutdown();
             }
             true
         } else {

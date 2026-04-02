@@ -51,8 +51,8 @@ use logging::{
 };
 use pipeline::WorkerStateRoots;
 use protocol::{
-    build_cancel_response, build_response, extract_request_id, extract_request_id_from_raw_line,
-    parse_work_request,
+    build_cancel_response, build_response, extract_arguments, extract_cancel, extract_request_id,
+    extract_sandbox_dir,
 };
 use registry::{RequestCoordinator, SharedRequestCoordinator};
 use request::{RequestExecutor, RequestKind, WorkRequest};
@@ -151,13 +151,6 @@ fn write_all_stdout_fd(bytes: &[u8]) -> io::Result<()> {
 
 type SharedStdout = Arc<Mutex<()>>;
 
-fn startup_args() -> Vec<String> {
-    std::env::args()
-        .skip(1)
-        .filter(|arg| arg != "--persistent_worker")
-        .collect()
-}
-
 fn build_full_args(
     startup_args: &[String],
     request_args: &[String],
@@ -165,20 +158,19 @@ fn build_full_args(
     assemble_request_argv(startup_args, request_args)
 }
 
-fn classify_request(
-    startup_args: &[String],
-    request: &WorkRequest,
-) -> Result<RequestKind, ProcessWrapperError> {
-    let full_args = build_full_args(startup_args, &request.arguments)?;
-    let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
-    Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
-}
-
 fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequest> {
     let request: tinyjson::JsonValue = match line.parse::<tinyjson::JsonValue>() {
         Ok(request) => request,
         Err(e) => {
-            if let Some(request_id) = extract_request_id_from_raw_line(line) {
+            let request_id = (|| {
+                let after_key = line.split_once("\"requestId\"")?.1;
+                let after_colon = after_key.split_once(':')?.1.trim_start();
+                let end = after_colon
+                    .find(|ch: char| !ch.is_ascii_digit())
+                    .unwrap_or(after_colon.len());
+                after_colon[..end].parse().ok().map(types::RequestId)
+            })();
+            if let Some(request_id) = request_id {
                 append_worker_lifecycle_log(&format!(
                     "pid={} thread={} request_parse_error request_id={} bytes={} error={}",
                     current_pid(),
@@ -195,8 +187,13 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequest> 
         }
     };
 
-    match parse_work_request(&request) {
-        Ok(ctx) => Some(ctx),
+    match extract_sandbox_dir(&request) {
+        Ok(sandbox_dir) => Some(WorkRequest {
+            request_id: extract_request_id(&request),
+            arguments: extract_arguments(&request),
+            sandbox_dir,
+            cancel: extract_cancel(&request),
+        }),
         Err(e) => {
             let request_id = extract_request_id(&request);
             let response = build_response(1, &e, request_id);
@@ -204,19 +201,6 @@ fn parse_request_line(line: &str, stdout: &SharedStdout) -> Option<WorkRequest> 
             None
         }
     }
-}
-
-fn prepare_request_outputs(
-    full_args: &[String],
-    request: &WorkRequest,
-) -> Result<(), ProcessWrapperError> {
-    let base_dir = request
-        .sandbox_dir
-        .as_ref()
-        .map(|_| request.base_dir().map_err(ProcessWrapperError))
-        .transpose()?;
-    prepare_outputs(full_args, base_dir.as_deref());
-    Ok(())
 }
 
 fn execute_singleplex_request(
@@ -227,7 +211,7 @@ fn execute_singleplex_request(
 ) -> Result<(), ProcessWrapperError> {
     let full_args = build_full_args(startup_args, &request.arguments)?;
     prepare_outputs(&full_args, None);
-    let (exit_code, output) = run_request(self_path, full_args)?;
+    let (exit_code, output) = run_request(self_path, full_args, None, "process_wrapper subprocess")?;
     let response = build_response(exit_code, &output, request.request_id);
     write_worker_response(stdout, &response)?;
     append_worker_lifecycle_log(&format!(
@@ -267,9 +251,16 @@ fn run_request_thread(
             Ok(args) => args,
             Err(e) => return (1, format!("worker thread error: {e}")),
         };
-        if let Err(e) = prepare_request_outputs(&full_args, &request) {
-            return (1, format!("worker thread error: {e}"));
-        }
+        let base_dir = match request
+            .sandbox_dir
+            .as_ref()
+            .map(|_| request.base_dir())
+            .transpose()
+        {
+            Ok(dir) => dir,
+            Err(e) => return (1, format!("worker thread error: {e}")),
+        };
+        prepare_outputs(&full_args, base_dir.as_deref());
 
         // If the request was already cancelled, bail out before running rustc.
         if !registry
@@ -347,7 +338,10 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
     let self_path = std::env::current_exe()
         .map_err(|e| ProcessWrapperError(format!("failed to get worker executable path: {e}")))?;
 
-    let startup_args = startup_args();
+    let startup_args: Vec<String> = std::env::args()
+        .skip(1)
+        .filter(|arg| arg != "--persistent_worker")
+        .collect();
 
     let stdin = io::stdin();
     let stdout: SharedStdout = Arc::new(Mutex::new(()));
@@ -388,7 +382,11 @@ pub(crate) fn worker_main() -> Result<(), ProcessWrapperError> {
             Some(request) => request,
             None => continue,
         };
-        let request_kind = match classify_request(&startup_args, &request) {
+        let request_kind = match build_full_args(&startup_args, &request.arguments)
+            .and_then(|full_args| {
+                let base_dir = request.base_dir().map_err(ProcessWrapperError)?;
+                Ok(RequestKind::parse_in_dir(&full_args, &base_dir))
+            }) {
             Ok(kind) => kind,
             Err(e) => {
                 let response = build_response(1, &e.to_string(), request.request_id);

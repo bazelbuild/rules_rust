@@ -16,7 +16,6 @@
 
 use tinyjson::JsonValue;
 
-use super::request::WorkRequest;
 use super::types::{RequestId, SandboxDir};
 
 #[cfg(test)]
@@ -26,57 +25,31 @@ pub(crate) struct WorkRequestInput {
     pub(crate) digest: Option<String>,
 }
 
-/// Parses a JSON WorkRequest into a `WorkRequest`.
-pub(super) fn parse_work_request(request: &JsonValue) -> Result<WorkRequest, String> {
-    Ok(WorkRequest {
-        request_id: extract_request_id(request),
-        arguments: extract_arguments(request),
-        sandbox_dir: extract_sandbox_dir(request)?,
-        cancel: extract_cancel(request),
-    })
-}
-
-pub(super) fn extract_request_id_from_raw_line(line: &str) -> Option<RequestId> {
-    let key_pos = line.find("\"requestId\"")?;
-    let after_key = &line[key_pos + "\"requestId\"".len()..];
-    let colon = after_key.find(':')?;
-    let after_colon = after_key[colon + 1..].trim_start();
-    let digits: String = after_colon
-        .chars()
-        .take_while(|ch| ch.is_ascii_digit())
-        .collect();
-    if digits.is_empty() {
-        None
-    } else {
-        digits.parse().ok().map(RequestId)
-    }
-}
-
 /// Extracts the `requestId` field from a WorkRequest (defaults to 0).
 pub(super) fn extract_request_id(request: &JsonValue) -> RequestId {
-    if let JsonValue::Object(map) = request {
-        if let Some(JsonValue::Number(id)) = map.get("requestId") {
-            return RequestId(*id as i64);
-        }
+    if let JsonValue::Object(map) = request
+        && let Some(JsonValue::Number(id)) = map.get("requestId")
+    {
+        return RequestId(*id as i64);
     }
     RequestId(0)
 }
 
 /// Extracts the `arguments` array from a WorkRequest.
 pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
-    if let JsonValue::Object(map) = request {
-        if let Some(JsonValue::Array(args)) = map.get("arguments") {
-            return args
-                .iter()
-                .filter_map(|v| {
-                    if let JsonValue::String(s) = v {
-                        Some(s.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-        }
+    if let JsonValue::Object(map) = request
+        && let Some(JsonValue::Array(args)) = map.get("arguments")
+    {
+        return args
+            .iter()
+            .filter_map(|v| {
+                if let JsonValue::String(s) = v {
+                    Some(s.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
     }
     vec![]
 }
@@ -86,38 +59,30 @@ pub(super) fn extract_arguments(request: &JsonValue) -> Vec<String> {
 /// An unusable directory usually means multiplex sandboxing is enabled on a
 /// platform without sandbox support.
 pub(super) fn extract_sandbox_dir(request: &JsonValue) -> Result<Option<SandboxDir>, String> {
-    if let JsonValue::Object(map) = request {
-        if let Some(JsonValue::String(dir)) = map.get("sandboxDir") {
-            if dir.is_empty() {
-                return Ok(None);
-            }
-            if sandbox_dir_is_usable(dir) {
-                return Ok(Some(SandboxDir(dir.clone())));
-            }
-            return Err(format!(
-                "Bazel sent sandboxDir=\"{}\" but the directory {}. \
-                 This typically means --experimental_worker_multiplex_sandboxing is enabled \
-                 on a platform without sandbox support (e.g. Windows). \
-                 Remove this flag or make it platform-specific \
-                 (e.g. build:linux --experimental_worker_multiplex_sandboxing).",
-                dir,
-                if std::path::Path::new(dir).exists() {
-                    "is empty (no symlinks to execroot)"
-                } else {
-                    "does not exist"
-                },
-            ));
+    if let JsonValue::Object(map) = request
+        && let Some(JsonValue::String(dir)) = map.get("sandboxDir")
+    {
+        if dir.is_empty() {
+            return Ok(None);
         }
+        if std::fs::read_dir(dir).is_ok_and(|mut entries| entries.next().is_some()) {
+            return Ok(Some(SandboxDir(dir.clone())));
+        }
+        return Err(format!(
+            "Bazel sent sandboxDir=\"{}\" but the directory {}. \
+             This typically means --experimental_worker_multiplex_sandboxing is enabled \
+             on a platform without sandbox support (e.g. Windows). \
+             Remove this flag or make it platform-specific \
+             (e.g. build:linux --experimental_worker_multiplex_sandboxing).",
+            dir,
+            if std::path::Path::new(dir).exists() {
+                "is empty (no symlinks to execroot)"
+            } else {
+                "does not exist"
+            },
+        ));
     }
     Ok(None)
-}
-
-/// Returns true when Bazel populated the sandbox directory.
-fn sandbox_dir_is_usable(dir: &str) -> bool {
-    match std::fs::read_dir(dir) {
-        Ok(mut entries) => entries.next().is_some(),
-        Err(_) => false,
-    }
 }
 
 #[cfg(test)]
@@ -136,18 +101,17 @@ pub(super) fn extract_inputs(request: &JsonValue) -> Vec<WorkRequestInput> {
             continue;
         };
 
-        let path = obj.get("path").and_then(|value| match value {
-            JsonValue::String(path) => Some(path.clone()),
+        let Some(JsonValue::String(path)) = obj.get("path") else {
+            continue;
+        };
+        let digest = obj.get("digest").and_then(|v| match v {
+            JsonValue::String(d) => Some(d.clone()),
             _ => None,
         });
-        let digest = obj.get("digest").and_then(|value| match value {
-            JsonValue::String(digest) => Some(digest.clone()),
-            _ => None,
+        result.push(WorkRequestInput {
+            path: path.clone(),
+            digest,
         });
-
-        if let Some(path) = path {
-            result.push(WorkRequestInput { path, digest });
-        }
     }
 
     result
@@ -155,17 +119,24 @@ pub(super) fn extract_inputs(request: &JsonValue) -> Vec<WorkRequestInput> {
 
 /// Extracts the `cancel` field from a WorkRequest (false if absent).
 pub(super) fn extract_cancel(request: &JsonValue) -> bool {
-    if let JsonValue::Object(map) = request {
-        if let Some(JsonValue::Boolean(cancel)) = map.get("cancel") {
-            return *cancel;
-        }
+    if let JsonValue::Object(map) = request
+        && let Some(JsonValue::Boolean(cancel)) = map.get("cancel")
+    {
+        return *cancel;
     }
     false
 }
 
 /// Builds a JSON WorkResponse string.
 pub(super) fn build_response(exit_code: i32, output: &str, request_id: RequestId) -> String {
-    let output = sanitize_response_output(output);
+    let output: String = output
+        .chars()
+        .map(|ch| match ch {
+            '\n' | '\r' | '\t' => ch,
+            ch if ch.is_control() => ' ',
+            ch => ch,
+        })
+        .collect();
     format!(
         "{{\"exitCode\":{},\"output\":{},\"requestId\":{}}}",
         exit_code,
@@ -181,17 +152,6 @@ pub(super) fn build_cancel_response(request_id: RequestId) -> String {
         json_string_literal(""),
         request_id.0
     )
-}
-
-pub(super) fn sanitize_response_output(output: &str) -> String {
-    output
-        .chars()
-        .map(|ch| match ch {
-            '\n' | '\r' | '\t' => ch,
-            ch if ch.is_control() => ' ',
-            ch => ch,
-        })
-        .collect()
 }
 
 pub(super) fn json_string_literal(value: &str) -> String {

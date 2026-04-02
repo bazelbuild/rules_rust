@@ -42,12 +42,8 @@ pub(crate) fn spawn_non_pipelined_rustc(child: Child) -> Arc<RustcInvocation> {
         let (exit_code, diagnostics) = match output {
             Ok(output) => {
                 let exit_code = output.status.code().unwrap_or(-1);
+                let mut diagnostics = String::from_utf8_lossy(&output.stderr).into_owned();
                 let stdout = String::from_utf8_lossy(&output.stdout);
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                let mut diagnostics = String::new();
-                if !stderr.is_empty() {
-                    diagnostics.push_str(&stderr);
-                }
                 if !stdout.is_empty() {
                     if !diagnostics.is_empty() {
                         diagnostics.push('\n');
@@ -63,16 +59,6 @@ pub(crate) fn spawn_non_pipelined_rustc(child: Child) -> Arc<RustcInvocation> {
     });
 
     ret
-}
-
-/// Processes a single stderr line through the policy and appends to diagnostics.
-fn accumulate_diagnostic(line: &str, policy: &mut RustcStderrPolicy, diagnostics: &mut String) {
-    if let Some(processed) = policy.process_line(line) {
-        if !diagnostics.is_empty() {
-            diagnostics.push('\n');
-        }
-        diagnostics.push_str(&processed);
-    }
 }
 
 /// Spawns a thread that tracks a pipelined rustc process through completion.
@@ -108,7 +94,12 @@ pub(crate) fn spawn_pipelined_rustc(
                 );
                 break;
             }
-            accumulate_diagnostic(&line, &mut policy, &mut diagnostics);
+            if let Some(processed) = policy.process_line(&line) {
+                if !diagnostics.is_empty() {
+                    diagnostics.push('\n');
+                }
+                diagnostics.push_str(&processed);
+            }
         }
 
         // Drain the remaining diagnostics after metadata.
@@ -116,7 +107,12 @@ pub(crate) fn spawn_pipelined_rustc(
             if crate::rustc::extract_rmeta_path(&line).is_some() {
                 continue;
             }
-            accumulate_diagnostic(&line, &mut policy, &mut diagnostics);
+            if let Some(processed) = policy.process_line(&line) {
+                if !diagnostics.is_empty() {
+                    diagnostics.push('\n');
+                }
+                diagnostics.push_str(&processed);
+            }
         }
 
         // stderr closed; rustc is likely exiting.

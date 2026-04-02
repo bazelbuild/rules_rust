@@ -99,14 +99,6 @@ impl Drop for TemporaryPathGuard {
     }
 }
 
-fn cleanup_expanded_paramfiles(paths: &[PathBuf]) {
-    let mut cleanup = TemporaryPathGuard::new();
-    for path in paths {
-        cleanup.track_file(path.clone());
-    }
-    cleanup.cleanup();
-}
-
 #[cfg(windows)]
 struct ParsedDependencyArgs {
     dependency_paths: Vec<PathBuf>,
@@ -519,7 +511,9 @@ fn main() -> Result<(), ProcessWrapperError> {
                         ))
                     })?;
                 }
-                cleanup_expanded_paramfiles(&opts.temporary_expanded_paramfiles);
+                for path in &opts.temporary_expanded_paramfiles {
+                    let _ = fs::remove_file(path);
+                }
                 exit(0);
             }
             eprintln!(concat!(

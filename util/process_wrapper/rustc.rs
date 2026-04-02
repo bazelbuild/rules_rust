@@ -25,14 +25,6 @@ pub(crate) enum ErrorFormat {
     Rendered,
 }
 
-pub(crate) fn error_format_from_str(value: &str) -> Option<ErrorFormat> {
-    match value {
-        "json" => Some(ErrorFormat::Json),
-        "rendered" => Some(ErrorFormat::Rendered),
-        _ => None,
-    }
-}
-
 #[derive(Debug, Clone)]
 pub(crate) struct RustcStderrProcessor {
     error_format: ErrorFormat,
@@ -80,9 +72,10 @@ impl RustcStderrPolicy {
 
     pub(crate) fn from_option_str(error_format: Option<&str>) -> Self {
         match error_format {
-            Some(value) => Self::Processed(RustcStderrProcessor::new(
-                error_format_from_str(value).unwrap_or(ErrorFormat::Rendered),
-            )),
+            Some(value) => Self::Processed(RustcStderrProcessor::new(match value {
+                "json" => ErrorFormat::Json,
+                _ => ErrorFormat::Rendered,
+            })),
             None => Self::Raw,
         }
     }
@@ -95,73 +88,53 @@ impl RustcStderrPolicy {
     }
 }
 
-fn get_key(value: &JsonValue, key: &str) -> Option<String> {
-    if let JsonValue::Object(map) = value {
-        if let JsonValue::String(s) = map.get(key)? {
-            Some(s.clone())
-        } else {
-            None
-        }
-    } else {
-        None
-    }
-}
-
-fn json_warning(line: &str) -> JsonValue {
-    JsonValue::Object(HashMap::from([
-        (
-            "$message_type".to_string(),
-            JsonValue::String("diagnostic".to_string()),
-        ),
-        ("message".to_string(), JsonValue::String(line.to_string())),
-        ("code".to_string(), JsonValue::Null),
-        (
-            "level".to_string(),
-            JsonValue::String("warning".to_string()),
-        ),
-        ("spans".to_string(), JsonValue::Array(Vec::new())),
-        ("children".to_string(), JsonValue::Array(Vec::new())),
-        ("rendered".to_string(), JsonValue::String(line.to_string())),
-    ]))
-}
-
-pub(crate) fn process_stderr_line(mut line: String, error_format: ErrorFormat) -> LineResult {
+pub(crate) fn process_stderr_line(line: String, error_format: ErrorFormat) -> LineResult {
     if line.contains("is not a recognized feature for this target (ignoring feature)")
         || line.starts_with(" WARN ")
     {
-        if let Ok(json_str) = json_warning(&line).stringify() {
-            line = json_str;
-        } else {
-            return Ok(LineOutput::Skip);
-        }
+        return match error_format {
+            ErrorFormat::Rendered => Ok(LineOutput::Message(line)),
+            ErrorFormat::Json => {
+                let warning = JsonValue::Object(HashMap::from([
+                    (
+                        "$message_type".to_string(),
+                        JsonValue::String("diagnostic".to_string()),
+                    ),
+                    ("message".to_string(), JsonValue::String(line.clone())),
+                    ("code".to_string(), JsonValue::Null),
+                    (
+                        "level".to_string(),
+                        JsonValue::String("warning".to_string()),
+                    ),
+                    ("spans".to_string(), JsonValue::Array(Vec::new())),
+                    ("children".to_string(), JsonValue::Array(Vec::new())),
+                    ("rendered".to_string(), JsonValue::String(line)),
+                ]));
+                match warning.stringify() {
+                    Ok(json_str) => Ok(LineOutput::Message(json_str)),
+                    Err(_) => Ok(LineOutput::Skip),
+                }
+            }
+        };
     }
-    process_json(line, error_format)
-}
-
-/// Parses one rustc JSON line and returns the requested output form.
-///
-/// Non-diagnostic messages are skipped. Invalid JSON returns an error.
-pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResult {
     let parsed: JsonValue = line
         .parse()
         .map_err(|_| "error parsing rustc output as json".to_owned())?;
-    Ok(if let Some(rendered) = get_key(&parsed, "rendered") {
-        output_based_on_error_format(line, rendered, error_format)
+    let rendered = if let JsonValue::Object(map) = &parsed
+        && let Some(JsonValue::String(s)) = map.get("rendered")
+    {
+        Some(s.clone())
     } else {
+        None
+    };
+    Ok(match rendered {
+        Some(rendered) => match error_format {
+            ErrorFormat::Json => LineOutput::Message(line),
+            ErrorFormat::Rendered => LineOutput::Message(rendered),
+        },
         // Ignore non-diagnostic messages such as artifact notifications.
-        LineOutput::Skip
+        None => LineOutput::Skip,
     })
-}
-
-fn output_based_on_error_format(
-    line: String,
-    rendered: String,
-    error_format: ErrorFormat,
-) -> LineOutput {
-    match error_format {
-        ErrorFormat::Json => LineOutput::Message(line),
-        ErrorFormat::Rendered => LineOutput::Message(rendered),
-    }
 }
 
 /// Extracts `.rmeta` artifact paths from rustc JSON notifications.

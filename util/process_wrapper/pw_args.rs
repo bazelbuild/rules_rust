@@ -252,34 +252,6 @@ pub(crate) fn resolve_external_path(arg: &str) -> std::borrow::Cow<'_, str> {
     std::borrow::Cow::Borrowed(arg)
 }
 
-fn record_pipelining_flag(arg: &str, metadata: &mut NormalizedRustcMetadata) -> bool {
-    if !is_pipelining_flag(arg) {
-        return false;
-    }
-    if arg == "--pipelining-metadata" {
-        metadata.relocated.pipelining_mode = Some(SubprocessPipeliningMode::Metadata);
-    } else if arg == "--pipelining-full" {
-        metadata.relocated.pipelining_mode = Some(SubprocessPipeliningMode::Full);
-    } else if let Some(key) = arg.strip_prefix("--pipelining-key=") {
-        metadata.pipelining_key = Some(key.to_owned());
-    } else if let Some(path) = arg.strip_prefix("--pipelining-rlib-path=") {
-        metadata.relocated.pipelining_rlib_path = Some(path.to_owned());
-    }
-    true
-}
-
-fn apply_relocated_value(flag: &str, value: String, relocated: &mut RelocatedPwFlags) {
-    match flag {
-        "--env-file" => relocated.env_files.push(value),
-        "--arg-file" => relocated.arg_files.push(value),
-        "--output-file" => relocated.output_file = Some(value),
-        "--rustc-output-format" => relocated.rustc_output_format = Some(value),
-        "--stable-status-file" => relocated.stable_status_file = Some(value),
-        "--volatile-status-file" => relocated.volatile_status_file = Some(value),
-        _ => {}
-    }
-}
-
 #[derive(Clone, Copy)]
 pub(crate) enum ParamFileReadErrorMode {
     Error,
@@ -298,10 +270,28 @@ pub(crate) fn normalize_args_recursive(
     for mut arg in args {
         crate::util::apply_substitutions(&mut arg, subst_mappings);
         if let Some(flag) = pending_flag.take() {
-            apply_relocated_value(&flag, arg, &mut metadata.relocated);
+            match flag.as_str() {
+                "--env-file" => metadata.relocated.env_files.push(arg),
+                "--arg-file" => metadata.relocated.arg_files.push(arg),
+                "--output-file" => metadata.relocated.output_file = Some(arg),
+                "--rustc-output-format" => metadata.relocated.rustc_output_format = Some(arg),
+                "--stable-status-file" => metadata.relocated.stable_status_file = Some(arg),
+                "--volatile-status-file" => metadata.relocated.volatile_status_file = Some(arg),
+                _ => {}
+            }
             continue;
         }
-        if record_pipelining_flag(&arg, metadata) {
+        if arg == "--pipelining-metadata" {
+            metadata.relocated.pipelining_mode = Some(SubprocessPipeliningMode::Metadata);
+            continue;
+        } else if arg == "--pipelining-full" {
+            metadata.relocated.pipelining_mode = Some(SubprocessPipeliningMode::Full);
+            continue;
+        } else if let Some(key) = arg.strip_prefix("--pipelining-key=") {
+            metadata.pipelining_key = Some(key.to_owned());
+            continue;
+        } else if let Some(path) = arg.strip_prefix("--pipelining-rlib-path=") {
+            metadata.relocated.pipelining_rlib_path = Some(path.to_owned());
             continue;
         }
         if is_relocated_pw_flag(&arg) {
@@ -373,32 +363,36 @@ pub(crate) fn expand_args_inline(
     Ok((expanded, metadata))
 }
 
-fn env_from_files(paths: &[String]) -> Result<HashMap<String, String>, String> {
-    let mut env_vars = HashMap::new();
-    for path in paths {
+pub(crate) fn build_child_environment(
+    env_files: &[String],
+    stable_status_file: Option<&str>,
+    volatile_status_file: Option<&str>,
+    subst_mappings: &[(String, String)],
+) -> Result<HashMap<String, String>, String> {
+    let mut environment_file_block = HashMap::new();
+    for path in env_files {
         let lines = read_file_to_array(path)
             .map_err(|err| format!("failed to read env-file '{}': {}", path, err))?;
-        for line in lines.into_iter() {
+        for line in lines {
             let (k, v) = line
                 .split_once('=')
                 .ok_or_else(|| format!("env-file '{}': invalid line (no '='): {}", path, line))?;
-            env_vars.insert(k.to_owned(), v.to_owned());
+            environment_file_block.insert(k.to_owned(), v.to_owned());
         }
     }
-    Ok(env_vars)
-}
-
-pub(crate) fn environment_block(
-    environment_file_block: HashMap<String, String>,
-    stable_stamp_mappings: &[(String, String)],
-    volatile_stamp_mappings: &[(String, String)],
-    subst_mappings: &[(String, String)],
-) -> HashMap<String, String> {
+    let stable_stamp_mappings = match stable_status_file {
+        Some(path) => read_stamp_status_with_context(path, "stable-status")?,
+        None => Vec::new(),
+    };
+    let volatile_stamp_mappings = match volatile_status_file {
+        Some(path) => read_stamp_status_with_context(path, "volatile-status")?,
+        None => Vec::new(),
+    };
     // Start from the current process environment.
     let mut environment_variables: HashMap<String, String> = std::env::vars().collect();
     // Later sources override earlier ones.
     environment_variables.extend(environment_file_block);
-    for (f, replace_with) in &[stable_stamp_mappings, volatile_stamp_mappings].concat() {
+    for (f, replace_with) in &[&stable_stamp_mappings[..], &volatile_stamp_mappings[..]].concat() {
         for value in environment_variables.values_mut() {
             let from = format!("{{{f}}}");
             let new = value.replace(from.as_str(), replace_with);
@@ -408,28 +402,5 @@ pub(crate) fn environment_block(
     for value in environment_variables.values_mut() {
         crate::util::apply_substitutions(value, subst_mappings);
     }
-    environment_variables
-}
-
-pub(crate) fn build_child_environment(
-    env_files: &[String],
-    stable_status_file: Option<&str>,
-    volatile_status_file: Option<&str>,
-    subst_mappings: &[(String, String)],
-) -> Result<HashMap<String, String>, String> {
-    let environment_file_block = env_from_files(env_files)?;
-    let stable_stamp_mappings = match stable_status_file {
-        Some(path) => read_stamp_status_with_context(path, "stable-status")?,
-        None => Vec::new(),
-    };
-    let volatile_stamp_mappings = match volatile_status_file {
-        Some(path) => read_stamp_status_with_context(path, "volatile-status")?,
-        None => Vec::new(),
-    };
-    Ok(environment_block(
-        environment_file_block,
-        &stable_stamp_mappings,
-        &volatile_stamp_mappings,
-        subst_mappings,
-    ))
+    Ok(environment_variables)
 }
