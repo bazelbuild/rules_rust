@@ -239,3 +239,10 @@ design questions remain open:
 - How much teardown and cancellation validation is enough to treat the
   background-rustc lifetime as operationally solid under `bazel clean`,
   cancellation races, and dynamic execution?
+- Diagnostics processing now runs on the monitor thread rather than the request
+  thread. Verify the output format still satisfies Bazel consumers.
+- Windows `#[cfg(windows)]` paths in `execute_metadata` are preserved but
+  untested under the new invocation architecture.
+- Small timing window: `.rmeta` exists in the pipeline output directory before
+  it is copied to the declared output location. Verify Bazel's output checker
+  does not race with this copy.
