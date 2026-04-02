@@ -67,6 +67,25 @@ def _assert_no_deprecated_attributes(_ctx):
     """
     pass
 
+def _pipelining_output_hash_salt(ctx, toolchain, crate_type, disable_pipelining):
+    """Returns a mode tag for artifact paths that differ across pipelining modes."""
+
+    if is_exec_configuration(ctx) or not can_use_metadata_for_pipelining(toolchain, crate_type):
+        return ""
+
+    if toolchain._worker_pipelining:
+        return "worker_pipelining"
+
+    if can_build_metadata(
+        toolchain,
+        ctx,
+        crate_type,
+        disable_pipelining = disable_pipelining,
+    ):
+        return "hollow_rlib"
+
+    return ""
+
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
 
@@ -147,6 +166,11 @@ def _rust_library_common(ctx, crate_type):
         crate_root = crate_root_src(ctx.attr.name, ctx.attr.crate_name, ctx.files.srcs, crate_type)
     srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
+    # Worker pipelining uses a single rustc invocation (no SVH mismatch risk),
+    # so disable_pipelining (which works around SVH issues in hollow rlib mode)
+    # should be ignored when worker pipelining is active.
+    effective_disable_pipelining = getattr(ctx.attr, "disable_pipelining", False) and not toolchain._worker_pipelining
+
     # Determine unique hash for this rlib.
     # Note that we don't include a hash for `cdylib` and `staticlib` since they are meant to be consumed externally
     # and having a deterministic name is important since it ends up embedded in the executable. This is problematic
@@ -155,7 +179,16 @@ def _rust_library_common(ctx, crate_type):
     if crate_type in ["cdylib", "staticlib"]:
         output_hash = None
     else:
-        output_hash = determine_output_hash(crate_root, ctx.label)
+        output_hash = determine_output_hash(
+            crate_root,
+            ctx.label,
+            salt = _pipelining_output_hash_salt(
+                ctx,
+                toolchain,
+                crate_type,
+                effective_disable_pipelining,
+            ),
+        )
 
     rust_lib_name = determine_lib_name(
         crate_name,
@@ -168,10 +201,6 @@ def _rust_library_common(ctx, crate_type):
     rustc_rmeta_output = None
     metadata_supports_pipelining = False
 
-    # Worker pipelining uses a single rustc invocation (no SVH mismatch risk),
-    # so disable_pipelining (which works around SVH issues in hollow rlib mode)
-    # should be ignored when worker pipelining is active.
-    effective_disable_pipelining = getattr(ctx.attr, "disable_pipelining", False) and not toolchain._worker_pipelining
     if can_build_metadata(
         toolchain,
         ctx,

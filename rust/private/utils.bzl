@@ -212,19 +212,22 @@ def get_lib_name_for_windows(lib):
 
     return libname
 
-def determine_output_hash(crate_root, label):
+def determine_output_hash(crate_root, label, salt = ""):
     """Generates a hash of the crate root file's path.
 
     Args:
         crate_root (File): The crate's root file (typically `lib.rs`).
         label (Label): The label of the target.
+        salt (str, optional): Additional mode-specific disambiguator to fold into
+            the hash so incompatible artifact variants do not reuse the same
+            on-disk filename.
 
     Returns:
         str: A string representation of the hash.
     """
 
     # Take the absolute value of hash() since it could be negative.
-    h = abs(hash(crate_root.path) + hash(repr(label)))
+    h = abs(hash(crate_root.path) + hash(repr(label)) + hash(salt))
     return repr(h)
 
 def get_preferred_artifact(library_to_link, use_pic):
