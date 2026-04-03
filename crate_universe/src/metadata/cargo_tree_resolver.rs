@@ -16,6 +16,7 @@ use url::Url;
 use crate::config::CrateId;
 use crate::metadata::cargo_bin::Cargo;
 use crate::select::{Select, SelectableScalar};
+use crate::splicing::splicer::symlink_external_path_deps;
 use crate::utils::symlink::symlink;
 use crate::utils::target_triple::TargetTriple;
 
@@ -525,6 +526,34 @@ impl TreeResolver {
                 pristine_root, output_dir
             )
         })?;
+
+        // Symlink any path dependencies that live outside the workspace root
+        symlink_external_path_deps(
+            pristine_manifest_path.as_std_path(),
+            pristine_root.as_std_path(),
+            output_dir,
+        )?;
+
+        // Also handle workspace members' external path deps
+        let manifest = cargo_toml::Manifest::from_path(pristine_manifest_path.as_std_path())
+            .with_context(|| format!("Failed to parse manifest at {}", pristine_manifest_path))?;
+        if let Some(ref workspace) = manifest.workspace {
+            for member_pattern in &workspace.members {
+                let glob_pattern = pristine_root.join(member_pattern).to_string();
+                if let Ok(entries) = glob::glob(&glob_pattern) {
+                    for entry in entries.flatten() {
+                        let member_manifest = entry.join("Cargo.toml");
+                        if member_manifest.exists() {
+                            symlink_external_path_deps(
+                                &member_manifest,
+                                pristine_root.as_std_path(),
+                                output_dir,
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
 
         let cargo_metadata = self
             .cargo_bin

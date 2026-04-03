@@ -1,0 +1,6 @@
+[package]
+name = "external_crate_b"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
