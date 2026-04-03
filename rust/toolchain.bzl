@@ -593,7 +593,7 @@ def _rust_toolchain_impl(ctx):
         make_variables = make_variable_info,
         rust_doc = sysroot.rustdoc,
         rust_std = sysroot.rust_std,
-        rust_std_paths = depset([file.dirname for file in sysroot.rust_std.to_list()]),
+        rust_std_paths = sysroot.rust_std,
         rustc = sysroot.rustc,
         rustc_lib = sysroot.rustc_lib,
         rustfmt = sysroot.rustfmt,

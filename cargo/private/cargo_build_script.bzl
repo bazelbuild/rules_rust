@@ -449,7 +449,7 @@ def _cargo_build_script_impl(ctx):
     # Pull in env vars which may be required for the cc_toolchain to work (e.g. on OSX, the SDK version).
     # We hope that the linker env is sufficient for the whole cc_toolchain.
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
-    linker, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
+    linker, _, _, link_args, linker_env = get_linker_and_args(ctx, "bin", toolchain, cc_toolchain, feature_configuration, None)
     env.update(**linker_env)
     env["LD"] = linker
     env["LDFLAGS"] = " ".join(_pwd_flags(link_args))
@@ -577,7 +577,7 @@ def _cargo_build_script_impl(ctx):
     args = ctx.actions.args()
     args.add(script, format = "--script=%s")
     args.add(links, format = "--links=%s")
-    args.add(out_dir.path, format = "--out_dir=%s")
+    args.add_all([out_dir], format_each = "--out_dir=%s", expand_directories = False)
     args.add(env_out, format = "--env_out=%s")
     args.add(flags_out, format = "--flags_out=%s")
     args.add(link_flags, format = "--link_flags=%s")
@@ -649,6 +649,7 @@ def _cargo_build_script_impl(ctx):
         mnemonic = "CargoBuildScriptRun",
         progress_message = "Running Cargo build script {}".format(pkg_name),
         env = env,
+        execution_requirements = {"supports-path-mapping": "1"},
         toolchain = None,
         use_default_shell_env = use_default_shell_env,
     )
