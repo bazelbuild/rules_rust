@@ -1,7 +1,21 @@
-"""A module defining toolchain utilities"""
+"""A module defining toolchain utilities."""
+
+def _find_rustc_toolchain(ctx):
+    return ctx.toolchains[str(Label("@rust_toolchains//rustc:toolchain_type"))]
 
 def _toolchain_files_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("//rust:toolchain_type"))]
+    rustc_toolchain = _find_rustc_toolchain(ctx)
+    clippy_toolchain_label = str(Label("@rust_toolchains//clippy:toolchain_type"))
+    clippy_toolchain = ctx.toolchains[clippy_toolchain_label] if clippy_toolchain_label in ctx.toolchains else None
+    cargo_toolchain_label = str(Label("@rust_toolchains//cargo:toolchain_type"))
+    cargo_toolchain = ctx.toolchains[cargo_toolchain_label] if cargo_toolchain_label in ctx.toolchains else None
+
+    if ctx.attr.tool == "clippy" or ctx.attr.tool == "cargo-clippy":
+        toolchain = clippy_toolchain or rustc_toolchain
+    elif ctx.attr.tool == "cargo":
+        toolchain = cargo_toolchain or rustc_toolchain
+    else:
+        toolchain = rustc_toolchain
 
     runfiles = None
     if ctx.attr.tool == "cargo":
@@ -84,12 +98,14 @@ toolchain_files = rule(
         ),
     },
     toolchains = [
-        str(Label("//rust:toolchain_type")),
+        str(Label("@rust_toolchains//rustc:toolchain_type")),
+        config_common.toolchain_type("@rust_toolchains//clippy:toolchain_type", mandatory = False),
+        config_common.toolchain_type("@rust_toolchains//cargo:toolchain_type", mandatory = False),
     ],
 )
 
 def _current_rust_toolchain_impl(ctx):
-    toolchain = ctx.toolchains[str(Label("@rules_rust//rust:toolchain_type"))]
+    toolchain = _find_rustc_toolchain(ctx)
 
     return [
         toolchain,
@@ -103,7 +119,7 @@ current_rust_toolchain = rule(
     doc = "A rule for exposing the current registered `rust_toolchain`.",
     implementation = _current_rust_toolchain_impl,
     toolchains = [
-        str(Label("@rules_rust//rust:toolchain_type")),
+        str(Label("@rust_toolchains//rustc:toolchain_type")),
     ],
 )
 
