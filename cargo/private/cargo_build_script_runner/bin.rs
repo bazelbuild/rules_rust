@@ -100,12 +100,25 @@ fn run_buildrs() -> Result<(), String> {
 
     for dep_env_path in input_dep_env_paths.iter() {
         if let Ok(contents) = read_to_string(dep_env_path) {
+            // Handle line continuations: lines ending with '\' continue on the next line
+            let mut current_line = String::new();
             for line in contents.split('\n') {
-                // split on empty contents will still produce a single empty string in iterable.
-                if line.is_empty() {
+                // Skip empty lines when we're not in a continuation
+                if line.is_empty() && current_line.is_empty() {
                     continue;
                 }
-                match line.split_once('=') {
+
+                if let Some(prefix) = line.strip_suffix('\\') {
+                    // Line continues on the next line
+                    current_line.push_str(prefix);
+                    current_line.push('\n');
+                    continue;
+                }
+
+                // Complete line (either standalone or end of continuation)
+                current_line.push_str(line);
+
+                match current_line.split_once('=') {
                     Some((key, value)) => {
                         command.env(key, value.replace("${pwd}", &exec_root.to_string_lossy()));
                     }
@@ -115,6 +128,7 @@ fn run_buildrs() -> Result<(), String> {
                         )
                     }
                 }
+                current_line.clear();
             }
         } else {
             return Err("error: Dependency environment file unreadable".to_owned());
