@@ -7,6 +7,7 @@
 
 use std::env;
 use std::fs;
+use std::path::Path;
 use std::process::{self, Command};
 
 fn main() {
@@ -35,8 +36,8 @@ fn main() {
         .unwrap_or(true);
 
     if is_empty {
-        let sentinel = format!("{}/.empty", snippets_dir);
+        let sentinel = Path::new(&snippets_dir).join(".empty");
         fs::File::create(&sentinel)
-            .unwrap_or_else(|e| panic!("failed to create {}: {}", sentinel, e));
+            .unwrap_or_else(|e| panic!("failed to create {}: {}", sentinel.display(), e));
     }
 }
