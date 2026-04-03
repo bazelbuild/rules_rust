@@ -60,15 +60,42 @@ def parse_env_strings(entries):
     return env_vars
 
 def find_toolchain(ctx):
-    """Finds the first rust toolchain that is configured.
+    """Finds the first rustc toolchain that is configured.
 
     Args:
         ctx (ctx): The ctx object for the current target.
 
     Returns:
-        rust_toolchain: A Rust toolchain context.
+        rust_toolchain: A Rustc toolchain context.
     """
-    return ctx.toolchains[Label("//rust:toolchain_type")]
+    rustc_toolchain_type = str(Label("@rust_toolchains//rustc:toolchain_type"))
+    if rustc_toolchain_type in ctx.toolchains:
+        return ctx.toolchains[rustc_toolchain_type]
+
+    # Keep compatibility for rules that still request the legacy type label.
+    legacy_toolchain_type = str(Label("//rust:toolchain_type"))
+    if legacy_toolchain_type in ctx.toolchains:
+        return ctx.toolchains[legacy_toolchain_type]
+
+    fail(
+        "No Rust toolchain configured. Expected @rust_toolchains//rustc:toolchain_type " +
+        "or //rust:toolchain_type.",
+    )
+
+def find_optional_toolchain(ctx, toolchain_type):
+    """Finds the configured toolchain for a given type if it exists.
+
+    Args:
+        ctx (ctx): The ctx object for the current target.
+        toolchain_type (str): The toolchain type label.
+
+    Returns:
+        rust_toolchain or None: The toolchain context or None if unavailable.
+    """
+    toolchain_label = str(Label(toolchain_type))
+    if toolchain_label in ctx.toolchains:
+        return ctx.toolchains[toolchain_label]
+    return None
 
 # A global kill switch to test without a cc toolchain present.
 _FORCE_DISABLE_CC_TOOLCHAIN = False
