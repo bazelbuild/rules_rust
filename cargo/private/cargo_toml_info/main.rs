@@ -114,9 +114,9 @@ fn format_lint_set<'a>(
         a_priority.cmp(&b_priority)
     });
 
-    let formatted = lints.into_iter().map(|(name, lint)| {
-        group.format_cli_arg(name, lint.level)
-    });
+    let formatted = lints
+        .into_iter()
+        .map(|(name, lint)| group.format_cli_arg(name, lint.level));
 
     Some(formatted)
 }
@@ -285,7 +285,11 @@ mod test {
     fn format_lint_set() {
         assert!(super::format_lint_set(None, &super::LintGroup::Rustc).is_none());
 
-        let lint = |level, priority| Lint { level, priority, config: Default::default() };
+        let lint = |level, priority| Lint {
+            level,
+            priority,
+            config: Default::default(),
+        };
         let lints_map: BTreeMap<String, BTreeMap<String, Lint>> = BTreeMap::from_iter([(
             "clippy".into(),
             BTreeMap::from_iter([
@@ -299,8 +303,14 @@ mod test {
                 ("rustdoc_allow".into(), lint(LintLevel::Allow, 0)),
                 ("clippy_forbid".into(), lint(LintLevel::Forbid, -1)),
                 ("clippy_deny".into(), lint(LintLevel::Deny, -1)),
-                ("rustc_deny_without_priority".into(), lint(LintLevel::Deny, 0)),
-                ("rustc_deny_without_priority2".into(), lint(LintLevel::Deny, 0)),
+                (
+                    "rustc_deny_without_priority".into(),
+                    lint(LintLevel::Deny, 0),
+                ),
+                (
+                    "rustc_deny_without_priority2".into(),
+                    lint(LintLevel::Deny, 0),
+                ),
             ]),
         )]);
 
@@ -332,7 +342,11 @@ mod test {
     #[test]
     fn lint_priority() {
         // Test different lint priority scenarios
-        let lint = |priority| Lint { level: LintLevel::Allow, priority, config: Default::default() };
+        let lint = |priority| Lint {
+            level: LintLevel::Allow,
+            priority,
+            config: Default::default(),
+        };
 
         assert_eq!(super::lint_priority(&lint(0)), 0);
         assert_eq!(super::lint_priority(&lint(5)), 5);
