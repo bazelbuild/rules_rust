@@ -121,7 +121,7 @@ crate.from_cargo(
 )
 use_repo(crate, "cu")
 
-bazel_dep(name = "toolchains_musl", version = "0.1.20", dev_dependency = True)
+bazel_dep(name = "toolchains_musl", version = "0.1.27", dev_dependency = True)
 
 toolchains_musl = use_extension("@toolchains_musl//:toolchains_musl.bzl", "toolchains_musl", dev_dependency = True)
 toolchains_musl.config(
