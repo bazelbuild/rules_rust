@@ -54,22 +54,30 @@ def _rust_impl(module_ctx):
     for repository_set in root.tags.repository_set:
         if repository_set.name not in grouped_repository_sets:
             grouped_repository_sets[repository_set.name] = {
-                "allocator_library": repository_set.allocator_library,
+                "allocator_library": str(repository_set.allocator_library) if repository_set.allocator_library else None,
+                "auth": repository_set.auth if repository_set.auth else None,
+                "auth_patterns": repository_set.auth_patterns if repository_set.auth_patterns else None,
                 "dev_components": repository_set.dev_components,
                 "edition": repository_set.edition,
+                "exec_compatible_with": [str(v) for v in repository_set.exec_compatible_with] if repository_set.exec_compatible_with else None,
                 "exec_triple": repository_set.exec_triple,
+                "extra_exec_rustc_flags": repository_set.extra_exec_rustc_flags if repository_set.extra_exec_rustc_flags else None,
+                "extra_rustc_flags": repository_set.extra_rustc_flags if repository_set.extra_rustc_flags else None,
                 "extra_target_triples": {repository_set.target_triple: [str(v) for v in repository_set.target_compatible_with]},
+                "global_allocator_library": str(repository_set.global_allocator_library) if repository_set.global_allocator_library else None,
                 "name": repository_set.name,
+                "netrc": repository_set.netrc if repository_set.netrc else None,
                 "opt_level": {repository_set.target_triple: repository_set.opt_level} if repository_set.opt_level else None,
                 "rustfmt_version": repository_set.rustfmt_version,
                 "sha256s": repository_set.sha256s,
+                "strip_level": {repository_set.target_triple: repository_set.strip_level} if repository_set.strip_level else None,
                 "target_settings": [str(v) for v in repository_set.target_settings],
                 "urls": repository_set.urls,
                 "versions": repository_set.versions,
             }
         else:
             for attr_name in _RUST_REPOSITORY_SET_TAG_ATTRS.keys():
-                if attr_name in ["extra_target_triples", "name", "target_compatible_with", "target_triple", "opt_level"]:
+                if attr_name in ["extra_target_triples", "name", "target_compatible_with", "target_triple", "opt_level", "strip_level"]:
                     continue
                 attr_value = getattr(repository_set, attr_name, None)
                 if attr_value:
@@ -81,6 +89,10 @@ def _rust_impl(module_ctx):
                 if grouped_repository_sets[repository_set.name]["opt_level"] == None:
                     grouped_repository_sets[repository_set.name]["opt_level"] = {}
                 grouped_repository_sets[repository_set.name]["opt_level"][repository_set.target_triple] = repository_set.opt_level
+            if repository_set.strip_level:
+                if grouped_repository_sets[repository_set.name]["strip_level"] == None:
+                    grouped_repository_sets[repository_set.name]["strip_level"] = {}
+                grouped_repository_sets[repository_set.name]["strip_level"][repository_set.target_triple] = repository_set.strip_level
 
     extra_toolchain_infos = {}
 
@@ -113,16 +125,20 @@ def _rust_impl(module_ctx):
                 edition = toolchain.edition,
                 extra_rustc_flags = extra_rustc_flags,
                 extra_exec_rustc_flags = toolchain.extra_exec_rustc_flags,
-                allocator_library = toolchain.allocator_library,
+                allocator_library = str(toolchain.allocator_library) if toolchain.allocator_library else None,
+                global_allocator_library = str(toolchain.global_allocator_library) if toolchain.global_allocator_library else None,
                 rustfmt_version = toolchain.rustfmt_version,
                 rust_analyzer_version = toolchain.rust_analyzer_version,
                 sha256s = toolchain.sha256s,
                 extra_target_triples = toolchain.extra_target_triples,
+                strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
                 register_toolchains = False,
+                compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
+                rustfmt_toolchain_triples = toolchain.rustfmt_toolchain_triples if toolchain.rustfmt_toolchain_triples else DEFAULT_TOOLCHAIN_TRIPLES,
                 target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
             )
@@ -132,15 +148,13 @@ def _rust_impl(module_ctx):
     return module_ctx.extension_metadata(**metadata_kwargs)
 
 _COMMON_TAG_DEFAULTS = {
-    "allocator_library": "",
     "rustfmt_version": DEFAULT_NIGHTLY_VERSION,
     "urls": DEFAULT_STATIC_RUST_URL_TEMPLATES,
 }
 
 _COMMON_TAG_KWARGS = {
-    "allocator_library": attr.string(
+    "allocator_library": attr.label(
         doc = "Target that provides allocator functions when rust_library targets are embedded in a cc_binary.",
-        default = _COMMON_TAG_DEFAULTS["allocator_library"],
     ),
     "dev_components": attr.bool(
         doc = "Whether to download the rustc-dev components (defaults to False). Requires version to be \"nightly\".",
@@ -151,6 +165,9 @@ _COMMON_TAG_KWARGS = {
             "The rust edition to be used by default (2015, 2018, or 2021). " +
             "If absent, every rule is required to specify its `edition` attribute."
         ),
+    ),
+    "global_allocator_library": attr.label(
+        doc = "Target that provides allocator functions when global allocator is used with cc_common.link.",
     ),
     "rustfmt_version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
@@ -166,14 +183,35 @@ _COMMON_TAG_KWARGS = {
 }
 
 _RUST_REPOSITORY_SET_TAG_ATTRS = {
+    "auth": attr.string_dict(
+        doc = "Auth object compatible with repository_ctx.download to use when downloading files.",
+    ),
+    "auth_patterns": attr.string_dict(
+        doc = "Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive.",
+    ),
+    "exec_compatible_with": attr.label_list(
+        doc = "A list of constraints for the execution platform for this toolchain.",
+    ),
     "exec_triple": attr.string(
         doc = "Exec triple for this repository_set.",
+    ),
+    "extra_exec_rustc_flags": attr.string_list(
+        doc = "Extra flags to pass to rustc in exec configuration.",
+    ),
+    "extra_rustc_flags": attr.string_list(
+        doc = "Extra flags to pass to rustc in non-exec configuration.",
     ),
     "name": attr.string(
         doc = "Name of the repository_set - if you're looking to replace default toolchains you must use the exact name you're replacing.",
     ),
+    "netrc": attr.string(
+        doc = ".netrc file to use for authentication; mirrors the eponymous attribute from http_archive.",
+    ),
     "opt_level": attr.string_dict(
         doc = "Rustc optimization levels. For more details see the documentation for `rust_toolchain.opt_level`.",
+    ),
+    "strip_level": attr.string_dict(
+        doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
     ),
     "target_compatible_with": attr.label_list(
         doc = "List of platform constraints this toolchain produces, for the particular target_triple this call is for.",
@@ -225,6 +263,12 @@ _RUST_TOOLCHAIN_TAG = tag_class(
         "rust_analyzer_version": attr.string(
             doc = "The version of Rustc to pair with rust-analyzer.",
         ),
+        "rustfmt_toolchain_triples": attr.string_dict(
+            doc = "Like toolchain_triples, but for rustfmt toolchains. Mapping of rust target triple to repository name.",
+        ),
+        "strip_level": attr.string_dict(
+            doc = "Rustc strip levels. For more details see the documentation for `rust_toolchain.strip_level`.",
+        ),
         "target_settings": attr.label_list(
             doc = "A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.",
         ),
@@ -269,6 +313,11 @@ def _rust_host_tools_impl(module_ctx):
     for mod in module_ctx.modules:
         for host_tools in mod.tags.host_tools:
             attrs = {key: getattr(host_tools, key) for key in dir(host_tools)}
+
+            # Label attrs must be stringified for the repository rule.
+            for label_attr in ("allocator_library", "global_allocator_library"):
+                if label_attr in attrs:
+                    attrs[label_attr] = str(attrs[label_attr]) if attrs[label_attr] else None
 
             # Allow shorthand versions to follow the defaults
             # defined by rules_rust.
