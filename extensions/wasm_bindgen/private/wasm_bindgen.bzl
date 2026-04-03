@@ -77,6 +77,9 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
     outputs = [bindgen_wasm_module, snippets] + js_out + ts_out
 
     args = ctx.actions.args()
+    args.add(bindgen_bin.path)
+    args.add(snippets.path)
+    args.add("--")
     args.add("--target", target_output)
     args.add("--out-dir", bindgen_wasm_module.dirname)
     args.add("--out-name", out_name)
@@ -84,7 +87,8 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
     args.add(input_file)
 
     ctx.actions.run(
-        executable = bindgen_bin,
+        executable = ctx.executable._process_wrapper,
+        tools = [bindgen_bin],
         inputs = [input_file],
         outputs = outputs,
         mnemonic = "RustWasmBindgen",
@@ -177,6 +181,12 @@ WASM_BINDGEN_ATTR = {
     ),
     "_allowlist_function_transition": attr.label(
         default = Label("@bazel_tools//tools/allowlists/function_transition_allowlist"),
+    ),
+    "_process_wrapper": attr.label(
+        doc = "A process wrapper for ensuring tree artifacts are non-empty.",
+        default = Label("//private:wasm_bindgen_wrapper"),
+        executable = True,
+        cfg = "exec",
     ),
 }
 
