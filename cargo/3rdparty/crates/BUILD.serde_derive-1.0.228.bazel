@@ -6,12 +6,12 @@
 #     bazel run @@//cargo/3rdparty:crates_vendor
 ###############################################################################
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_library(
-    name = "erased_serde",
+rust_proc_macro(
+    name = "serde_derive",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -29,7 +29,7 @@ rust_library(
         ],
     ),
     crate_features = [
-        "alloc",
+        "default",
     ],
     crate_root = "src/lib.rs",
     edition = "2021",
@@ -38,7 +38,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=erased-serde",
+        "crate-name=serde_derive",
         "manual",
         "noclippy",
         "norustfmt",
@@ -91,9 +91,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.4.5",
+    version = "1.0.228",
     deps = [
-        "@rrc__serde-1.0.228//:serde",
-        "@rrc__typeid-1.0.2//:typeid",
+        "@rrc__proc-macro2-1.0.93//:proc_macro2",
+        "@rrc__quote-1.0.38//:quote",
+        "@rrc__syn-2.0.98//:syn",
     ],
 )
