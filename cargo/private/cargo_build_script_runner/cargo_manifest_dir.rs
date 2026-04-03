@@ -78,6 +78,32 @@ fn is_dir_empty(path: &Path) -> Result<bool, String> {
     Ok(entries.next().is_none())
 }
 
+/// Recursively checks whether a directory tree contains any regular files.
+///
+/// Returns `false` if the directory only contains empty subdirectories,
+/// which is important because remote execution tree artifacts only track
+/// files, not directories.
+fn dir_contains_files(path: &Path) -> bool {
+    let entries = match std::fs::read_dir(path) {
+        Ok(entries) => entries,
+        Err(_) => return false,
+    };
+    for entry in entries.flatten() {
+        let file_type = match entry.file_type() {
+            Ok(ft) => ft,
+            Err(_) => continue,
+        };
+        if file_type.is_dir() {
+            if dir_contains_files(&entry.path()) {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+    false
+}
+
 /// A struct for generating runfiles directories to use when running Cargo build scripts.
 pub struct RunfilesMaker {
     /// The output where a runfiles-like directory should be written.
@@ -248,17 +274,24 @@ impl RunfilesMaker {
                 .iter()
                 .any(|suffix| dest.ends_with(suffix))
             {
-                if let Some(parent) = abs_dest.parent() {
-                    if is_dir_empty(parent).map_err(|e| {
+                let mut dir = abs_dest.parent().map(Path::to_path_buf);
+                while let Some(parent) = dir {
+                    if parent == self.output_dir {
+                        break;
+                    }
+                    if is_dir_empty(&parent).map_err(|e| {
                         format!("Failed to determine if directory was empty with: {:?}", e)
                     })? {
-                        std::fs::remove_dir(parent).map_err(|e| {
+                        std::fs::remove_dir(&parent).map_err(|e| {
                             format!(
                                 "Failed to delete directory {} with {:?}",
                                 parent.display(),
                                 e
                             )
                         })?;
+                        dir = parent.parent().map(Path::to_path_buf);
+                    } else {
+                        break;
                     }
                 }
                 continue;
@@ -273,6 +306,7 @@ impl RunfilesMaker {
                 )
             })?;
         }
+
         Ok(())
     }
 
@@ -310,6 +344,20 @@ impl RunfilesMaker {
             }
         } else {
             self.drain_runfiles_dir_unix()?;
+        }
+
+        // If the runfiles dir contains no files, add an empty file to avoid
+        // an upstream Bazel bug where tree artifacts with only empty
+        // subdirectories are considered "not created" in remote execution.
+        // https://github.com/bazelbuild/bazel/issues/28286
+        if !dir_contains_files(&self.output_dir) {
+            std::fs::write(self.output_dir.join(".empty"), "").unwrap_or_else(|e| {
+                panic!(
+                    "Failed to write empty file to runfiles dir `{}`\n{:?}",
+                    self.output_dir.display(),
+                    e
+                )
+            })
         }
 
         // Due to the symlinks in `CARGO_MANIFEST_DIR`, some build scripts
