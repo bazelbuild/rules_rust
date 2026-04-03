@@ -49,6 +49,21 @@ pub(crate) struct Options {
     pub(crate) rustc_quit_on_rmeta: bool,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
+    // If set to (seed_dir, dest_dir), copies the seed directory contents into
+    // dest_dir before spawning the child process.  Used to seed the incremental
+    // compilation tree artifact from the previous build's state.
+    pub(crate) copy_seed: Option<(String, String)>,
+    // If set to (file_path, input_path), writes input_path to file_path after
+    // the child process completes successfully.  Used to populate the
+    // unused_inputs_list file so Bazel excludes the seed from cache keys.
+    pub(crate) write_unused_inputs: Option<(String, String)>,
+    // If set to (prev_dir, dest_dir), reads directly from prev_dir (which is
+    // outside the sandbox) and hardlinks/copies into dest_dir.
+    pub(crate) seed_prev_dir: Option<(String, String)>,
+    // Minimum incremental cache size (in MiB) to seed from the previous build.
+    pub(crate) seed_min_mb: u64,
+    // If true, exit with 0 after pre-exec operations without spawning a child.
+    pub(crate) exit_early: bool,
 }
 
 pub(crate) fn options() -> Result<Options, OptionError> {
@@ -66,6 +81,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut output_file = None;
     let mut rustc_quit_on_rmeta_raw = None;
     let mut rustc_output_format_raw = None;
+    let mut copy_seed_raw = None;
+    let mut write_unused_inputs_raw = None;
+    let mut seed_prev_dir_raw = None;
+    let mut seed_min_mb_raw = None;
+    let mut exit_early_raw = None;
     let mut flags = Flags::new();
     let mut require_explicit_unstable_features = None;
     flags.define_repeated_flag("--subst", "", &mut subst_mapping_raw);
@@ -120,6 +140,39 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "If set, an empty -Zallow-features= will be added to the rustc command line whenever no \
          other -Zallow-features= is present in the rustc flags.",
         &mut require_explicit_unstable_features,
+    );
+    flags.define_repeated_flag(
+        "--copy-seed",
+        "Copy a seed directory into the output directory before spawning \
+         the child process. Takes two values: <seed_dir> <dest_dir>. Used \
+         to seed the incremental compilation tree artifact from the previous build.",
+        &mut copy_seed_raw,
+    );
+    flags.define_repeated_flag(
+        "--write-unused-inputs",
+        "Write an input path to a file after the child process succeeds. \
+         Takes two values: <file_path> <input_path>. Used to populate the \
+         unused_inputs_list so Bazel excludes the seed from cache keys.",
+        &mut write_unused_inputs_raw,
+    );
+    flags.define_repeated_flag(
+        "--seed-prev-dir",
+        "Read incremental cache directly from a previous build's output \
+         directory and hardlink/copy into the output directory. \
+         Takes two values: <prev_dir> <dest_dir>.",
+        &mut seed_prev_dir_raw,
+    );
+    flags.define_flag(
+        "--seed-min-mb",
+        "Minimum incremental cache size (in MiB) to seed from. \
+         Caches below this threshold are skipped. Default: 20.",
+        &mut seed_min_mb_raw,
+    );
+    flags.define_flag(
+        "--exit-early",
+        "Exit with 0 after pre-exec operations (seed, etc.) \
+         without spawning a child process.",
+        &mut exit_early_raw,
     );
 
     let mut child_args = match flags
@@ -202,6 +255,16 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let require_explicit_unstable_features =
         require_explicit_unstable_features.is_some_and(|s| s == "true");
 
+    let seed_min_mb = seed_min_mb_raw
+        .map(|s| {
+            s.parse::<u64>().map_err(|e| {
+                OptionError::Generic(format!("invalid --seed-min-mb value '{s}': {e}"))
+            })
+        })
+        .transpose()?
+        .unwrap_or(20);
+    let exit_early = exit_early_raw.is_some_and(|s| s == "true");
+
     // Append all the arguments fetched from files to those provided via command line.
     child_args.append(&mut file_arguments);
     let child_args = prepare_args(
@@ -211,16 +274,62 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         None,
         None,
     )?;
+
     // Split the executable path from the rest of the arguments.
-    let (exec_path, args) = child_args.split_first().ok_or_else(|| {
-        OptionError::Generic(
-            "at least one argument after -- is required (the child process path)".to_owned(),
-        )
-    })?;
+    // When --exit-early is set, no child process is needed.
+    let (exec_path, args) = if exit_early && child_args.is_empty() {
+        (String::new(), Vec::new())
+    } else {
+        let (e, a) = child_args.split_first().ok_or_else(|| {
+            OptionError::Generic(
+                "at least one argument after -- is required (the child process path)".to_owned(),
+            )
+        })?;
+        (e.to_owned(), a.to_vec())
+    };
+
+    // Process --copy-seed
+    let copy_seed = copy_seed_raw
+        .map(|cs| {
+            if cs.len() != 2 {
+                return Err(OptionError::Generic(format!(
+                    "\"--copy-seed\" needs exactly 2 parameters, {} provided",
+                    cs.len()
+                )));
+            }
+            Ok((cs[0].to_owned(), cs[1].to_owned()))
+        })
+        .transpose()?;
+
+    // Process --write-unused-inputs
+    let write_unused_inputs = write_unused_inputs_raw
+        .map(|wu| {
+            if wu.len() != 2 {
+                return Err(OptionError::Generic(format!(
+                    "\"--write-unused-inputs\" needs exactly 2 parameters, {} provided",
+                    wu.len()
+                )));
+            }
+            Ok((wu[0].to_owned(), wu[1].to_owned()))
+        })
+        .transpose()?;
+
+    // Process --seed-prev-dir
+    let seed_prev_dir = seed_prev_dir_raw
+        .map(|sp| {
+            if sp.len() != 2 {
+                return Err(OptionError::Generic(format!(
+                    "\"--seed-prev-dir\" needs exactly 2 parameters, {} provided",
+                    sp.len()
+                )));
+            }
+            Ok((sp[0].to_owned(), sp[1].to_owned()))
+        })
+        .transpose()?;
 
     Ok(Options {
-        executable: exec_path.to_owned(),
-        child_arguments: args.to_vec(),
+        executable: exec_path,
+        child_arguments: args,
         child_environment: vars,
         touch_file,
         copy_output,
@@ -229,6 +338,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         output_file,
         rustc_quit_on_rmeta,
         rustc_output_format,
+        copy_seed,
+        write_unused_inputs,
+        seed_prev_dir,
+        seed_min_mb,
+        exit_early,
     })
 }
 

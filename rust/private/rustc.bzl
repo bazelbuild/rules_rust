@@ -883,6 +883,27 @@ def _will_emit_object_file(emit):
 def _remove_codegen_units(flag):
     return None if flag.startswith("-Ccodegen-units") else flag
 
+def _should_enable_incremental(ctx):
+    """Check if incremental should be enabled (workspace targets only, not opt).
+
+    Args:
+        ctx (ctx): The rule's context object.
+
+    Returns:
+        bool: True if incremental compilation should be enabled.
+    """
+    if is_exec_configuration(ctx):  # proc-macros, build scripts
+        return False
+    if not hasattr(ctx.attr, "_incremental"):
+        return False
+    if not ctx.attr._incremental[BuildSettingInfo].value:
+        return False
+    if ctx.var["COMPILATION_MODE"] == "opt":
+        return False
+    if ctx.label.workspace_root:
+        return False  # External deps only; workspace targets have empty root
+    return True
+
 def construct_arguments(
         *,
         ctx,
@@ -912,7 +933,8 @@ def construct_arguments(
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
-        error_format = None):
+        error_format = None,
+        incremental = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -946,6 +968,7 @@ def construct_arguments(
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
+        incremental (File, optional): Tree artifact for incremental compilation cache. If set, adds -Cincremental=<path> to rustc flags.
 
     Returns:
         tuple: A tuple of the following items
@@ -1072,6 +1095,13 @@ def construct_arguments(
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
     rustc_flags.add(compilation_mode.debug_info, format = "--codegen=debuginfo=%s")
     rustc_flags.add(compilation_mode.strip_level, format = "--codegen=strip=%s")
+
+    # Incremental compilation via tree artifact. Both main and metadata
+    # actions MUST use -Cincremental (SVH encodes incremental-specific
+    # options beyond codegen-units). Bazel creates tree artifact dirs
+    # automatically before the action runs.
+    if incremental:
+        rustc_flags.add_all([incremental], format_each = "-Cincremental=%s", expand_directories = False)
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
@@ -1234,6 +1264,7 @@ def construct_arguments(
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
         all = [process_wrapper_flags, rustc_path, rustc_flags],
+        incremental_enabled = incremental != None,
     )
 
     return args, env
@@ -1401,12 +1432,52 @@ def rustc_compile_action(
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
 
+    # Declare tree artifact outputs for incremental compilation cache.
+    # Making the incremental state a Bazel-managed tree artifact means:
+    #   1. The path is identical on local and remote workers
+    #   2. Bazel distributes the cache via CAS for consistent state
+    #   3. Sandboxing and remote execution work normally
+    # Both main and metadata actions need -Cincremental for matching SVH, but use
+    # SEPARATE tree artifacts so --rustc-quit-on-rmeta doesn't corrupt the main cache.
+    incr_enabled = _should_enable_incremental(ctx)
+    incr_tree = None
+    incr_metadata_tree = None
+    incr_seed = None
+    incr_unused_inputs = None
+    seed_threshold_mb = 20
+    if incr_enabled:
+        safe_name = ctx.label.name.replace("::", "__").replace("/", "_")
+        incr_tree = ctx.actions.declare_directory(safe_name + "-incr", sibling = crate_info.output)
+        if build_metadata:
+            incr_metadata_tree = ctx.actions.declare_directory(safe_name + "-incr-metadata", sibling = crate_info.output)
+
+        # Seed action: copy previous build's incr state into a tree artifact
+        # using process_wrapper (with parallel hardlinks and size threshold).
+        incr_seed = ctx.actions.declare_directory(safe_name + "-incr-seed", sibling = crate_info.output)
+        incr_unused_inputs = ctx.actions.declare_file(safe_name + "-incr-unused-inputs.txt", sibling = crate_info.output)
+        prev_incr_dir = "{}/{}/{}-incr".format(ctx.bin_dir.path, ctx.label.package, safe_name)
+        seed_threshold_mb = ctx.attr._incremental_seed_threshold_mb[BuildSettingInfo].value
+        seed_pw_args = ctx.actions.args()
+        seed_pw_args.add("--seed-prev-dir", prev_incr_dir)
+        seed_pw_args.add(incr_seed.path)
+        seed_pw_args.add("--seed-min-mb", str(seed_threshold_mb))
+        seed_pw_args.add("--exit-early", "true")
+        ctx.actions.run(
+            executable = ctx.executable._process_wrapper,
+            inputs = crate_info.srcs,
+            outputs = [incr_seed],
+            arguments = [seed_pw_args],
+            execution_requirements = {"no-cache": "1", "no-remote": "1", "no-sandbox": "1"},
+            mnemonic = "RustcIncrSeed",
+            progress_message = "Capturing incremental seed for {}".format(ctx.label.name),
+        )
+
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rustc.path,
+        tool_path = toolchain.system_rustc_path if toolchain.system_rustc_path else toolchain.rustc.path,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1424,6 +1495,7 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
+        incremental = incr_tree,
     )
 
     args_metadata = None
@@ -1433,7 +1505,7 @@ def rustc_compile_action(
             attr = attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool_path = toolchain.system_rustc_path if toolchain.system_rustc_path else toolchain.rustc.path,
             cc_toolchain = cc_toolchain,
             emit = emit,
             feature_configuration = feature_configuration,
@@ -1451,6 +1523,7 @@ def rustc_compile_action(
             use_json_output = True,
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
+            incremental = incr_metadata_tree,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -1491,6 +1564,10 @@ def rustc_compile_action(
     action_outputs = list(outputs)
     if rustc_output:
         action_outputs.append(rustc_output)
+    if incr_tree:
+        action_outputs.append(incr_tree)
+    if incr_unused_inputs:
+        action_outputs.append(incr_unused_inputs)
 
     # Get the compilation mode for the current target.
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
@@ -1507,16 +1584,33 @@ def rustc_compile_action(
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
+    # Use RustcLink mnemonic for crate types that involve linking (bin, cdylib, dylib, proc-macro).
+    # This allows different execution strategies for compilation vs linking.
+    is_link_action = crate_info.type in ("bin", "cdylib", "dylib", "proc-macro")
+    action_mnemonic = "RustcLink" if is_link_action else "Rustc"
+
     if ctx.executable._process_wrapper:
-        # Run as normal
+        main_inputs = compile_inputs
+        main_arguments = args.all
+        main_unused_inputs_list = None
+        if incr_seed:
+            main_inputs = depset([incr_seed], transitive = [compile_inputs])
+            seed_args = ctx.actions.args()
+            seed_args.add_all("--copy-seed", [incr_seed, incr_tree], expand_directories = False)
+            seed_args.add("--seed-min-mb", str(seed_threshold_mb))
+            seed_args.add_all("--write-unused-inputs", [incr_unused_inputs, incr_seed], expand_directories = False)
+            main_arguments = [seed_args] + args.all
+            main_unused_inputs_list = incr_unused_inputs
+
         ctx.actions.run(
             executable = ctx.executable._process_wrapper,
-            inputs = compile_inputs,
+            inputs = main_inputs,
             outputs = action_outputs,
             env = env,
-            arguments = args.all,
-            mnemonic = "Rustc",
-            progress_message = "Compiling Rust {} {}{} ({} file{})".format(
+            arguments = main_arguments,
+            mnemonic = action_mnemonic,
+            progress_message = "{} Rust {} {}{} ({} file{})".format(
+                "Linking" if is_link_action else "Compiling",
                 crate_info.type,
                 ctx.label.name,
                 formatted_version,
@@ -1525,12 +1619,18 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            unused_inputs_list = main_unused_inputs_list,
         )
         if args_metadata:
+            metadata_outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x]
+
+            if incr_metadata_tree:
+                metadata_outputs.append(incr_metadata_tree)
+
             ctx.actions.run(
                 executable = ctx.executable._process_wrapper,
                 inputs = compile_inputs,
-                outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
+                outputs = metadata_outputs,
                 env = env,
                 arguments = args_metadata.all,
                 mnemonic = "RustcMetadata",
