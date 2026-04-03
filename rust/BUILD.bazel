@@ -9,14 +9,17 @@ exports_files([
     "toolchain.bzl",
 ])
 
-toolchain_type(
+alias(
     name = "toolchain_type",
+    actual = "@rust_toolchains//rustc:toolchain_type",
+    deprecation = "instead use `@rust_toolchains//rustc:toolchain_type`",
+    tags = ["manual"],
 )
 
 alias(
     name = "toolchain",
     actual = "toolchain_type",
-    deprecation = "instead use `@rules_rust//rust:toolchain_type`",
+    deprecation = "instead use `@rust_toolchains//rustc:toolchain_type`",
     tags = ["manual"],
 )
 
