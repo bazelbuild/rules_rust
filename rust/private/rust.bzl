@@ -59,6 +59,14 @@ load(
 
 # TODO(marco): Separate each rule into its own file.
 
+def _toolchain_make_variables(ctx):
+    make_variables = {}
+    for toolchain_target in getattr(ctx.attr, "toolchains", []):
+        if platform_common.TemplateVariableInfo in toolchain_target:
+            variables = getattr(toolchain_target[platform_common.TemplateVariableInfo], "variables", {})
+            make_variables.update(variables)
+    return make_variables
+
 def _assert_no_deprecated_attributes(_ctx):
     """Forces a failure if any deprecated attributes were specified
 
@@ -285,7 +293,7 @@ def _rust_binary_impl(ctx):
             ctx,
             ctx.attr.env,
             ctx.attr.data,
-            {},
+            _toolchain_make_variables(ctx),
         ),
     ))
 
@@ -472,7 +480,7 @@ def _rust_test_impl(ctx):
         ctx,
         getattr(ctx.attr, "env", {}),
         data,
-        {},
+        _toolchain_make_variables(ctx),
     )
     if toolchain.coverage_supported and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
