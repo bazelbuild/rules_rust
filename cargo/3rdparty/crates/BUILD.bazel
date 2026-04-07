@@ -44,14 +44,14 @@ alias(
 )
 
 alias(
-    name = "cargo_toml-0.20.5",
-    actual = "@rrc__cargo_toml-0.20.5//:cargo_toml",
+    name = "cargo_toml-0.22.3",
+    actual = "@rrc__cargo_toml-0.22.3//:cargo_toml",
     tags = ["manual"],
 )
 
 alias(
     name = "cargo_toml",
-    actual = "@rrc__cargo_toml-0.20.5//:cargo_toml",
+    actual = "@rrc__cargo_toml-0.22.3//:cargo_toml",
     tags = ["manual"],
 )
 

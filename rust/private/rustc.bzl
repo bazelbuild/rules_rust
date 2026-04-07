@@ -541,7 +541,7 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
-def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
+def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
     Args:
@@ -560,9 +560,9 @@ def _symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
 
     # Take the absolute value of hash() since it could be negative.
     path_hash = abs(hash(lib.path))
-    lib_name = get_lib_name_for_windows(lib) if toolchain.target_os.startswith("windows") else get_lib_name_default(lib)
+    lib_name = get_lib_name_for_windows(lib) if toolchain.target_abi == "msvc" else get_lib_name_default(lib)
 
-    if toolchain.target_os.startswith("windows"):
+    if toolchain.target_abi == "msvc":
         prefix = ""
         extension = ".lib"
     elif lib_name.endswith(".pic"):
@@ -657,8 +657,8 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
                 if name in visited_libs:
                     old_path = visited_libs[name].path
                     if old_path not in ambiguous_libs:
-                        ambiguous_libs[old_path] = _symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
-                ambiguous_libs[artifact.path] = _symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
+                        ambiguous_libs[old_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
+                ambiguous_libs[artifact.path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
 
             visited_libs[name] = artifact
     return ambiguous_libs
@@ -858,6 +858,7 @@ def collect_inputs(
         build_info = build_info,
         dep_info = dep_info,
         include_link_flags = include_link_flags,
+        include_transitive_data = not toolchain._incompatible_do_not_include_transitive_data_in_compile_inputs,
     )
 
     # TODO(parkmycar): Cleanup the handling of lint_files here.
@@ -1499,7 +1500,7 @@ def rustc_compile_action(
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
-        if toolchain.target_os == "windows" and compilation_mode.strip_level == "none":
+        if toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
         elif toolchain.target_os in ["macos", "darwin"]:
@@ -1642,6 +1643,7 @@ def rustc_compile_action(
             compilation_outputs = compilation_outputs,
             name = output_relative_to_package,
             stamp = ctx.attr.stamp,
+            main_output = crate_info.output,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
             additional_outputs = additional_linker_outputs,
         )
@@ -1994,13 +1996,15 @@ def add_edition_flags(args, crate):
 def _process_build_scripts(
         build_info,
         dep_info,
-        include_link_flags = True):
+        include_link_flags = True,
+        include_transitive_data = False):
     """Gathers the outputs from a target's `cargo_build_script` action.
 
     Args:
         build_info (BuildInfo): The target Build's dependency info.
         dep_info (DepInfo): The Depinfo provider form the target Crate's set of inputs.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
+        include_transitive_data (bool, optional): Whether to include transitive data dependencies in compile inputs.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -2010,7 +2014,9 @@ def _process_build_scripts(
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
     direct_inputs = []
-    transitive_inputs = [dep_info.link_search_path_files, dep_info.transitive_data]
+    transitive_inputs = [dep_info.link_search_path_files]
+    if include_transitive_data:
+        transitive_inputs.append(dep_info.transitive_data)
 
     # Arguments to the commandline line wrapper that are going to be used
     # to create the final command line
@@ -2037,6 +2043,7 @@ def _process_build_scripts(
     for dep_build_info in dep_info.transitive_build_infos.to_list():
         if dep_build_info.out_dir:
             direct_inputs.append(dep_build_info.out_dir)
+        transitive_inputs.append(dep_build_info.compile_data)
 
     out_dir_compile_inputs = depset(
         direct_inputs,
@@ -2198,7 +2205,26 @@ def _get_crate_dirname(crate):
     """
     return crate.output.dirname
 
-def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = False, for_darwin = False, flavor_msvc = False):
+def portable_link_flags(
+        lib,
+        use_pic,
+        ambiguous_libs,
+        get_lib_name,
+        for_darwin = False,
+        flavor_msvc = False):
+    """_summary_
+
+    Args:
+        lib (_type_): _description_
+        use_pic (_type_): _description_
+        ambiguous_libs (_type_): _description_
+        get_lib_name (_type_): _description_
+        for_darwin (bool, optional): _description_. Defaults to False.
+        flavor_msvc (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
     artifact = get_preferred_artifact(lib, use_pic)
     if ambiguous_libs and artifact.path in ambiguous_libs:
         artifact = ambiguous_libs[artifact.path]
@@ -2238,17 +2264,11 @@ def _portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows
         ):
             return [] if for_darwin else ["-lstatic=%s" % get_lib_name(artifact)]
 
-        if for_windows:
-            if flavor_msvc:
-                return [
-                    "-lstatic=%s" % get_lib_name(artifact),
-                    "-Clink-arg={}".format(artifact.basename),
-                ]
-            else:
-                return [
-                    "-lstatic=%s" % get_lib_name(artifact),
-                    "-Clink-arg=-l{}".format(artifact.basename),
-                ]
+        if flavor_msvc:
+            return [
+                "-lstatic=%s" % get_lib_name(artifact),
+                "-Clink-arg={}".format(artifact.basename),
+            ]
         else:
             return [
                 "-lstatic=%s" % get_lib_name(artifact),
@@ -2279,8 +2299,15 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
                     ("-Clink-arg=%s--no-whole-archive" % prefix),
                 ])
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_for_windows, for_windows = True, flavor_msvc = flavor_msvc))
-    _add_user_link_flags(ret, linker_input)
+            get_lib_name = get_lib_name_for_windows if flavor_msvc else get_lib_name_default
+            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, flavor_msvc = flavor_msvc))
+
+    # Windows toolchains can inherit POSIX defaults like -pthread from C deps,
+    # which fails to link with the MinGW/LLD toolchain. Drop them here.
+    for flag in linker_input.user_link_flags:
+        if flag in ("-pthread", "-lpthread"):
+            continue
+        ret.append("--codegen=link-arg={}".format(flag))
     return ret
 
 def _make_link_flags_windows_msvc(make_link_flags_args, use_direct_driver):
@@ -2300,7 +2327,7 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
                 ("-Clink-arg=%s%s" % (prefix, get_preferred_artifact(lib, use_pic).path)),
             ])
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
+            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
     return ret
 
@@ -2316,7 +2343,7 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
                 ("-Clink-arg=%s--no-whole-archive" % prefix),
             ])
         elif include_link_flags:
-            ret.extend(_portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
+            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
     _add_user_link_flags(ret, linker_input)
     return ret
 
@@ -2359,19 +2386,18 @@ def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
             - callable: The function for producing link args.
             - callable: The function for formatting link library names.
     """
+    get_lib_name = get_lib_name_default
+
     if target_os == "windows":
-        make_link_flags_windows_msvc = _make_link_flags_windows_msvc_direct if use_direct_link_driver else _make_link_flags_windows_msvc_indirect
-        make_link_flags_windows_gnu = _make_link_flags_windows_gnu_direct if use_direct_link_driver else _make_link_flags_windows_gnu_indirect
-        make_link_flags = make_link_flags_windows_msvc if target_abi == "msvc" else make_link_flags_windows_gnu
-        get_lib_name = get_lib_name_for_windows
+        if target_abi == "msvc":
+            make_link_flags = _make_link_flags_windows_msvc_direct if use_direct_link_driver else _make_link_flags_windows_msvc_indirect
+            get_lib_name = get_lib_name_for_windows
+        else:
+            make_link_flags = _make_link_flags_windows_gnu_direct if use_direct_link_driver else _make_link_flags_windows_gnu_indirect
     elif target_os.startswith(("mac", "darwin", "ios")):
-        make_link_flags_darwin = _make_link_flags_darwin_direct if use_direct_link_driver else _make_link_flags_darwin_indirect
-        make_link_flags = make_link_flags_darwin
-        get_lib_name = get_lib_name_default
+        make_link_flags = _make_link_flags_darwin_direct if use_direct_link_driver else _make_link_flags_darwin_indirect
     else:
-        make_link_flags_default = _make_link_flags_default_direct if use_direct_link_driver else _make_link_flags_default_indirect
-        make_link_flags = make_link_flags_default
-        get_lib_name = get_lib_name_default
+        make_link_flags = _make_link_flags_default_direct if use_direct_link_driver else _make_link_flags_default_indirect
 
     return (make_link_flags, get_lib_name)
 

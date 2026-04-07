@@ -40,6 +40,14 @@ def triple(triple):
             abi = None,
             str = triple,
         )
+    elif triple == "avr-none":
+        return struct(
+            arch = "avr",
+            vendor = None,
+            system = "none",
+            abi = None,
+            str = triple,
+        )
     elif triple in ("aarch64-fuchsia", "x86_64-fuchsia"):
         return struct(
             arch = triple.split("-")[0],
