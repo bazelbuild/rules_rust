@@ -1,0 +1,15 @@
+load("//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "artifact_test",
+    srcs = ["main.rs"],
+    edition = "2018",
+)
+
+genrule(
+    name = "artifact_test_binary_contains_sentinel",
+    srcs = [":artifact_test"],
+    outs = ["artifact_test_binary_contains_sentinel.txt"],
+    testonly = True,
+    cmd = "strings $(location :artifact_test) | grep ARTIFACT_SENTINEL > $@",
+)

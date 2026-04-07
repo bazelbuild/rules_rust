@@ -33,7 +33,9 @@ load(
     ":rustc.bzl",
     "collect_extra_rustc_flags",
     "is_no_std",
+    "replace_rustc_default_info",
     "rustc_compile_action",
+    "rustc_default_info",
 )
 load(
     ":utils.bzl",
@@ -98,6 +100,88 @@ def _assert_correct_dep_mapping(ctx):
                         type,
                     ),
                 )
+
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
+
+_TEST_SHARDING_LAUNCHER_DIR = "_test_sharding_launcher"
+
+def _declare_public_test_runfiles_aliases(ctx, launcher, output):
+    launcher_basename = launcher.basename
+    aliases = [
+        (
+            ctx.actions.declare_symlink(output.basename + ".runfiles", sibling = output),
+            paths.join(_TEST_SHARDING_LAUNCHER_DIR, launcher_basename + ".runfiles"),
+            "directory",
+        ),
+        (
+            ctx.actions.declare_symlink(output.basename + ".runfiles_manifest", sibling = output),
+            paths.join(_TEST_SHARDING_LAUNCHER_DIR, launcher_basename + ".runfiles_manifest"),
+            "file",
+        ),
+        (
+            ctx.actions.declare_symlink(output.basename + ".repo_mapping", sibling = output),
+            paths.join(_TEST_SHARDING_LAUNCHER_DIR, launcher_basename + ".repo_mapping"),
+            "file",
+        ),
+    ]
+
+    for alias, target_path, target_type in aliases:
+        ctx.actions.symlink(
+            output = alias,
+            target_path = target_path,
+            target_type = target_type,
+        )
+
+    return [alias for alias, _, _ in aliases]
+
+def _wrap_rust_test_executable(ctx, providers, launcher, output):
+    if not ctx.attr.use_libtest_harness:
+        return providers, {}
+
+    # Bazel can force sharding at execution time, so every libtest-backed
+    # rust_test target needs the launcher, not only targets with shard_count.
+    default_info = rustc_default_info(providers)
+
+    # Keep the public test artifact at the target-derived path while Bazel
+    # executes a hidden launcher artifact under bazel test.
+    ctx.actions.symlink(
+        output = launcher,
+        target_file = ctx.executable._test_sharding_launcher,
+        is_executable = True,
+    )
+
+    public_runfiles_aliases = _declare_public_test_runfiles_aliases(ctx, launcher, output)
+
+    runfiles = ctx.runfiles(files = [output, launcher] + public_runfiles_aliases)
+    if default_info.default_runfiles != None:
+        runfiles = runfiles.merge(default_info.default_runfiles)
+    runfiles = runfiles.merge(ctx.attr._test_sharding_launcher[DefaultInfo].default_runfiles)
+
+    default_info = DefaultInfo(
+        files = depset([output]),
+        runfiles = runfiles,
+        executable = launcher,
+    )
+
+    workspace = ctx.label.workspace_name or ctx.workspace_name
+    env = {
+        "RULES_RUST_TEST_BINARY_EXEC_PATH": output.path,
+        "RULES_RUST_TEST_BINARY_RLOCATIONPATH": _rlocationpath(output, workspace),
+        "RULES_RUST_TEST_BINARY_RUNFILES_PATH": output.short_path,
+        "RULES_RUST_TEST_BINARY_SOURCE_REPOSITORY": workspace,
+        # Bazel still overwrites TEST_BINARY during bazel test, but preserving
+        # the public path in RunEnvironmentInfo keeps bazel run and any
+        # launcher-driven child process aligned with the stable target path.
+        "TEST_BINARY": output.short_path,
+    }
+
+    providers = replace_rustc_default_info(providers, default_info)
+
+    return providers, env
 
 def _rust_library_impl(ctx):
     """The implementation of the `rust_library` rule.
@@ -356,6 +440,13 @@ def _rust_test_impl(ctx):
     crate_type = "bin"
     deps = transform_deps(ctx.attr.deps)
     proc_macro_deps = transform_deps(ctx.attr.proc_macro_deps + get_import_macro_deps(ctx))
+    output = ctx.actions.declare_file(ctx.label.name + toolchain.binary_ext)
+    launcher = None
+    if ctx.attr.use_libtest_harness:
+        launcher = ctx.actions.declare_file(paths.join(
+            _TEST_SHARDING_LAUNCHER_DIR,
+            ctx.label.name + toolchain.binary_ext,
+        ))
 
     if ctx.attr.crate and ctx.attr.srcs:
         fail("rust_test.crate and rust_test.srcs are mutually exclusive. Update {} to use only one of these attributes".format(
@@ -373,10 +464,6 @@ def _rust_test_impl(ctx):
 
         crate_name = crate.name
         output_hash = determine_output_hash(crate.root, ctx.label)
-        output = ctx.actions.declare_file(
-            ctx.label.name + toolchain.binary_ext,
-        )
-
         rust_metadata = None
         rustc_rmeta_output = None
         if can_build_metadata(toolchain, ctx, crate_type):
@@ -443,10 +530,6 @@ def _rust_test_impl(ctx):
         srcs, compile_data, crate_root = transform_sources(ctx, ctx.files.srcs, ctx.files.compile_data, crate_root)
 
         output_hash = determine_output_hash(crate_root, ctx.label)
-        output = ctx.actions.declare_file(
-            ctx.label.name + toolchain.binary_ext,
-        )
-
         rust_metadata = None
         rustc_rmeta_output = None
         if can_build_metadata(toolchain, ctx, crate_type):
@@ -498,6 +581,7 @@ def _rust_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
+    providers, sharding_env = _wrap_rust_test_executable(ctx, providers, launcher, output)
     data = getattr(ctx.attr, "data", [])
 
     env = expand_dict_value_locations(
@@ -506,6 +590,7 @@ def _rust_test_impl(ctx):
         data,
         {},
     )
+    env.update(sharding_env)
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
@@ -913,6 +998,12 @@ _RUST_TEST_ATTRS = {
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
+    ),
+    "_test_sharding_launcher": attr.label(
+        cfg = "exec",
+        default = Label("//rust/private/test_sharding:launcher"),
+        executable = True,
+        doc = "Internal launcher used to shard libtest-based rust_test targets.",
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 

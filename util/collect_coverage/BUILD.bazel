@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
 
 rust_binary(
     name = "collect_coverage",
@@ -14,4 +14,10 @@ rust_binary(
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "collect_coverage_test",
+    srcs = ["collect_coverage.rs"],
+    edition = "2018",
 )

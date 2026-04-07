@@ -27,6 +27,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 
+const TEST_BINARY_EXEC_PATH_ENV: &str = "RULES_RUST_TEST_BINARY_EXEC_PATH";
+
 macro_rules! debug_log {
     ($($arg:tt)*) => {
         if env::var("VERBOSE_COVERAGE").is_ok() {
@@ -87,6 +89,24 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
     }
 }
 
+fn find_test_binary_from_exec_path(execroot: &Path) -> Option<PathBuf> {
+    let test_binary = env::var_os(TEST_BINARY_EXEC_PATH_ENV)?;
+    let test_binary = PathBuf::from(test_binary);
+    let test_binary = if test_binary.is_absolute() {
+        test_binary
+    } else {
+        execroot.join(test_binary)
+    };
+
+    debug_log!(
+        "Resolved {} to {}",
+        TEST_BINARY_EXEC_PATH_ENV,
+        test_binary.display()
+    );
+
+    Some(test_binary)
+}
+
 /// Derive the Bazel output configuration bin directory from `COVERAGE_DIR`.
 ///
 /// `COVERAGE_DIR` follows the stable convention `bazel-out/<config>/testlogs/...`.
@@ -106,8 +126,31 @@ fn config_bin_dir(execroot: &Path, coverage_dir: &Path) -> PathBuf {
         .join("bin")
 }
 
+fn resolve_test_binary(
+    execroot: &Path,
+    runfiles_dir: Option<&Path>,
+    coverage_dir: &Path,
+) -> PathBuf {
+    if let Some(test_binary) = find_test_binary_from_exec_path(execroot) {
+        return test_binary;
+    }
+
+    match runfiles_dir {
+        Some(runfiles_dir) => find_test_binary(execroot, runfiles_dir),
+        None => {
+            let bin_dir = config_bin_dir(execroot, coverage_dir);
+            let test_binary = execroot
+                .join(bin_dir)
+                .join(env::var("TEST_BINARY").unwrap());
+            debug_log!("Resolved TEST_BINARY to: {}", test_binary.display());
+            test_binary
+        }
+    }
+}
+
 fn main() {
     let coverage_dir = PathBuf::from(env::var("COVERAGE_DIR").unwrap());
+    let coverage_output_file = PathBuf::from(env::var("COVERAGE_OUTPUT_FILE").unwrap());
     let execroot = PathBuf::from(env::var("ROOT").unwrap());
 
     // RUNFILES_DIR is explicitly removed by Bazel in split coverage
@@ -129,7 +172,6 @@ fn main() {
         None => debug_log!("RUNFILES_DIR: not set (split coverage postprocessing)"),
     }
 
-    let coverage_output_file = coverage_dir.join("coverage.dat");
     let profdata_file = coverage_dir.join("coverage.profdata");
     let llvm_cov_path = env::var("RUST_LLVM_COV").unwrap();
     let llvm_profdata_path = env::var("RUST_LLVM_PROFDATA").unwrap();
@@ -141,17 +183,7 @@ fn main() {
         Some(ref rd) => find_metadata_file(&execroot, rd, &llvm_profdata_path),
         None => execroot.join(&llvm_profdata_path),
     };
-    let test_binary = match runfiles_dir {
-        Some(ref rd) => find_test_binary(&execroot, rd),
-        None => {
-            let bin_dir = config_bin_dir(&execroot, &coverage_dir);
-            let test_binary = execroot
-                .join(bin_dir)
-                .join(env::var("TEST_BINARY").unwrap());
-            debug_log!("Resolved TEST_BINARY to: {}", test_binary.display());
-            test_binary
-        }
-    };
+    let test_binary = resolve_test_binary(&execroot, runfiles_dir.as_deref(), &coverage_dir);
     let profraw_files: Vec<PathBuf> = fs::read_dir(coverage_dir)
         .unwrap()
         .flatten()
@@ -233,4 +265,62 @@ fn main() {
     fs::remove_file(profdata_file).unwrap();
 
     debug_log!("Success!");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{resolve_test_binary, TEST_BINARY_EXEC_PATH_ENV};
+    use std::env;
+    use std::ffi::OsString;
+    use std::path::{Path, PathBuf};
+
+    struct EnvGuard {
+        key: &'static str,
+        previous: Option<OsString>,
+    }
+
+    impl EnvGuard {
+        fn set(key: &'static str, value: Option<&str>) -> Self {
+            let previous = env::var_os(key);
+            match value {
+                Some(value) => env::set_var(key, value),
+                None => env::remove_var(key),
+            }
+            EnvGuard { key, previous }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => env::set_var(self.key, value),
+                None => env::remove_var(self.key),
+            }
+        }
+    }
+
+    #[test]
+    fn exec_path_overrides_test_binary_resolution() {
+        let _exec_path_guard = EnvGuard::set(
+            TEST_BINARY_EXEC_PATH_ENV,
+            Some("bazel-out/dbg-fastbuild/bin/test/unit/test_sharding/sharded_test"),
+        );
+        let _test_binary_guard =
+            EnvGuard::set("TEST_BINARY", Some("test/unit/test_sharding/sharded_test"));
+
+        let resolved = resolve_test_binary(
+            Path::new("/execroot/rules_rust"),
+            Some(Path::new("/execroot/rules_rust/runfiles")),
+            Path::new(
+                "/execroot/rules_rust/bazel-out/dbg-fastbuild/testlogs/test/unit/test_sharding",
+            ),
+        );
+
+        assert_eq!(
+            resolved,
+            PathBuf::from(
+                "/execroot/rules_rust/bazel-out/dbg-fastbuild/bin/test/unit/test_sharding/sharded_test"
+            ),
+        );
+    }
 }

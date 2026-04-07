@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_test")
+
+rust_test(
+    name = "sharded_test",
+    srcs = ["main.rs"],
+    edition = "2018",
+    shard_count = 3,
+)
+
+rust_test(
+    name = "forced_sharding_test",
+    srcs = ["main.rs"],
+    edition = "2018",
+)

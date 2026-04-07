@@ -205,11 +205,29 @@ impl Runfiles {
                 Self::create_manifest_based(Path::new(&manifest_file))?
             }
             _ => {
-                let dir = find_runfiles_dir()?;
-                let manifest_path = dir.join("MANIFEST");
-                match manifest_path.exists() {
-                    true => Self::create_manifest_based(&manifest_path)?,
-                    false => Mode::DirectoryBased(dir),
+                let has_runfiles_env = std::env::var_os(RUNFILES_DIR_ENV_VAR).is_some()
+                    || std::env::var_os(TEST_SRCDIR_ENV_VAR).is_some();
+
+                if has_runfiles_env {
+                    let dir = find_runfiles_dir()?;
+                    let manifest_path = dir.join("MANIFEST");
+                    match manifest_path.exists() {
+                        true => Self::create_manifest_based(&manifest_path)?,
+                        false => Mode::DirectoryBased(dir),
+                    }
+                } else {
+                    match find_runfiles_manifest() {
+                        Ok(manifest_path) => Self::create_manifest_based(&manifest_path)?,
+                        Err(RunfilesError::RunfilesDirNotFound) => {
+                            let dir = find_runfiles_dir()?;
+                            let manifest_path = dir.join("MANIFEST");
+                            match manifest_path.exists() {
+                                true => Self::create_manifest_based(&manifest_path)?,
+                                false => Mode::DirectoryBased(dir),
+                            }
+                        }
+                        Err(err) => return Err(err),
+                    }
                 }
             }
         };
@@ -421,6 +439,70 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
     }
 
     Err(RunfilesError::RunfilesDirNotFound)
+}
+
+fn find_runfiles_manifest() -> Result<PathBuf> {
+    if let Some(value) = std::env::var_os(MANIFEST_FILE_ENV_VAR) {
+        assert!(
+            value.is_empty(),
+            "Unexpected call when {} exists",
+            MANIFEST_FILE_ENV_VAR
+        );
+    }
+
+    let exec_path = std::env::args().next().expect("arg 0 was not set");
+    let current_dir =
+        env::current_dir().expect("The current working directory is always expected to be set.");
+
+    find_runfiles_manifest_for_binary_path(
+        if Path::new(&exec_path).is_absolute() {
+            PathBuf::from(exec_path)
+        } else {
+            current_dir.join(exec_path)
+        },
+        current_dir,
+    )
+}
+
+fn find_runfiles_manifest_for_binary_path(
+    mut binary_path: PathBuf,
+    current_dir: PathBuf,
+) -> Result<PathBuf> {
+    loop {
+        let manifest_path = manifest_path_for_binary(&binary_path)?;
+        if manifest_path.is_file() {
+            return Ok(manifest_path);
+        }
+
+        if !fs::symlink_metadata(&binary_path)
+            .map_err(RunfilesError::RunfilesDirIoError)?
+            .file_type()
+            .is_symlink()
+        {
+            break;
+        }
+
+        let link_target = binary_path
+            .read_link()
+            .map_err(RunfilesError::RunfilesDirIoError)?;
+        binary_path = if link_target.is_absolute() {
+            link_target
+        } else {
+            let link_dir = binary_path.parent().unwrap();
+            current_dir.join(link_dir).join(link_target)
+        };
+    }
+
+    Err(RunfilesError::RunfilesDirNotFound)
+}
+
+fn manifest_path_for_binary(binary_path: &Path) -> Result<PathBuf> {
+    let binary_name = binary_path
+        .file_name()
+        .ok_or(RunfilesError::RunfilesDirNotFound)?;
+    let mut manifest_name = binary_name.to_os_string();
+    manifest_name.push(".runfiles_manifest");
+    Ok(binary_path.with_file_name(manifest_name))
 }
 
 #[cfg(test)]
@@ -648,6 +730,35 @@ mod test {
                 assert_eq!("Example Text!", buffer);
             },
         );
+    }
+
+    #[test]
+    fn test_manifest_path_for_binary() {
+        assert_eq!(
+            manifest_path_for_binary(Path::new("/tmp/example/bin")).unwrap(),
+            PathBuf::from("/tmp/example/bin.runfiles_manifest"),
+        );
+    }
+
+    #[test]
+    fn test_find_runfiles_manifest_for_binary_path() {
+        let temp_dir = PathBuf::from(std::env::var("TEST_TMPDIR").unwrap())
+            .join("test_find_runfiles_manifest_for_binary_path");
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let binary = temp_dir.join("example_test");
+        let manifest = temp_dir.join("example_test.runfiles_manifest");
+        std::fs::write(&binary, b"#!/bin/sh\n").unwrap();
+        std::fs::write(&manifest, b"rules_rust /tmp/rules_rust\n").unwrap();
+
+        assert_eq!(
+            find_runfiles_manifest_for_binary_path(binary.clone(), temp_dir.clone()).unwrap(),
+            manifest,
+        );
+
+        std::fs::remove_file(binary).unwrap();
+        std::fs::remove_file(manifest).unwrap();
+        std::fs::remove_dir_all(temp_dir).unwrap();
     }
 
     #[test]
