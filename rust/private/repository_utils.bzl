@@ -368,6 +368,7 @@ rust_toolchain(
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
     opt_level = {opt_level},
     strip_level = {strip_level},
+    version = "{version}",
     tags = ["rust_version={version}"],
 )
 """
