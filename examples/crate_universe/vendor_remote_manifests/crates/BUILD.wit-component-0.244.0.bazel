@@ -104,7 +104,7 @@ rust_library(
     deps = [
         "@cvm__anyhow-1.0.102//:anyhow",
         "@cvm__bitflags-2.11.0//:bitflags",
-        "@cvm__indexmap-2.13.0//:indexmap",
+        "@cvm__indexmap-2.13.1//:indexmap",
         "@cvm__log-0.4.29//:log",
         "@cvm__serde-1.0.228//:serde",
         "@cvm__serde_json-1.0.149//:serde_json",

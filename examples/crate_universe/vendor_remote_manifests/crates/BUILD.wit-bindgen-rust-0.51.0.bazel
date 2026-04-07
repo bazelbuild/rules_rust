@@ -105,7 +105,7 @@ rust_library(
     deps = [
         "@cvm__anyhow-1.0.102//:anyhow",
         "@cvm__heck-0.5.0//:heck",
-        "@cvm__indexmap-2.13.0//:indexmap",
+        "@cvm__indexmap-2.13.1//:indexmap",
         "@cvm__prettyplease-0.2.37//:prettyplease",
         "@cvm__syn-2.0.117//:syn",
         "@cvm__wasm-metadata-0.244.0//:wasm_metadata",

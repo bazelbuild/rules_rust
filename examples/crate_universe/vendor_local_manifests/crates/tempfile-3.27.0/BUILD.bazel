@@ -103,7 +103,7 @@ rust_library(
     }),
     version = "3.27.0",
     deps = [
-        "//vendor_local_manifests/crates/fastrand-2.3.0:fastrand",
+        "//vendor_local_manifests/crates/fastrand-2.4.1:fastrand",
         "//vendor_local_manifests/crates/once_cell-1.21.4:once_cell",
     ] + select({
         "@rules_rust//rust/platform:aarch64-apple-darwin": [

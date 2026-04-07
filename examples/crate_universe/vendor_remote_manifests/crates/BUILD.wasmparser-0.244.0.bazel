@@ -109,7 +109,7 @@ rust_library(
     deps = [
         "@cvm__bitflags-2.11.0//:bitflags",
         "@cvm__hashbrown-0.15.5//:hashbrown",
-        "@cvm__indexmap-2.13.0//:indexmap",
-        "@cvm__semver-1.0.27//:semver",
+        "@cvm__indexmap-2.13.1//:indexmap",
+        "@cvm__semver-1.0.28//:semver",
     ],
 )
