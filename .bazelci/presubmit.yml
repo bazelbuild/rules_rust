@@ -17,8 +17,8 @@ aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
 min_rust_version_shell_commands: &min_rust_version_shell_commands
-  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.74.0"],\n|' WORKSPACE.bazel
-  - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.74.0"],\n|' MODULE.bazel
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.85.0"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.85.0"],\n|' MODULE.bazel
 nightly_flags: &nightly_flags
   - "--//rust/toolchain/channel=nightly"
 nightly_aspects_flags: &nightly_aspects_flags
@@ -92,6 +92,9 @@ split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_she
   - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
   - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc
   - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
+rbe_coverage_flags: &rbe_coverage_flags
+  # https://github.com/bazelbuild/bazel/issues/20578
+  - "--strategy=CoverageReport=local"
 tasks:
   ubuntu2204:
     build_targets: *default_linux_targets
@@ -106,6 +109,9 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_rbe_targets
     test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
   macos:
     platform: macos_arm64
     build_targets: *default_macos_targets
@@ -133,6 +139,9 @@ tasks:
     shell_commands: *no_bzlmod_rbe_shell_commands
     build_targets: *default_rbe_targets
     test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
   macos_no_bzlmod:
     name: No Bzlmod
     platform: macos_arm64
@@ -213,6 +222,9 @@ tasks:
     build_flags: *aspects_flags
     build_targets: *default_rbe_targets
     test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
   rbe_ubuntu2204_rolling_with_aspects:
     name: RBE Rolling Bazel Version With Aspects
     platform: rbe_ubuntu2204
@@ -221,6 +233,9 @@ tasks:
       - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
     build_targets: *default_rbe_targets
     test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
     build_flags: *aspects_flags
     soft_fail: yes
     bazel: "rolling"
@@ -1087,49 +1102,6 @@ tasks:
     platform: windows
     name: Extensions Prost
     working_directory: extensions/prost
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_linux:
-    platform: ubuntu2204
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_linux_rbe:
-    platform: rbe_ubuntu2204
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_macos:
-    platform: macos_arm64
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
-    build_flags: *aspects_flags
-    test_flags: *aspects_flags
-    build_targets:
-      - "//..."
-    test_targets:
-      - "//..."
-  extensions_protobuf_windows:
-    platform: windows
-    name: Extensions Protobuf
-    working_directory: extensions/protobuf
     build_flags: *aspects_flags
     test_flags: *aspects_flags
     build_targets:

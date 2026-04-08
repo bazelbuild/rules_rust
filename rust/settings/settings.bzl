@@ -258,16 +258,6 @@ def toolchain_generated_sysroot():
         visibility = ["//visibility:public"],
     )
 
-# buildifier: disable=unnamed-macro
-def incompatible_change_rust_test_compilation_output_directory():
-    """A flag to put rust_test compilation outputs in the same directory as the rust_library compilation outputs.
-    """
-    incompatible_flag(
-        name = "incompatible_change_rust_test_compilation_output_directory",
-        build_setting_default = False,
-        issue = "https://github.com/bazelbuild/rules_rust/issues/2827",
-    )
-
 def experimental_link_std_dylib():
     """A flag to control whether to link libstd dynamically."""
     bool_flag(
@@ -543,6 +533,15 @@ def incompatible_do_not_include_data_in_compile_data():
         name = "incompatible_do_not_include_data_in_compile_data",
         build_setting_default = True,
         issue = "https://github.com/bazelbuild/rules_rust/issues/2977",
+    )
+
+# buildifier: disable=unnamed-macro
+def incompatible_do_not_include_transitive_data_in_compile_inputs():
+    """A flag to control whether transitive data dependencies are included in compile inputs."""
+    incompatible_flag(
+        name = "incompatible_do_not_include_transitive_data_in_compile_inputs",
+        build_setting_default = True,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3915",
     )
 
 def codegen_units():

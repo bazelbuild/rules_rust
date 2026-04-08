@@ -26,8 +26,8 @@ load(
     "extra_rustc_flag",
     "extra_rustc_flags",
     "incompatible_change_clippy_error_format",
-    "incompatible_change_rust_test_compilation_output_directory",
     "incompatible_do_not_include_data_in_compile_data",
+    "incompatible_do_not_include_transitive_data_in_compile_inputs",
     "lto",
     "no_std",
     "pipelined_compilation",
@@ -110,9 +110,9 @@ extra_rustc_flags()
 
 incompatible_change_clippy_error_format()
 
-incompatible_change_rust_test_compilation_output_directory()
-
 incompatible_do_not_include_data_in_compile_data()
+
+incompatible_do_not_include_transitive_data_in_compile_inputs()
 
 lto()
 

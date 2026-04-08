@@ -150,8 +150,10 @@ def cargo_build_script(
     if "CARGO_CRATE_NAME" not in rustc_env:
         rustc_env["CARGO_CRATE_NAME"] = name_to_crate_name(name_to_pkg_name(name))
 
+    exec_compatible_with = kwargs.pop("exec_compatible_with", None)
+
     script_kwargs = {}
-    for arg in ("exec_compatible_with", "testonly"):
+    for arg in ("testonly",):
         if arg in kwargs:
             script_kwargs[arg] = kwargs[arg]
 
@@ -159,6 +161,12 @@ def cargo_build_script(
     for arg in ("compatible_with", "target_compatible_with"):
         if arg in kwargs:
             wrapper_kwargs[arg] = kwargs[arg]
+
+    # The script is always run in an `exec` configuration so whenever the
+    # `cargo_build_script` is given an `exec_compatible_with`, for this target
+    # it is translated to `target_compatible_with` to match the `cfg = "exec"`
+    # consumption of the target.
+    script_kwargs["target_compatible_with"] = exec_compatible_with
 
     binary_tags = depset(
         (tags if tags else []) + ["manual"],

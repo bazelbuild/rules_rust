@@ -144,7 +144,7 @@ For more details about repin, [please refer to the documentation](https://bazelb
 In cases where Rust targets have heavy interactions with other Bazel targets ([Cc](https://docs.bazel.build/versions/main/be/c-cpp.html), [Proto](https://rules-proto-grpc.com/en/4.5.0/lang/rust.html),
 etc.), maintaining Cargo.toml files may have diminishing returns as things like rust-analyzer
 begin to be confused about missing targets or environment variables defined only in Bazel.
-In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/hello_world_no_cargo).
+In situations like this, it may be desirable to have a "Cargo free" setup. You find an example in the in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples/hello_world_no_cargo).
 
 crates_repository supports this through the packages attribute,
 as shown below.
@@ -227,7 +227,7 @@ Only a cargo workspace needs updating whenever the underlying Cargo.toml file ch
 In some cases, it is require that all external dependencies are vendored, meaning downloaded
 and stored in the workspace. This helps, for example, to conduct licence scans, apply custom patches,
 or to ensure full build reproducibility since no download error could possibly occur.
-You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/examples/bzlmod/all_deps_vendor).
+You find a complete example in the in the [example folder](https://github.com/bazelbuild/rules_rust/tree/main/examples/all_deps_vendor).
 
 For the setup, you need to add the skylib in addition to the rust rules to your `MODULE.bazel`.
 
@@ -367,7 +367,7 @@ sys_deps()
 
 Now, you can build the project as usual.
 
-There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/bzlmod/).
+There are some more examples of using crate_universe with bzlmod in the [example folder](https://github.com/bazelbuild/rules_rust/blob/main/examples/).
 
 """
 
@@ -1112,18 +1112,15 @@ def _crate_impl(module_ctx):
                 fail("Spec specified for repo {}, but the module defined repositories {}".format(repo, local_repos))
 
         for cfg in mod.tags.from_cargo + mod.tags.from_specs:
-            # Preload all external repositories. Calling `module_ctx.watch` will cause restarts of the implementation
-            # function of the module extension when the file has changed.
+            # Watch inputs not modified by the generator. Calling `module_ctx.watch` will cause restarts of
+            # the implementation function of the module extension when the file has changed.
             if cfg.cargo_lockfile:
                 module_ctx.watch(cfg.cargo_lockfile)
-            if cfg.lockfile:
-                module_ctx.watch(cfg.lockfile)
             if cfg.cargo_config:
                 module_ctx.watch(cfg.cargo_config)
             if hasattr(cfg, "manifests"):
                 for m in cfg.manifests:
                     module_ctx.watch(m)
-
             cargo_path, rustc_path = _get_host_cargo_rustc(module_ctx, host_triple, cfg.host_tools)
             cargo_bazel_fn = new_cargo_bazel_fn(
                 repository_ctx = module_ctx,
@@ -1179,6 +1176,12 @@ def _crate_impl(module_ctx):
                 skip_cargo_lockfile_overwrite = cfg.skip_cargo_lockfile_overwrite,
                 strip_internal_dependencies_from_cargo_lockfile = cfg.strip_internal_dependencies_from_cargo_lockfile,
             )
+
+            # Watch cfg.lockfile AFTER generation. The generator may modify it during
+            # repin, and in Bazel 9 module_ctx.read verifies digests for files already
+            # read, which would crash if the lockfile changed between watch and read.
+            if cfg.lockfile:
+                module_ctx.watch(cfg.lockfile)
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:

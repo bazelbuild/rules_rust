@@ -144,6 +144,9 @@ def _construct_known_triples_test_impl(ctx):
     # WebAssembly MVP target
     _assert_parts(env, triple("wasm32v1-none"), "wasm32", "v1", "none", None)
 
+    # AVR bare-metal target
+    _assert_parts(env, triple("avr-none"), "avr", None, "none", None)
+
     _assert_parts(env, triple("x86_64-fuchsia"), "x86_64", "unknown", "fuchsia", None)
     _assert_parts(env, triple("x86_64-apple-ios-macabi"), "x86_64", "apple", "ios", "macabi")
 

@@ -91,7 +91,7 @@ rust_library(
     version = "0.3.1",
     deps = [
         "@rrc__semver-1.0.25//:semver",
-        "@rrc__serde-1.0.217//:serde",
+        "@rrc__serde-1.0.228//:serde",
         "@rrc__serde-untagged-0.1.6//:serde_untagged",
         "@rrc__serde-value-0.7.0//:serde_value",
         "@rrc__thiserror-1.0.69//:thiserror",

@@ -100,7 +100,7 @@ rust_library(
     version = "0.9.34+deprecated",
     deps = [
         "@cvm__indexmap-2.13.0//:indexmap",
-        "@cvm__itoa-1.0.17//:itoa",
+        "@cvm__itoa-1.0.18//:itoa",
         "@cvm__ryu-1.0.23//:ryu",
         "@cvm__serde-1.0.228//:serde",
         "@cvm__unsafe-libyaml-0.2.11//:unsafe_libyaml",

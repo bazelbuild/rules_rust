@@ -368,6 +368,7 @@ rust_toolchain(
     extra_exec_rustc_flags = {extra_exec_rustc_flags},
     opt_level = {opt_level},
     strip_level = {strip_level},
+    version = "{version}",
     tags = ["rust_version={version}"],
 )
 """
@@ -417,7 +418,13 @@ def BUILD_for_rust_toolchain(
         str: A rendered template of a `rust_toolchain` declaration
     """
     if stdlib_linkflags == None:
-        stdlib_linkflags = ", ".join(['"%s"' % x for x in system_to_stdlib_linkflags(target_triple.system)])
+        stdlib_linkflags = ", ".join([
+            '"%s"' % x
+            for x in system_to_stdlib_linkflags(
+                target_triple.system,
+                target_triple.abi,
+            )
+        ])
 
     rustfmt_label = None
     if include_rustfmt:

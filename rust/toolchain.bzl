@@ -611,6 +611,7 @@ def _rust_toolchain_impl(ctx):
         target_os = target_os,
         target_abi = target_abi,
         target_triple = target_triple,
+        version = ctx.attr.version,
         require_explicit_unstable_features = _require_explicit_unstable_features(ctx),
 
         # Experimental and incompatible flags
@@ -621,9 +622,9 @@ def _rust_toolchain_impl(ctx):
         _experimental_use_cc_common_link = _experimental_use_cc_common_link(ctx),
         _experimental_use_global_allocator = experimental_use_global_allocator,
         _experimental_use_coverage_metadata_files = ctx.attr._experimental_use_coverage_metadata_files[BuildSettingInfo].value,
-        _incompatible_change_rust_test_compilation_output_directory = ctx.attr._incompatible_change_rust_test_compilation_output_directory[IncompatibleFlagInfo].enabled,
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
+        _incompatible_do_not_include_transitive_data_in_compile_inputs = ctx.attr._incompatible_do_not_include_transitive_data_in_compile_inputs[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
         _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
@@ -842,6 +843,10 @@ rust_toolchain = rule(
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
         ),
+        "version": attr.string(
+            doc = "The version of the Rust compiler. (E.g. `1.94.1`, nightly/2026-03-26`)",
+            default = "",
+        ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
         ),
@@ -863,12 +868,13 @@ rust_toolchain = rule(
                 "This flag is only relevant when used together with --@rules_rust//rust/settings:experimental_use_global_allocator."
             ),
         ),
-        "_incompatible_change_rust_test_compilation_output_directory": attr.label(
-            default = Label("//rust/settings:incompatible_change_rust_test_compilation_output_directory"),
-        ),
         "_incompatible_do_not_include_data_in_compile_data": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_data_in_compile_data"),
             doc = "Label to a boolean build setting that controls whether to include data files in compile_data.",
+        ),
+        "_incompatible_do_not_include_transitive_data_in_compile_inputs": attr.label(
+            default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
+            doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),
