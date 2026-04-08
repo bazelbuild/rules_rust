@@ -88,6 +88,12 @@ coverage_validation_post_shell_commands: &coverage_validation_post_shell_command
       ; 1>&2 cat bazel-out/_coverage/_coverage_report.dat \
       ; exit 1 \
       ; }
+  - |
+    grep -q '^LF:[1-9]' bazel-out/_coverage/_coverage_report.dat \
+    || { 1>&2 echo "Coverage report has no line data" \
+      ; 1>&2 head -50 bazel-out/_coverage/_coverage_report.dat \
+      ; exit 1 \
+      ; }
 split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
   - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
   - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc

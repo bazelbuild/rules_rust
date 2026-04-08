@@ -4,5 +4,14 @@ rust_binary(
     name = "collect_coverage",
     srcs = ["collect_coverage.rs"],
     edition = "2018",
+    # To ensure this tool is produced deterministically, debug info
+    # is stripped out. On macOS, full symbol stripping is needed to
+    # also remove N_OSO stab entries whose timestamps and sandbox
+    # paths vary between builds.
+    rustc_flags = select({
+        "@platforms//os:linux": ["-Cstrip=debuginfo"],
+        "@platforms//os:macos": ["-Cstrip=symbols"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
