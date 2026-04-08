@@ -611,6 +611,7 @@ def _rust_toolchain_impl(ctx):
         target_os = target_os,
         target_abi = target_abi,
         target_triple = target_triple,
+        version = ctx.attr.version,
         require_explicit_unstable_features = _require_explicit_unstable_features(ctx),
 
         # Experimental and incompatible flags
@@ -841,6 +842,10 @@ rust_toolchain = rule(
                 "The platform triple for the toolchains target environment. " +
                 "For more details see: https://docs.bazel.build/versions/master/skylark/rules.html#configurations"
             ),
+        ),
+        "version": attr.string(
+            doc = "The version of the Rust compiler. (E.g. `1.94.1`, nightly/2026-03-26`)",
+            default = "",
         ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),
