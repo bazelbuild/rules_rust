@@ -104,7 +104,7 @@ rust_library(
     }),
     version = "8.2.0",
     deps = [
-        "@rmdbi__libc-0.2.183//:libc",
+        "@rmdbi__libc-0.2.184//:libc",
         "@rmdbi__log-0.4.29//:log",
         "@rmdbi__notify-types-2.1.0//:notify_types",
         "@rmdbi__walkdir-2.5.0//:walkdir",
