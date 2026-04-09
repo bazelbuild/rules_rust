@@ -642,7 +642,7 @@ def _cargo_build_script_impl(ctx):
         tools = tools,
         inputs = depset(build_script_inputs, transitive = [runfiles_inputs]),
         mnemonic = "CargoBuildScriptRun",
-        progress_message = "Running Cargo build script {}".format(pkg_name),
+        progress_message = "Running Cargo build script %{label}",
         env = env,
         toolchain = None,
         use_default_shell_env = use_default_shell_env,
