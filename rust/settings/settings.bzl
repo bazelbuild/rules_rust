@@ -370,6 +370,44 @@ def clippy_error_format():
     )
 
 # buildifier: disable=unnamed-macro
+def incremental():
+    """Enable incremental Rust compilation via Bazel-managed tree artifacts.
+
+    When enabled, workspace crates (not external dependencies) get
+    ``-Cincremental=<tree_artifact>`` passed to rustc.  The incremental
+    state is stored as a Bazel-managed tree artifact, enabling cache
+    sharing across builds.  The process wrapper handles seeding the
+    incremental cache from a previous build's output.
+
+    Usage:
+        ``--@rules_rust//rust/settings:incremental=true``
+    """
+    bool_flag(
+        name = "incremental",
+        build_setting_default = False,
+    )
+
+# buildifier: disable=unnamed-macro
+def incremental_seed_threshold_mb():
+    """Minimum incremental cache size (in MiB) to seed from the previous build.
+
+    When the previous build's incremental cache is smaller than this threshold,
+    the seed step is skipped because rustc's overhead loading the dep-graph and
+    query-cache exceeds any incremental benefit for small crates.  The
+    ``-Cincremental`` flag is still passed so rustc writes state for future builds;
+    only the seed read is skipped.
+
+    Set to 0 to always seed (even tiny caches).
+
+    Usage:
+        ``--@rules_rust//rust/settings:incremental_seed_threshold_mb=20``
+    """
+    int_flag(
+        name = "incremental_seed_threshold_mb",
+        build_setting_default = 20,
+    )
+
+# buildifier: disable=unnamed-macro
 def incompatible_change_clippy_error_format():
     """A flag to enable the `clippy_error_format` setting.
 
