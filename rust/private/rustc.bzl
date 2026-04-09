@@ -1653,6 +1653,12 @@ def rustc_compile_action(
     coverage_runfiles = []
     if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata] + toolchain.llvm_lib
+        collect_cc_coverage = getattr(ctx.executable, "_collect_cc_coverage", None)
+        if not collect_cc_coverage:
+            collect_cc_coverage = getattr(ctx.file, "_collect_cc_coverage", None)
+
+        if collect_cc_coverage:
+            coverage_runfiles.append(collect_cc_coverage)
 
     experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
 

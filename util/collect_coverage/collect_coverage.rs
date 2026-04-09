@@ -189,11 +189,12 @@ fn main() {
         .arg("-format=lcov")
         .arg("-instr-profile")
         .arg(&profdata_file)
-        .arg("-ignore-filename-regex='.*external/.+'")
-        .arg("-ignore-filename-regex='/tmp/.+'")
-        .arg(format!("-path-equivalence=.,'{}'", execroot.display()))
+        .arg("-ignore-filename-regex=.*external/.+")
+        .arg("-ignore-filename-regex=/tmp/.+")
+        .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
-        .stdout(process::Stdio::piped());
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped());
 
     debug_log!("Spawning {:#?}", llvm_cov_cmd);
     let child = llvm_cov_cmd
@@ -201,6 +202,18 @@ fn main() {
         .expect("Failed to spawn llvm-cov process");
 
     let output = child.wait_with_output().expect("llvm-cov process failed");
+
+    if !output.status.success() {
+        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("<non-utf8>");
+        if stderr.contains("no coverage data found") {
+            debug_log!("No coverage data found in binary; writing empty report");
+            fs::write(&coverage_output_file, "").unwrap();
+            fs::remove_file(&profdata_file).ok();
+            return;
+        }
+        eprintln!("llvm-cov export failed:\n{}", stderr);
+        process::exit(output.status.code().unwrap_or(1));
+    }
 
     // Parse the child process's stdout to a string now that it's complete.
     debug_log!("Parsing llvm-cov output");

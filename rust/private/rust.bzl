@@ -524,6 +524,13 @@ def _rust_test_impl(ctx):
 
         env["RUST_LLVM_COV"] = llvm_cov_path
         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
+
+        # Bazel's collect_coverage.sh checks both GENERATE_LLVM_LCOV and
+        # CC_CODE_COVERAGE_SCRIPT before invoking the coverage collector.
+        # These are not automatically wired for Starlark test rules so we
+        # must set them explicitly.
+        env["GENERATE_LLVM_LCOV"] = "1"
+        env["CC_CODE_COVERAGE_SCRIPT"] = ctx.executable._collect_cc_coverage.path
     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
     providers.append(RunEnvironmentInfo(
