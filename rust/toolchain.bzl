@@ -56,6 +56,7 @@ def _rust_stdlib_filegroup_impl(ctx):
     panic_files = []
 
     std_rlibs = [f for f in rust_std if f.basename.endswith(".rlib")]
+    has_profiler_builtins = any(["profiler_builtins" in f.basename for f in std_rlibs])
     if std_rlibs:
         # test depends on std
         # std depends on everything except test
@@ -116,6 +117,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
             panic_files = panic_files,
+            has_profiler_builtins = has_profiler_builtins,
             srcs = ctx.attr.srcs,
         ),
     ]
@@ -585,6 +587,7 @@ def _rust_toolchain_impl(ctx):
         linker = sysroot.linker,
         linker_preference = linker_preference,
         linker_type = ctx.attr.linker_type or None,
+        coverage_supported = bool(ctx.file.llvm_cov) and ctx.attr.rust_std[rust_common.stdlib_info].has_profiler_builtins,
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         llvm_lib = ctx.files.llvm_lib,

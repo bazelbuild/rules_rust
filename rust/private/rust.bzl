@@ -506,7 +506,7 @@ def _rust_test_impl(ctx):
         data,
         {},
     )
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+    if toolchain.coverage_supported and ctx.configuration.coverage_enabled:
         if not toolchain.llvm_profdata:
             fail("toolchain.llvm_profdata is required if toolchain.llvm_cov is set.")
 
