@@ -137,6 +137,34 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         .to_str()
         .ok_or_else(|| OptionError::Generic("current directory not utf-8".to_owned()))?
         .to_owned();
+    let output_base = {
+        let external = std::path::Path::new(&current_dir).join("external");
+        match std::fs::canonicalize(external) {
+            Ok(canonical) => canonical
+                .parent()
+                .and_then(|p| p.to_str())
+                .unwrap_or(&current_dir)
+                .to_owned(),
+            Err(_) => match std::fs::canonicalize(&current_dir) {
+                Ok(canonical) => canonical
+                    .parent()
+                    .and_then(|p| p.parent())
+                    .and_then(|p| p.to_str())
+                    .unwrap_or(&current_dir)
+                    .to_owned(),
+                Err(_) => current_dir.clone(),
+            },
+        }
+    };
+
+    let exec_root = {
+        let workspace_name = std::path::Path::new(&current_dir)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("_main");
+        format!("{}/execroot/{}", output_base, workspace_name)
+    };
+
     let subst_mappings = subst_mapping_raw
         .unwrap_or_default()
         .into_iter()
@@ -146,6 +174,10 @@ pub(crate) fn options() -> Result<Options, OptionError> {
             })?;
             let v = if val == "${pwd}" {
                 current_dir.as_str()
+            } else if val == "${output_base}" {
+                output_base.as_str()
+            } else if val == "${exec_root}" {
+                exec_root.as_str()
             } else {
                 val
             }
