@@ -24,31 +24,19 @@ set -euo pipefail
 
 export RUNTIME_PWD="$(pwd)"
 if [[ -z "${{BAZEL_REAL:-}}" ]]; then
-    BAZEL_REAL="$(which bazel || echo 'bazel')"
+    export BAZEL_REAL="$(which bazel || echo 'bazel')"
 fi
 
 _BIN="$(rlocation "{bin}")"
 
-_ENVIRON=()
-_ENVIRON+=(BAZEL_REAL="${{BAZEL_REAL}}")
-_ENVIRON+=(BUILD_WORKSPACE_DIRECTORY="${{BUILD_WORKSPACE_DIRECTORY}}")
-_ENVIRON+=(PATH="${{PATH}}")
 {env}
-
-if [[ -n "${{CARGO_BAZEL_DEBUG:-}}" ]]; then
-    _ENVIRON+=(CARGO_BAZEL_DEBUG="${{CARGO_BAZEL_DEBUG}}")
-fi
-
-# Pass on CARGO_REGISTRIES_* and CARGO_REGISTRY*
-while IFS= read -r line; do _ENVIRON+=("${{line}}"); done < <(env | grep ^CARGO_REGISTER)
 
 # The path needs to be preserved to prevent bazel from starting with different
 # startup options (requiring a restart of bazel).
 # If you provide an empty path, bazel starts itself with
 # --default_system_javabase set to the empty string, but if you provide a path,
 # it may set it to a value (eg. "/usr/local/buildtools/java/jdk11").
-exec env - \\
-"${{_ENVIRON[@]}}" \\
+exec env -u OUTPUT_BASE \\
     "${{_BIN}}" \\
     {args} \\
     --nonhermetic-root-bazel-workspace-dir="${{BUILD_WORKSPACE_DIRECTORY}}" \\
@@ -143,13 +131,10 @@ def _sys_runfile_env(ctx, name, file, is_windows):
             name,
         )
 
-    return "\n".join([
-        "export {}=\"$(rlocation \"{}\")\"".format(
-            name,
-            _rlocationpath(file, ctx.workspace_name),
-        ),
-        "_ENVIRON+=({0}=\"${{{0}}}\")".format(name),
-    ])
+    return "export {}=\"$(rlocation \"{}\")\"".format(
+        name,
+        _rlocationpath(file, ctx.workspace_name),
+    )
 
 def _expand_env(value, is_windows):
     if is_windows:
