@@ -791,27 +791,25 @@ where
         let parts = line.split(';').collect::<Vec<_>>();
         if parts.len() != 4 {
             // The only time a line will not cleanly contain 4 parts
-            // is when there's a build dependencies divider. When found,
-            // start tracking build dependencies.
-            if line.ends_with("[build-dependencies]") {
-                let depth = (line.chars().count() - "[build-dependencies]".chars().count()) / 4;
-                while parents.len() > (depth + 1) {
-                    parents.pop();
-                }
-                parents
-                    .last_mut()
-                    .context("build-dependencies marker without parent")?
-                    .listing_build_deps = true;
-                continue;
+            // is when there's a build/dev dependencies divider.
+            // When found, track whether we're listing build dependencies.
+            let (is_build_deps, marker_len) = if line.ends_with("[build-dependencies]") {
+                (true, "[build-dependencies]".chars().count())
             } else if line.ends_with("[dev-dependencies]") {
-                // let depth = (line.chars().count() - "[dev-dependencies]".chars().count()) / 4;
-                // TODO: Actually fix the bug here
+                (false, "[dev-dependencies]".chars().count())
+            } else {
+                bail!("Unexpected line '{}'", line);
+            };
 
-                // Dev dependencies are not treated any differently than normal dependencies
-                // when we enter these blocks, continue to collect deps as usual.
-                continue;
+            let depth = (line.chars().count() - marker_len) / 4;
+            while parents.len() > (depth + 1) {
+                parents.pop();
             }
-            bail!("Unexpected line '{}'", line);
+            parents
+                .last_mut()
+                .context("dependency section marker without parent")?
+                .listing_build_deps = is_build_deps;
+            continue;
         }
 
         // We expect the crate id (parts[1]) to be one of:
