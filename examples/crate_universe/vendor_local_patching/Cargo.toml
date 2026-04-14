@@ -3,7 +3,7 @@ name = "my_third_party"
 version = "0.1.0"
 
 [dependencies]
-rand = "0.8.5"
+rand = "0.9.3"
 
 [patch.crates-io]
 # We need to make sure that forked_getrandom/BUILD.bazel exposes the correct
