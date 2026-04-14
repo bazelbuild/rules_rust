@@ -405,7 +405,7 @@ impl TreeResolver {
 
                 for (entry, tree_data) in target_tree_data {
                     metadata
-                        .entry(entry.as_crate_id().clone())
+                        .entry(entry.clone())
                         .or_default()
                         .entry(target_triple.clone())
                         .or_default()
@@ -413,7 +413,7 @@ impl TreeResolver {
                 }
                 for (entry, tree_data) in host_tree_data {
                     metadata
-                        .entry(entry.as_crate_id().clone())
+                        .entry(entry.clone())
                         .or_default()
                         .entry(host_triple.clone())
                         .or_default()
@@ -758,77 +758,28 @@ impl Ord for DependencyDetailWithOrd {
 
 impl Eq for DependencyDetailWithOrd {}
 
-/// A wrapper for [CrateId] used by [parse_cargo_tree_output] to successfully
-/// parse target and host dependencies.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum TreeDepCompileKind {
-    /// Collecting dependencies for the target platform.
-    Target(CrateId),
-
-    /// Collecting dependencies for the host platform (e.g. `[build-dependency]`
-    /// and `proc-macro`).
-    Host(CrateId),
-
-    /// A variant of [TreeDepCompileKind::Target] that represents an edge where
-    /// dependencies are to be collected for host. E.g. a crate which has
-    /// a `[build-dependency] or `(proc-macro)` dependency. This variant is only
-    /// used for internal bookkeeping to make sure other nodes farther down in
-    /// the graph are collected as [TreeDepCompileKind::Host].
-    TargetWithHostDep(CrateId),
-}
-
-impl TreeDepCompileKind {
-    pub fn new(crate_id: CrateId, is_host_dep: bool) -> Self {
-        if is_host_dep {
-            TreeDepCompileKind::Host(crate_id)
-        } else {
-            TreeDepCompileKind::Target(crate_id)
-        }
-    }
-
-    pub fn as_crate_id(&self) -> &CrateId {
-        match self {
-            TreeDepCompileKind::Target(id) => id,
-            TreeDepCompileKind::TargetWithHostDep(id) => id,
-            TreeDepCompileKind::Host(id) => id,
-        }
-    }
-}
-
-impl From<TreeDepCompileKind> for CrateId {
-    fn from(value: TreeDepCompileKind) -> Self {
-        match value {
-            TreeDepCompileKind::Target(id) => id,
-            TreeDepCompileKind::TargetWithHostDep(id) => id,
-            TreeDepCompileKind::Host(id) => id,
-        }
-    }
-}
-
-/// Parses the output of `cargo tree --format=|{p}|{f}|`. Other flags may be
+/// Parses the output of `cargo tree --format=;{p};{f};`. Other flags may be
 /// passed to `cargo tree` as well, but this format is critical.
 fn parse_cargo_tree_output<I, S, E>(
     lines: I,
 ) -> Result<(
-    BTreeMap<TreeDepCompileKind, CargoTreeEntry>,
-    BTreeMap<TreeDepCompileKind, CargoTreeEntry>,
+    BTreeMap<CrateId, CargoTreeEntry>,
+    BTreeMap<CrateId, CargoTreeEntry>,
 )>
 where
     I: Iterator<Item = std::result::Result<S, E>>,
     S: AsRef<str>,
     E: std::error::Error + Sync + Send + 'static,
 {
-    let mut target_tree_data = BTreeMap::<TreeDepCompileKind, CargoTreeEntry>::new();
-    let mut host_tree_data: BTreeMap<TreeDepCompileKind, CargoTreeEntry> = BTreeMap::new();
-    let mut parents: Vec<TreeDepCompileKind> = Vec::new();
+    let mut target_tree_data = BTreeMap::<CrateId, CargoTreeEntry>::new();
+    let mut host_tree_data: BTreeMap<CrateId, CargoTreeEntry> = BTreeMap::new();
 
-    let is_host_child = |parents: &Vec<TreeDepCompileKind>| {
-        parents.iter().any(|p| match p {
-            TreeDepCompileKind::Target(_) => false,
-            TreeDepCompileKind::TargetWithHostDep(_) => true,
-            TreeDepCompileKind::Host(_) => true,
-        })
-    };
+    struct ParentCrate {
+        crate_id: CrateId,
+        is_host_dep: bool,
+        listing_build_deps: bool, // Whether we're currently in the list of build deps for this crate
+    }
+    let mut parents: Vec<ParentCrate> = Vec::new();
 
     for line in lines {
         let line = line?;
@@ -843,22 +794,26 @@ where
             // is when there's a build dependencies divider. When found,
             // start tracking build dependencies.
             if line.ends_with("[build-dependencies]") {
-                let build_depth =
-                    (line.chars().count() - "[build-dependencies]".chars().count()) / 4;
-
-                if matches!(parents[build_depth], TreeDepCompileKind::Target(_)) {
-                    parents[build_depth] =
-                        TreeDepCompileKind::TargetWithHostDep(parents[build_depth].clone().into());
+                let depth = (line.chars().count() - "[build-dependencies]".chars().count()) / 4;
+                while parents.len() > (depth + 1) {
+                    parents.pop();
                 }
-
+                parents
+                    .last_mut()
+                    .context("build-dependencies marker without parent")?
+                    .listing_build_deps = true;
                 continue;
             } else if line.ends_with("[dev-dependencies]") {
+                // let depth = (line.chars().count() - "[dev-dependencies]".chars().count()) / 4;
+                // TODO: Actually fix the bug here
+
                 // Dev dependencies are not treated any differently than normal dependencies
                 // when we enter these blocks, continue to collect deps as usual.
                 continue;
             }
             bail!("Unexpected line '{}'", line);
         }
+
         // We expect the crate id (parts[1]) to be one of:
         // `<crate name> v<crate version>`
         // `<crate name> v<crate version> (<path>)`
@@ -866,7 +821,7 @@ where
         // `<crate name> v<crate version> (proc-macro) (<path>)`
         // https://github.com/rust-lang/cargo/blob/19f952f160d4f750d1e12fad2bf45e995719673d/src/cargo/ops/tree/mod.rs#L281
         let crate_id_parts = parts[1].split(' ').collect::<Vec<_>>();
-        if crate_id_parts.len() < 2 && crate_id_parts.len() > 4 {
+        if crate_id_parts.len() < 2 {
             bail!(
                 "Unexpected crate id format '{}' when parsing 'cargo tree' output.",
                 parts[1]
@@ -888,56 +843,27 @@ where
         // need to identify when build dependencies start.
         let depth = parts[0].chars().count() / 4;
 
-        let (kind, is_host_dep) = if (depth + 1) <= parents.len() {
-            // Drain parents until we get down to the right depth
-            let range = parents.len() - (depth + 1);
-            for _ in 0..range {
-                parents.pop();
-            }
+        while parents.len() > depth {
+            parents.pop();
+        }
+        if parents.len() != depth {
+            bail!(
+                "Unexpected tree structure: no direct parent for line '{}'",
+                line
+            )
+        }
 
-            // If the current parent does not have the same Crate ID, then
-            // it's likely we have moved to a different crate. This can happen
-            // in the following case
-            // ```
-            // ├── proc-macro2 v1.0.81
-            // │   └── unicode-ident v1.0.12
-            // ├── quote v1.0.36
-            // │   └── proc-macro2 v1.0.81 (*)
-            // ```
-            if parents
+        let is_host_dep = is_proc_macro
+            || parents
                 .last()
-                .filter(|last| *last.as_crate_id() != crate_id)
-                .is_some()
-            {
-                parents.pop();
+                .map(|p| p.is_host_dep || p.listing_build_deps)
+                .unwrap_or(false);
 
-                // Because we pop a parent we need to check at this time if the current crate is
-                // truly a host dependency.
-                let is_host_dep = is_proc_macro || is_host_child(&parents);
-                let kind = TreeDepCompileKind::new(crate_id, is_host_dep);
-
-                parents.push(kind.clone());
-
-                (kind, is_host_dep)
-            } else {
-                let is_host_dep = is_proc_macro || is_host_child(&parents);
-                let kind = TreeDepCompileKind::new(crate_id, is_host_dep);
-                (kind, is_host_dep)
-            }
-        } else {
-            let is_host_dep = is_proc_macro || is_host_child(&parents);
-            let kind = if is_host_dep {
-                TreeDepCompileKind::Host(crate_id)
-            } else {
-                TreeDepCompileKind::Target(crate_id)
-            };
-
-            // Start tracking the current crate as the new parent for any
-            // crates that represent a new depth in the dep tree.
-            parents.push(kind.clone());
-
-            (kind, is_host_dep)
-        };
+        parents.push(ParentCrate {
+            crate_id: crate_id.clone(),
+            is_host_dep,
+            listing_build_deps: false,
+        });
 
         let mut features = if parts[2].is_empty() {
             BTreeSet::new()
@@ -945,32 +871,17 @@ where
             parts[2].split(',').map(str::to_owned).collect()
         };
 
-        // Attribute any dependency that is not the root to it's parent.
-        if depth > 0 {
-            // Access the last item in the list of parents and insert the current
-            // crate as a dependency to it.
-            if let Some(parent) = parents.iter().rev().nth(1) {
-                // Ensure this variant is never referred to publicly
-                let sanitized_compile_kind = |parent: &TreeDepCompileKind| match parent {
-                    TreeDepCompileKind::Target(_) => parent.clone(),
-                    TreeDepCompileKind::TargetWithHostDep(p) => {
-                        TreeDepCompileKind::Target(p.clone())
-                    }
-                    TreeDepCompileKind::Host(_) => parent.clone(),
-                };
-
-                // Dependency data is only tracked for direct consumers of build dependencies
-                // since they're known to be wrong cross-platform.
-                match parent {
-                    TreeDepCompileKind::Target(_) => &mut target_tree_data,
-                    TreeDepCompileKind::TargetWithHostDep(_) => &mut target_tree_data,
-                    TreeDepCompileKind::Host(_) => &mut host_tree_data,
-                }
-                .entry(sanitized_compile_kind(parent))
-                .or_default()
-                .deps
-                .insert(kind.as_crate_id().clone());
+        // Attribute any dependency that is not the root to its parent.
+        if let Some(parent) = parents.iter().rev().nth(1) {
+            if parent.is_host_dep {
+                &mut host_tree_data
+            } else {
+                &mut target_tree_data
             }
+            .entry(parent.crate_id.clone())
+            .or_default()
+            .deps
+            .insert(crate_id.clone());
         }
 
         if is_host_dep {
@@ -978,7 +889,7 @@ where
         } else {
             &mut target_tree_data
         }
-        .entry(kind)
+        .entry(crate_id)
         .or_default()
         .features
         .append(&mut features);
@@ -1410,28 +1321,28 @@ mod test {
         assert_eq!(
             BTreeMap::from([
                 (
-                    TreeDepCompileKind::Host(autocfg_id.clone()),
+                    autocfg_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::new(),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(proc_macro2_id.clone()),
+                    proc_macro2_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
                         deps: BTreeSet::from([unicode_ident_id.clone(),]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(quote_id.clone()),
+                    quote_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
                         deps: BTreeSet::from([proc_macro2_id.clone()]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(serde_derive_id.clone()),
+                    serde_derive_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned()]),
                         deps: BTreeSet::from([
@@ -1442,7 +1353,7 @@ mod test {
                     }
                 ),
                 (
-                    TreeDepCompileKind::Host(syn_id.clone()),
+                    syn_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from([
                             "clone-impls".to_owned(),
@@ -1461,7 +1372,7 @@ mod test {
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(unicode_ident_id.clone()),
+                    unicode_ident_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::new(),
@@ -1475,7 +1386,7 @@ mod test {
         assert_eq!(
             BTreeMap::from([
                 (
-                    TreeDepCompileKind::Target(chrono_id.clone()),
+                    chrono_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from([
                             "clock".to_owned(),
@@ -1498,56 +1409,56 @@ mod test {
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(core_foundation_sys_id.clone()),
+                    core_foundation_sys_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "link".to_owned()]),
                         deps: BTreeSet::new(),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(cpufeatures_id.clone()),
+                    cpufeatures_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::from([libc_id.clone()]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Target(iana_time_zone_id),
+                    iana_time_zone_id,
                     CargoTreeEntry {
                         features: BTreeSet::from(["fallback".to_owned()]),
                         deps: BTreeSet::from([core_foundation_sys_id]),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(libc_id.clone()),
+                    libc_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "std".to_owned()]),
                         deps: BTreeSet::new(),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(num_integer_id),
+                    num_integer_id,
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::from([num_traits_id.clone()]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Target(num_traits_id),
+                    num_traits_id,
                     CargoTreeEntry {
                         features: BTreeSet::from(["i128".to_owned()]),
                         deps: BTreeSet::from([autocfg_id.clone()]),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(time_id),
+                    time_id,
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::from([libc_id]),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Target(tree_data_id),
+                    tree_data_id,
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::from([chrono_id, cpufeatures_id, serde_derive_id,]),
@@ -1630,21 +1541,21 @@ mod test {
         assert_eq!(
             BTreeMap::from([
                 (
-                    TreeDepCompileKind::Host(autocfg_id.clone()),
+                    autocfg_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::new(),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(num_traits_id.clone()),
+                    num_traits_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "std".to_owned()]),
                         deps: BTreeSet::from([autocfg_id.clone(),]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(proc_macro_error_attr_id.clone()),
+                    proc_macro_error_attr_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::from([
@@ -1655,21 +1566,21 @@ mod test {
                     }
                 ),
                 (
-                    TreeDepCompileKind::Host(proc_macro2_id.clone()),
+                    proc_macro2_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
                         deps: BTreeSet::from([unicode_ident_id.clone(),]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(quote_id.clone()),
+                    quote_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from(["default".to_owned(), "proc-macro".to_owned()]),
                         deps: BTreeSet::from([proc_macro2_id.clone(),]),
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(syn_id.clone()),
+                    syn_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::from([
                             "clone-impls".to_owned(),
@@ -1687,14 +1598,14 @@ mod test {
                     },
                 ),
                 (
-                    TreeDepCompileKind::Host(unicode_ident_id.clone()),
+                    unicode_ident_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::new(),
                     }
                 ),
                 (
-                    TreeDepCompileKind::Host(version_check_id.clone()),
+                    version_check_id.clone(),
                     CargoTreeEntry {
                         features: BTreeSet::new(),
                         deps: BTreeSet::new(),
@@ -1707,7 +1618,7 @@ mod test {
 
         assert_eq!(
             BTreeMap::from([(
-                TreeDepCompileKind::Target(nested_build_dependencies_id.clone()),
+                nested_build_dependencies_id.clone(),
                 CargoTreeEntry {
                     features: BTreeSet::new(),
                     deps: BTreeSet::from([
@@ -1754,7 +1665,7 @@ mod test {
 
         assert_eq!(
             BTreeMap::from([(
-                TreeDepCompileKind::Host(autocfg_id.clone()),
+                autocfg_id.clone(),
                 CargoTreeEntry {
                     features: BTreeSet::new(),
                     deps: BTreeSet::new(),
