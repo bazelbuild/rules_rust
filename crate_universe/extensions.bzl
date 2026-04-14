@@ -373,7 +373,7 @@ There are some more examples of using crate_universe with bzlmod in the [example
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:structs.bzl", "structs")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//crate_universe/private:common_utils.bzl",
@@ -758,7 +758,7 @@ def _generate_hub_and_spokes(
                     kwargs["commit"] = v
                 else:
                     kwargs[k.lower()] = v
-            new_git_repository(
+            git_repository(
                 name = crate_repo_name,
                 init_submodules = True,
                 patch_args = repo.get("patch_args", None),
