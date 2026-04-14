@@ -1673,4 +1673,98 @@ mod test {
             "Failed checking host dependencies."
         );
     }
+
+    /// Dev-dependencies that follow build-dependencies for the same crate
+    /// must be classified as target deps, not host deps.
+    #[test]
+    fn parse_cargo_tree_output_dev_deps_after_build_deps() {
+        let anyhow_id = CrateId {
+            name: "anyhow".to_owned(),
+            version: Version::new(1, 0, 100),
+        };
+        let tokio_id = CrateId {
+            name: "tokio".to_owned(),
+            version: Version::new(1, 49, 0),
+        };
+        let tokio_test_id = CrateId {
+            name: "tokio-test".to_owned(),
+            version: Version::new(0, 4, 4),
+        };
+        let my_crate_id = CrateId {
+            name: "my-crate".to_owned(),
+            version: Version::new(0, 1, 0),
+        };
+
+        // Simulates a crate with:
+        //   [dependencies] tokio (with taskdump via global feature unification)
+        //   [build-dependencies] anyhow
+        //   [dev-dependencies] tokio-test -> tokio (*)
+        //
+        // The tokio (*) under dev-dependencies must be classified as a target
+        // dep, NOT a host dep.
+        let (target_output, host_output) = parse_cargo_tree_output(
+            textwrap::dedent(
+                r#"
+                ;my-crate v0.1.0 (/my-crate);;
+                `-- ;tokio v1.49.0;bytes,full,taskdump;
+                [build-dependencies]
+                `-- ;anyhow v1.0.100;default,std;
+                [dev-dependencies]
+                `-- ;tokio-test v0.4.4;;
+                    `-- ;tokio v1.49.0;bytes,full,taskdump; (*)
+                "#,
+            )
+            .lines()
+            .map(Ok::<&str, std::io::Error>),
+        )
+        .unwrap();
+
+        assert_eq!(
+            BTreeMap::from([(
+                anyhow_id.clone(),
+                CargoTreeEntry {
+                    features: BTreeSet::from(["default".to_owned(), "std".to_owned()]),
+                    deps: BTreeSet::new(),
+                },
+            ),]),
+            host_output,
+            "Failed checking host dependencies."
+        );
+
+        assert_eq!(
+            BTreeMap::from([
+                (
+                    my_crate_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([
+                            tokio_id.clone(),
+                            anyhow_id.clone(),
+                            tokio_test_id.clone(),
+                        ]),
+                    },
+                ),
+                (
+                    tokio_id.clone(),
+                    CargoTreeEntry {
+                        features: BTreeSet::from([
+                            "bytes".to_owned(),
+                            "full".to_owned(),
+                            "taskdump".to_owned(),
+                        ]),
+                        deps: BTreeSet::new(),
+                    },
+                ),
+                (
+                    tokio_test_id,
+                    CargoTreeEntry {
+                        features: BTreeSet::new(),
+                        deps: BTreeSet::from([tokio_id]),
+                    },
+                ),
+            ]),
+            target_output,
+            "Failed checking target dependencies."
+        );
+    }
 }
