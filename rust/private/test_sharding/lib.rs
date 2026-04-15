@@ -54,6 +54,7 @@ pub struct ShardConfig {
 pub struct ParsedArgs {
     pub passthrough: bool,
     pub has_explicit_filters: bool,
+    pub explicit_filters: Vec<OsString>,
     pub listing_args: Vec<OsString>,
     pub execution_args: Vec<OsString>,
 }
@@ -177,6 +178,7 @@ where
 {
     let mut passthrough = false;
     let mut has_explicit_filters = false;
+    let mut explicit_filters = Vec::new();
     let mut listing_args = Vec::new();
     let mut execution_args = Vec::new();
 
@@ -219,26 +221,58 @@ where
             continue;
         }
 
-        listing_args.push(arg);
+        explicit_filters.push(arg);
         has_explicit_filters = true;
     }
 
     ParsedArgs {
         passthrough,
         has_explicit_filters,
+        explicit_filters,
         listing_args,
         execution_args,
     }
 }
 
-pub fn inferred_test_filters(has_explicit_filters: bool) -> Result<Vec<OsString>, String> {
-    if has_explicit_filters {
-        return Ok(Vec::new());
+fn split_testbridge_test_only_filters(value: &str) -> Vec<String> {
+    let mut filters = Vec::new();
+    let mut current = String::new();
+    let mut chars = value.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == ':' {
+            if chars.peek() == Some(&':') {
+                current.push(':');
+                current.push(':');
+                chars.next();
+                continue;
+            }
+
+            if !current.is_empty() {
+                filters.push(current);
+                current = String::new();
+            }
+            continue;
+        }
+
+        current.push(ch);
     }
 
+    if !current.is_empty() {
+        filters.push(current);
+    }
+
+    filters
+}
+
+pub fn inferred_test_filters(explicit_filters: &[OsString]) -> Result<Vec<OsString>, String> {
     match env::var(TESTBRIDGE_TEST_ONLY_ENV) {
-        Ok(value) => Ok(vec![OsString::from(value)]),
-        Err(env::VarError::NotPresent) => Ok(Vec::new()),
+        Ok(value) if value.is_empty() => Ok(explicit_filters.to_vec()),
+        Ok(value) => Ok(split_testbridge_test_only_filters(&value)
+            .into_iter()
+            .map(OsString::from)
+            .collect()),
+        Err(env::VarError::NotPresent) => Ok(explicit_filters.to_vec()),
         Err(env::VarError::NotUnicode(_)) => {
             Err(format!("{TESTBRIDGE_TEST_ONLY_ENV} was not valid UTF-8"))
         }
@@ -450,8 +484,8 @@ fn absolute_invocation_path(path: PathBuf) -> Result<PathBuf, String> {
             .map_err(|err| format!("failed to get current directory for argv[0]: {err}"));
     }
 
-    let path_env =
-        env::var_os("PATH").ok_or_else(|| "PATH was not set for wrapped rust test launcher".to_owned())?;
+    let path_env = env::var_os("PATH")
+        .ok_or_else(|| "PATH was not set for wrapped rust test launcher".to_owned())?;
     for entry in env::split_paths(&path_env) {
         let candidate = if entry.is_absolute() {
             entry.join(&path)
@@ -620,7 +654,10 @@ fn cleanup_xml_log_capture(xml_log_capture: Option<&Path>) {
     }
 }
 
-fn run_test_binary(command: &mut Command, xml_log_capture: Option<&Path>) -> Result<TestExecution, String> {
+fn run_test_binary(
+    command: &mut Command,
+    xml_log_capture: Option<&Path>,
+) -> Result<TestExecution, String> {
     match xml_log_capture {
         Some(capture_path) => run_test_binary_with_xml_capture(command, capture_path),
         None => command
@@ -684,9 +721,7 @@ fn run_test_binary_with_xml_capture(
             .unwrap_or(false),
     );
     drop(timeout_signal_guard);
-    Ok(TestExecution {
-        reported_exit_code,
-    })
+    Ok(TestExecution { reported_exit_code })
 }
 
 fn wait_for_test_binary(
@@ -707,7 +742,9 @@ fn wait_for_test_binary(
             None => {}
         }
 
-        if timeout_signal_guard.is_some_and(TimeoutSignalGuard::timed_out) && !force_killed_after_timeout {
+        if timeout_signal_guard.is_some_and(TimeoutSignalGuard::timed_out)
+            && !force_killed_after_timeout
+        {
             // Once Bazel timed the shard out, keep that timeout state sticky and
             // force the child down so a SIG_IGN test cannot keep running well
             // past --test_timeout and later report success in synthetic XML.
@@ -748,9 +785,9 @@ where
                 return Ok(());
             }
 
-            writer
-                .write_all(&buffer[..read])
-                .map_err(|err| format!("failed to forward wrapped rust test {stream_name}: {err}"))?;
+            writer.write_all(&buffer[..read]).map_err(|err| {
+                format!("failed to forward wrapped rust test {stream_name}: {err}")
+            })?;
             writer
                 .flush()
                 .map_err(|err| format!("failed to flush wrapped rust test {stream_name}: {err}"))?;
@@ -762,12 +799,12 @@ where
             let mut capture_writer = capture_writer
                 .lock()
                 .map_err(|_| format!("failed to lock wrapped rust test {stream_name} capture"))?;
-            capture_writer
-                .write_all(&buffer[..read])
-                .map_err(|err| format!("failed to capture wrapped rust test {stream_name}: {err}"))?;
-            capture_writer
-                .flush()
-                .map_err(|err| format!("failed to flush wrapped rust test {stream_name} capture: {err}"))?;
+            capture_writer.write_all(&buffer[..read]).map_err(|err| {
+                format!("failed to capture wrapped rust test {stream_name}: {err}")
+            })?;
+            capture_writer.flush().map_err(|err| {
+                format!("failed to flush wrapped rust test {stream_name} capture: {err}")
+            })?;
         }
     })
 }
@@ -1010,8 +1047,8 @@ fn write_decoded_test_log_chunk<W: Write>(
             Err(err) => {
                 let valid_up_to = err.valid_up_to();
                 if valid_up_to > 0 {
-                    let valid_text = std::str::from_utf8(&decode_buffer[..valid_up_to])
-                        .map_err(|utf8_err| {
+                    let valid_text =
+                        std::str::from_utf8(&decode_buffer[..valid_up_to]).map_err(|utf8_err| {
                             format!("failed to decode synthetic system-out chunk: {utf8_err}")
                         })?;
                     escape_state.write_text(writer, valid_text)?;
@@ -1141,13 +1178,13 @@ mod tests {
     use super::{
         absolute_invocation_path, configure_listing_command, discarded_listing_profile_path,
         empty_shard_filter, empty_test_filter, filter_tests_by_name, has_exact_flag,
-        inferred_test_filters, launcher_neighbor_path, launcher_public_test_binary_path,
-        install_timeout_signal_guard, maybe_write_xml_output, normalize_public_test_binary_path,
-        maybe_prepare_xml_log_capture, parse_args, parse_test_listing, public_test_binary_runfiles_path,
-        reported_exit_code, select_shard_tests, writes_xml_output, xml_test_name, ParsedArgs,
-        ShardConfig, LLVM_PROFILE_FILE_ENV, SIGTERM_SIGNAL, TEST_BINARY_ENV,
-        TEST_BINARY_RUNFILES_PATH_ENV,
-        TESTBRIDGE_TEST_ONLY_ENV, XML_OUTPUT_FILE_ENV,
+        inferred_test_filters, install_timeout_signal_guard, launcher_neighbor_path,
+        launcher_public_test_binary_path, maybe_prepare_xml_log_capture, maybe_write_xml_output,
+        normalize_public_test_binary_path, parse_args, parse_test_listing,
+        public_test_binary_runfiles_path, reported_exit_code, select_shard_tests,
+        writes_xml_output, xml_test_name, ParsedArgs, ShardConfig, LLVM_PROFILE_FILE_ENV,
+        SIGTERM_SIGNAL, TESTBRIDGE_TEST_ONLY_ENV, TEST_BINARY_ENV, TEST_BINARY_RUNFILES_PATH_ENV,
+        XML_OUTPUT_FILE_ENV,
     };
     use std::env;
     use std::ffi::OsString;
@@ -1254,12 +1291,11 @@ mod tests {
             ParsedArgs {
                 passthrough: false,
                 has_explicit_filters: true,
+                explicit_filters: vec![OsString::from("alpha"), OsString::from("beta")],
                 listing_args: vec![
                     OsString::from("--ignored"),
                     OsString::from("--skip"),
                     OsString::from("skip_me"),
-                    OsString::from("alpha"),
-                    OsString::from("beta"),
                 ],
                 execution_args: vec![
                     OsString::from("--ignored"),
@@ -1285,6 +1321,7 @@ mod tests {
             ParsedArgs {
                 passthrough: true,
                 has_explicit_filters: false,
+                explicit_filters: Vec::new(),
                 listing_args: vec![OsString::from("--skip=beta")],
                 execution_args: vec![
                     OsString::from("--skip=beta"),
@@ -1314,6 +1351,7 @@ mod tests {
             ]
         );
         assert_eq!(parsed.execution_args, parsed.listing_args);
+        assert!(parsed.explicit_filters.is_empty());
         assert!(!parsed.has_explicit_filters);
     }
 
@@ -1363,16 +1401,48 @@ mod tests {
         );
 
         assert_eq!(
-            inferred_test_filters(false).unwrap(),
+            inferred_test_filters(&[]).unwrap(),
             vec![OsString::from("tests::empty_test_filter_is_stable")],
         );
     }
 
     #[test]
-    fn explicit_filters_override_testbridge_value() {
-        let _testbridge_guard = EnvGuard::set(TESTBRIDGE_TEST_ONLY_ENV, Some("alpha:beta"));
+    fn inferred_test_filters_split_multiple_testbridge_filters() {
+        let _testbridge_guard = EnvGuard::set(TESTBRIDGE_TEST_ONLY_ENV, Some("test_7:test_8"));
 
-        assert!(inferred_test_filters(true).unwrap().is_empty());
+        assert_eq!(
+            inferred_test_filters(&[]).unwrap(),
+            vec![OsString::from("test_7"), OsString::from("test_8")],
+        );
+    }
+
+    #[test]
+    fn inferred_test_filters_split_multiple_namespaced_testbridge_filters() {
+        let _testbridge_guard =
+            EnvGuard::set(TESTBRIDGE_TEST_ONLY_ENV, Some("alpha::one:beta::two"));
+
+        assert_eq!(
+            inferred_test_filters(&[]).unwrap(),
+            vec![OsString::from("alpha::one"), OsString::from("beta::two")],
+        );
+    }
+
+    #[test]
+    fn testbridge_filters_override_explicit_filters() {
+        let _testbridge_guard = EnvGuard::set(TESTBRIDGE_TEST_ONLY_ENV, Some("test_8"));
+
+        assert_eq!(
+            inferred_test_filters(&[OsString::from("test_1")]).unwrap(),
+            vec![OsString::from("test_8")],
+        );
+    }
+
+    #[test]
+    fn explicit_filters_apply_without_testbridge_override() {
+        assert_eq!(
+            inferred_test_filters(&[OsString::from("alpha"), OsString::from("beta")]).unwrap(),
+            vec![OsString::from("alpha"), OsString::from("beta")],
+        );
     }
 
     #[test]
@@ -1501,13 +1571,11 @@ mod tests {
         let capture = maybe_prepare_xml_log_capture().unwrap().unwrap();
 
         assert_eq!(capture.parent().unwrap(), temp_dir.path());
-        assert!(
-            capture
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .contains("rules_rust_test_xml_capture_")
-        );
+        assert!(capture
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .contains("rules_rust_test_xml_capture_"));
     }
 
     #[test]
@@ -1516,7 +1584,11 @@ mod tests {
         let xml_output = temp_dir.path().join("test.xml");
         let capture_path = temp_dir.path().join("captured.log");
         let _xml_guard = EnvGuard::set(XML_OUTPUT_FILE_ENV, Some(xml_output.to_str().unwrap()));
-        fs::write(&capture_path, b"stdout line\ninvalid \x00 byte\ncdata ]]> marker\n").unwrap();
+        fs::write(
+            &capture_path,
+            b"stdout line\ninvalid \x00 byte\ncdata ]]> marker\n",
+        )
+        .unwrap();
 
         maybe_write_xml_output(
             "test/unit/test_sharding/sharded_test",
@@ -1548,7 +1620,11 @@ mod tests {
             Some("test/unit/test_sharding/_test_sharding_launcher/sharded_test"),
         );
         let capture_path = temp_dir.path().join("captured.log");
-        fs::write(&capture_path, b"-- Test timed out at 2026-04-09 10:11:08 UTC --\n").unwrap();
+        fs::write(
+            &capture_path,
+            b"-- Test timed out at 2026-04-09 10:11:08 UTC --\n",
+        )
+        .unwrap();
 
         let public_test_binary = public_test_binary_runfiles_path().unwrap();
         maybe_write_xml_output(
@@ -1580,7 +1656,10 @@ mod tests {
         // dropped, while the wrapper stays alive to write fallback XML.
         let rc = unsafe { kill(getpid(), SIGTERM_SIGNAL) };
         assert_eq!(rc, 0);
-        assert!(_guard.as_ref().map(|guard| guard.timed_out()).unwrap_or(false));
+        assert!(_guard
+            .as_ref()
+            .map(|guard| guard.timed_out())
+            .unwrap_or(false));
     }
 
     #[cfg(unix)]
@@ -1637,9 +1716,10 @@ mod tests {
 
     #[test]
     fn absolute_invocation_path_uses_cwd_for_relative_paths() {
-        let relative = PathBuf::from("./bazel-bin/test/unit/test_sharding/_test_sharding_launcher/sharded_test");
+        let relative = PathBuf::from(
+            "./bazel-bin/test/unit/test_sharding/_test_sharding_launcher/sharded_test",
+        );
         let expected = env::current_dir().unwrap().join(&relative);
         assert_eq!(absolute_invocation_path(relative).unwrap(), expected);
     }
-
 }

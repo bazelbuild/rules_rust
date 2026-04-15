@@ -16,9 +16,8 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let test_binary = resolve_test_binary()?;
-    let original_args: Vec<OsString> = env::args_os().skip(1).collect();
-    let parsed_args = parse_args(original_args.iter().cloned());
-    let test_filters = inferred_test_filters(parsed_args.has_explicit_filters)?;
+    let parsed_args = parse_args(env::args_os().skip(1));
+    let test_filters = inferred_test_filters(&parsed_args.explicit_filters)?;
     let shard_config = shard_config_from_env()?;
 
     if shard_config.is_some() {
@@ -27,7 +26,7 @@ fn run() -> Result<(), String> {
     }
 
     if parsed_args.passthrough {
-        let mut passthrough_args = original_args.clone();
+        let mut passthrough_args = parsed_args.execution_args.clone();
         passthrough_args.extend(test_filters);
         return exec_test_binary(&test_binary, &passthrough_args);
     }
@@ -38,7 +37,7 @@ fn run() -> Result<(), String> {
     };
 
     if active_shard.is_none() && test_filters.is_empty() {
-        return exec_test_binary(&test_binary, &original_args);
+        return exec_test_binary(&test_binary, &parsed_args.execution_args);
     }
 
     let test_names = list_tests(&test_binary, &parsed_args.listing_args)?;
