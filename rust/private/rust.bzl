@@ -474,6 +474,7 @@ def _rust_test_impl(ctx):
         rust_flags = get_rust_test_flags(ctx.attr),
         skip_expanding_rustc_env = True,
     )
+    providers = _maybe_wrap_sharded_test(ctx, providers, toolchain)
     data = getattr(ctx.attr, "data", [])
 
     env = expand_dict_value_locations(
@@ -515,6 +516,70 @@ def _rust_test_impl(ctx):
     ))
 
     return providers
+
+def _maybe_wrap_sharded_test(ctx, providers, toolchain):
+    if not ctx.attr.experimental_enable_sharding or not ctx.attr.use_libtest_harness:
+        return providers
+
+    crate_info = _find_test_crate_info(providers)
+    if crate_info == None:
+        fail("Couldn't find crate_info or test_crate_info in rust_test providers")
+    test_binary = crate_info.output
+    wrapper, wrapper_template = _declare_test_sharding_wrapper(ctx, toolchain)
+
+    ctx.actions.expand_template(
+        template = wrapper_template,
+        output = wrapper,
+        substitutions = {
+            "{{TEST_BINARY}}": test_binary.short_path,
+        },
+        is_executable = True,
+    )
+
+    wrapped_providers = []
+    replaced_default_info = False
+    for provider in providers:
+        if _is_default_info(provider):
+            wrapped_providers.append(DefaultInfo(
+                files = provider.files,
+                runfiles = provider.default_runfiles.merge(ctx.runfiles(files = [test_binary])),
+                executable = wrapper,
+            ))
+            replaced_default_info = True
+        else:
+            wrapped_providers.append(provider)
+
+    if not replaced_default_info:
+        fail("Couldn't find DefaultInfo in rust_test providers")
+
+    return wrapped_providers
+
+def _find_test_crate_info(providers):
+    for provider in providers:
+        if hasattr(provider, "crate"):
+            return provider.crate
+        if hasattr(provider, "name"):
+            return provider
+    return None
+
+def _is_default_info(provider):
+    return (
+        hasattr(provider, "default_runfiles") and
+        hasattr(provider, "files") and
+        hasattr(provider, "files_to_run")
+    )
+
+def _declare_test_sharding_wrapper(ctx, toolchain):
+    if toolchain.target_os == "windows":
+        return (
+            ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.bat"),
+            ctx.file._test_sharding_wrapper_windows,
+        )
+
+    return (
+        ctx.actions.declare_file(ctx.label.name + "_sharding_wrapper.sh"),
+        ctx.file._test_sharding_wrapper_unix,
+    )
 
 def _rust_library_group_impl(ctx):
     dep_variant_infos = []
@@ -892,6 +957,24 @@ _RUST_TEST_ATTRS = {
     "env_inherit": attr.string_list(
         doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by bazel test.",
     ),
+    "experimental_enable_sharding": attr.bool(
+        mandatory = False,
+        default = False,
+        doc = dedent("""\
+            If True, enable support for Bazel test sharding (shard_count attribute).
+
+            When enabled, tests are executed via a wrapper script that:
+            1. Enumerates tests using libtest's --list flag
+            2. Sorts tests by name and partitions them across shards by stable name hash
+            3. Uses either Bazel's native TEST_TOTAL_SHARDS/TEST_SHARD_INDEX env
+               or explicit RULES_RUST_TEST_TOTAL_SHARDS/RULES_RUST_TEST_SHARD_INDEX env
+            4. Runs only the tests assigned to the current shard
+
+            This attribute only has an effect when use_libtest_harness is True.
+
+            This is experimental and may change in future releases.
+        """),
+    ),
     "use_libtest_harness": attr.bool(
         mandatory = False,
         default = True,
@@ -900,6 +983,14 @@ _RUST_TEST_ATTRS = {
             [--test_arg](https://docs.bazel.build/versions/4.0.0/command-line-reference.html#flag--test_arg) flag.
             E.g. `bazel test //src:rust_test --test_arg=foo::test::test_fn`.
         """),
+    ),
+    "_test_sharding_wrapper_unix": attr.label(
+        default = Label("//rust/private:test_sharding_wrapper.sh"),
+        allow_single_file = True,
+    ),
+    "_test_sharding_wrapper_windows": attr.label(
+        default = Label("//rust/private:test_sharding_wrapper.bat"),
+        allow_single_file = True,
     ),
 } | _COVERAGE_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 

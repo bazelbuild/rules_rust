@@ -6,6 +6,11 @@ load("//rust/private:stamp.bzl", "stamp_build_setting")
 # Exported for docs
 exports_files(["providers.bzl"])
 
+exports_files([
+    "test_sharding_wrapper.bat",
+    "test_sharding_wrapper.sh",
+])
+
 bzl_library(
     name = "bazel_tools_bzl_lib",
     srcs = ["@bazel_tools//tools:bzl_srcs"],
