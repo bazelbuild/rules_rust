@@ -105,7 +105,7 @@ rust_library(
     deps = [
         "@rmdbi__anyhow-1.0.102//:anyhow",
         "@rmdbi__heck-0.5.0//:heck",
-        "@rmdbi__indexmap-2.13.1//:indexmap",
+        "@rmdbi__indexmap-2.14.0//:indexmap",
         "@rmdbi__prettyplease-0.2.37//:prettyplease",
         "@rmdbi__syn-2.0.117//:syn",
         "@rmdbi__wasm-metadata-0.244.0//:wasm_metadata",
