@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("//rust/platform:triple.bzl", "triple")
-load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES")
+load("//rust/platform:triple_mappings.bzl", "SUPPORTED_PLATFORM_TRIPLES", "system_to_staticlib_ext")
 
 def _construct_platform_triple_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -152,10 +152,24 @@ def _construct_known_triples_test_impl(ctx):
 
     return unittest.end(env)
 
+def _wasm_staticlib_ext_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    for system in ["threads", "unknown", "wasi", "wasip1", "wasip2"]:
+        asserts.equals(
+            env,
+            ".a",
+            system_to_staticlib_ext(system),
+            "{} should use a static archive extension".format(system),
+        )
+
+    return unittest.end(env)
+
 construct_platform_triple_test = unittest.make(_construct_platform_triple_test_impl)
 construct_minimal_platform_triple_test = unittest.make(_construct_minimal_platform_triple_test_impl)
 supported_platform_triples_test = unittest.make(_supported_platform_triples_test_impl)
 construct_known_triples_test = unittest.make(_construct_known_triples_test_impl)
+wasm_staticlib_ext_test = unittest.make(_wasm_staticlib_ext_test_impl)
 
 def platform_triple_test_suite(name, **kwargs):
     """Define a test suite for testing the `triple` constructor
@@ -176,6 +190,9 @@ def platform_triple_test_suite(name, **kwargs):
     construct_known_triples_test(
         name = "construct_known_triples_test",
     )
+    wasm_staticlib_ext_test(
+        name = "wasm_staticlib_ext_test",
+    )
 
     native.test_suite(
         name = name,
@@ -184,6 +201,7 @@ def platform_triple_test_suite(name, **kwargs):
             ":construct_minimal_platform_triple_test",
             ":supported_platform_triples_test",
             ":construct_known_triples_test",
+            ":wasm_staticlib_ext_test",
         ],
         **kwargs
     )
