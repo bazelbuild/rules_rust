@@ -369,6 +369,8 @@ rust_toolchain(
     opt_level = {opt_level},
     strip_level = {strip_level},
     version = "{version}",
+    channel = "{channel}",
+    iso_date = {iso_date},
     tags = ["rust_version={version}"],
 )
 """
@@ -378,12 +380,14 @@ def BUILD_for_rust_toolchain(
         exec_triple,
         target_triple,
         version,
-        allocator_library,
-        global_allocator_library,
-        default_edition,
-        include_rustfmt,
-        include_llvm_tools,
-        include_linker,
+        channel,
+        iso_date = None,
+        allocator_library = None,
+        global_allocator_library = None,
+        default_edition = "",
+        include_rustfmt = False,
+        include_llvm_tools = False,
+        include_linker = False,
         include_objcopy = False,
         stdlib_linkflags = None,
         extra_rustc_flags = None,
@@ -396,7 +400,9 @@ def BUILD_for_rust_toolchain(
         name (str): The name of the toolchain declaration
         exec_triple (triple): The rust-style target that this compiler runs on
         target_triple (triple): The rust-style target triple of the tool
-        version (str): The Rust version for the toolchain.
+        version (str): The semver Rust version for the toolchain (e.g. `1.94.1`).
+        channel (str): The Rust release channel (`stable`, `nightly`, or `beta`).
+        iso_date (str, optional): The ISO date of the nightly or beta release (e.g. `2026-03-26`).
         allocator_library (str, optional): Target that provides allocator functions when rust_library targets are embedded in a cc_binary.
         global_allocator_library (str, optional): Target that provides allocator functions when a global allocator is used with cc_common_link.
                                                   This target is only used in the target configuration; exec builds still use the symbols provided
@@ -476,6 +482,8 @@ def BUILD_for_rust_toolchain(
         opt_level = opt_level,
         strip_level = strip_level,
         version = version,
+        channel = channel,
+        iso_date = repr(iso_date),
     )
 
 _build_file_for_toolchain_template = """\

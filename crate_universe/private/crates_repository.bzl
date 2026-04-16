@@ -49,6 +49,13 @@ def _crates_repository_impl(repository_ctx):
     # Locate the lockfiles
     lockfiles = get_lockfiles(repository_ctx)
 
+    # Watch lockfiles and manifests for changes.
+    repository_ctx.watch(lockfiles.cargo)
+    if lockfiles.bazel:
+        repository_ctx.watch(lockfiles.bazel)
+    for m in repository_ctx.attr.manifests:
+        repository_ctx.watch(repository_ctx.path(m))
+
     # Locate Rust tools (cargo, rustc)
     tools = get_rust_tools(repository_ctx, host_triple)
     cargo_path = repository_ctx.path(tools.cargo)

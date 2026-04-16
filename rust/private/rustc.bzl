@@ -883,6 +883,27 @@ def _will_emit_object_file(emit):
 def _remove_codegen_units(flag):
     return None if flag.startswith("-Ccodegen-units") else flag
 
+def _should_add_oso_prefix(toolchain):
+    """Whether to add -oso_prefix to strip absolute paths from N_OSO entries.
+
+    On macOS, ld64 embeds absolute paths in N_OSO stab entries which breaks
+    build reproducibility. The -oso_prefix flag strips a prefix from these
+    entries.
+
+    Both Apple's ld64 and lld-macho support -oso_prefix. For indirect linker
+    drivers (cc/clang), the flag is passed as -Wl,-oso_prefix,<prefix>.
+
+    Args:
+        toolchain (rust_toolchain): The current Rust toolchain.
+
+    Returns:
+        bool: True if -oso_prefix should be added.
+    """
+    if not toolchain.target_os.startswith(("mac", "darwin", "ios")):
+        return False
+
+    return True
+
 def construct_arguments(
         *,
         ctx,
@@ -939,7 +960,9 @@ def construct_arguments(
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
         stamp (bool, optional): Whether or not workspace status stamping is enabled. For more details see
             https://docs.bazel.build/versions/main/user-manual.html#flag--stamp
-        remap_path_prefix (str, optional): A value used to remap `${pwd}` to. If set to None, no prefix will be set.
+        remap_path_prefix (str, optional): A value used to remap `${pwd}`, `${exec_root}`, and `${output_base}` to.
+            If set to None, no remapping will be applied. On macOS, also adds `-oso_prefix` to strip absolute paths
+            from N_OSO linker entries.
         use_json_output (bool): Have rustc emit json and process_wrapper parse json messages to output rendered output.
         build_metadata (bool): Generate CLI arguments for building *only* .rmeta files. This requires use_json_output.
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
@@ -989,6 +1012,8 @@ def construct_arguments(
     # Since we cannot get the `exec_root` from starlark, we cheat a little and
     # use `${pwd}` which resolves the `exec_root` at action execution time.
     process_wrapper_flags.add("--subst", "pwd=${pwd}")
+    process_wrapper_flags.add("--subst", "exec_root=${exec_root}")
+    process_wrapper_flags.add("--subst", "output_base=${output_base}")
 
     # If stamping is enabled, enable the functionality in the process wrapper
     if stamp:
@@ -1076,6 +1101,8 @@ def construct_arguments(
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+        rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
 
     emit_without_paths = []
     for kind in emit:
@@ -1139,6 +1166,15 @@ def construct_arguments(
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
             # Additional context: https://github.com/rust-lang/rust/pull/36574
             rustc_flags.add_all(link_args, format_each = "--codegen=link-arg=%s")
+
+            if remap_path_prefix != None and _should_add_oso_prefix(
+                toolchain,
+            ):
+                if ld_is_direct_driver:
+                    rustc_flags.add("--codegen=link-arg=-oso_prefix")
+                    rustc_flags.add("${pwd}/", format = "--codegen=link-arg=%s")
+                else:
+                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
 
         _add_native_link_flags(
             rustc_flags,

@@ -5,6 +5,7 @@ Repository rules for defining Rust dependencies and toolchains.
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//rust:nightly_versions.bzl", "NIGHTLY_VERSION_TRANSITIONS")
 load("//rust/platform:triple.bzl", "get_host_triple", "triple")
 load("//rust/platform:triple_mappings.bzl", "triple_to_constraint_set")
 load("//rust/private:common.bzl", "rust_common")
@@ -447,6 +448,32 @@ def _include_rust_objcopy(version, iso_date):
 
     return False
 
+def _resolve_nightly_version(iso_date):
+    """Resolve a nightly iso_date to its underlying Rust semver version.
+
+    First tries a direct lookup, then falls back to scanning sorted
+    transition dates for the last entry whose date is <= the requested
+    iso_date.
+
+    Args:
+        iso_date (str): The nightly ISO date (e.g. "2026-03-26").
+
+    Returns:
+        str: The resolved Rust version (e.g. "1.96.0"), or None if
+            the date precedes all tracked transitions.
+    """
+    direct = NIGHTLY_VERSION_TRANSITIONS.get(iso_date)
+    if direct:
+        return direct
+
+    result = None
+    for transition_date in sorted(NIGHTLY_VERSION_TRANSITIONS):
+        if transition_date <= iso_date:
+            result = NIGHTLY_VERSION_TRANSITIONS[transition_date]
+        else:
+            break
+    return result
+
 def _rust_toolchain_tools_repository_impl(ctx):
     """The implementation of the rust toolchain tools repository rule."""
     sha256s = dict(ctx.attr.sha256s)
@@ -458,6 +485,17 @@ def _rust_toolchain_tools_repository_impl(ctx):
         iso_date = version_array[1]
 
     check_version_valid(ctx.attr.version, iso_date)
+
+    if version in ("nightly", "beta"):
+        channel = version
+    else:
+        channel = "stable"
+
+    toolchain_version = version
+    if channel == "nightly" and iso_date:
+        resolved = _resolve_nightly_version(iso_date)
+        if resolved:
+            toolchain_version = resolved
 
     exec_triple = triple(ctx.attr.exec_triple)
 
@@ -556,7 +594,9 @@ def _rust_toolchain_tools_repository_impl(ctx):
         extra_exec_rustc_flags = ctx.attr.extra_exec_rustc_flags,
         opt_level = ctx.attr.opt_level if ctx.attr.opt_level else None,
         strip_level = ctx.attr.strip_level if ctx.attr.strip_level else None,
-        version = ctx.attr.version,
+        version = toolchain_version,
+        channel = channel,
+        iso_date = iso_date,
     ))
 
     # Not all target triples are expected to have dev components

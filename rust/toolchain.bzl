@@ -573,6 +573,7 @@ def _rust_toolchain_impl(ctx):
         all_files = depset(transitive = all_files_depsets),
         binary_ext = ctx.attr.binary_ext,
         cargo = sysroot.cargo,
+        channel = ctx.attr.channel,
         clippy_driver = sysroot.clippy,
         cargo_clippy = sysroot.cargo_clippy,
         compilation_mode_opts = compilation_mode_opts,
@@ -580,6 +581,7 @@ def _rust_toolchain_impl(ctx):
         dylib_ext = ctx.attr.dylib_ext,
         env = ctx.attr.env,
         exec_triple = exec_triple,
+        iso_date = ctx.attr.iso_date,
         libstd_and_allocator_ccinfo = make_local_ccinfo(ctx.attr.allocator_library[CcInfo], "std"),
         libstd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "std"),
         nostd_and_global_allocator_ccinfo = make_local_ccinfo(ctx.attr.global_allocator_library[CcInfo], "no_std_with_alloc"),
@@ -660,6 +662,10 @@ rust_toolchain = rule(
             allow_single_file = True,
             cfg = "exec",
         ),
+        "channel": attr.string(
+            doc = "The Rust release channel (`stable`, `nightly`, or `beta`).",
+            default = "",
+        ),
         "clippy_driver": attr.label(
             doc = "The location of the `clippy-driver` binary. Can be a direct source or a filegroup containing one item.",
             allow_single_file = True,
@@ -726,6 +732,10 @@ rust_toolchain = rule(
         "global_allocator_library": attr.label(
             doc = "Target that provides allocator functions for when a global allocator is present.",
             default = Label("//rust/private/cc:global_allocator_library"),
+        ),
+        "iso_date": attr.string(
+            doc = "The ISO date of the nightly or beta release (e.g. `2026-03-26`). Empty for stable releases.",
+            default = "",
         ),
         "linker": attr.label(
             doc = "The label to an explicit linker to use (e.g. rust-lld, ld, link-ld.exe, etc.). Linker binaries must be runnable in the exec configuration, so cfg = \"exec\" is used. To choose a linker based on the target platform, use a select() when providing this attribute. The select() will be evaluated against the target platform before the exec transition is applied, allowing platform-specific linker selection while ensuring the selected linker is built for the exec platform.",
@@ -847,7 +857,7 @@ rust_toolchain = rule(
             ),
         ),
         "version": attr.string(
-            doc = "The version of the Rust compiler. (E.g. `1.94.1`, nightly/2026-03-26`)",
+            doc = "The version of the Rust compiler (e.g. `1.94.1`).",
             default = "",
         ),
         "_codegen_units": attr.label(
