@@ -345,7 +345,7 @@ pub(crate) struct CrateAnnotations {
     pub(crate) additive_build_file_content: Option<String>,
 
     /// For git sourced crates, this is a the
-    /// [git_repository::shallow_since](https://docs.bazel.build/versions/main/repo/git.html#new_git_repository-shallow_since) attribute.
+    /// [git_repository::shallow_since](https://docs.bazel.build/versions/main/repo/git.html#git_repository-shallow_since) attribute.
     pub(crate) shallow_since: Option<String>,
 
     /// The `patch_args` attribute of a Bazel repository rule. See

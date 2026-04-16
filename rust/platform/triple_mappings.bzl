@@ -210,12 +210,12 @@ _SYSTEM_TO_STATICLIB_EXT = {
     "nixos": ".a",
     "none": ".a",
     "nto": ".a",
-    "threads": "",
+    "threads": ".a",
     "uefi": ".lib",
-    "unknown": "",
-    "wasi": "",
-    "wasip1": "",
-    "wasip2": "",
+    "unknown": ".a",
+    "wasi": ".a",
+    "wasip1": ".a",
+    "wasip2": ".a",
     "windows": ".lib",
 }
 

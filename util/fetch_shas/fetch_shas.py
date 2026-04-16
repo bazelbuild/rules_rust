@@ -1,16 +1,17 @@
 #!/usr/bin/env python3.11
-"""A script for generating the `//rust:known_shas.bzl` file."""
+"""A script for generating the `//rust:known_shas.bzl` and `//rust:nightly_versions.bzl` files."""
 
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import tomllib
 from pathlib import Path
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, List, Sequence, Tuple
 
 KNOWN_SHAS_TEMPLATE = """\
 \"\"\"A module containing a mapping of Rust tools to checksums
@@ -19,6 +20,20 @@ This is a generated file -- see //util/fetch_shas
 \"\"\"
 
 FILE_KEY_TO_SHA = {}
+"""
+
+NIGHTLY_VERSIONS_TEMPLATE = """\
+\"\"\"A module containing a mapping of nightly iso dates to Rust versions.
+
+This is a generated file -- see //util/fetch_shas
+\"\"\"
+
+# Each entry marks the first tracked nightly date where the Rust
+# version changed. To resolve a given iso_date, find the latest
+# entry whose date is <= the target date.
+NIGHTLY_VERSION_TRANSITIONS = {{
+{}
+}}
 """
 
 
@@ -214,6 +229,53 @@ def download_direct_sha256s(
     }
 
 
+def extract_nightly_version_transitions(
+    manifest_data: Dict[str, Dict[str, Any]],
+) -> List[Tuple[str, str]]:
+    """Extract a transition table mapping nightly iso dates to Rust versions.
+
+    Only includes entries where the version changed from the previous entry,
+    keeping the table compact.
+
+    Args:
+        manifest_data: The parsed manifest data from download_manifest_data.
+
+    Returns:
+        A sorted list of (iso_date, version) tuples at transition points.
+    """
+    nightly_info = manifest_data.get("nightly", {})
+    date_to_version = {}
+
+    for iso_date, info in nightly_info.items():
+        rustc_pkg = info.get("pkg", {}).get("rustc", {})
+        rustc_version_str = rustc_pkg.get("version", "")
+        if not rustc_version_str:
+            logging.warning("No rustc version found for nightly %s", iso_date)
+            continue
+
+        match = re.match(r"^(\d+\.\d+\.\d+)", rustc_version_str)
+        if not match:
+            logging.warning(
+                "Could not parse version from %r for nightly %s",
+                rustc_version_str,
+                iso_date,
+            )
+            continue
+
+        date_to_version[iso_date] = match.group(1)
+
+    sorted_dates = sorted(date_to_version.keys())
+    transitions = []
+    prev_version = None
+    for date in sorted_dates:
+        version = date_to_version[date]
+        if version != prev_version:
+            transitions.append((date, version))
+            prev_version = version
+
+    return transitions
+
+
 def load_data(file: Path) -> Sequence[str]:
     """Load a `fetch_shas_*.txt` file
 
@@ -357,6 +419,11 @@ def main() -> None:
             )
         )
 
+        nightly_transitions = extract_nightly_version_transitions(manifest_data)
+        logging.info(
+            "Identified %s nightly version transitions.", len(nightly_transitions)
+        )
+
     finally:
         if not "RULES_RUST_FETCH_SHAS_DEBUG" in os.environ:
             shutil.rmtree(tmp_dir)
@@ -370,6 +437,13 @@ def main() -> None:
         )
     )
     logging.info("Done. Wrote %s", known_shas_file.relative_to(workspace_dir))
+
+    nightly_versions_file = workspace_dir / "rust/nightly_versions.bzl"
+    transitions_str = "\n".join(
+        '    "{}": "{}",'.format(date, ver) for date, ver in nightly_transitions
+    )
+    nightly_versions_file.write_text(NIGHTLY_VERSIONS_TEMPLATE.format(transitions_str))
+    logging.info("Done. Wrote %s", nightly_versions_file.relative_to(workspace_dir))
 
 
 if __name__ == "__main__":
