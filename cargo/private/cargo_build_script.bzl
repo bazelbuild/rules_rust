@@ -623,6 +623,10 @@ def _cargo_build_script_impl(ctx):
     if experimental_symlink_execroot:
         env["RULES_RUST_SYMLINK_EXEC_ROOT"] = "1"
 
+    out_dir_volatile_basenames = ctx.attr._out_dir_volatile_file_basenames[BuildSettingInfo].value
+    if out_dir_volatile_basenames:
+        env["RULES_RUST_OUT_DIR_VOLATILE_BASENAMES"] = ":".join(out_dir_volatile_basenames)
+
     ctx.actions.run(
         executable = ctx.executable._cargo_build_script_runner,
         arguments = [args, runfiles_args],
@@ -795,6 +799,9 @@ cargo_build_script = rule(
             executable = True,
             allow_files = True,
             default = Label("//cargo/private:no_cxx"),
+        ),
+        "_out_dir_volatile_file_basenames": attr.label(
+            default = Label("//cargo/settings:out_dir_volatile_file_basenames"),
         ),
     },
     fragments = ["cpp"],

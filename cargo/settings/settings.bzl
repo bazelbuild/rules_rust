@@ -42,3 +42,25 @@ def use_default_shell_env():
         name = "use_default_shell_env",
         build_setting_default = True,
     )
+
+def out_dir_volatile_file_basenames():
+    """A flag which determines what file basenames are removed from `OUT_DIR` by `cargo_build_script` actions to make the `_bs.out_dir` TreeArtifact deterministic.
+
+    Files whose names appear in this list, as well as files with a `.d` or `.pc`
+    extension, are deleted from `OUT_DIR` after the build script runs and before Bazel
+    captures the directory. Files like `config.log` and `Makefile` embed the Bazel
+    sandbox path, so their content changes on every action invocation, causing cache
+    misses for all downstream `rustc` compilations.
+    """
+    string_list_flag(
+        name = "out_dir_volatile_file_basenames",
+        build_setting_default = [
+            "config.log",
+            "config.log.old",
+            "config.status",
+            "Makefile",
+            "Makefile.config",
+            "config.cache",
+            "commit_hash",
+        ],
+    )
