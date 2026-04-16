@@ -630,6 +630,12 @@ tasks:
       - "--config=no_std_alloc"
     test_flags:
       - "--config=no_std_alloc"
+  unstable_rust_features_ubuntu2204:
+    name: Build with unstable_rust_features
+    platform: ubuntu2204
+    working_directory: test/integration/unstable_rust_features
+    build_targets:
+      - "//..."
   bzlmod_repo_mapping_runfiles:
     name: bzlmod repo mapping test
     platform: ubuntu2204

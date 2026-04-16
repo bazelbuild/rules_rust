@@ -228,3 +228,8 @@ AllocatorLibrariesImplInfo = provider(
         "static_archive": "Optional[File]: the allocator library archive (typically .a file).",
     },
 )
+
+UnstableRustFeaturesInfo = provider(
+    doc = "UnstableRustFeaturesInfo contains a function mapping build targets to unstable features approved for use. Only works on nightly toolchains. May return the special value \"__all__\" to allow all unstable features for the target.",
+    fields = {"unstable_rust_features_config": "Callable[[Label], List[string]] Returns a list of unstable features approved for use for the given build target."},
+)

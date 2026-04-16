@@ -24,6 +24,7 @@ load(
     "CrateGroupInfo",
     "CrateInfo",
     "LintsInfo",
+    "UnstableRustFeaturesInfo",
 )
 load(
     ":rust_allocator_libraries.bzl",
@@ -806,6 +807,11 @@ _COMMON_ATTRS = {
     ),
     "stamp": _stamp_attribute(
         default_value = 0,
+    ),
+    "unstable_rust_features_config": attr.label(
+        doc = "Controls which unstable features are allowed to be used by this target. Setting this to anything other than None requires a nightly toolchain.",
+        providers = [UnstableRustFeaturesInfo],
+        default = None,
     ),
     "version": attr.string(
         doc = "A version to inject in the cargo environment variable.",

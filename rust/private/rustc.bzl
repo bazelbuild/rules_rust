@@ -34,6 +34,7 @@ load(
     "AlwaysEnableMetadataOutputGroupsInfo",
     "LintsInfo",
     "RustcOutputDiagnosticsInfo",
+    "UnstableRustFeaturesInfo",
     _BuildInfo = "BuildInfo",
 )
 load(":rustc_resource_set.bzl", "get_rustc_resource_set", "is_codegen_units_enabled")
@@ -904,6 +905,15 @@ def _should_add_oso_prefix(toolchain):
 
     return True
 
+def _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features):
+    other_flags = []
+    for flag in rust_flags:
+        if flag.startswith("-Zallow-features="):
+            all_allowed_unstable_features.extend(flag.removeprefix("-Zallow-features=").split(","))
+        else:
+            other_flags.append(flag)
+    return other_flags
+
 def construct_arguments(
         *,
         ctx,
@@ -933,7 +943,8 @@ def construct_arguments(
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
-        error_format = None):
+        error_format = None,
+        allowed_unstable_rust_features = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -969,6 +980,7 @@ def construct_arguments(
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
+        allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
 
     Returns:
         tuple: A tuple of the following items
@@ -996,8 +1008,12 @@ def construct_arguments(
 
     process_wrapper_flags.add_all(build_flags_files, before_each = "--arg-file")
 
-    if require_explicit_unstable_features:
-        process_wrapper_flags.add("--require-explicit-unstable-features", "true")
+    all_allowed_unstable_features = []
+    if getattr(ctx.attr, "unstable_rust_features_config", None):
+        all_allowed_unstable_features.extend(ctx.attr.unstable_rust_features_config[UnstableRustFeaturesInfo].unstable_rust_features_config(ctx.label))
+
+    if allowed_unstable_rust_features != None:
+        all_allowed_unstable_features.extend(allowed_unstable_rust_features)
 
     # Certain rust build processes expect to find files from the environment
     # variable `$CARGO_MANIFEST_DIR`. Examples of this include pest, tera,
@@ -1124,7 +1140,11 @@ def construct_arguments(
 
     # Tell Rustc where to find the standard library (or libcore)
     rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
-    rustc_flags.add_all(rust_flags, map_each = map_flag)
+
+    rustc_flags.add_all(
+        _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features),
+        map_each = map_flag,
+    )
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1244,7 +1264,18 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
         env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
-    rustc_flags.add_all(collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type), map_each = map_flag)
+    extra_rustc_flags = _extract_allowed_unstable_features_from_flags(
+        collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type),
+        all_allowed_unstable_features,
+    )
+    if getattr(ctx.attr, "unstable_rust_features_config", None) and not "__all__" in all_allowed_unstable_features:
+        all_allowed_unstable_features = {f: None for f in all_allowed_unstable_features}.keys()
+        extra_rustc_flags.append("-Zallow-features=" + ",".join(all_allowed_unstable_features))
+
+        # require_explicit_unstable_features makes no sense when all features are allowed anyway
+        if require_explicit_unstable_features:
+            process_wrapper_flags.add("--require-explicit-unstable-features", "true")
+    rustc_flags.add_all(extra_rustc_flags, map_each = map_flag)
 
     if is_no_std(ctx, toolchain, crate_info.is_test):
         rustc_flags.add('--cfg=feature="no_std"')
@@ -1323,7 +1354,8 @@ def rustc_compile_action(
         force_all_deps_direct = False,
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
-        include_coverage = True):
+        include_coverage = True,
+        allowed_unstable_rust_features = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
@@ -1337,6 +1369,8 @@ def rustc_compile_action(
         crate_info_dict: A mutable dict used to create CrateInfo provider
         skip_expanding_rustc_env (bool, optional): Whether to expand CrateInfo.rustc_env
         include_coverage (bool, optional): Whether to generate coverage information or not.
+        allowed_unstable_rust_features (list, optional): A list of unstable Rust language features
+            that are allowed to be used in the crate.
 
     Returns:
         list: A list of the following providers:
@@ -1460,6 +1494,7 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
+        allowed_unstable_rust_features = allowed_unstable_rust_features,
     )
 
     args_metadata = None
@@ -1487,6 +1522,7 @@ def rustc_compile_action(
             use_json_output = True,
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
+            allowed_unstable_rust_features = allowed_unstable_rust_features,
         )
 
     env = dict(ctx.configuration.default_shell_env)

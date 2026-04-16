@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(":unstable_features_for_test.bzl", "unstable_rust_features_for_test_rule")
+
+unstable_rust_features_for_test_rule(name = "unstable_rust_features_for_test")
+
+rust_binary(
+    name = "unstable_features_test",
+    srcs = ["main.rs"],
+    unstable_rust_features_config = ":unstable_rust_features_for_test",
+)
