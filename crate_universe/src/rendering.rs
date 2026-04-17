@@ -2335,17 +2335,15 @@ mod test {
             .expect("should contain rust_binary");
         let binary_section = &build_file_content[binary_start..];
 
-        // Locate the deps and proc_macro_deps attribute positions within the binary.
-        let deps_pos = binary_section
-            .find("    deps = ")
-            .expect("binary should have deps attribute");
+        // When the crate's lib is a proc-macro, deps will be empty and therefore
+        // omitted from the rendered output.  Only proc_macro_deps should be present.
         let proc_macro_deps_pos = binary_section
             .find("    proc_macro_deps = ")
             .expect("binary should have proc_macro_deps attribute");
 
         assert!(
-            !binary_section[deps_pos..proc_macro_deps_pos].contains(":my_proc_macro"),
-            "proc-macro lib must not appear in deps:\n{binary_section}"
+            !binary_section[..proc_macro_deps_pos].contains(":my_proc_macro"),
+            "proc-macro lib must not appear before proc_macro_deps:\n{binary_section}"
         );
         assert!(
             binary_section[proc_macro_deps_pos..].contains(":my_proc_macro"),
