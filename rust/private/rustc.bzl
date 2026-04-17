@@ -2252,6 +2252,7 @@ def portable_link_flags(
         use_pic,
         ambiguous_libs,
         get_lib_name,
+        for_windows = False,
         for_darwin = False,
         flavor_msvc = False):
     """_summary_
@@ -2261,6 +2262,7 @@ def portable_link_flags(
         use_pic (_type_): _description_
         ambiguous_libs (_type_): _description_
         get_lib_name (_type_): _description_
+        for_windows (bool, optional): _description_. Defaults to False.
         for_darwin (bool, optional): _description_. Defaults to False.
         flavor_msvc (bool, optional): _description_. Defaults to False.
 
@@ -2353,7 +2355,7 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
                 ])
         elif include_link_flags:
             get_lib_name = get_lib_name_for_windows if flavor_msvc else get_lib_name_default
-            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, flavor_msvc = flavor_msvc))
+            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name, for_windows = True, flavor_msvc = flavor_msvc))
 
     # Windows toolchains can inherit POSIX defaults like -pthread from C deps,
     # which fails to link with the MinGW/LLD toolchain. Drop them here.
