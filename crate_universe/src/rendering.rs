@@ -735,28 +735,35 @@ impl Renderer {
         krate: &CrateContext,
         target: &TargetAttributes,
     ) -> Result<RustBinary> {
+        // If the crate's library target is a proc-macro, the binary must list
+        // it in `proc_macro_deps` rather than `deps`; rules_rust validates this.
+        let lib_is_proc_macro = krate
+            .targets
+            .iter()
+            .any(|rule| matches!(rule, Rule::ProcMacro(_)));
+
+        let mut deps = self.make_deps(
+            krate.common_attrs.deps.clone(),
+            krate.common_attrs.extra_deps.clone(),
+        );
+        let mut proc_macro_deps = self.make_deps(
+            krate.common_attrs.proc_macro_deps.clone(),
+            krate.common_attrs.extra_proc_macro_deps.clone(),
+        );
+
+        if let Some(library_target_name) = &krate.library_target_name {
+            let lib_label = Label::from_str(&format!(":{library_target_name}")).unwrap();
+            if lib_is_proc_macro {
+                proc_macro_deps.insert(lib_label, None);
+            } else {
+                deps.insert(lib_label, None);
+            }
+        }
+
         Ok(RustBinary {
             name: format!("{}__bin", target.crate_name),
-            deps: {
-                let mut deps = self.make_deps(
-                    krate.common_attrs.deps.clone(),
-                    krate.common_attrs.extra_deps.clone(),
-                );
-                if let Some(library_target_name) = &krate.library_target_name {
-                    deps.insert(
-                        Label::from_str(&format!(":{library_target_name}")).unwrap(),
-                        None,
-                    );
-                }
-                SelectSet::new(deps, platforms)
-            },
-            proc_macro_deps: SelectSet::new(
-                self.make_deps(
-                    krate.common_attrs.proc_macro_deps.clone(),
-                    krate.common_attrs.extra_proc_macro_deps.clone(),
-                ),
-                platforms,
-            ),
+            deps: SelectSet::new(deps, platforms),
+            proc_macro_deps: SelectSet::new(proc_macro_deps, platforms),
             aliases: SelectDict::new(self.make_aliases(krate, false, false), platforms),
             common: self.make_common_attrs(platforms, krate, target)?,
         })
@@ -2275,5 +2282,74 @@ mod test {
         assert!(build_file_content
             .replace(' ', "")
             .contains(&expected.replace(' ', "")));
+    }
+
+    /// Binary targets of a proc-macro crate must list the proc-macro lib in
+    /// `proc_macro_deps`, not `deps`. rules_rust validates this strictly.
+    #[test]
+    fn binary_of_proc_macro_crate_uses_proc_macro_deps() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("my_proc_macro".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name.clone(),
+                version: crate_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([
+                    Rule::ProcMacro(TargetAttributes {
+                        crate_name: "my_proc_macro".to_owned(),
+                        crate_root: Some("src/lib.rs".to_owned()),
+                        ..TargetAttributes::default()
+                    }),
+                    Rule::Binary(TargetAttributes {
+                        crate_name: "my_bin".to_owned(),
+                        crate_root: Some("src/main.rs".to_owned()),
+                        ..TargetAttributes::default()
+                    }),
+                ]),
+                library_target_name: Some("my_proc_macro".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.my_proc_macro-0.1.0.bazel"))
+            .unwrap();
+
+        // Find the rust_binary section.
+        let binary_start = build_file_content
+            .find("rust_binary(")
+            .expect("should contain rust_binary");
+        let binary_section = &build_file_content[binary_start..];
+
+        // Locate the deps and proc_macro_deps attribute positions within the binary.
+        let deps_pos = binary_section
+            .find("    deps = ")
+            .expect("binary should have deps attribute");
+        let proc_macro_deps_pos = binary_section
+            .find("    proc_macro_deps = ")
+            .expect("binary should have proc_macro_deps attribute");
+
+        assert!(
+            !binary_section[deps_pos..proc_macro_deps_pos].contains(":my_proc_macro"),
+            "proc-macro lib must not appear in deps:\n{binary_section}"
+        );
+        assert!(
+            binary_section[proc_macro_deps_pos..].contains(":my_proc_macro"),
+            "proc-macro lib must appear in proc_macro_deps:\n{binary_section}"
+        );
     }
 }
