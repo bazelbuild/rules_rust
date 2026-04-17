@@ -215,16 +215,16 @@ impl Renderer {
                 // creation for all workspace members (repository == null).
                 // Use override_targets["lib"] when set; skip otherwise to
                 // avoid emitting dangling alias targets.
-                let maybe_actual: Option<Label> =
-                    if context.workspace_members.contains_key(&dep.id) {
-                        krate.override_targets.get("lib").cloned()
-                    } else {
-                        Some(self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ))
-                    };
+                let maybe_actual: Option<Label> = if context.workspace_members.contains_key(&dep.id)
+                {
+                    krate.override_targets.get("lib").cloned()
+                } else {
+                    Some(self.crate_label(
+                        &krate.name,
+                        &krate.version.to_string(),
+                        library_target_name,
+                    ))
+                };
 
                 if let Some(actual) = maybe_actual {
                     // Avoid adding the <crate_name>-<version> alias if there are
