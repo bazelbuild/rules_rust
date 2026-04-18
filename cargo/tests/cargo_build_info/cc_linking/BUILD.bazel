@@ -1,0 +1,20 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//cargo:defs.bzl", "cargo_build_info")
+load("//rust:defs.bzl", "rust_test")
+
+cc_library(
+    name = "native_lib",
+    srcs = ["native.c"],
+)
+
+cargo_build_info(
+    name = "build_info",
+    cc_lib = ":native_lib",
+)
+
+rust_test(
+    name = "cc_linking_test",
+    srcs = ["test.rs"],
+    edition = "2021",
+    deps = [":build_info"],
+)

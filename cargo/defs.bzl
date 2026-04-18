@@ -9,6 +9,10 @@ load(
     _cargo_env = "cargo_env",
 )
 load(
+    "//cargo/private:cargo_build_info.bzl",
+    _cargo_build_info = "cargo_build_info",
+)
+load(
     "//cargo/private:cargo_build_script_wrapper.bzl",
     _cargo_build_script = "cargo_build_script",
 )
@@ -23,6 +27,7 @@ load(
 load("//cargo/private:cargo_toml_env_vars.bzl", _cargo_toml_env_vars = "cargo_toml_env_vars")
 
 cargo_bootstrap_repository = _cargo_bootstrap_repository
+cargo_build_info = _cargo_build_info
 cargo_env = _cargo_env
 
 cargo_build_script = _cargo_build_script

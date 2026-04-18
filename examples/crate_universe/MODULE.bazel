@@ -15,6 +15,14 @@ local_path_override(
     path = "../..",
 )
 
+bazel_dep(name = "rules_rust_bindgen", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust_bindgen",
+    path = "../../extensions/bindgen",
+)
+
+register_toolchains("@rules_rust_bindgen//:default_bindgen_toolchain")
+
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
@@ -404,35 +412,31 @@ use_repo(
 # M U L T I   P A C K A G E
 ###############################################################################
 
+bazel_dep(name = "briansmith_ring", version = "0.17.14")
+bazel_dep(name = "aws-lc", version = "1.67.0")
+
 # https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html
 multi_pkg_example = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+inject_repo(multi_pkg_example, "briansmith_ring")
+
+inject_repo(multi_pkg_example, "aws-lc")
+
 multi_pkg_example.annotation(
-    crate = "curl-sys",
+    crate = "ring",
     gen_build_script = "off",
     repositories = ["m_pkgs"],
-    deps = [
-        "@m_pkgs__curl//:curl",
-    ],
+    deps = ["@briansmith_ring//:ring_core"],
 )
 multi_pkg_example.annotation(
-    crate = "httpmock",
-    repositories = ["m_pkgs"],
-    shallow_since = "1673473097 +0100",
-)
-multi_pkg_example.annotation(
-    crate = "isahc",
-    repositories = ["m_pkgs"],
-    shallow_since = "1667787880 -0600",
-)
-multi_pkg_example.annotation(
-    build_script_data_glob = ["nghttp2/**"],
-    crate = "libnghttp2-sys",
-    data_glob = ["nghttp2/**"],
+    crate = "aws-lc-sys",
+    # buildifier: disable=canonical-repository
+    override_target_build_script = "@@//multi_package:aws_lc_sys_bs",
     repositories = ["m_pkgs"],
 )
 multi_pkg_example.annotation(
-    build_script_data_glob = ["vendor/**"],
-    crate = "wepoll-ffi",
+    crate = "aws-lc-rs",
+    gen_build_script = "off",
     repositories = ["m_pkgs"],
 )
 multi_pkg_example.from_cargo(
@@ -449,18 +453,6 @@ multi_pkg_example.from_cargo(
 use_repo(
     multi_pkg_example,
     "m_pkgs",
-)
-
-http_archive(
-    name = "m_pkgs__curl",
-    build_file = "//multi_package/3rdparty:BUILD.curl.bazel",
-    integrity = "sha256-c6Sw6ZWWoJ+lkkpPt+S5lahf2g0YosAquc8TS+vOBO4=",
-    strip_prefix = "curl-8.10.1",
-    type = "tar.xz",
-    urls = [
-        "https://curl.se/download/curl-8.10.1.tar.xz",
-        "https://github.com/curl/curl/releases/download/curl-8_10_1/curl-8.10.1.tar.xz",
-    ],
 )
 
 ###############################################################################
