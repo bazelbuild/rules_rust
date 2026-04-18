@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//rust:defs.bzl", "rust_common", "rust_doc", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_common", "rust_doc", "rust_library", "rust_proc_macro", "rust_test")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
@@ -102,6 +102,27 @@ def _transitive_compile_data_not_in_compile_inputs_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _proc_macro_data_in_compile_inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    rustc_action = None
+    for action in target.actions:
+        if action.mnemonic == "Rustc":
+            rustc_action = action
+            break
+
+    asserts.false(env, rustc_action == None, "Expected a Rustc action")
+
+    data_inputs = [i for i in rustc_action.inputs.to_list() if "proc_macro_data_dep.txt" in i.path]
+    asserts.true(
+        env,
+        len(data_inputs) > 0,
+        "Expected proc-macro data dep file to appear in Rustc action inputs, but it was not found",
+    )
+
+    return analysistest.end(env)
+
 def _data_propagates_to_runfiles_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
@@ -124,6 +145,7 @@ wrapper_rule_propagates_and_joins_compile_data_test = analysistest.make(_wrapper
 compile_data_propagates_to_rust_doc_test = analysistest.make(_compile_data_propagates_to_rust_doc_test_impl)
 transitive_data_not_in_compile_inputs_test = analysistest.make(_transitive_data_not_in_compile_inputs_test_impl)
 transitive_compile_data_not_in_compile_inputs_test = analysistest.make(_transitive_compile_data_not_in_compile_inputs_test_impl)
+proc_macro_data_in_compile_inputs_test = analysistest.make(_proc_macro_data_in_compile_inputs_test_impl)
 data_propagates_to_runfiles_test = analysistest.make(_data_propagates_to_runfiles_test_impl)
 
 def _define_test_targets():
@@ -269,6 +291,20 @@ def _define_test_targets():
         edition = "2021",
     )
 
+    rust_proc_macro(
+        name = "proc_macro_with_data",
+        srcs = ["proc_macro_with_data.rs"],
+        data = ["proc_macro_data_dep.txt"],
+        edition = "2021",
+    )
+
+    rust_library(
+        name = "lib_depending_on_proc_macro",
+        srcs = ["lib_depending_on_proc_macro.rs"],
+        proc_macro_deps = [":proc_macro_with_data"],
+        edition = "2021",
+    )
+
 def compile_data_test_suite(name):
     """Entry-point macro called from the BUILD file.
 
@@ -313,6 +349,11 @@ def compile_data_test_suite(name):
         target_under_test = ":lib_depending_on_data",
     )
 
+    proc_macro_data_in_compile_inputs_test(
+        name = "proc_macro_data_in_compile_inputs_test",
+        target_under_test = ":lib_depending_on_proc_macro",
+    )
+
     native.test_suite(
         name = name,
         tests = [
@@ -323,5 +364,6 @@ def compile_data_test_suite(name):
             ":transitive_data_not_in_compile_inputs_test",
             ":transitive_compile_data_not_in_compile_inputs_test",
             ":data_propagates_to_runfiles_test",
+            ":proc_macro_data_in_compile_inputs_test",
         ],
     )
