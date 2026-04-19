@@ -17,7 +17,7 @@ cargo_toml_env_vars(
 )
 
 rust_library(
-    name = "tokio_tungstenite",
+    name = "clap",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -35,13 +35,18 @@ rust_library(
         ],
     ),
     crate_features = [
-        "connect",
+        "cargo",
+        "color",
         "default",
-        "handshake",
-        "stream",
+        "error-context",
+        "help",
+        "std",
+        "suggestions",
+        "usage",
+        "wrap_help",
     ],
     crate_root = "src/lib.rs",
-    edition = "2018",
+    edition = "2024",
     rustc_env_files = [
         ":cargo_toml_env_vars",
     ],
@@ -50,7 +55,7 @@ rust_library(
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=tokio-tungstenite",
+        "crate-name=clap",
         "manual",
         "noclippy",
         "norustfmt",
@@ -103,11 +108,8 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.21.0",
+    version = "4.6.1",
     deps = [
-        "@rmdbi__futures-util-0.3.32//:futures_util",
-        "@rmdbi__log-0.4.29//:log",
-        "@rmdbi__tokio-1.52.1//:tokio",
-        "@rmdbi__tungstenite-0.21.0//:tungstenite",
+        "@rmdbi__clap_builder-4.6.0//:clap_builder",
     ],
 )

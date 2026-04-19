@@ -104,10 +104,10 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.2.6",
+    version = "0.2.7",
     deps = [
         "@rmdbi__portable-atomic-1.13.1//:portable_atomic",
-        "@rmdbi__portable-atomic-util-0.2.6//:build_script_build",
+        "@rmdbi__portable-atomic-util-0.2.7//:build_script_build",
     ],
 )
 
@@ -162,7 +162,7 @@ cargo_build_script(
         "noclippy",
         "norustfmt",
     ],
-    version = "0.2.6",
+    version = "0.2.7",
     visibility = ["//visibility:private"],
 )
 
