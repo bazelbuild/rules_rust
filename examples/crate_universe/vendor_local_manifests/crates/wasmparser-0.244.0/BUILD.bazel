@@ -107,9 +107,9 @@ rust_library(
     }),
     version = "0.244.0",
     deps = [
-        "//vendor_local_manifests/crates/bitflags-2.11.0:bitflags",
+        "//vendor_local_manifests/crates/bitflags-2.11.1:bitflags",
         "//vendor_local_manifests/crates/hashbrown-0.15.5:hashbrown",
-        "//vendor_local_manifests/crates/indexmap-2.13.1:indexmap",
+        "//vendor_local_manifests/crates/indexmap-2.14.0:indexmap",
         "//vendor_local_manifests/crates/semver-1.0.28:semver",
     ],
 )
