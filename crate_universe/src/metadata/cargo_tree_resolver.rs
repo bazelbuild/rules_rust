@@ -138,12 +138,34 @@ impl TreeResolver {
             .map(|n| n.get())
             .unwrap_or(4);
 
+        // Without any host triples, no `cargo tree` invocations would run and
+        // the resulting BUILD files would silently be missing `crate_features`
+        // and optional dependencies. Bail with an actionable message instead.
+        if cargo_host_triples.is_empty() {
+            bail!(
+                "`supported_platform_triples` contains no platforms with host tools, so \
+                 `cargo tree` cannot be invoked and feature resolution cannot be performed. \
+                 Bazel's execution platform triple typically should be included in \
+                 `supported_platform_triples` (e.g. `x86_64-unknown-linux-gnu`). \
+                 target_triples=[{}]",
+                cargo_target_triples
+                    .keys()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            );
+        }
+
         // Prepare all unique jobs: (cargo_host, cargo_target)
         let mut jobs = Vec::<(String, String)>::new();
         for cargo_host in cargo_host_triples.keys() {
             for cargo_target in cargo_target_triples.keys() {
                 jobs.push((cargo_host.clone(), cargo_target.clone()));
             }
+        }
+
+        if jobs.is_empty() {
+            bail!("No `cargo tree` invocations to run: no target triples were provided.");
         }
 
         // Spawn workers up to the cap; join one whenever the cap is reached.
@@ -1719,6 +1741,44 @@ mod test {
             )]),
             target_output,
             "Failed checking target dependencies."
+        );
+    }
+
+    #[test]
+    fn execute_cargo_tree_errors_when_no_host_triples() {
+        let (_, tempdir) =
+            crate::test::test_tempdir("execute_cargo_tree_errors_when_no_host_triples");
+
+        let resolver = TreeResolver::new(Cargo::new(
+            tempdir.join("nonexistent-cargo"),
+            tempdir.join("nonexistent-rustc"),
+        ));
+
+        let target_triples: BTreeSet<TargetTriple> =
+            BTreeSet::from([TargetTriple::from_bazel("thumbv6m-none-eabi".to_owned())]);
+        let host_triples: BTreeSet<TargetTriple> = BTreeSet::new();
+
+        let err = resolver
+            .execute_cargo_tree(
+                &tempdir.join("Cargo.toml"),
+                &host_triples,
+                &target_triples,
+                &tempdir.join("rustc_wrapper"),
+            )
+            .expect_err("expected an error when no host triples are supplied");
+
+        let msg = err.to_string();
+        assert!(
+            msg.contains("supported_platform_triples"),
+            "error message should mention `supported_platform_triples`, got: {msg}",
+        );
+        assert!(
+            msg.contains("host tools"),
+            "error message should mention host tools, got: {msg}",
+        );
+        assert!(
+            msg.contains("thumbv6m-none-eabi"),
+            "error message should list the configured target triples, got: {msg}",
         );
     }
 
