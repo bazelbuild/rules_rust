@@ -56,7 +56,7 @@ impl TryFrom<JsonValue> for RustcMessage {
     }
 }
 
-/// process_rustc_json takes an output line from rustc configured with
+/// process_json takes an output line from rustc configured with
 /// --error-format=json, parses the json and returns the appropriate output
 /// according to the original --error-format supplied.
 /// Only messages are returned, emits are ignored.
@@ -74,12 +74,12 @@ pub(crate) fn process_json(line: String, error_format: ErrorFormat) -> LineResul
 }
 
 /// stop_on_rmeta_completion parses the json output of rustc in the same way
-/// process_rustc_json does. In addition, it will signal to stop when metadata
+/// process_json does. In addition, it will signal to stop when metadata
 /// is emitted so the compiler can be terminated.
-/// This is used to implement pipelining in rules_rust, please see
-/// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199
+/// This is used to implement pipelining in rules_rust under the legacy
+/// `--rustc-quit-on-rmeta` path; see
+/// https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199.
 /// Returns an error if parsing json fails.
-/// TODO: pass a function to handle the emit event and merge with process_json
 pub(crate) fn stop_on_rmeta_completion(
     line: String,
     error_format: ErrorFormat,

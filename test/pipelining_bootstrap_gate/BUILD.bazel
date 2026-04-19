@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+# Local-only validation target for the -Zallow-features= guardrail that
+# rules_rust auto-injects when `incompatible_use_unstable_no_codegen_for_pipelining`
+# is enabled. The source uses an unstable feature gate (`#![feature(trait_alias)]`),
+# which rustc must reject with error E0725 ("the feature ... is not in the list of
+# allowed features") when the guardrail is in effect.
+#
+# Tagged "manual" so it is skipped by `:all` / `...` wildcards. Build it explicitly
+# to verify the guardrail:
+#
+#     bazel build --@rules_rust//rust/settings:pipelined_compilation \
+#                 --@rules_rust//rust/settings:incompatible_use_unstable_no_codegen_for_pipelining \
+#                 //test/pipelining_bootstrap_gate:unstable
+#
+# Expected: the build fails with rustc error E0725 referencing `trait_alias`.
+#
+# To verify the escape hatch works, supply your own bootstrap + allow-list:
+#
+#     bazel build --@rules_rust//rust/settings:pipelined_compilation \
+#                 --@rules_rust//rust/settings:incompatible_use_unstable_no_codegen_for_pipelining \
+#                 --@rules_rust//rust/settings:extra_rustc_env=RUSTC_BOOTSTRAP=1 \
+#                 --@rules_rust//rust/settings:extra_rustc_flag=-Zallow-features=trait_alias \
+#                 //test/pipelining_bootstrap_gate:unstable
+#
+# Expected: the build succeeds.
+rust_library(
+    name = "unstable",
+    srcs = ["unstable.rs"],
+    edition = "2021",
+    tags = ["manual"],
+)

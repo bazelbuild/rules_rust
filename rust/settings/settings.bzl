@@ -112,10 +112,12 @@ def use_real_import_macro():
     )
 
 def pipelined_compilation():
-    """When set, this flag causes rustc to emit `*.rmeta` files and use them for `rlib -> rlib` dependencies.
+    """When set, this flag enables pipelined compilation for `rlib -> rlib` dependencies.
 
-    While this involves one extra (short) rustc invocation to build the rmeta file,
-    it allows library dependencies to be unlocked much sooner, increasing parallelism during compilation.
+    rules_rust creates a second RustcMetadata action so downstream libraries can start
+    compiling from metadata before the full upstream rlib finishes. See
+    `incompatible_use_unstable_no_codegen_for_pipelining` for the alternate metadata
+    production mode.
     """
     bool_flag(
         name = "pipelined_compilation",
@@ -542,6 +544,21 @@ def incompatible_do_not_include_transitive_data_in_compile_inputs():
         name = "incompatible_do_not_include_transitive_data_in_compile_inputs",
         build_setting_default = True,
         issue = "https://github.com/bazelbuild/rules_rust/issues/3915",
+    )
+
+# buildifier: disable=unnamed-macro
+def incompatible_use_unstable_no_codegen_for_pipelining():
+    """Switch pipelined compilation to `-Zno-codegen` hollow rlibs.
+
+    When enabled with `pipelined_compilation`, the metadata action runs to
+    completion with `rustc -Zno-codegen --emit=link=<path>`. rules_rust also
+    injects `RUSTC_BOOTSTRAP=1` and `-Zallow-features=` on the metadata and
+    full compile actions unless the user already manages either setting.
+    """
+    incompatible_flag(
+        name = "incompatible_use_unstable_no_codegen_for_pipelining",
+        build_setting_default = False,
+        issue = "https://github.com/bazelbuild/rules_rust/issues/3977",
     )
 
 def codegen_units():

@@ -645,6 +645,7 @@ def _rust_toolchain_impl(ctx):
         _toolchain_generated_sysroot = ctx.attr._toolchain_generated_sysroot[BuildSettingInfo].value,
         _incompatible_do_not_include_data_in_compile_data = ctx.attr._incompatible_do_not_include_data_in_compile_data[IncompatibleFlagInfo].enabled,
         _incompatible_do_not_include_transitive_data_in_compile_inputs = ctx.attr._incompatible_do_not_include_transitive_data_in_compile_inputs[IncompatibleFlagInfo].enabled,
+        _incompatible_use_unstable_no_codegen_for_pipelining = ctx.attr._incompatible_use_unstable_no_codegen_for_pipelining[IncompatibleFlagInfo].enabled,
         _no_std = no_std,
         _codegen_units = ctx.attr._codegen_units[BuildSettingInfo].value,
         _experimental_use_allocator_libraries_with_mangled_symbols = ctx.attr.experimental_use_allocator_libraries_with_mangled_symbols,
@@ -903,6 +904,10 @@ rust_toolchain = rule(
         "_incompatible_do_not_include_transitive_data_in_compile_inputs": attr.label(
             default = Label("//rust/settings:incompatible_do_not_include_transitive_data_in_compile_inputs"),
             doc = "Label to a boolean build setting that controls whether to include transitive data dependencies in compile inputs.",
+        ),
+        "_incompatible_use_unstable_no_codegen_for_pipelining": attr.label(
+            default = Label("//rust/settings:incompatible_use_unstable_no_codegen_for_pipelining"),
+            doc = "Label to a boolean build setting that switches pipelined compilation to `-Zno-codegen` hollow rlibs (see #3977).",
         ),
         "_linker_preference": attr.label(
             default = Label("//rust/settings:toolchain_linker_preference"),

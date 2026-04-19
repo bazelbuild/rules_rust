@@ -21,7 +21,7 @@ use std::io::{self, prelude::*};
 /// Skip is returned nothing will be printed and execution continues,
 /// if Terminate is returned, process_output returns immediately.
 /// Terminate is used to stop processing when we see an emit metadata
-/// message.
+/// message under the --rustc-quit-on-rmeta code path.
 #[derive(Debug)]
 pub(crate) enum LineOutput {
     Message(String),
