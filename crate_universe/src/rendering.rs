@@ -290,7 +290,7 @@ impl Renderer {
                         dependencies.push(Alias {
                             rule: alias_rule.rule(),
                             name: shorthand.clone(),
-                            actual: actual.clone(),
+                            actual,
                             tags: BTreeSet::from(["manual".to_owned()]),
                         });
                     }
