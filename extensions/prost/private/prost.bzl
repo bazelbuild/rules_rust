@@ -23,6 +23,7 @@ load(
     "can_build_metadata",
     "can_use_metadata_for_pipelining",
     "generate_output_diagnostics",
+    "metadata_output_path",
 )
 load("//:providers.bzl", "ProstProtoInfo")
 load(":prost_transform.bzl", "ProstTransformInfo")
@@ -176,26 +177,14 @@ def _compile_rust(
         extension = ".rlib",
     )
 
-    rmeta_name = "{prefix}{name}-{lib_hash}{extension}".format(
-        prefix = "lib",
-        name = crate_name,
-        lib_hash = output_hash,
-        extension = ".rmeta",
-    )
-
     lib = ctx.actions.declare_file(lib_name)
     rmeta = None
     rustc_rmeta_output = None
     metadata_supports_pipelining = False
 
     if can_build_metadata(toolchain, ctx, "rlib"):
-        rmeta_name = "{prefix}{name}-{lib_hash}{extension}".format(
-            prefix = "lib",
-            name = crate_name,
-            lib_hash = output_hash,
-            extension = ".rmeta",
-        )
-        rmeta = ctx.actions.declare_file(rmeta_name)
+        rmeta_rel_path = metadata_output_path(toolchain, lib_name)
+        rmeta = ctx.actions.declare_file(rmeta_rel_path, sibling = lib)
         rustc_rmeta_output = generate_output_diagnostics(ctx, rmeta)
         metadata_supports_pipelining = can_use_metadata_for_pipelining(toolchain, "rlib")
 

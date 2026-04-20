@@ -718,6 +718,17 @@ def _replace_all(string, substitutions):
 
     return string
 
+def metadata_output_path(toolchain, base_name):
+    """Path for the pipelined metadata artifact, relative to the full rlib's dir.
+
+    New path (`incompatible_use_unstable_no_codegen_for_pipelining`=true) writes a
+    hollow rlib into a `_meta/` subdir to avoid colliding with the full rlib under
+    `-Ldependency=`. Legacy path writes `<base>.rmeta` as a sibling.
+    """
+    if toolchain._incompatible_use_unstable_no_codegen_for_pipelining:
+        return "_meta/" + paths.replace_extension(base_name, "_meta.rlib")
+    return paths.replace_extension(base_name, ".rmeta")
+
 def can_build_metadata(toolchain, ctx, crate_type, *, disable_pipelining = False):
     """Can we build metadata for the target built using this context?
 

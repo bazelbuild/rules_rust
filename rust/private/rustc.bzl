@@ -922,7 +922,7 @@ def construct_arguments(
         out_dir,
         build_env_files,
         build_flags_files,
-        emit = ["dep-info", "link"],
+        emit = ["link"],
         force_all_deps_direct = False,
         add_flags_for_binary = False,
         include_link_flags = True,
@@ -933,6 +933,7 @@ def construct_arguments(
         force_depend_on_objects = False,
         skip_expanding_rustc_env = False,
         require_explicit_unstable_features = False,
+        inject_allow_features_guardrail = False,
         error_format = None):
     """Builds an Args object containing common rustc flags
 
@@ -968,6 +969,7 @@ def construct_arguments(
         force_depend_on_objects (bool): Force using `.rlib` object files instead of metadata (`.rmeta`) files even if they are available.
         skip_expanding_rustc_env (bool): Whether to skip expanding CrateInfo.rustc_env_attr
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
+        inject_allow_features_guardrail (bool): When True, inject `-Zallow-features=` alongside `-Zno-codegen` to prevent silent unstable-feature enablement via RUSTC_BOOTSTRAP=1. Disabled on nightly toolchains (where unstable features are already allowed by default) and when the user manages bootstrap/allow-features themselves; gated in rustc_compile_action.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
 
     Returns:
@@ -1070,12 +1072,31 @@ def construct_arguments(
         error_format = "json"
 
     if build_metadata:
-        # Configure process_wrapper to terminate rustc when metadata are emitted
-        process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
+        if toolchain._incompatible_use_unstable_no_codegen_for_pipelining:
+            # RUSTC_BOOTSTRAP=1 is set on the action env in rustc_compile_action,
+            # required for -Zno-codegen on stable/beta rustc. -Zallow-features=
+            # (empty list) blocks all #![feature(...)] attributes to prevent the
+            # bootstrap env from silently enabling unstable language features in
+            # user code. Both are gated on inject_allow_features_guardrail, which
+            # is False on nightly (unstable features already allowed) and when
+            # the user manages bootstrap/allow-features themselves.
+            rustc_flags.add("-Zno-codegen")
+            if inject_allow_features_guardrail:
+                rustc_flags.add("-Zallow-features=")
+        else:
+            process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
         if crate_info.rustc_rmeta_output:
             process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
     elif crate_info.rustc_output:
         process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+
+    if not build_metadata and toolchain._incompatible_use_unstable_no_codegen_for_pipelining and bool(crate_info.metadata):
+        # Mirror the metadata action's -Zallow-features= so the bootstrap env
+        # does not silently enable unstable language features on the full
+        # compile. Gated on inject_allow_features_guardrail (computed in
+        # rustc_compile_action via _user_manages_bootstrap).
+        if inject_allow_features_guardrail:
+            rustc_flags.add("-Zallow-features=")
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -1105,8 +1126,17 @@ def construct_arguments(
         rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
 
     emit_without_paths = []
+    redirect_link_to_metadata = (
+        build_metadata and
+        crate_info.metadata != None and
+        toolchain._incompatible_use_unstable_no_codegen_for_pipelining
+    )
     for kind in emit:
-        if kind == "link" and crate_info.type == "bin" and crate_info.output != None:
+        if kind == "link" and redirect_link_to_metadata:
+            # -Zno-codegen --emit=link writes lib<name>.rlib by default, which would
+            # collide with the full action's output; redirect to the hollow path.
+            rustc_flags.add(crate_info.metadata, format = "--emit=link=%s")
+        elif kind == "link" and crate_info.type == "bin" and crate_info.output != None:
             rustc_flags.add(crate_info.output, format = "--emit=link=%s")
         else:
             emit_without_paths.append(kind)
@@ -1193,7 +1223,13 @@ def construct_arguments(
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
 
     # These always need to be added, even if not linking this crate.
-    add_crate_link_flags(rustc_flags, dep_info, force_all_deps_direct, use_metadata)
+    add_crate_link_flags(
+        rustc_flags,
+        dep_info,
+        force_all_deps_direct,
+        use_metadata,
+        metadata_in_separate_dir = toolchain._incompatible_use_unstable_no_codegen_for_pipelining,
+    )
 
     needs_extern_proc_macro_flag = _is_proc_macro(crate_info) and crate_info.edition != "2015"
     if needs_extern_proc_macro_flag:
@@ -1273,6 +1309,44 @@ def construct_arguments(
     )
 
     return args, env
+
+def _flag_is_allow_features(argv, index):
+    """Returns True if the flag at argv[index] is a -Zallow-features flag.
+
+    Handles three forms rustc accepts:
+    - "-Zallow-features=..."
+    - "-Zallow-features" followed by the value in the next token
+    - "-Z" followed by "allow-features[=...]" in the next token
+    """
+    flag = argv[index]
+    if flag == "-Zallow-features" or flag.startswith("-Zallow-features="):
+        return True
+    if flag == "-Z" and index + 1 < len(argv):
+        next_tok = argv[index + 1]
+        if next_tok == "allow-features" or next_tok.startswith("allow-features="):
+            return True
+    return False
+
+def _user_manages_bootstrap(ctx, attr, env_before_inject, collected_extra_flags):
+    """Return True if the user has set RUSTC_BOOTSTRAP or -Zallow-features themselves.
+
+    When True, rules_rust skips auto-injecting both RUSTC_BOOTSTRAP=1 and
+    -Zallow-features= for this target, treating the user's configuration as
+    authoritative.
+    """
+    if "RUSTC_BOOTSTRAP" in env_before_inject:
+        return True
+
+    attr_flags = getattr(attr, "rustc_flags", []) or []
+    for i in range(len(attr_flags)):
+        if _flag_is_allow_features(attr_flags, i):
+            return True
+
+    for i in range(len(collected_extra_flags)):
+        if _flag_is_allow_features(collected_extra_flags, i):
+            return True
+
+    return False
 
 def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
     """Gather all 'extra' rustc flags from the target's attributes and toolchain.
@@ -1413,18 +1487,21 @@ def rustc_compile_action(
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
 
+    use_no_codegen_pipelining = toolchain._incompatible_use_unstable_no_codegen_for_pipelining
+
     # The types of rustc outputs to emit.
-    # If we build metadata, we need to keep the command line of the two invocations
-    # (rlib and rmeta) as similar as possible, otherwise rustc rejects the rmeta as
-    # a candidate.
-    # Because of that we need to add emit=metadata to both the rlib and rmeta invocation.
-    #
-    # When cc_common linking is enabled, emit a `.o` file, which is later
-    # passed to the cc_common.link action.
-    emit = ["dep-info", "link"]
-    if build_metadata:
-        emit.append("metadata")
+    if use_no_codegen_pipelining:
+        # Metadata is emitted by a separate -Zno-codegen action; the full action
+        # only produces the linked rlib.
+        emit = ["link"]
+    else:
+        # Legacy pipelining: rustc matches metadata against full-compile command
+        # lines, so both actions must request `--emit=...,metadata`.
+        emit = ["dep-info", "link"]
+        if build_metadata:
+            emit.append("metadata")
     if experimental_use_cc_common_link:
+        # Pass a `.o` to the cc_common.link action.
         emit = ["obj"]
 
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
@@ -1436,6 +1513,35 @@ def rustc_compile_action(
             require_explicit_unstable_features = True
         elif ctx.attr.require_explicit_unstable_features == -1:
             require_explicit_unstable_features = toolchain.require_explicit_unstable_features
+
+    # Build the env snapshot used to detect a user-managed RUSTC_BOOTSTRAP before
+    # any rules_rust-injected values are added. Matches the merge order in the
+    # main env assembly below.
+    env_before_inject = dict(ctx.configuration.default_shell_env)
+    env_before_inject.update(crate_info.rustc_env)
+    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
+        env_before_inject.update(
+            ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env,
+        )
+
+    collected_extra_flags = collect_extra_rustc_flags(
+        ctx,
+        toolchain,
+        crate_info.root,
+        crate_info.type,
+    )
+
+    user_manages_bootstrap = _user_manages_bootstrap(
+        ctx,
+        attr,
+        env_before_inject,
+        collected_extra_flags,
+    )
+    inject_allow_features_guardrail = (
+        use_no_codegen_pipelining and
+        not user_manages_bootstrap and
+        toolchain.channel != "nightly"
+    )
 
     args, env_from_args = construct_arguments(
         ctx = ctx,
@@ -1460,10 +1566,12 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
+        inject_allow_features_guardrail = inject_allow_features_guardrail,
     )
 
     args_metadata = None
     if build_metadata:
+        metadata_emit = ["link"] if use_no_codegen_pipelining else emit
         args_metadata, _ = construct_arguments(
             ctx = ctx,
             attr = attr,
@@ -1471,7 +1579,7 @@ def rustc_compile_action(
             toolchain = toolchain,
             tool_path = toolchain.rustc.path,
             cc_toolchain = cc_toolchain,
-            emit = emit,
+            emit = metadata_emit,
             feature_configuration = feature_configuration,
             crate_info = crate_info,
             dep_info = dep_info,
@@ -1487,12 +1595,21 @@ def rustc_compile_action(
             use_json_output = True,
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
+            inject_allow_features_guardrail = inject_allow_features_guardrail,
         )
 
     env = dict(ctx.configuration.default_shell_env)
 
     # this is the final list of env vars
     env.update(env_from_args)
+
+    if build_metadata and use_no_codegen_pipelining and inject_allow_features_guardrail:
+        # RUSTC_BOOTSTRAP=1 is required for -Zno-codegen on stable/beta rustc, and
+        # must be set on both the metadata and full actions for SVH compatibility
+        # (since RUSTC_BOOTSTRAP affects the crate hash). Skipped on nightly
+        # toolchains (where -Zno-codegen works without bootstrap) and when the user
+        # manages RUSTC_BOOTSTRAP or -Zallow-features themselves (escape hatch).
+        env["RUSTC_BOOTSTRAP"] = "1"
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
@@ -2166,7 +2283,7 @@ def _get_dir_names(files):
         dirs[f.dirname] = None
     return dirs.keys()
 
-def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_metadata = False):
+def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_metadata = False, metadata_in_separate_dir = False):
     """Adds link flags to an Args object reference
 
     Args:
@@ -2175,6 +2292,9 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
         use_metadata (bool, optional): Build command line arguments using metadata for crates that provide it.
+        metadata_in_separate_dir (bool, optional): If True, add an extra `-Ldependency` pointing at
+            the `_meta/` subdir where hollow rlibs live under `-Zno-codegen` pipelining. Under legacy
+            pipelining the `.rmeta` is a sibling of the full rlib, so no extra flag is needed.
     """
 
     direct_crates = depset(
@@ -2193,6 +2313,14 @@ def add_crate_link_flags(args, dep_info, force_all_deps_direct = False, use_meta
         uniquify = True,
         format_each = "-Ldependency=%s",
     )
+
+    if use_metadata and metadata_in_separate_dir:
+        args.add_all(
+            dep_info.transitive_crates,
+            map_each = _get_crate_metadata_dirname,
+            uniquify = True,
+            format_each = "-Ldependency=%s",
+        )
 
 def _crate_to_link_flag_metadata(crate):
     """A helper macro used by `add_crate_link_flags` for adding crate link flags to a Arg object
@@ -2246,6 +2374,15 @@ def _get_crate_dirname(crate):
         str: The directory name of the the output File that will be produced.
     """
     return crate.output.dirname
+
+def _get_crate_metadata_dirname(crate):
+    """Returns the `_meta/` subdir containing `crate`'s hollow `_meta.rlib`, or None.
+
+    Only meaningful under `-Zno-codegen` pipelining; callers gate on that flag.
+    """
+    if crate.metadata and crate.metadata_supports_pipelining and crate.metadata.dirname != crate.output.dirname:
+        return crate.metadata.dirname
+    return None
 
 def portable_link_flags(
         lib,

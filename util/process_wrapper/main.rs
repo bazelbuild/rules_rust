@@ -186,8 +186,8 @@ fn main() -> Result<(), ProcessWrapperError> {
             move |line| process_line(line, quit_on_rmeta, format, metadata_emitted),
         );
         if me {
-            // If recv returns Ok(), a signal was sent in this channel so we should terminate the child process.
-            // We can safely ignore the Result from kill() as we don't care if the process already terminated.
+            // Metadata was emitted and we asked process_output to terminate early.
+            // We can safely ignore kill() failures -- the process may already be gone.
             let _ = child.kill();
             was_killed = true;
         }

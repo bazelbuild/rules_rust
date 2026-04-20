@@ -45,7 +45,7 @@ pub(crate) struct Options {
     // Meant to be used to get json output out of rustc for tooling usage.
     pub(crate) output_file: Option<String>,
     // If set, it configures rustc to emit an rmeta file and then
-    // quit.
+    // quit (legacy pipelining path).
     pub(crate) rustc_quit_on_rmeta: bool,
     // This controls the output format of rustc messages.
     pub(crate) rustc_output_format: Option<rustc::ErrorFormat>,
@@ -109,8 +109,8 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     );
     flags.define_flag(
         "--rustc-output-format",
-        "Controls the rustc output format if --rustc-quit-on-rmeta is set.\n\
-        'json' will cause the json output to be output, \
+        "Controls how rustc JSON messages are forwarded.\n\
+        'json' will pass through JSON messages, \
         'rendered' will extract the rendered message and print that.\n\
         Default: `rendered`",
         &mut rustc_output_format_raw,

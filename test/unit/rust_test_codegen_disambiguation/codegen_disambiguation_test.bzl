@@ -1,7 +1,7 @@
 """Tests that rust_test targets receive codegen disambiguation flags.
 
 rust_test targets pass --codegen=metadata and --codegen=extra-filename to rustc
-so that intermediate compilation artifacts (.o, .d files) get unique names. This
+so that intermediate compilation artifacts (such as .o files) get unique names. This
 prevents collisions with rust_binary or rust_library targets that share the same
 crate name, which would otherwise cause link failures on non-sandboxed builds
 (e.g. Windows or --spawn_strategy=standalone). See

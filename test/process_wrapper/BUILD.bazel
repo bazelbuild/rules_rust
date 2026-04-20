@@ -157,8 +157,29 @@ rust_binary(
 )
 
 rust_test(
+    name = "rustc_output_format",
+    srcs = [
+        "rustc_output_format.rs",
+        "rustc_test_util.rs",
+    ],
+    data = [
+        ":fake_rustc",
+        "//util/process_wrapper",
+    ],
+    edition = "2018",
+    rustc_env = {
+        "FAKE_RUSTC_RLOCATIONPATH": "$(rlocationpath :fake_rustc)",
+        "PROCESS_WRAPPER_RLOCATIONPATH": "$(rlocationpath //util/process_wrapper)",
+    },
+    deps = ["//rust/runfiles"],
+)
+
+rust_test(
     name = "rustc_quit_on_rmeta",
-    srcs = ["rustc_quit_on_rmeta.rs"],
+    srcs = [
+        "rustc_quit_on_rmeta.rs",
+        "rustc_test_util.rs",
+    ],
     data = [
         ":fake_rustc",
         "//util/process_wrapper",
