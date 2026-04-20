@@ -218,10 +218,7 @@ fn print_inheritable_path(
 ) {
     let maybe_path = match (
         manifest_value,
-        workspace_path_relative_to_crate.and_then(|workspace_path_relative_to_crate| {
-            workspace_value
-                .map(|workspace_value| (workspace_path_relative_to_crate, workspace_value))
-        }),
+        workspace_path_relative_to_crate.zip(workspace_value),
     ) {
         (Some(InheritableString::Value(path)), _) => Some(path.to_owned()),
         (Some(InheritableString::Inherit(_)), Some((relpath, value_path))) => {

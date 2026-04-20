@@ -167,7 +167,7 @@ rust_library(
             "//vendor_local_manifests/crates/libc-0.2.185:libc",  # cfg(any(target_os = "macos", target_os = "openbsd", target_os = "vita", target_os = "emscripten"))
         ],
         "@rules_rust//rust/platform:wasm32-wasip2": [
-            "//vendor_local_manifests/crates/wasip2-1.0.2-wasi-0.2.9:wasip2",  # cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p2"))
+            "//vendor_local_manifests/crates/wasip2-1.0.3-wasi-0.2.9:wasip2",  # cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p2"))
         ],
         "@rules_rust//rust/platform:x86_64-apple-darwin": [
             "//vendor_local_manifests/crates/libc-0.2.185:libc",  # cfg(any(target_os = "macos", target_os = "openbsd", target_os = "vita", target_os = "emscripten"))

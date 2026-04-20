@@ -1,5 +1,5 @@
 {
-  "checksum": "b0a3c14f1e2cac8599ccff2e6abe7847cca6713de53e593b17bfb3c871528292",
+  "checksum": "01f20c8f5c6c20ea63cc953b65a51175cb08a04ad410762806978fd8aaef3abb",
   "crates": {
     "direct-cargo-bazel-deps 0.0.1": {
       "name": "direct-cargo-bazel-deps",
