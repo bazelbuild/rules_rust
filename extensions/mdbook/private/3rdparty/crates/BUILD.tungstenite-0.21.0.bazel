@@ -113,7 +113,7 @@ rust_library(
         "@rmdbi__http-1.4.0//:http",
         "@rmdbi__httparse-1.10.1//:httparse",
         "@rmdbi__log-0.4.29//:log",
-        "@rmdbi__rand-0.8.5//:rand",
+        "@rmdbi__rand-0.8.6//:rand",
         "@rmdbi__sha1-0.10.6//:sha1",
         "@rmdbi__thiserror-1.0.69//:thiserror",
         "@rmdbi__url-2.5.8//:url",

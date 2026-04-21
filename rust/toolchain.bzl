@@ -56,6 +56,7 @@ def _rust_stdlib_filegroup_impl(ctx):
     panic_files = []
 
     std_rlibs = [f for f in rust_std if f.basename.endswith(".rlib")]
+    has_profiler_builtins = any(["profiler_builtins" in f.basename for f in std_rlibs])
     if std_rlibs:
         # test depends on std
         # std depends on everything except test
@@ -116,6 +117,7 @@ def _rust_stdlib_filegroup_impl(ctx):
             alloc_files = alloc_files,
             self_contained_files = self_contained_files,
             panic_files = panic_files,
+            has_profiler_builtins = has_profiler_builtins,
             srcs = ctx.attr.srcs,
         ),
     ]
@@ -211,7 +213,8 @@ def _generate_sysroot(
         llvm_tools = None,
         rust_std = None,
         rustfmt = None,
-        linker = None):
+        linker = None,
+        rust_objcopy = None):
     """Generate a rust sysroot from collection of toolchain components
 
     Args:
@@ -226,6 +229,7 @@ def _generate_sysroot(
         rust_std (Target, optional): A collection of Files containing Rust standard library components.
         rustfmt (File, optional): The path to a `rustfmt` executable.
         linker (Target, optional): The linker target (e.g. `rust-lld`).
+        rust_objcopy (File, optional): The path to a `rust-objcopy` executable.
 
     Returns:
         struct: A struct of generated files representing the new sysroot
@@ -297,6 +301,18 @@ def _generate_sysroot(
         sysroot_linker_files = _symlink_sysroot_tree(ctx, name, linker, linker[DefaultInfo].default_runfiles.files)
         direct_files.append(sysroot_linker)
         transitive_file_sets.append(sysroot_linker_files)
+
+    # rust-objcopy. rustc invokes this when `-Cstrip=debuginfo` is set and
+    # looks for it inside the sysroot at lib/rustlib/{triple}/bin, so it
+    # needs to land at the same relative path under the generated sysroot
+    # and be declared as an action input.
+    if rust_objcopy:
+        dest = "bin"
+        if "/lib/rustlib/" in rust_objcopy.dirname:
+            idx = rust_objcopy.dirname.find("/lib/rustlib/")
+            dest = rust_objcopy.dirname[idx + 1:]
+        sysroot_rust_objcopy = _symlink_sysroot_bin(ctx, name, dest, rust_objcopy)
+        direct_files.append(sysroot_rust_objcopy)
 
     # Llvm tools
     sysroot_llvm_tools = None
@@ -423,6 +439,7 @@ def _rust_toolchain_impl(ctx):
         cargo_clippy = ctx.file.cargo_clippy,
         llvm_tools = ctx.attr.llvm_tools,
         linker = ctx.attr.linker,
+        rust_objcopy = ctx.file.rust_objcopy,
     )
 
     # Determine the path and short_path of the sysroot
@@ -587,6 +604,7 @@ def _rust_toolchain_impl(ctx):
         linker = sysroot.linker,
         linker_preference = linker_preference,
         linker_type = ctx.attr.linker_type or None,
+        coverage_supported = bool(ctx.file.llvm_cov) and ctx.attr.rust_std[rust_common.stdlib_info].has_profiler_builtins,
         llvm_cov = ctx.file.llvm_cov,
         llvm_profdata = ctx.file.llvm_profdata,
         llvm_lib = ctx.files.llvm_lib,

@@ -1220,7 +1220,7 @@ def construct_arguments(
         rustc_flags.add("--extern")
         rustc_flags.add("proc_macro")
 
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+    if toolchain.coverage_supported and ctx.configuration.coverage_enabled:
         # https://doc.rust-lang.org/rustc/instrument-coverage.html
         rustc_flags.add("--codegen=instrument-coverage")
 
@@ -1723,7 +1723,7 @@ def rustc_compile_action(
         outputs = [crate_info.output]
 
     coverage_runfiles = []
-    if toolchain.llvm_cov and ctx.configuration.coverage_enabled and crate_info.is_test:
+    if toolchain.coverage_supported and ctx.configuration.coverage_enabled and crate_info.is_test:
         coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata] + toolchain.llvm_lib
         collect_cc_coverage = getattr(ctx.executable, "_collect_cc_coverage", None)
         if not collect_cc_coverage:

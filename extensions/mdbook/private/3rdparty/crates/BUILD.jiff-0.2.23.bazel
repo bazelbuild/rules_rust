@@ -105,11 +105,11 @@ rust_library(
     deps = select({
         "@rules_rust//rust/platform:riscv32imc-unknown-none-elf": [
             "@rmdbi__portable-atomic-1.13.1//:portable_atomic",  # cfg(not(target_has_atomic = "ptr"))
-            "@rmdbi__portable-atomic-util-0.2.6//:portable_atomic_util",  # cfg(not(target_has_atomic = "ptr"))
+            "@rmdbi__portable-atomic-util-0.2.7//:portable_atomic_util",  # cfg(not(target_has_atomic = "ptr"))
         ],
         "@rules_rust//rust/platform:thumbv6m-none-eabi": [
             "@rmdbi__portable-atomic-1.13.1//:portable_atomic",  # cfg(not(target_has_atomic = "ptr"))
-            "@rmdbi__portable-atomic-util-0.2.6//:portable_atomic_util",  # cfg(not(target_has_atomic = "ptr"))
+            "@rmdbi__portable-atomic-util-0.2.7//:portable_atomic_util",  # cfg(not(target_has_atomic = "ptr"))
         ],
         "//conditions:default": [],
     }),

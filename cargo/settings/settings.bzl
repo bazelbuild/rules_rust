@@ -14,18 +14,6 @@ def experimental_symlink_execroot():
         build_setting_default = False,
     )
 
-def incompatible_runfiles_cargo_manifest_dir():
-    """A flag which causes `cargo_build_script` to write an explicit `CARGO_MANIFEST_DIR` \
-    directory from an action instead of using runfiles directories which cannot be \
-    passed to downstream actions.
-
-    https://github.com/bazelbuild/bazel/issues/15486
-    """
-    bool_flag(
-        name = "incompatible_runfiles_cargo_manifest_dir",
-        build_setting_default = True,
-    )
-
 def cargo_manifest_dir_filename_suffixes_to_retain():
     """A flag which determines what files are retained in `CARGO_MANIFEST_DIR` directories \
     that are created in `CargoBuildScriptRun` actions.

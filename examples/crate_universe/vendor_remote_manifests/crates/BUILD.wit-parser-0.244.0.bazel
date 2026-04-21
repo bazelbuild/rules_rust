@@ -110,7 +110,7 @@ rust_library(
     deps = [
         "@cvm__anyhow-1.0.102//:anyhow",
         "@cvm__id-arena-2.3.0//:id_arena",
-        "@cvm__indexmap-2.13.1//:indexmap",
+        "@cvm__indexmap-2.14.0//:indexmap",
         "@cvm__log-0.4.29//:log",
         "@cvm__semver-1.0.28//:semver",
         "@cvm__serde-1.0.228//:serde",
