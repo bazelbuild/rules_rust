@@ -27,6 +27,7 @@ load(
     _DepInfo = "DepInfo",
     _DepVariantInfo = "DepVariantInfo",
     _TestCrateInfo = "TestCrateInfo",
+    _UnstableRustFeaturesInfo = "UnstableRustFeaturesInfo",
 )
 
 BuildInfo = _BuildInfo
@@ -36,5 +37,6 @@ CrateInfo = _CrateInfo
 DepInfo = _DepInfo
 DepVariantInfo = _DepVariantInfo
 TestCrateInfo = _TestCrateInfo
+UnstableRustFeaturesInfo = _UnstableRustFeaturesInfo
 
 COMMON_PROVIDERS = _COMMON_PROVIDERS
