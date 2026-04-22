@@ -1038,11 +1038,21 @@ def construct_arguments(
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
-    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    #
+    # Use ${exec_root} (sandbox-invariant absolute path to Bazel's real execroot)
+    # instead of ${pwd} here. Under sandboxed execution every rustc action runs
+    # in its own per-pid sandbox cwd, so ${pwd} resolves to a different absolute
+    # string for each action. rustc's env!() macro bakes the raw string into the
+    # compiled crate and hashes it into the SVH; --remap-path-prefix does not
+    # normalize env!() values. Result: nondeterministic SVHs for crates that do
+    # `PathBuf::from(env!("OUT_DIR"))` (e.g. pyo3-build-config), breaking
+    # pipelined compilation (full/hollow rlib SVHs diverge) and poisoning the
+    # remote/disk cache.
+    components = "${{exec_root}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
     if out_dir != None:
-        env["OUT_DIR"] = "${pwd}/" + out_dir
+        env["OUT_DIR"] = "${exec_root}/" + out_dir
 
     # Arguments for launching rustc from the process wrapper
     rustc_path = ctx.actions.args()
