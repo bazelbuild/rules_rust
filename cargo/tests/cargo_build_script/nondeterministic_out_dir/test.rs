@@ -1,6 +1,7 @@
-// include_str! resolves at compile time against the TreeArtifact captured by Bazel.
-// If the runner failed to strip config.log / *.d / *.pc files, the TreeArtifact hash
-// would change on every run, causing unnecessary rebuilds for all downstream crates.
+//! include_str! resolves at compile time against the TreeArtifact captured by Bazel.
+//! If the runner failed to strip config.log / *.d / *.pc files, the TreeArtifact hash
+//! would change on every run, causing unnecessary rebuilds for all downstream crates.
+
 const OUTPUT: &str = include_str!(concat!(env!("OUT_DIR"), "/output.txt"));
 
 #[test]
