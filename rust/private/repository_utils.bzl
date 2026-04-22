@@ -716,15 +716,18 @@ rust_analyzer_toolchain(
     name = "{name}",
     proc_macro_srv = {proc_macro_srv},
     rust_analyzer = {rust_analyzer},
+    rust_std = "//:rust_std-{target_triple}",
     rustc = "{rustc}",
     rustc_srcs = "//lib/rustlib/src:rustc_srcs",
+    cargo = "//:cargo",
     visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rust_analyzer_toolchain(name, rustc, proc_macro_srv, rust_analyzer = None):
+def BUILD_for_rust_analyzer_toolchain(name, target_triple, rustc, proc_macro_srv, rust_analyzer = None):
     return _build_file_for_rust_analyzer_toolchain_template.format(
         name = name,
+        target_triple = target_triple.str,
         rustc = rustc,
         proc_macro_srv = repr(proc_macro_srv),
         rust_analyzer = repr(rust_analyzer) if rust_analyzer else "None",

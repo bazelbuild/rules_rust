@@ -335,6 +335,12 @@ rust_analyzer_toolchain = rule(
             executable = True,
             allow_single_file = True,
         ),
+        "cargo": attr.label(
+            doc = "The path to a `cargo` binary.",
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+        ),
         "rustc": attr.label(
             doc = "The path to a `rustc` binary.",
             cfg = "exec",
@@ -349,6 +355,10 @@ rust_analyzer_toolchain = rule(
         "rustc_srcs_path": attr.string(
             doc = "The direct path to rustc srcs relative to rustc_srcs package root.",
             default = "library",
+        ),
+        "rust_std": attr.label(
+            doc = "The core library of rust.",
+            mandatory = True,
         ),
     },
 )
