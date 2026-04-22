@@ -17,7 +17,7 @@
 
 use std::collections::BTreeMap;
 use std::env;
-use std::fs::{create_dir_all, read_to_string, write};
+use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -234,6 +234,13 @@ fn run_buildrs() -> Result<(), String> {
         .drain_runfiles_dir(&out_dir_abs)
         .unwrap();
 
+    // Remove non-deterministic configure-generated files from OUT_DIR before
+    // Bazel captures it as a TreeArtifact. Files like config.log and
+    // Makefile.config embed the Bazel sandbox path (which changes on every
+    // action run), making the TreeArtifact hash non-deterministic and causing
+    // cache misses for all downstream rustc compilations.
+    remove_nondeterministic_out_dir_files(&out_dir_abs);
+
     // If out_dir is empty add an empty file to the directory to avoid an upstream Bazel bug
     // https://github.com/bazelbuild/bazel/issues/28286
     if out_dir_abs.read_dir().map(|read| read.count()).unwrap_or(0) == 0 {
@@ -254,6 +261,45 @@ fn run_buildrs() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// Recursively walk `dir` and delete any file whose basename appears in
+/// `RULES_RUST_OUT_DIR_VOLATILE_BASENAMES` (colon-separated, set by the
+/// `//cargo/settings:out_dir_volatile_file_basenames` flag) or has a `.d` or
+/// `.pc` extension. Errors are silently ignored: if a file cannot be removed
+/// the worst outcome is a cache miss, not a build failure.
+fn remove_nondeterministic_out_dir_files(dir: &Path) {
+    let volatile_basenames: Vec<String> = env::var("RULES_RUST_OUT_DIR_VOLATILE_BASENAMES")
+        .map(|v| v.split(':').map(String::from).collect())
+        .unwrap_or_default();
+    remove_nondeterministic_out_dir_files_with_list(dir, &volatile_basenames);
+}
+
+fn remove_nondeterministic_out_dir_files_with_list(dir: &Path, volatile_basenames: &[String]) {
+    let entries = match read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        // Use file_type() which does not follow symlinks, so we never recurse
+        // into symlink targets or traverse outside OUT_DIR.
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        let path = entry.path();
+        if file_type.is_dir() {
+            remove_nondeterministic_out_dir_files_with_list(&path, volatile_basenames);
+        } else if file_type.is_file() {
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if volatile_basenames.iter().any(|b| b == name)
+                    || name.ends_with(".d")
+                    || name.ends_with(".pc")
+                {
+                    let _ = remove_file(&path);
+                }
+            }
+        }
+    }
 }
 
 fn should_symlink_exec_root() -> bool {
@@ -446,6 +492,137 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs::{create_dir_all, write};
+
+    fn make_temp_dir(label: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .subsec_nanos();
+        let dir = std::env::temp_dir().join(format!("rules_rust_bin_test_{}_{}", label, nanos));
+        create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn basenames(names: &[&str]) -> Vec<String> {
+        names.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn remove_nondeterministic_named_files() {
+        let names = &["config.log", "config.status", "Makefile", "commit_hash"];
+        let dir = make_temp_dir("named");
+        for name in names {
+            write(dir.join(name), "content").unwrap();
+        }
+        write(dir.join("libfoo.a"), "keep").unwrap();
+
+        remove_nondeterministic_out_dir_files_with_list(&dir, &basenames(names));
+
+        for name in names {
+            assert!(
+                !dir.join(name).exists(),
+                "{} should have been removed",
+                name
+            );
+        }
+        assert!(dir.join("libfoo.a").exists(), "libfoo.a should be kept");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn remove_dot_d_and_pc_files() {
+        let dir = make_temp_dir("dotd");
+        write(dir.join("foo.d"), "deps").unwrap();
+        write(dir.join("bar.d"), "deps").unwrap();
+        write(dir.join("jemalloc.pc"), "prefix=/sandbox/out").unwrap();
+        write(dir.join("output.o"), "keep").unwrap();
+
+        remove_nondeterministic_out_dir_files_with_list(&dir, &[]);
+
+        assert!(!dir.join("foo.d").exists(), "foo.d should be removed");
+        assert!(!dir.join("bar.d").exists(), "bar.d should be removed");
+        assert!(
+            !dir.join("jemalloc.pc").exists(),
+            "jemalloc.pc should be removed"
+        );
+        assert!(dir.join("output.o").exists(), "output.o should be kept");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn remove_nondeterministic_files_recursively() {
+        let dir = make_temp_dir("recurse");
+        let sub = dir.join("subdir");
+        create_dir_all(&sub).unwrap();
+        write(sub.join("config.log"), "log").unwrap();
+        write(sub.join("foo.d"), "deps").unwrap();
+        write(sub.join("output.o"), "keep").unwrap();
+        write(dir.join("Makefile"), "top-level").unwrap();
+
+        remove_nondeterministic_out_dir_files_with_list(
+            &dir,
+            &basenames(&["config.log", "Makefile"]),
+        );
+
+        assert!(!sub.join("config.log").exists());
+        assert!(!sub.join("foo.d").exists());
+        assert!(sub.join("output.o").exists());
+        assert!(!dir.join("Makefile").exists());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn remove_nondeterministic_nonexistent_dir_is_noop() {
+        let dir = std::env::temp_dir().join("rules_rust_bin_test_nonexistent_999999999");
+        // Must not panic.
+        remove_nondeterministic_out_dir_files_with_list(&dir, &[]);
+    }
+
+    #[test]
+    fn remove_nondeterministic_custom_basenames() {
+        let dir = make_temp_dir("custom");
+        write(dir.join("custom_volatile.txt"), "bad").unwrap();
+        write(dir.join("config.log"), "keep_this").unwrap();
+
+        remove_nondeterministic_out_dir_files_with_list(&dir, &basenames(&["custom_volatile.txt"]));
+
+        assert!(
+            !dir.join("custom_volatile.txt").exists(),
+            "custom file should be removed"
+        );
+        assert!(
+            dir.join("config.log").exists(),
+            "config.log should be kept with custom list"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn remove_nondeterministic_env_var_override() {
+        let dir = make_temp_dir("envvar");
+        write(dir.join("config.log"), "would be removed by default").unwrap();
+        write(dir.join("only_this.txt"), "should be removed").unwrap();
+
+        // Override via env var: only "only_this.txt" is volatile; config.log should survive.
+        let prev = std::env::var("RULES_RUST_OUT_DIR_VOLATILE_BASENAMES").ok();
+        std::env::set_var("RULES_RUST_OUT_DIR_VOLATILE_BASENAMES", "only_this.txt");
+        remove_nondeterministic_out_dir_files(&dir);
+        match prev {
+            Some(v) => std::env::set_var("RULES_RUST_OUT_DIR_VOLATILE_BASENAMES", v),
+            None => std::env::remove_var("RULES_RUST_OUT_DIR_VOLATILE_BASENAMES"),
+        }
+
+        assert!(
+            !dir.join("only_this.txt").exists(),
+            "only_this.txt should be removed"
+        );
+        assert!(
+            dir.join("config.log").exists(),
+            "config.log should survive when not in env var list"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     #[test]
     fn rustc_cfg_parsing() {
