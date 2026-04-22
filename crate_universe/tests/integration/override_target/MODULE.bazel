@@ -1,0 +1,40 @@
+module(
+    name = "cu_test_override_target",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.annotation(
+    crate = "foo",
+    override_target_lib = "//:foo",
+    repositories = ["override_target"],
+)
+crate.spec(
+    package = "foo",
+    repositories = ["override_target"],
+    version = "0.0.0",
+)
+crate.splicing_config(
+    repositories = ["override_target"],
+    resolver_version = "2",
+)
+crate.from_cargo(
+    name = "override_target",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+)
+use_repo(
+    crate,
+    "override_target",
+)

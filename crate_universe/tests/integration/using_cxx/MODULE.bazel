@@ -1,0 +1,85 @@
+module(
+    name = "cu_test_using_cxx",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+using_cxx = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+using_cxx.spec(
+    package = "cxx",
+    repositories = ["using_cxx"],
+    version = "1.0.194",
+)
+using_cxx.splicing_config(
+    repositories = ["using_cxx"],
+    resolver_version = "2",
+)
+using_cxx.from_specs(
+    name = "using_cxx",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+)
+use_repo(
+    using_cxx,
+    "using_cxx",
+)
+
+http_archive(
+    name = "cxxbridge-cmd",
+    build_file_content = """
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@cxxbridge_cmd_deps//:defs.bzl", "aliases", "all_crate_deps")
+
+rust_binary(
+    name = "cxxbridge-cmd",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    compile_data = glob(["src/gen/**"]),
+    edition = "2021",
+    rustc_env = {
+        "CARGO_PKG_VERSION_MAJOR": "1",
+        "CARGO_PKG_VERSION_MINOR": "0",
+        "CARGO_PKG_VERSION_PATCH": "194",
+    },
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ),
+)
+    """,
+    sha256 = "d0956799fa8678d4c50eed028f2de1c0552ae183c76e976cf7ca8c4e36a7c328",
+    strip_prefix = "cxxbridge-cmd-1.0.194",
+    type = "tar.gz",
+    urls = ["https://static.crates.io/crates/cxxbridge-cmd/cxxbridge-cmd-1.0.194.crate"],
+)
+
+cxxbridge_cmd_deps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+cxxbridge_cmd_deps.splicing_config(
+    repositories = ["cxxbridge_cmd_deps"],
+    resolver_version = "2",
+)
+cxxbridge_cmd_deps.from_cargo(
+    name = "cxxbridge_cmd_deps",
+    cargo_lockfile = "//:cxxbridge-cmd.Cargo.lock",
+    lockfile = "//:cxxbridge-cmd.cargo-bazel-lock.json",
+    manifests = ["@cxxbridge-cmd//:Cargo.toml"],
+)
+use_repo(
+    cxxbridge_cmd_deps,
+    "cxxbridge_cmd_deps",
+)

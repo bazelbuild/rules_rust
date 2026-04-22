@@ -1,0 +1,201 @@
+module(
+    name = "cu_test_alias_rule",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+alias_rule_global_alias_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_alias_annotation_none.annotation(
+    alias_rule = "",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+)
+alias_rule_global_alias_annotation_none.render_config(
+    default_alias_rule_name = "alias",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+)
+alias_rule_global_alias_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_alias_annotation_none.from_specs(
+    name = "alias_rule_global_alias_annotation_none",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_alias_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_alias_annotation_none,
+    "alias_rule_global_alias_annotation_none",
+)
+
+alias_rule_global_alias_annotation_opt = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_alias_annotation_opt.annotation(
+    alias_rule = "opt",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+)
+alias_rule_global_alias_annotation_opt.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+    version = "0.1.0",
+)
+alias_rule_global_alias_annotation_opt.render_config(
+    default_alias_rule_name = "alias",
+    repositories = ["alias_rule_global_alias_annotation_opt"],
+)
+alias_rule_global_alias_annotation_opt.from_specs(
+    name = "alias_rule_global_alias_annotation_opt",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_alias_annotation_opt.json",
+)
+use_repo(
+    alias_rule_global_alias_annotation_opt,
+    "alias_rule_global_alias_annotation_opt",
+)
+
+alias_rule_global_opt_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_none.annotation(
+    alias_rule = "",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+)
+alias_rule_global_opt_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_none.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_none"],
+)
+alias_rule_global_opt_annotation_none.from_specs(
+    name = "alias_rule_global_opt_annotation_none",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_opt_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_none,
+    "alias_rule_global_opt_annotation_none",
+)
+
+alias_rule_global_opt_annotation_alias = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_alias.annotation(
+    alias_rule = "alias",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+)
+alias_rule_global_opt_annotation_alias.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_alias.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_alias"],
+)
+alias_rule_global_opt_annotation_alias.from_specs(
+    name = "alias_rule_global_opt_annotation_alias",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_opt_annotation_alias.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_alias,
+    "alias_rule_global_opt_annotation_alias",
+)
+
+alias_rule_global_opt_annotation_dbg = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_opt_annotation_dbg.annotation(
+    alias_rule = "dbg",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+)
+alias_rule_global_opt_annotation_dbg.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_dbg.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+    version = "0.1.0",
+)
+alias_rule_global_opt_annotation_dbg.render_config(
+    default_alias_rule_name = "opt",
+    repositories = ["alias_rule_global_opt_annotation_dbg"],
+)
+alias_rule_global_opt_annotation_dbg.from_specs(
+    name = "alias_rule_global_opt_annotation_dbg",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_opt_annotation_dbg.json",
+)
+use_repo(
+    alias_rule_global_opt_annotation_dbg,
+    "alias_rule_global_opt_annotation_dbg",
+)
+
+alias_rule_global_dbg_annotation_fastbuild = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_dbg_annotation_fastbuild.annotation(
+    alias_rule = "fastbuild",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+)
+alias_rule_global_dbg_annotation_fastbuild.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+    version = "0.1.0",
+)
+alias_rule_global_dbg_annotation_fastbuild.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+    version = "0.1.0",
+)
+alias_rule_global_dbg_annotation_fastbuild.render_config(
+    default_alias_rule_name = "dbg",
+    repositories = ["alias_rule_global_dbg_annotation_fastbuild"],
+)
+alias_rule_global_dbg_annotation_fastbuild.from_specs(
+    name = "alias_rule_global_dbg_annotation_fastbuild",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_dbg_annotation_fastbuild.json",
+)
+use_repo(
+    alias_rule_global_dbg_annotation_fastbuild,
+    "alias_rule_global_dbg_annotation_fastbuild",
+)
+
+alias_rule_global_custom_annotation_none = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+alias_rule_global_custom_annotation_none.annotation(
+    alias_rule = "",
+    crate = "test_data_passing_crate",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+)
+alias_rule_global_custom_annotation_none.spec(
+    package = "test_data_passing_crate",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+    version = "0.1.0",
+)
+alias_rule_global_custom_annotation_none.render_config(
+    default_alias_rule_bzl = "//:alias_rules.bzl",
+    default_alias_rule_name = "alias_rule",
+    repositories = ["alias_rule_global_custom_annotation_none"],
+)
+alias_rule_global_custom_annotation_none.from_specs(
+    name = "alias_rule_global_custom_annotation_none",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:cargo-bazel-lock_global_custom_annotation_none.json",
+)
+use_repo(
+    alias_rule_global_custom_annotation_none,
+    "alias_rule_global_custom_annotation_none",
+)
