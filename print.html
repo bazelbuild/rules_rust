@@ -1986,6 +1986,17 @@ is available.</li>
 --@rules_rust//cargo/settings:experimental_symlink_execroot
 </pre>
 <p>A flag for which causes <code>cargo_build_script</code> to symlink the execroot of the action to     the <code>CARGO_MANIFEST_DIR</code> where the scripts are run.</p>
+<p><a id="out_dir_volatile_file_basenames"></a></p>
+<h2 id="out_dir_volatile_file_basenames"><a class="header" href="#out_dir_volatile_file_basenames">out_dir_volatile_file_basenames</a></h2>
+<pre>
+--@rules_rust//cargo/settings:out_dir_volatile_file_basenames
+</pre>
+<p>A flag which determines what file basenames are removed from <code>OUT_DIR</code> by <code>cargo_build_script</code> actions to make the <code>_bs.out_dir</code> TreeArtifact deterministic.</p>
+<p>Files whose names appear in this list, as well as files with a <code>.d</code> or <code>.pc</code>
+extension, are deleted from <code>OUT_DIR</code> after the build script runs and before Bazel
+captures the directory. Files like <code>config.log</code> and <code>Makefile</code> embed the Bazel
+sandbox path, so their content changes on every action invocation, causing cache
+misses for all downstream <code>rustc</code> compilations.</p>
 <p><a id="use_default_shell_env"></a></p>
 <h2 id="use_default_shell_env"><a class="header" href="#use_default_shell_env">use_default_shell_env</a></h2>
 <pre>
