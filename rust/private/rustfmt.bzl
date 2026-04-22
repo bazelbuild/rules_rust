@@ -35,6 +35,8 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
         list: A list of formattable sources (`File`).
     """
 
+    crate_srcs = crate_info.srcs
+
     # Targets with specific tags will not be formatted
     if aspect_ctx:
         ignore_tags = [
@@ -47,8 +49,10 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
             if tag.replace("-", "_").lower() in ignore_tags:
                 return []
 
+        crate_srcs = depset(getattr(aspect_ctx.rule.files, "srcs", []), transitive = [crate_info.srcs])
+
     # Filter out any generated files
-    srcs = [src for src in crate_info.srcs.to_list() if src.is_source]
+    srcs = [src for src in crate_srcs.to_list() if src.is_source]
 
     return srcs
 
@@ -97,13 +101,15 @@ def _perform_check(edition, srcs, ctx):
 
     return marker
 
-def _rustfmt_aspect_impl(target, ctx):
-    # Exit early if a target already has a rustfmt output group. This
-    # can be useful for rules which always want to inhibit rustfmt.
-    if OutputGroupInfo in target:
-        if hasattr(target[OutputGroupInfo], "rustfmt_checks"):
-            return []
+RustfmtTargetInfo = provider(
+    doc = "A provider containing rustfmt formattable sources for a target.",
+    fields = {
+        "edition": "str: The Rust edition of the target.",
+        "srcs": "list[File]: The formattable sources.",
+    },
+)
 
+def _rustfmt_srcs_aspect_impl(target, ctx):
     crate_info = _get_rustfmt_ready_crate_info(target)
 
     if not crate_info:
@@ -111,13 +117,39 @@ def _rustfmt_aspect_impl(target, ctx):
 
     srcs = _find_rustfmtable_srcs(crate_info, ctx)
 
-    # If there are no formattable sources, do nothing.
-    if not srcs:
+    return [
+        RustfmtTargetInfo(
+            srcs = srcs,
+            edition = crate_info.edition,
+        ),
+    ]
+
+rustfmt_srcs_aspect = aspect(
+    implementation = _rustfmt_srcs_aspect_impl,
+    doc = "This aspect collects formattable sources from a Rust target.",
+    required_providers = [
+        [rust_common.crate_info],
+        [rust_common.test_crate_info],
+    ],
+    fragments = ["cpp"],
+)
+
+def _rustfmt_aspect_impl(target, ctx):
+    # Exit early if a target already has a rustfmt output group. This
+    # can be useful for rules which always want to inhibit rustfmt.
+    if OutputGroupInfo in target:
+        if hasattr(target[OutputGroupInfo], "rustfmt_checks"):
+            return []
+
+    if RustfmtTargetInfo not in target:
         return []
 
-    edition = crate_info.edition
+    info = target[RustfmtTargetInfo]
 
-    marker = _perform_check(edition, srcs, ctx)
+    if not info.srcs:
+        return []
+
+    marker = _perform_check(info.edition, info.srcs, ctx)
 
     return [
         OutputGroupInfo(
@@ -160,47 +192,50 @@ generated source files are also ignored by this aspect.
         [rust_common.crate_info],
         [rust_common.test_crate_info],
     ],
+    requires = [rustfmt_srcs_aspect],
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust/rustfmt:toolchain_type")),
     ],
 )
 
-def _rustfmt_test_manifest_aspect_impl(target, ctx):
-    crate_info = _get_rustfmt_ready_crate_info(target)
+_RustfmtTestManifestInfo = provider(
+    doc = "A container for rustfmt manifest info to use in `rustfmt_test`",
+    fields = {
+        "manifest": "File: The manifest of formattable sources.",
+        "srcs": "depset[File]: The formattable sources.",
+    },
+)
 
-    if not crate_info:
+def _rustfmt_test_target_aspect_impl(target, ctx):
+    if RustfmtTargetInfo not in target:
         return []
 
-    # Parse the edition to use for formatting from the target
-    edition = crate_info.edition
-
-    srcs = _find_rustfmtable_srcs(crate_info, ctx)
-    manifest = _generate_manifest(edition, srcs, ctx)
+    info = target[RustfmtTargetInfo]
+    manifest = _generate_manifest(info.edition, info.srcs, ctx)
 
     return [
-        OutputGroupInfo(
-            rustfmt_manifest = depset([manifest]),
+        _RustfmtTestManifestInfo(
+            manifest = manifest,
+            srcs = depset(info.srcs),
         ),
     ]
 
-# This aspect contains functionality split out of `rustfmt_aspect` which broke when
-# `required_providers` was added to it. Aspects which have `required_providers` seems
-# to not function with attributes that also require providers.
-_rustfmt_test_manifest_aspect = aspect(
-    implementation = _rustfmt_test_manifest_aspect_impl,
-    doc = """\
-This aspect is used to gather information about a crate for use in `rustfmt_test`
-
-Output Groups:
-
-- `rustfmt_manifest`: A manifest used by rustfmt binaries to provide crate specific settings.
-""",
+_rustfmt_test_target_aspect = aspect(
+    implementation = _rustfmt_test_target_aspect_impl,
+    doc = """This aspect is used to gather information about a crate for use in `rustfmt_test`""",
+    requires = [rustfmt_srcs_aspect],
     fragments = ["cpp"],
     toolchains = [
         str(Label("//rust/rustfmt:toolchain_type")),
     ],
 )
+
+def _rlocationpath(file, workspace_name):
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+
+    return "{}/{}".format(workspace_name, file.short_path)
 
 def _rustfmt_test_impl(ctx):
     # The executable of a test target must be the output of an action in
@@ -218,23 +253,22 @@ def _rustfmt_test_impl(ctx):
         is_executable = True,
     )
 
-    crate_infos = [_get_rustfmt_ready_crate_info(target) for target in ctx.attr.targets]
-    srcs = [depset(_find_rustfmtable_srcs(crate_info)) for crate_info in crate_infos if crate_info]
-
-    # Some targets may be included in tests but tagged as "no-format". In this
-    # case, there will be no manifest.
-    manifests = [getattr(target[OutputGroupInfo], "rustfmt_manifest", None) for target in ctx.attr.targets]
-    manifests = depset(transitive = [manifest for manifest in manifests if manifest])
+    srcs = []
+    manifests = []
+    for target in ctx.attr.targets:
+        if _RustfmtTestManifestInfo not in target:
+            continue
+        info = target[_RustfmtTestManifestInfo]
+        manifests.append(info.manifest)
+        srcs.append(info.srcs)
 
     runfiles = ctx.runfiles(
-        transitive_files = depset(transitive = srcs + [manifests]),
+        transitive_files = depset(manifests, transitive = srcs),
     )
 
     runfiles = runfiles.merge(
         ctx.attr._runner[DefaultInfo].default_runfiles,
     )
-
-    workspace = ctx.label.workspace_name or ctx.workspace_name
 
     return [
         DefaultInfo(
@@ -245,8 +279,8 @@ def _rustfmt_test_impl(ctx):
         RunEnvironmentInfo(
             environment = {
                 "RUSTFMT_MANIFESTS": ctx.configuration.host_path_separator.join([
-                    workspace + "/" + manifest.short_path
-                    for manifest in sorted(manifests.to_list())
+                    _rlocationpath(manifest, ctx.workspace_name)
+                    for manifest in manifests
                 ]),
                 "RUST_BACKTRACE": "1",
             },
@@ -263,7 +297,7 @@ rustfmt_test = rule(
                 [rust_common.crate_info],
                 [rust_common.test_crate_info],
             ],
-            aspects = [_rustfmt_test_manifest_aspect],
+            aspects = [_rustfmt_test_target_aspect],
         ),
         "_runner": attr.label(
             doc = "The rustfmt test runner",
