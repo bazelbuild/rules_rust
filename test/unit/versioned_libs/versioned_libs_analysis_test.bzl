@@ -5,7 +5,7 @@ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import")
 load("//rust:defs.bzl", "rust_shared_library")
 
-LIBNAMES = ["sterling", "cheryl", "lana", "pam", "malory", "cyril"]
+LIBNAMES = ["sterling", "lana", "pam", "malory", "cyril"]
 
 def _is_in_argv(argv, version = None):
     return any(["-ldylib={}{}".format(name, version or "") in argv for name in LIBNAMES])
@@ -33,7 +33,7 @@ def _suffix_version_test_impl(ctx):
     tut = analysistest.target_under_test(env)
     argv = tut.actions[0].argv
 
-    asserts.true(env, _is_in_argv(argv))
+    asserts.true(env, "-Clink-arg=-l:libcheryl.so.3.8" in argv)
 
     return analysistest.end(env)
 
@@ -68,7 +68,7 @@ def _test_linux():
         name = "linux_suffix_version",
         srcs = ["a.rs"],
         edition = "2018",
-        deps = [":import_libcheryl.so.3.8", ":import_libcheryl.so"],
+        deps = [":import_libcheryl.so.3.8"],
         target_compatible_with = ["@platforms//os:linux"],
     )
     cc_import(
@@ -79,15 +79,6 @@ def _test_linux():
         name = "libcheryl.so.3.8",
         srcs = ["b.c"],
         linkshared = True,
-    )
-    cc_import(
-        name = "import_libcheryl.so",
-        shared_library = "libcheryl.so",
-    )
-    copy_file(
-        name = "copy_unversioned",
-        src = ":libcheryl.so.3.8",
-        out = "libcheryl.so",
     )
     suffix_version_test(
         name = "linux_suffix_version_test",
