@@ -19,6 +19,10 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
+    ":per_crate_flag_trim.bzl",
+    "per_crate_flag_trim_transition",
+)
+load(
     ":providers.bzl",
     "BuildInfo",
     "CrateGroupInfo",
@@ -58,6 +62,9 @@ load(
 )
 
 # TODO(marco): Separate each rule into its own file.
+
+# Setting path for per_crate_rustc_flag, used in transition definitions
+_PER_CRATE_FLAG_SETTING = "@rules_rust//rust/settings:experimental_per_crate_rustc_flag"
 
 def _toolchain_make_variables(ctx):
     make_variables = {}
@@ -867,6 +874,17 @@ _COMMON_ATTRS = {
         doc = "A setting used to determine whether or not the `--stamp` flag is enabled",
         default = Label("//rust/private:stamp"),
     ),
+    "skip_per_crate_rustc_flags": attr.bool(
+        doc = dedent("""\
+            If True, the `experimental_per_crate_rustc_flag` setting is trimmed from this
+            target's configuration. This puts the target back into a canonical configuration,
+            improving cache hit rates for targets that would never match any per-crate filter.
+
+            This attribute is primarily used by crate_universe for generated third-party crates.
+            First-party crates should leave this as False (the default).
+        """),
+        default = False,
+    ),
 } | RUSTC_ATTRS | RUSTC_ALLOCATOR_LIBRARIES_ATTRS
 
 _PLATFORM_ATTRS = {
@@ -997,6 +1015,7 @@ _RUST_TEST_ATTRS = {
 rust_library = rule(
     implementation = _rust_library_impl,
     provides = COMMON_PROVIDERS,
+    cfg = per_crate_flag_trim_transition,
     attrs = _COMMON_ATTRS | {
         "disable_pipelining": attr.bool(
             default = False,
@@ -1005,6 +1024,9 @@ rust_library = rule(
                 This will cause this rule to not produce a `.rmeta` file and all the dependent
                 crates will instead use the `.rlib` file.
             """),
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     fragments = ["cpp"],
@@ -1099,17 +1121,22 @@ def _resolve_platform(settings, attr):
     return platform
 
 def _rust_static_library_transition_impl(settings, attr):
+    # Trim per_crate_rustc_flag for third-party crates to improve cache hit rates
+    per_crate_flags = [] if getattr(attr, "skip_per_crate_rustc_flags", False) else settings[_PER_CRATE_FLAG_SETTING]
     return {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
+        _PER_CRATE_FLAG_SETTING: per_crate_flags,
     }
 
 _rust_static_library_transition = transition(
     implementation = _rust_static_library_transition_impl,
     inputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
     outputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
 )
 
@@ -1140,17 +1167,22 @@ rust_static_library = rule(
 )
 
 def _rust_shared_library_transition_impl(settings, attr):
+    # Trim per_crate_rustc_flag for third-party crates to improve cache hit rates
+    per_crate_flags = [] if getattr(attr, "skip_per_crate_rustc_flags", False) else settings[_PER_CRATE_FLAG_SETTING]
     return {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
+        _PER_CRATE_FLAG_SETTING: per_crate_flags,
     }
 
 _rust_shared_library_transition = transition(
     implementation = _rust_shared_library_transition_impl,
     inputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
     outputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
 )
 
@@ -1195,6 +1227,7 @@ _proc_macro_dep_transition = transition(
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = COMMON_PROVIDERS,
+    cfg = per_crate_flag_trim_transition,
     # Start by copying the common attributes, then override the `deps` attribute
     # to apply `_proc_macro_dep_transition`. To add this transition we additionally
     # need to declare `_allowlist_function_transition`, see
@@ -1262,17 +1295,22 @@ _RUST_BINARY_ATTRS = {
 } | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
 def _rust_binary_transition_impl(settings, attr):
+    # Trim per_crate_rustc_flag for third-party crates to improve cache hit rates
+    per_crate_flags = [] if getattr(attr, "skip_per_crate_rustc_flags", False) else settings[_PER_CRATE_FLAG_SETTING]
     return {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
+        _PER_CRATE_FLAG_SETTING: per_crate_flags,
     }
 
 _rust_binary_transition = transition(
     implementation = _rust_binary_transition_impl,
     inputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
     outputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
 )
 
@@ -1511,17 +1549,22 @@ rust_test_without_process_wrapper_test = rule(
 )
 
 def _rust_test_transition_impl(settings, attr):
+    # Trim per_crate_rustc_flag for third-party crates to improve cache hit rates
+    per_crate_flags = [] if getattr(attr, "skip_per_crate_rustc_flags", False) else settings[_PER_CRATE_FLAG_SETTING]
     return {
         "//command_line_option:platforms": _resolve_platform(settings, attr),
+        _PER_CRATE_FLAG_SETTING: per_crate_flags,
     }
 
 _rust_test_transition = transition(
     implementation = _rust_test_transition_impl,
     inputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
     outputs = [
         "//command_line_option:platforms",
+        _PER_CRATE_FLAG_SETTING,
     ],
 )
 
