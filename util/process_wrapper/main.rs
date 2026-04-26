@@ -373,6 +373,15 @@ fn main() -> Result<(), ProcessWrapperError> {
         .wait()
         .map_err(|e| ProcessWrapperError(format!("failed to wait for child process: {}", e)))?;
     let code = status.code().unwrap_or(1);
+    if let Some(exit_code_file) = &opts.captured_exit_code_file {
+        fs::write(exit_code_file, format!("{code}\n")).map_err(|e| {
+            ProcessWrapperError(format!(
+                "failed to write captured exit code to {}: {}",
+                exit_code_file, e
+            ))
+        })?;
+    }
+
     if code == 0 {
         if let Some(tf) = opts.touch_file {
             OpenOptions::new()
@@ -396,7 +405,11 @@ fn main() -> Result<(), ProcessWrapperError> {
         let _ = fs::remove_dir_all(path);
     }
 
-    exit(code)
+    if opts.captured_exit_code_file.is_some() {
+        Ok(())
+    } else {
+        exit(code)
+    }
 }
 
 #[cfg(test)]
