@@ -101,7 +101,7 @@ def get_clippy_ready_crate_info(target, aspect_ctx = None):
     else:
         return None
 
-def rust_clippy_action(ctx, clippy_executable, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None):
+def rust_clippy_action(ctx, clippy_executable, crate_info, config, output = None, success_marker = None, cap_at_warnings = False, extra_clippy_flags = [], error_format = None, clippy_diagnostics_file = None, captured_exit_code_file = None):
     """Run clippy with the specified parameters.
 
     Args:
@@ -115,6 +115,7 @@ def rust_clippy_action(ctx, clippy_executable, crate_info, config, output = None
         extra_clippy_flags (List[str]): A list of extra options to pass to clippy. If not set, every warnings will be turned into errors
         error_format (str): Which error format to use. Must be acceptable by rustc: https://doc.rust-lang.org/beta/rustc/command-line-arguments.html#--error-format-control-how-errors-are-produced
         clippy_diagnostics_file (File): File to output diagnostics to. If None, no diagnostics will be written
+        captured_exit_code_file (File): File to write clippy's exit code to. If set, the process wrapper exits successfully even when clippy fails.
 
     Returns:
         None
@@ -198,6 +199,10 @@ def rust_clippy_action(ctx, clippy_executable, crate_info, config, output = None
     if success_marker != None:
         args.process_wrapper_flags.add("--touch-file", success_marker)
         outputs.append(success_marker)
+
+    if captured_exit_code_file != None:
+        args.process_wrapper_flags.add("--captured-exit-code-file", captured_exit_code_file)
+        outputs.append(captured_exit_code_file)
 
     if clippy_flags or lint_files:
         args.rustc_flags.add_all(clippy_flags)
