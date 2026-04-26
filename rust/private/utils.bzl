@@ -865,7 +865,12 @@ def determine_lib_name(name, crate_type, toolchain, lib_hash = None):
               "please file an issue!").format(crate_type))
 
     prefix = "lib"
-    if toolchain.target_triple and toolchain.target_os == "windows" and crate_type not in ("lib", "rlib"):
+    if (toolchain.target_triple and
+        toolchain.target_os == "windows" and
+        crate_type not in ("lib", "rlib") and
+        # GNU-like Windows staticlibs are archives named lib<crate>.a.
+        (crate_type != "staticlib" or
+         toolchain.target_abi not in ("gnu", "gnullvm"))):
         prefix = ""
     if toolchain.target_arch in ("wasm32", "wasm64") and crate_type == "cdylib":
         prefix = ""
