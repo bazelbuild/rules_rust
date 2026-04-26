@@ -41,6 +41,9 @@ pub(crate) struct Options {
     pub(crate) stdout_file: Option<String>,
     // If set, redirects the child process stderr to this file.
     pub(crate) stderr_file: Option<String>,
+    // If set, writes the child process exit code to this file and exits
+    // successfully after the child process completes.
+    pub(crate) captured_exit_code_file: Option<String>,
     // If set, also logs all unprocessed output from the rustc output to this file.
     // Meant to be used to get json output out of rustc for tooling usage.
     pub(crate) output_file: Option<String>,
@@ -61,6 +64,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut copy_output_raw = None;
     let mut stdout_file = None;
     let mut stderr_file = None;
+    let mut captured_exit_code_file = None;
     let mut output_file = None;
     let mut rustc_output_format_raw = None;
     let mut flags = Flags::new();
@@ -103,6 +107,11 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--stderr-file",
         "Redirect subprocess stderr in this file.",
         &mut stderr_file,
+    );
+    flags.define_flag(
+        "--captured-exit-code-file",
+        "Write subprocess exit code to this file and exit successfully.",
+        &mut captured_exit_code_file,
     );
     flags.define_flag(
         "--output-file",
@@ -285,6 +294,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         copy_output,
         stdout_file,
         stderr_file,
+        captured_exit_code_file,
         output_file,
         rustc_output_format,
     })
