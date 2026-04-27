@@ -751,6 +751,10 @@ _COMMON_ATTRS = {
         """),
         allow_files = True,
     ),
+    "macos_sdkroot": attr.label(
+        doc = "Optional macOS SDK root to expose to rustc as SDKROOT when linking macOS targets.",
+        allow_files = True,
+    ),
     "deps": attr.label_list(
         doc = dedent("""\
             List of other libraries to be linked to this library target.

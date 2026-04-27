@@ -541,6 +541,16 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
+def _apple_sdkroot(ctx, attr):
+    macos_sdkroot = getattr(attr, "macos_sdkroot", None)
+    if macos_sdkroot == None:
+        return None
+
+    return ctx.expand_location(
+        "${{pwd}}/$(execpath {})".format(macos_sdkroot.label),
+        targets = [macos_sdkroot],
+    )
+
 def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
 
@@ -1287,6 +1297,10 @@ def construct_arguments(
             )
 
             env.update(link_env)
+            macos_sdkroot = _apple_sdkroot(ctx, attr)
+            if macos_sdkroot != None:
+                env["SDKROOT"] = macos_sdkroot
+
             rustc_flags.add(ld, format = "--codegen=linker=%s")
 
             # Split link args into individual "--codegen=link-arg=" flags to handle nested spaces.
