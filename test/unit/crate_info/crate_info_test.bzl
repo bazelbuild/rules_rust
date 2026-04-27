@@ -45,23 +45,17 @@ def _crate_info_does_not_leak_default_shell_env_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
     crate_info = tut[rust_common.crate_info]
-    rustc_env = crate_info.rustc_env
 
+    # Note: a structural "no key from default_shell_env appears in rustc_env"
+    # check would false-positive on Windows, where `env_from_args` legitimately
+    # carries cc_toolchain link_env values (PATH, ...) for crates that emit a
+    # dylib (e.g. proc_macro). The canary is unambiguous: nothing except an
+    # explicit --action_env produces it, so its presence proves a leak.
     asserts.false(
         env,
-        _LEAK_CANARY_KEY in rustc_env,
+        _LEAK_CANARY_KEY in crate_info.rustc_env,
         ("CrateInfo.rustc_env leaked default_shell_env: found key '{key}'. " +
          "See bazelbuild/rules_rust#3989.").format(key = _LEAK_CANARY_KEY),
-    )
-
-    # Defense in depth: nothing from default_shell_env should appear in the
-    # published provider env, regardless of what callers set via --action_env.
-    leaked = [k for k in ctx.configuration.default_shell_env if k in rustc_env]
-    asserts.true(
-        env,
-        leaked == [],
-        ("CrateInfo.rustc_env leaked default_shell_env keys: {leaked}. " +
-         "See bazelbuild/rules_rust#3989.").format(leaked = leaked),
     )
 
     return analysistest.end(env)
