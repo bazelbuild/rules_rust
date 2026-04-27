@@ -1,0 +1,57 @@
+module(
+    name = "cu_test_vendor",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# For external vendor test (names crate from GitHub)
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "names_external",
+    build_file = "//3rdparty:BUILD.names.bazel",
+    sha256 = "eab40caca5805624ba31d028913931c3d054b22daafff6f43e3435cfa9fb761e",
+    strip_prefix = "names-0.13.0",
+    urls = ["https://github.com/fnichol/names/archive/refs/tags/v0.13.0.zip"],
+)
+
+vendored = use_extension("//:vendor_extensions.bzl", "vendored")
+use_repo(
+    vendored,
+    # vendor_external repos
+    "crates_vendor",
+    "crates_vendor__clap-3.1.5",
+    "crates_vendor__rand-0.8.5",
+    "crates_vendor__version-sync-0.9.4",
+    # vendor_remote_manifests repos
+    "cvm",
+    "cvm__serde_yaml-0.9.34-deprecated",
+    "cvm__tempfile-3.27.0",
+    "cvm__tokio-1.52.1",
+    "cvm__tokio-test-0.4.5",
+    # vendor_remote_pkgs repos
+    "crates_vendor_pkgs",
+    "crates_vendor_pkgs__axum-0.4.8",
+    "crates_vendor_pkgs__hyper-0.14.32",
+    "crates_vendor_pkgs__mime-0.3.17",
+    "crates_vendor_pkgs__serde_json-1.0.135",
+    "crates_vendor_pkgs__socket2-0.4.10",
+    "crates_vendor_pkgs__tokio-1.43.0",
+    "crates_vendor_pkgs__tower-0.4.13",
+    "crates_vendor_pkgs__tower-http-0.2.5",
+    "crates_vendor_pkgs__tracing-0.1.41",
+    "crates_vendor_pkgs__tracing-subscriber-0.3.19",
+)

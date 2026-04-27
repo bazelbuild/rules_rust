@@ -191,7 +191,7 @@ We don't have such easy facilities available in bazel besides specifying it as a
 To mimic cargo's bindeps feature we use the unstable feature called [artifact-dependencies](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html?highlight=feature#artifact-dependencies)
 which integrates well with bazel concepts.
 
-You could use the syntax specified in the above document to place it in `Cargo.toml`. For that you can consult the following [example](https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/MODULE.bazel#L279-L291).
+You could use the syntax specified in the above document to place it in `Cargo.toml`. For that you can consult the following [example](https://github.com/bazelbuild/rules_rust/blob/main/crate_universe/tests/integration/cargo_bindeps/MODULE.bazel).
 
 This method has the following consequences:
 * if you use shared dependency tree with your project these binary dependencies will interfere with yours (may conflict)

@@ -841,12 +841,12 @@ def crate_repositories():
 
     maybe(
         http_archive,
-        name = "rmdbi__dbus-0.9.10",
-        sha256 = "21b3aa68d7e7abee336255bd7248ea965cc393f3e70411135a6f6a4b651345d4",
+        name = "rmdbi__dbus-0.9.11",
+        sha256 = "b942602992bb7acfd1f51c49811c58a610ef9181b6e66f3e519d79b540a3bf73",
         type = "tar.gz",
-        urls = ["https://static.crates.io/crates/dbus/0.9.10/download"],
-        strip_prefix = "dbus-0.9.10",
-        build_file = Label("//private/3rdparty/crates:BUILD.dbus-0.9.10.bazel"),
+        urls = ["https://static.crates.io/crates/dbus/0.9.11/download"],
+        strip_prefix = "dbus-0.9.11",
+        build_file = Label("//private/3rdparty/crates:BUILD.dbus-0.9.11.bazel"),
     )
 
     maybe(
