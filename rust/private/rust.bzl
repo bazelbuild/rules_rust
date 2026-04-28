@@ -1006,9 +1006,23 @@ rust_library = rule(
         """),
 )
 
+def _resolve_platform(settings, attr):
+    """Resolve the platform label for a transition, adding @ prefix if needed.
+
+    When a label has no repo name (e.g. from the main repo), str(label) omits
+    the leading @, producing "//platforms:foo" instead of "@//platforms:foo".
+    Bazel's platform setting requires the canonical form with @.
+    """
+    if not attr.platform:
+        return settings["//command_line_option:platforms"]
+    platform = str(attr.platform)
+    if not attr.platform.repo_name:
+        platform = "@" + platform
+    return platform
+
 def _rust_static_library_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_static_library_transition = transition(
@@ -1049,7 +1063,7 @@ rust_static_library = rule(
 
 def _rust_shared_library_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_shared_library_transition = transition(
@@ -1171,7 +1185,7 @@ _RUST_BINARY_ATTRS = {
 
 def _rust_binary_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_binary_transition = transition(
@@ -1418,7 +1432,7 @@ rust_test_without_process_wrapper_test = rule(
 
 def _rust_test_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_test_transition = transition(
