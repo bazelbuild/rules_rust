@@ -1009,14 +1009,15 @@ rust_library = rule(
 def _resolve_platform(settings, attr):
     """Resolve the platform label for a transition, adding @ prefix if needed.
 
-    When a label has no repo name (e.g. from the main repo), str(label) omits
-    the leading @, producing "//platforms:foo" instead of "@//platforms:foo".
-    Bazel's platform setting requires the canonical form with @.
+    With --noincompatible_unambiguous_label_stringification, str(label) for
+    main-repo labels omits the leading @, producing "//foo:bar" instead of
+    "@//foo:bar". The platform setting requires the canonical form with @.
+    See https://github.com/bazelbuild/bazel/issues/15916.
     """
     if not attr.platform:
         return settings["//command_line_option:platforms"]
     platform = str(attr.platform)
-    if not attr.platform.repo_name:
+    if not platform.startswith("@"):
         platform = "@" + platform
     return platform
 
