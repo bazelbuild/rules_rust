@@ -549,6 +549,40 @@ def _collect_splicing_config(module, repository):
 
     return config
 
+def _get_annotation_patches(module_ctx, annotations, crate_name, crate_version):
+    """Look up patch-related fields from annotations for a specific crate.
+
+    Args:
+        module_ctx: The module context for reading files.
+        annotations: Dict of crate name to list of annotation JSON strings.
+        crate_name: The name of the crate to look up.
+        crate_version: The version of the crate to look up.
+
+    Returns:
+        A tuple of (patches, patch_args, patch_tool, patches_hash).
+        patches_hash is a hash of patch file contents for cache invalidation.
+    """
+
+    crate_annotations = annotations.get(crate_name, [])
+    for annotation_json in crate_annotations:
+        version, data = json.decode(annotation_json)
+
+        # Check if version matches ("*" matches all, or exact match, or semver prefix)
+        if version == "*" or version == crate_version or crate_version.startswith(version):
+            patches = data.get("patches", None)
+            patch_args = data.get("patch_args", None)
+            patch_tool = data.get("patch_tool", None)
+            if patches or patch_args or patch_tool:
+                # Compute hash of patch file contents for cache invalidation
+                patches_hash = None
+                if patches:
+                    patch_content = ""
+                    for patch in patches:
+                        patch_content += module_ctx.read(module_ctx.path(Label(patch)))
+                    patches_hash = str(hash(patch_content))
+                return (patches, patch_args, patch_tool, patches_hash)
+    return (None, None, None, None)
+
 def _generate_hub_and_spokes(
         *,
         module_ctx,
@@ -732,15 +766,20 @@ def _generate_hub_and_spokes(
             version = version.replace("+", "-"),
         )
 
+        # Look up patches from annotations
+        ann_patches, ann_patch_args, ann_patch_tool, ann_patches_hash = _get_annotation_patches(module_ctx, annotations, name, version)
+
         if "Http" in repo:
             # Replicates functionality in repo_http.j2.
             build_file_content = module_ctx.read(crates_dir.get_child("BUILD.%s-%s.bazel" % (name, version)))
             repo = repo["Http"]
             http_archive(
                 name = crate_repo_name,
-                patch_args = repo.get("patch_args", None),
-                patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
+                # canonical_id forces re-download when patch content changes
+                canonical_id = ann_patches_hash,
+                patch_args = ann_patch_args if ann_patch_args else repo.get("patch_args", None),
+                patch_tool = ann_patch_tool if ann_patch_tool else repo.get("patch_tool", None),
+                patches = ann_patches if ann_patches else repo.get("patches", None),
                 remote_patch_strip = 1,
                 sha256 = repo.get("sha256", None),
                 type = "tar.gz",
@@ -761,9 +800,9 @@ def _generate_hub_and_spokes(
             git_repository(
                 name = crate_repo_name,
                 init_submodules = True,
-                patch_args = repo.get("patch_args", None),
-                patch_tool = repo.get("patch_tool", None),
-                patches = repo.get("patches", None),
+                patch_args = ann_patch_args if ann_patch_args else repo.get("patch_args", None),
+                patch_tool = ann_patch_tool if ann_patch_tool else repo.get("patch_tool", None),
+                patches = ann_patches if ann_patches else repo.get("patches", None),
                 shallow_since = repo.get("shallow_since", None),
                 remote = repo["remote"],
                 build_file_content = build_file_content,
