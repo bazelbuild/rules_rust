@@ -292,17 +292,19 @@ rust = module_extension(
     },
 )
 
+_RUST_HOST_TOOLS_TAG_ATTRS = {
+    "name": attr.string(
+        doc = "The name of the module to create",
+        default = "rust_host_tools",
+    ),
+    "version": attr.string(
+        doc = "The version of Rust to use for tools executed on the Bazel host.",
+        default = rust_common.default_version,
+    ),
+} | _COMMON_TAG_KWARGS
+
 _RUST_HOST_TOOLS_TAG = tag_class(
-    attrs = {
-        "name": attr.string(
-            doc = "The name of the module to create",
-            default = "rust_host_tools",
-        ),
-        "version": attr.string(
-            doc = "The version of Rust to use for tools executed on the Bazel host.",
-            default = rust_common.default_version,
-        ),
-    } | _COMMON_TAG_KWARGS,
+    attrs = _RUST_HOST_TOOLS_TAG_ATTRS,
 )
 
 # This is a separate module extension so that only the host tools are
@@ -312,7 +314,7 @@ def _rust_host_tools_impl(module_ctx):
 
     for mod in module_ctx.modules:
         for host_tools in mod.tags.host_tools:
-            attrs = {key: getattr(host_tools, key) for key in dir(host_tools)}
+            attrs = {key: getattr(host_tools, key) for key in _RUST_HOST_TOOLS_TAG_ATTRS.keys()}
 
             # Label attrs must be stringified for the repository rule.
             for label_attr in ("allocator_library", "global_allocator_library"):
