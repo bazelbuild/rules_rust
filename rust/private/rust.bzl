@@ -57,6 +57,17 @@ load(
 
 # TODO(marco): Separate each rule into its own file.
 
+def _get_pkg_name(ctx):
+    """Extract the Cargo package name from a 'crate-name=...' tag.
+
+    crate_universe adds this tag to vendored crates. Returns empty string if
+    not found, in which case _create_crate_info defaults to the crate name.
+    """
+    for tag in getattr(ctx.attr, "tags", []):
+        if tag.startswith("crate-name="):
+            return tag[len("crate-name="):]
+    return ""
+
 def _assert_no_deprecated_attributes(_ctx):
     """Forces a failure if any deprecated attributes were specified
 
@@ -245,6 +256,9 @@ def _rust_library_common(ctx, crate_type):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            version = getattr(ctx.attr, "version", "0.0.0"),
+            source = getattr(ctx.attr, "source", "Local"),
+            pkg_name = _get_pkg_name(ctx),
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = False),
         ),
     )
@@ -309,6 +323,9 @@ def _rust_binary_impl(ctx):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            version = getattr(ctx.attr, "version", "0.0.0"),
+            source = getattr(ctx.attr, "source", "Local"),
+            pkg_name = _get_pkg_name(ctx),
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, ctx.attr.crate_type, crate_is_test = False),
         ),
     )
@@ -431,6 +448,9 @@ def _rust_test_impl(ctx):
             compile_data_targets = compile_data_targets,
             wrapped_crate_type = crate.type,
             owner = ctx.label,
+            version = getattr(ctx.attr, "version", "0.0.0"),
+            source = getattr(ctx.attr, "source", "Local"),
+            pkg_name = _get_pkg_name(ctx),
             cfgs = _collect_cfgs(ctx, toolchain, crate.root, crate_type, crate_is_test = True),
         )
     else:
@@ -487,6 +507,9 @@ def _rust_test_impl(ctx):
             compile_data = depset(compile_data),
             compile_data_targets = depset(ctx.attr.compile_data),
             owner = ctx.label,
+            version = getattr(ctx.attr, "version", "0.0.0"),
+            source = getattr(ctx.attr, "source", "Local"),
+            pkg_name = _get_pkg_name(ctx),
             cfgs = _collect_cfgs(ctx, toolchain, crate_root, crate_type, crate_is_test = True),
         )
 
@@ -604,6 +627,9 @@ def _stamp_attribute(default_value):
 RUSTC_ATTRS = {
     "_always_enable_metadata_output_groups": attr.label(
         default = Label("//rust/settings:always_enable_metadata_output_groups"),
+    ),
+    "_auditable": attr.label(
+        default = Label("//rust/settings:auditable"),
     ),
     "_error_format": attr.label(
         default = Label("//rust/settings:error_format"),
@@ -791,6 +817,10 @@ _COMMON_ATTRS = {
     # "name": attr.string(
     #     doc = "This name will also be used as the name of the crate built by this rule.",
     # `),
+    "source": attr.string(
+        doc = "The source of this crate (e.g. 'crates.io', 'git', 'local', 'registry'). Used for cargo-auditable dependency tracking.",
+        default = "Local",
+    ),
     "srcs": attr.label_list(
         doc = dedent("""\
             List of Rust `.rs` source files used to build the library.
@@ -1062,9 +1092,17 @@ _rust_shared_library_transition = transition(
     ],
 )
 
+_AUDITABLE_INJECTOR_ATTR = {
+    "auditable_injector": attr.label(
+        doc = "The auditable_injector tool for embedding cargo-auditable metadata. " +
+              "Set to @rules_rust//tools/auditable:auditable_injector to enable.",
+        cfg = "exec",
+    ),
+}
+
 rust_shared_library = rule(
     implementation = _rust_shared_library_impl,
-    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS,
+    attrs = _COMMON_ATTRS | _PLATFORM_ATTRS | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS | _AUDITABLE_INJECTOR_ATTR,
     fragments = ["cpp"],
     cfg = _rust_shared_library_transition,
     toolchains = [
@@ -1187,7 +1225,7 @@ _rust_binary_transition = transition(
 rust_binary = rule(
     implementation = _rust_binary_impl,
     provides = COMMON_PROVIDERS,
-    attrs = _COMMON_ATTRS | _RUST_BINARY_ATTRS | _PLATFORM_ATTRS,
+    attrs = _COMMON_ATTRS | _RUST_BINARY_ATTRS | _PLATFORM_ATTRS | _AUDITABLE_INJECTOR_ATTR,
     executable = True,
     fragments = ["cpp"],
     cfg = _rust_binary_transition,

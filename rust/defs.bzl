@@ -84,14 +84,23 @@ rust_library = _rust_library
 rust_static_library = _rust_static_library
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_shared_library = _rust_shared_library
-# See @rules_rust//rust/private:rust.bzl for a complete description.
+_AUDITABLE_INJECTOR_SELECT = select({
+    str(Label("//rust/settings:auditable_enabled")): str(Label("//tools/auditable:auditable_injector")),
+    "//conditions:default": None,
+})
+
+def rust_shared_library(name, **kwargs):
+    """Builds a Rust shared library. See @rules_rust//rust/private:rust.bzl for a complete description."""
+    kwargs.setdefault("auditable_injector", _AUDITABLE_INJECTOR_SELECT)
+    _rust_shared_library(name = name, **kwargs)
 
 rust_proc_macro = _rust_proc_macro
 # See @rules_rust//rust/private:rust.bzl for a complete description.
 
-rust_binary = _rust_binary
-# See @rules_rust//rust/private:rust.bzl for a complete description.
+def rust_binary(name, **kwargs):
+    """Builds a Rust binary crate. See @rules_rust//rust/private:rust.bzl for a complete description."""
+    kwargs.setdefault("auditable_injector", _AUDITABLE_INJECTOR_SELECT)
+    _rust_binary(name = name, **kwargs)
 
 rust_library_group = _rust_library_group
 # See @rules_rust//rust/private:rust.bzl for a complete description.

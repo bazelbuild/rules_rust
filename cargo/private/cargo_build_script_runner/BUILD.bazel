@@ -1,4 +1,9 @@
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+# Loads rust_binary directly from rust/private:rust.bzl (not //rust:defs.bzl)
+# to avoid a dependency cycle with the auditable_injector.
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "rust_binary")
 
 rust_library(
     name = "cargo_build_script_runner",

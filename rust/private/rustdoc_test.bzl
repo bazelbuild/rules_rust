@@ -130,6 +130,9 @@ def _rust_doc_test_impl(ctx):
         compile_data_targets = crate.compile_data_targets,
         wrapped_crate_type = crate.type,
         owner = ctx.label,
+        version = crate.version,
+        source = crate.source,
+        pkg_name = crate.pkg_name,
     )
 
     if toolchain.target_os == "windows":

@@ -558,6 +558,19 @@ def codegen_units():
     )
 
 # buildifier: disable=unnamed-macro
+def auditable():
+    """When enabled, embeds cargo-auditable compatible dependency metadata \
+    into a `.dep-v0` section of compiled Rust binaries. This allows tools \
+    like `cargo audit` to detect dependency vulnerabilities in compiled binaries.
+
+    To enable, set --@rules_rust//rust/settings:auditable=true in .bazelrc.
+    """
+    bool_flag(
+        name = "auditable",
+        build_setting_default = False,
+    )
+
+# buildifier: disable=unnamed-macro
 def collect_cfgs():
     """Enable collection of cfg flags with results stored in CrateInfo.cfgs.
     """
