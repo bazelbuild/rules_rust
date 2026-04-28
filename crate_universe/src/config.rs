@@ -107,6 +107,11 @@ pub(crate) struct RenderConfig {
     /// Whether to generate cargo_toml_env_vars targets.
     /// This is expected to always be true except for bootstrapping.
     pub(crate) generate_cargo_toml_env_vars: bool,
+
+    /// The default_visibility for individual crate BUILD packages. If None,
+    /// defaults to ["//visibility:public"]. Set to restrict direct references
+    /// to crate targets so that consumers must use the top-level aliases.
+    pub(crate) crate_package_default_visibility: Option<Vec<String>>,
 }
 
 // Default is manually implemented so that the default values match the default
@@ -129,6 +134,7 @@ impl Default for RenderConfig {
             regen_command: String::default(),
             vendor_mode: Option::default(),
             generate_rules_license_metadata: default_generate_rules_license_metadata(),
+            crate_package_default_visibility: None,
         }
     }
 }

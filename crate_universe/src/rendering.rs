@@ -436,7 +436,7 @@ impl Renderer {
                 });
             }
 
-            let package = Package::default_visibility_public(package_metadata);
+            let package = self.crate_package(package_metadata);
             starlark.push(Starlark::Package(package));
 
             starlark.push(Starlark::PackageInfo(starlark::PackageInfo {
@@ -461,7 +461,7 @@ impl Renderer {
             }
         } else {
             // Package visibility.
-            let package = Package::default_visibility_public(BTreeSet::new());
+            let package = self.crate_package(BTreeSet::new());
             starlark.push(Starlark::Package(package));
         }
 
@@ -888,6 +888,22 @@ impl Renderer {
             }),
             extra_deps,
         )
+    }
+
+    /// Constructs a `Package` for an individual crate BUILD file, using
+    /// `crate_package_default_visibility` from the render config if set,
+    /// otherwise falling back to `//visibility:public`.
+    fn crate_package(&self, default_package_metadata: BTreeSet<Label>) -> Package {
+        match &self.config.crate_package_default_visibility {
+            Some(visibility) => {
+                let default_visibility = visibility.iter().cloned().collect();
+                Package {
+                    default_package_metadata,
+                    default_visibility,
+                }
+            }
+            None => Package::default_visibility_public(default_package_metadata),
+        }
     }
 
     fn render_vendor_support_files(
