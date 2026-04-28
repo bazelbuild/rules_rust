@@ -1,0 +1,4 @@
+load(":auditable_test.bzl", "auditable_test_suite")
+
+############################ UNIT TESTS #############################
+auditable_test_suite(name = "auditable_test_suite")
