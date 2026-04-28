@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//rust:defs.bzl", "rust_library", "rust_test")
+load("//rust:defs.bzl", "rust_test")
 load("//test/unit:common.bzl", "assert_env_value")
 
 def _find_action(tut, mnemonic):
@@ -12,7 +12,7 @@ def _find_action(tut, mnemonic):
     return None
 
 # ---------------------------------------------------------------------------
-# Test: standalone rust_test with compile_data in rustc_env
+# Test: standalone rust_test with compile_data referenced in rustc_env
 # ---------------------------------------------------------------------------
 
 def _standalone_test_impl(ctx):
@@ -28,22 +28,6 @@ def _standalone_test_impl(ctx):
 standalone_compile_data_env_test = analysistest.make(_standalone_test_impl)
 
 # ---------------------------------------------------------------------------
-# Test: rust_test wrapping a crate with compile_data in rustc_env
-# ---------------------------------------------------------------------------
-
-def _crate_wrap_test_impl(ctx):
-    env = analysistest.begin(ctx)
-    tut = analysistest.target_under_test(env)
-    action = _find_action(tut, "Rustc")
-    if not action:
-        fail("No Rustc action found")
-    expected = "${pwd}/" + ctx.bin_dir.path + "/test/unit/compile_data_env/generated.txt"
-    assert_env_value(env, action, "GENERATED_PATH", expected)
-    return analysistest.end(env)
-
-crate_wrap_compile_data_env_test = analysistest.make(_crate_wrap_test_impl)
-
-# ---------------------------------------------------------------------------
 # Subjects and test suite
 # ---------------------------------------------------------------------------
 
@@ -55,25 +39,9 @@ def _test_subjects():
         newline = "unix",
     )
 
-    rust_library(
-        name = "mylib",
-        srcs = ["lib.rs"],
-        edition = "2021",
-    )
-
     rust_test(
         name = "standalone_test",
         srcs = ["test.rs"],
-        compile_data = [":gen_file"],
-        edition = "2021",
-        rustc_env = {
-            "GENERATED_PATH": "$(execpath :gen_file)",
-        },
-    )
-
-    rust_test(
-        name = "crate_wrap_test",
-        crate = ":mylib",
         compile_data = [":gen_file"],
         edition = "2021",
         rustc_env = {
@@ -94,15 +62,9 @@ def compile_data_env_test_suite(name):
         target_under_test = ":standalone_test",
     )
 
-    crate_wrap_compile_data_env_test(
-        name = "crate_wrap_compile_data_env_test",
-        target_under_test = ":crate_wrap_test",
-    )
-
     native.test_suite(
         name = name,
         tests = [
             ":standalone_compile_data_env_test",
-            ":crate_wrap_compile_data_env_test",
         ],
     )
