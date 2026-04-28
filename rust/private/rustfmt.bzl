@@ -47,7 +47,19 @@ def _find_rustfmtable_srcs(crate_info, aspect_ctx = None):
             if tag.replace("-", "_").lower() in ignore_tags:
                 return []
 
-    # Filter out any generated files
+    # Filter out generated files, but recover hand-written sources that were
+    # symlinked into bazel-out by transform_sources() (which happens when any
+    # compile_data entry is generated). Return the original source File objects
+    # so that exec_path and short_path remain correct for manifests and runfiles.
+    if aspect_ctx and hasattr(aspect_ctx.rule.attr, "srcs"):
+        original_srcs = []
+        for target in aspect_ctx.rule.attr.srcs:
+            for f in target.files.to_list():
+                if f.is_source:
+                    original_srcs.append(f)
+        if original_srcs:
+            return original_srcs
+
     srcs = [src for src in crate_info.srcs.to_list() if src.is_source]
 
     return srcs
@@ -219,7 +231,7 @@ def _rustfmt_test_impl(ctx):
     )
 
     crate_infos = [_get_rustfmt_ready_crate_info(target) for target in ctx.attr.targets]
-    srcs = [depset(_find_rustfmtable_srcs(crate_info)) for crate_info in crate_infos if crate_info]
+    srcs = [crate_info.srcs for crate_info in crate_infos if crate_info]
 
     # Some targets may be included in tests but tagged as "no-format". In this
     # case, there will be no manifest.
