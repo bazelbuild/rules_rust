@@ -404,7 +404,7 @@ def _rust_test_impl(ctx):
             rustc_env.update(expand_dict_value_locations(
                 ctx,
                 ctx.attr.rustc_env,
-                deduplicate(getattr(ctx.attr, "data", [])),
+                deduplicate(getattr(ctx.attr, "data", []) + compile_data_targets.to_list()),
                 {},
             ))
         aliases = dict(crate.aliases)
@@ -461,7 +461,7 @@ def _rust_test_impl(ctx):
             rustc_env = expand_dict_value_locations(
                 ctx,
                 ctx.attr.rustc_env,
-                deduplicate(getattr(ctx.attr, "data", [])),
+                deduplicate(getattr(ctx.attr, "data", []) + getattr(ctx.attr, "compile_data", [])),
                 {},
             )
         else:
