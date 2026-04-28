@@ -992,6 +992,13 @@ def _crate_impl(module_ctx):
         repo_specific_annotations = {}
         for annotation_tag in mod.tags.annotation:
             annotation_dict = structs.to_dict(annotation_tag)
+
+            # Watch patch files so changes trigger repository re-generation.
+            # This must be done before patches are stringified downstream.
+            for patch_label in annotation_dict.get("patches", []):
+                if patch_label:
+                    module_ctx.watch(module_ctx.path(patch_label))
+
             if "build_script_data_select" in annotation_dict:
                 annotation_dict["build_script_data"] = struct(
                     common = annotation_dict["build_script_data"],
