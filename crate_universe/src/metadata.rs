@@ -256,6 +256,10 @@ impl VendorGenerator {
             .arg("--locked")
             .arg("--versioned-dirs")
             .arg(output_dir)
+            // Without this flag `cargo vendor` ignores `[source]` replacement
+            // in `.cargo/config.toml`, so it bypasses any configured registry
+            // proxy and connects directly to index.crates.io.
+            .arg("--respect-source-config")
             .env("RUSTC", &self.rustc_bin)
             .output()
             .with_context(|| {
