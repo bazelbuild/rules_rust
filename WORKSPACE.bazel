@@ -26,6 +26,10 @@ load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
 
 rust_analyzer_dependencies()
 
+load("@rules_rust//tools/auditable:deps.bzl", "auditable_dependencies")
+
+auditable_dependencies()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()

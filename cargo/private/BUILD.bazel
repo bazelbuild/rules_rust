@@ -1,6 +1,10 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-load("//rust:defs.bzl", "rust_binary")
+
+# Loads rust_binary directly from rust/private:rust.bzl (not //rust:defs.bzl)
+# to avoid a dependency cycle with the auditable_injector.
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "rust_binary")
 
 rust_binary(
     name = "copy_file",

@@ -1447,6 +1447,19 @@ def rustc_compile_action(
         experimental_use_cc_common_link = experimental_use_cc_common_link,
     )
 
+    # Generate cargo-auditable dependency metadata if the setting is enabled
+    # and this is a linkable crate type (binary or cdylib).
+    auditable_obj = None
+    if (hasattr(ctx.attr, "_auditable") and
+        ctx.attr._auditable[BuildSettingInfo].value and
+        crate_info.type in ["bin", "cdylib"] and
+        hasattr(ctx.attr, "auditable_injector") and
+        ctx.attr.auditable_injector):
+        auditable_obj = _create_auditable_object(ctx, crate_info, dep_info, toolchain)
+        if auditable_obj:
+            compile_inputs = depset([auditable_obj], transitive = [compile_inputs])
+            rust_flags = list(rust_flags) + _auditable_rustc_flags(auditable_obj, toolchain)
+
     # The types of rustc outputs to emit.
     # If we build metadata, we need to keep the command line of the two invocations
     # (rlib and rmeta) as similar as possible, otherwise rustc rejects the rmeta as
@@ -2783,6 +2796,159 @@ extra_exec_rustc_flag = rule(
 
 def _per_crate_rustc_flag_impl(ctx):
     return PerCrateRustcFlagsInfo(per_crate_rustc_flags = [f for f in ctx.build_setting_value if f != ""])
+
+def _crate_key(crate_info):
+    """Return a unique key for a CrateInfo, used for deduplication and index lookup."""
+    return crate_info.name + "@" + crate_info.version
+
+def _resolve_edges(dep_variant_infos, crate_to_idx):
+    """Resolve dependency edges from a list of DepVariantInfo structs.
+
+    Handles two kinds of DepVariantInfo:
+      - crate_info: direct crate dependency
+      - crate_group_info: group of crates (e.g. from rust_prost_library)
+
+    Proc-macro and build script dependencies are excluded since they are
+    compile-time tools not linked into the final binary.
+
+    Args:
+        dep_variant_infos: list of DepVariantInfo structs.
+        crate_to_idx: dict mapping crate key to package index.
+
+    Returns:
+        Sorted, deduplicated list of package indices.
+    """
+    edges = []
+    for dvi in dep_variant_infos:
+        if dvi.crate_info and _crate_key(dvi.crate_info) in crate_to_idx:
+            edges.append(crate_to_idx[_crate_key(dvi.crate_info)])
+        elif hasattr(dvi, "crate_group_info") and dvi.crate_group_info:
+            for inner_dvi in dvi.crate_group_info.dep_variant_infos.to_list():
+                if inner_dvi.crate_info and _crate_key(inner_dvi.crate_info) in crate_to_idx:
+                    edges.append(crate_to_idx[_crate_key(inner_dvi.crate_info)])
+    return sorted({e: None for e in edges})
+
+def _create_auditable_object(ctx, crate_info, dep_info, toolchain):
+    """Generate a cargo-auditable compatible .dep-v0 object file.
+
+    Collects dependency metadata from the transitive crate graph and invokes
+    the auditable_injector tool to create a platform-appropriate object file.
+
+    Args:
+        ctx: The rule's context object.
+        crate_info: CrateInfo for the current crate.
+        dep_info: DepInfo with transitive dependency information.
+        toolchain: The Rust toolchain.
+
+    Returns:
+        File: The generated audit_data object file.
+    """
+
+    # Filter out proc-macro crates -- they are compile-time tools that run
+    # during compilation but are not linked into the final binary.
+    # Sort by crate key for deterministic output across builds (depset
+    # iteration order is not guaranteed to be stable).
+    transitive_crates = sorted(
+        [c for c in dep_info.transitive_crates.to_list() if not _is_proc_macro(c)],
+        key = _crate_key,
+    )
+
+    # Build an index from crate identity to position in the packages list.
+    # If the root crate (binary/cdylib) already appears in transitive_crates
+    # (e.g. a binary depending on its own library crate), reuse that index
+    # instead of appending a duplicate entry.
+    crate_to_idx = {}
+    for i, dep_crate in enumerate(transitive_crates):
+        crate_to_idx[_crate_key(dep_crate)] = i
+    root_key = _crate_key(crate_info)
+    if root_key in crate_to_idx:
+        root_idx = crate_to_idx[root_key]
+    else:
+        root_idx = len(transitive_crates)
+        crate_to_idx[root_key] = root_idx
+
+    # Resolve direct dependency edges for each runtime crate, including edges
+    # through CrateGroupInfo (e.g. rust_prost_library / prost toolchain).
+    # Proc-macro and build script deps are excluded since they are not linked.
+    dep_edges = []
+    for dep_crate in transitive_crates:
+        dep_edges.append(_resolve_edges(dep_crate.deps.to_list(), crate_to_idx))
+
+    # Root crate's direct deps.
+    dep_edges.append(_resolve_edges(crate_info.deps.to_list(), crate_to_idx))
+
+    # Build the packages list as structured data, then encode with json.encode().
+    # Use pkg_name (Cargo package name) for the "name" field so vulnerability
+    # scanners can match advisories. Falls back to crate name if pkg_name is empty.
+    packages = []
+    for i, dep_crate in enumerate(transitive_crates):
+        entry = {
+            "dependencies": dep_edges[i],
+            "name": dep_crate.pkg_name or dep_crate.name,
+            "source": dep_crate.source,
+            "version": dep_crate.version,
+        }
+        if i == root_idx:
+            entry["root"] = True
+
+            # Merge library and binary edges when the root was already in
+            # transitive_crates (binary depending on its own library crate).
+            merged = {e: None for e in dep_edges[i]}
+            merged.update({e: None for e in dep_edges[len(transitive_crates)]})
+            entry["dependencies"] = sorted(merged)
+        packages.append(entry)
+
+    # Root crate entry (only if not already in transitive_crates).
+    if root_idx == len(transitive_crates):
+        packages.append({
+            "dependencies": dep_edges[root_idx],
+            "name": crate_info.pkg_name or crate_info.name,
+            "root": True,
+            "source": crate_info.source,
+            "version": crate_info.version,
+        })
+
+    json_content = json.encode({"format": 0, "packages": packages})
+
+    json_file = ctx.actions.declare_file(crate_info.name + "_audit_deps.json")
+    ctx.actions.write(output = json_file, content = json_content)
+
+    audit_obj = ctx.actions.declare_file(crate_info.name + "_audit_data.o")
+    target_triple = toolchain.target_flag_value
+
+    injector_info = ctx.attr.auditable_injector[DefaultInfo]
+    ctx.actions.run(
+        executable = injector_info.files_to_run.executable,
+        inputs = [json_file],
+        outputs = [audit_obj],
+        arguments = [target_triple, json_file.path, audit_obj.path],
+        tools = [injector_info.files_to_run],
+        mnemonic = "RustAuditable",
+        progress_message = "Generating cargo-auditable metadata for %{label}",
+    )
+
+    return audit_obj
+
+def _auditable_rustc_flags(audit_obj, toolchain):
+    """Return the rustc flags needed to link the auditable object file.
+
+    Args:
+        audit_obj: The generated audit_data object file.
+        toolchain: The Rust toolchain.
+
+    Returns:
+        list[str]: Rustc flags to pass.
+    """
+    flags = ["--codegen=link-arg=" + audit_obj.path]
+
+    if toolchain.target_os in ["macos", "darwin"]:
+        flags.append("--codegen=link-arg=-Wl,-u,_AUDITABLE_VERSION_INFO")
+    elif toolchain.target_os == "windows":
+        flags.append("--codegen=link-arg=/INCLUDE:AUDITABLE_VERSION_INFO")
+    elif toolchain.target_arch not in ("wasm32", "wasm64"):
+        flags.append("--codegen=link-arg=-Wl,-u,AUDITABLE_VERSION_INFO")
+
+    return flags
 
 per_crate_rustc_flag = rule(
     doc = (

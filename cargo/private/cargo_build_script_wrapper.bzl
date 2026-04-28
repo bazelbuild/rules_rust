@@ -7,7 +7,11 @@ load(
     "name_to_pkg_name",
     _build_script_run = "cargo_build_script",
 )
-load("//rust:defs.bzl", "rust_binary")
+
+# Loads rust_binary directly from rust/private:rust.bzl (not //rust:defs.bzl)
+# to avoid a dependency cycle with the auditable_injector.
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "rust_binary")
 
 def cargo_build_script(
         *,

@@ -34,18 +34,21 @@ CrateInfo = provider(
         "name": "str: The name of this crate.",
         "output": "File: The output File that will be produced, depends on crate type.",
         "owner": "Label: The label of the target that produced this CrateInfo",
+        "pkg_name": "str: The Cargo package name, which may differ from the Rust crate name (e.g. 'rustls-webpki' vs 'webpki').",
         "proc_macro_deps": "depset[DepVariantInfo]: This crate's rust proc_macro dependencies' providers.",
         "root": "File: The source File entrypoint to this crate, eg. lib.rs",
         "rustc_env": "Dict[String, String]: Additional `\"key\": \"value\"` environment variables to set for rustc.",
         "rustc_env_files": "[File]: Files containing additional environment variables to set for rustc.",
         "rustc_output": "File: The output from rustc from producing the output file. It is optional.",
         "rustc_rmeta_output": "File: The rmeta file produced for this crate. It is optional.",
+        "source": "str: The source of this crate (e.g. 'CratesIo', 'Git', 'Local', 'Registry').",
         "srcs": "depset[File]: All source Files that are part of the crate.",
         "std_dylib": "File: libstd.so file",
         "type": (
             "str: The type of this crate " +
             "(see [rustc --crate-type](https://doc.rust-lang.org/rustc/command-line-arguments.html#--crate-type-a-list-of-types-of-crates-for-the-compiler-to-emit))."
         ),
+        "version": "str: The semver version of this crate.",
         "wrapped_crate_type": (
             "str, optional: The original crate type for targets generated using a previously defined " +
             "crate (typically tests using the `rust_test::crate` attribute)"

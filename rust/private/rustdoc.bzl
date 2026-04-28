@@ -46,6 +46,9 @@ def _strip_crate_info_output(crate_info):
         compile_data = crate_info.compile_data,
         compile_data_targets = crate_info.compile_data_targets,
         data = crate_info.data,
+        version = crate_info.version,
+        source = crate_info.source,
+        pkg_name = crate_info.pkg_name,
     )
 
 def rustdoc_compile_action(
