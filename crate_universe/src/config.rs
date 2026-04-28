@@ -111,6 +111,7 @@ pub(crate) struct RenderConfig {
     /// The default_visibility for individual crate BUILD packages. If None,
     /// defaults to ["//visibility:public"]. Set to restrict direct references
     /// to crate targets so that consumers must use the top-level aliases.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) crate_package_default_visibility: Option<Vec<String>>,
 }
 
