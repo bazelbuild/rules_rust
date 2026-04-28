@@ -1,5 +1,6 @@
 """Test definitions for rustfmt test rules"""
 
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(
     "@rules_rust//rust:defs.bzl",
     "rust_binary",
@@ -101,12 +102,36 @@ def rustfmt_integration_test_suite(name, **kwargs):
             targets = [":{}_generated".format(variant)],
         )
 
+        #
+        # Test targets with generated compile_data (triggers transform_sources
+        # to symlink hand-written sources into bazel-out)
+        #
+        write_file(
+            name = "{}_compile_data_gen".format(variant),
+            out = "{}_generated_data.txt".format(variant),
+            content = ["generated"],
+        )
+
+        rust_rule(
+            name = "{}_compile_data_generated".format(variant),
+            srcs = ["srcs/compile_data_generated/lib.rs"],
+            compile_data = [":{}_compile_data_gen".format(variant)],
+            edition = "2021",
+        )
+
+        rustfmt_test(
+            name = "{}_compile_data_generated_test".format(variant),
+            tags = ["manual"],
+            targets = [":{}_compile_data_generated".format(variant)],
+        )
+
         tests.extend([
             "{}_formatted_2015_test".format(variant),
             "{}_formatted_2018_test".format(variant),
             "{}_unformatted_2015_test".format(variant),
             "{}_unformatted_2018_test".format(variant),
             "{}_generated_test".format(variant),
+            "{}_compile_data_generated_test".format(variant),
         ])
 
     native.test_suite(
