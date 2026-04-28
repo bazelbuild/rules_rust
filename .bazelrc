@@ -20,6 +20,12 @@ coverage --combined_report=lcov
 coverage --experimental_fetch_all_coverage_outputs
 coverage --experimental_split_coverage_postprocessing
 
+# Instrument all workspace targets for coverage. Without this, the default
+# --instrumentation_filter may not match workspace targets, resulting in
+# empty coverage reports. Projects should adjust this to exclude vendored
+# dependencies, e.g.: coverage --instrumentation_filter=^//,-^//third_party
+coverage --instrumentation_filter=^//
+
 # Required for some of the tests
 # https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
 common --experimental_cc_shared_library
