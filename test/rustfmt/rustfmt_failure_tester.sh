@@ -86,7 +86,6 @@ EOF
     check_build_result $TEST_OK ${variant}_formatted_2015_test
     check_build_result $TEST_OK ${variant}_formatted_2018_test
     check_build_result $TEST_OK ${variant}_generated_test
-    check_build_result $TEST_FAILED ${variant}_compile_data_generated_test
   done
 
   # Format a specific target
@@ -100,7 +99,6 @@ EOF
     check_build_result $TEST_OK ${variant}_formatted_2015_test
     check_build_result $TEST_OK ${variant}_formatted_2018_test
     check_build_result $TEST_OK ${variant}_generated_test
-    check_build_result $TEST_OK ${variant}_compile_data_generated_test
   done
 
   # Format all targets

@@ -121,7 +121,6 @@ def rustfmt_integration_test_suite(name, **kwargs):
 
         rustfmt_test(
             name = "{}_compile_data_generated_test".format(variant),
-            tags = ["manual"],
             targets = [":{}_compile_data_generated".format(variant)],
         )
 
@@ -131,6 +130,7 @@ def rustfmt_integration_test_suite(name, **kwargs):
             "{}_unformatted_2015_test".format(variant),
             "{}_unformatted_2018_test".format(variant),
             "{}_generated_test".format(variant),
+            "{}_compile_data_generated_test".format(variant),
         ])
 
     native.test_suite(
