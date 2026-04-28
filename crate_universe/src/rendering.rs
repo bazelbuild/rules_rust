@@ -641,6 +641,12 @@ impl Renderer {
                     .unwrap_or_default(),
                 platforms,
             ),
+            build_script_env_files: SelectSet::new(
+                attrs
+                    .map(|attrs| attrs.build_script_env_files.clone())
+                    .unwrap_or_default(),
+                platforms,
+            ),
             rustc_flags: SelectList::new(
                 // In most cases, warnings in 3rd party crates are not
                 // interesting as they're out of the control of consumers. The
@@ -1340,6 +1346,66 @@ mod test {
 
         // Ensure `cargo_build_script` requirements are met
         assert!(build_file_content.contains("name = \"_bs\""));
+    }
+
+    #[test]
+    fn render_cargo_build_script_with_env_files() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+
+        let attrs = BuildScriptAttributes {
+            build_script_env_files: Select::from_value(BTreeSet::from(["env_file.txt".to_owned()])),
+            ..BuildScriptAttributes::default()
+        };
+
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([Rule::BuildScript(TargetAttributes {
+                    crate_name: "build_script_build".to_owned(),
+                    crate_root: Some("build.rs".to_owned()),
+                    ..TargetAttributes::default()
+                })]),
+                library_target_name: None,
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: Some(attrs),
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let build_file_content = output
+            .get(&PathBuf::from("BUILD.mock_crate-0.1.0.bazel"))
+            .unwrap();
+
+        assert!(
+            build_file_content.contains("cargo_build_script("),
+            "Expected cargo_build_script in:\n{}",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("build_script_env_files = ["),
+            "Expected build_script_env_files in:\n{}",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("\"env_file.txt\""),
+            "Expected env_file.txt in build_script_env_files:\n{}",
+            build_file_content
+        );
     }
 
     #[test]
