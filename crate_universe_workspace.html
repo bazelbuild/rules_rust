@@ -187,7 +187,7 @@ call above or <a href="#crates_repository-generator_urls">crates_repository::gen
 <h2 id="workflows"><a class="header" href="#workflows">Workflows</a></h2>
 <p>The <a href="#crates_repository"><code>crates_repository</code></a> rule (the primary repository rule of <code>rules_rust</code>'s cargo support) supports a number of different
 ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
-the <a href="https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe">./examples/crate_universe</a> directory.</p>
+the <a href="https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration">crate_universe/tests/integration</a> directory.</p>
 <h3 id="cargo-workspaces"><a class="header" href="#cargo-workspaces">Cargo Workspaces</a></h3>
 <p>One of the simpler ways to wire up dependencies would be to first structure your project into a <a href="https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html">Cargo workspace</a>.
 The <code>crates_repository</code> rule can ingest a root <code>Cargo.toml</code> file and generate dependencies from there.</p>
@@ -388,11 +388,11 @@ convenient accessors to larger sections of the dependency graph.</p>
 <h3 id="supplying-extra-tools-to-build"><a class="header" href="#supplying-extra-tools-to-build">Supplying extra tools to build</a></h3>
 <p>Some build scripts can be made to work by pulling in some extra files and making them available to the build script.</p>
 <p>Commonly this is done by passing the file to the <code>build_script_data</code> annotation for the crate, and using <code>build_script_env</code> to tell the build script where the file is. That env var may often use <code>$(execroot)</code> to get the path to the label, or <code>$${pwd}/</code> as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A</p>
-<p>There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.</p>
+<p>There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.</p>
 <h3 id="building-with-bazel-and-supplying-via-an-override"><a class="header" href="#building-with-bazel-and-supplying-via-an-override">Building with Bazel and supplying via an override</a></h3>
 <p>Some build scripts have hooks to allow replacing parts that are complicated to build with output prepared by Bazel.</p>
 <p>We can use those hooks by specifying paths (generally using the <code>build_script_data</code> and <code>build_script_env</code> annotations) and pointing them at labels which Bazel will then build. These env vars may often use <code>$(execroot)</code> to get the path to the label, or <code>$${pwd}/</code> as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).</p>
-<p>There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.</p>
+<p>There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.</p>
 <hr />
 <hr />
 <p><a id="crates_vendor"></a></p>
