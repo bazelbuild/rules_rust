@@ -1222,10 +1222,7 @@ def construct_arguments(
     # Use Bazel's standard instrumentation filter (--instrumentation_filter)
     # so that only targets matching the filter get instrumented, consistent
     # with how coverage works for other languages (Java, C++).
-    # Test targets always need instrumentation since the coverage runtime
-    # only initializes if the binary is compiled with -Cinstrument-coverage,
-    # even when the statically linked library code was instrumented.
-    if toolchain.coverage_supported and ctx.configuration.coverage_enabled and (crate_info.is_test or ctx.coverage_instrumented()):
+    if toolchain.coverage_supported and ctx.configuration.coverage_enabled and ctx.coverage_instrumented():
         rustc_flags.add("--codegen=instrument-coverage")
 
     if toolchain._experimental_link_std_dylib:
