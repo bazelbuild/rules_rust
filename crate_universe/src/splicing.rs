@@ -2,7 +2,7 @@
 
 pub(crate) mod cargo_config;
 mod crate_index_lookup;
-mod splicer;
+pub(crate) mod splicer;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -41,6 +41,11 @@ pub(crate) struct SplicingManifest {
 
     /// The Cargo resolver version to use for splicing
     pub(crate) resolver_version: cargo_toml::Resolver,
+
+    /// The path of the "main" manifest (first in the manifests list).
+    /// Used to disambiguate when manifests come from multiple Cargo workspaces.
+    #[serde(default)]
+    pub(crate) main_manifest: Option<Utf8PathBuf>,
 }
 
 impl FromStr for SplicingManifest {
@@ -61,6 +66,7 @@ impl SplicingManifest {
         let Self {
             manifests,
             cargo_config,
+            main_manifest,
             ..
         } = self;
 
@@ -88,9 +94,19 @@ impl SplicingManifest {
             Utf8PathBuf::from(resolved_path)
         });
 
+        // Resolve the main manifest path
+        let main_manifest = main_manifest.map(|path| {
+            let resolved_path = path
+                .to_string()
+                .replace("${build_workspace_directory}", &workspace_dir_str)
+                .replace("${output_base}", &output_base_str);
+            Utf8PathBuf::from(resolved_path)
+        });
+
         Self {
             manifests,
             cargo_config,
+            main_manifest,
             ..self
         }
     }
@@ -678,6 +694,7 @@ mod test {
             ]),
             cargo_config: None,
             resolver_version: cargo_toml::Resolver::V2,
+            main_manifest: None,
         };
         let metadata = SplicingMetadata::try_from(manifest).unwrap();
         let metadata = serde_json::to_string(&metadata).unwrap();
