@@ -4,6 +4,7 @@ load(
     "cargo_manifest_dir_filename_suffixes_to_retain",
     "debug_std_streams_output_group",
     "experimental_symlink_execroot",
+    "out_dir_volatile_file_basenames",
     "use_default_shell_env",
 )
 
@@ -27,3 +28,5 @@ debug_std_streams_output_group()
 experimental_symlink_execroot()
 
 use_default_shell_env()
+
+out_dir_volatile_file_basenames()

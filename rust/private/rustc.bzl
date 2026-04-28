@@ -1797,8 +1797,12 @@ def rustc_compile_action(
         )
 
     if crate_info_dict != None:
+        # Persist only rustc-specific env; the merged `env` above also carries
+        # ctx.configuration.default_shell_env, which must not leak through
+        # CrateInfo -- it would otherwise clobber cc_toolchain link_env in
+        # downstream rust_test(crate = ...) (see bazelbuild/rules_rust#3989).
         crate_info_dict.update({
-            "rustc_env": env,
+            "rustc_env": env_from_args,
         })
         crate_info = rust_common.create_crate_info(
             deps = depset(deps),
