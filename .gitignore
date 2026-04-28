@@ -8,8 +8,8 @@
 /bzlmod/hello_world/bazel-*
 /examples/bazel-*
 /examples/cargo_manifest_dir/external_crate/bazel-*
-/examples/crate_universe/bazel-*
-/examples/crate_universe/*/bazel-*
+/crate_universe/tests/integration/*/bazel-*
+/crate_universe/tests/integration/vendor/*/bazel-*
 /test/cc_common_link/bazel-*
 /test/cc_common_link/with_global_alloc/bazel-*
 /test/no_std/bazel-*

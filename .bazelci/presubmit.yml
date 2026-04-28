@@ -2,17 +2,6 @@
 minimum_bazel_version: &minimum_bazel_version "7.4.1"
 minimum_bazel_shell_commands: &minimum_bazel_shell_commands
   - echo "build --build_runfile_links" >> user.bazelrc
-no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
-no_bzlmod_shell_commands: &no_bzlmod_shell_commands
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
-  - echo "build --build_runfile_links" >> user.bazelrc
-  - echo "7.4.1" > .bazelversion
-no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
-  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
-  - echo "build --build_runfile_links" >> user.bazelrc
-  - echo "7.4.1" > .bazelversion
 aspects_flags: &aspects_flags
   - "--config=rustfmt"
   - "--config=clippy"
@@ -25,11 +14,6 @@ nightly_aspects_flags: &nightly_aspects_flags
   - "--//rust/toolchain/channel=nightly"
   - "--config=rustfmt"
   - "--config=clippy"
-bzlmod_flags: &bzlmod_flags
-  - "--lockfile_mode=error"
-bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
-  # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
-  - "--incompatible_use_plus_in_repo_names"
 single_rust_channel_targets: &single_rust_channel_targets
   - "--"
   - "//..."
@@ -73,14 +57,6 @@ default_windows_targets: &default_windows_targets
   - "//..."
   # Panic backtraces appear not to work well on Windows.
   - "-//test/unit/remap_path_prefix:integration_test"
-crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
-  - "//vendor_external:crates_vendor"
-  - "//vendor_local_manifests:crates_vendor"
-  - "//vendor_local_pkgs:crates_vendor"
-  - "//vendor_local_patching:crates_vendor"
-  - "//vendor_remote_manifests:crates_vendor"
-  - "//vendor_remote_pkgs:crates_vendor"
-  - "@rules_rust//tools/rust_analyzer:gen_rust_project"
 coverage_validation_post_shell_commands: &coverage_validation_post_shell_commands
   - |
     grep -q '^SF:.*\.rs$' bazel-out/_coverage/_coverage_report.dat \
@@ -125,43 +101,6 @@ tasks:
     coverage_targets: *default_macos_targets
     post_shell_commands: *coverage_validation_post_shell_commands
   windows:
-    build_targets: *default_windows_targets
-    test_targets: *default_windows_targets
-  ubuntu2204_no_bzlmod:
-    name: No Bzlmod
-    platform: ubuntu2204
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_shell_commands
-    build_targets: *default_linux_targets
-    test_targets: *default_linux_targets
-    coverage_targets: *default_linux_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
-    run_targets:
-      - //test:query_test_binary
-  rbe_ubuntu2204_no_bzlmod:
-    name: No Bzlmod
-    platform: rbe_ubuntu2204
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_rbe_shell_commands
-    build_targets: *default_rbe_targets
-    test_targets: *default_rbe_targets
-    coverage_targets: *default_rbe_targets
-    coverage_flags: *rbe_coverage_flags
-    post_shell_commands: *coverage_validation_post_shell_commands
-  macos_no_bzlmod:
-    name: No Bzlmod
-    platform: macos_arm64
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_shell_commands
-    build_targets: *default_macos_targets
-    test_targets: *default_macos_targets
-    coverage_targets: *default_macos_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
-  windows_no_bzlmod:
-    name: No Bzlmod
-    platform: windows
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_shell_commands
     build_targets: *default_windows_targets
     test_targets: *default_windows_targets
   windows_with_runfiles:
@@ -302,19 +241,6 @@ tasks:
     test_targets: *default_linux_targets
     build_flags:
       - "--config=unpretty"
-  ubuntu2204_bzlmod_only:
-    name: With bzlmod
-    platform: ubuntu2204
-    # See https://bazel.build/external/migration#migration-process
-    # When WORKSPACE.bzlmod is provided, the workspace file is ignored.
-    shell_commands:
-      - "touch WORKSPACE.bzlmod"
-    build_flags:
-      - "--enable_bzlmod"
-    build_targets:
-      - "//crate_universe:cargo_bazel_bin"
-      - "//rust/runfiles"
-      - "//util/import"
   ubuntu2204_clang:
     name: With Clang
     platform: ubuntu2204
@@ -488,73 +414,283 @@ tasks:
     platform: windows
     run_targets:
       - "//tools/vscode:gen_launch_json"
-  crate_universe_examples_ubuntu2204:
-    name: Crate Universe Examples
+  ###########################################################################
+  # C R A T E   U N I V E R S E   I N T E G R A T I O N   T E S T S
+  ###########################################################################
+  # TODO: Add linux_arm64 tasks when BazelCI workers are available.
+
+  # --- alias_rule ---
+  cu_integ_alias_rule_ubuntu2204:
+    name: Crate Universe - alias_rule
     platform: ubuntu2204
-    working_directory: examples/crate_universe
-    run_targets: *crate_universe_vendor_example_targets
+    working_directory: crate_universe/tests/integration/alias_rule
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags: *aspects_flags
-  crate_universe_rbe_ubuntu2204:
-    name: Crate Universe Examples
-    platform: rbe_ubuntu2204
-    working_directory: examples/crate_universe
-    shell_commands:
-      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
-      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
-    run_targets: *crate_universe_vendor_example_targets
-    build_targets:
-      - "--"
-      - "//..."
-      # TODO: Fix boringssl on RBE
-      - "-//complicated_dependencies/..."
-    test_targets:
-      - "--"
-      - "//..."
-      # TODO: Fix boringssl on RBE
-      - "-//complicated_dependencies/..."
-    build_flags: *aspects_flags
-  crate_universe_examples_macos:
-    name: Crate Universe Examples
+  cu_integ_alias_rule_macos:
+    name: Crate Universe - alias_rule
     platform: macos_arm64
-    working_directory: examples/crate_universe
-    run_targets: *crate_universe_vendor_example_targets
+    working_directory: crate_universe/tests/integration/alias_rule
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-    build_flags: *aspects_flags
-  crate_universe_local_path_external:
-    name: Crate Universe Local Path External
+
+  # --- cargo_aliases ---
+  cu_integ_cargo_aliases_ubuntu2204:
+    name: Crate Universe - cargo_aliases
     platform: ubuntu2204
-    working_directory: examples/crate_universe_local_path
+    working_directory: crate_universe/tests/integration/cargo_aliases
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_aliases_macos:
+    name: Crate Universe - cargo_aliases
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_aliases
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- cargo_bindeps (linux only, requires nightly) ---
+  cu_integ_cargo_bindeps_ubuntu2204:
+    name: Crate Universe - cargo_bindeps
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/cargo_bindeps
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- cargo_local ---
+  cu_integ_cargo_local_ubuntu2204:
+    name: Crate Universe - cargo_local
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/cargo_local
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_local_macos:
+    name: Crate Universe - cargo_local
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_local
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- cargo_remote ---
+  cu_integ_cargo_remote_ubuntu2204:
+    name: Crate Universe - cargo_remote
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/cargo_remote
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_remote_macos:
+    name: Crate Universe - cargo_remote
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_remote
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- cargo_workspace ---
+  cu_integ_cargo_workspace_ubuntu2204:
+    name: Crate Universe - cargo_workspace
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/cargo_workspace
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_workspace_macos:
+    name: Crate Universe - cargo_workspace
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_workspace
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- cargo_conditional_deps ---
+  cu_integ_cargo_conditional_deps_ubuntu2204:
+    name: Crate Universe - cargo_conditional_deps
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/cargo_conditional_deps
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_cargo_conditional_deps_macos:
+    name: Crate Universe - cargo_conditional_deps
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/cargo_conditional_deps
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- complicated_dependencies (linux + macos only, boringssl issues on Windows/RBE) ---
+  cu_integ_complicated_dependencies_ubuntu2204:
+    name: Crate Universe - complicated_dependencies
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/complicated_dependencies
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_complicated_dependencies_macos:
+    name: Crate Universe - complicated_dependencies
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/complicated_dependencies
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- multi_package (linux + macos only, curl-sys Windows issues) ---
+  cu_integ_multi_package_ubuntu2204:
+    name: Crate Universe - multi_package
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/multi_package
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_multi_package_macos:
+    name: Crate Universe - multi_package
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/multi_package
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- no_cargo_manifests ---
+  cu_integ_no_cargo_manifests_ubuntu2204:
+    name: Crate Universe - no_cargo_manifests
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/no_cargo_manifests
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_no_cargo_manifests_macos:
+    name: Crate Universe - no_cargo_manifests
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/no_cargo_manifests
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- override_target ---
+  cu_integ_override_target_ubuntu2204:
+    name: Crate Universe - override_target
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/override_target
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_override_target_macos:
+    name: Crate Universe - override_target
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/override_target
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- remove_internal_deps ---
+  cu_integ_remove_internal_deps_ubuntu2204:
+    name: Crate Universe - remove_internal_deps
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/remove_internal_deps
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_remove_internal_deps_macos:
+    name: Crate Universe - remove_internal_deps
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/remove_internal_deps
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- using_cxx (linux + macos only, C++ codegen platform issues) ---
+  cu_integ_using_cxx_ubuntu2204:
+    name: Crate Universe - using_cxx
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/using_cxx
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_using_cxx_macos:
+    name: Crate Universe - using_cxx
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/using_cxx
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- vendor (consolidated) ---
+  cu_integ_vendor_ubuntu2204:
+    name: Crate Universe - vendor
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/vendor
+    run_targets:
+      - "//3rdparty:crates_vendor"
+      - "//local_manifests:crates_vendor"
+      - "//local_pkgs:crates_vendor"
+      - "//remote_manifests:crates_vendor"
+      - "//remote_pkgs:crates_vendor"
+      - "//local_patching:crates_vendor"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cu_integ_vendor_macos:
+    name: Crate Universe - vendor
+    platform: macos_arm64
+    working_directory: crate_universe/tests/integration/vendor
+    run_targets:
+      - "//3rdparty:crates_vendor"
+      - "//local_manifests:crates_vendor"
+      - "//local_pkgs:crates_vendor"
+      - "//remote_manifests:crates_vendor"
+      - "//remote_pkgs:crates_vendor"
+      - "//local_patching:crates_vendor"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+
+  # --- local_path (linux only, vendor script tests) ---
+  cu_integ_local_path_external:
+    name: Crate Universe - local_path (external)
+    platform: ubuntu2204
+    working_directory: crate_universe/tests/integration/local_path
     run_targets:
       - "//:vendor_edit_test_out_of_tree"
-  crate_universe_local_path_in_tree:
-    name: Crate Universe Local Path In Tree
+  cu_integ_local_path_in_tree:
+    name: Crate Universe - local_path (in tree)
     platform: ubuntu2204
-    working_directory: examples/crate_universe_local_path
+    working_directory: crate_universe/tests/integration/local_path
     run_targets:
       - "//:vendor_edit_test_in_tree"
-  crate_universe_local_path_external_no_bzlmod:
-    name: Crate Universe Local Path External (No Bzlmod)
-    platform: ubuntu2204
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_shell_commands
-    working_directory: examples/crate_universe_local_path
-    run_targets:
-      - "//:vendor_edit_test_out_of_tree_nobzlmod"
-  crate_universe_local_path_in_tree_no_bzlmod:
-    name: Crate Universe Local Path In Tree (No Bzlmod)
-    platform: ubuntu2204
-    bazel: *no_bzlmod_bazel_version
-    shell_commands: *no_bzlmod_shell_commands
-    working_directory: examples/crate_universe_local_path
-    run_targets:
-      - "//:vendor_edit_test_in_tree_nobzlmod"
+
   example_bindgen_toolchain:
     name: Example custom bindgen toolchain registration
     platform: ubuntu2204
@@ -563,17 +699,6 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-# See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
-#  crate_universe_examples_windows:
-#    name: Crate Universe Examples
-#    platform: windows
-#    working_directory: examples/crate_universe
-#    run_targets: *crate_universe_vendor_example_targets
-#    build_flags: *aspects_flags
-#    build_targets:
-#      - "//..."
-#    test_targets:
-#      - "//..."
   cc_common_link_ubuntu2204:
     name: Build via cc_common.link
     platform: ubuntu2204
@@ -636,8 +761,8 @@ tasks:
     working_directory: test/integration/unstable_rust_features
     build_targets:
       - "//..."
-  bzlmod_repo_mapping_runfiles:
-    name: bzlmod repo mapping test
+  repo_mapping_runfiles:
+    name: repo mapping test
     platform: ubuntu2204
     working_directory: test/integration/bzlmod_repo_mapping/module_a
     test_targets:
@@ -694,22 +819,22 @@ tasks:
       - "--apple_platform_type=ios"
     test_targets:
       - "//..."
-  bzlmod_all_crate_deps:
-    name: Cargo dependencies with bzlmod
+  example_all_crate_deps:
+    name: Cargo dependencies
     platform: ubuntu2204
     working_directory: examples/all_crate_deps
     build_targets:
       - "//..."
-  bzlmod_all_deps_vendor:
-    name: Vendored dependencies with bzlmod
+  example_all_deps_vendor:
+    name: Vendored dependencies
     platform: ubuntu2204
     working_directory: examples/all_deps_vendor
     run_targets:
       - "//basic/3rdparty:crates_vendor"
     build_targets:
       - "//..."
-  bzlmod_compile_opt:
-    name: Compiler optimization with bzlmod
+  example_compile_opt:
+    name: Compiler optimization
     platform: ubuntu2204
     working_directory: examples/compile_opt
     build_targets:
@@ -841,18 +966,19 @@ tasks:
     run_targets:
       - "//pkg_a:pkg_a_binary"
       - "//pkg_b:pkg_b_binary"
-  ubuntu2204_bzlmod_bcr:
-    name: bzlmod BCR presubmit
+  example_hello_world_linux:
+    name: Hello World example
     platform: ubuntu2204
     working_directory: examples/hello_world
-    test_flags: *bzlmod_flags
+    test_flags:
+      - "--lockfile_mode=error"
     run_targets:
       - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
-  ubuntu2204_bzlmod_minimum_bazel_bcr:
-    name: bzlmod BCR presubmit minimal bazel
+  example_hello_world_linux_minimum_bazel:
+    name: Hello World example minimal bazel
     bazel: *minimum_bazel_version
     platform: ubuntu2204
     working_directory: examples/hello_world
@@ -863,21 +989,23 @@ tasks:
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
-  macos_bzlmod_bcr:
-    name: bzlmod BCR presubmit
+  example_hello_world_macos:
+    name: Hello World example
     platform: macos_arm64
     working_directory: examples/hello_world
-    test_flags: *bzlmod_flags
+    test_flags:
+      - "--lockfile_mode=error"
     run_targets:
       - "//third-party-in-workspace:vendor"
       - "@rules_rust//tools/rust_analyzer:gen_rust_project"
     test_targets:
       - "//..."
-  windows_bzlmod_bcr:
-    name: bzlmod BCR presubmit
+  example_hello_world_windows:
+    name: Hello World example
     platform: windows
     working_directory: examples/hello_world
-    test_flags: *bzlmod_flags
+    test_flags:
+      - "--lockfile_mode=error"
     run_targets:
       - "//third-party-in-workspace:vendor"
     build_targets:
@@ -916,62 +1044,22 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  ubuntu2204_bzlmod_plus_repo_names_bcr:
-    name: bzlmod BCR presubmit w/ incompatible flags
-    # A newer version than is specified in the .bazel_version file is needed for
-    # --incompatible_use_plus_in_repo_names'
-    bazel: *minimum_bazel_version
-    platform: ubuntu2204
-    working_directory: examples/hello_world
-    test_flags: *bzlmod_plus_repo_names_flags
-    run_targets:
-      - "//third-party-in-workspace:vendor"
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
-    test_targets:
-      - "//..."
-  macos_bzlmod_plus_repo_names_bcr:
-    name: bzlmod BCR presubmit w/ incompatible flags
-    # A newer version than is specified in the .bazel_version file is needed for
-    # --incompatible_use_plus_in_repo_names'
-    bazel: *minimum_bazel_version
-    platform: macos_arm64
-    working_directory: examples/hello_world
-    test_flags: *bzlmod_plus_repo_names_flags
-    run_targets:
-      - "//third-party-in-workspace:vendor"
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
-    test_targets:
-      - "//..."
-  windows_bzlmod_plus_repo_names_bcr:
-    name: bzlmod BCR presubmit w/ incompatible flags
-    # A newer version than is specified in the .bazel_version file is needed for
-    # --incompatible_use_plus_in_repo_names'
-    bazel: *minimum_bazel_version
-    platform: windows
-    working_directory: examples/hello_world
-    test_flags: *bzlmod_plus_repo_names_flags
-    run_targets:
-      - "//third-party-in-workspace:vendor"
-    build_targets:
-      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
-    test_targets:
-      - "//..."
-  bzlmod_no_cargo:
-    name: Cargo-less bzlmod
+  example_no_cargo:
+    name: Cargo-less example
     platform: ubuntu2204
     working_directory: examples/hello_world_no_cargo
     build_targets:
       - "//..."
-  bzlmod_override_targets:
-    name: Override Targets bzlmod
+  example_override_targets:
+    name: Override Targets
     platform: ubuntu2204
     working_directory: examples/override_target
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  bzlmod_proto:
-    name: Proto and Prost with bzlmod
+  example_proto:
+    name: Proto and Prost
     platform: ubuntu2204
     working_directory: examples/proto
     build_targets:

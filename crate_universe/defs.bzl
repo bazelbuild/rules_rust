@@ -39,7 +39,7 @@ call above or [crates_repository::generator_urls](#crates_repository-generator_u
 
 The [`crates_repository`](#crates_repository) rule (the primary repository rule of `rules_rust`'s cargo support) supports a number of different
 ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
-the [./examples/crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/examples/crate_universe) directory.
+the [crate_universe/tests/integration](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration) directory.
 
 ### Cargo Workspaces
 
@@ -272,7 +272,7 @@ Some build scripts can be made to work by pulling in some extra files and making
 
 Commonly this is done by passing the file to the `build_script_data` annotation for the crate, and using `build_script_env` to tell the build script where the file is. That env var may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A
 
-There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
+There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.
 
 ### Building with Bazel and supplying via an override
 
@@ -280,7 +280,7 @@ Some build scripts have hooks to allow replacing parts that are complicated to b
 
 We can use those hooks by specifying paths (generally using the `build_script_data` and `build_script_env` annotations) and pointing them at labels which Bazel will then build. These env vars may often use `$(execroot)` to get the path to the label, or `$${pwd}/` as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).
 
-There is an example of this in the "complicated dependencies" section of https://github.com/bazelbuild/rules_rust/blob/main/examples/crate_universe/WORKSPACE.bazel which builds boring-sys.
+There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.
 
 ---
 

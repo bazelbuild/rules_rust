@@ -1,0 +1,77 @@
+module(
+    name = "cu_test_multi_package",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.annotation(
+    crate = "curl-sys",
+    gen_build_script = "off",
+    repositories = ["m_pkgs"],
+    deps = [
+        "@m_pkgs__curl//:curl",
+    ],
+)
+crate.annotation(
+    crate = "httpmock",
+    repositories = ["m_pkgs"],
+    shallow_since = "1673473097 +0100",
+)
+crate.annotation(
+    crate = "isahc",
+    repositories = ["m_pkgs"],
+    shallow_since = "1667787880 -0600",
+)
+crate.annotation(
+    build_script_data_glob = ["nghttp2/**"],
+    crate = "libnghttp2-sys",
+    data_glob = ["nghttp2/**"],
+    repositories = ["m_pkgs"],
+)
+crate.annotation(
+    build_script_data_glob = ["vendor/**"],
+    crate = "wepoll-ffi",
+    repositories = ["m_pkgs"],
+)
+crate.from_cargo(
+    name = "m_pkgs",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+    manifests = [
+        "//pkg_a:Cargo.toml",
+        "//sub_pkgs/pkg_b:Cargo.toml",
+        "//sub_pkgs/pkg_c:Cargo.toml",
+    ],
+)
+use_repo(
+    crate,
+    "m_pkgs",
+)
+
+http_archive(
+    name = "m_pkgs__curl",
+    build_file = "//3rdparty:BUILD.curl.bazel",
+    integrity = "sha256-c6Sw6ZWWoJ+lkkpPt+S5lahf2g0YosAquc8TS+vOBO4=",
+    strip_prefix = "curl-8.10.1",
+    type = "tar.xz",
+    urls = [
+        "https://curl.se/download/curl-8.10.1.tar.xz",
+        "https://github.com/curl/curl/releases/download/curl-8_10_1/curl-8.10.1.tar.xz",
+    ],
+)
