@@ -166,6 +166,15 @@ fn main() {
         })
         .collect();
 
+    // No profraw files means no instrumented code ran (e.g. a test target
+    // that wasn't instrumented due to --instrumentation_filter). Write an
+    // empty coverage file and exit successfully.
+    if profraw_files.is_empty() {
+        debug_log!("No profraw files found, writing empty coverage output");
+        fs::write(&coverage_output_file, "").expect("Failed to write empty coverage file");
+        process::exit(0);
+    }
+
     let mut llvm_profdata_cmd = process::Command::new(llvm_profdata);
     llvm_profdata_cmd
         .arg("merge")
