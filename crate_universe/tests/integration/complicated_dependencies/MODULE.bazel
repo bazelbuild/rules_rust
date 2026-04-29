@@ -1,0 +1,61 @@
+module(
+    name = "cu_test_complicated_dependencies",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "boringssl", version = "0.20241209.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+inject_repo(crate, "boringssl")
+
+crate.annotation(
+    build_script_data = [
+        # buildifier: disable=canonical-repository
+        "@@//:boringssl_gen_dir",
+    ],
+    build_script_env = {
+        # buildifier: disable=canonical-repository
+        "BORING_BSSL_INCLUDE_PATH": "$(execpath @@//:boringssl_gen_dir)/include",
+        # buildifier: disable=canonical-repository
+        "BORING_BSSL_PATH": "$(execpath @@//:boringssl_gen_dir)",
+    },
+    compile_data = [
+        # buildifier: disable=canonical-repository
+        "@@//:boringssl_gen_dir",
+    ],
+    crate = "boring-sys",
+    repositories = ["complicated_dependencies"],
+)
+crate.spec(
+    package = "boring",
+    repositories = ["complicated_dependencies"],
+    version = "3.0.4",
+)
+crate.splicing_config(
+    repositories = ["complicated_dependencies"],
+    resolver_version = "2",
+)
+crate.from_specs(
+    name = "complicated_dependencies",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+)
+use_repo(
+    crate,
+    "complicated_dependencies",
+)

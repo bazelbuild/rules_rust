@@ -2,7 +2,7 @@
 
 ## `multi_package-cargo-bazel-lock.json`
 
-This was copied from `examples/crate_universe/multi_package/cargo-bazel-lock.json` at commit 53daac71c0755680c29f4c55ac5238cc063e8b31.
+This was copied from `crate_universe/tests/integration/multi_package/cargo-bazel-lock.json` at commit 53daac71c0755680c29f4c55ac5238cc063e8b31.
 
 It's intended to be an example of a realistic and meaningfully complex lockfile.
 

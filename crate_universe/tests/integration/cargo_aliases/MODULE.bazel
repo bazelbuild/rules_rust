@@ -1,0 +1,35 @@
+module(
+    name = "cu_test_cargo_aliases",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.annotation(
+    crate = "names",
+    repositories = ["cargo_aliases"],
+    shallow_since = "1646516410 -0700",
+    version = "0.12.1-dev",
+)
+crate.from_cargo(
+    name = "cargo_aliases",
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    lockfile = "//:cargo-bazel-lock.json",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(
+    crate,
+    "cargo_aliases",
+)
