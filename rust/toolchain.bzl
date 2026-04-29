@@ -973,9 +973,6 @@ toolchain(
 Then, either add the label of the toolchain rule to `register_toolchains` in the WORKSPACE, or pass \
 it to the `"--extra_toolchains"` flag for Bazel, and it will be used.
 
-See `@rules_rust//rust:repositories.bzl` for examples of defining the `@rust_cpuX` repository \
-with the actual binaries and libraries.
-
 To use a platform-specific linker, you can use a `select()` in the `linker` attribute:
 
 ```python

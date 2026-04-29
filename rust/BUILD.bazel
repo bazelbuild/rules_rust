@@ -3,9 +3,6 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
-    "known_shas.bzl",
-    "nightly_versions.bzl",
-    "repositories.bzl",
     "defs.bzl",
     "toolchain.bzl",
 ])

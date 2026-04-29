@@ -359,9 +359,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:
         if arch == "x86_64" or abi == "sim":
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
+            all_abi_constraints.append("@apple_support//constraints:simulator")
         else:
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
+            all_abi_constraints.append("@apple_support//constraints:device")
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
@@ -492,13 +492,13 @@ def triple_to_constraint_set(target_triple):
         return [
             "@platforms//cpu:aarch64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ]
     if target_triple == "x86_64-apple-ios-macabi":
         return [
             "@platforms//cpu:x86_64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ]
 
     triple_struct = triple(target_triple)

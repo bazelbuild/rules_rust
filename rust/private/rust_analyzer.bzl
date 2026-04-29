@@ -386,7 +386,7 @@ def _rust_analyzer_detect_sysroot_impl(ctx):
     if not rust_analyzer_toolchain.rustc_srcs:
         fail(
             "Current Rust-Analyzer toolchain doesn't contain rustc sources in `rustc_srcs` attribute.",
-            "These are needed by rust-analyzer. If you are using the default Rust toolchain, add `rust_repositories(include_rustc_srcs = True, ...).` to your WORKSPACE file.",
+            "These are needed by rust-analyzer.",
         )
 
     rustc_srcs = rust_analyzer_toolchain.rustc_srcs

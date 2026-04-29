@@ -35,32 +35,3 @@ def rust_wasm_bindgen_dependencies():
     direct_deps.extend(crate_repositories())
     direct_deps.extend(webdriver_repositories())
     return direct_deps
-
-# buildifier: disable=unnamed-macro
-def rust_wasm_bindgen_register_toolchains(register_toolchains = True):
-    """Registers the default toolchains for the `rules_rust` [wasm-bindgen][wb] rules.
-
-    [wb]: https://github.com/rustwasm/wasm-bindgen
-
-    Args:
-        register_toolchains (bool, optional): Whether or not to register toolchains.
-    """
-
-    if register_toolchains:
-        native.register_toolchains(str(Label("//:default_wasm_bindgen_toolchain")))
-
-# buildifier: disable=unnamed-macro
-def rust_wasm_bindgen_repositories(register_default_toolchain = True):
-    """Declare dependencies needed for [rust_wasm_bindgen](#rust_wasm_bindgen).
-
-    **Deprecated**: Use [rust_wasm_bindgen_dependencies](#rust_wasm_bindgen_depednencies) and [rust_wasm_bindgen_register_toolchains](#rust_wasm_bindgen_register_toolchains).
-
-    Args:
-        register_default_toolchain (bool, optional): If True, the default [rust_wasm_bindgen_toolchain](#rust_wasm_bindgen_toolchain)
-            (`@rules_rust//:default_wasm_bindgen_toolchain`) is registered. This toolchain requires a set of dependencies
-            that were generated using [crate_universe](https://github.com/bazelbuild/rules_rust/tree/main/crate_universe). These will also be loaded.
-    """
-
-    rust_wasm_bindgen_dependencies()
-
-    rust_wasm_bindgen_register_toolchains(register_toolchains = register_default_toolchain)

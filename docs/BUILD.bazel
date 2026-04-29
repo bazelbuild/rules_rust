@@ -139,26 +139,6 @@ stardoc(
 )
 
 stardoc(
-    name = "rust_repositories",
-    out = "src/rust_repositories.md",
-    input = "@rules_rust//rust:repositories.bzl",
-    symbol_names = [
-        "rules_rust_dependencies",
-        "rust_analyzer_toolchain_repository",
-        "rust_register_toolchains",
-        "rust_repositories",
-        "rust_repository_set",
-        "rust_stdlib_filegroup",
-        "rust_toolchain_repository_proxy",
-        "rust_toolchain_repository",
-        "rust_toolchain_tools_repository",
-        "rust_toolchain",
-    ],
-    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
-    deps = [":all_docs"],
-)
-
-stardoc(
     name = "rust_toolchains",
     out = "src/rust_toolchains.md",
     input = "@rules_rust//rust:toolchain.bzl",
@@ -269,7 +249,6 @@ mdbook(
         ":rust_mdbook",
         ":rust_prost",
         ":rust_pyo3",
-        ":rust_repositories",
         ":rust_settings",
         ":rust_toolchains",
         ":rust_unpretty",

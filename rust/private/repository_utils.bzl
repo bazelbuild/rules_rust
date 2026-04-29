@@ -6,7 +6,6 @@ load(
     "read_user_netrc",
     "use_netrc",
 )
-load("//rust:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(
     "//rust/platform:triple_mappings.bzl",
     "system_to_binary_ext",
@@ -14,6 +13,7 @@ load(
     "system_to_staticlib_ext",
     "system_to_stdlib_linkflags",
 )
+load("//rust/private:known_shas.bzl", "FILE_KEY_TO_SHA")
 load(":common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")
 load(":semver.bzl", "semver")
 
@@ -889,7 +889,7 @@ def lookup_tool_sha256(
     The lookup order is:
 
     1. The sha256s dict in the context attributes;
-    2. The list of sha256 hashes populated in `//rust:known_shas.bzl`;
+    2. The list of sha256 hashes populated in `//rust/private:known_shas.bzl`;
 
     Args:
         repository_ctx (repository_ctx): A repository_ctx (no attrs required).
