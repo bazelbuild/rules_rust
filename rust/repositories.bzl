@@ -870,6 +870,24 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
         build_contents.append(BUILD_for_rust_analyzer_proc_macro_srv(host_triple))
         proc_macro_srv = "//:rust_analyzer_proc_macro_srv"
 
+    rust_stdlib_content, rust_stdlib_sha256 = load_rust_stdlib(
+        ctx = repository_ctx,
+        target_triple = host_triple,
+        version = version,
+        iso_date = iso_date,
+    )
+    build_contents.append(rust_stdlib_content)
+    sha256s.update(rust_stdlib_sha256)
+
+    cargo_content, cargo_sha256 = load_cargo(
+        ctx = repository_ctx,
+        iso_date = iso_date,
+        target_triple = host_triple,
+        version = version,
+    )
+    build_contents.append(cargo_content)
+    sha256s.update(cargo_sha256)
+
     # Load rust-analyzer binary from official Rust distribution
     rust_analyzer = None
     rust_analyzer_content, rust_analyzer_sha256 = load_rust_analyzer(
@@ -885,6 +903,7 @@ def _rust_analyzer_toolchain_tools_repository_impl(repository_ctx):
 
     build_contents.append(BUILD_for_rust_analyzer_toolchain(
         name = "rust_analyzer_toolchain",
+        target_triple = host_triple,
         rustc = rustc,
         proc_macro_srv = proc_macro_srv,
         rust_analyzer = rust_analyzer,
