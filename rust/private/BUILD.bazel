@@ -12,6 +12,20 @@ exports_files([
     "test_sharding_wrapper.sh",
 ])
 
+filegroup(
+    name = "empty_macos_sdkroot",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "default_macos_sdkroot",
+    actual = select({
+        "@platforms//os:osx": "@macos_sdk//sysroot",
+        "//conditions:default": ":empty_macos_sdkroot",
+    }),
+    visibility = ["//visibility:public"],
+)
+
 bzl_library(
     name = "bazel_tools_bzl_lib",
     srcs = ["@bazel_tools//tools:bzl_srcs"],

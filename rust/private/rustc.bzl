@@ -541,15 +541,18 @@ def get_linker_and_args(ctx, crate_type, toolchain, cc_toolchain, feature_config
 
     return ld, ld_is_direct_driver, link_args, link_env
 
+_EMPTY_MACOS_SDKROOT = Label("//rust/private:empty_macos_sdkroot")
+
 def _apple_sdkroot(ctx, attr):
     macos_sdkroot = getattr(attr, "macos_sdkroot", None)
-    if macos_sdkroot == None:
+    if macos_sdkroot == None or macos_sdkroot.label == _EMPTY_MACOS_SDKROOT:
         return None
 
-    return ctx.expand_location(
-        "${{pwd}}/$(execpath {})".format(macos_sdkroot.label),
-        targets = [macos_sdkroot],
-    )
+    files = macos_sdkroot[DefaultInfo].files.to_list()
+    if len(files) != 1:
+        fail("macos_sdkroot must provide exactly one file")
+
+    return "${{pwd}}/{}".format(files[0].path)
 
 def symlink_for_ambiguous_lib(actions, toolchain, crate_info, lib):
     """Constructs a disambiguating symlink for a library dependency.
@@ -806,6 +809,9 @@ def collect_inputs(
 
     if linker_script:
         nolinkstamp_compile_direct_inputs.append(linker_script)
+
+    if hasattr(files, "macos_sdkroot"):
+        nolinkstamp_compile_direct_inputs += files.macos_sdkroot
 
     if not cc_toolchain:
         runtime_libs = depset()
