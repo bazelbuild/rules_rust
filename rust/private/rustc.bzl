@@ -1116,9 +1116,13 @@ def construct_arguments(
 
     # For determinism to help with build distribution and such
     if remap_path_prefix != None:
+        # `--remap-path-prefix` flags are applied in reverse order. We need to
+        # specify the outermost directory (output_base) first, so that it's
+        # remapped last. Otherwise we can end up with a partial rewrite where
+        # "/path/to/output_base/execroot" becomes "./execroot" rather than ".".
+        rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
-        rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
 
     emit_without_paths = []
     for kind in emit:

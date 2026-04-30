@@ -6,7 +6,6 @@ load("//rust:defs.bzl", "rust_binary", "rust_library")
 load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
-    "assert_argv_contains",
     "assert_list_contains_adjacent_elements",
 )
 
@@ -17,9 +16,11 @@ def _remap_path_prefix_test_impl(ctx):
     action = target.actions[0]
     assert_action_mnemonic(env, action, "Rustc")
 
-    assert_argv_contains(env, action, "--remap-path-prefix=${pwd}=.")
-    assert_argv_contains(env, action, "--remap-path-prefix=${exec_root}=.")
-    assert_argv_contains(env, action, "--remap-path-prefix=${output_base}=.")
+    assert_list_contains_adjacent_elements(env, action.argv, [
+        "--remap-path-prefix=${output_base}=.",
+        "--remap-path-prefix=${pwd}=.",
+        "--remap-path-prefix=${exec_root}=.",
+    ])
 
     return analysistest.end(env)
 
