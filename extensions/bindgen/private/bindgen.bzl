@@ -285,6 +285,9 @@ def _rust_bindgen_impl(ctx):
     # Configure Clang Arguments
     args.add("--")
 
+    # Ignore unknown warning options from the CC toolchain (e.g., GCC-specific flags)
+    args.add("-Wno-unknown-warning-option")
+
     resource_dir = _get_resource_dir(cc_toolchain)
     if resource_dir:
         args.add("-resource-dir=%s" % resource_dir)
