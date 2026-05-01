@@ -1,0 +1,22 @@
+# Loads rules directly from rust/private:rust.bzl (not //rust:defs.bzl)
+# to avoid a dependency cycle: the defs.bzl macro sets auditable_injector
+# via select(), which would make the injector depend on itself.
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "auditable_injector",
+    srcs = ["main.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/auditable/3rdparty/crates:miniz_oxide",
+        "//tools/auditable/3rdparty/crates:object",
+    ],
+)
+
+rust_test(
+    name = "auditable_injector_test",
+    crate = ":auditable_injector",
+    edition = "2021",
+)

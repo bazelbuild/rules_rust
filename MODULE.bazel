@@ -20,6 +20,9 @@ bazel_dep(name = "apple_support", version = "1.24.1", repo_name = "build_bazel_a
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
     internal_deps,
+    "rra",
+    "rra__miniz_oxide-0.9.1",
+    "rra__object-0.39.1",
     "rrra",
     "rrra__anyhow-1.0.102",
     "rrra__camino-1.2.2",
