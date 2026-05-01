@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>crate_universe (bzlmod) - rules_rust</title>
+        <title>crate_universe - rules_rust</title>
 
 
         <!-- Custom HTML head -->
@@ -317,7 +317,7 @@ which integrates well with bazel concepts.</p>
 <li>you have to use  nightly <code>host_tools</code> to generate dependencies because</li>
 </ul>
 <p>Alternatively you can specify this in a separate <code>repo</code> with <code>cargo.from_specs</code> syntax:</p>
-<pre><code class="language-python">bindeps = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+<pre><code class="language-python">bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 bindeps.spec(package = "cargo-machete", version = "=0.7.0", artifact = "bin")
 bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
@@ -684,7 +684,7 @@ can be found below where the supported keys for each template can be found in th
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="crate_universe_workspace.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="upstream_tooling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -698,7 +698,7 @@ can be found below where the supported keys for each template can be found in th
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="crate_universe_workspace.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="upstream_tooling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

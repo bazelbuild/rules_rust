@@ -231,7 +231,6 @@ toolchain(
 )
 </code></pre>
 <p>Then, either add the label of the toolchain rule to <code>register_toolchains</code> in the WORKSPACE, or pass it to the <code>"--extra_toolchains"</code> flag for Bazel, and it will be used.</p>
-<p>See <code>@rules_rust//rust:repositories.bzl</code> for examples of defining the <code>@rust_cpuX</code> repository with the actual binaries and libraries.</p>
 <p>To use a platform-specific linker, you can use a <code>select()</code> in the <code>linker</code> attribute:</p>
 <pre><code class="language-python">rust_toolchain(
     name = "rust_toolchain_impl",

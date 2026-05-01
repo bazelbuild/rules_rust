@@ -165,13 +165,7 @@ using <a href="https://github.com/tokio-rs/prost">Prost</a> and <a href="https:/
 <li><a href="#rust_prost_toolchain">rust_prost_toolchain</a></li>
 </ul>
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
-<pre><code class="language-python">load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
-
-rust_prost_dependencies()
-
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
+<pre><code class="language-python">bazel_dep(name = "rules_rust_prost", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
 <p>The <code>prost</code> and <code>tonic</code> rules do not specify a default toolchain in order to avoid mismatched
 dependency issues. To setup the <code>prost</code> and <code>tonic</code> toolchain, please see the section
@@ -261,7 +255,7 @@ toolchain(
     toolchain_type = "@rules_rust//proto/prost:toolchain_type",
 )
 </code></pre>
-<p>Lastly, you must register the toolchain in your <code>WORKSPACE</code> file. For example:</p>
+<p>Lastly, you must register the toolchain in your <code>MODULE.bazel</code> file. For example:</p>
 <pre><code class="language-python">register_toolchains("//toolchains:prost_toolchain")
 </code></pre>
 <hr />

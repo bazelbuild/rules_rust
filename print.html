@@ -162,33 +162,11 @@
 <p><a name="setup"></a></p>
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
 <p>The rules are released, and releases can be found on <a href="https://github.com/bazelbuild/rules_rust/releases">the GitHub Releases page</a>. We recommend using the latest release from that page.</p>
-<h3 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h3>
-<p>Note that rules_rust bzlmod support is still a work in progress. Most features should work, but bugs are more likely. This is not a desired end-state - please report (or better yet, help fix!) bugs you run into.</p>
-<p>To use <code>rules_rust</code> in a project using bzlmod, add the following to your <code>MODULE.bazel</code> file:</p>
+<p>To use <code>rules_rust</code> in a project, add the following to your <code>MODULE.bazel</code> file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust", version = "0.70.0")
 </code></pre>
 <p>Don't forget to substitute in your desired release's version number.</p>
-<h3 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h3>
-<p>To use <code>rules_rust</code> in a project using a WORKSPACE file, add the following to your <code>WORKSPACE</code> file to add the external repositories for the Rust toolchain:</p>
-<pre><code class="language-python">load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# To find additional information on this release or newer ones visit:
-# https://github.com/bazelbuild/rules_rust/releases
-http_archive(
-    name = "rules_rust",
-    integrity = "sha256-Weev1uz2QztBlDA88JX6A1N72SucD1V8lBsaliM0TTg=",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.48.0/rules_rust-v0.48.0.tar.gz"],
-)
-
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
-
-rules_rust_dependencies()
-
-rust_register_toolchains()
-</code></pre>
-<p>Don't forget to substitute in your desired release's version number and integrity hash.</p>
 <h2 id="specifying-rust-version"><a class="header" href="#specifying-rust-version">Specifying Rust version</a></h2>
-<h3 id="bzlmod-1"><a class="header" href="#bzlmod-1">Bzlmod</a></h3>
 <p>To use a particular version of the Rust compiler, pass that version to the <code>toolchain</code> method of the <code>rust</code> extension, like this:</p>
 <pre><code class="language-python">rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -206,34 +184,9 @@ rust.toolchain(
 <pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
 </code></pre>
 <p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
-<h3 id="workspace-1"><a class="header" href="#workspace-1">WORKSPACE</a></h3>
-<p>To build with a particular version of the Rust compiler when using a WORKSPACE file, pass that version to <code>rust_register_toolchains</code>:</p>
-<pre><code class="language-python">rust_register_toolchains(
-    edition = "2021",
-    versions = [
-        "1.79.0"
-    ],
-)
-</code></pre>
-<p>Like in the Bzlmod approach, as well as an exact version, <code>versions</code> can accept <code>nightly/{iso_date}</code> and <code>beta/{iso_date}</code> strings for toolchains from different release channels.</p>
-<pre><code class="language-python">rust_register_toolchains(
-    edition = "2021",
-    versions = [
-        "nightly/2024-06-13",
-    ],
-)
-</code></pre>
-<p>Here too a <code>stable</code> and <code>nightly</code> toolchain will be registered by default if no versions are passed to <code>rust_register_toolchains</code>. However,
-if only 1 version is passed and it is from the <code>nightly</code> or <code>beta</code> release channels (i.e. <strong>not</strong> <code>stable</code>), then the following build setting flag must
-also be set either in the command line or in the project's <code>.bazelrc</code> file.</p>
-<pre><code class="language-text">build --@rules_rust//rust/toolchain/channel=nightly
-</code></pre>
-<p>Failure to do so will result in rules attempting to match a <code>stable</code> toolchain when one was not registered, thus raising an error.</p>
 <h2 id="supported-bazel-versions"><a class="header" href="#supported-bazel-versions">Supported bazel versions</a></h2>
 <p>The oldest version of Bazel the <code>main</code> branch is tested against is <code>7.4.1</code>. Previous versions may still be functional in certain environments, but this is the minimum version we strive to fully support.</p>
 <p>We test these rules against the latest rolling releases of Bazel, and aim for compatibility with them, but prioritise stable releases over rolling releases where necessary.</p>
-<h3 id="workspace-support"><a class="header" href="#workspace-support">WORKSPACE support</a></h3>
-<p>WORKSPACE support is officially tested with Bazel 7 for as long as that is the min supported version. While it may work with later versions, compatibility with those versions is not guaranteed or actively verified.</p>
 <h2 id="supported-platforms"><a class="header" href="#supported-platforms">Supported platforms</a></h2>
 <p>We aim to support Linux and macOS.</p>
 <p>We do not have sufficient maintainer expertise to support Windows. Most things probably work, but we have had to disable many tests in CI because we lack the expertise to fix them. We welcome contributions to help improve its support.</p>
@@ -1416,8 +1369,7 @@ at the root of the project that describes its structure or on build system speci
 The <code>rust_analyzer</code> rules facilitate both approaches.</p>
 <h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup-3"><a class="header" href="#setup-3">Setup</a></h3>
-<h4 id="bzlmod-2"><a class="header" href="#bzlmod-2">Bzlmod</a></h4>
-<p>First, ensure <code>rules_rust</code> is setup in your workspace:</p>
+<p>First, ensure <code>rules_rust</code> is setup in your <code>MODULE.bazel</code>:</p>
 <pre><code class="language-python"># MODULE.bazel
 
 # See releases page for available versions:
@@ -1432,28 +1384,6 @@ with</p>
 should be added to <code>.gitignore</code> because it is effectively a build artifact.
 Once the <code>rust-project.json</code> has been generated in the project root,
 rust-analyzer can pick it up upon restart.</p>
-<h4 id="workspace-2"><a class="header" href="#workspace-2">WORKSPACE</a></h4>
-<p>Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure <code>rules_rust</code> is
-setup in your workspace.</p>
-<p>Moreover, when loading the dependencies for the tool, you should call the function <code>rust_analyzer_dependencies()</code>:</p>
-<pre><code class="language-python">load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-
-rust_analyzer_dependencies()
-</code></pre>
-<p>Again, you can now run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
-whenever dependencies change to regenerate the <code>rust-project.json</code> file.</p>
-<p>For users who do not use <code>rust_register_toolchains</code> to register toolchains, the following can be added
-to their WORKSPACE to register a <code>rust_analyzer_toolchain</code>. Please make sure the Rust version used in
-this toolchain matches the version used by the currently registered toolchain or the sources/documentation
-will not match what's being compiled with and can lead to confusing results.</p>
-<pre><code class="language-python">load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
-
-register_toolchains(rust_analyzer_toolchain_repository(
-    name = "rust_analyzer_toolchain",
-    # This should match the currently registered toolchain.
-    version = "1.63.0",
-))
-</code></pre>
 <h4 id="vscode"><a class="header" href="#vscode">VSCode</a></h4>
 <p>To set this up using <a href="https://code.visualstudio.com/">VSCode</a>, users should first install the
 <a href="https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer">rust_analyzer plugin</a>.
@@ -2079,7 +2009,6 @@ toolchain(
 )
 </code></pre>
 <p>Then, either add the label of the toolchain rule to <code>register_toolchains</code> in the WORKSPACE, or pass it to the <code>"--extra_toolchains"</code> flag for Bazel, and it will be used.</p>
-<p>See <code>@rules_rust//rust:repositories.bzl</code> for examples of defining the <code>@rust_cpuX</code> repository with the actual binaries and libraries.</p>
 <p>To use a platform-specific linker, you can use a <code>select()</code> in the <code>linker</code> attribute:</p>
 <pre><code class="language-python">rust_toolchain(
     name = "rust_toolchain_impl",
@@ -2195,7 +2124,7 @@ rust.toolchain(<a href="rust_bzlmod.html#rust.toolchain-aliases">aliases</a>, <a
 <tr><td style="text-align: left"><a id="rust.repository_set-netrc"></a>netrc</td><td style="text-align: left">.netrc file to use for authentication; mirrors the eponymous attribute from http_archive.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.repository_set-opt_level"></a>opt_level</td><td style="text-align: left">Rustc optimization levels. For more details see the documentation for <code>rust_toolchain.opt_level</code>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.repository_set-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2026-04-16"</code></td></tr>
-<tr><td style="text-align: left"><a id="rust.repository_set-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_bzlmod.html#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.repository_set-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.repository_set-strip_level"></a>strip_level</td><td style="text-align: left">Rustc strip levels. For more details see the documentation for <code>rust_toolchain.strip_level</code>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.repository_set-target_compatible_with"></a>target_compatible_with</td><td style="text-align: left">List of platform constraints this toolchain produces, for the particular target_triple this call is for.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.repository_set-target_settings"></a>target_settings</td><td style="text-align: left">A list of <code>config_settings</code> that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
@@ -2221,7 +2150,7 @@ rust.toolchain(<a href="rust_bzlmod.html#rust.toolchain-aliases">aliases</a>, <a
 <tr><td style="text-align: left"><a id="rust.toolchain-rust_analyzer_version"></a>rust_analyzer_version</td><td style="text-align: left">The version of Rustc to pair with rust-analyzer.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.toolchain-rustfmt_toolchain_triples"></a>rustfmt_toolchain_triples</td><td style="text-align: left">Like toolchain_triples, but for rustfmt toolchains. Mapping of rust target triple to repository name.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.toolchain-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2026-04-16"</code></td></tr>
-<tr><td style="text-align: left"><a id="rust.toolchain-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_bzlmod.html#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust.toolchain-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.toolchain-strip_level"></a>strip_level</td><td style="text-align: left">Rustc strip levels. For more details see the documentation for <code>rust_toolchain.strip_level</code>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.toolchain-target_settings"></a>target_settings</td><td style="text-align: left">A list of <code>config_settings</code> that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust.toolchain-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
@@ -2247,253 +2176,9 @@ rust_host_tools.host_tools(<a href="rust_bzlmod.html#rust_host_tools.host_tools-
 <tr><td style="text-align: left"><a id="rust_host_tools.host_tools-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_host_tools.host_tools-global_allocator_library"></a>global_allocator_library</td><td style="text-align: left">Target that provides allocator functions when global allocator is used with cc_common.link.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_host_tools.host_tools-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"nightly/2026-04-16"</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_bzlmod.html#rust_repositories">rust_repositories</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
+<tr><td style="text-align: left"><a id="rust_host_tools.host_tools-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_host_tools.host_tools-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
 <tr><td style="text-align: left"><a id="rust_host_tools.host_tools-version"></a>version</td><td style="text-align: left">The version of Rust to use for tools executed on the Bazel host.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"1.95.0"</code></td></tr>
-</tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
-<h1 id="rust-repositories"><a class="header" href="#rust-repositories">Rust Repositories</a></h1>
-<p>Repository rules for defining Rust dependencies and toolchains.</p>
-<h2 id="functions-2"><a class="header" href="#functions-2">Functions</a></h2>
-<ul>
-<li><a href="rust_repositories.html#rules_rust_dependencies">rules_rust_dependencies</a></li>
-<li><a href="rust_repositories.html#rust_analyzer_toolchain_repository">rust_analyzer_toolchain_repository</a></li>
-<li><a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a></li>
-<li><a href="rust_repositories.html#rust_repositories">rust_repositories</a></li>
-<li><a href="rust_repositories.html#rust_repository_set">rust_repository_set</a></li>
-<li><a href="rust_repositories.html#rust_toolchain_repository">rust_toolchain_repository</a></li>
-</ul>
-<h2 id="repository-rules-1"><a class="header" href="#repository-rules-1">Repository Rules</a></h2>
-<ul>
-<li><a href="rust_repositories.html#rust_toolchain_repository_proxy">rust_toolchain_repository_proxy</a></li>
-<li><a href="rust_repositories.html#rust_toolchain_tools_repository">rust_toolchain_tools_repository</a></li>
-</ul>
-<p><a id="rules_rust_dependencies"></a></p>
-<h2 id="rules_rust_dependencies"><a class="header" href="#rules_rust_dependencies">rules_rust_dependencies</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")
-
-rules_rust_dependencies()
-</pre>
-<p>Dependencies used in the implementation of <code>rules_rust</code>.</p>
-<p><a id="rust_analyzer_toolchain_repository"></a></p>
-<h2 id="rust_analyzer_toolchain_repository"><a class="header" href="#rust_analyzer_toolchain_repository">rust_analyzer_toolchain_repository</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
-
-rust_analyzer_toolchain_repository(<a href="rust_repositories.html#rust_analyzer_toolchain_repository-name">name</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-version">version</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-exec_compatible_with">exec_compatible_with</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-target_compatible_with">target_compatible_with</a>,
-                                   <a href="rust_repositories.html#rust_analyzer_toolchain_repository-sha256s">sha256s</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-urls">urls</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-auth">auth</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-netrc">netrc</a>, <a href="rust_repositories.html#rust_analyzer_toolchain_repository-auth_patterns">auth_patterns</a>)
-</pre>
-<p>Assemble a remote rust_analyzer_toolchain target based on the given params.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-name"></a>name</td><td style="text-align: left">The name of the toolchain proxy repository containing the registerable toolchain.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-version"></a>version</td><td style="text-align: left">The version of the tool among "nightly", "beta', or an exact version.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-exec_compatible_with"></a>exec_compatible_with</td><td style="text-align: left">A list of constraints for the execution platform for this toolchain.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-target_compatible_with"></a>target_compatible_with</td><td style="text-align: left">A list of constraints for the target platform for this toolchain.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-auth"></a>auth</td><td style="text-align: left">Auth object compatible with repository_ctx.download to use when downloading files. See <a href="https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download">repository_ctx.download</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-netrc"></a>netrc</td><td style="text-align: left">.netrc file to use for authentication; mirrors the eponymous attribute from http_archive</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_analyzer_toolchain_repository-auth_patterns"></a>auth_patterns</td><td style="text-align: left">Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>str: The name of a registerable rust_analyzer_toolchain.</p>
-<p><a id="rust_register_toolchains"></a></p>
-<h2 id="rust_register_toolchains"><a class="header" href="#rust_register_toolchains">rust_register_toolchains</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_register_toolchains")
-
-rust_register_toolchains(*, <a href="rust_repositories.html#rust_register_toolchains-dev_components">dev_components</a>, <a href="rust_repositories.html#rust_register_toolchains-edition">edition</a>, <a href="rust_repositories.html#rust_register_toolchains-allocator_library">allocator_library</a>, <a href="rust_repositories.html#rust_register_toolchains-global_allocator_library">global_allocator_library</a>,
-                         <a href="rust_repositories.html#rust_register_toolchains-register_toolchains">register_toolchains</a>, <a href="rust_repositories.html#rust_register_toolchains-rustfmt_version">rustfmt_version</a>, <a href="rust_repositories.html#rust_register_toolchains-rust_analyzer_version">rust_analyzer_version</a>, <a href="rust_repositories.html#rust_register_toolchains-sha256s">sha256s</a>,
-                         <a href="rust_repositories.html#rust_register_toolchains-extra_target_triples">extra_target_triples</a>, <a href="rust_repositories.html#rust_register_toolchains-extra_rustc_flags">extra_rustc_flags</a>, <a href="rust_repositories.html#rust_register_toolchains-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="rust_repositories.html#rust_register_toolchains-strip_level">strip_level</a>,
-                         <a href="rust_repositories.html#rust_register_toolchains-urls">urls</a>, <a href="rust_repositories.html#rust_register_toolchains-versions">versions</a>, <a href="rust_repositories.html#rust_register_toolchains-aliases">aliases</a>, <a href="rust_repositories.html#rust_register_toolchains-hub_name">hub_name</a>, <a href="rust_repositories.html#rust_register_toolchains-compact_windows_names">compact_windows_names</a>, <a href="rust_repositories.html#rust_register_toolchains-toolchain_triples">toolchain_triples</a>,
-                         <a href="rust_repositories.html#rust_register_toolchains-rustfmt_toolchain_triples">rustfmt_toolchain_triples</a>, <a href="rust_repositories.html#rust_register_toolchains-target_settings">target_settings</a>, <a href="rust_repositories.html#rust_register_toolchains-extra_toolchain_infos">extra_toolchain_infos</a>)
-</pre>
-<p>Emits a default set of toolchains for Linux, MacOS, and Freebsd</p>
-<p>Skip this macro and call the <code>rust_repository_set</code> macros directly if you need a compiler for     other hosts or for additional target triples.</p>
-<p>The <code>sha256s</code> attribute represents a dict associating tool subdirectories to sha256 hashes. As an example:</p>
-<pre><code class="language-python">{
-    "rust-1.46.0-x86_64-unknown-linux-gnu": "e3b98bc3440fe92817881933f9564389eccb396f5f431f33d48b979fa2fbdcf5",
-    "rustfmt-1.4.12-x86_64-unknown-linux-gnu": "1894e76913303d66bf40885a601462844eec15fca9e76a6d13c390d7000d64b0",
-    "rust-std-1.46.0-x86_64-unknown-linux-gnu": "ac04aef80423f612c0079829b504902de27a6997214eb58ab0765d02f7ec1dbc",
-}
-</code></pre>
-<p>This would match for <code>exec_triple = "x86_64-unknown-linux-gnu"</code>.  If not specified, rules_rust pulls from a non-exhaustive     list of known checksums..</p>
-<p>See <code>load_arbitrary_tool</code> in <code>@rules_rust//rust:repositories.bzl</code> for more details.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every target is required to specify its <code>edition</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-global_allocator_library"></a>global_allocator_library</td><td style="text-align: left">Target that provides allocator functions when global allocator is used with cc_common.link.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-register_toolchains"></a>register_toolchains</td><td style="text-align: left">If true, repositories will be generated to produce and register <code>rust_toolchain</code> targets.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of rustfmt. If none is supplied and only a single version in <code>versions</code> is given, then this defaults to that version, otherwise will default to the default nightly version.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-rust_analyzer_version"></a>rust_analyzer_version</td><td style="text-align: left">The version of Rustc to pair with rust-analyzer.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-extra_target_triples"></a>extra_target_triples</td><td style="text-align: left">Additional rust-style targets that rust toolchains should support.</td><td style="text-align: left"><code>["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasip1", "wasm32-wasip2"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-extra_rustc_flags"></a>extra_rustc_flags</td><td style="text-align: left">Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-extra_exec_rustc_flags"></a>extra_exec_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in exec configuration.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-strip_level"></a>strip_level</td><td style="text-align: left">Dictionary of target triples to strip config.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-versions"></a>versions</td><td style="text-align: left">A list of toolchain versions to download. This parameter only accepts one versions per channel. E.g. <code>["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]</code>.</td><td style="text-align: left"><code>["1.95.0", "nightly/2026-04-16"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-aliases"></a>aliases</td><td style="text-align: left">A mapping of "full" repository name to another name to use instead.</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-hub_name"></a>hub_name</td><td style="text-align: left">The name of the bzlmod hub repository for toolchains.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-compact_windows_names"></a>compact_windows_names</td><td style="text-align: left">Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-toolchain_triples"></a>toolchain_triples</td><td style="text-align: left">Mapping of rust target triple -&gt; repository name to create.</td><td style="text-align: left"><code>{"aarch64-apple-darwin": "rust_macos_aarch64", "aarch64-pc-windows-msvc": "rust_windows_aarch64", "aarch64-unknown-linux-gnu": "rust_linux_aarch64", "powerpc64le-unknown-linux-gnu": "rust_linux_powerpc64le", "s390x-unknown-linux-gnu": "rust_linux_s390x", "x86_64-apple-darwin": "rust_macos_x86_64", "x86_64-pc-windows-msvc": "rust_windows_x86_64", "x86_64-unknown-freebsd": "rust_freebsd_x86_64", "x86_64-unknown-linux-gnu": "rust_linux_x86_64"}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-rustfmt_toolchain_triples"></a>rustfmt_toolchain_triples</td><td style="text-align: left">Like toolchain_triples, but for rustfmt toolchains.</td><td style="text-align: left"><code>{"aarch64-apple-darwin": "rust_macos_aarch64", "aarch64-pc-windows-msvc": "rust_windows_aarch64", "aarch64-unknown-linux-gnu": "rust_linux_aarch64", "powerpc64le-unknown-linux-gnu": "rust_linux_powerpc64le", "s390x-unknown-linux-gnu": "rust_linux_s390x", "x86_64-apple-darwin": "rust_macos_x86_64", "x86_64-pc-windows-msvc": "rust_windows_x86_64", "x86_64-unknown-freebsd": "rust_freebsd_x86_64", "x86_64-unknown-linux-gnu": "rust_linux_x86_64"}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-target_settings"></a>target_settings</td><td style="text-align: left">A list of <code>config_settings</code> that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_register_toolchains-extra_toolchain_infos"></a>extra_toolchain_infos</td><td style="text-align: left">(dict[str, dict], optional): Mapping of information about extra toolchains which were created outside of this call, which should be added to the hub repo.</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="rust_repositories"></a></p>
-<h2 id="rust_repositories"><a class="header" href="#rust_repositories">rust_repositories</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
-
-rust_repositories(<a href="rust_repositories.html#rust_repositories-kwargs">**kwargs</a>)
-</pre>
-<p><strong>Deprecated</strong>: Use <a href="rust_repositories.html#rules_rust_dependencies">rules_rust_dependencies</a>     and <a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a> directly.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_repositories-kwargs"></a>kwargs</td><td style="text-align: left">Keyword arguments for the <code>rust_register_toolchains</code> macro.</td><td style="text-align: left">none</td></tr>
-</tbody></table>
-</div>
-<p><a id="rust_repository_set"></a></p>
-<h2 id="rust_repository_set"><a class="header" href="#rust_repository_set">rust_repository_set</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_repository_set")
-
-rust_repository_set(*, <a href="rust_repositories.html#rust_repository_set-name">name</a>, <a href="rust_repositories.html#rust_repository_set-versions">versions</a>, <a href="rust_repositories.html#rust_repository_set-exec_triple">exec_triple</a>, <a href="rust_repositories.html#rust_repository_set-target_settings">target_settings</a>, <a href="rust_repositories.html#rust_repository_set-allocator_library">allocator_library</a>,
-                    <a href="rust_repositories.html#rust_repository_set-global_allocator_library">global_allocator_library</a>, <a href="rust_repositories.html#rust_repository_set-extra_target_triples">extra_target_triples</a>, <a href="rust_repositories.html#rust_repository_set-rustfmt_version">rustfmt_version</a>, <a href="rust_repositories.html#rust_repository_set-edition">edition</a>,
-                    <a href="rust_repositories.html#rust_repository_set-dev_components">dev_components</a>, <a href="rust_repositories.html#rust_repository_set-extra_rustc_flags">extra_rustc_flags</a>, <a href="rust_repositories.html#rust_repository_set-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="rust_repositories.html#rust_repository_set-opt_level">opt_level</a>, <a href="rust_repositories.html#rust_repository_set-strip_level">strip_level</a>,
-                    <a href="rust_repositories.html#rust_repository_set-sha256s">sha256s</a>, <a href="rust_repositories.html#rust_repository_set-urls">urls</a>, <a href="rust_repositories.html#rust_repository_set-auth">auth</a>, <a href="rust_repositories.html#rust_repository_set-netrc">netrc</a>, <a href="rust_repositories.html#rust_repository_set-auth_patterns">auth_patterns</a>, <a href="rust_repositories.html#rust_repository_set-register_toolchain">register_toolchain</a>,
-                    <a href="rust_repositories.html#rust_repository_set-exec_compatible_with">exec_compatible_with</a>, <a href="rust_repositories.html#rust_repository_set-default_target_compatible_with">default_target_compatible_with</a>, <a href="rust_repositories.html#rust_repository_set-aliases">aliases</a>,
-                    <a href="rust_repositories.html#rust_repository_set-compact_windows_names">compact_windows_names</a>)
-</pre>
-<p>Assembles a remote repository for the given toolchain params, produces a proxy repository     to contain the toolchain declaration, and registers the toolchains.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_repository_set-name"></a>name</td><td style="text-align: left">The name of the generated repository</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-versions"></a>versions</td><td style="text-align: left">A list of toolchain versions to download. This parameter only accepts one versions per channel. E.g. <code>["1.65.0", "nightly/2022-11-02", "beta/2020-12-30"]</code>.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-exec_triple"></a>exec_triple</td><td style="text-align: left">The Rust-style target that this compiler runs on</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-target_settings"></a>target_settings</td><td style="text-align: left">A list of config_settings that must be satisfied by the target configuration in order for this set of toolchains to be selected during toolchain resolution.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-global_allocator_library"></a>global_allocator_library</td><td style="text-align: left">Target that provides allocator functions a global allocator is used with cc_common.link.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-extra_target_triples"></a>extra_target_triples</td><td style="text-align: left">Additional rust-style targets that this set of toolchains should support. If a map, values should be (optional) target_compatible_with lists for that particular target triple.</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of rustfmt to be associated with the toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components. Requires version to be "nightly".</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-extra_rustc_flags"></a>extra_rustc_flags</td><td style="text-align: left">Dictionary of target triples to list of extra flags to pass to rustc in non-exec configuration.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-extra_exec_rustc_flags"></a>extra_exec_rustc_flags</td><td style="text-align: left">Dictionary of target triples to list of extra flags to pass to rustc in exec configuration.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-opt_level"></a>opt_level</td><td style="text-align: left">Dictionary of target triples to optimization config.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-strip_level"></a>strip_level</td><td style="text-align: left">Dictionary of target triples to strip config.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-auth"></a>auth</td><td style="text-align: left">Auth object compatible with repository_ctx.download to use when downloading files. See <a href="https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download">repository_ctx.download</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-netrc"></a>netrc</td><td style="text-align: left">.netrc file to use for authentication; mirrors the eponymous attribute from http_archive</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-auth_patterns"></a>auth_patterns</td><td style="text-align: left">Override mapping of hostnames to authorization patterns; mirrors the eponymous attribute from http_archive</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-register_toolchain"></a>register_toolchain</td><td style="text-align: left">If True, the generated <code>rust_toolchain</code> target will become a registered toolchain.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-exec_compatible_with"></a>exec_compatible_with</td><td style="text-align: left">A list of constraints for the execution platform for this toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-default_target_compatible_with"></a>default_target_compatible_with</td><td style="text-align: left">A list of constraints for the target platform for this toolchain when the exec platform is the same as the target platform.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-aliases"></a>aliases</td><td style="text-align: left">Replacement names to use for toolchains created by this macro.</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_repository_set-compact_windows_names"></a>compact_windows_names</td><td style="text-align: left">Whether or not to produce compact repository names for windows toolchains. This is to avoid MAX_PATH issues.</td><td style="text-align: left"><code>True</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>dict[str, dict]: A dict of information about all generated toolchains.</p>
-<p><a id="rust_toolchain_repository"></a></p>
-<h2 id="rust_toolchain_repository"><a class="header" href="#rust_toolchain_repository">rust_toolchain_repository</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_toolchain_repository")
-
-rust_toolchain_repository(<a href="rust_repositories.html#rust_toolchain_repository-name">name</a>, <a href="rust_repositories.html#rust_toolchain_repository-version">version</a>, <a href="rust_repositories.html#rust_toolchain_repository-exec_triple">exec_triple</a>, <a href="rust_repositories.html#rust_toolchain_repository-target_triple">target_triple</a>, <a href="rust_repositories.html#rust_toolchain_repository-exec_compatible_with">exec_compatible_with</a>,
-                          <a href="rust_repositories.html#rust_toolchain_repository-target_compatible_with">target_compatible_with</a>, <a href="rust_repositories.html#rust_toolchain_repository-target_settings">target_settings</a>, <a href="rust_repositories.html#rust_toolchain_repository-channel">channel</a>, <a href="rust_repositories.html#rust_toolchain_repository-allocator_library">allocator_library</a>,
-                          <a href="rust_repositories.html#rust_toolchain_repository-global_allocator_library">global_allocator_library</a>, <a href="rust_repositories.html#rust_toolchain_repository-rustfmt_version">rustfmt_version</a>, <a href="rust_repositories.html#rust_toolchain_repository-edition">edition</a>, <a href="rust_repositories.html#rust_toolchain_repository-dev_components">dev_components</a>,
-                          <a href="rust_repositories.html#rust_toolchain_repository-extra_rustc_flags">extra_rustc_flags</a>, <a href="rust_repositories.html#rust_toolchain_repository-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="rust_repositories.html#rust_toolchain_repository-opt_level">opt_level</a>, <a href="rust_repositories.html#rust_toolchain_repository-strip_level">strip_level</a>, <a href="rust_repositories.html#rust_toolchain_repository-sha256s">sha256s</a>,
-                          <a href="rust_repositories.html#rust_toolchain_repository-urls">urls</a>, <a href="rust_repositories.html#rust_toolchain_repository-auth">auth</a>, <a href="rust_repositories.html#rust_toolchain_repository-netrc">netrc</a>, <a href="rust_repositories.html#rust_toolchain_repository-auth_patterns">auth_patterns</a>)
-</pre>
-<p>Assembles a remote repository for the given toolchain params, produces a proxy repository     to contain the toolchain declaration, and registers the toolchains.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-name"></a>name</td><td style="text-align: left">The name of the generated repository</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-version"></a>version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-exec_triple"></a>exec_triple</td><td style="text-align: left">The Rust-style target that this compiler runs on.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-target_triple"></a>target_triple</td><td style="text-align: left">The Rust-style target to build for.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-exec_compatible_with"></a>exec_compatible_with</td><td style="text-align: left">A list of constraints for the execution platform for this toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-target_compatible_with"></a>target_compatible_with</td><td style="text-align: left">A list of constraints for the target platform for this toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-target_settings"></a>target_settings</td><td style="text-align: left">A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-channel"></a>channel</td><td style="text-align: left">The channel of the Rust toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when rust_library targets are embedded in a cc_binary.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-global_allocator_library"></a>global_allocator_library</td><td style="text-align: left">Target that provides allocator functions when a global allocator is used with cc_common.link.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of rustfmt to be associated with the toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components. Requires version to be "nightly". Defaults to False.</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-extra_rustc_flags"></a>extra_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in non-exec configuration. Subject to Make variable expansion with respect to RUST_SYSROOT, RUST_SYSROOT_SHORT, RUSTC, etc.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-extra_exec_rustc_flags"></a>extra_exec_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in exec configuration. Subject to Make variable expansion with respect to RUST_SYSROOT, RUST_SYSROOT_SHORT, RUSTC, etc.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-opt_level"></a>opt_level</td><td style="text-align: left">Optimization level config for this toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-strip_level"></a>strip_level</td><td style="text-align: left">Strip level config for this toolchain.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format). Defaults to ['https://static.rust-lang.org/dist/{}.tar.xz']</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-auth"></a>auth</td><td style="text-align: left">Auth object compatible with repository_ctx.download to use when downloading files. See <a href="https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download">repository_ctx.download</a> for more details.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-netrc"></a>netrc</td><td style="text-align: left">.netrc file to use for authentication; mirrors the eponymous attribute from http_archive</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository-auth_patterns"></a>auth_patterns</td><td style="text-align: left">A list of patterns to match against urls for which the auth object should be used.</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>dict[str, str]: Information about the registerable toolchain created by this rule.</p>
-<p><a id="rust_toolchain_repository_proxy"></a></p>
-<h2 id="rust_toolchain_repository_proxy"><a class="header" href="#rust_toolchain_repository_proxy">rust_toolchain_repository_proxy</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_toolchain_repository_proxy")
-
-rust_toolchain_repository_proxy(<a href="rust_repositories.html#rust_toolchain_repository_proxy-name">name</a>, <a href="rust_repositories.html#rust_toolchain_repository_proxy-exec_compatible_with">exec_compatible_with</a>, <a href="rust_repositories.html#rust_toolchain_repository_proxy-target_compatible_with">target_compatible_with</a>, <a href="rust_repositories.html#rust_toolchain_repository_proxy-target_settings">target_settings</a>,
-                                <a href="rust_repositories.html#rust_toolchain_repository_proxy-toolchain">toolchain</a>, <a href="rust_repositories.html#rust_toolchain_repository_proxy-toolchain_type">toolchain_type</a>)
-</pre>
-<p>Generates a toolchain-bearing repository that declares the toolchains from some other rust_toolchain_repository.</p>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-name"></a>name</td><td style="text-align: left">A unique name for this repository.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-exec_compatible_with"></a>exec_compatible_with</td><td style="text-align: left">A list of constraints for the execution platform for this toolchain.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-target_compatible_with"></a>target_compatible_with</td><td style="text-align: left">A list of constraints for the target platform for this toolchain.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-target_settings"></a>target_settings</td><td style="text-align: left">A list of config_settings that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-toolchain"></a>toolchain</td><td style="text-align: left">The name of the toolchain implementation target.</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_repository_proxy-toolchain_type"></a>toolchain_type</td><td style="text-align: left">The toolchain type of the toolchain to declare</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-</tbody></table>
-</div>
-<p><a id="rust_toolchain_tools_repository"></a></p>
-<h2 id="rust_toolchain_tools_repository"><a class="header" href="#rust_toolchain_tools_repository">rust_toolchain_tools_repository</a></h2>
-<pre>
-load("@rules_rust//rust:repositories.bzl", "rust_toolchain_tools_repository")
-
-rust_toolchain_tools_repository(<a href="rust_repositories.html#rust_toolchain_tools_repository-name">name</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-allocator_library">allocator_library</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-auth">auth</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-auth_patterns">auth_patterns</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-dev_components">dev_components</a>,
-                                <a href="rust_repositories.html#rust_toolchain_tools_repository-edition">edition</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-exec_triple">exec_triple</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-extra_exec_rustc_flags">extra_exec_rustc_flags</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-extra_rustc_flags">extra_rustc_flags</a>,
-                                <a href="rust_repositories.html#rust_toolchain_tools_repository-global_allocator_library">global_allocator_library</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-netrc">netrc</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-opt_level">opt_level</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-rustfmt_version">rustfmt_version</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-sha256s">sha256s</a>,
-                                <a href="rust_repositories.html#rust_toolchain_tools_repository-strip_level">strip_level</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-target_triple">target_triple</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-urls">urls</a>, <a href="rust_repositories.html#rust_toolchain_tools_repository-version">version</a>)
-</pre>
-<p>Composes a single workspace containing the toolchain components for compiling on a given platform to a series of target platforms.</p>
-<p>A given instance of this rule should be accompanied by a toolchain_repository_proxy invocation to declare its toolchains to Bazel; the indirection allows separating toolchain selection from toolchain fetching.</p>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-name"></a>name</td><td style="text-align: left">A unique name for this repository.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-allocator_library"></a>allocator_library</td><td style="text-align: left">Target that provides allocator functions when <code>rust_library</code> targets are embedded in a <code>cc_binary</code>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-auth"></a>auth</td><td style="text-align: left">Auth object compatible with repository_ctx.download to use when downloading files. See <a href="https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download">repository_ctx.download</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-auth_patterns"></a>auth_patterns</td><td style="text-align: left">A list of patterns to match against urls for which the auth object should be used.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-dev_components"></a>dev_components</td><td style="text-align: left">Whether to download the rustc-dev components (defaults to False). Requires version to be "nightly".</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-edition"></a>edition</td><td style="text-align: left">The rust edition to be used by default (2015, 2018, or 2021). If absent, every rule is required to specify its <code>edition</code> attribute.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-exec_triple"></a>exec_triple</td><td style="text-align: left">The Rust-style target that this compiler runs on</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-extra_exec_rustc_flags"></a>extra_exec_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in exec configuration</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-extra_rustc_flags"></a>extra_rustc_flags</td><td style="text-align: left">Extra flags to pass to rustc in non-exec configuration</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-global_allocator_library"></a>global_allocator_library</td><td style="text-align: left">Target that provides allocator functions when a global allocator is used with <a href="https://bazel.build/rules/lib/toplevel/cc_common#link"><code>cc_common.link</code></a>.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-netrc"></a>netrc</td><td style="text-align: left">.netrc file to use for authentication; mirrors the eponymous attribute from http_archive</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-opt_level"></a>opt_level</td><td style="text-align: left">Rustc optimization levels. For more details see the documentation for <code>rust_toolchain.opt_level</code>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-rustfmt_version"></a>rustfmt_version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-sha256s"></a>sha256s</td><td style="text-align: left">A dict associating tool subdirectories to sha256 hashes. See <a href="rust_repositories.html#rust_register_toolchains">rust_register_toolchains</a> for more details.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-strip_level"></a>strip_level</td><td style="text-align: left">Rustc strip levels. For more details see the documentation for <code>rust_toolchain.strip_level</code>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-target_triple"></a>target_triple</td><td style="text-align: left">The Rust-style target that this compiler builds for.</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-urls"></a>urls</td><td style="text-align: left">A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["https://static.rust-lang.org/dist/{}.tar.xz"]</code></td></tr>
-<tr><td style="text-align: left"><a id="rust_toolchain_tools_repository-version"></a>version</td><td style="text-align: left">The version of the tool among "nightly", "beta", or an exact version.</td><td style="text-align: left">String</td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
 </tbody></table>
 </div><div style="break-before: page; page-break-before: always;"></div><h1 id="external-dependencies"><a class="header" href="#external-dependencies">External Dependencies</a></h1>
 <p><a href="crate_universe_workspace.html">crate_universe workspace</a> (<a href="crate_universe_bzlmod.html">crate_universe bzlmod</a>) is a tool built into <code>rules_rust</code> that can be used to fetch dependencies.</p>
@@ -2659,7 +2344,7 @@ which integrates well with bazel concepts.</p>
 <li>you have to use  nightly <code>host_tools</code> to generate dependencies because</li>
 </ul>
 <p>Alternatively you can specify this in a separate <code>repo</code> with <code>cargo.from_specs</code> syntax:</p>
-<pre><code class="language-python">bindeps = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+<pre><code class="language-python">bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 bindeps.spec(package = "cargo-machete", version = "=0.7.0", artifact = "bin")
 bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
@@ -3017,633 +2702,7 @@ can be found below where the supported keys for each template can be found in th
 <tr><td style="text-align: left"><a id="crate.splicing_config-repositories"></a>repositories</td><td style="text-align: left">A list of repository names specified from <code>crate.from_cargo(name=...)</code> that this annotation is applied to. Defaults to all repositories.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
 <tr><td style="text-align: left"><a id="crate.splicing_config-resolver_version"></a>resolver_version</td><td style="text-align: left">The <a href="https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions">resolver version</a> to use in generated Cargo manifests. This flag is <strong>only</strong> used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"2"</code></td></tr>
 </tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
-<h1 id="crate-universe-1"><a class="header" href="#crate-universe-1">Crate Universe</a></h1>
-<p>Crate Universe is a set of Bazel rule for generating Rust targets using Cargo.</p>
-<p>This doc describes using crate_universe from a WORKSPACE file.</p>
-<p>If you're using bzlmod, please see <a href="crate_universe_bzlmod.html">the bzlmod equivalent of this doc</a>.</p>
-<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
-<p>After loading <code>rules_rust</code> in your workspace, set the following to begin using <code>crate_universe</code>:</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
-
-crate_universe_dependencies()
-</code></pre>
-<p>Note that if the current version of <code>rules_rust</code> is not a release artifact, you may need to set additional
-flags such as <a href="crate_universe_workspace.html#crate_universe_dependencies-bootstrap"><code>bootstrap = True</code></a> on the <code>crate_universe_dependencies</code>
-call above or <a href="crate_universe_workspace.html#crates_repository-generator_urls">crates_repository::generator_urls</a> in uses of <code>crates_repository</code>.</p>
-<h2 id="rules-8"><a class="header" href="#rules-8">Rules</a></h2>
-<ul>
-<li><a href="crate_universe_workspace.html#crates_repository">crates_repository</a></li>
-<li><a href="crate_universe_workspace.html#crates_vendor">crates_vendor</a></li>
-</ul>
-<h2 id="utility-macros"><a class="header" href="#utility-macros">Utility Macros</a></h2>
-<ul>
-<li><a href="crate_universe_workspace.html#crate_universe_dependencies">crate_universe_dependencies</a></li>
-<li><a href="crate_universe_workspace.html#crateannotation">crate.annotation</a></li>
-<li><a href="crate_universe_workspace.html#crateselect">crate.select</a></li>
-<li><a href="crate_universe_workspace.html#cratespec">crate.spec</a></li>
-<li><a href="crate_universe_workspace.html#crateworkspace_member">crate.workspace_member</a></li>
-<li><a href="crate_universe_workspace.html#render_config">render_config</a></li>
-<li><a href="crate_universe_workspace.html#splicing_config">splicing_config</a></li>
-</ul>
-<h2 id="workflows"><a class="header" href="#workflows">Workflows</a></h2>
-<p>The <a href="crate_universe_workspace.html#crates_repository"><code>crates_repository</code></a> rule (the primary repository rule of <code>rules_rust</code>'s cargo support) supports a number of different
-ways users can express and organize their dependencies. The most common are listed below though there are more to be found in
-the <a href="https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration">crate_universe/tests/integration</a> directory.</p>
-<h3 id="cargo-workspaces-1"><a class="header" href="#cargo-workspaces-1">Cargo Workspaces</a></h3>
-<p>One of the simpler ways to wire up dependencies would be to first structure your project into a <a href="https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html">Cargo workspace</a>.
-The <code>crates_repository</code> rule can ingest a root <code>Cargo.toml</code> file and generate dependencies from there.</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
-
-crates_repository(
-    name = "crate_index",
-    cargo_lockfile = "//:Cargo.lock",
-    lockfile = "//:Cargo.Bazel.lock",
-    manifests = ["//:Cargo.toml"],
-)
-
-load("@crate_index//:defs.bzl", "crate_repositories")
-
-crate_repositories()
-</code></pre>
-<p>The generated <code>crates_repository</code> contains helper macros which make collecting dependencies for Bazel targets simpler.
-Notably, the <code>all_crate_deps</code> and <code>aliases</code> macros (see <a href="crate_universe_workspace.html#dependencies-api">Dependencies API</a>) commonly allow the
-<code>Cargo.toml</code> files to be the single source of truth for dependencies. Since these macros come from the generated
-repository, the dependencies and alias definitions they return will automatically update BUILD targets.</p>
-<pre><code class="language-python">load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-
-rust_library(
-    name = "lib",
-    aliases = aliases(),
-    deps = all_crate_deps(
-        normal = True,
-    ),
-    proc_macro_deps = all_crate_deps(
-        proc_macro = True,
-    ),
-)
-
-rust_test(
-    name = "unit_test",
-    crate = ":lib",
-    aliases = aliases(
-        normal_dev = True,
-        proc_macro_dev = True,
-    ),
-    deps = all_crate_deps(
-        normal_dev = True,
-    ),
-    proc_macro_deps = all_crate_deps(
-        proc_macro_dev = True,
-    ),
-)
-</code></pre>
-<h3 id="direct-packages"><a class="header" href="#direct-packages">Direct Packages</a></h3>
-<p>In cases where Rust targets have heavy interactions with other Bazel targets (<a href="https://docs.bazel.build/versions/main/be/c-cpp.html">Cc</a>, <a href="https://rules-proto-grpc.com/en/latest/lang/rust.html">Proto</a>, etc.),
-maintaining <code>Cargo.toml</code> files may have deminishing returns as things like <a href="https://rust-analyzer.github.io/">rust-analyzer</a> begin to be confused
-about missing targets or environment variables defined only in Bazel. In workspaces like this, it may be desirable
-to have a "Cargo free" setup. <code>crates_repository</code> supports this through the <code>packages</code> attribute.</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "render_config")
-
-crates_repository(
-    name = "crate_index",
-    cargo_lockfile = "//:Cargo.lock",
-    lockfile = "//:Cargo.Bazel.lock",
-    packages = {
-        "async-trait": crate.spec(
-            version = "0.1.51",
-        ),
-        "mockall": crate.spec(
-            version = "0.10.2",
-        ),
-        "tokio": crate.spec(
-            version = "1.12.0",
-        ),
-    },
-    # Setting the default package name to `""` forces the use of the macros defined in this repository
-    # to always use the root package when looking for dependencies or aliases. This should be considered
-    # optional as the repository also exposes aliases for easy access to all dependencies.
-    render_config = render_config(
-        default_package_name = ""
-    ),
-)
-
-load("@crate_index//:defs.bzl", "crate_repositories")
-
-crate_repositories()
-</code></pre>
-<p>Consuming dependencies may be more ergonomic in this case through the aliases defined in the new repository.</p>
-<pre><code class="language-python">load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-
-rust_library(
-    name = "lib",
-    deps = [
-        "@crate_index//:tokio",
-    ],
-    proc_macro_deps = [
-        "@crate_index//:async-trait",
-    ],
-)
-
-rust_test(
-    name = "unit_test",
-    crate = ":lib",
-    deps = [
-        "@crate_index//:mockall",
-    ],
-)
-</code></pre>
-<h3 id="binary-dependencies-1"><a class="header" href="#binary-dependencies-1">Binary dependencies</a></h3>
-<p>Neither of the above approaches supports depending on binary-only packages.</p>
-<p>In order to depend on a Cargo package that contains binaries and no library, you
-will need to do one of the following:</p>
-<ul>
-<li>
-<p>Fork the package to add an empty lib.rs, which makes the package visible to
-Cargo metadata and compatible with the above approaches;</p>
-</li>
-<li>
-<p>Or handwrite your own build target for the binary, use <code>http_archive</code> to
-import its source code, and use <code>crates_repository</code> to make build targets for
-its dependencies. This is demonstrated below using the <code>rustfilt</code> crate as an
-example.</p>
-</li>
-</ul>
-<pre><code class="language-python"># in WORKSPACE.bazel
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "rustfilt",
-    build_file = "//rustfilt:BUILD.rustfilt.bazel",
-    sha256 = "c8d748b182c8f95224336d20dcc5609598af612581ce60cfb29da4dc8d0091f2",
-    strip_prefix = "rustfilt-0.2.1",
-    type = "tar.gz",
-    urls = ["https://static.crates.io/crates/rustfilt/rustfilt-0.2.1.crate"],
-)
-
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
-
-crates_repository(
-    name = "rustfilt_deps",
-    cargo_lockfile = "//rustfilt:Cargo.lock",
-    manifests = ["@rustfilt//:Cargo.toml"],
-)
-
-load("@rustfilt_deps//:defs.bzl", rustfilt_deps = "crate_repositories")
-
-rustfilt_deps()
-</code></pre>
-<pre><code class="language-python"># in rustfilt/BUILD.rustfilt.bazel
-
-load("@rules_rust//rust:defs.bzl", "rust_binary")
-
-rust_binary(
-    name = "rustfilt",
-    srcs = glob(["src/**/*.rs"]),
-    edition = "2018",
-    deps = [
-        "@rustfilt_deps//:clap",
-        "@rustfilt_deps//:lazy_static",
-        "@rustfilt_deps//:regex",
-        "@rustfilt_deps//:rustc-demangle",
-    ],
-)
-</code></pre>
-<p>If you use either <code>crates_repository</code> or <code>crates_vendor</code> to depend on a Cargo
-package that contains <em>both</em> a library crate <em>and</em> binaries, by default only the
-library gets made available to Bazel. To generate Bazel targets for the binary
-crates as well, you must opt in to it with an annotation on the package:</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
-
-crates_repository(
-    name = "crate_index",
-    annotations = {
-        "thepackage": [crate.annotation(
-            gen_binaries = True,
-            # Or, to expose just a subset of the package's binaries by name:
-            gen_binaries = ["rustfilt"],
-        )],
-    },
-    # Or, to expose every binary of every package:
-    generate_binaries = True,
-    ...
-)
-</code></pre>
-<h2 id="dependencies-api"><a class="header" href="#dependencies-api">Dependencies API</a></h2>
-<p>After rendering dependencies, convenience macros may also be generated to provide
-convenient accessors to larger sections of the dependency graph.</p>
-<ul>
-<li><a href="crate_universe_workspace.html#aliases">aliases</a></li>
-<li><a href="crate_universe_workspace.html#crate_deps">crate_deps</a></li>
-<li><a href="crate_universe_workspace.html#all_crate_deps">all_crate_deps</a></li>
-<li><a href="crate_universe_workspace.html#crate_repositories">crate_repositories</a></li>
-</ul>
-<h2 id="building-crates-with-complicated-dependencies"><a class="header" href="#building-crates-with-complicated-dependencies">Building crates with complicated dependencies</a></h2>
-<p>Some crates have build.rs scripts which are complicated to run. Typically these build C++ (or other languages), or attempt to find pre-installed libraries on the build machine.</p>
-<p>There are a few approaches to making sure these run:</p>
-<h3 id="some-things-work-without-intervention"><a class="header" href="#some-things-work-without-intervention">Some things work without intervention</a></h3>
-<p>Some build scripts will happily run without any support needed.</p>
-<p>rules_rust already supplies a configured C++ toolchain as input to build script execution, and sets variables like <code>CC</code>, <code>CXX</code>, <code>LD</code>, <code>LDFLAGS</code>, etc as needed. Many crates which invoke a compiler with the default environment, or forward these env vars, will Just Work (e.g. if using <a href="https://github.com/rust-lang/cc-rs"><code>cc-rs</code></a>).</p>
-<p>rules_rust is open to PRs which make build scripts more likely to work by default with intervention assuming they're broadly applicable (e.g. setting extra widely-known env vars is probably fine, wiring up additional toolchains like <code>cmake</code> that aren't present by default for most Bazel users probably isn't).</p>
-<h3 id="supplying-extra-tools-to-build"><a class="header" href="#supplying-extra-tools-to-build">Supplying extra tools to build</a></h3>
-<p>Some build scripts can be made to work by pulling in some extra files and making them available to the build script.</p>
-<p>Commonly this is done by passing the file to the <code>build_script_data</code> annotation for the crate, and using <code>build_script_env</code> to tell the build script where the file is. That env var may often use <code>$(execroot)</code> to get the path to the label, or <code>$${pwd}/</code> as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).A</p>
-<p>There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.</p>
-<h3 id="building-with-bazel-and-supplying-via-an-override"><a class="header" href="#building-with-bazel-and-supplying-via-an-override">Building with Bazel and supplying via an override</a></h3>
-<p>Some build scripts have hooks to allow replacing parts that are complicated to build with output prepared by Bazel.</p>
-<p>We can use those hooks by specifying paths (generally using the <code>build_script_data</code> and <code>build_script_env</code> annotations) and pointing them at labels which Bazel will then build. These env vars may often use <code>$(execroot)</code> to get the path to the label, or <code>$${pwd}/</code> as a prefix if the path given is relative to the execroot (as will frequently happen when using a toolchain).</p>
-<p>There is an example of this in the complicated_dependencies integration test at https://github.com/bazelbuild/rules_rust/tree/main/crate_universe/tests/integration/complicated_dependencies which builds boring-sys.</p>
-<hr />
-<hr />
-<p><a id="crates_vendor"></a></p>
-<h2 id="crates_vendor"><a class="header" href="#crates_vendor">crates_vendor</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
-
-crates_vendor(<a href="crate_universe_workspace.html#crates_vendor-name">name</a>, <a href="crate_universe_workspace.html#crates_vendor-annotations">annotations</a>, <a href="crate_universe_workspace.html#crates_vendor-bazel">bazel</a>, <a href="crate_universe_workspace.html#crates_vendor-buildifier">buildifier</a>, <a href="crate_universe_workspace.html#crates_vendor-cargo_bazel">cargo_bazel</a>, <a href="crate_universe_workspace.html#crates_vendor-cargo_config">cargo_config</a>, <a href="crate_universe_workspace.html#crates_vendor-cargo_lockfile">cargo_lockfile</a>,
-              <a href="crate_universe_workspace.html#crates_vendor-generate_binaries">generate_binaries</a>, <a href="crate_universe_workspace.html#crates_vendor-generate_build_scripts">generate_build_scripts</a>, <a href="crate_universe_workspace.html#crates_vendor-generate_cargo_toml_env_vars">generate_cargo_toml_env_vars</a>,
-              <a href="crate_universe_workspace.html#crates_vendor-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="crate_universe_workspace.html#crates_vendor-lockfile">lockfile</a>, <a href="crate_universe_workspace.html#crates_vendor-manifests">manifests</a>, <a href="crate_universe_workspace.html#crates_vendor-mode">mode</a>, <a href="crate_universe_workspace.html#crates_vendor-packages">packages</a>, <a href="crate_universe_workspace.html#crates_vendor-render_config">render_config</a>,
-              <a href="crate_universe_workspace.html#crates_vendor-repository_name">repository_name</a>, <a href="crate_universe_workspace.html#crates_vendor-splicing_config">splicing_config</a>, <a href="crate_universe_workspace.html#crates_vendor-supported_platform_triples">supported_platform_triples</a>, <a href="crate_universe_workspace.html#crates_vendor-vendor_path">vendor_path</a>)
-</pre>
-<p>A rule for defining Rust dependencies (crates) and writing targets for them to the current workspace.
-This rule is useful for users whose workspaces are expected to be consumed in other workspaces as the
-rendered <code>BUILD</code> files reduce the number of workspace dependencies, allowing for easier loads. This rule
-handles all the same <a href="crate_universe_workspace.html#workflows">workflows</a> <code>crate_universe</code> rules do.</p>
-<p>Example:</p>
-<p>Given the following workspace structure:</p>
-<pre><code class="language-text">[workspace]/
-    WORKSPACE
-    BUILD
-    Cargo.toml
-    3rdparty/
-        BUILD
-    src/
-        main.rs
-</code></pre>
-<p>The following is something that'd be found in <code>3rdparty/BUILD</code>:</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:defs.bzl", "crates_vendor", "crate")
-
-crates_vendor(
-    name = "crates_vendor",
-    annotations = {
-        "rand": [crate.annotation(
-            default_features = False,
-            features = ["small_rng"],
-        )],
-    },
-    cargo_lockfile = "//:Cargo.Bazel.lock",
-    manifests = ["//:Cargo.toml"],
-    mode = "remote",
-    vendor_path = "crates",
-    tags = ["manual"],
-)
-</code></pre>
-<p>The above creates a target that can be run to write <code>BUILD</code> files into the <code>3rdparty</code>
-directory next to where the target is defined. To run it, simply call:</p>
-<pre><code class="language-shell">bazel run //3rdparty:crates_vendor
-</code></pre>
-<p><a id="#crates_vendor_repinning_updating_dependencies"></a></p>
-<h3 id="repinning--updating-dependencies"><a class="header" href="#repinning--updating-dependencies">Repinning / Updating Dependencies</a></h3>
-<p>Repinning dependencies is controlled by both the <code>CARGO_BAZEL_REPIN</code> environment variable or the <code>--repin</code>
-flag to the <code>crates_vendor</code> binary. To update dependencies, simply add the flag ro your <code>bazel run</code> invocation.</p>
-<pre><code class="language-shell">bazel run //3rdparty:crates_vendor -- --repin
-</code></pre>
-<p>Under the hood, <code>--repin</code> will trigger a <a href="https://doc.rust-lang.org/cargo/commands/cargo-update.html">cargo update</a>
-call against the generated workspace. The following table describes how to control particular values passed to the
-<code>cargo update</code> command.</p>
-<div class="table-wrapper"><table><thead><tr><th>Value</th><th>Cargo command</th></tr></thead><tbody>
-<tr><td>Any of [<code>true</code>, <code>1</code>, <code>yes</code>, <code>on</code>, <code>workspace</code>]</td><td><code>cargo update --workspace</code></td></tr>
-<tr><td>Any of [<code>full</code>, <code>eager</code>, <code>all</code>]</td><td><code>cargo update</code></td></tr>
-<tr><td><code>package_name</code></td><td><code>cargo upgrade --package package_name</code></td></tr>
-<tr><td><code>package_name@1.2.3</code></td><td><code>cargo upgrade --package package_name --precise 1.2.3</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crates_vendor-name"></a>name</td><td style="text-align: left">A unique name for this target.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-annotations"></a>annotations</td><td style="text-align: left">Extra settings to apply to crates. See <a href="crate_universe_workspace.html#crateannotation">crate.annotation</a>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; List of strings</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-bazel"></a>bazel</td><td style="text-align: left">The path to a bazel binary used to locate the output_base for the current workspace.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-buildifier"></a>buildifier</td><td style="text-align: left">The path to a <a href="https://github.com/bazelbuild/buildtools/blob/5.0.1/buildifier/README.md">buildifier</a> binary used to format generated BUILD files.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rules_rust//crate_universe/private/vendor:buildifier"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-cargo_bazel"></a>cargo_bazel</td><td style="text-align: left">The cargo-bazel binary to use for vendoring. If this attribute is not set, then a <code>CARGO_BAZEL_GENERATOR_PATH</code> action env will be used.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@@rules_rust++cu_nr+cargo_bazel_bootstrap//:binary"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-cargo_config"></a>cargo_config</td><td style="text-align: left">A <a href="https://doc.rust-lang.org/cargo/reference/config.html">Cargo configuration</a> file.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-cargo_lockfile"></a>cargo_lockfile</td><td style="text-align: left">The path to an existing <code>Cargo.lock</code> file</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-generate_binaries"></a>generate_binaries</td><td style="text-align: left">Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-generate_build_scripts"></a>generate_build_scripts</td><td style="text-align: left">Whether or not to generate <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">cargo build scripts</a> by default.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-generate_cargo_toml_env_vars"></a>generate_cargo_toml_env_vars</td><td style="text-align: left">Whether to generate cargo_toml_env_vars targets.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-generate_target_compatible_with"></a>generate_target_compatible_with</td><td style="text-align: left">DEPRECATED: Moved to <code>render_config</code>.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-lockfile"></a>lockfile</td><td style="text-align: left">The path to a file to write rendering information. It contains the same information as the lockfile attribute of crates_repository. It is not used by crates_vendor but may be useful for code generators like gazelle.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-manifests"></a>manifests</td><td style="text-align: left">A list of Cargo manifests (<code>Cargo.toml</code> files).</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-mode"></a>mode</td><td style="text-align: left">Flags determining how crates should be vendored. <code>local</code> is where crate source and BUILD files are written to the repository. <code>remote</code> is where only BUILD files are written and repository rules used to fetch source code.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"remote"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-packages"></a>packages</td><td style="text-align: left">A set of crates (packages) specifications to depend on. See <a href="crate_universe_workspace.html#crate.spec">crate.spec</a>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-render_config"></a>render_config</td><td style="text-align: left">The configuration flags to use for rendering. Use <code>//crate_universe:defs.bzl\%render_config</code> to generate the value for this field. If unset, the defaults defined there will be used.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-repository_name"></a>repository_name</td><td style="text-align: left">The name of the repository to generate for <code>remote</code> vendor modes. If unset, the label name will be used</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-splicing_config"></a>splicing_config</td><td style="text-align: left">The configuration flags to use for splicing Cargo manifests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-supported_platform_triples"></a>supported_platform_triples</td><td style="text-align: left">A set of all platform triples to consider when generating dependencies.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["aarch64-apple-darwin", "aarch64-apple-ios", "aarch64-apple-ios-macabi", "aarch64-apple-ios-sim", "aarch64-linux-android", "aarch64-pc-windows-msvc", "aarch64-unknown-fuchsia", "aarch64-unknown-linux-gnu", "aarch64-unknown-nixos-gnu", "aarch64-unknown-nto-qnx710", "aarch64-unknown-uefi", "arm-unknown-linux-gnueabi", "arm-unknown-linux-musleabi", "armv7-linux-androideabi", "armv7-unknown-linux-gnueabi", "i686-apple-darwin", "i686-linux-android", "i686-pc-windows-msvc", "i686-unknown-freebsd", "i686-unknown-linux-gnu", "powerpc-unknown-linux-gnu", "riscv32imc-unknown-none-elf", "riscv64gc-unknown-linux-gnu", "riscv64gc-unknown-none-elf", "s390x-unknown-linux-gnu", "thumbv6m-none-eabi", "thumbv7em-none-eabi", "thumbv7em-none-eabihf", "thumbv8m.main-none-eabi", "wasm32-unknown-emscripten", "wasm32-unknown-unknown", "wasm32-wasip1", "wasm32-wasip1-threads", "wasm32-wasip2", "x86_64-apple-darwin", "x86_64-apple-ios", "x86_64-apple-ios-macabi", "x86_64-linux-android", "x86_64-pc-windows-msvc", "x86_64-unknown-freebsd", "x86_64-unknown-fuchsia", "x86_64-unknown-linux-gnu", "x86_64-unknown-nixos-gnu", "x86_64-unknown-none", "x86_64-unknown-uefi"]</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_vendor-vendor_path"></a>vendor_path</td><td style="text-align: left">The path to a directory to write files into. Absolute paths will be treated as relative to the workspace root</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"crates"</code></td></tr>
-</tbody></table>
-</div>
-<p><a id="crate.annotation"></a></p>
-<h2 id="crateannotation"><a class="header" href="#crateannotation">crate.annotation</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crate")
-
-crate.annotation(<a href="crate_universe_workspace.html#crate.annotation-version">version</a>, <a href="crate_universe_workspace.html#crate.annotation-additive_build_file">additive_build_file</a>, <a href="crate_universe_workspace.html#crate.annotation-additive_build_file_content">additive_build_file_content</a>, <a href="crate_universe_workspace.html#crate.annotation-alias_rule">alias_rule</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-build_script_compile_data">build_script_compile_data</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_data">build_script_data</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_tools">build_script_tools</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-build_script_data_glob">build_script_data_glob</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_deps">build_script_deps</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_env">build_script_env</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-build_script_exec_properties">build_script_exec_properties</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_link_deps">build_script_link_deps</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_proc_macro_deps">build_script_proc_macro_deps</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-build_script_rundir">build_script_rundir</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_rustc_env">build_script_rustc_env</a>, <a href="crate_universe_workspace.html#crate.annotation-build_script_toolchains">build_script_toolchains</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-build_script_use_default_shell_env">build_script_use_default_shell_env</a>, <a href="crate_universe_workspace.html#crate.annotation-compile_data">compile_data</a>, <a href="crate_universe_workspace.html#crate.annotation-compile_data_glob">compile_data_glob</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-compile_data_glob_excludes">compile_data_glob_excludes</a>, <a href="crate_universe_workspace.html#crate.annotation-crate_features">crate_features</a>, <a href="crate_universe_workspace.html#crate.annotation-data">data</a>, <a href="crate_universe_workspace.html#crate.annotation-data_glob">data_glob</a>, <a href="crate_universe_workspace.html#crate.annotation-deps">deps</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-extra_aliased_targets">extra_aliased_targets</a>, <a href="crate_universe_workspace.html#crate.annotation-gen_binaries">gen_binaries</a>, <a href="crate_universe_workspace.html#crate.annotation-disable_pipelining">disable_pipelining</a>, <a href="crate_universe_workspace.html#crate.annotation-gen_build_script">gen_build_script</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-patch_args">patch_args</a>, <a href="crate_universe_workspace.html#crate.annotation-patch_tool">patch_tool</a>, <a href="crate_universe_workspace.html#crate.annotation-patches">patches</a>, <a href="crate_universe_workspace.html#crate.annotation-proc_macro_deps">proc_macro_deps</a>, <a href="crate_universe_workspace.html#crate.annotation-rustc_env">rustc_env</a>, <a href="crate_universe_workspace.html#crate.annotation-rustc_env_files">rustc_env_files</a>,
-                 <a href="crate_universe_workspace.html#crate.annotation-rustc_flags">rustc_flags</a>, <a href="crate_universe_workspace.html#crate.annotation-shallow_since">shallow_since</a>, <a href="crate_universe_workspace.html#crate.annotation-override_targets">override_targets</a>)
-</pre>
-<p>A collection of extra attributes and settings for a particular crate</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crate.annotation-version"></a>version</td><td style="text-align: left">The version or semver-conditions to match with a crate. The wildcard <code>*</code> matches any version, including prerelease versions.</td><td style="text-align: left"><code>"*"</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-additive_build_file"></a>additive_build_file</td><td style="text-align: left">A file containing extra contents to write to the bottom of generated BUILD files.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-additive_build_file_content"></a>additive_build_file_content</td><td style="text-align: left">Extra contents to write to the bottom of generated BUILD files.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-alias_rule"></a>alias_rule</td><td style="text-align: left">Alias rule to use instead of <code>native.alias()</code>.  Overrides <a href="crate_universe_workspace.html#render_config">render_config</a>'s 'default_alias_rule'.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_compile_data"></a>build_script_compile_data</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::compile_data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_data"></a>build_script_data</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_tools"></a>build_script_tools</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::tools</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_data_glob"></a>build_script_data_glob</td><td style="text-align: left">A list of glob patterns to add to a crate's <code>cargo_build_script::data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_deps"></a>build_script_deps</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::deps</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_env"></a>build_script_env</td><td style="text-align: left">Additional environment variables to set when running the crate's <code>cargo_build_script</code> - sets that target's <code>build_script_env</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_exec_properties"></a>build_script_exec_properties</td><td style="text-align: left">Execution properties to set on a crate's <code>cargo_build_script::exec_properties</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_link_deps"></a>build_script_link_deps</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::link_deps</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_proc_macro_deps"></a>build_script_proc_macro_deps</td><td style="text-align: left">A list of labels to add to a crate's <code>cargo_build_script::proc_macro_deps</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_rundir"></a>build_script_rundir</td><td style="text-align: left">An override for the build script's rundir attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_rustc_env"></a>build_script_rustc_env</td><td style="text-align: left">Additional environment variables to set when compiling the crate's <code>cargo_build_script</code> - sets that target's <code>rustc_env</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_toolchains"></a>build_script_toolchains</td><td style="text-align: left">A list of labels to set on a crates's <code>cargo_build_script::toolchains</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-build_script_use_default_shell_env"></a>build_script_use_default_shell_env</td><td style="text-align: left">Whether or not to include the default shell environment for the build script action.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-compile_data"></a>compile_data</td><td style="text-align: left">A list of labels to add to a crate's <code>rust_library::compile_data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-compile_data_glob"></a>compile_data_glob</td><td style="text-align: left">A list of glob patterns to add to a crate's <code>rust_library::compile_data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-compile_data_glob_excludes"></a>compile_data_glob_excludes</td><td style="text-align: left">A list of glob patterns to be excluded from a crate's <code>rust_library::compile_data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-crate_features"></a>crate_features</td><td style="text-align: left">A list of strings to add to a crate's <code>rust_library::crate_features</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-data"></a>data</td><td style="text-align: left">A list of labels to add to a crate's <code>rust_library::data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-data_glob"></a>data_glob</td><td style="text-align: left">A list of glob patterns to add to a crate's <code>rust_library::data</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-deps"></a>deps</td><td style="text-align: left">A list of labels to add to a crate's <code>rust_library::deps</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-extra_aliased_targets"></a>extra_aliased_targets</td><td style="text-align: left">A list of targets to add to the generated aliases in the root crate_universe repository.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-gen_binaries"></a>gen_binaries</td><td style="text-align: left">As a list, the subset of the crate's bins that should get <code>rust_binary</code> targets produced. Or <code>True</code> to generate all, <code>False</code> to generate none.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-disable_pipelining"></a>disable_pipelining</td><td style="text-align: left">If True, disables pipelining for library targets for this crate.</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-gen_build_script"></a>gen_build_script</td><td style="text-align: left">An authoritative flag to determine whether or not to produce <code>cargo_build_script</code> targets for the current crate.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-patch_args"></a>patch_args</td><td style="text-align: left">The <code>patch_args</code> attribute of a Bazel repository rule. See <a href="https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_args">http_archive.patch_args</a></td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-patch_tool"></a>patch_tool</td><td style="text-align: left">The <code>patch_tool</code> attribute of a Bazel repository rule. See <a href="https://docs.bazel.build/versions/main/repo/http.html#http_archive-patch_tool">http_archive.patch_tool</a></td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-patches"></a>patches</td><td style="text-align: left">The <code>patches</code> attribute of a Bazel repository rule. See <a href="https://docs.bazel.build/versions/main/repo/http.html#http_archive-patches">http_archive.patches</a></td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-proc_macro_deps"></a>proc_macro_deps</td><td style="text-align: left">A list of labels to add to a crate's <code>rust_library::proc_macro_deps</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-rustc_env"></a>rustc_env</td><td style="text-align: left">Additional variables to set on a crate's <code>rust_library::rustc_env</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-rustc_env_files"></a>rustc_env_files</td><td style="text-align: left">A list of labels to set on a crate's <code>rust_library::rustc_env_files</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-rustc_flags"></a>rustc_flags</td><td style="text-align: left">A list of strings to set on a crate's <code>rust_library::rustc_flags</code> attribute.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-shallow_since"></a>shallow_since</td><td style="text-align: left">An optional timestamp used for crates originating from a git repository instead of a crate registry. This flag optimizes fetching the source code.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.annotation-override_targets"></a>override_targets</td><td style="text-align: left">A dictionary of alternate targets to use when something depends on this crate to allow the parent repo to provide its own version of this dependency. Keys can be <code>proc-macro</code>, <code>custom-build</code>, <code>lib</code>, <code>bin</code>.</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>string: A json encoded string containing the specified version and separately all other inputs.</p>
-<p><a id="crate.select"></a></p>
-<h2 id="crateselect"><a class="header" href="#crateselect">crate.select</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crate")
-
-crate.select(<a href="crate_universe_workspace.html#crate.select-common">common</a>, <a href="crate_universe_workspace.html#crate.select-selects">selects</a>)
-</pre>
-<p>A Starlark Select for <code>crate.annotation()</code>.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crate.select-common"></a>common</td><td style="text-align: left">A value that applies to all configurations.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="crate.select-selects"></a>selects</td><td style="text-align: left">A dict of <code>target_triple</code> to values.</td><td style="text-align: left">none</td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>struct: A struct representing the Starlark Select.</p>
-<p><a id="crate.spec"></a></p>
-<h2 id="cratespec"><a class="header" href="#cratespec">crate.spec</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crate")
-
-crate.spec(<a href="crate_universe_workspace.html#crate.spec-package">package</a>, <a href="crate_universe_workspace.html#crate.spec-version">version</a>, <a href="crate_universe_workspace.html#crate.spec-artifact">artifact</a>, <a href="crate_universe_workspace.html#crate.spec-lib">lib</a>, <a href="crate_universe_workspace.html#crate.spec-default_features">default_features</a>, <a href="crate_universe_workspace.html#crate.spec-features">features</a>, <a href="crate_universe_workspace.html#crate.spec-git">git</a>, <a href="crate_universe_workspace.html#crate.spec-branch">branch</a>, <a href="crate_universe_workspace.html#crate.spec-tag">tag</a>, <a href="crate_universe_workspace.html#crate.spec-rev">rev</a>, <a href="crate_universe_workspace.html#crate.spec-path">path</a>)
-</pre>
-<p>A constructor for a crate dependency.</p>
-<p>See <a href="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html">specifying dependencies</a> in the Cargo book for more details.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crate.spec-package"></a>package</td><td style="text-align: left">The explicit name of the package (used when attempting to alias a crate).</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-version"></a>version</td><td style="text-align: left">The exact version of the crate. Cannot be used with <code>git</code> or <code>path</code>.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-artifact"></a>artifact</td><td style="text-align: left">Set to "bin" to pull in a binary crate as an artifact dependency. Requires a nightly Cargo.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-lib"></a>lib</td><td style="text-align: left">If using <code>artifact = "bin"</code>, additionally setting <code>lib = True</code> declares a dependency on both the package's library and binary, as opposed to just the binary.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-default_features"></a>default_features</td><td style="text-align: left">Maps to the <code>default-features</code> flag.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-features"></a>features</td><td style="text-align: left">A list of features to use for the crate</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-git"></a>git</td><td style="text-align: left">The Git url to use for the crate. Cannot be used with <code>version</code> or <code>path</code>.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-branch"></a>branch</td><td style="text-align: left">The git branch of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified. Specifying <code>rev</code> is recommended for fully-reproducible builds.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-tag"></a>tag</td><td style="text-align: left">The git tag of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified. Specifying <code>rev</code> is recommended for fully-reproducible builds.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-rev"></a>rev</td><td style="text-align: left">The git revision of the remote crate. Tied with the <code>git</code> param. Only one of branch, tag or rev may be specified.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crate.spec-path"></a>path</td><td style="text-align: left">The local path of the remote crate. Cannot be used with <code>version</code> or <code>git</code>.</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>string: A json encoded string of all inputs</p>
-<p><a id="crate.workspace_member"></a></p>
-<h2 id="crateworkspace_member"><a class="header" href="#crateworkspace_member">crate.workspace_member</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crate")
-
-crate.workspace_member(<a href="crate_universe_workspace.html#crate.workspace_member-version">version</a>, <a href="crate_universe_workspace.html#crate.workspace_member-sha256">sha256</a>)
-</pre>
-<p>Define information for extra workspace members</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crate.workspace_member-version"></a>version</td><td style="text-align: left">The semver of the crate to download. Must be an exact version.</td><td style="text-align: left">none</td></tr>
-<tr><td style="text-align: left"><a id="crate.workspace_member-sha256"></a>sha256</td><td style="text-align: left">The sha256 checksum of the <code>.crate</code> file.</td><td style="text-align: left"><code>None</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>string: A json encoded string of all inputs</p>
-<p><a id="render_config"></a></p>
-<h2 id="render_config-1"><a class="header" href="#render_config-1">render_config</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "render_config")
-
-render_config(<a href="crate_universe_workspace.html#render_config-build_file_template">build_file_template</a>, <a href="crate_universe_workspace.html#render_config-crate_label_template">crate_label_template</a>, <a href="crate_universe_workspace.html#render_config-crate_alias_template">crate_alias_template</a>,
-              <a href="crate_universe_workspace.html#render_config-crate_repository_template">crate_repository_template</a>, <a href="crate_universe_workspace.html#render_config-crates_module_template">crates_module_template</a>, <a href="crate_universe_workspace.html#render_config-default_alias_rule">default_alias_rule</a>,
-              <a href="crate_universe_workspace.html#render_config-default_package_name">default_package_name</a>, <a href="crate_universe_workspace.html#render_config-generate_cargo_toml_env_vars">generate_cargo_toml_env_vars</a>, <a href="crate_universe_workspace.html#render_config-generate_target_compatible_with">generate_target_compatible_with</a>,
-              <a href="crate_universe_workspace.html#render_config-platforms_template">platforms_template</a>, <a href="crate_universe_workspace.html#render_config-regen_command">regen_command</a>, <a href="crate_universe_workspace.html#render_config-vendor_mode">vendor_mode</a>, <a href="crate_universe_workspace.html#render_config-generate_rules_license_metadata">generate_rules_license_metadata</a>)
-</pre>
-<p>Various settings used to configure rendered outputs</p>
-<p>The template parameters each support a select number of format keys. A description of each key
-can be found below where the supported keys for each template can be found in the parameter docs</p>
-<div class="table-wrapper"><table><thead><tr><th>key</th><th>definition</th></tr></thead><tbody>
-<tr><td><code>name</code></td><td>The name of the crate. Eg <code>tokio</code></td></tr>
-<tr><td><code>repository</code></td><td>The rendered repository name for the crate. Directly relates to <code>crate_repository_template</code>.</td></tr>
-<tr><td><code>triple</code></td><td>A platform triple. Eg <code>x86_64-unknown-linux-gnu</code></td></tr>
-<tr><td><code>version</code></td><td>The crate version. Eg <code>1.2.3</code></td></tr>
-<tr><td><code>target</code></td><td>The library or binary target of the crate</td></tr>
-<tr><td><code>file</code></td><td>The basename of a file</td></tr>
-</tbody></table>
-</div>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="render_config-build_file_template"></a>build_file_template</td><td style="text-align: left">The base template to use for BUILD file names. The available format keys are [<code>{name}</code>, {version}`].</td><td style="text-align: left"><code>"//:BUILD.{name}-{version}.bazel"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-crate_label_template"></a>crate_label_template</td><td style="text-align: left">The base template to use for crate labels. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>, <code>{target}</code>].</td><td style="text-align: left"><code>"@{repository}__{name}-{version}//:{target}"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-crate_alias_template"></a>crate_alias_template</td><td style="text-align: left">The template to use when referring to generated aliases within the external repository. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>].</td><td style="text-align: left"><code>"//:{name}-{version}"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-crate_repository_template"></a>crate_repository_template</td><td style="text-align: left">The base template to use for Crate label repository names. The available format keys are [<code>{repository}</code>, <code>{name}</code>, <code>{version}</code>].</td><td style="text-align: left"><code>"{repository}__{name}-{version}"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-crates_module_template"></a>crates_module_template</td><td style="text-align: left">The pattern to use for the <code>defs.bzl</code> and <code>BUILD.bazel</code> file names used for the crates module. The available format keys are [<code>{file}</code>].</td><td style="text-align: left"><code>"//:{file}"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-default_alias_rule"></a>default_alias_rule</td><td style="text-align: left">Alias rule to use when generating aliases for all crates.  Acceptable values are 'alias', 'dbg'/'fastbuild'/'opt' (transitions each crate's <code>compilation_mode</code>)  or a string representing a rule in the form '&lt;label to .bzl&gt;:<rule>' that takes a single label parameter 'actual'. See '@crate_index//:alias_rules.bzl' for an example.</td><td style="text-align: left"><code>"alias"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-default_package_name"></a>default_package_name</td><td style="text-align: left">The default package name to use in the rendered macros. This affects the auto package detection of things like <code>all_crate_deps</code>.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-generate_cargo_toml_env_vars"></a>generate_cargo_toml_env_vars</td><td style="text-align: left">Whether to generate cargo_toml_env_vars targets. This is expected to be true except when bootstrapping.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-generate_target_compatible_with"></a>generate_target_compatible_with</td><td style="text-align: left">Whether to generate <code>target_compatible_with</code> annotations on the generated BUILD files.  This catches a <code>target_triple</code>being targeted that isn't declared in <code>supported_platform_triples</code>.</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-platforms_template"></a>platforms_template</td><td style="text-align: left">The base template to use for platform names. See <a href="https://docs.bazel.build/versions/main/platforms.html">platforms documentation</a>. The available format keys are [<code>{triple}</code>].</td><td style="text-align: left"><code>"@rules_rust//rust/platform:{triple}"</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-regen_command"></a>regen_command</td><td style="text-align: left">An optional command to demonstrate how generated files should be regenerated.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-vendor_mode"></a>vendor_mode</td><td style="text-align: left">An optional configuration for rendirng content to be rendered into repositories.</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="render_config-generate_rules_license_metadata"></a>generate_rules_license_metadata</td><td style="text-align: left">Whether to generate rules license metadata</td><td style="text-align: left"><code>False</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>string: A json encoded struct to match the Rust <code>config::RenderConfig</code> struct</p>
-<p><a id="splicing_config"></a></p>
-<h2 id="splicing_config-1"><a class="header" href="#splicing_config-1">splicing_config</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "splicing_config")
-
-splicing_config(<a href="crate_universe_workspace.html#splicing_config-resolver_version">resolver_version</a>)
-</pre>
-<p>Various settings used to configure Cargo manifest splicing behavior.</p>
-<p><strong>PARAMETERS</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="splicing_config-resolver_version"></a>resolver_version</td><td style="text-align: left">The <a href="https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions">resolver version</a> to use in generated Cargo manifests. This flag is <strong>only</strong> used when splicing a manifest from direct package definitions. See <code>crates_repository::packages</code>.</td><td style="text-align: left"><code>"2"</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>RETURNS</strong></p>
-<p>str: A json encoded string of the parameters provided</p>
-<p><a id="crates_repository"></a></p>
-<h2 id="crates_repository"><a class="header" href="#crates_repository">crates_repository</a></h2>
-<pre>
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
-
-crates_repository(<a href="crate_universe_workspace.html#crates_repository-name">name</a>, <a href="crate_universe_workspace.html#crates_repository-annotations">annotations</a>, <a href="crate_universe_workspace.html#crates_repository-cargo_config">cargo_config</a>, <a href="crate_universe_workspace.html#crates_repository-cargo_lockfile">cargo_lockfile</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="crate_universe_workspace.html#crates_repository-generate_binaries">generate_binaries</a>, <a href="crate_universe_workspace.html#crates_repository-generate_build_scripts">generate_build_scripts</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-generate_target_compatible_with">generate_target_compatible_with</a>, <a href="crate_universe_workspace.html#crates_repository-generator">generator</a>, <a href="crate_universe_workspace.html#crates_repository-generator_sha256s">generator_sha256s</a>, <a href="crate_universe_workspace.html#crates_repository-generator_urls">generator_urls</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-isolated">isolated</a>, <a href="crate_universe_workspace.html#crates_repository-lockfile">lockfile</a>, <a href="crate_universe_workspace.html#crates_repository-manifests">manifests</a>, <a href="crate_universe_workspace.html#crates_repository-packages">packages</a>, <a href="crate_universe_workspace.html#crates_repository-quiet">quiet</a>, <a href="crate_universe_workspace.html#crates_repository-render_config">render_config</a>, <a href="crate_universe_workspace.html#crates_repository-repin_instructions">repin_instructions</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="crate_universe_workspace.html#crates_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="crate_universe_workspace.html#crates_repository-rust_version">rust_version</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-skip_cargo_lockfile_overwrite">skip_cargo_lockfile_overwrite</a>, <a href="crate_universe_workspace.html#crates_repository-splicing_config">splicing_config</a>,
-                  <a href="crate_universe_workspace.html#crates_repository-strip_internal_dependencies_from_cargo_lockfile">strip_internal_dependencies_from_cargo_lockfile</a>, <a href="crate_universe_workspace.html#crates_repository-supported_platform_triples">supported_platform_triples</a>)
-</pre>
-<p>A rule for defining and downloading Rust dependencies (crates). This rule
-handles all the same <a href="crate_universe_workspace.html#workflows">workflows</a> <code>crate_universe</code> rules do.</p>
-<p>Environment Variables:</p>
-<div class="table-wrapper"><table><thead><tr><th>variable</th><th>usage</th></tr></thead><tbody>
-<tr><td><code>CARGO_BAZEL_GENERATOR_SHA256</code></td><td>The sha256 checksum of the file located at <code>CARGO_BAZEL_GENERATOR_URL</code></td></tr>
-<tr><td><code>CARGO_BAZEL_GENERATOR_URL</code></td><td>The URL of a cargo-bazel binary. This variable takes precedence over attributes and can use <code>file://</code> for local paths</td></tr>
-<tr><td><code>CARGO_BAZEL_ISOLATED</code></td><td>An authoritative flag as to whether or not the <code>CARGO_HOME</code> environment variable should be isolated from the host configuration</td></tr>
-<tr><td><code>CARGO_BAZEL_REPIN</code></td><td>An indicator that the dependencies represented by the rule should be regenerated. <code>REPIN</code> may also be used. See <a href="crate_universe_workspace.html#repinning--updating-dependencies">Repinning / Updating Dependencies</a> for more details.</td></tr>
-<tr><td><code>CARGO_BAZEL_REPIN_ONLY</code></td><td>A comma-delimited allowlist for rules to execute repinning. Can be useful if multiple instances of the repository rule are used in a Bazel workspace, but repinning should be limited to one of them.</td></tr>
-<tr><td><code>CARGO_BAZEL_TIMEOUT</code></td><td>An integer value to override the default timeout setting when running the cargo-bazel binary. This value must be in seconds.</td></tr>
-</tbody></table>
-</div>
-<p>Example:</p>
-<p>Given the following workspace structure:</p>
-<pre><code class="language-text">[workspace]/
-    WORKSPACE.bazel
-    BUILD.bazel
-    Cargo.toml
-    Cargo.Bazel.lock
-    src/
-        main.rs
-</code></pre>
-<p>The following is something that'd be found in the <code>WORKSPACE</code> file:</p>
-<pre><code class="language-python">load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "crate")
-
-crates_repository(
-    name = "crate_index",
-    annotations = {
-        "rand": [crate.annotation(
-            default_features = False,
-            features = ["small_rng"],
-        )],
-    },
-    cargo_lockfile = "//:Cargo.Bazel.lock",
-    lockfile = "//:cargo-bazel-lock.json",
-    manifests = ["//:Cargo.toml"],
-    # Should match the version represented by the currently registered `rust_toolchain`.
-    rust_version = "1.60.0",
-)
-</code></pre>
-<p>The above will create an external repository which contains aliases and macros for accessing
-Rust targets found in the dependency graph defined by the given manifests.</p>
-<p><strong>NOTE</strong>: The <code>cargo_lockfile</code> and <code>lockfile</code> must be manually created. The rule unfortunately does not yet create
-it on its own. When initially setting up this rule, an empty file should be created and then
-populated by repinning dependencies.</p>
-<h3 id="repinning--updating-dependencies-1"><a class="header" href="#repinning--updating-dependencies-1">Repinning / Updating Dependencies</a></h3>
-<p>Dependency syncing and updating is done in the repository rule which means it's done during the
-analysis phase of builds. As mentioned in the environments variable table above, the <code>CARGO_BAZEL_REPIN</code>
-(or <code>REPIN</code>) environment variables can be used to force the rule to update dependencies and potentially
-render a new lockfile. Given an instance of this repository rule named <code>crate_index</code>, the easiest way to
-repin dependencies is to run:</p>
-<pre><code class="language-shell">CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
-</code></pre>
-<p>This will result in all dependencies being updated for a project. The <code>CARGO_BAZEL_REPIN</code> environment variable
-can also be used to customize how dependencies are updated. The following table shows translations from environment
-variable values to the equivalent <a href="https://doc.rust-lang.org/cargo/commands/cargo-update.html">cargo update</a> command
-that is called behind the scenes to update dependencies.</p>
-<div class="table-wrapper"><table><thead><tr><th>Value</th><th>Cargo command</th></tr></thead><tbody>
-<tr><td>Any of [<code>true</code>, <code>1</code>, <code>yes</code>, <code>on</code>, <code>workspace</code>]</td><td><code>cargo update --workspace</code></td></tr>
-<tr><td>Any of [<code>full</code>, <code>eager</code>, <code>all</code>]</td><td><code>cargo update</code></td></tr>
-<tr><td><code>package_name</code></td><td><code>cargo upgrade --package package_name</code></td></tr>
-<tr><td><code>package_name@1.2.3</code></td><td><code>cargo upgrade --package package_name@1.2.3</code></td></tr>
-<tr><td><code>package_name@1.2.3=4.5.6</code></td><td><code>cargo upgrade --package package_name@1.2.3 --precise=4.5.6</code></td></tr>
-</tbody></table>
-</div>
-<p>If the <code>crates_repository</code> is used multiple times in the same Bazel workspace (e.g. for multiple independent
-Rust workspaces), it may additionally be useful to use the <code>CARGO_BAZEL_REPIN_ONLY</code> environment variable, which
-limits execution of the repinning to one or multiple instances of the <code>crates_repository</code> rule via a comma-delimited
-allowlist:</p>
-<pre><code class="language-shell">CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index
-</code></pre>
-<p><strong>ATTRIBUTES</strong></p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Type</th><th style="text-align: left">Mandatory</th><th style="text-align: left">Default</th></tr></thead><tbody>
-<tr><td style="text-align: left"><a id="crates_repository-name"></a>name</td><td style="text-align: left">A unique name for this repository.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels#target-names">Name</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-annotations"></a>annotations</td><td style="text-align: left">Extra settings to apply to crates. See <a href="crate_universe_workspace.html#crateannotation">crate.annotation</a>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; List of strings</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-cargo_config"></a>cargo_config</td><td style="text-align: left">A <a href="https://doc.rust-lang.org/cargo/reference/config.html">Cargo configuration</a> file</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-cargo_lockfile"></a>cargo_lockfile</td><td style="text-align: left">The path used to store the <code>crates_repository</code> specific <a href="https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html">Cargo.lock</a> file. In the case that your <code>crates_repository</code> corresponds directly with an existing <code>Cargo.toml</code> file which has a paired <code>Cargo.lock</code> file, that <code>Cargo.lock</code> file should be used here, which will keep the versions used by cargo and bazel in sync.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">required</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-compressed_windows_toolchain_names"></a>compressed_windows_toolchain_names</td><td style="text-align: left">Whether or not the toolchain names of windows toolchains are expected to be in a <code>compressed</code> format.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generate_binaries"></a>generate_binaries</td><td style="text-align: left">Whether to generate <code>rust_binary</code> targets for all the binary crates in every package. By default only the <code>rust_library</code> targets are generated.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generate_build_scripts"></a>generate_build_scripts</td><td style="text-align: left">Whether or not to generate <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">cargo build scripts</a> by default.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generate_target_compatible_with"></a>generate_target_compatible_with</td><td style="text-align: left">DEPRECATED: Moved to <code>render_config</code>.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generator"></a>generator</td><td style="text-align: left">The absolute label of a generator. Eg. <code>@cargo_bazel_bootstrap//:cargo-bazel</code>. This is typically used when bootstrapping</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generator_sha256s"></a>generator_sha256s</td><td style="text-align: left">Dictionary of <code>host_triple</code> -&gt; <code>sha256</code> for a <code>cargo-bazel</code> binary.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-generator_urls"></a>generator_urls</td><td style="text-align: left">URL template from which to download the <code>cargo-bazel</code> binary. <code>{host_triple}</code> and will be filled in according to the host platform.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-isolated"></a>isolated</td><td style="text-align: left">If true, <code>CARGO_HOME</code> will be overwritten to a directory within the generated repository in order to prevent other uses of Cargo from impacting having any effect on the generated targets produced by this rule. For users who either have multiple <code>crate_repository</code> definitions in a WORKSPACE or rapidly re-pin dependencies, setting this to false may improve build times. This variable is also controlled by <code>CARGO_BAZEL_ISOLATED</code> environment variable.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-lockfile"></a>lockfile</td><td style="text-align: left">The path to a file to use for reproducible renderings. If set, this file must exist within the workspace (but can be empty) before this rule will work.If you already have a <code>MODULE.bazel.lock</code> file, you don't need this.If you don't have a <code>MODULE.bazel.lock</code> file, the <code>lockfile</code> will save you generation time.</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">Label</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>None</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-manifests"></a>manifests</td><td style="text-align: left">A list of Cargo manifests (<code>Cargo.toml</code> files).</td><td style="text-align: left"><a href="https://bazel.build/concepts/labels">List of labels</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>[]</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-packages"></a>packages</td><td style="text-align: left">A set of crates (packages) specifications to depend on. See <a href="crate_universe_workspace.html#crate.spec">crate.spec</a>.</td><td style="text-align: left"><a href="https://bazel.build/rules/lib/dict">Dictionary: String -&gt; String</a></td><td style="text-align: left">optional</td><td style="text-align: left"><code>{}</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-quiet"></a>quiet</td><td style="text-align: left">If stdout and stderr should not be printed to the terminal.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>True</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-render_config"></a>render_config</td><td style="text-align: left">The configuration flags to use for rendering. Use <code>//crate_universe:defs.bzl\%render_config</code> to generate the value for this field. If unset, the defaults defined there will be used.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-repin_instructions"></a>repin_instructions</td><td style="text-align: left">Instructions to re-pin the repository if required. Many people have wrapper scripts for keeping dependencies up to date, and would like to point users to that instead of the default.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template</td><td style="text-align: left">The template to use for finding the host <code>cargo</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'rustc.exe') will be replaced in the string if present.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template</td><td style="text-align: left">The template to use for finding the host <code>rustc</code> binary. <code>{version}</code> (eg. '1.53.0'), <code>{triple}</code> (eg. 'x86_64-unknown-linux-gnu'), <code>{arch}</code> (eg. 'aarch64'), <code>{vendor}</code> (eg. 'unknown'), <code>{system}</code> (eg. 'darwin'), <code>{cfg}</code> (eg. 'exec'), <code>{channel}</code> (eg. 'stable'), and <code>{tool}</code> (eg. 'cargo.exe') will be replaced in the string if present.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-rust_version"></a>rust_version</td><td style="text-align: left">The version of Rust the currently registered toolchain is using. Eg. <code>1.56.0</code>, or <code>nightly/2021-09-08</code></td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>"1.95.0"</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-skip_cargo_lockfile_overwrite"></a>skip_cargo_lockfile_overwrite</td><td style="text-align: left">Whether to skip writing the cargo lockfile back after resolving. You may want to set this if your dependency versions are maintained externally through a non-trivial set-up. But you probably don't want to set this.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-splicing_config"></a>splicing_config</td><td style="text-align: left">The configuration flags to use for splicing Cargo manifests. Use <code>//crate_universe:defs.bzl\%rsplicing_config</code> to generate the value for this field. If unset, the defaults defined there will be used.</td><td style="text-align: left">String</td><td style="text-align: left">optional</td><td style="text-align: left"><code>""</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-strip_internal_dependencies_from_cargo_lockfile"></a>strip_internal_dependencies_from_cargo_lockfile</td><td style="text-align: left">Whether to strip internal dependencies from the cargo lockfile. You may want to use this if you want to maintain a cargo lockfile for bazel only. Bazel only requires external dependencies to be present in the lockfile. By removing internal dependencies, the lockfile changes less frequently which reduces merge conflicts in other lockfiles where the cargo lockfile's sha is stored.</td><td style="text-align: left">Boolean</td><td style="text-align: left">optional</td><td style="text-align: left"><code>False</code></td></tr>
-<tr><td style="text-align: left"><a id="crates_repository-supported_platform_triples"></a>supported_platform_triples</td><td style="text-align: left">A set of all platform triples to consider when generating dependencies.</td><td style="text-align: left">List of strings</td><td style="text-align: left">optional</td><td style="text-align: left"><code>["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "wasm32-unknown-unknown", "wasm32-wasip1", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "x86_64-unknown-nixos-gnu"]</code></td></tr>
-</tbody></table>
-</div>
-<p><strong>ENVIRONMENT VARIABLES</strong></p>
-<p>This repository rule depends on the following environment variables:</p>
-<ul>
-<li><code>CARGO_BAZEL_GENERATOR_URL</code></li>
-<li><code>CARGO_BAZEL_GENERATOR_SHA256</code></li>
-<li><code>CARGO_BAZEL_REPIN</code></li>
-<li><code>REPIN</code></li>
-<li><code>CARGO_BAZEL_REPIN_ONLY</code></li>
-<li><code>CARGO_BAZEL_ISOLATED</code></li>
-<li><code>CARGO_BAZEL_DEBUG</code></li>
-<li><code>CARGO_BAZEL_TIMEOUT</code></li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="upstream-tooling"><a class="header" href="#upstream-tooling">Upstream Tooling</a></h1>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="upstream-tooling"><a class="header" href="#upstream-tooling">Upstream Tooling</a></h1>
 <p>rules_rust manages versions of things like rustc. If you want to manually run upstream tooling configured at the versions, plugins and such that rules_rust has configured, rules_rust exposes these as targets in <code>@rules_rust//tools/upstream_wrapper</code>:</p>
 <pre><code class="language-console">% bazel query @rules_rust//tools/upstream_wrapper
 @rules_rust//tools/upstream_wrapper:cargo
@@ -3672,14 +2731,13 @@ allowlist:</p>
 <div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_bindgen"><a class="header" href="#rules_rust_bindgen">rules_rust_bindgen</a></h1>
 <p>These rules are for using <a href="https://github.com/rust-lang/rust-bindgen">Bindgen</a> to generate <a href="http://www.rust-lang.org/">Rust</a> bindings to C (and some C++) libraries.</p>
-<h2 id="rules-9"><a class="header" href="#rules-9">Rules</a></h2>
+<h2 id="rules-8"><a class="header" href="#rules-8">Rules</a></h2>
 <ul>
 <li><a href="rust_bindgen.html#rust_bindgen">rust_bindgen</a></li>
 <li><a href="rust_bindgen.html#rust_bindgen_library">rust_bindgen_library</a></li>
 <li><a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
-<h3 id="bzlmod-3"><a class="header" href="#bzlmod-3">Bzlmod</a></h3>
+<h2 id="setup-6"><a class="header" href="#setup-6">Setup</a></h2>
 <p>To use the Rust bindgen rules, add the following to your <code>MODULE.bazel</code> file:</p>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_bindgen", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
@@ -3689,23 +2747,10 @@ You need to register either your own or the default toolchain by adding the foll
 </code></pre>
 <p>The default toolchain builds libclang from source via the <a href="https://registry.bazel.build/modules/llvm-project">llvm-project</a> bazel_dep.
 <a href="https://github.com/bazelbuild/rules_rust/tree/main/examples/bindgen_toolchain">examples/bindgen_toolchain</a> shows how to use a prebuilt libclang.</p>
-<h3 id="workspace-3"><a class="header" href="#workspace-3">Workspace</a></h3>
-<p>Or add the following if you're still using <code>WORKSPACE</code> to add the
-external repositories for the Rust bindgen toolchain (in addition to the <a href="https://bazelbuild.github.io/rules_rust/#setup">rust rules setup</a>):</p>
-<pre><code class="language-python">load("@rules_rust_bindgen//:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
-
-rust_bindgen_dependencies()
-
-rust_bindgen_register_toolchains()
-
-load("@rules_rust_bindgen//:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
-
-rust_bindgen_transitive_dependencies()
-</code></pre>
 <p>Bindgen aims to be as hermetic as possible so will end up building <code>libclang</code> from <a href="https://github.com/llvm/llvm-project">llvm-project</a> from
-source. If this is found to be undesirable then no Bindgen related calls should be added to your WORKSPACE and instead
-users should define their own repositories using something akin to <a href="https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html">crate_universe</a> and define their own
-toolchains following the instructions for <a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a>.</p>
+source. If this is found to be undesirable, users should define their own repositories using something akin to
+<a href="https://bazelbuild.github.io/rules_rust/crate_universe_bzlmod.html">crate_universe</a> and define their own toolchains following the instructions for
+<a href="rust_bindgen.html#rust_bindgen_toolchain">rust_bindgen_toolchain</a>.</p>
 <hr />
 <hr />
 <p><a id="rust_bindgen"></a></p>
@@ -3791,26 +2836,14 @@ rust_bindgen_library(<a href="rust_bindgen.html#rust_bindgen_library-name">name<
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_mdbook"><a class="header" href="#rules_rust_mdbook">rules_rust_mdbook</a></h1>
 <p>Bazel rules for <a href="https://github.com/rust-lang/mdBook">mdBook</a>.</p>
-<h2 id="rules-10"><a class="header" href="#rules-10">Rules</a></h2>
+<h2 id="rules-9"><a class="header" href="#rules-9">Rules</a></h2>
 <ul>
 <li><a href="rust_mdbook.html#mdbook">mdbook</a></li>
 <li><a href="rust_mdbook.html#mdbook_server">mdbook_server</a></li>
 <li><a href="rust_mdbook.html#mdbook_toolchain">mdbook_toolchain</a></li>
 </ul>
-<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
-<h3 id="bzlmod-4"><a class="header" href="#bzlmod-4">bzlmod</a></h3>
+<h2 id="setup-7"><a class="header" href="#setup-7">Setup</a></h2>
 <pre><code class="language-python">bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
-</code></pre>
-<h3 id="workspace-4"><a class="header" href="#workspace-4">WORKSPACE</a></h3>
-<pre><code class="language-python">load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
-
-rules_mdbook_dependencies()
-
-mdbook_register_toolchains()
-
-load("@rules_rust_mdbook//:repositories_transitive.bzl", "rules_mdbook_transitive_deps")
-
-rules_mdbook_transitive_deps()
 </code></pre>
 <hr />
 <hr />
@@ -3864,19 +2897,13 @@ mdbook_toolchain(<a href="rust_mdbook.html#mdbook_toolchain-name">name</a>, <a h
 <h1 id="rules_rust_prost"><a class="header" href="#rules_rust_prost">rules_rust_prost</a></h1>
 <p>These build rules are used for building <a href="https://developers.google.com/protocol-buffers/">protobufs</a>/<a href="https://grpc.io">gRPC</a> in <a href="http://www.rust-lang.org/">Rust</a> with Bazel
 using <a href="https://github.com/tokio-rs/prost">Prost</a> and <a href="https://github.com/tokio-rs/tonic">Tonic</a></p>
-<h2 id="rules-11"><a class="header" href="#rules-11">Rules</a></h2>
+<h2 id="rules-10"><a class="header" href="#rules-10">Rules</a></h2>
 <ul>
 <li><a href="rust_prost.html#rust_prost_library">rust_prost_library</a></li>
 <li><a href="rust_prost.html#rust_prost_toolchain">rust_prost_toolchain</a></li>
 </ul>
-<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
-<pre><code class="language-python">load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
-
-rust_prost_dependencies()
-
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
+<h2 id="setup-8"><a class="header" href="#setup-8">Setup</a></h2>
+<pre><code class="language-python">bazel_dep(name = "rules_rust_prost", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
 <p>The <code>prost</code> and <code>tonic</code> rules do not specify a default toolchain in order to avoid mismatched
 dependency issues. To setup the <code>prost</code> and <code>tonic</code> toolchain, please see the section
@@ -3966,7 +2993,7 @@ toolchain(
     toolchain_type = "@rules_rust//proto/prost:toolchain_type",
 )
 </code></pre>
-<p>Lastly, you must register the toolchain in your <code>WORKSPACE</code> file. For example:</p>
+<p>Lastly, you must register the toolchain in your <code>MODULE.bazel</code> file. For example:</p>
 <pre><code class="language-python">register_toolchains("//toolchains:prost_toolchain")
 </code></pre>
 <hr />
@@ -4171,26 +3198,20 @@ pyo3_extension(*, <a href="rust_pyo3.html#pyo3_extension-name">name</a>, <a href
 </div><div style="break-before: page; page-break-before: always;"></div><!-- Generated with Stardoc: http://skydoc.bazel.build -->
 <h1 id="rules_rust_wasm_bindgen"><a class="header" href="#rules_rust_wasm_bindgen">rules_rust_wasm_bindgen</a></h1>
 <p>Bazel rules for generating wasm modules for Javascript using <a href="https://github.com/rustwasm/wasm-bindgen">wasm-bindgen</a>.</p>
-<h2 id="rules-12"><a class="header" href="#rules-12">Rules</a></h2>
+<h2 id="rules-11"><a class="header" href="#rules-11">Rules</a></h2>
 <ul>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a></li>
 <li><a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a></li>
 </ul>
-<h2 id="setup-10"><a class="header" href="#setup-10">Setup</a></h2>
-<p>To begin using the <code>wasm-bindgen</code> rules, users can load the necessary dependencies
-in their workspace by adding the following to their <code>WORKSPACE.bazel</code> file.</p>
-<pre><code class="language-python">load("@rules_rust_wasm_bindgen//:repositories.bzl", "rust_wasm_bindgen_dependencies", "rust_wasm_bindgen_register_toolchains")
-
-rust_wasm_bindgen_dependencies()
-
-rust_wasm_bindgen_register_toolchains()
+<h2 id="setup-9"><a class="header" href="#setup-9">Setup</a></h2>
+<p>To begin using the <code>wasm-bindgen</code> rules, add the following to your <code>MODULE.bazel</code> file:</p>
+<pre><code class="language-python">bazel_dep(name = "rules_rust_wasm_bindgen", version = "{SEE_RELEASE_NOTES}")
 </code></pre>
 <p>This should enable users to start using the <a href="rust_wasm_bindgen.html#rust_wasm_bindgen">rust_wasm_bindgen</a>
 rule. However, it's common to want to control the version of <code>wasm-bindgen</code> in the
 workspace instead of relying on the one provided by <code>rules_rust</code>. In this case, users
-should avoid calling <code>rust_wasm_bindgen_register_toolchains</code> and instead use the
-<a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a> rule to define their own
-toolchains to register in the workspace.</p>
+should use the <a href="rust_wasm_bindgen.html#rust_wasm_bindgen_toolchain">rust_wasm_bindgen_toolchain</a> rule to
+define their own toolchains to register.</p>
 <h2 id="interfacing-with-javascript-rules"><a class="header" href="#interfacing-with-javascript-rules">Interfacing with Javascript rules</a></h2>
 <p>Rules for doing so can be found at <a href="https://github.com/UebelAndre/rules_js_rust_wasm_bindgen">rules_js_rust_wasm_bindgen</a></p>
 <p><a id="rust_wasm_bindgen"></a></p>

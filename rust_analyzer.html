@@ -163,8 +163,7 @@ at the root of the project that describes its structure or on build system speci
 The <code>rust_analyzer</code> rules facilitate both approaches.</p>
 <h2 id="rust-projectjson-approach"><a class="header" href="#rust-projectjson-approach">rust-project.json approach</a></h2>
 <h3 id="setup"><a class="header" href="#setup">Setup</a></h3>
-<h4 id="bzlmod"><a class="header" href="#bzlmod">Bzlmod</a></h4>
-<p>First, ensure <code>rules_rust</code> is setup in your workspace:</p>
+<p>First, ensure <code>rules_rust</code> is setup in your <code>MODULE.bazel</code>:</p>
 <pre><code class="language-python"># MODULE.bazel
 
 # See releases page for available versions:
@@ -179,28 +178,6 @@ with</p>
 should be added to <code>.gitignore</code> because it is effectively a build artifact.
 Once the <code>rust-project.json</code> has been generated in the project root,
 rust-analyzer can pick it up upon restart.</p>
-<h4 id="workspace"><a class="header" href="#workspace">WORKSPACE</a></h4>
-<p>Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure <code>rules_rust</code> is
-setup in your workspace.</p>
-<p>Moreover, when loading the dependencies for the tool, you should call the function <code>rust_analyzer_dependencies()</code>:</p>
-<pre><code class="language-python">load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-
-rust_analyzer_dependencies()
-</code></pre>
-<p>Again, you can now run <code>bazel run @rules_rust//tools/rust_analyzer:gen_rust_project</code>
-whenever dependencies change to regenerate the <code>rust-project.json</code> file.</p>
-<p>For users who do not use <code>rust_register_toolchains</code> to register toolchains, the following can be added
-to their WORKSPACE to register a <code>rust_analyzer_toolchain</code>. Please make sure the Rust version used in
-this toolchain matches the version used by the currently registered toolchain or the sources/documentation
-will not match what's being compiled with and can lead to confusing results.</p>
-<pre><code class="language-python">load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
-
-register_toolchains(rust_analyzer_toolchain_repository(
-    name = "rust_analyzer_toolchain",
-    # This should match the currently registered toolchain.
-    version = "1.63.0",
-))
-</code></pre>
 <h4 id="vscode"><a class="header" href="#vscode">VSCode</a></h4>
 <p>To set this up using <a href="https://code.visualstudio.com/">VSCode</a>, users should first install the
 <a href="https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer">rust_analyzer plugin</a>.
