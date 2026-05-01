@@ -55,11 +55,13 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "armv7-unknown-linux-gnueabi": _support(std = True, host_tools = True),
     "i686-linux-android": _support(std = True, host_tools = False),
     "i686-unknown-freebsd": _support(std = True, host_tools = False),
+    "loongarch64-unknown-linux-gnu": _support(std = True, host_tools = True),
     "powerpc-unknown-linux-gnu": _support(std = True, host_tools = True),
     "riscv32imc-unknown-none-elf": _support(std = True, host_tools = False),
     "riscv64gc-unknown-linux-gnu": _support(std = True, host_tools = False),
     "riscv64gc-unknown-none-elf": _support(std = True, host_tools = False),
     "s390x-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "sparc64-unknown-linux-gnu": _support(std = True, host_tools = False),
     "thumbv6m-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabi": _support(std = True, host_tools = False),
     "thumbv7em-none-eabihf": _support(std = True, host_tools = False),
@@ -80,8 +82,13 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "avr-none": _support(std = False, host_tools = False),
     "bpfeb-unknown-none": _support(std = False, host_tools = False),
     "bpfel-unknown-none": _support(std = False, host_tools = False),
+    "mips-unknown-linux-gnu": _support(std = True, host_tools = True),
+    "sparc64-unknown-netbsd": _support(std = True, host_tools = True),
+    "sparc64-unknown-openbsd": _support(std = True, host_tools = True),
+    "thumbv6-none-eabi": _support(std = False, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
 }
 
@@ -117,14 +124,16 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "armv7": "armv7",
     "armv7s": None,
     "asmjs": None,
+    "avr": "avr",
     "bpfeb": "bpfeb",
     "bpfel": "bpfel",
+    "hexagon": "hexagon",
     "i386": "i386",
     "i586": None,
     "i686": "x86_32",
     "le32": None,
-    "mips": None,
-    "mipsel": None,
+    "loongarch64": "loongarch64",
+    "mips": "mips32",
     "powerpc": "ppc32",
     "powerpc64": "ppc",
     "powerpc64le": "ppc64le",
@@ -134,6 +143,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "riscv64gc": "riscv64",
     "s390": None,
     "s390x": "s390x",
+    "sparc64": "sparc64",
+    "thumbv6": "armv6",
     "thumbv6m": "armv6-m",
     "thumbv7em": "armv7e-m",
     "thumbv7m": "armv7-m",
@@ -470,11 +481,6 @@ def triple_to_constraint_set(target_triple):
             "@platforms//cpu:wasm32",
             "@platforms//os:wasi",
             "@rules_rust//rust/platform:wasi_preview_2",
-        ]
-    if target_triple == "wasm32-unknown-emscripten":
-        return [
-            "@platforms//cpu:wasm32",
-            "@platforms//os:emscripten",
         ]
     if target_triple == "wasm32-unknown-unknown":
         return [
