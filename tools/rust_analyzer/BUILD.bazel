@@ -4,6 +4,18 @@ load("//tools/private:tool_utils.bzl", "aspect_repository")
 load(":env_file.bzl", "env_file")
 load(":opt_transition.bzl", "opt_executable")
 
+exports_files(
+    [
+        "aquery.rs",
+        "bin/discover_rust_project.rs",
+        "bin/gen_rust_project.rs",
+        "bin/validate.rs",
+        "lib.rs",
+        "rust_project.rs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 rust_binary(
     name = "discover_bazel_rust_project",
     srcs = ["bin/discover_rust_project.rs"],
