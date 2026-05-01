@@ -565,3 +565,12 @@ def collect_cfgs():
         name = "collect_cfgs",
         build_setting_default = False,
     )
+
+def use_default_shell_env():
+    """A flag which controls the value of
+    `ctx.actions.run.use_default_shell_env` when invoking rustc.
+    """
+    bool_flag(
+        name = "use_default_shell_env",
+        build_setting_default = False,
+    )
