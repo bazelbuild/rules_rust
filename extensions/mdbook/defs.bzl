@@ -10,24 +10,8 @@ Bazel rules for [mdBook](https://github.com/rust-lang/mdBook).
 
 ## Setup
 
-### bzlmod
-
 ```python
 bazel_dep(name = "rules_rust_mdbook", version = "{SEE_RELEASE_NOTES}")
-```
-
-### WORKSPACE
-
-```python
-load("@rules_rust_mdbook//:repositories.bzl", "mdbook_register_toolchains", "rules_mdbook_dependencies")
-
-rules_mdbook_dependencies()
-
-mdbook_register_toolchains()
-
-load("@rules_rust_mdbook//:repositories_transitive.bzl", "rules_mdbook_transitive_deps")
-
-rules_mdbook_transitive_deps()
 ```
 
 ---

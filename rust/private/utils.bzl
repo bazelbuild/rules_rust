@@ -18,7 +18,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:find_cc_toolchain.bzl", find_rules_cc_toolchain = "find_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load(":compat.bzl", "abs")
 load(
     ":providers.bzl",
     "AlwaysEnableMetadataOutputGroupsInfo",

@@ -25,7 +25,6 @@ load(
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "rust_common")
-load(":compat.bzl", "abs")
 load(":lto.bzl", "construct_lto_arguments")
 load(
     ":providers.bzl",

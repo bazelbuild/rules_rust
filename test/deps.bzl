@@ -4,7 +4,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//test/determinism/3rdparty/crates:crates.bzl", determinism_test_crate_repositories = "crate_repositories")
 load("//test/generated_inputs:external_repo.bzl", "generated_inputs_in_external_repo")
-load("//test/load_arbitrary_tool:load_arbitrary_tool_test.bzl", "load_arbitrary_tool_test")
 load("//test/rust_analyzer/3rdparty/crates:crates.bzl", rust_analyzer_test_crate_repositories = "crate_repositories")
 load("//test/unit/toolchain:toolchain_test_utils.bzl", "rules_rust_toolchain_test_target_json_repository")
 load("//test/vscode/3rdparty/crates:crates.bzl", vscode_test_crate_repositories = "crate_repositories")
@@ -27,19 +26,15 @@ rust_library(
 )
 """
 
-def rules_rust_test_deps(is_bzlmod = False):
+def rules_rust_test_deps():
     """Load dependencies for rules_rust tests
-
-    Args:
-        is_bzlmod (bool): Whether or not the context from which this macro
-            is called is bzlmod.
 
     Returns:
         list[struct(repo=str, is_dev_dep=bool)]: A list of the repositories
         defined by this macro.
     """
 
-    direct_deps = load_arbitrary_tool_test()
+    direct_deps = []
     direct_deps.extend(generated_inputs_in_external_repo())
     direct_deps.extend(rust_analyzer_test_crate_repositories())
     direct_deps.extend(vscode_test_crate_repositories())
@@ -62,23 +57,6 @@ def rules_rust_test_deps(is_bzlmod = False):
         name = "rules_rust_toolchain_test_target_json",
         target_json = Label("//test/unit/toolchain:toolchain-test-triple.json"),
     )
-
-    if not is_bzlmod:
-        maybe(
-            http_archive,
-            name = "rules_python",
-            sha256 = "690e0141724abb568267e003c7b6d9a54925df40c275a870a4d934161dc9dd53",
-            strip_prefix = "rules_python-0.40.0",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.40.0/rules_python-0.40.0.tar.gz",
-        )
-
-        maybe(
-            http_archive,
-            name = "rules_testing",
-            sha256 = "28c2d174471b587bf0df1fd3a10313f22c8906caf4050f8b46ec4648a79f90c3",
-            strip_prefix = "rules_testing-0.7.0",
-            url = "https://github.com/bazelbuild/rules_testing/releases/download/v0.7.0/rules_testing-v0.7.0.tar.gz",
-        )
 
     direct_deps.extend([
         struct(repo = "libc", is_dev_dep = True),

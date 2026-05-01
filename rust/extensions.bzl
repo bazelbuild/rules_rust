@@ -2,8 +2,14 @@
 
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//rust:defs.bzl", "rust_common")
-load("//rust:repositories.bzl", "DEFAULT_TOOLCHAIN_TRIPLES", "rust_register_toolchains", "rust_repository_set", "rust_toolchain_tools_repository")
 load("//rust/platform:triple.bzl", "get_host_triple")
+load(
+    "//rust/private:repositories.bzl",
+    "DEFAULT_TOOLCHAIN_TRIPLES",
+    "rust_register_toolchains",
+    "rust_repository_set",
+    "rust_toolchain_tools_repository",
+)
 load(
     "//rust/private:repository_utils.bzl",
     "DEFAULT_EXTRA_TARGET_TRIPLES",
@@ -98,7 +104,6 @@ def _rust_impl(module_ctx):
 
     for repository_set in grouped_repository_sets.values():
         toolchain_infos = rust_repository_set(
-            register_toolchain = False,
             **repository_set
         )
         extra_toolchain_infos.update(**toolchain_infos)
@@ -134,7 +139,6 @@ def _rust_impl(module_ctx):
                 strip_level = toolchain.strip_level if toolchain.strip_level else None,
                 urls = toolchain.urls,
                 versions = toolchain.versions,
-                register_toolchains = False,
                 compact_windows_names = True,
                 aliases = toolchain.aliases,
                 toolchain_triples = toolchain_triples,
@@ -174,7 +178,7 @@ _COMMON_TAG_KWARGS = {
         default = _COMMON_TAG_DEFAULTS["rustfmt_version"],
     ),
     "sha256s": attr.string_dict(
-        doc = "A dict associating tool subdirectories to sha256 hashes. See [rust_repositories](#rust_repositories) for more details.",
+        doc = "A dict associating tool subdirectories to sha256 hashes.",
     ),
     "urls": attr.string_list(
         doc = "A list of mirror urls containing the tools from the Rust-lang static file server. These must contain the '{}' used to substitute the tool being fetched (using .format).",

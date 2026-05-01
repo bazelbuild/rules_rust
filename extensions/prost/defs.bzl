@@ -17,13 +17,7 @@ using [Prost][prost] and [Tonic][tonic]
 ## Setup
 
 ```python
-load("@rules_rust//proto/prost:repositories.bzl", "rust_prost_dependencies")
-
-rust_prost_dependencies()
-
-load("@rules_rust//proto/prost:transitive_repositories.bzl", "rust_prost_transitive_repositories")
-
-rust_prost_transitive_repositories()
+bazel_dep(name = "rules_rust_prost", version = "{SEE_RELEASE_NOTES}")
 ```
 
 The `prost` and `tonic` rules do not specify a default toolchain in order to avoid mismatched
@@ -131,7 +125,7 @@ toolchain(
 )
 ```
 
-Lastly, you must register the toolchain in your `WORKSPACE` file. For example:
+Lastly, you must register the toolchain in your `MODULE.bazel` file. For example:
 
 ```python
 register_toolchains("//toolchains:prost_toolchain")

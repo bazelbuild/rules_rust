@@ -1,14 +1,11 @@
 """Bzlmod module extensions that are only used internally"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//cargo:deps.bzl", "cargo_dependencies")
+load("//cargo/3rdparty/crates:crates.bzl", "crate_repositories")
 
 def _internal_deps_impl(module_ctx):
-    # This should contain the subset of WORKSPACE.bazel that defines
-    # repositories.
-
     direct_deps = []
-    direct_deps.extend(cargo_dependencies())
+    direct_deps.extend(crate_repositories())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
