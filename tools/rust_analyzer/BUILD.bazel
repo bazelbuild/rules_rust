@@ -2,6 +2,18 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
 load("//tools/private:tool_utils.bzl", "aspect_repository")
 
+exports_files(
+    [
+        "aquery.rs",
+        "bin/discover_rust_project.rs",
+        "bin/gen_rust_project.rs",
+        "bin/validate.rs",
+        "lib.rs",
+        "rust_project.rs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 rust_binary(
     name = "discover_bazel_rust_project",
     srcs = ["bin/discover_rust_project.rs"],
