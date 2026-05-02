@@ -118,6 +118,7 @@ def rustdoc_compile_action(
         # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
         force_depend_on_objects = is_test,
         include_link_flags = False,
+        force_link_inputs = is_test,
     )
 
     # Since this crate is not actually producing the output described by the
@@ -131,7 +132,7 @@ def rustdoc_compile_action(
         attr = ctx.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
+        tool_path = toolchain.rust_doc.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
@@ -146,7 +147,7 @@ def rustdoc_compile_action(
         emit = [],
         remap_path_prefix = None,
         add_flags_for_binary = True,
-        include_link_flags = False,
+        include_link_flags = is_test,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
     )
@@ -168,6 +169,7 @@ def rustdoc_compile_action(
         inputs = all_inputs,
         env = env,
         arguments = args.all,
+        process_wrapper_flags = args.process_wrapper_flags,
         tools = [toolchain.rust_doc],
     )
 

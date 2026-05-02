@@ -718,7 +718,8 @@ def collect_inputs(
         stamp = False,
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
-        include_link_flags = True):
+        include_link_flags = True,
+        force_link_inputs = False):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -741,6 +742,8 @@ def collect_inputs(
         experimental_use_cc_common_link (bool, optional): Whether rules_rust uses cc_common.link to link
             rust binaries.
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
+        force_link_inputs (bool, optional): Whether to collect linker inputs even when the crate type would
+            normally be handled as a non-linking compile action.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -774,7 +777,7 @@ def collect_inputs(
     # flattened on each transitive rust_library dependency.
     libs_from_linker_inputs = []
     ambiguous_libs = {}
-    if crate_info.type not in ("lib", "rlib"):
+    if crate_info.type not in ("lib", "rlib") or force_link_inputs:
         linker_inputs = dep_info.transitive_noncrates.to_list()
         ambiguous_libs = _disambiguate_libs(ctx.actions, toolchain, crate_info, dep_info, use_pic)
         libs_from_linker_inputs = _collect_libs_from_linker_inputs(linker_inputs, use_pic) + [
@@ -1322,18 +1325,27 @@ def construct_arguments(
                 else:
                     rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
 
+        # rustdoc tests compile doctest binaries through rustdoc instead of
+        # rustc. That frontend accepts native libraries as linker args, not
+        # rustc's `-lstatic`/`-ldylib` forms.
+        link_libraries_as_link_args = add_flags_for_binary and include_link_flags and not emit
+        native_link_crate_type = crate_info.type
+        if link_libraries_as_link_args and native_link_crate_type in ["lib", "rlib"]:
+            native_link_crate_type = "bin"
+
         _add_native_link_flags(
             rustc_flags,
             dep_info,
             linkstamp_outs,
             ambiguous_libs,
-            crate_info.type,
+            native_link_crate_type,
             toolchain,
             cc_toolchain,
             feature_configuration,
             compilation_mode,
             ld_is_direct_driver,
             include_link_flags = include_link_flags,
+            link_libraries_as_link_args = link_libraries_as_link_args,
         )
 
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
@@ -2520,8 +2532,20 @@ def portable_link_flags(
 def _add_user_link_flags(ret, linker_input):
     ret.extend(["--codegen=link-arg={}".format(flag) for flag in linker_input.user_link_flags])
 
+def _link_arg_compatible_link_flags(flags, link_libraries_as_link_args):
+    if not link_libraries_as_link_args:
+        return flags
+
+    ret = []
+    for flag in flags:
+        if flag.startswith("-Clink-arg=") or flag.startswith("--codegen=link-arg="):
+            ret.append(flag)
+        elif flag.startswith("-ldylib="):
+            ret.append("-Clink-arg=-l" + flag[len("-ldylib="):])
+    return ret
+
 def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_driver):
-    linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
+    linker_input, use_pic, ambiguous_libs, include_link_flags, link_libraries_as_link_args = make_link_flags_args
     ret = []
     prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
@@ -2544,7 +2568,7 @@ def _make_link_flags_windows(make_link_flags_args, flavor_msvc, use_direct_drive
         if flag in ("-pthread", "-lpthread"):
             continue
         ret.append("--codegen=link-arg={}".format(flag))
-    return ret
+    return _link_arg_compatible_link_flags(ret, link_libraries_as_link_args)
 
 def _make_link_flags_windows_msvc(make_link_flags_args, use_direct_driver):
     return _make_link_flags_windows(make_link_flags_args, flavor_msvc = True, use_direct_driver = use_direct_driver)
@@ -2553,7 +2577,7 @@ def _make_link_flags_windows_gnu(make_link_flags_args, use_direct_driver):
     return _make_link_flags_windows(make_link_flags_args, flavor_msvc = False, use_direct_driver = use_direct_driver)
 
 def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
-    linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
+    linker_input, use_pic, ambiguous_libs, include_link_flags, link_libraries_as_link_args = make_link_flags_args
     ret = []
     prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
@@ -2565,10 +2589,10 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
         elif include_link_flags:
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
     _add_user_link_flags(ret, linker_input)
-    return ret
+    return _link_arg_compatible_link_flags(ret, link_libraries_as_link_args)
 
 def _make_link_flags_default(make_link_flags_args, use_direct_driver):
-    linker_input, use_pic, ambiguous_libs, include_link_flags = make_link_flags_args
+    linker_input, use_pic, ambiguous_libs, include_link_flags, link_libraries_as_link_args = make_link_flags_args
     ret = []
     prefix = "" if use_direct_driver else "-Wl,"
     for lib in linker_input.libraries:
@@ -2581,7 +2605,7 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
         elif include_link_flags:
             ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
     _add_user_link_flags(ret, linker_input)
-    return ret
+    return _link_arg_compatible_link_flags(ret, link_libraries_as_link_args)
 
 def _make_link_flags_default_indirect(make_link_flags_args):
     return _make_link_flags_default(make_link_flags_args, False)
@@ -2638,7 +2662,7 @@ def _get_make_link_flag_funcs(target_os, target_abi, use_direct_link_driver):
     return (make_link_flags, get_lib_name)
 
 def _libraries_dirnames(make_link_flags_args):
-    link_input, use_pic, _, _ = make_link_flags_args
+    link_input, use_pic, _, _, _ = make_link_flags_args
 
     # De-duplicate names.
     return depset([get_preferred_artifact(lib, use_pic).dirname for lib in link_input.libraries]).to_list()
@@ -2654,7 +2678,8 @@ def _add_native_link_flags(
         feature_configuration,
         compilation_mode,
         use_direct_link_driver,
-        include_link_flags = True):
+        include_link_flags = True,
+        link_libraries_as_link_args = False):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
@@ -2669,6 +2694,8 @@ def _add_native_link_flags(
         compilation_mode (bool): The compilation mode for this build.
         use_direct_link_driver (bool): Whether the linker is a direct driver (e.g. `ld`, `wasm-ld`) vs a wrapper (e.g. `clang`, `gcc`).
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
+        link_libraries_as_link_args (bool, optional): Emit library search flags through linker args instead of
+            rustc's `-lstatic`/`-ldylib` forms.
     """
     if crate_type in ["lib", "rlib"]:
         return
@@ -2680,9 +2707,11 @@ def _add_native_link_flags(
         target_abi = toolchain.target_abi,
         use_direct_link_driver = use_direct_link_driver,
     )
+    dynamic_runtime_link_format = "-Clink-arg=-l%s" if link_libraries_as_link_args else "-ldylib=%s"
+    static_runtime_link_format = "-Clink-arg=-l%s" if link_libraries_as_link_args else "-lstatic=%s"
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
-    make_link_flags_args = [(arg, use_pic, ambiguous_libs, include_link_flags) for arg in dep_info.transitive_noncrates.to_list()]
+    make_link_flags_args = [(arg, use_pic, ambiguous_libs, include_link_flags, link_libraries_as_link_args) for arg in dep_info.transitive_noncrates.to_list()]
     args.add_all(make_link_flags_args, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
     if ambiguous_libs:
         # If there are ambiguous libs, the disambiguation symlinks to them are
@@ -2715,7 +2744,7 @@ def _add_native_link_flags(
                 args.add_all(
                     cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
                     map_each = get_lib_name,
-                    format_each = "-ldylib=%s",
+                    format_each = dynamic_runtime_link_format,
                 )
         else:
             # For all other crate types we want to link C++ runtime library statically
@@ -2729,7 +2758,7 @@ def _add_native_link_flags(
                 args.add_all(
                     cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
                     map_each = get_lib_name,
-                    format_each = "-lstatic=%s",
+                    format_each = static_runtime_link_format,
                 )
 
 def _get_dirname(file):

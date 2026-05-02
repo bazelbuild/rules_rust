@@ -8,6 +8,7 @@ load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
     "assert_argv_contains",
+    "assert_argv_contains_prefix",
     "assert_argv_contains_prefix_not",
 )
 
@@ -24,6 +25,16 @@ def _get_rustdoc_action(env, tut):
     assert_action_mnemonic(env, action, "Rustdoc")
 
     return action
+
+def _get_action_by_mnemonic(env, tut, mnemonic):
+    actions = [action for action in tut.actions if action.mnemonic == mnemonic]
+    asserts.equals(
+        env,
+        1,
+        len(actions),
+        "Expected exactly one {} action, got {}".format(mnemonic, [action.mnemonic for action in tut.actions]),
+    )
+    return actions[0]
 
 def _common_rustdoc_checks(env, tut):
     action = _get_rustdoc_action(env, tut)
@@ -154,6 +165,43 @@ def _rustdoc_with_json_error_format_test_impl(ctx):
 
     return analysistest.end(env)
 
+def _rustdoc_test_runs_in_build_action_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    action = _get_action_by_mnemonic(env, tut, "RustdocTest")
+
+    assert_argv_contains(env, action, "--test")
+    assert_argv_contains(env, action, "--stdout-file")
+    assert_argv_contains(env, action, "--stderr-file")
+    assert_argv_contains(env, action, "--captured-exit-code-file")
+
+    files = tut[DefaultInfo].files.to_list()
+    asserts.equals(env, 1, len(files))
+    asserts.true(
+        env,
+        files[0].basename == "lib_doctest",
+        "Expected rust_doc_test to expose the test runner symlink, got {}".format(files[0].basename),
+    )
+
+    runfile_basenames = [file.basename for file in tut[DefaultInfo].default_runfiles.files.to_list()]
+    asserts.true(env, "lib_doctest.rustdoc_test.stdout" in runfile_basenames)
+    asserts.true(env, "lib_doctest.rustdoc_test.stderr" in runfile_basenames)
+    asserts.true(env, "lib_doctest.rustdoc_test.exit_code" in runfile_basenames)
+
+    return analysistest.end(env)
+
+def _rustdoc_test_with_cc_link_flags_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+
+    action = _get_action_by_mnemonic(env, tut, "RustdocTest")
+
+    assert_argv_contains_prefix(env, action, "-Lnative=")
+    assert_argv_contains(env, action, "-Clink-arg=-lcc_lib")
+
+    return analysistest.end(env)
+
 rustdoc_for_lib_test = analysistest.make(_rustdoc_for_lib_test_impl)
 rustdoc_for_bin_test = analysistest.make(_rustdoc_for_bin_test_impl)
 rustdoc_for_bin_with_cc_lib_test = analysistest.make(_rustdoc_for_bin_with_cc_lib_test_impl)
@@ -168,6 +216,8 @@ rustdoc_zip_output_test = analysistest.make(_rustdoc_zip_output_test_impl)
 rustdoc_with_json_error_format_test = analysistest.make(_rustdoc_with_json_error_format_test_impl, config_settings = {
     str(Label("//rust/settings:error_format")): "json",
 })
+rustdoc_test_runs_in_build_action_test = analysistest.make(_rustdoc_test_runs_in_build_action_test_impl)
+rustdoc_test_with_cc_link_flags_test = analysistest.make(_rustdoc_test_with_cc_link_flags_test_impl)
 
 def _target_maker(rule_fn, name, rustdoc_deps = [], rustdoc_proc_macro_deps = [], **kwargs):
     rule_fn(
@@ -434,6 +484,16 @@ def rustdoc_test_suite(name):
         target_under_test = ":lib_doc",
     )
 
+    rustdoc_test_runs_in_build_action_test(
+        name = "rustdoc_test_runs_in_build_action_test",
+        target_under_test = ":lib_doctest",
+    )
+
+    rustdoc_test_with_cc_link_flags_test(
+        name = "rustdoc_test_with_cc_link_flags_test",
+        target_under_test = ":lib_with_cc_doctest",
+    )
+
     native.filegroup(
         name = "lib_doc_zip",
         srcs = [":lib_doc.zip"],
@@ -457,6 +517,8 @@ def rustdoc_test_suite(name):
             ":rustdoc_for_lib_with_cc_lib_test",
             ":rustdoc_with_args_test",
             ":rustdoc_with_json_error_format_test",
+            ":rustdoc_test_runs_in_build_action_test",
+            ":rustdoc_test_with_cc_link_flags_test",
             ":rustdoc_zip_output_test",
         ],
     )
