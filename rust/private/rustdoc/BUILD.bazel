@@ -1,12 +1,8 @@
-load("//rust:defs.bzl", "rust_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 package(default_visibility = ["//visibility:public"])
 
-rust_binary(
-    name = "rustdoc_test_writer",
-    srcs = ["rustdoc_test_writer.rs"],
-    edition = "2018",
-    deps = [
-        "//rust/runfiles",
-    ],
+cc_binary(
+    name = "rustdoc_test_runner",
+    srcs = ["rustdoc_test_runner.cc"],
 )
