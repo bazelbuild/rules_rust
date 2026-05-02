@@ -19,6 +19,12 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
 load(
+    ":exec_settings_trim.bzl",
+    "RULE_TRANSITION_INPUT_SETTINGS",
+    "RULE_TRANSITION_OUTPUT_SETTINGS",
+    "rule_transition_impl",
+)
+load(
     ":providers.bzl",
     "BuildInfo",
     "CrateGroupInfo",
@@ -1007,18 +1013,12 @@ rust_library = rule(
 )
 
 def _rust_static_library_transition_impl(settings, attr):
-    return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    return rule_transition_impl(settings, attr)
 
 _rust_static_library_transition = transition(
     implementation = _rust_static_library_transition_impl,
-    inputs = [
-        "//command_line_option:platforms",
-    ],
-    outputs = [
-        "//command_line_option:platforms",
-    ],
+    inputs = RULE_TRANSITION_INPUT_SETTINGS,
+    outputs = RULE_TRANSITION_INPUT_SETTINGS,
 )
 
 rust_static_library = rule(
@@ -1048,18 +1048,12 @@ rust_static_library = rule(
 )
 
 def _rust_shared_library_transition_impl(settings, attr):
-    return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    return rule_transition_impl(settings, attr)
 
 _rust_shared_library_transition = transition(
     implementation = _rust_shared_library_transition_impl,
-    inputs = [
-        "//command_line_option:platforms",
-    ],
-    outputs = [
-        "//command_line_option:platforms",
-    ],
+    inputs = RULE_TRANSITION_INPUT_SETTINGS,
+    outputs = RULE_TRANSITION_INPUT_SETTINGS,
 )
 
 rust_shared_library = rule(
@@ -1100,9 +1094,25 @@ _proc_macro_dep_transition = transition(
     implementation = _proc_macro_dep_transition_impl,
 )
 
+def _proc_macro_settings_trim_transition_impl(settings, attr):
+    """Reset target-specific settings for proc macros.
+
+    Proc macros always run in exec configuration (as compiler plugins).
+    This transition unconditionally resets target-specific settings to
+    defaults so the exec config hash is stable across target config changes.
+    """
+    return rule_transition_impl(settings, attr, force = True)
+
+_proc_macro_settings_trim_transition = transition(
+    implementation = _proc_macro_settings_trim_transition_impl,
+    inputs = RULE_TRANSITION_INPUT_SETTINGS,
+    outputs = RULE_TRANSITION_OUTPUT_SETTINGS,
+)
+
 rust_proc_macro = rule(
     implementation = _rust_proc_macro_impl,
     provides = COMMON_PROVIDERS,
+    cfg = _proc_macro_settings_trim_transition,
     # Start by copying the common attributes, then override the `deps` attribute
     # to apply `_proc_macro_dep_transition`. To add this transition we additionally
     # need to declare `_allowlist_function_transition`, see
@@ -1170,18 +1180,12 @@ _RUST_BINARY_ATTRS = {
 } | _EXPERIMENTAL_USE_CC_COMMON_LINK_ATTRS
 
 def _rust_binary_transition_impl(settings, attr):
-    return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    return rule_transition_impl(settings, attr)
 
 _rust_binary_transition = transition(
     implementation = _rust_binary_transition_impl,
-    inputs = [
-        "//command_line_option:platforms",
-    ],
-    outputs = [
-        "//command_line_option:platforms",
-    ],
+    inputs = RULE_TRANSITION_INPUT_SETTINGS,
+    outputs = RULE_TRANSITION_INPUT_SETTINGS,
 )
 
 rust_binary = rule(
@@ -1417,18 +1421,12 @@ rust_test_without_process_wrapper_test = rule(
 )
 
 def _rust_test_transition_impl(settings, attr):
-    return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
-    }
+    return rule_transition_impl(settings, attr)
 
 _rust_test_transition = transition(
     implementation = _rust_test_transition_impl,
-    inputs = [
-        "//command_line_option:platforms",
-    ],
-    outputs = [
-        "//command_line_option:platforms",
-    ],
+    inputs = RULE_TRANSITION_INPUT_SETTINGS,
+    outputs = RULE_TRANSITION_INPUT_SETTINGS,
 )
 
 rust_test = rule(
