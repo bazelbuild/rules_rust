@@ -377,43 +377,100 @@ tasks:
     platform: ubuntu2204
     run_targets:
       - "//test/rustfmt:rustfmt_failure_tester"
-  rust_analyzer_tests_linux:
-    name: Rust-Analyzer Linux Tests
-    platform: ubuntu2204
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-      - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_tests_macos:
-    name: Rust-Analyzer Macos Tests
-    platform: macos_arm64
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-      - "//test/rust_analyzer:rust_analyzer_test"
-  rust_analyzer_tests_windows:
-    name: Rust-Analyzer Windows Tests
-    platform: windows
-    run_targets:
-      - "//tools/rust_analyzer:gen_rust_project"
-      - "//tools/rust_analyzer:discover_bazel_rust_project"
-  ide_integration_vscode_tests_linux:
+  ide_integration_tests_linux:
     name: IDE VSCode Tests
     platform: ubuntu2204
     run_targets:
       - "//tools/vscode:gen_launch_json"
       - "//test/vscode:vscode_test"
-  ide_integration_vscode_tests_macos:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  ide_integration_tests_macos:
     name: IDE VSCode Tests
     platform: macos_arm64
     run_targets:
       - "//tools/vscode:gen_launch_json"
       - "//test/vscode:vscode_test"
-  ide_integration_vscode_tests_windows:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  ide_integration_tests_windows:
     name: IDE VSCode Tests
     platform: windows
     run_targets:
       - "//tools/vscode:gen_launch_json"
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      # TODO: Enable rust-analyzer tests on windows.
+      # - "//test/rust_analyzer:rust_analyzer_test"
+
+  path_mapping_ubuntu2204:
+    name: Path Mapping Linux
+    platform: ubuntu2204
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  path_mapping_rbe_ubuntu2204:
+    name: Path Mapping RBE
+    platform: rbe_ubuntu2204
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+    coverage_targets: *default_rbe_targets
+    coverage_flags: *rbe_coverage_flags
+    post_shell_commands: *coverage_validation_post_shell_commands
+  path_mapping_macos:
+    name: Path Mapping MacOS
+    platform: macos_arm64
+    build_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    test_flags:
+      - --config=clippy
+      - --config=rustfmt
+      - --experimental_output_paths=strip
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  # TODO: path_mapping requires sandboxing
+  # https://github.com/bazelbuild/bazel/issues/7480
+  #
+  # path_mapping_windows:
+  #   name: Path Mapping Windows
+  #   platform: windows
+  #   build_flags:
+  #     - --config=clippy
+  #     - --config=rustfmt
+  #     - --experimental_output_paths=strip
+  #   test_flags:
+  #     - --config=clippy
+  #     - --config=rustfmt
+  #     - --experimental_output_paths=strip
+  #   build_targets: *default_windows_targets
+  #   test_targets: *default_windows_targets
+
   ###########################################################################
   # C R A T E   U N I V E R S E   I N T E G R A T I O N   T E S T S
   ###########################################################################

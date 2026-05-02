@@ -10,9 +10,21 @@ def _location_expansion_rustc_flags_test(ctx):
     tut = analysistest.target_under_test(env)
     action = tut.actions[1]
     assert_action_mnemonic(env, action, "Rustc")
+
+    # Because target `rustc_flags` use `$(execpath ...)`, the action does
+    # not advertise `supports-path-mapping`, so file paths remain at their
+    # configuration-specific `ctx.bin_dir` locations.
     assert_argv_contains(env, action, ctx.bin_dir.path + "/test/unit/location_expansion/mylibrary.rs")
-    expected = "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/generated_flag.data"
-    assert_argv_contains(env, action, expected)
+
+    # `$(location ...)` is expanded at analysis time into a literal
+    # configuration-dependent string (`bazel-out/<config>/bin/...`).
+    # Bazel does not rewrite raw argv strings under path mapping, so this
+    # arg keeps the un-mapped configuration prefix even when the rest of
+    # the Rustc command uses `bazel-out/cfg/bin/...`. The action will
+    # fail at execution time under path mapping because the file is
+    # materialized at the mapped path; we accept that as documented in
+    # the Rust action implementation.
+    assert_argv_contains(env, action, "@${pwd}/" + ctx.bin_dir.path + "/test/unit/location_expansion/generated_flag.data")
     return analysistest.end(env)
 
 location_expansion_rustc_flags_test = analysistest.make(_location_expansion_rustc_flags_test)
@@ -33,7 +45,7 @@ def _location_expansion_test():
         srcs = ["mylibrary.rs"],
         edition = "2018",
         rustc_flags = [
-            "@$(location :flag_generator)",
+            "@$(execpath :flag_generator)",
         ],
         compile_data = [":flag_generator"],
     )

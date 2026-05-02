@@ -624,6 +624,7 @@ def _rust_toolchain_impl(ctx):
         extra_exec_rustc_flags = expanded_extra_exec_rustc_flags,
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
+        sysroot_anchor = sysroot.sysroot_anchor,
         sysroot_short_path = sysroot_short_path,
         target_arch = target_arch,
         target_flag_value = target_json.path if target_json else target_triple.str,

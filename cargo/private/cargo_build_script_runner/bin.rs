@@ -53,7 +53,7 @@ fn run_buildrs() -> Result<(), String> {
 
     cargo_manifest_maker.create_runfiles_dir().unwrap();
 
-    let out_dir_abs = exec_root.join(out_dir);
+    let out_dir_abs = exec_root.join(&out_dir);
     // For some reason Google's RBE does not create the output directory, force create it.
     create_dir_all(&out_dir_abs)
         .unwrap_or_else(|_| panic!("Failed to make output directory: {:?}", out_dir_abs));
@@ -176,7 +176,7 @@ fn run_buildrs() -> Result<(), String> {
 
     write(
         &env_file,
-        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy())
+        BuildScriptOutput::outputs_to_env(&buildrs_outputs, &exec_root.to_string_lossy(), &out_dir)
             .as_bytes(),
     )
     .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", env_file, e));
@@ -186,6 +186,7 @@ fn run_buildrs() -> Result<(), String> {
             &buildrs_outputs,
             &crate_links,
             &exec_root.to_string_lossy(),
+            &out_dir,
         )
         .as_bytes(),
     )
@@ -204,7 +205,11 @@ fn run_buildrs() -> Result<(), String> {
         compile_flags,
         link_flags,
         link_search_paths,
-    } = BuildScriptOutput::outputs_to_flags(&buildrs_outputs, &exec_root.to_string_lossy());
+    } = BuildScriptOutput::outputs_to_flags(
+        &buildrs_outputs,
+        &exec_root.to_string_lossy(),
+        &out_dir,
+    );
 
     write(&compile_flags_file, compile_flags.as_bytes())
         .unwrap_or_else(|e| panic!("Unable to write file {:?}: {:#?}", compile_flags_file, e));

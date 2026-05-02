@@ -165,7 +165,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         attr = ctx.rule.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = clippy_executable.path,
+        tool_file = clippy_executable,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -233,6 +233,7 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         mnemonic = "Clippy",
         progress_message = "Clippy %{label}",
         toolchain = "@rules_rust//rust:toolchain_type",
+        execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
     )
 
 def _clippy_aspect_impl(target, ctx):

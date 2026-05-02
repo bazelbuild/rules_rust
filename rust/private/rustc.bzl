@@ -653,12 +653,17 @@ def _disambiguate_libs(actions, toolchain, crate_info, dep_info, use_pic):
                 (name in visited_libs and visited_libs[name].path != artifact.path)
             ):
                 # Disambiguate the previously visited library (if we just detected
-                # that it is ambiguous) and the current library.
+                # that it is ambiguous) and the current library. Key the
+                # `ambiguous_libs` dict on `short_path` (root-relative,
+                # configuration-independent) rather than `path` so that the
+                # lookup in `portable_link_flags` keeps matching when path
+                # mapping rewrites `.path` to the `bazel-out/cfg/bin/...`
+                # prefix at argv-expansion time.
                 if name in visited_libs:
-                    old_path = visited_libs[name].path
-                    if old_path not in ambiguous_libs:
-                        ambiguous_libs[old_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
-                ambiguous_libs[artifact.path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
+                    old_short_path = visited_libs[name].short_path
+                    if old_short_path not in ambiguous_libs:
+                        ambiguous_libs[old_short_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, visited_libs[name])
+                ambiguous_libs[artifact.short_path] = symlink_for_ambiguous_lib(actions, toolchain, crate_info, artifact)
 
             visited_libs[name] = artifact
     return ambiguous_libs
@@ -727,7 +732,8 @@ def collect_inputs(
     Returns:
         tuple: A tuple: A tuple of the following items:
             - (list): A list of all build info `OUT_DIR` File objects
-            - (str): The `OUT_DIR` of the current build info
+            - (File|None): The `File` of the current build info's `OUT_DIR`,
+              or `None` when no build script supplies one.
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flag files from the current build info
             - (list[File]): Linkstamp outputs
@@ -913,13 +919,19 @@ def _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstab
             other_flags.append(flag)
     return other_flags
 
+def _has_location_expansion(flags):
+    for flag in flags:
+        for directive in ("$(location ", "$(locations ", "$(execpath ", "$(execpaths "):
+            if directive in flag:
+                return True
+    return False
+
 def construct_arguments(
         *,
         ctx,
         attr,
         file,
         toolchain,
-        tool_path,
         cc_toolchain,
         feature_configuration,
         crate_info,
@@ -931,6 +943,8 @@ def construct_arguments(
         out_dir,
         build_env_files,
         build_flags_files,
+        tool_file = None,
+        tool_path = None,
         emit = ["dep-info", "link"],
         force_all_deps_direct = False,
         add_flags_for_binary = False,
@@ -951,7 +965,6 @@ def construct_arguments(
         attr (struct): The attributes for the target. These may be different from ctx.attr in an aspect context.
         file (struct): A struct containing files defined in label type attributes marked as `allow_single_file`.
         toolchain (rust_toolchain): The current target's `rust_toolchain`
-        tool_path (str): Path to rustc
         cc_toolchain (CcToolchain): The CcToolchain for the current target.
         feature_configuration (FeatureConfiguration): Class used to construct command lines from CROSSTOOL features.
         crate_info (CrateInfo): The CrateInfo provider of the target crate
@@ -959,10 +972,45 @@ def construct_arguments(
         linkstamp_outs (list): Linkstamp outputs of native dependencies
         ambiguous_libs (dict): Ambiguous libs, see `_disambiguate_libs`
         output_hash (str): The hashed path of the crate root
-        rust_flags (list): Additional flags to pass to rustc
-        out_dir (str): The path to the output directory for the target Crate.
+        rust_flags (list or Args): Additional flags to pass to rustc. Accepts
+            either a plain `list[str]` (folded into the main `rustc_flags`
+            `Args` so flags intermix with the rest of the command line,
+            with any `-Zallow-features=` entries extracted and merged
+            with `unstable_rust_features_config`) or a `ctx.actions.args()`
+            `Args` object (returned on the `args` struct as
+            `extra_rustc_flags` and appended to `args.all` as a separate
+            entry, since `Args` cannot be merged with one another). The
+            `Args` form is opaque at analysis time, so any
+            `-Zallow-features=` it carries passes through to rustc
+            unchanged — callers that need it merged with
+            `unstable_rust_features_config` should keep using the
+            `list[str]` form. Use the `Args` form when the caller needs
+            `Args.add_all` features such as `map_each` (e.g. for
+            `File`-derived flags that must be rewritten by Bazel path
+            mapping).
+        out_dir (File, optional): The build script's output directory.
+            When provided, the directory is handed to `process_wrapper`
+            via an explicit `--out-dir <path>` arg sourced from a
+            `File`-typed `Args` entry. `process_wrapper` then
+            materializes `OUT_DIR=${pwd}/<path>` in the child process's
+            environment. Routing the path through a `File`-typed arg lets
+            Bazel's path mapping (`--experimental_output_paths=strip`)
+            rewrite it to the `bazel-out/cfg/bin/...` prefix at argv-
+            expansion time when the action advertises
+            `supports-path-mapping`. When omitted (or `None`), no
+            `OUT_DIR` env var is set; callers (such as `rustdoc`) that
+            need different `OUT_DIR` semantics—e.g. setting it from a
+            `short_path` for actions that run from runfiles—can populate
+            the returned `env` dict themselves.
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (depset): The output files of a `cargo_build_script` actions containing rustc build flags
+        tool_path (str): Path to rustc. Used as a fallback when `tool_file` is
+            not provided. When `tool_file` is provided, this string is ignored.
+        tool_file (File, optional): The `File` representing the tool to invoke
+            (e.g. `toolchain.rustc`, `clippy_executable`). When provided, it is
+            added to the `Args` as a `File` so that Bazel's path mapping
+            (`--experimental_output_paths=strip`) can rewrite its location.
+            Falls back to `tool_path` (a plain string) when `None`.
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
@@ -1041,12 +1089,32 @@ def construct_arguments(
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
     if out_dir != None:
-        env["OUT_DIR"] = "${pwd}/" + out_dir
+        # Hand `OUT_DIR` to `process_wrapper` as an explicit
+        # `--out-dir <path>` arg sourced from a `File`-typed `Args`
+        # entry. `process_wrapper` then materializes
+        # `OUT_DIR=${pwd}/<path>` in the child process's environment.
+        # Bazel only rewrites argv strings that originate from `File`
+        # objects, so this routing lets path mapping
+        # (`--experimental_output_paths=strip`) rewrite the value to
+        # the `bazel-out/cfg/bin/...` prefix when the action
+        # advertises `supports-path-mapping`. Setting `OUT_DIR`
+        # directly in the action's `env` dict would not work because
+        # Bazel does not path-map env values.
+        process_wrapper_flags.add_all(
+            [out_dir],
+            before_each = "--out-dir",
+            expand_directories = False,
+        )
 
-    # Arguments for launching rustc from the process wrapper
+    # Arguments for launching rustc from the process wrapper. When a `File` is
+    # provided via `tool_file`, add it directly so Bazel's path mapping can
+    # rewrite the location; otherwise fall back to the bare string `tool_path`.
     rustc_path = ctx.actions.args()
     rustc_path.add("--")
-    rustc_path.add(tool_path)
+    if tool_file != None:
+        rustc_path.add(tool_file)
+    else:
+        rustc_path.add(tool_path)
 
     # If we're emitting an object file, remove any `-Ccodegen-units=` flags.
     # The build rules expect to see a single object file, not the multiple
@@ -1088,9 +1156,9 @@ def construct_arguments(
         # Configure process_wrapper to terminate rustc when metadata are emitted
         process_wrapper_flags.add("--rustc-quit-on-rmeta", "true")
         if crate_info.rustc_rmeta_output:
-            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output.path)
+            process_wrapper_flags.add("--output-file", crate_info.rustc_rmeta_output)
     elif crate_info.rustc_output:
-        process_wrapper_flags.add("--output-file", crate_info.rustc_output.path)
+        process_wrapper_flags.add("--output-file", crate_info.rustc_output)
 
     rustc_flags.add(error_format, format = "--error-format=%s")
 
@@ -1106,7 +1174,10 @@ def construct_arguments(
         rustc_flags.add(output_hash, format = "--codegen=extra-filename=-%s")
 
     if output_dir:
-        rustc_flags.add(output_dir, format = "--out-dir=%s")
+        # Use add_all with the output File and a map_each callback that returns the
+        # dirname so Bazel can apply path mapping (--experimental_output_paths=strip)
+        # to the directory portion of the path.
+        rustc_flags.add_all([crate_info.output], map_each = _get_dirname, format_each = "--out-dir=%s")
 
     compilation_mode = get_compilation_mode_opts(ctx, toolchain)
     rustc_flags.add(compilation_mode.opt_level, format = "--codegen=opt-level=%s")
@@ -1137,13 +1208,37 @@ def construct_arguments(
     if linker_script:
         rustc_flags.add(linker_script, format = "--codegen=link-arg=-T%s")
 
-    # Tell Rustc where to find the standard library (or libcore)
-    rustc_flags.add_all(toolchain.rust_std_paths, before_each = "-L", format_each = "%s")
-
+    # Tell Rustc where to find the standard library (or libcore). Use the
+    # underlying `File`s with a `map_each` so Bazel's path mapping
+    # (`--experimental_output_paths=strip`) can rewrite the dirnames.
     rustc_flags.add_all(
-        _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features),
-        map_each = map_flag,
+        toolchain.rust_std,
+        before_each = "-L",
+        map_each = _get_dirname,
+        uniquify = True,
     )
+
+    # `rust_flags` is either a plain `list[str]` or a `ctx.actions.args()`
+    # `Args` object. Lists are folded into the main `rustc_flags` `Args`
+    # here, with any `-Zallow-features=` entries extracted into
+    # `all_allowed_unstable_features` so they can be merged with
+    # `unstable_rust_features_config` and re-emitted as a single arg
+    # below. `Args` inputs cannot be merged with another `Args` and are
+    # opaque at analysis time, so we capture the caller's `Args` here
+    # and append it as a separate entry in `args.all` (after the
+    # main `rustc_flags` `Args`, consistent with the existing "later
+    # flags win" semantics). Any `-Zallow-features=` baked into an
+    # `Args` value passes through to rustc unchanged — callers that
+    # need it merged with `unstable_rust_features_config` should keep
+    # using the `list[str]` form.
+    rust_flags_args = None
+    if type(rust_flags) == "Args":
+        rust_flags_args = rust_flags
+    elif rust_flags:
+        rustc_flags.add_all(
+            _extract_allowed_unstable_features_from_flags(rust_flags, all_allowed_unstable_features),
+            map_each = map_flag,
+        )
 
     # Gather data path from crate_info since it is inherited from real crate for rust_doc and rust_test
     # Deduplicate data paths due to https://github.com/bazelbuild/bazel/issues/14681
@@ -1249,9 +1344,15 @@ def construct_arguments(
             {},
         ))
 
-    # Ensure the sysroot is set for the target platform
+    # Ensure the sysroot is set for the target platform. Compute the dirname
+    # from the underlying `sysroot_anchor` `File` via `map_each` so Bazel's
+    # path mapping can rewrite it.
     if toolchain._toolchain_generated_sysroot:
-        rustc_flags.add(toolchain.sysroot, format = "--sysroot=%s")
+        rustc_flags.add_all(
+            [toolchain.sysroot_anchor],
+            map_each = _get_dirname,
+            format_each = "--sysroot=%s",
+        )
 
     if toolchain._rename_first_party_crates:
         env["RULES_RUST_THIRD_PARTY_DIR"] = toolchain._third_party_dir
@@ -1263,13 +1364,21 @@ def construct_arguments(
     if hasattr(ctx.attr, "_extra_exec_rustc_env") and is_exec_configuration(ctx):
         env.update(ctx.attr._extra_exec_rustc_env[ExtraExecRustcEnvInfo].extra_exec_rustc_env)
 
+    # Strip any `-Zallow-features=` entries out of the toolchain's extra
+    # rustc flags into `all_allowed_unstable_features` and, when
+    # `unstable_rust_features_config` is configured to a concrete list,
+    # re-emit a single deduplicated `-Zallow-features=<merged>` arg so
+    # the union of toolchain-wide, target-level, and config-level
+    # features is enforced. When the config is unset or `__all__`,
+    # stripped features are silently dropped — matching the historical
+    # behavior where `__all__` (or no config) means "no restriction".
     extra_rustc_flags = _extract_allowed_unstable_features_from_flags(
         collect_extra_rustc_flags(ctx, toolchain, crate_info.root, crate_info.type),
         all_allowed_unstable_features,
     )
     if getattr(ctx.attr, "unstable_rust_features_config", None) and not "__all__" in all_allowed_unstable_features:
-        all_allowed_unstable_features = {f: None for f in all_allowed_unstable_features}.keys()
-        extra_rustc_flags.append("-Zallow-features=" + ",".join(all_allowed_unstable_features))
+        deduped_allowed = {f: None for f in all_allowed_unstable_features}.keys()
+        extra_rustc_flags.append("-Zallow-features=" + ",".join(deduped_allowed))
 
         # require_explicit_unstable_features makes no sense when all features are allowed anyway
         if require_explicit_unstable_features:
@@ -1280,10 +1389,11 @@ def construct_arguments(
         rustc_flags.add('--cfg=feature="no_std"')
 
     # Add target specific flags last, so they can override previous flags
+    authored_rustc_flags = getattr(attr, "rustc_flags", [])
     rustc_flags.add_all(
         expand_list_element_locations(
             ctx,
-            getattr(attr, "rustc_flags", []),
+            authored_rustc_flags,
             data_paths,
             {},
         ),
@@ -1294,12 +1404,20 @@ def construct_arguments(
     env["REPOSITORY_NAME"] = ctx.label.workspace_name
 
     # Create a struct which keeps the arguments separate so each may be tuned or
-    # replaced where necessary
+    # replaced where necessary. `Args` objects cannot be merged with one
+    # another, so a caller-supplied `rust_flags` `Args` lives on the
+    # struct as `extra_rustc_flags` and is appended to `all` so it
+    # survives independently end-to-end.
+    all_args = [process_wrapper_flags, rustc_path, rustc_flags]
+    if rust_flags_args != None:
+        all_args.append(rust_flags_args)
     args = struct(
         process_wrapper_flags = process_wrapper_flags,
         rustc_path = rustc_path,
         rustc_flags = rustc_flags,
-        all = [process_wrapper_flags, rustc_path, rustc_flags],
+        extra_rustc_flags = rust_flags_args,
+        supports_path_mapping = not _has_location_expansion(authored_rustc_flags),
+        all = all_args,
     )
 
     return args, env
@@ -1475,7 +1593,7 @@ def rustc_compile_action(
         attr = attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rustc.path,
+        tool_file = toolchain.rustc,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1503,7 +1621,7 @@ def rustc_compile_action(
             attr = attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
+            tool_file = toolchain.rustc,
             cc_toolchain = cc_toolchain,
             emit = emit,
             feature_configuration = feature_configuration,
@@ -1596,6 +1714,7 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
         if args_metadata:
             ctx.actions.run(
@@ -1613,6 +1732,7 @@ def rustc_compile_action(
                     "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
+                execution_requirements = {"supports-path-mapping": ""} if args_metadata.supports_path_mapping else None,
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
@@ -1634,6 +1754,7 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
+            execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
@@ -2090,7 +2211,11 @@ def _process_build_scripts(
     Returns:
         tuple: A tuple: A tuple of the following items:
             - (depset[File]): A list of all build info `OUT_DIR` File objects
-            - (str): The `OUT_DIR` of the current build info
+            - (File|None): The `File` for the current build info's `OUT_DIR`,
+              or `None` when no build script supplies one. Exposed so that
+              consumers can pass it through `Args.add_all`, which lets
+              Bazel's path mapping (`--experimental_output_paths=strip`)
+              rewrite the path at argv-expansion time.
             - (File): An optional path to a generated environment file from a `cargo_build_script` target
             - (depset[File]): All direct and transitive build flags from the current build info.
     """
@@ -2108,7 +2233,7 @@ def _process_build_scripts(
     # We include the direct dep build_info because crates which use cargo build scripts may need to e.g. include_str! a generated file.
     if build_info:
         if build_info.out_dir:
-            out_dir = build_info.out_dir.path
+            out_dir = build_info.out_dir
             direct_inputs.append(build_info.out_dir)
         build_env_file = build_info.rustc_env
         if build_info.flags:
@@ -2307,8 +2432,8 @@ def portable_link_flags(
         _type_: _description_
     """
     artifact = get_preferred_artifact(lib, use_pic)
-    if ambiguous_libs and artifact.path in ambiguous_libs:
-        artifact = ambiguous_libs[artifact.path]
+    if ambiguous_libs and artifact.short_path in ambiguous_libs:
+        artifact = ambiguous_libs[artifact.short_path]
     if lib.static_library or lib.pic_static_library:
         # To ensure appropriate linker library argument order, in the presence
         # of both native libraries that depend on rlibs and rlibs that depend
@@ -2531,9 +2656,17 @@ def _add_native_link_flags(
     args.add_all(make_link_flags_args, map_each = _libraries_dirnames, uniquify = True, format_each = "-Lnative=%s")
     if ambiguous_libs:
         # If there are ambiguous libs, the disambiguation symlinks to them are
-        # all created in the same directory. Add it to the library search path.
-        ambiguous_libs_dirname = ambiguous_libs.values()[0].dirname
-        args.add(ambiguous_libs_dirname, format = "-Lnative=%s")
+        # all created in the same directory. Add it to the library search
+        # path. Pass a `File` (not a `dirname` string) through `add_all` +
+        # `map_each = _get_dirname` so Bazel can rewrite this argv entry
+        # under path mapping; otherwise, raw `.dirname` strings remain at
+        # the un-mapped `bazel-out/<config>/bin/...` location and the
+        # path-mapped Rustc action can't find the symlinks.
+        args.add_all(
+            [ambiguous_libs.values()[0]],
+            map_each = _get_dirname,
+            format_each = "-Lnative=%s",
+        )
 
     args.add_all(make_link_flags_args, map_each = make_link_flags)
 
