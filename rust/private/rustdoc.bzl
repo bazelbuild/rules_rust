@@ -15,7 +15,6 @@
 """Rules for generating documentation with `rustdoc` for Bazel built crates"""
 
 load("//rust/private:common.bzl", "rust_common")
-load("//rust/private:pic_utils.bzl", "should_use_pic")
 load("//rust/private:providers.bzl", "LintsInfo")
 load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
 load(
@@ -23,9 +22,6 @@ load(
     "dedent",
     "find_cc_toolchain",
     "find_toolchain",
-    "get_lib_name_default",
-    "get_lib_name_for_windows",
-    "get_preferred_artifact",
 )
 
 def _rustdoc_crate_info(crate_info, output):
@@ -130,8 +126,8 @@ def rustdoc_compile_action(
         lint_files = lint_files,
         # If this is a rustdoc test, we need to depend on rlibs rather than .rmeta.
         force_depend_on_objects = is_test,
-        include_linker_inputs = is_test,
         include_link_flags = False,
+        force_link_inputs = is_test,
     )
 
     # rustdoc actions don't produce the crate's compile output, so we swap in
@@ -140,38 +136,12 @@ def rustdoc_compile_action(
     # back to the crate root, which is always a `File` per the provider contract.
     rustdoc_crate_info = _rustdoc_crate_info(crate_info, output if output != None else crate_info.root)
 
-    # rustdoc does not understand linker flags like -lstatic that
-    # `include_link_flags` generates. So we manually build flags that only apply
-    # to rustdoc.
-    if is_test:
-        compilation_mode = ctx.var["COMPILATION_MODE"]
-        use_pic = should_use_pic(
-            cc_toolchain = cc_toolchain,
-            feature_configuration = feature_configuration,
-            crate_type = crate_info.type,
-            compilation_mode = compilation_mode,
-            toolchain = toolchain,
-        )
-        for_windows = toolchain.target_abi == "msvc"
-        get_lib_name = get_lib_name_for_windows if for_windows else get_lib_name_default
-        for dep in dep_info.transitive_noncrates.to_list():
-            for lib in dep.libraries:
-                if not (lib.static_library or lib.pic_static_library):
-                    continue
-                arg = get_lib_name(get_preferred_artifact(lib, use_pic))
-                if not for_windows:
-                    arg = "-l" + arg
-                if type(rustdoc_flags) == "Args":
-                    rustdoc_flags.add("-Clink-arg=%s" % arg)
-                else:
-                    rustdoc_flags.append("-Clink-arg=%s" % arg)
-
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
+        tool_path = toolchain.rust_doc.path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
@@ -186,7 +156,7 @@ def rustdoc_compile_action(
         emit = [],
         remap_path_prefix = None,
         add_flags_for_binary = True,
-        include_link_flags = False,
+        include_link_flags = is_test,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
     )
@@ -208,6 +178,8 @@ def rustdoc_compile_action(
         inputs = all_inputs,
         env = env,
         arguments = args.all,
+        process_wrapper_flags = args.process_wrapper_flags,
+        supports_path_mapping = args.supports_path_mapping,
         tools = [toolchain.rust_doc],
     )
 
