@@ -805,6 +805,10 @@ impl Renderer {
                 ),
                 platforms,
             ),
+            // Enable configuration trimming for third-party crates to improve cache hit rates.
+            // This ensures that per_crate_rustc_flag settings (which don't affect third-party
+            // crates) don't cause unnecessary rebuilds.
+            skip_per_crate_rustc_flags: true,
             srcs: target.srcs.clone(),
             tags: {
                 let mut tags = BTreeSet::from_iter(krate.common_attrs.tags.iter().cloned());
