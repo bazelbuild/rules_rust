@@ -54,6 +54,17 @@ def _collect_user_link_flags(env, tut):
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
     return [f for i in linker_inputs for f in i.user_link_flags]
 
+def _collect_static_library_basenames(env, tut):
+    asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
+    cc_info = tut[CcInfo]
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list()
+    return [
+        library_to_link.static_library.basename
+        for linker_input in linker_inputs
+        for library_to_link in linker_input.libraries
+        if library_to_link.static_library != None
+    ]
+
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
     tut = analysistest.target_under_test(env)
@@ -110,6 +121,12 @@ def _crate_group_info_provides_cc_info_test_impl(ctx):
         env,
         len(tut[rust_common.dep_info].transitive_noncrates.to_list()) == 1,
         "crate_group_info should provide 1 non-crate transitive dependency",
+    )
+    static_library_basenames = _collect_static_library_basenames(env, tut)
+    asserts.true(
+        env,
+        "libcc_lib.a" in static_library_basenames,
+        "rust_library CcInfo should include static libraries from CrateGroupInfo deps, got {}".format(static_library_basenames),
     )
     return analysistest.end(env)
 
