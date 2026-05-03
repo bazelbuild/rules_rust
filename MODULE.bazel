@@ -17,6 +17,10 @@ bazel_dep(name = "rules_cc", version = "0.2.4")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
+bazel_dep(name = "llvm", version = "0.7.7")
+
+osx = use_extension("@llvm//extensions:osx.bzl", "osx")
+use_repo(osx, "macos_sdk")
 
 internal_deps = use_extension("//rust/private:internal_extensions.bzl", "i")
 use_repo(
