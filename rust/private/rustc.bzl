@@ -2081,6 +2081,18 @@ def _collect_nonstatic_linker_inputs(cc_info):
             ))
     return shared_linker_inputs
 
+def _collect_dep_cc_infos(dep):
+    cc_infos = []
+    crate_group = getattr(dep, "crate_group_info", None)
+    if crate_group:
+        for group_dep in crate_group.dep_variant_infos.to_list():
+            if group_dep.cc_info:
+                cc_infos.append(group_dep.cc_info)
+    elif dep.cc_info:
+        cc_infos.append(dep.cc_info)
+
+    return cc_infos
+
 def _add_lto_flags(ctx, toolchain, args, crate):
     """Adds flags to an Args object to configure LTO for 'rustc'.
 
@@ -2200,18 +2212,18 @@ def establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_co
 
     # Flattening is okay since crate_info.deps only records direct deps.
     for dep in crate_info.deps.to_list():
-        if dep.cc_info:
+        for dep_cc_info in _collect_dep_cc_infos(dep):
             # A Rust staticlib or shared library doesn't need to propagate linker inputs
             # of its dependencies, except for shared libraries.
             if crate_info.type in ["cdylib", "staticlib"]:
-                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep.cc_info)
+                shared_linker_inputs = _collect_nonstatic_linker_inputs(dep_cc_info)
                 if shared_linker_inputs:
                     linking_context = cc_common.create_linking_context(
                         linker_inputs = depset(shared_linker_inputs),
                     )
                     cc_infos.append(CcInfo(linking_context = linking_context))
             else:
-                cc_infos.append(dep.cc_info)
+                cc_infos.append(dep_cc_info)
 
     if crate_info.type in ("rlib", "lib"):
         libstd_and_allocator_cc_info = _get_std_and_alloc_info(ctx, toolchain, crate_info)
