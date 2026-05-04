@@ -19,6 +19,7 @@
 - [Bzlmod](./rust_bzlmod.md)
 - [External Crates](./external_crates.md)
     - [crate_universe](crate_universe_bzlmod.md)
+- [Code Coverage](./coverage.md)
 - [Upstream Tooling](./upstream_tooling.md)
 - [IDE Integrations](./ide_integrations.md)
 - [Extensions](./extensions.md)
