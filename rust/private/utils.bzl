@@ -519,7 +519,7 @@ def filter_deps(ctx):
     Returns:
         deps and proc_macro_deps
     """
-    if len(ctx.attr.deps) != len(ctx.attr.proc_macro_deps) and not getattr(ctx.attr, "_skip_deps_verification", False):
+    if len(ctx.attr.deps) != len(ctx.attr.proc_macro_deps) and not getattr(ctx.attr, "skip_deps_verification", False):
         fail("All deps should be passed to both `deps` and `proc_macro_deps`; please use the macros in //rust:defs.bzl")
 
     deps = []

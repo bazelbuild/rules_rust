@@ -791,6 +791,10 @@ _COMMON_ATTRS = {
         """),
         cfg = "exec",
     ),
+    "skip_deps_verification": attr.bool(
+        doc = "Internal only, do not use.",
+        default = False,
+    ),
     "require_explicit_unstable_features": attr.int(
         doc = (
             "Whether to require all unstable features to be explicitly opted in to using " +
@@ -1435,7 +1439,7 @@ rust_binary_without_process_wrapper = rule(
         "_allowlist_function_transition": attr.label(
             default = Label("//tools/allowlists/function_transition_allowlist"),
         ),
-        "_skip_deps_verification": attr.bool(default = True),
+        "skip_deps_verification": attr.bool(default = True),
     }),
     executable = True,
     fragments = ["cpp"],
