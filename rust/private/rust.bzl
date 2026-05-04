@@ -1006,9 +1006,29 @@ rust_library = rule(
         """),
 )
 
+def _resolve_platform(settings, attr):
+    """Resolve the platform label for a transition, adding @ prefix if needed.
+
+    With --noincompatible_unambiguous_label_stringification, str(label) for
+    main-repo labels omits the leading @, producing "//foo:bar" instead of
+    "@//foo:bar". The platform setting requires the canonical form with @.
+    See https://github.com/bazelbuild/bazel/issues/15916.
+
+    Note that this function will no longer be needed if
+    `--noincompatible_unambiguous_label_stringification` is dropped but
+    it's currently required internally by Google.
+    See https://github.com/bazelbuild/bazel/issues/16196
+    """
+    if not attr.platform:
+        return settings["//command_line_option:platforms"]
+    platform = str(attr.platform)
+    if not platform.startswith("@"):
+        platform = "@" + platform
+    return platform
+
 def _rust_static_library_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_static_library_transition = transition(
@@ -1049,7 +1069,7 @@ rust_static_library = rule(
 
 def _rust_shared_library_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_shared_library_transition = transition(
@@ -1171,7 +1191,7 @@ _RUST_BINARY_ATTRS = {
 
 def _rust_binary_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_binary_transition = transition(
@@ -1418,7 +1438,7 @@ rust_test_without_process_wrapper_test = rule(
 
 def _rust_test_transition_impl(settings, attr):
     return {
-        "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
+        "//command_line_option:platforms": _resolve_platform(settings, attr),
     }
 
 _rust_test_transition = transition(
