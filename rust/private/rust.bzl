@@ -1013,6 +1013,11 @@ def _resolve_platform(settings, attr):
     main-repo labels omits the leading @, producing "//foo:bar" instead of
     "@//foo:bar". The platform setting requires the canonical form with @.
     See https://github.com/bazelbuild/bazel/issues/15916.
+    
+    Note that this function will no longer be needed if
+    `--noincompatible_unambiguous_label_stringification` is dropped but
+    it's currently required internally by Google.
+    See https://github.com/bazelbuild/bazel/issues/16196
     """
     if not attr.platform:
         return settings["//command_line_option:platforms"]
