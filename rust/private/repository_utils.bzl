@@ -372,6 +372,7 @@ rust_toolchain(
     channel = "{channel}",
     iso_date = {iso_date},
     tags = ["rust_version={version}"],
+    use_default_shell_env = {use_default_shell_env},
 )
 """
 
@@ -393,7 +394,8 @@ def BUILD_for_rust_toolchain(
         extra_rustc_flags = None,
         extra_exec_rustc_flags = None,
         opt_level = None,
-        strip_level = None):
+        strip_level = None,
+        use_default_shell_env = False):
     """Emits a toolchain declaration to match an existing compiler and stdlib.
 
     Args:
@@ -419,6 +421,7 @@ def BUILD_for_rust_toolchain(
         extra_exec_rustc_flags (list, optional): Extra flags to pass to rustc in exec configuration.
         opt_level (dict, optional): Optimization level config for this toolchain.
         strip_level (dict, optional): Strip level config for this toolchain.
+        use_default_shell_env (bool, optional): Whether rustc actions inherit the shell environment (defaults to False).
 
     Returns:
         str: A rendered template of a `rust_toolchain` declaration
@@ -484,6 +487,7 @@ def BUILD_for_rust_toolchain(
         version = version,
         channel = channel,
         iso_date = repr(iso_date),
+        use_default_shell_env = use_default_shell_env,
     )
 
 _build_file_for_toolchain_template = """\
