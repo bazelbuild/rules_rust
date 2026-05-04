@@ -291,8 +291,8 @@ tasks:
     shell_commands: *minimum_bazel_shell_commands
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
-    coverage_targets: *default_linux_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
+    # Coverage disabled on min Bazel version: the coverage collection
+    # wrapper does not reliably find profraw files on Bazel 7.x.
   ubuntu1804_with_aspects:
     name: "Min Bazel Version With Aspects"
     bazel: *minimum_bazel_version
@@ -301,8 +301,6 @@ tasks:
     build_targets: *default_linux_targets
     test_targets: *default_linux_targets
     build_flags: *aspects_flags
-    coverage_targets: *default_linux_targets
-    post_shell_commands: *coverage_validation_post_shell_commands
   ubuntu2204_min_rust_version:
     name: "Min Rust Version"
     platform: ubuntu2204
