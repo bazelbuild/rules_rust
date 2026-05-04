@@ -645,9 +645,6 @@ RUSTC_ATTRS = {
     "_rustc_output_diagnostics": attr.label(
         default = Label("//rust/settings:rustc_output_diagnostics"),
     ),
-    "_use_default_shell_env": attr.label(
-        default = Label("//rust/settings:use_default_shell_env"),
-    ),
 }
 
 _COMMON_ATTRS = {

@@ -1596,7 +1596,6 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
-            use_default_shell_env = ctx.attr._use_default_shell_env[BuildSettingInfo].value
         )
         if args_metadata:
             ctx.actions.run(
@@ -1614,7 +1613,6 @@ def rustc_compile_action(
                     "" if len(srcs) == 1 else "s",
                 ),
                 toolchain = "@rules_rust//rust:toolchain_type",
-                use_default_shell_env = ctx.attr._use_default_shell_env[BuildSettingInfo].value
             )
     elif hasattr(ctx.executable, "_bootstrap_process_wrapper"):
         # Run without process_wrapper
@@ -1636,7 +1634,6 @@ def rustc_compile_action(
             ),
             toolchain = "@rules_rust//rust:toolchain_type",
             resource_set = get_rustc_resource_set(toolchain),
-            use_default_shell_env = ctx.attr._use_default_shell_env[BuildSettingInfo].value
         )
     else:
         fail("No process wrapper was defined for {}".format(ctx.label))
