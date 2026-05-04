@@ -806,7 +806,7 @@ _COMMON_ATTRS = {
         flags = ["DIRECT_COMPILE_TIME_INPUT"],
     ),
     "stamp": _stamp_attribute(
-        default_value = 0,
+        default_value = -1,
     ),
     "unstable_rust_features_config": attr.label(
         doc = "Controls which unstable features are allowed to be used by this target. Setting this to anything other than None requires a nightly toolchain.",
