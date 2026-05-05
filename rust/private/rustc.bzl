@@ -1037,7 +1037,21 @@ def construct_arguments(
 
     # Both ctx.label.workspace_root and ctx.label.package are relative paths
     # and either can be empty strings. Avoid trailing/double slashes in the path.
-    components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    #
+    # When transform_sources moves source files into bazel-out (due to mixed
+    # generated/non-generated sources), the crate root ends up under a different
+    # directory than the original source package. We must derive CARGO_MANIFEST_DIR
+    # from the actual crate root path so proc-macros can find Cargo.toml in the
+    # sandbox.
+    _package_path = "/".join([c for c in [ctx.label.workspace_root, ctx.label.package] if c])
+    if crate_info.root.is_source:
+        components = "${{pwd}}/{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+    else:
+        # Crate root was transformed (symlinked into bazel-out). The file is at
+        # <root.root.path>/<workspace_root>/<package>/<relative_path>, so the
+        # manifest directory is <root.root.path>/<workspace_root>/<package>.
+        _manifest_dir = "/".join([c for c in [crate_info.root.root.path, _package_path] if c])
+        components = "${{pwd}}/{}".format(_manifest_dir).split("/")
     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
 
     if out_dir != None:
