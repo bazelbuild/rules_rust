@@ -209,76 +209,112 @@ impl Renderer {
                 .as_ref()
                 .unwrap_or(&self.config.default_alias_rule);
 
+            let is_workspace_member = context.workspace_members.contains_key(&dep.id);
             if let Some(library_target_name) = &krate.library_target_name {
-                // Avoid adding the <crate_name>-<version> alias if there are
-                // more than 1 dependency referencing the same crate at the
-                // same version, but one of them is aliased.
-                //
-                // Without this check we would add duplicate aliases in
-                // scenarios like the following:
-                //
-                // itertools = "0.11.24"
-                // itertools_other = { version = "0.11.24", package = "itertools" }
-                //
-                let add_primary_alias = dep.alias.is_none()
-                    || !context.has_duplicate_workspace_member_dep_by_version(&dep);
+                // Workspace-member deps have no spoke repo
+                // (@{index}__<name>-<version>): extensions.bzl skips spoke
+                // creation when crate["repository"] == None
+                // (crate_universe/extensions.bzl:722-724). Use
+                // override_targets[key] when set; skip otherwise to avoid
+                // emitting dangling alias targets.
+                let maybe_actual: Option<Label> = if is_workspace_member {
+                    krate.targets.iter().find_map(|rule| match rule {
+                        Rule::Library(..) | Rule::ProcMacro(..) => krate
+                            .override_targets
+                            .get(rule.override_target_key())
+                            .cloned(),
+                        _ => None,
+                    })
+                } else {
+                    Some(self.crate_label(
+                        &krate.name,
+                        &krate.version.to_string(),
+                        library_target_name,
+                    ))
+                };
 
-                if add_primary_alias {
-                    dependencies.push(Alias {
-                        rule: alias_rule.rule(),
-                        name: format!("{}-{}", krate.name, krate.version),
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    });
+                if is_workspace_member && maybe_actual.is_none() {
+                    tracing::warn!(
+                        "Skipping hub alias for workspace-member dep `{}-{}`: \
+                         no override_targets entry found. Add \
+                         `crate.annotation(override_target_lib = \"...\")` (or \
+                         `override_target_proc_macro` for proc-macro crates) in MODULE.bazel \
+                         to emit a hub alias.",
+                        krate.name,
+                        krate.version,
+                    );
                 }
 
-                let shorthand = if let Some(rename) = dep.alias.as_ref() {
-                    // when the alias is the same as the crate name, don't create the alias
-                    if krate.name != *rename {
+                if let Some(actual) = maybe_actual {
+                    // Avoid adding the <crate_name>-<version> alias if there are
+                    // more than 1 dependency referencing the same crate at the
+                    // same version, but one of them is aliased.
+                    //
+                    // Without this check we would add duplicate aliases in
+                    // scenarios like the following:
+                    //
+                    // itertools = "0.11.24"
+                    // itertools_other = { version = "0.11.24", package = "itertools" }
+                    //
+                    let add_primary_alias = dep.alias.is_none()
+                        || !context.has_duplicate_workspace_member_dep_by_version(&dep);
+
+                    if add_primary_alias {
                         dependencies.push(Alias {
                             rule: alias_rule.rule(),
-                            name: format!("{}-{}", rename, krate.version),
-                            actual: self.crate_label(
-                                &krate.name,
-                                &krate.version.to_string(),
-                                library_target_name,
-                            ),
+                            name: format!("{}-{}", krate.name, krate.version),
+                            actual: actual.clone(),
                             tags: BTreeSet::from(["manual".to_owned()]),
                         });
                     }
-                    rename
-                } else {
-                    &krate.name
-                };
 
-                // Add a shorthand for crate names as long as there isn't a duplicate
-                // entry. Shorthands for duplicate entries would lead to ambiguous
-                // dependencies.
-                if !context.has_duplicate_workspace_member_dep_by_alias(&dep) {
-                    dependencies.push(Alias {
-                        rule: alias_rule.rule(),
-                        name: shorthand.clone(),
-                        actual: self.crate_label(
-                            &krate.name,
-                            &krate.version.to_string(),
-                            library_target_name,
-                        ),
-                        tags: BTreeSet::from(["manual".to_owned()]),
-                    });
+                    let shorthand = if let Some(rename) = dep.alias.as_ref() {
+                        // when the alias is the same as the crate name, don't create the alias
+                        if krate.name != *rename {
+                            dependencies.push(Alias {
+                                rule: alias_rule.rule(),
+                                name: format!("{}-{}", rename, krate.version),
+                                actual: actual.clone(),
+                                tags: BTreeSet::from(["manual".to_owned()]),
+                            });
+                        }
+                        rename
+                    } else {
+                        &krate.name
+                    };
+
+                    // Add a shorthand for crate names as long as there isn't a duplicate
+                    // entry. Shorthands for duplicate entries would lead to ambiguous
+                    // dependencies.
+                    if !context.has_duplicate_workspace_member_dep_by_alias(&dep) {
+                        dependencies.push(Alias {
+                            rule: alias_rule.rule(),
+                            name: shorthand.clone(),
+                            actual,
+                            tags: BTreeSet::from(["manual".to_owned()]),
+                        });
+                    }
                 }
             }
 
-            for (alias, target) in &krate.extra_aliased_targets {
-                dependencies.push(Alias {
-                    rule: alias_rule.rule(),
-                    name: alias.clone(),
-                    actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
-                    tags: BTreeSet::from(["manual".to_owned()]),
-                });
+            if is_workspace_member {
+                if !krate.extra_aliased_targets.is_empty() {
+                    tracing::warn!(
+                        "Skipping extra_aliased_targets for workspace-member dep `{}-{}`: \
+                         spoke repos are not created for workspace members.",
+                        krate.name,
+                        krate.version,
+                    );
+                }
+            } else {
+                for (alias, target) in &krate.extra_aliased_targets {
+                    dependencies.push(Alias {
+                        rule: alias_rule.rule(),
+                        name: alias.clone(),
+                        actual: self.crate_label(&krate.name, &krate.version.to_string(), target),
+                        tags: BTreeSet::from(["manual".to_owned()]),
+                    });
+                }
             }
         }
 
@@ -2038,10 +2074,10 @@ mod test {
         assert!(found);
     }
 
-    /// Tests a situation where we identical aliases to the crate's name on the
-    /// package's deps
+    /// Tests that when a workspace-member dep is aliased under its own crate name
+    /// and has no `override_targets` set, no hub alias is emitted.
     #[test]
-    fn crate_with_ambiguous_rename() {
+    fn workspace_member_dep_with_alias_same_as_crate_name_and_no_override() {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
         context
@@ -2089,54 +2125,107 @@ mod test {
         let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
 
         println!("{build_file_content}");
-        let expected = indoc! {r#"
-            ###############################################################################
-            # @generated
-            # DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To
-            # regenerate this file, run the following:
-            #
-            #     cargo_bazel_regen_command
-            ###############################################################################
+        // mock_crate is a workspace member dep with no override_targets set,
+        // so no hub alias should be emitted to avoid dangling spoke-repo refs.
+        assert!(
+            !build_file_content.contains("alias("),
+            "no alias should be emitted for workspace member dep with no override:\n{build_file_content}"
+        );
+    }
 
-            package(default_visibility = ["//visibility:public"])
+    /// Tests that when an external (non-workspace-member) dep is aliased under
+    /// a name identical to the crate's own name, the rename alias is suppressed
+    /// (it would be a duplicate of the primary alias), but the primary
+    /// `<name>-<version>` and shorthand aliases are still emitted exactly once.
+    #[test]
+    fn external_dep_with_rename_same_as_crate_name() {
+        let mut context = Context::default();
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
 
-            exports_files(
-                [
-                    "cargo-bazel.json",
-                    "defs.bzl",
-                ] + glob(
-                    allow_empty = True,
-                    include = ["*.bazel"],
-                ),
-            )
+        // External dep — intentionally NOT inserted into workspace_members.
+        let dep_id = CrateId::new("mock_dep".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(TargetAttributes {
+                    crate_name: "mock_dep".to_owned(),
+                    crate_root: Some("src/lib.rs".to_owned()),
+                    ..TargetAttributes::default()
+                })]),
+                library_target_name: Some("mock_dep".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "mock_dep".to_owned(),
+                        // alias == crate name: the `name != rename` guard must fire
+                        alias: Some("mock_dep".into()),
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
 
-            filegroup(
-                name = "srcs",
-                srcs = glob(
-                    allow_empty = True,
-                    include = [
-                        "*.bazel",
-                        "*.bzl",
-                    ],
-                ),
-            )
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
 
-            # Workspace Member Dependencies
-            alias(
-                name = "mock_crate-0.1.0",
-                actual = "@test_rendering__mock_crate-0.1.0//:library_name",
-                tags = ["manual"],
-            )
-
-            alias(
-                name = "mock_crate",
-                actual = "@test_rendering__mock_crate-0.1.0//:library_name",
-                tags = ["manual"],
-            )
-        "#};
-        assert!(build_file_content
-            .replace(' ', "")
-            .contains(&expected.replace(' ', "")));
+        println!("{build_file_content}");
+        // Primary versioned alias and shorthand must both be present.
+        assert!(
+            build_file_content.contains("\"mock_dep-0.1.0\""),
+            "primary alias must be emitted:\n{build_file_content}"
+        );
+        assert!(
+            build_file_content.contains("\"mock_dep\""),
+            "shorthand alias must be emitted:\n{build_file_content}"
+        );
+        // The rename alias would produce a second `name = "mock_dep-0.1.0"` entry —
+        // verify the guard suppresses it so the name appears exactly once.
+        assert_eq!(
+            build_file_content
+                .matches("name = \"mock_dep-0.1.0\"")
+                .count(),
+            1,
+            "rename alias must not be emitted as a duplicate:\n{build_file_content}"
+        );
     }
 
     /// Tests a situation where there are two dependencies referencing the same
@@ -2348,6 +2437,423 @@ mod test {
         assert!(
             binary_section[proc_macro_deps_pos..].contains(":my_proc_macro"),
             "proc-macro lib must appear in proc_macro_deps:\n{binary_section}"
+        );
+    }
+
+    /// When a workspace-member crate is itself a dep of another workspace member,
+    /// and has both a library target and a build script, the hub BUILD.bazel alias
+    /// must point to `override_targets["lib"]` rather than a non-existent spoke repo.
+    #[test]
+    fn hub_alias_for_workspace_member_dep_with_build_script_uses_override_target() {
+        let mut context = Context::default();
+
+        // consumer: a workspace member
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
+
+        // dep_crate: another workspace member with library + build script
+        let dep_id = CrateId::new("dep_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(dep_id.clone(), "dep_crate".into());
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([
+                    Rule::Library(TargetAttributes {
+                        crate_name: "dep_crate".to_owned(),
+                        crate_root: Some("src/lib.rs".to_owned()),
+                        ..TargetAttributes::default()
+                    }),
+                    Rule::BuildScript(TargetAttributes {
+                        crate_name: "build_script_build".to_owned(),
+                        crate_root: Some("build.rs".to_owned()),
+                        ..TargetAttributes::default()
+                    }),
+                ]),
+                library_target_name: Some("dep_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: Some(BuildScriptAttributes::default()),
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::from([(
+                    "lib".to_owned(),
+                    Label::from_str("//tools/dep_crate:dep_crate").unwrap(),
+                )]),
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "dep_crate".to_owned(),
+                        alias: None,
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        // Must use the override label, not a (non-existent) spoke repo.
+        assert!(
+            build_file_content.contains("//tools/dep_crate:dep_crate"),
+            "expected override label in hub alias:\n{build_file_content}"
+        );
+        assert!(
+            !build_file_content.contains("@test_rendering__dep_crate"),
+            "must not emit spoke-repo alias for workspace member:\n{build_file_content}"
+        );
+    }
+
+    /// When a workspace-member dep has no override_targets["lib"], no hub alias
+    /// should be emitted to avoid dangling references to missing spoke repos.
+    #[test]
+    fn hub_alias_omitted_for_workspace_member_dep_with_no_override() {
+        let mut context = Context::default();
+
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
+
+        let dep_id = CrateId::new("dep_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(dep_id.clone(), "dep_crate".into());
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("dep_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(), // no override set
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "dep_crate".to_owned(),
+                        alias: None,
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        // No alias rule should appear in the hub at all.
+        assert!(
+            !build_file_content.contains("alias("),
+            "no alias should be emitted for workspace member dep without override:\n{build_file_content}"
+        );
+    }
+
+    /// When a workspace-member proc-macro dep has `override_targets["proc-macro"]` set,
+    /// the hub alias must use that label rather than a non-existent spoke repo.
+    /// This exercises the `Rule::ProcMacro` arm of the `find_map` that replaced
+    /// the `"lib"` hardcode.
+    #[test]
+    fn hub_alias_for_workspace_member_proc_macro_dep_uses_override_target() {
+        let mut context = Context::default();
+
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
+
+        let dep_id = CrateId::new("dep_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(dep_id.clone(), "dep_crate".into());
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::ProcMacro(TargetAttributes {
+                    crate_name: "dep_crate".to_owned(),
+                    crate_root: Some("src/lib.rs".to_owned()),
+                    ..TargetAttributes::default()
+                })]),
+                library_target_name: Some("dep_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::from([(
+                    "proc-macro".to_owned(),
+                    Label::from_str("//tools/dep_crate:dep_crate").unwrap(),
+                )]),
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "dep_crate".to_owned(),
+                        alias: None,
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        assert!(
+            build_file_content.contains("//tools/dep_crate:dep_crate"),
+            "expected override label in hub alias:\n{build_file_content}"
+        );
+        assert!(
+            !build_file_content.contains("@test_rendering__dep_crate"),
+            "must not emit spoke-repo alias for workspace member proc-macro:\n{build_file_content}"
+        );
+    }
+
+    /// When a workspace-member dep has `extra_aliased_targets` set, those aliases
+    /// must be suppressed — spoke repos are not created for workspace members so
+    /// the generated labels would be dangling.
+    #[test]
+    fn extra_aliased_targets_omitted_for_workspace_member_dep() {
+        let mut context = Context::default();
+
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
+
+        let dep_id = CrateId::new("dep_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(dep_id.clone(), "dep_crate".into());
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("dep_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::from([("foo".to_owned(), "foo_impl".to_owned())]),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "dep_crate".to_owned(),
+                        alias: None,
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        assert!(
+            !build_file_content.contains("alias("),
+            "extra_aliased_targets must not emit aliases for workspace member dep:\n{build_file_content}"
+        );
+    }
+
+    /// Tests that `extra_aliased_targets` aliases ARE emitted for external
+    /// (non-workspace-member) deps — i.e. the workspace-member guard does not
+    /// incorrectly suppress aliases for regular external crates.
+    #[test]
+    fn extra_aliased_targets_emitted_for_external_dep() {
+        let mut context = Context::default();
+
+        let consumer_id = CrateId::new("consumer".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(consumer_id.clone(), "consumer".into());
+
+        // dep_crate is external: it is a dep of a workspace member but NOT
+        // itself in workspace_members.
+        let dep_id = CrateId::new("dep_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context.crates.insert(
+            dep_id.clone(),
+            CrateContext {
+                name: dep_id.name.clone(),
+                version: dep_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("dep_crate".to_owned()),
+                common_attrs: CommonAttributes::default(),
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::from([("foo".to_owned(), "foo_impl".to_owned())]),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+        context.crates.insert(
+            consumer_id.clone(),
+            CrateContext {
+                name: consumer_id.name.clone(),
+                version: consumer_id.version.clone(),
+                package_url: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: Some("consumer".to_owned()),
+                common_attrs: CommonAttributes {
+                    deps: Select::from_value(BTreeSet::from([CrateDependency {
+                        id: dep_id.clone(),
+                        target: "dep_crate".to_owned(),
+                        alias: None,
+                        local_path: None,
+                    }])),
+                    ..Default::default()
+                },
+                build_script_attrs: None,
+                repository: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+        let build_file_content = output.get(&PathBuf::from("BUILD.bazel")).unwrap();
+
+        assert!(
+            build_file_content.contains(r#"name = "foo","#),
+            "extra_aliased_targets must emit aliases for external dep:\n{build_file_content}"
         );
     }
 }
