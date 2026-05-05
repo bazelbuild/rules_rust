@@ -1,7 +1,7 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@rules_python//python:defs.bzl", "py_test")
-load("//:defs.bzl", "pyo3_extension")
+load("//extensions/pyo3:defs.bzl", "pyo3_extension")
 
 MODES = [
     "dbg",
@@ -57,7 +57,7 @@ MODES = [
         name = "string_sum_{}_test_src".format(mode),
         out = "string_sum_{}_test.py".format(mode),
         substitutions = {
-            "compilation_modes.string_sum_current": "compilation_modes.string_sum_{}".format(mode),
+            "extensions.pyo3.test.compilation_modes.string_sum_current": "extensions.pyo3.test.compilation_modes.string_sum_{}".format(mode),
         },
         template = "string_sum_current_test.py",
     )

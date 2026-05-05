@@ -1,6 +1,10 @@
-# rules_rust_pyo3
+# PyO3 extension
 
 Bazel rules for [PyO3](https://pyo3.rs/v0.26.0/).
+
+Load rules from `@rules_rust//extensions/pyo3:defs.bzl`. The legacy
+`@rules_rust_pyo3` repository is only needed as a compatibility layer for older
+load and toolchain labels.
 
 ## Documentation
 

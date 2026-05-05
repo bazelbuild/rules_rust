@@ -232,7 +232,7 @@ py_pyo3_library = rule(
             doc = "A binary used to generate pythons type stubs.",
             cfg = "exec",
             executable = True,
-            default = Label("//private:stubgen"),
+            default = Label("//extensions/pyo3/private:stubgen"),
         ),
     },
     toolchains = [PYO3_TOOLCHAIN],
@@ -332,7 +332,7 @@ def pyo3_extension(
         crate_root = crate_root,
         data = data,
         deps = [
-            Label("//private:current_rust_pyo3_toolchain"),
+            Label("//extensions/pyo3/private:current_rust_pyo3_toolchain"),
             Label("@rules_python//python/cc:current_py_cc_headers"),
         ] + deps,
         edition = edition,

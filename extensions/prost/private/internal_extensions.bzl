@@ -21,6 +21,6 @@ def _rust_ext_dev_impl(module_ctx):
     )
 
 rust_ext_dev = module_extension(
-    doc = "Development dependencies for the rules_rust_prost extension.",
+    doc = "Development dependencies for the prost extension.",
     implementation = _rust_ext_dev_impl,
 )

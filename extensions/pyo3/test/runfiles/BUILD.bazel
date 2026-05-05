@@ -1,6 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_test")
 load("@rules_rust//rust:defs.bzl", "rust_library")
-load("//:defs.bzl", "pyo3_extension")
+load("//extensions/pyo3:defs.bzl", "pyo3_extension")
 
 rust_library(
     name = "reader_helper",

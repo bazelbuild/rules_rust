@@ -1,12 +1,12 @@
 load("@rules_python//python:defs.bzl", "py_test")
 load("@rules_python//python:packaging.bzl", py_wheel = "py_wheel_rule")
-load("//:defs.bzl", "pyo3_extension")
+load("//extensions/pyo3:defs.bzl", "pyo3_extension")
 
 pyo3_extension(
     name = "string_sum",
     srcs = ["string_sum.rs"],
     edition = "2021",
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//extensions/pyo3/test:__subpackages__"],
 )
 
 # Package some specific py_library targets, without their dependencies
@@ -25,7 +25,7 @@ py_test(
     srcs = ["venv_test.py"],
     data = [":rust_wheel"],
     env = {
-        "IMPORT_STR": "from test.wheel.string_sum import sum_as_string",
+        "IMPORT_STR": "from extensions.pyo3.test.wheel.string_sum import sum_as_string",
         "RUST_WHEEL": "$(rlocationpath :rust_wheel)",
     },
     deps = ["@rules_python//python/runfiles"],
@@ -36,7 +36,7 @@ pyo3_extension(
     srcs = ["string_sum_import.rs"],
     edition = "2021",
     imports = ["."],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//extensions/pyo3/test:__subpackages__"],
 )
 
 # Package some specific py_library targets, without their dependencies
@@ -44,7 +44,7 @@ py_wheel(
     name = "rust_wheel_import",
     distribution = "string_sum_import",
     python_tag = "py3",
-    strip_path_prefixes = ["test/wheel"],
+    strip_path_prefixes = ["extensions/pyo3/test/wheel"],
     version = "0.0.1",
     deps = [
         ":string_sum_import",

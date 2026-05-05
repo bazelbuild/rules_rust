@@ -1,4 +1,4 @@
-"""# rules_rust_prost
+"""# Prost extension
 
 These build rules are used for building [protobufs][protobuf]/[gRPC][grpc] in [Rust][rust] with Bazel
 using [Prost][prost] and [Tonic][tonic]
@@ -17,12 +17,17 @@ using [Prost][prost] and [Tonic][tonic]
 ## Setup
 
 ```python
-bazel_dep(name = "rules_rust_prost", version = "{SEE_RELEASE_NOTES}")
+bazel_dep(name = "rules_rust", version = "{SEE_RELEASE_NOTES}")
 ```
 
-The `prost` and `tonic` rules do not specify a default toolchain in order to avoid mismatched
-dependency issues. To setup the `prost` and `tonic` toolchain, please see the section
-[Customizing `prost` and `tonic` Dependencies](#custom-prost-deps).
+Load rules from the `rules_rust` extension package:
+
+```python
+load("@rules_rust//extensions/prost:defs.bzl", "rust_prost_library")
+```
+
+Register `@rules_rust//extensions/prost:default_prost_toolchain`, or define a custom
+toolchain as described in [Customizing `prost` and `tonic` Dependencies](#custom-prost-deps).
 
 For additional information about Bazel toolchains, see [here](https://docs.bazel.build/versions/master/toolchains.html).
 
@@ -81,7 +86,7 @@ crates_repository(
             version = "0",
         ),
     },
-    repository_name = "rules_rust_prost",
+    repository_name = "crates_io",
     tags = ["manual"],
 )
 ```
@@ -90,7 +95,7 @@ You can then define a toolchain with the `rust_prost_toolchain` rule which uses 
 defined above. For example:
 
 ```python
-load("@rules_rust//proto/prost:defs.bzl", "rust_prost_toolchain")
+load("@rules_rust//extensions/prost:defs.bzl", "rust_prost_toolchain")
 load("@rules_rust//rust:defs.bzl", "rust_library_group")
 
 rust_library_group(
@@ -121,7 +126,7 @@ rust_prost_toolchain(
 toolchain(
     name = "prost_toolchain",
     toolchain = "prost_toolchain_impl",
-    toolchain_type = "@rules_rust//proto/prost:toolchain_type",
+    toolchain_type = "@rules_rust//extensions/prost:toolchain_type",
 )
 ```
 
@@ -136,12 +141,12 @@ register_toolchains("//toolchains:prost_toolchain")
 """
 
 load(
-    "//private:prost.bzl",
+    "//extensions/prost/private:prost.bzl",
     _rust_prost_library = "rust_prost_library",
     _rust_prost_toolchain = "rust_prost_toolchain",
 )
 load(
-    "//private:prost_transform.bzl",
+    "//extensions/prost/private:prost_transform.bzl",
     _rust_prost_transform = "rust_prost_transform",
 )
 

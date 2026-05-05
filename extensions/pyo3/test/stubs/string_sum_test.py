@@ -1,7 +1,7 @@
 """Unit tests to show simple interactions with PyO3 modules."""
 
 import unittest
-from test.stubs import string_sum
+from extensions.pyo3.test.stubs import string_sum
 
 
 class StringSumTest(unittest.TestCase):

@@ -3,9 +3,9 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_rust//rust:defs.bzl", "rust_common")
 
-PYO3_TOOLCHAIN = str(Label("//:toolchain_type"))
+PYO3_TOOLCHAIN = "//extensions/pyo3:toolchain_type"
 
-RUST_PYO3_TOOLCHAIN = str(Label("//:rust_toolchain_type"))
+RUST_PYO3_TOOLCHAIN = "//extensions/pyo3:rust_toolchain_type"
 
 PY_IMPLEMENTATIONS = {
     "cpython": "CPython",
@@ -91,7 +91,7 @@ annotations = {
     "pyo3-build-config": [
         crate.annotation(
             build_script_data = [
-                "@rules_rust_pyo3//:current_pyo3_toolchain",
+                "@rules_rust//extensions/pyo3:current_pyo3_toolchain",
             ],
             build_script_env = {
                 "PYO3_CROSS": "$(PYO3_CROSS)",
@@ -102,14 +102,14 @@ annotations = {
                 "PYO3_PYTHON": "$(PYO3_PYTHON)",
             },
             build_script_toolchains = [
-                "@rules_rust_pyo3//:current_pyo3_toolchain",
+                "@rules_rust//extensions/pyo3:current_pyo3_toolchain",
             ],
         ),
     ],
     "pyo3-ffi": [
         crate.annotation(
             build_script_data = [
-                "@rules_rust_pyo3//:current_pyo3_toolchain",
+                "@rules_rust//extensions/pyo3:current_pyo3_toolchain",
             ],
             build_script_env = {
                 "PYO3_CROSS": "$(PYO3_CROSS)",
@@ -120,7 +120,7 @@ annotations = {
                 "PYO3_PYTHON": "$(PYO3_PYTHON)",
             },
             build_script_toolchains = [
-                "@rules_rust_pyo3//:current_pyo3_toolchain",
+                "@rules_rust//extensions/pyo3:current_pyo3_toolchain",
             ],
         ),
     ],
@@ -130,7 +130,7 @@ annotations = {
     implementation = _pyo3_toolchain_impl,
     attrs = {
         "_experimental_stubgen": attr.label(
-            default = Label("//settings:experimental_stubgen"),
+            default = Label("//extensions/pyo3/settings:experimental_stubgen"),
         ),
     },
     toolchains = [
