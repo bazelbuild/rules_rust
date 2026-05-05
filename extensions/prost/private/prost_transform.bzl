@@ -42,7 +42,7 @@ A rule for transforming the outputs of `ProstGenProto` actions.
 This rule is used by adding it to the `data` attribute of `proto_library` targets. E.g.
 ```python
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_rust_prost//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+load("@rules_rust//extensions/prost:defs.bzl", "rust_prost_library", "rust_prost_transform")
 
 rust_prost_transform(
     name = "a_transform",

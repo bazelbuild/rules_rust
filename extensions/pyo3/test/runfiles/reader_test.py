@@ -2,7 +2,7 @@
 
 import unittest
 from pathlib import Path
-from test.runfiles import reader
+from extensions.pyo3.test.runfiles import reader
 
 from python.runfiles import Runfiles
 
@@ -43,7 +43,7 @@ class RunfilesTest(unittest.TestCase):
         if not runfiles:
             raise EnvironmentError("Failed to locate runfiles.")
 
-        rlocationpath = "rules_rust_pyo3/test/runfiles/data.txt"
+        rlocationpath = "rules_rust/extensions/pyo3/test/runfiles/data.txt"
         data_file = _rlocation(runfiles, rlocationpath)
 
         self.assertEqual(

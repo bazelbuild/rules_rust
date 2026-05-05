@@ -1,9 +1,9 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//extensions/prost:defs.bzl", "rust_prost_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
 load(":transition.bzl", "nocompile_wkt_transitioned")
 
-package(default_visibility = ["//private/tests:__subpackages__"])
+package(default_visibility = ["//extensions/prost/private/tests:__subpackages__"])
 
 proto_library(
     name = "nocompile_well_known_types_proto",
@@ -43,6 +43,6 @@ rust_test(
     edition = "2021",
     deps = [
         ":nocompile_well_known_types_rs_proto_transitioned",
-        "//private/3rdparty/crates:prost-types",
+        "@rules_rs//rs/private/prost:prost-types",
     ],
 )

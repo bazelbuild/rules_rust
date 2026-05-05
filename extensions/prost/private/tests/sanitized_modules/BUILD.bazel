@@ -1,6 +1,6 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_test")
-load("//:defs.bzl", "rust_prost_library")
+load("//extensions/prost:defs.bzl", "rust_prost_library")
 
 proto_library(
     name = "foo_proto",

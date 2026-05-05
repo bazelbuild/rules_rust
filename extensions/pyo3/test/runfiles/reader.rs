@@ -17,7 +17,7 @@ mod reader {
     #[pyfunction]
     fn read_data() -> PyResult<String> {
         let r = Runfiles::create().unwrap();
-        let path = rlocation!(r, "rules_rust_pyo3/test/runfiles/data.txt").unwrap();
+        let path = rlocation!(r, "rules_rust/extensions/pyo3/test/runfiles/data.txt").unwrap();
 
         std::fs::read_to_string(path).map_err(PyFileNotFoundError::new_err)
     }

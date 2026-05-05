@@ -1,8 +1,8 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("//:defs.bzl", "rust_prost_library")
+load("//extensions/prost:defs.bzl", "rust_prost_library")
 
-package(default_visibility = ["//private/tests:__subpackages__"])
+package(default_visibility = ["//extensions/prost/private/tests:__subpackages__"])
 
 proto_library(
     name = "echo_proto",
@@ -22,11 +22,11 @@ rust_binary(
     edition = "2021",
     deps = [
         ":echo_rs_proto",
-        "//private/3rdparty/crates:h2",
-        "//private/3rdparty/crates:prost",
-        "//private/3rdparty/crates:tokio",
-        "//private/3rdparty/crates:tokio-stream",
-        "//private/3rdparty/crates:tonic",
+        "@rules_rs//rs/private/prost",
+        "@rules_rs//rs/private/prost:h2",
+        "@rules_rs//rs/private/prost:tokio",
+        "@rules_rs//rs/private/prost:tokio-stream",
+        "@rules_rs//rs/private/prost:tonic",
     ],
 )
 
@@ -36,10 +36,10 @@ rust_binary(
     edition = "2021",
     deps = [
         ":echo_rs_proto",
-        "//private/3rdparty/crates:h2",
-        "//private/3rdparty/crates:prost",
-        "//private/3rdparty/crates:tokio",
-        "//private/3rdparty/crates:tokio-stream",
-        "//private/3rdparty/crates:tonic",
+        "@rules_rs//rs/private/prost",
+        "@rules_rs//rs/private/prost:h2",
+        "@rules_rs//rs/private/prost:tokio",
+        "@rules_rs//rs/private/prost:tokio-stream",
+        "@rules_rs//rs/private/prost:tonic",
     ],
 )

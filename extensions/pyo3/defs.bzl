@@ -1,12 +1,16 @@
-"""# rules_rust_pyo3
+"""# PyO3 extension
+
+Load PyO3 rules from `@rules_rust//extensions/pyo3:defs.bzl`. The legacy
+`@rules_rust_pyo3` repository is only needed as a compatibility layer for older
+load and toolchain labels.
 """
 
 load(
-    "//private:pyo3.bzl",
+    "//extensions/pyo3/private:pyo3.bzl",
     _pyo3_extension = "pyo3_extension",
 )
 load(
-    "//private:pyo3_toolchain.bzl",
+    "//extensions/pyo3/private:pyo3_toolchain.bzl",
     _pyo3_toolchain = "pyo3_toolchain",
     _rust_pyo3_toolchain = "rust_pyo3_toolchain",
 )

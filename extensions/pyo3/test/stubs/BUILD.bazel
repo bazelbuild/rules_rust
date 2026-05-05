@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_python//python:defs.bzl", "py_test")
-load("//:defs.bzl", "pyo3_extension")
+load("//extensions/pyo3:defs.bzl", "pyo3_extension")
 
 pyo3_extension(
     name = "string_sum",
