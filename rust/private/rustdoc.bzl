@@ -16,7 +16,7 @@
 
 load("//rust/private:common.bzl", "rust_common")
 load("//rust/private:providers.bzl", "LintsInfo")
-load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments")
+load("//rust/private:rustc.bzl", "collect_deps", "collect_inputs", "construct_arguments", "get_cc_toolchain_runtime_libs")
 load("//rust/private:utils.bzl", "dedent", "find_cc_toolchain", "find_toolchain")
 
 def _strip_crate_info_output(crate_info):
@@ -96,6 +96,7 @@ def rustdoc_compile_action(
         html_input_files.extend(ctx.files.markdown_css)
 
     cc_toolchain, feature_configuration = find_cc_toolchain(ctx)
+    runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type)
 
     dep_info, build_info, _ = collect_deps(
         deps = crate_info.deps.to_list(),
@@ -119,6 +120,7 @@ def rustdoc_compile_action(
         force_depend_on_objects = is_test,
         include_link_flags = False,
         force_link_inputs = is_test,
+        runtime_libs = runtime_libs,
     )
 
     # Since this crate is not actually producing the output described by the
@@ -150,6 +152,7 @@ def rustdoc_compile_action(
         include_link_flags = is_test,
         force_depend_on_objects = is_test,
         skip_expanding_rustc_env = True,
+        runtime_libs = runtime_libs,
     )
 
     # Because rustdoc tests compile tests outside of the sandbox, the sysroot

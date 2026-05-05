@@ -42,12 +42,18 @@ with_extra_toolchain_transition = transition(
 
 DepActionsInfo = provider(
     "Contains information about dependencies actions.",
-    fields = {"actions": "List[Action]"},
+    fields = {
+        "actions": "List[Action]",
+        "runfiles": "List[File]",
+    },
 )
 
 def _with_extra_toolchain_impl(ctx):
     return [
-        DepActionsInfo(actions = ctx.attr.target[0].actions),
+        DepActionsInfo(
+            actions = ctx.attr.target[0].actions,
+            runfiles = ctx.attr.target[0][DefaultInfo].default_runfiles.files.to_list(),
+        ),
     ]
 
 with_extra_toolchain = rule(
@@ -71,6 +77,28 @@ def _inputs_analysis_test_impl(ctx):
             "error: expected '{}' to be in inputs: '{}'".format(expected, inputs),
         )
 
+    for expected in ctx.attr.expected_link_arg_inputs:
+        asserts.true(
+            env,
+            any([arg.startswith("-Clink-arg=") and arg.endswith("/" + expected) for arg in action.argv]),
+            "error: expected '{}' to be linked via -Clink-arg: '{}'".format(expected, action.argv),
+        )
+
+    for unexpected in ctx.attr.unexpected_args:
+        asserts.false(
+            env,
+            unexpected in action.argv,
+            "error: did not expect '{}' in args: '{}'".format(unexpected, action.argv),
+        )
+
+    runfiles = tut[DepActionsInfo].runfiles
+    for expected in ctx.attr.expected_runfiles:
+        asserts.true(
+            env,
+            any([runfile.path.endswith("/" + expected) for runfile in runfiles]),
+            "error: expected '{}' to be in runfiles: '{}'".format(expected, runfiles),
+        )
+
     return analysistest.end(env)
 
 inputs_analysis_test = analysistest.make(
@@ -78,6 +106,9 @@ inputs_analysis_test = analysistest.make(
     doc = """An analysistest to examine the inputs of a library target.""",
     attrs = {
         "expected_inputs": attr.string_list(),
+        "expected_link_arg_inputs": attr.string_list(),
+        "expected_runfiles": attr.string_list(),
+        "unexpected_args": attr.string_list(),
     },
 )
 
@@ -129,6 +160,9 @@ def runtime_libs_test(name):
         name = "%s/shared_library" % name,
         target_under_test = "%s/_shared_library" % name,
         expected_inputs = ["dummy.so"],
+        expected_link_arg_inputs = ["dummy.so"],
+        expected_runfiles = ["dummy.so"],
+        unexpected_args = ["-ldylib=dummy"],
     )
 
     rust_static_library(
