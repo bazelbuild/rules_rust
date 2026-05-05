@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load(":debug_transition.bzl", "dbg_rust_binary")
 load(":remap_path_prefix_test.bzl", "remap_path_prefix_test_suite")
@@ -35,6 +36,32 @@ rust_test(
         "BINARY": "$(rlocationpath :panic_bin_dbg)",
     },
     deps = ["//rust/runfiles"],
+)
+
+# Library with generated source to trigger transform_sources().
+# Exposes file!() so a runtime test can verify the path is clean.
+write_file(
+    name = "remap_file_macro_lib_src",
+    out = "remap_file_macro_lib.rs",
+    content = [
+        "pub fn get_file_path() -> &'static str {",
+        "    file!()",
+        "}",
+        "",
+    ],
+)
+
+rust_library(
+    name = "remap_file_macro_lib",
+    srcs = [":remap_file_macro_lib.rs"],
+    edition = "2021",
+)
+
+rust_test(
+    name = "file_macro_test",
+    srcs = ["file_macro_test.rs"],
+    edition = "2021",
+    deps = [":remap_file_macro_lib"],
 )
 
 remap_path_prefix_test_suite(
