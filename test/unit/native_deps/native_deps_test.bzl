@@ -19,7 +19,12 @@ def _get_toolchain(ctx):
 def _get_bin_dir_from_action(action):
     """Extract the bin directory from an action's outputs.
 
-    This handles config transitions that add suffixes like -ST-<hash>.
+    This handles config transitions that add suffixes like -ST-<hash>, as
+    well as Bazel path mapping (`--experimental_output_paths=strip` plus a
+    `supports-path-mapping` requirement on the action), which rewrites
+    argv entries to live under `bazel-out/cfg/bin/...` even though the
+    File's `.dirname` still returns the un-mapped, configuration-specific
+    path.
 
     Args:
         action: The action to extract the bin directory from.
@@ -27,6 +32,9 @@ def _get_bin_dir_from_action(action):
     Returns:
         The bin directory path as a string.
     """
+    for arg in action.argv:
+        if arg.startswith("bazel-out/cfg/bin/"):
+            return "bazel-out/cfg/bin"
     bin_dir = action.outputs.to_list()[0].dirname
     if "/bin/" in bin_dir:
         bin_dir = bin_dir.split("/bin/")[0] + "/bin"
@@ -62,6 +70,14 @@ def _assert_bin_dir_structure(env, ctx, bin_dir, toolchain):
     # bin_dir should be like: bazel-out/{platform}-{mode}[-ST-{hash}]/bin
     asserts.true(env, bin_dir.startswith("bazel-out/"), "bin_dir should start with bazel-out/")
     asserts.true(env, bin_dir.endswith("/bin"), "bin_dir should end with /bin")
+
+    # Under Bazel path mapping (`--experimental_output_paths=strip`) the
+    # configuration-specific component is rewritten to the literal `cfg`,
+    # so the platform/compilation-mode/darwin checks below no longer
+    # apply. Both forms still round-trip through the same execution
+    # sandbox.
+    if bin_dir == "bazel-out/cfg/bin":
+        return
 
     # Validate it contains compilation mode (ignoring potential ST-{hash})
     bin_dir_components = bin_dir.split("/")[1]  # Get the platform-mode component

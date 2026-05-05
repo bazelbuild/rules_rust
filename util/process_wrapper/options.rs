@@ -58,6 +58,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
     let mut stable_status_file_raw = None;
     let mut volatile_status_file_raw = None;
     let mut env_file_raw = None;
+    let mut out_dir_raw = None;
     let mut arg_file_raw = None;
     let mut touch_file = None;
     let mut copy_output_raw = None;
@@ -75,6 +76,16 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         "--env-file",
         "File(s) containing environment variables to pass to the child process.",
         &mut env_file_raw,
+    );
+    flags.define_flag(
+        "--out-dir",
+        "Path to the build script's output directory, exposed to the child \
+         process as the `OUT_DIR` environment variable (with the action's \
+         working directory prepended). Sourced from a `File`-typed `Args` \
+         entry on the rules_rust side so the value is rewritten by Bazel \
+         path mapping (`--experimental_output_paths=strip`) when the \
+         action advertises `supports-path-mapping`.",
+        &mut out_dir_raw,
     );
     flags.define_repeated_flag(
         "--arg-file",
@@ -165,7 +176,7 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         format!("{}/execroot/{}", output_base, workspace_name)
     };
 
-    let subst_mappings = subst_mapping_raw
+    let mut subst_mappings = subst_mapping_raw
         .unwrap_or_default()
         .into_iter()
         .map(|arg| {
@@ -185,11 +196,40 @@ pub(crate) fn options() -> Result<Options, OptionError> {
             Ok((key.to_owned(), v))
         })
         .collect::<Result<Vec<(String, String)>, OptionError>>()?;
+    if let Some(out_dir) = out_dir_raw.as_deref() {
+        // Expose `--out-dir` as an `${out_dir}` substitution token so
+        // that env values templated by `cargo_build_script_runner` (which
+        // rewrites `$OUT_DIR/...` references in build-script-emitted
+        // env vars to `${pwd}/${out_dir}/...`) resolve to the same path
+        // we use for `OUT_DIR` itself. Sourcing this from `--out-dir`
+        // (a `File`-typed `Args` entry on the rules_rust side) means the
+        // value is rewritten by Bazel path mapping to the
+        // `bazel-out/cfg/bin/...` prefix when the consuming action
+        // advertises `supports-path-mapping`, keeping the env value in
+        // sync with where the file is actually materialized.
+        subst_mappings.push(("out_dir".to_owned(), out_dir.to_owned()));
+    }
     let stable_stamp_mappings =
         stable_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
     let volatile_stamp_mappings =
         volatile_status_file_raw.map_or_else(Vec::new, |s| read_stamp_status_to_array(s).unwrap());
-    let environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
+    let mut environment_file_block = env_from_files(env_file_raw.unwrap_or_default())?;
+    if let Some(out_dir) = out_dir_raw.as_deref() {
+        // `OUT_DIR` is materialized here (rather than in the action's `env`
+        // dict on the rules_rust side) so that the value can flow through
+        // a `File`-typed `Args` entry. Bazel only rewrites `Args`-derived
+        // argv strings under path mapping, so routing the path through
+        // an explicit `--out-dir` arg keeps it correctly mapped to the
+        // `bazel-out/cfg/bin/...` prefix when the action opts into
+        // `supports-path-mapping`.
+        //
+        // Inserting into `environment_file_block` (which subsequently
+        // overrides the inherited process env) makes this take precedence
+        // over any stale `OUT_DIR` Bazel may have set on the action and
+        // lets the existing `${pwd}` substitution in `environment_block`
+        // handle the working-directory prefix.
+        environment_file_block.insert("OUT_DIR".to_owned(), format!("${{pwd}}/{out_dir}"));
+    }
     let mut file_arguments = args_from_file(arg_file_raw.unwrap_or_default())?;
     // Process --copy-output
     let copy_output = copy_output_raw
