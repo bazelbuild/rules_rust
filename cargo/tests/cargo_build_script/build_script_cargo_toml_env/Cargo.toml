@@ -1,0 +1,9 @@
+[package]
+name = "test_cargo_toml_env"
+version = "1.2.3"
+authors = ["Test Author <test@example.com>", "Another Author"]
+description = """
+This is a multiline description
+that spans multiple lines.
+"""
+edition = "2021"
