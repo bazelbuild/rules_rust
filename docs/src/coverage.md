@@ -20,10 +20,7 @@ For projects with vendored or third-party dependencies, restrict instrumentation
 
 ```text
 coverage --instrumentation_filter=^//
-coverage --instrument_test_targets
 ```
-
-The `--instrument_test_targets` flag is recommended because Rust test binaries (`rust_test`) often compile library source code directly into the test binary (e.g., when using the `crate` attribute). Without this flag, test targets are excluded from instrumentation by default, which means library code compiled into the test binary would not produce coverage data.
 
 To further exclude specific directories:
 
@@ -31,10 +28,24 @@ To further exclude specific directories:
 coverage --instrumentation_filter=^//,-^//third_party
 ```
 
+### `rust_test` with a `crate` attribute
+
+When a `rust_test` target uses the `crate` attribute, Rust compiles the library source code directly into the test binary. Rules Rust automatically checks whether the underlying crate should be instrumented, so library code compiled into the test binary produces coverage data without needing `--instrument_test_targets`.
+
+Note: because the entire crate (including `#[cfg(test)]` code) is compiled as one unit, test-specific code in the crate will also be instrumented. This is a known inconsistency with the usual Bazel convention where test code is only instrumented when `--instrument_test_targets` is set.
+
+### `--instrument_test_targets`
+
+By default, Bazel excludes test targets from instrumentation. If you want coverage of the test code itself (not just the libraries it exercises), add:
+
+```text
+coverage --instrument_test_targets
+```
+
 ### Flags Summary
 
 | Flag | Purpose |
 |------|---------|
 | `--instrumentation_filter=<regex>` | Controls which targets are instrumented. Default: `-/javatests[/:],-/test/java[/:]` |
-| `--instrument_test_targets` | Also instrument test targets. Recommended for Rust. |
+| `--instrument_test_targets` | Also instrument test targets. Not required for library coverage via `rust_test` with `crate`. |
 | `--combined_report=lcov` | Produce a combined LCOV report (set by default with `bazel coverage`). |
