@@ -91,18 +91,19 @@ def get_generator(repository_ctx, host_triple):
 
 def render_config(
         build_file_template = "//:BUILD.{name}-{version}.bazel",
-        crate_label_template = "@{repository}__{name}-{version}//:{target}",
         crate_alias_template = "//:{name}-{version}",
+        crate_label_template = "@{repository}__{name}-{version}//:{target}",
+        crate_package_default_visibility = None,
         crate_repository_template = "{repository}__{name}-{version}",
         crates_module_template = "//:{file}",
         default_alias_rule = "alias",
         default_package_name = None,
         generate_cargo_toml_env_vars = True,
+        generate_rules_license_metadata = False,
         generate_target_compatible_with = True,
         platforms_template = "@rules_rust//rust/platform:{triple}",
         regen_command = None,
-        vendor_mode = None,
-        generate_rules_license_metadata = False):
+        vendor_mode = None):
     """Various settings used to configure rendered outputs
 
     The template parameters each support a select number of format keys. A description of each key
@@ -126,6 +127,9 @@ def render_config(
             available format keys are [`{repository}`, `{name}`, `{version}`].
         crate_alias_template (str, optional): The template to use when referring to generated aliases within the external
             repository. The available format keys are [`{repository}`, `{name}`, `{version}`].
+        crate_package_default_visibility (list, optional): The default_visibility for individual crate BUILD packages.
+            If None, defaults to `["//visibility:public"]`. Set to restrict direct references to crate targets so
+            that consumers must use the top-level aliases.
         crates_module_template (str, optional): The pattern to use for the `defs.bzl` and `BUILD.bazel`
             file names used for the crates module. The available format keys are [`{file}`].
         default_alias_rule (str, option): Alias rule to use when generating aliases for all crates.  Acceptable values
@@ -153,6 +157,7 @@ def render_config(
         build_file_template = build_file_template,
         crate_alias_template = crate_alias_template,
         crate_label_template = crate_label_template,
+        crate_package_default_visibility = crate_package_default_visibility,
         crate_repository_template = crate_repository_template,
         crates_module_template = crates_module_template,
         default_alias_rule = parse_alias_rule(default_alias_rule),
