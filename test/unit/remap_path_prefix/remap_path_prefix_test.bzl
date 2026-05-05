@@ -7,6 +7,7 @@ load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
     "assert_argv_contains",
+    "assert_argv_contains_prefix_suffix",
     "assert_list_contains_adjacent_elements",
 )
 
@@ -34,8 +35,8 @@ def _remap_path_prefix_generated_test_impl(ctx):
     action = target.actions[0]
     assert_action_mnemonic(env, action, "Rustc")
 
-    assert_argv_contains(env, action, "--remap-path-prefix=${pwd}/bazel-out/k8-fastbuild/bin=.")
-    assert_argv_contains(env, action, "--remap-path-prefix=${exec_root}/bazel-out/k8-fastbuild/bin=.")
+    assert_argv_contains_prefix_suffix(env, action, "--remap-path-prefix=${pwd}/bazel-out/", "/bin=.")
+    assert_argv_contains_prefix_suffix(env, action, "--remap-path-prefix=${exec_root}/bazel-out/", "/bin=.")
     assert_argv_contains(env, action, "--remap-path-prefix=${output_base}=.")
 
     return analysistest.end(env)
