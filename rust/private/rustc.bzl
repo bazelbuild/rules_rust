@@ -703,6 +703,19 @@ def _depend_on_metadata(crate_info, force_depend_on_objects):
 
     return crate_info.type in ("rlib", "lib")
 
+def get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_type):
+    if not cc_toolchain:
+        return depset()
+
+    if crate_type in ["dylib", "cdylib"]:
+        # For shared libraries we want to link C++ runtime library dynamically
+        # (for example libstdc++.so or libc++.so).
+        return cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
+
+    # For all other crate types we want to link C++ runtime library statically
+    # (for example libstdc++.a or libc++.a).
+    return cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+
 def collect_inputs(
         ctx,
         file,
@@ -719,7 +732,8 @@ def collect_inputs(
         force_depend_on_objects = False,
         experimental_use_cc_common_link = False,
         include_link_flags = True,
-        force_link_inputs = False):
+        force_link_inputs = False,
+        runtime_libs = None):
     """Gather's the inputs and required input information for a rustc action
 
     Args:
@@ -744,6 +758,8 @@ def collect_inputs(
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
         force_link_inputs (bool, optional): Whether to collect linker inputs even when the crate type would
             normally be handled as a non-linking compile action.
+        runtime_libs (depset[File], optional): Runtime libraries from the C++ toolchain
+            selected for `crate_info.type`.
 
     Returns:
         tuple: A tuple: A tuple of the following items:
@@ -816,14 +832,8 @@ def collect_inputs(
     if hasattr(files, "macos_sdkroot"):
         nolinkstamp_compile_direct_inputs += files.macos_sdkroot
 
-    if not cc_toolchain:
-        runtime_libs = depset()
-    elif crate_info.type in ["dylib", "cdylib"]:
-        # For shared libraries we want to link C++ runtime library dynamically
-        # (for example libstdc++.so or libc++.so).
-        runtime_libs = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
-    else:
-        runtime_libs = cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration)
+    if runtime_libs == None:
+        runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type)
 
     nolinkstamp_compile_inputs = depset(
         nolinkstamp_compile_direct_inputs +
@@ -977,7 +987,8 @@ def construct_arguments(
         require_explicit_unstable_features = False,
         always_use_param_file = False,
         error_format = None,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        runtime_libs = None):
     """Builds an Args object containing common rustc flags
 
     Args:
@@ -1048,6 +1059,8 @@ def construct_arguments(
         require_explicit_unstable_features (bool): Whether to require all unstable features to be explicitly opted in to using `-Zallow-features=...`.
         error_format (str, optional): Error format to pass to the `--error-format` command line argument. If set to None, uses the "_error_format" entry in `attr`.
         allowed_unstable_rust_features (list, optional): List of unstable Rust language features allowed for this target.
+        runtime_libs (depset[File], optional): Runtime libraries from the C++ toolchain
+            selected for `crate_info.type`.
 
     Returns:
         tuple: A tuple of the following items
@@ -1291,7 +1304,8 @@ def construct_arguments(
         if toolchain.target_arch not in ("wasm32", "wasm64"):
             if output_dir:
                 use_pic = _should_use_pic(cc_toolchain, feature_configuration, crate_info.type, compilation_mode)
-                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic)
+                rpath_runtime_libs = runtime_libs if crate_info.type in ["dylib", "cdylib"] else None
+                rpaths = _compute_rpaths(toolchain, output_dir, dep_info, use_pic, rpath_runtime_libs)
             else:
                 rpaths = depset()
 
@@ -1346,6 +1360,7 @@ def construct_arguments(
             ld_is_direct_driver,
             include_link_flags = include_link_flags,
             link_libraries_as_link_args = link_libraries_as_link_args,
+            runtime_libs = runtime_libs,
         )
 
     use_metadata = _depend_on_metadata(crate_info, force_depend_on_objects)
@@ -1580,6 +1595,8 @@ def rustc_compile_action(
     if not cc_toolchain or not _are_linkstamps_supported(feature_configuration = feature_configuration):
         linkstamps = depset([])
 
+    runtime_libs = get_cc_toolchain_runtime_libs(cc_toolchain, feature_configuration, crate_info.type)
+
     # Determine if the build is currently running with --stamp
     stamp = is_stamping_enabled(attr)
 
@@ -1603,6 +1620,7 @@ def rustc_compile_action(
         lint_files = lint_files,
         stamp = stamp,
         experimental_use_cc_common_link = experimental_use_cc_common_link,
+        runtime_libs = runtime_libs,
     )
 
     compile_inputs_metadata = compile_inputs
@@ -1649,6 +1667,7 @@ def rustc_compile_action(
         require_explicit_unstable_features = require_explicit_unstable_features,
         always_use_param_file = toolchain._bootstrapping,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
+        runtime_libs = runtime_libs,
     )
 
     args_metadata = None
@@ -1677,6 +1696,7 @@ def rustc_compile_action(
             build_metadata = True,
             require_explicit_unstable_features = require_explicit_unstable_features,
             allowed_unstable_rust_features = allowed_unstable_rust_features,
+            runtime_libs = runtime_libs,
         )
 
     env = dict(ctx.configuration.default_shell_env)
@@ -1922,6 +1942,10 @@ def rustc_compile_action(
             if _is_dylib(library_to_link) and library_to_link.dynamic_library
         ])
         transitive_runfiles.append(dynamic_libraries)
+    if cc_toolchain and crate_info.type in ["dylib", "cdylib"]:
+        transitive_runfiles.append(ctx.runfiles(
+            transitive_files = runtime_libs,
+        ))
     runfiles = runfiles.merge_all(transitive_runfiles)
 
     executable = crate_info.output if crate_info.type == "bin" or crate_info.is_test else None
@@ -2317,7 +2341,7 @@ def _process_build_scripts(
         depset(build_flags_files, transitive = [dep_info.link_search_path_files]),
     )
 
-def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
+def _compute_rpaths(toolchain, output_dir, dep_info, use_pic, dynamic_runtime_libs = None):
     """Determine the artifact's rpaths relative to the bazel root for runtime linking of shared libraries.
 
     Args:
@@ -2325,6 +2349,8 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
         output_dir (str): The output directory of the current target
         dep_info (DepInfo): The current target's dependency info
         use_pic: If set, prefers pic_static_library over static_library.
+        dynamic_runtime_libs (depset[File], optional): Dynamic runtime libraries
+            from the C++ toolchain.
 
     Returns:
         depset: A set of relative paths from the output directory to each dependency
@@ -2341,6 +2367,8 @@ def _compute_rpaths(toolchain, output_dir, dep_info, use_pic):
         for lib in linker_input.libraries
         if _is_dylib(lib)
     ]
+    if dynamic_runtime_libs != None:
+        dylibs.extend(dynamic_runtime_libs.to_list())
 
     # Include std dylib if dylib linkage is enabled
     if toolchain._experimental_link_std_dylib:
@@ -2691,7 +2719,8 @@ def _add_native_link_flags(
         compilation_mode,
         use_direct_link_driver,
         include_link_flags = True,
-        link_libraries_as_link_args = False):
+        link_libraries_as_link_args = False,
+        runtime_libs = None):
     """Adds linker flags for all dependencies of the current target.
 
     Args:
@@ -2708,6 +2737,8 @@ def _add_native_link_flags(
         include_link_flags (bool, optional): Whether to include flags like `-l` that instruct the linker to search for a library.
         link_libraries_as_link_args (bool, optional): Emit library search flags through linker args instead of
             rustc's `-lstatic`/`-ldylib` forms.
+        runtime_libs (depset[File], optional): Runtime libraries from the C++ toolchain
+            selected for `crate_type`.
     """
     if crate_type in ["lib", "rlib"]:
         return
@@ -2719,7 +2750,6 @@ def _add_native_link_flags(
         target_abi = toolchain.target_abi,
         use_direct_link_driver = use_direct_link_driver,
     )
-    dynamic_runtime_link_format = "-Clink-arg=-l%s" if link_libraries_as_link_args else "-ldylib=%s"
     static_runtime_link_format = "-Clink-arg=-l%s" if link_libraries_as_link_args else "-lstatic=%s"
 
     # TODO(hlopko): Remove depset flattening by using lambdas once we are on >=Bazel 5.0
@@ -2744,31 +2774,40 @@ def _add_native_link_flags(
     args.add_all(linkstamp_outs, format_each = "-Clink-args=%s")
 
     if cc_toolchain:
+        if runtime_libs == None:
+            fail("runtime_libs must be provided when linking {}".format(crate_type))
+
         if crate_type in ["dylib", "cdylib"]:
-            # For shared libraries we want to link C++ runtime library dynamically
-            # (for example libstdc++.so or libc++.so).
             args.add_all(
-                cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
+                runtime_libs,
                 map_each = _get_dirname,
                 format_each = "-Lnative=%s",
             )
             if include_link_flags:
-                args.add_all(
-                    cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration),
-                    map_each = get_lib_name,
-                    format_each = dynamic_runtime_link_format,
-                )
+                # rustc places `-ldylib` entries before Rust rlibs. With
+                # `--as-needed`, that can drop runtime libraries such as
+                # libunwind before libstd references them, so pass these as
+                # explicit linker args instead.
+                if toolchain.target_os == "windows" and not link_libraries_as_link_args:
+                    args.add_all(
+                        runtime_libs,
+                        map_each = get_lib_name,
+                        format_each = "-ldylib=%s",
+                    )
+                else:
+                    args.add_all(
+                        runtime_libs,
+                        format_each = "-Clink-arg=%s",
+                    )
         else:
-            # For all other crate types we want to link C++ runtime library statically
-            # (for example libstdc++.a or libc++.a).
             args.add_all(
-                cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+                runtime_libs,
                 map_each = _get_dirname,
                 format_each = "-Lnative=%s",
             )
             if include_link_flags:
                 args.add_all(
-                    cc_toolchain.static_runtime_lib(feature_configuration = feature_configuration),
+                    runtime_libs,
                     map_each = get_lib_name,
                     format_each = static_runtime_link_format,
                 )
