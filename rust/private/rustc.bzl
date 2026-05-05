@@ -2292,7 +2292,8 @@ def portable_link_flags(
         ambiguous_libs,
         get_lib_name,
         for_darwin = False,
-        flavor_msvc = False):
+        flavor_msvc = False,
+        link_static_library_by_path = False):
     """_summary_
 
     Args:
@@ -2302,6 +2303,8 @@ def portable_link_flags(
         get_lib_name (_type_): _description_
         for_darwin (bool, optional): _description_. Defaults to False.
         flavor_msvc (bool, optional): _description_. Defaults to False.
+        link_static_library_by_path (bool, optional): Use the selected static artifact path for the
+            trailing `-Clink-arg` copy instead of `-l<name>`. Defaults to False.
 
     Returns:
         _type_: _description_
@@ -2351,9 +2354,12 @@ def portable_link_flags(
                 "-Clink-arg={}".format(artifact.basename),
             ]
         else:
+            # Rustc may restore dynamic linker mode before appending -Clink-arg
+            # values, so use the selected archive path where supported.
+            late_static_link_arg = artifact.path if link_static_library_by_path else "-l{}".format(get_lib_name(artifact))
             return [
                 "-lstatic=%s" % get_lib_name(artifact),
-                "-Clink-arg=-l{}".format(get_lib_name(artifact)),
+                "-Clink-arg={}".format(late_static_link_arg),
             ]
     elif _is_dylib(lib):
         return [
@@ -2408,7 +2414,14 @@ def _make_link_flags_darwin(make_link_flags_args, use_direct_driver):
                 ("-Clink-arg=%s%s" % (prefix, get_preferred_artifact(lib, use_pic).path)),
             ])
         elif include_link_flags:
-            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default, for_darwin = True))
+            ret.extend(portable_link_flags(
+                lib,
+                use_pic,
+                ambiguous_libs,
+                get_lib_name_default,
+                for_darwin = True,
+                link_static_library_by_path = True,
+            ))
     _add_user_link_flags(ret, linker_input)
     return ret
 
@@ -2424,7 +2437,13 @@ def _make_link_flags_default(make_link_flags_args, use_direct_driver):
                 ("-Clink-arg=%s--no-whole-archive" % prefix),
             ])
         elif include_link_flags:
-            ret.extend(portable_link_flags(lib, use_pic, ambiguous_libs, get_lib_name_default))
+            ret.extend(portable_link_flags(
+                lib,
+                use_pic,
+                ambiguous_libs,
+                get_lib_name_default,
+                link_static_library_by_path = True,
+            ))
     _add_user_link_flags(ret, linker_input)
     return ret
 

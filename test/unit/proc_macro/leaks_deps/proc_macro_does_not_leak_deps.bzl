@@ -35,7 +35,11 @@ def _proc_macro_does_not_leak_deps_impl(ctx):
         else:
             native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative.lib"]
     else:
-        native_deps = [arg for arg in rustc_action.argv if arg == "-Clink-arg=-lnative"]
+        native_deps = [
+            arg
+            for arg in rustc_action.argv
+            if arg.startswith("-Clink-arg=") and arg.endswith("/test/unit/proc_macro/leaks_deps/native/libnative.a")
+        ]
     asserts.equals(env, 1, len(native_deps))
 
     return analysistest.end(env)
