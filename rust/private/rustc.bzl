@@ -1118,6 +1118,14 @@ def construct_arguments(
         rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
+        if not crate_info.root.is_source:
+            # Also remap the relative bazel-out/<config>/bin/ prefix.
+            # file!(), Location::caller(), and tracing/log macros embed
+            # the literal relative path that rustc received on the command
+            # line.  The ${pwd} remap above only matches absolute paths in
+            # debug info, so a second remap without ${pwd} is needed to
+            # strip the bin-dir prefix from these compile-time paths.
+            rustc_flags.add("--remap-path-prefix={}/=".format(ctx.bin_dir.path))
 
     emit_without_paths = []
     for kind in emit:
