@@ -190,7 +190,20 @@ fn main() {
         .arg("-instr-profile")
         .arg(&profdata_file)
         .arg("-ignore-filename-regex=.*external/.+")
-        .arg("-ignore-filename-regex=/tmp/.+")
+        .arg("-ignore-filename-regex=/tmp/.+");
+
+    // Allow additional ignore patterns via RUST_COVERAGE_IGNORE_REGEX env var
+    // (comma-separated list of regexes passed to llvm-cov -ignore-filename-regex).
+    if let Ok(extra) = env::var("RUST_COVERAGE_IGNORE_REGEX") {
+        for pattern in extra.split(',') {
+            let pattern = pattern.trim();
+            if !pattern.is_empty() {
+                llvm_cov_cmd.arg(format!("-ignore-filename-regex={}", pattern));
+            }
+        }
+    }
+
+    llvm_cov_cmd
         .arg(format!("-path-equivalence=.,{}", execroot.display()))
         .arg(test_binary)
         .stdout(process::Stdio::piped())
