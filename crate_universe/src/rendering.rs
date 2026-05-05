@@ -1516,6 +1516,47 @@ mod test {
     }
 
     #[test]
+    fn render_crate_edition() {
+        let mut context = Context::default();
+        let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
+        context
+            .workspace_members
+            .insert(crate_id.clone(), "mock_crate".to_owned());
+        context.crates.insert(
+            crate_id.clone(),
+            CrateContext {
+                name: crate_id.name,
+                version: crate_id.version,
+                package_url: None,
+                repository: None,
+                targets: BTreeSet::from([Rule::Library(mock_target_attributes())]),
+                library_target_name: None,
+                common_attrs: CommonAttributes {
+                    edition: "2021".to_owned(),
+                    ..CommonAttributes::default()
+                },
+                build_script_attrs: None,
+                license: None,
+                license_ids: BTreeSet::default(),
+                license_file: None,
+                additive_build_file_content: None,
+                disable_pipelining: false,
+                extra_aliased_targets: BTreeMap::default(),
+                alias_rule: None,
+                override_targets: BTreeMap::default(),
+            },
+        );
+
+        let renderer = Renderer::new(mock_render_config(None), mock_supported_platform_triples());
+        let output = renderer.render(&context, None).unwrap();
+
+        let defs_module = output.get(&PathBuf::from("defs.bzl")).unwrap();
+
+        assert!(defs_module.contains("def crate_edition("));
+        assert!(defs_module.contains(r#""mock_crate": "2021","#));
+    }
+
+    #[test]
     fn remote_remote_vendor_mode() {
         let mut context = Context::default();
         let crate_id = CrateId::new("mock_crate".to_owned(), VERSION_ZERO_ONE_ZERO);
