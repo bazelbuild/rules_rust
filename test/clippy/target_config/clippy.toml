@@ -1,0 +1,4 @@
+# A benign per-target clippy configuration. The threshold is raised
+# above the default so that src/lib.rs continues to pass clippy when
+# this file is wired in via the `clippy_config` attribute.
+too-many-arguments-threshold = 10

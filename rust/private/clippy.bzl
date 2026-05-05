@@ -274,13 +274,17 @@ def _clippy_aspect_impl(target, ctx):
     if ctx.attr._clippy_output_diagnostics[ClippyOutputDiagnosticsInfo].output_diagnostics:
         clippy_diagnostics = ctx.actions.declare_file(ctx.label.name + ".clippy.diagnostics", sibling = crate_info.output)
 
+    # Prefer a per-target clippy.toml when the underlying rule sets one,
+    # otherwise fall back to the global //rust/settings:clippy.toml flag.
+    config = getattr(ctx.rule.file, "clippy_config", None) or ctx.file._config
+
     # Run clippy using the extracted function
     rust_clippy_action(
         ctx = ctx,
         clippy_executable = toolchain.clippy_driver,
         process_wrapper = ctx.executable._process_wrapper,
         crate_info = crate_info,
-        config = ctx.file._config,
+        config = config,
         output = clippy_out,
         cap_at_warnings = clippy_out != None,  # If we're capturing output, we want the build to continue.
         success_marker = clippy_success_marker,
