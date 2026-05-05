@@ -80,6 +80,8 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
 
 _T3_PLATFORM_TRIPLES = {
     "aarch64-unknown-nto-qnx710": _support(std = True, host_tools = False),
+    "bpfeb-unknown-none": _support(std = False, host_tools = False),
+    "bpfel-unknown-none": _support(std = False, host_tools = False),
     "wasm64-unknown-unknown": _support(std = False, host_tools = False),
 }
 
@@ -115,6 +117,8 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
     "armv7": "armv7",
     "armv7s": None,
     "asmjs": None,
+    "bpfeb": "bpfeb",
+    "bpfel": "bpfel",
     "i386": "i386",
     "i586": None,
     "i686": "x86_32",
@@ -359,9 +363,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
     # add constraints for iOS + watchOS simulator and device triples
     if system in ["ios", "watchos"]:
         if arch == "x86_64" or abi == "sim":
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:simulator")
+            all_abi_constraints.append("@apple_support//constraints:simulator")
         else:
-            all_abi_constraints.append("@build_bazel_apple_support//constraints:device")
+            all_abi_constraints.append("@apple_support//constraints:device")
 
     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
     # figure out how they're doing this
@@ -492,13 +496,13 @@ def triple_to_constraint_set(target_triple):
         return [
             "@platforms//cpu:aarch64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ]
     if target_triple == "x86_64-apple-ios-macabi":
         return [
             "@platforms//cpu:x86_64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ]
 
     triple_struct = triple(target_triple)

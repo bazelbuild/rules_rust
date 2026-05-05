@@ -200,7 +200,7 @@ This method has the following consequences:
 Alternatively you can specify this in a separate `repo` with `cargo.from_specs` syntax:
 
 ```python
-bindeps = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+bindeps = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 bindeps.spec(package = "cargo-machete", version = "=0.7.0", artifact = "bin")
 bindeps.annotation(crate = "cargo-machete", gen_all_binaries = True)
@@ -379,6 +379,7 @@ load(
     "//crate_universe/private:common_utils.bzl",
     "new_cargo_bazel_fn",
 )
+load("//crate_universe/private:crate.bzl", _crate_universe_crate = "crate")
 load("//crate_universe/private:crates_repository.bzl", "SUPPORTED_PLATFORM_TRIPLES")
 load(
     "//crate_universe/private:crates_vendor.bzl",
@@ -405,7 +406,6 @@ load(
 load("//crate_universe/private:urls.bzl", "CARGO_BAZEL_SHA256S", "CARGO_BAZEL_URLS")
 load("//rust/platform:triple.bzl", "get_host_triple")
 load("//rust/platform:triple_mappings.bzl", "system_to_binary_ext")
-load(":defs.bzl", _crate_universe_crate = "crate")
 
 # A list of labels which may be relative (and if so, is within the repo the rule is generated in).
 #

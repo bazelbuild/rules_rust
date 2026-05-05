@@ -12,7 +12,7 @@ def _apple_platform_constraints_test_impl(ctx):
         [
             "@platforms//cpu:aarch64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ],
         aarch64_macabi_constraints,
         "aarch64-apple-ios-macabi should map to Mac Catalyst constraints",
@@ -24,7 +24,7 @@ def _apple_platform_constraints_test_impl(ctx):
         [
             "@platforms//cpu:x86_64",
             "@platforms//os:osx",
-            "@build_bazel_apple_support//constraints:catalyst",
+            "@apple_support//constraints:catalyst",
         ],
         x86_64_macabi_constraints,
         "x86_64-apple-ios-macabi should map to Mac Catalyst constraints",
@@ -36,7 +36,7 @@ def _apple_platform_constraints_test_impl(ctx):
         [
             "@platforms//cpu:x86_64",
             "@platforms//os:ios",
-            "@build_bazel_apple_support//constraints:simulator",
+            "@apple_support//constraints:simulator",
         ],
         x86_64_ios_constraints,
         "x86_64-apple-ios should remain mapped to iOS simulator constraints",

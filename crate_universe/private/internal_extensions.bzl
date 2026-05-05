@@ -1,14 +1,28 @@
 """Bzlmod module extensions that are only used internally"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//crate_universe:deps_bootstrap.bzl", "cargo_bazel_bootstrap")
-load("//crate_universe:repositories.bzl", "crate_universe_dependencies")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//cargo:defs.bzl", "cargo_bootstrap_repository")
+load("//cargo/3rdparty/crates:crates.bzl", _cargo_crate_repositories = "crate_repositories")
+load("//crate_universe/3rdparty:third_party_deps.bzl", "third_party_deps")
+load("//crate_universe/3rdparty/crates:crates.bzl", _vendor_crate_repositories = "crate_repositories")
+load("//crate_universe/private:srcs.bzl", "CARGO_BAZEL_SRCS")
+load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps")
 load("//crate_universe/tools/cross_installer:cross_installer_deps.bzl", "cross_installer_deps")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:common.bzl", "rust_common")
 
 def _internal_deps_impl(module_ctx):
     direct_deps = []
 
-    direct_deps.extend(crate_universe_dependencies())
+    third_party_deps()
+    direct_deps.extend(_vendor_crate_repositories())
+    direct_deps.extend(crates_vendor_deps())
+
+    # We call this, so that crate_universe users get the deps, but we _don't_ add them to direct_deps.
+    # For bzlmod these deps were already added as rules_rust internal deps, and if we add them here we get warnings about duplicates.
+    _cargo_crate_repositories()
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
@@ -34,10 +48,24 @@ cu = module_extension(
 def _internal_non_reproducible_deps_impl(module_ctx):
     direct_deps = []
 
-    direct_deps.extend(cargo_bazel_bootstrap(
+    maybe(
+        cargo_bootstrap_repository,
+        name = "cargo_bazel_bootstrap",
+        srcs = CARGO_BAZEL_SRCS,
+        binary = "cargo-bazel",
+        cargo_lockfile = "@rules_rust//crate_universe:Cargo.lock",
+        cargo_toml = "@rules_rust//crate_universe:Cargo.toml",
+        version = rust_common.default_version,
         rust_toolchain_cargo_template = "@rust_host_tools//:bin/{tool}",
         rust_toolchain_rustc_template = "@rust_host_tools//:bin/{tool}",
         compressed_windows_toolchain_names = False,
+        # The increased timeout helps avoid flakes in CI
+        timeout = 900,
+    )
+
+    direct_deps.append(struct(
+        repo = "cargo_bazel_bootstrap",
+        is_dev_dep = False,
     ))
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev

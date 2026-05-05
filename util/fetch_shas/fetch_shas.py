@@ -428,7 +428,7 @@ def main() -> None:
         if not "RULES_RUST_FETCH_SHAS_DEBUG" in os.environ:
             shutil.rmtree(tmp_dir)
 
-    known_shas_file = workspace_dir / "rust/known_shas.bzl"
+    known_shas_file = workspace_dir / "rust/private/known_shas.bzl"
     known_shas_file.write_text(
         KNOWN_SHAS_TEMPLATE.format(
             json.dumps(file_key_to_sha, sort_keys=True, indent=4).replace(
@@ -438,7 +438,7 @@ def main() -> None:
     )
     logging.info("Done. Wrote %s", known_shas_file.relative_to(workspace_dir))
 
-    nightly_versions_file = workspace_dir / "rust/nightly_versions.bzl"
+    nightly_versions_file = workspace_dir / "rust/private/nightly_versions.bzl"
     transitions_str = "\n".join(
         '    "{}": "{}",'.format(date, ver) for date, ver in nightly_transitions
     )

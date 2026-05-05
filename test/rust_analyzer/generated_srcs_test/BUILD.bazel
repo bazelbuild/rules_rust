@@ -1,20 +1,17 @@
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load(":generated_srcs_test.bzl", "generated_srcs_analysis_test_suite", "rust_generated_src")
 
-write_file(
+rust_generated_src(
     name = "generated_rs",
     out = "generated.rs",
-    content = [
-        "pub fn forty_two() -> i32 { 42 }",
-        "",
-    ],
+    content = "pub fn forty_two() -> i32 { 42 }\n",
 )
 
 rust_library(
     name = "generated_srcs",
     srcs = [
         "lib.rs",
-        ":generated.rs",
+        ":generated_rs",
     ],
     edition = "2021",
 )
@@ -39,3 +36,6 @@ rust_test(
         "//test/rust_analyzer/3rdparty/crates:serde_json",
     ],
 )
+
+############################ UNIT TESTS #############################
+generated_srcs_analysis_test_suite(name = "generated_srcs_analysis_test_suite")

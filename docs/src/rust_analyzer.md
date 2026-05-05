@@ -10,9 +10,7 @@ The `rust_analyzer` rules facilitate both approaches.
 
 ### Setup
 
-#### Bzlmod
-
-First, ensure `rules_rust` is setup in your workspace:
+First, ensure `rules_rust` is setup in your `MODULE.bazel`:
 
 ```python
 # MODULE.bazel
@@ -33,37 +31,6 @@ whenever dependencies change to regenerate the `rust-project.json` file. It
 should be added to `.gitignore` because it is effectively a build artifact.
 Once the `rust-project.json` has been generated in the project root,
 rust-analyzer can pick it up upon restart.
-
-#### WORKSPACE
-
-Alternatively, you can use the legacy WORKSPACE approach. As with Bzlmod, ensure `rules_rust` is
-setup in your workspace.
-
-Moreover, when loading the dependencies for the tool, you should call the function `rust_analyzer_dependencies()`:
-
-```python
-load("@rules_rust//tools/rust_analyzer:deps.bzl", "rust_analyzer_dependencies")
-
-rust_analyzer_dependencies()
-```
-
-Again, you can now run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project`
-whenever dependencies change to regenerate the `rust-project.json` file.
-
-For users who do not use `rust_register_toolchains` to register toolchains, the following can be added
-to their WORKSPACE to register a `rust_analyzer_toolchain`. Please make sure the Rust version used in
-this toolchain matches the version used by the currently registered toolchain or the sources/documentation
-will not match what's being compiled with and can lead to confusing results.
-
-```python
-load("@rules_rust//rust:repositories.bzl", "rust_analyzer_toolchain_repository")
-
-register_toolchains(rust_analyzer_toolchain_repository(
-    name = "rust_analyzer_toolchain",
-    # This should match the currently registered toolchain.
-    version = "1.63.0",
-))
-```
 
 #### VSCode
 

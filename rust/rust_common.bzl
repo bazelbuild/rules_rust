@@ -17,6 +17,7 @@
 load(
     "//rust/private:common.bzl",
     _COMMON_PROVIDERS = "COMMON_PROVIDERS",
+    _rust_common = "rust_common",
 )
 load(
     "//rust/private:providers.bzl",
@@ -40,3 +41,5 @@ TestCrateInfo = _TestCrateInfo
 UnstableRustFeaturesInfo = _UnstableRustFeaturesInfo
 
 COMMON_PROVIDERS = _COMMON_PROVIDERS
+
+rust_common = _rust_common

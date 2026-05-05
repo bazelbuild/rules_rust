@@ -1,14 +1,18 @@
 """Bzlmod module extensions"""
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//:repositories.bzl", "rust_wasm_bindgen_dependencies")
+load("//3rdparty/crates:crates.bzl", "crate_repositories")
+load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
+
+WASM_BINDGEN_VERSION = "0.2.105"
 
 def _rust_ext_impl(module_ctx):
     # This should contain the subset of WORKSPACE.bazel that defines
     # repositories.
     direct_deps = []
 
-    direct_deps.extend(rust_wasm_bindgen_dependencies())
+    direct_deps.extend(crate_repositories())
+    direct_deps.extend(webdriver_repositories())
 
     # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
     # dependencies are only relevant for module extensions that can be used
