@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//cargo:defs.bzl", "cargo_build_script")
 load("//rust:defs.bzl", "rust_test")
+load(":rlocationpath_failure_test.bzl", "rlocationpath_failure_test")
 
 write_file(
     name = "target_data",
@@ -19,10 +20,8 @@ cargo_build_script(
     srcs = ["build.rs"],
     build_script_env = {
         "DATA_EXECPATH": "$(execpath target_data.txt)",
-        "DATA_RLOCATIONPATH": "$(rlocationpath target_data.txt)",
         "DATA_ROOTPATH": "$(rootpath target_data.txt)",
         "TOOL_EXECPATH": "$(execpath exec_data.txt)",
-        "TOOL_RLOCATIONPATH": "$(rlocationpath exec_data.txt)",
         "TOOL_ROOTPATH": "$(rootpath exec_data.txt)",
     },
     data = ["target_data.txt"],
@@ -35,4 +34,20 @@ rust_test(
     srcs = ["test.rs"],
     edition = "2018",
     deps = [":build_rs"],
+)
+
+cargo_build_script(
+    name = "rlocationpath_build_rs",
+    srcs = ["build.rs"],
+    build_script_env = {
+        "DATA_RLOCATIONPATH": "$(rlocationpath target_data.txt)",
+    },
+    data = ["target_data.txt"],
+    edition = "2018",
+    tags = ["manual"],
+)
+
+rlocationpath_failure_test(
+    name = "rlocationpath_failure_test",
+    target_under_test = ":rlocationpath_build_rs",
 )
