@@ -28,6 +28,9 @@ load(
 # Reexport for cargo_build_script_wrapper.bzl
 name_to_crate_name = _name_to_crate_name
 
+# Keep this short: it is part of CARGO_MANIFEST_DIR on Windows.
+_CARGO_MANIFEST_DIR = "m"
+
 CargoBuildScriptRunfilesInfo = provider(
     doc = "Info about a `cargo_build_script.script` target.",
     fields = {
@@ -293,13 +296,33 @@ def _feature_enabled(ctx, feature_name, default = False):
 
     return default
 
+def _manifest_rlocation_prefix(workspace_name, package):
+    if package:
+        return "{}/{}".format(workspace_name, package)
+
+    return workspace_name
+
 def _rlocationpath(file, workspace_name):
     if file.short_path.startswith("../"):
         return file.short_path[len("../"):]
 
     return "{}/{}".format(workspace_name, file.short_path)
 
-def _create_runfiles_dir(ctx, script, retain_list):
+def _manifest_dir_rlocationpath(rlocationpath, manifest_rlocation_prefix):
+    prefix = manifest_rlocation_prefix + "/"
+    if rlocationpath == manifest_rlocation_prefix:
+        return _CARGO_MANIFEST_DIR
+    if rlocationpath.startswith(prefix):
+        return paths.join(_CARGO_MANIFEST_DIR, rlocationpath[len(prefix):])
+
+    return None
+
+def _create_runfiles_dir(
+        ctx,
+        script,
+        retain_list,
+        workspace_name,
+        manifest_rlocation_prefix):
     """Create a runfiles directory to represent `CARGO_MANIFEST_DIR`.
 
     Due to the inability to forcibly generate runfiles directories for use as inputs
@@ -314,6 +337,8 @@ def _create_runfiles_dir(ctx, script, retain_list):
         ctx (ctx): The rule's context object
         script (Target): The `cargo_build_script.script` target.
         retain_list (list): A list of strings to keep in generated runfiles directories.
+        workspace_name (str): The runfiles workspace name for the current repository.
+        manifest_rlocation_prefix (str): The current package's runfiles path prefix.
 
     Returns:
         Tuple[File, Depset[File], Args]:
@@ -321,13 +346,15 @@ def _create_runfiles_dir(ctx, script, retain_list):
             - Runfile inputs needed by the action.
             - The args required to create the directory.
     """
-    runfiles_dir = ctx.actions.declare_directory("{}.cargo_runfiles".format(ctx.label.name))
-
-    # External repos always fall into the `../` branch of `_rlocationpath`.
-    workspace_name = ctx.workspace_name
+    runfiles_dir = ctx.actions.declare_directory(ctx.label.name + ".crf")
 
     def _runfiles_map(file):
-        return "{}={}".format(file.path, _rlocationpath(file, workspace_name))
+        rlocationpath = _rlocationpath(file, workspace_name)
+        manifest_path = _manifest_dir_rlocationpath(rlocationpath, manifest_rlocation_prefix)
+        if not manifest_path:
+            return "{}={}".format(file.path, rlocationpath)
+
+        return "{}={}".format(file.path, manifest_path)
 
     runfiles = script[DefaultInfo].default_runfiles
 
@@ -382,8 +409,10 @@ def _cargo_build_script_impl(ctx):
         ctx = ctx,
         script = ctx.attr.script,
         retain_list = ctx.attr._cargo_manifest_dir_filename_suffixes_to_retain[BuildSettingInfo].value,
+        workspace_name = workspace_name,
+        manifest_rlocation_prefix = _manifest_rlocation_prefix(workspace_name, ctx.label.package),
     )
-    manifest_dir = "{}/{}/{}".format(runfiles_dir.path, workspace_name, ctx.label.package)
+    manifest_dir = paths.join(runfiles_dir.path, _CARGO_MANIFEST_DIR)
 
     pkg_name = ctx.attr.pkg_name
     if pkg_name == "":
@@ -538,6 +567,7 @@ def _cargo_build_script_impl(ctx):
             known_variables.update(variables)
 
     if ctx.attr.build_script_env:
+        _fail_on_rlocationpath_env(ctx.attr.build_script_env)
         _merge_env_dict(env, expand_dict_value_locations(
             ctx,
             ctx.attr.build_script_env,
@@ -802,6 +832,13 @@ def _merge_env_dict(prefix_dict, suffix_dict):
         if key in prefix_dict and key in suffix_dict and prefix_dict[key]:
             prefix_dict[key] += " " + suffix_dict.pop(key)
     prefix_dict.update(suffix_dict)
+
+def _fail_on_rlocationpath_env(env):
+    for key, value in env.items():
+        if "$(rlocationpath" in value:
+            fail(
+                "cargo_build_script build_script_env does not support $(rlocationpath ...) in '{}'; use $(execpath ...) or $(location ...) for files needed while running the build script".format(key),
+            )
 
 def name_to_pkg_name(name):
     """Sanitize the name of cargo_build_script targets.

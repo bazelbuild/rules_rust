@@ -112,8 +112,8 @@ pub struct RunfilesMaker {
     /// A list of file suffixes to retain when pruning runfiles.
     filename_suffixes_to_retain: BTreeSet<String>,
 
-    /// Runfiles to include in `output_dir`.
-    runfiles: BTreeMap<PathBuf, RlocationPath>,
+    /// Runfiles to include in `output_dir`, keyed by destination path.
+    runfiles: BTreeMap<RlocationPath, PathBuf>,
 }
 
 impl RunfilesMaker {
@@ -151,7 +151,7 @@ impl RunfilesMaker {
                 let (src, dest) = s
                     .split_once('=')
                     .unwrap_or_else(|| panic!("Unexpected runfiles argument: {}", s));
-                (PathBuf::from(src), RlocationPath::from(dest))
+                (RlocationPath::from(dest), PathBuf::from(src))
             })
             .collect::<BTreeMap<_, _>>();
 
@@ -167,7 +167,7 @@ impl RunfilesMaker {
     /// Create a runfiles directory.
     #[cfg(target_family = "unix")]
     pub fn create_runfiles_dir(&self) -> Result<(), String> {
-        for (src, dest) in &self.runfiles {
+        for (dest, src) in &self.runfiles {
             let abs_dest = self.output_dir.join(dest);
 
             if let Some(parent) = abs_dest.parent() {
@@ -213,7 +213,7 @@ impl RunfilesMaker {
 
         let supports_symlinks = system_supports_symlinks(&self.output_dir)?;
 
-        for (src, dest) in &self.runfiles {
+        for (dest, src) in &self.runfiles {
             let abs_dest = self.output_dir.join(dest);
             if let Some(parent) = abs_dest.parent() {
                 if !parent.exists() {
@@ -258,7 +258,7 @@ impl RunfilesMaker {
     /// The Unix implementation assumes symlinks are supported and that the runfiles directory
     /// was created using symlinks.
     fn drain_runfiles_dir_unix(&self) -> Result<(), String> {
-        for (src, dest) in &self.runfiles {
+        for (dest, src) in &self.runfiles {
             let abs_dest = self.output_dir.join(dest);
 
             remove_symlink(&abs_dest).map_err(|e| {
@@ -315,19 +315,17 @@ impl RunfilesMaker {
     /// The Windows implementation assumes symlinks are not supported and real files will have
     /// been copied into the runfiles directory.
     fn drain_runfiles_dir_windows(&self) -> Result<(), String> {
-        for dest in self.runfiles.values() {
+        for dest in self.runfiles.keys() {
             if !self
                 .filename_suffixes_to_retain
                 .iter()
                 .any(|suffix| dest.ends_with(suffix))
             {
-                continue;
+                let abs_dest = self.output_dir.join(dest);
+                std::fs::remove_file(&abs_dest).map_err(|e| {
+                    format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
+                })?;
             }
-
-            let abs_dest = self.output_dir.join(dest);
-            std::fs::remove_file(&abs_dest).map_err(|e| {
-                format!("Failed to remove file {} with {:?}", abs_dest.display(), e)
-            })?;
         }
         Ok(())
     }
