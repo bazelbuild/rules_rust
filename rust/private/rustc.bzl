@@ -1114,9 +1114,29 @@ def construct_arguments(
     rustc_flags.add(compilation_mode.strip_level, format = "--codegen=strip=%s")
 
     # For determinism to help with build distribution and such
+    #
+    # --remap-path-prefix tells rustc to replace a path prefix in all
+    # embedded paths (debug info, dep-info, panic locations, backtraces)
+    # so that absolute sandbox paths never leak into binaries or logs.
+    #
+    # When all sources are plain workspace files, remapping ${pwd} (the exec
+    # root) to remap_path_prefix (default ".") is enough.
+    #
+    # However, when a target mixes generated and non-generated sources (e.g.
+    # proto compile_data), transform_sources() symlinks every source file into
+    # bazel-out/<config>/bin/... so they sit next to the generated files.  In
+    # that case the crate root is no longer a source file and its path starts
+    # with ctx.bin_dir.path (e.g. "bazel-out/k8-fastbuild/bin").  We detect
+    # this via crate_info.root.is_source and use a more specific remap that
+    # also strips the bin-dir component, giving clean workspace-relative paths
+    # in panic messages and backtraces.
     if remap_path_prefix != None:
-        rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
-        rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        if crate_info.root.is_source:
+            rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
+            rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
+        else:
+            rustc_flags.add("--remap-path-prefix=${{pwd}}/{}={}".format(ctx.bin_dir.path, remap_path_prefix))
+            rustc_flags.add("--remap-path-prefix=${{exec_root}}/{}={}".format(ctx.bin_dir.path, remap_path_prefix))
         rustc_flags.add("--remap-path-prefix=${{output_base}}={}".format(remap_path_prefix))
 
     emit_without_paths = []
@@ -1189,11 +1209,12 @@ def construct_arguments(
             if remap_path_prefix != None and _should_add_oso_prefix(
                 toolchain,
             ):
+                oso_prefix = "${pwd}/" if crate_info.root.is_source else "${pwd}/" + ctx.bin_dir.path + "/"
                 if ld_is_direct_driver:
                     rustc_flags.add("--codegen=link-arg=-oso_prefix")
-                    rustc_flags.add("${pwd}/", format = "--codegen=link-arg=%s")
+                    rustc_flags.add(oso_prefix, format = "--codegen=link-arg=%s")
                 else:
-                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
+                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix," + oso_prefix)
 
         _add_native_link_flags(
             rustc_flags,

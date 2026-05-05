@@ -7,10 +7,12 @@ load(
     "//test/unit:common.bzl",
     "assert_action_mnemonic",
     "assert_argv_contains",
+    "assert_argv_contains_prefix_suffix",
     "assert_list_contains_adjacent_elements",
 )
 
-def _remap_path_prefix_test_impl(ctx):
+def _remap_path_prefix_source_test_impl(ctx):
+    """Verify remap flags for targets with plain source files."""
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
 
@@ -23,7 +25,23 @@ def _remap_path_prefix_test_impl(ctx):
 
     return analysistest.end(env)
 
-_remap_path_prefix_test = analysistest.make(_remap_path_prefix_test_impl)
+_remap_path_prefix_source_test = analysistest.make(_remap_path_prefix_source_test_impl)
+
+def _remap_path_prefix_generated_test_impl(ctx):
+    """Verify remap flags for targets with generated sources (symlinked into bin dir)."""
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+
+    action = target.actions[0]
+    assert_action_mnemonic(env, action, "Rustc")
+
+    assert_argv_contains_prefix_suffix(env, action, "--remap-path-prefix=${pwd}/bazel-out/", "/bin=.")
+    assert_argv_contains_prefix_suffix(env, action, "--remap-path-prefix=${exec_root}/bazel-out/", "/bin=.")
+    assert_argv_contains(env, action, "--remap-path-prefix=${output_base}=.")
+
+    return analysistest.end(env)
+
+_remap_path_prefix_generated_test = analysistest.make(_remap_path_prefix_generated_test_impl)
 
 def _subst_flags_test_impl(ctx):
     """Verify that process wrapper --subst flags are present."""
@@ -47,9 +65,12 @@ def remap_path_prefix_test_suite(name):
     Args:
         name (str): The name of the test suite.
     """
+
+    # Targets with generated sources (write_file produces non-source files,
+    # triggering transform_sources which symlinks into bin dir).
     write_file(
-        name = "remap_lib_src",
-        out = "remap_lib.rs",
+        name = "remap_lib_generated_src",
+        out = "remap_lib_generated.rs",
         content = [
             "pub fn hello() {}",
             "",
@@ -57,14 +78,14 @@ def remap_path_prefix_test_suite(name):
     )
 
     rust_library(
-        name = "remap_lib",
-        srcs = [":remap_lib.rs"],
+        name = "remap_lib_generated",
+        srcs = [":remap_lib_generated.rs"],
         edition = "2021",
     )
 
     write_file(
-        name = "remap_bin_src",
-        out = "remap_bin.rs",
+        name = "remap_bin_generated_src",
+        out = "remap_bin_generated.rs",
         content = [
             "fn main() {}",
             "",
@@ -72,34 +93,42 @@ def remap_path_prefix_test_suite(name):
     )
 
     rust_binary(
-        name = "remap_bin",
-        srcs = [":remap_bin.rs"],
+        name = "remap_bin_generated",
+        srcs = [":remap_bin_generated.rs"],
         edition = "2021",
     )
 
-    _remap_path_prefix_test(
-        name = "remap_path_prefix_lib_test",
-        target_under_test = ":remap_lib",
+    # Tests for plain source files (using existing dep.rs from the package).
+    _remap_path_prefix_source_test(
+        name = "remap_path_prefix_source_lib_test",
+        target_under_test = ":dep",
     )
 
-    _remap_path_prefix_test(
-        name = "remap_path_prefix_bin_test",
-        target_under_test = ":remap_bin",
+    # Tests for generated sources (symlinked into bin dir).
+    _remap_path_prefix_generated_test(
+        name = "remap_path_prefix_generated_lib_test",
+        target_under_test = ":remap_lib_generated",
+    )
+
+    _remap_path_prefix_generated_test(
+        name = "remap_path_prefix_generated_bin_test",
+        target_under_test = ":remap_bin_generated",
     )
 
     _subst_flags_test(
         name = "subst_flags_lib_test",
-        target_under_test = ":remap_lib",
+        target_under_test = ":remap_lib_generated",
     )
 
     _subst_flags_test(
         name = "subst_flags_bin_test",
-        target_under_test = ":remap_bin",
+        target_under_test = ":remap_bin_generated",
     )
 
     tests = [
-        ":remap_path_prefix_lib_test",
-        ":remap_path_prefix_bin_test",
+        ":remap_path_prefix_source_lib_test",
+        ":remap_path_prefix_generated_lib_test",
+        ":remap_path_prefix_generated_bin_test",
         ":subst_flags_lib_test",
         ":subst_flags_bin_test",
     ]
