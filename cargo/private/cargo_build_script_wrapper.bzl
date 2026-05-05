@@ -28,7 +28,6 @@ def cargo_build_script(
         compile_data = [],
         tools = [],
         links = None,
-        rundir = None,
         rustc_env = {},
         rustc_env_files = [],
         rustc_flags = [],
@@ -118,11 +117,6 @@ def cargo_build_script(
         compile_data (list, optional): Files needed for the compilation of the build script.
         tools (list, optional): Tools (executables) needed by the build script.
         links (str, optional): Name of the native library this crate links against.
-        rundir (str, optional): A directory to `cd` to before the cargo_build_script is run. This should be a path relative to the exec root.
-
-            The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.
-
-            If set to `.`, the cargo build script will run in the exec root.
         rustc_env (dict, optional): Environment variables to set in rustc when compiling the build script.
         rustc_env_files (list of label, optional): Files containing additional environment variables to set for rustc
             when building the build script.
@@ -136,6 +130,10 @@ def cargo_build_script(
             built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_script_run`
             target.
     """
+
+    rundir = kwargs.pop("rundir", None)
+    if rundir != None:
+        fail("cargo_build_script.rundir is no longer supported; build scripts always run in CARGO_MANIFEST_DIR")
 
     # This duplicates the code in _cargo_build_script_impl because we need to make these
     # available both when we invoke rustc (this code) and when we run the compiled build
@@ -225,7 +223,6 @@ def cargo_build_script(
         links = links,
         deps = deps,
         link_deps = link_deps,
-        rundir = rundir,
         rustc_flags = rustc_flags,
         visibility = visibility,
         tags = tags,

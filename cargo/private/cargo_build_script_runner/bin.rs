@@ -18,7 +18,7 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use cargo_build_script_runner::cargo_manifest_dir::{remove_symlink, symlink, RunfilesMaker};
@@ -46,7 +46,6 @@ fn run_buildrs() -> Result<(), String> {
         output_dep_env_path,
         stdout_path,
         stderr_path,
-        rundir,
         input_dep_env_paths,
         cargo_manifest_maker,
     } = Args::parse();
@@ -85,11 +84,9 @@ fn run_buildrs() -> Result<(), String> {
     let target_env_vars =
         get_target_env_vars(&rustc_env).expect("Error getting target env vars from rustc");
 
-    let working_directory = resolve_rundir(&rundir, &exec_root, &manifest_dir)?;
-
     let mut command = Command::new(exec_root.join(progname));
     command
-        .current_dir(&working_directory)
+        .current_dir(&manifest_dir)
         .envs(target_env_vars)
         .env("OUT_DIR", &out_dir_abs)
         .env("CARGO_MANIFEST_DIR", manifest_dir)
@@ -320,23 +317,6 @@ fn symlink_if_not_exists(original: &Path, link: &Path) -> Result<(), String> {
         .map_err(|err| format!("Failed to create symlink: {err}"))
 }
 
-fn resolve_rundir(rundir: &str, exec_root: &Path, manifest_dir: &Path) -> Result<PathBuf, String> {
-    if rundir.is_empty() {
-        return Ok(manifest_dir.to_owned());
-    }
-    let rundir_path = Path::new(rundir);
-    if rundir_path.is_absolute() {
-        return Err(format!("rundir must be empty (to run in manifest path) or relative path (relative to exec root), but was {:?}", rundir));
-    }
-    if rundir_path
-        .components()
-        .any(|c| c == std::path::Component::ParentDir)
-    {
-        return Err(format!("rundir must not contain .. but was {:?}", rundir));
-    }
-    Ok(exec_root.join(rundir_path))
-}
-
 fn swallow_already_exists(err: std::io::Error) -> std::io::Result<()> {
     if err.kind() == std::io::ErrorKind::AlreadyExists {
         Ok(())
@@ -357,7 +337,6 @@ struct Args {
     output_dep_env_path: String,
     stdout_path: Option<String>,
     stderr_path: Option<String>,
-    rundir: String,
     input_dep_env_paths: Vec<String>,
     cargo_manifest_maker: RunfilesMaker,
 }
@@ -381,7 +360,6 @@ impl Args {
             Err("Argument `output_dep_env_path` not provided".to_owned());
         let mut stdout_path = None;
         let mut stderr_path = None;
-        let mut rundir: Result<String, String> = Err("Argument `rundir` not provided".to_owned());
         let mut input_dep_env_paths = Vec::new();
         let mut cargo_manifest_maker: Result<RunfilesMaker, String> =
             Err("Argument `cargo_manifest_args` not provided".to_owned());
@@ -407,8 +385,6 @@ impl Args {
                 stdout_path = Some(arg.split_off("--stdout=".len()));
             } else if arg.starts_with("--stderr=") {
                 stderr_path = Some(arg.split_off("--stderr=".len()));
-            } else if arg.starts_with("--rundir=") {
-                rundir = Ok(arg.split_off("--rundir=".len()))
             } else if arg.starts_with("--input_dep_env_path=") {
                 input_dep_env_paths.push(arg.split_off("--input_dep_env_path=".len()));
             } else if arg.starts_with("--cargo_manifest_args=") {
@@ -429,7 +405,6 @@ impl Args {
             output_dep_env_path: output_dep_env_path.unwrap(),
             stdout_path,
             stderr_path,
-            rundir: rundir.unwrap(),
             input_dep_env_paths,
             cargo_manifest_maker: cargo_manifest_maker.unwrap(),
         }
@@ -498,6 +473,7 @@ fn main() {
 mod test {
     use super::*;
     use std::fs::{create_dir_all, write};
+    use std::path::PathBuf;
 
     fn make_temp_dir(label: &str) -> PathBuf {
         let nanos = std::time::SystemTime::now()

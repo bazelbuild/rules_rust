@@ -573,8 +573,6 @@ def _cargo_build_script_impl(ctx):
     args.add(link_flags, format = "--link_flags=%s")
     args.add(link_search_paths, format = "--link_search_paths=%s")
     args.add(dep_env_out, format = "--dep_env_out=%s")
-    args.add(ctx.attr.rundir, format = "--rundir=%s")
-
     output_groups = {
         "out_dir": depset([out_dir]),
     }
@@ -716,19 +714,6 @@ cargo_build_script = rule(
         ),
         "pkg_name": attr.string(
             doc = "The name of package being compiled, if not derived from `name`.",
-        ),
-        "rundir": attr.string(
-            default = "",
-            doc = dedent("""\
-                A directory to cd to before the cargo_build_script is run.
-
-                This should be a pathrelative to the exec root. The default behaviour (and the
-                behaviour if rundir is set to the empty string) is to change to the relative
-                path corresponding to the cargo manifest directory, which replicates the
-                normal behaviour of cargo so it is easy to write compatible build scripts.
-
-                If set to `.`, the cargo build script will run in the exec root.
-            """),
         ),
         "rustc_flags": attr.string_list(
             doc = dedent("""\
