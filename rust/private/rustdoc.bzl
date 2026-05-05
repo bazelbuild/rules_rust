@@ -126,12 +126,19 @@ def rustdoc_compile_action(
     # arguments expecting to do so.
     rustdoc_crate_info = _strip_crate_info_output(crate_info)
 
+    if toolchain.sysroot_path:
+        rustdoc_tool_path = toolchain.sysroot_path + "/bin/rustdoc"
+    elif is_test:
+        rustdoc_tool_path = toolchain.rust_doc.short_path
+    else:
+        rustdoc_tool_path = toolchain.rust_doc.path
+
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = toolchain.rust_doc.short_path if is_test else toolchain.rust_doc.path,
+        tool_path = rustdoc_tool_path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = rustdoc_crate_info,
