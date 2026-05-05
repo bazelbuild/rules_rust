@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//private:pyo3_toolchain.bzl", "current_pyo3_toolchain")
+load("//extensions/pyo3/private:pyo3_toolchain.bzl", "current_pyo3_toolchain")
 
 exports_files([
     ".isort.cfg",
@@ -29,7 +29,6 @@ bzl_library(
     srcs = glob(["*.bzl"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//3rdparty:bzl_lib",
-        "//private:bzl_lib",
+        "//extensions/pyo3/private:bzl_lib",
     ],
 )

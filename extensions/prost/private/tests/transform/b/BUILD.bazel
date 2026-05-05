@@ -1,8 +1,8 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
-load("//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+load("//extensions/prost:defs.bzl", "rust_prost_library", "rust_prost_transform")
 
-package(default_visibility = ["//private/tests:__subpackages__"])
+package(default_visibility = ["//extensions/prost/private/tests:__subpackages__"])
 
 rust_library(
     name = "greeting",
@@ -26,7 +26,7 @@ proto_library(
     ],
     strip_import_prefix = "/private/tests/transform",
     deps = [
-        "//private/tests/transform/b/c:c_proto",
+        "//extensions/prost/private/tests/transform/b/c:c_proto",
         "@com_google_protobuf//:empty_proto",
     ],
 )

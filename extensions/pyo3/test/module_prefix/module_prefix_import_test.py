@@ -1,7 +1,7 @@
 """Tests that a pyo3 extension can be imported via a module prefix."""
 
 import unittest
-from test.module_prefix.foo import bar
+from extensions.pyo3.test.module_prefix.foo import bar
 
 
 class ModulePrefixImportTest(unittest.TestCase):

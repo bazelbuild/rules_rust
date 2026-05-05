@@ -24,12 +24,12 @@ load(
     "can_use_metadata_for_pipelining",
     "generate_output_diagnostics",
 )
-load("//:providers.bzl", "ProstProtoInfo")
+load("//extensions/prost:providers.bzl", "ProstProtoInfo")
 load(":prost_transform.bzl", "ProstTransformInfo")
 
 RUST_EDITION = "2021"
 
-TOOLCHAIN_TYPE = "@rules_rust_prost//:toolchain_type"
+TOOLCHAIN_TYPE = "//extensions/prost:toolchain_type"
 
 def _create_proto_lang_toolchain(prost_toolchain):
     proto_lang_toolchain = proto_common.ProtoLangToolchainInfo(
@@ -515,7 +515,7 @@ rust_prost_toolchain = rule(
             doc = "The wrapper script for the Prost protoc plugin.",
             cfg = "exec",
             executable = True,
-            default = Label("@rules_rust_prost//private:protoc_wrapper"),
+            default = Label("//extensions/prost/private:protoc_wrapper"),
         ),
         "prost_types": attr.label(
             doc = "The Prost types crates to use.",
@@ -546,7 +546,7 @@ rust_prost_toolchain = rule(
         ),
     }, **proto_toolchains.if_legacy_toolchain({
         "_legacy_proto_toolchain": attr.label(
-            default = Label("//private:legacy_proto_toolchain"),
+            default = Label("//extensions/prost/private:legacy_proto_toolchain"),
         ),
     })),
     toolchains = proto_toolchains.use_toolchain("@rules_proto//proto:toolchain_type"),

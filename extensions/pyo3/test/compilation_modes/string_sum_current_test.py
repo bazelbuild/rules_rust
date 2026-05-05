@@ -3,7 +3,7 @@
 import unittest
 
 # isort: off
-from test.compilation_modes.string_sum_current import sum_as_string
+from extensions.pyo3.test.extensions.pyo3.test.compilation_modes.string_sum_current import sum_as_string
 
 
 class StringSumTest(unittest.TestCase):
