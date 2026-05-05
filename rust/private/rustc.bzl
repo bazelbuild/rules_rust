@@ -1115,9 +1115,9 @@ def construct_arguments(
 
     # For determinism to help with build distribution and such
     #
-    # --remap-path-prefix tells rustc to replace a path prefix in all output
-    # (diagnostics, file!(), panic locations, backtraces) so that absolute
-    # sandbox paths never leak into binaries or logs.
+    # --remap-path-prefix tells rustc to replace a path prefix in all
+    # embedded paths (debug info, dep-info, panic locations, backtraces)
+    # so that absolute sandbox paths never leak into binaries or logs.
     #
     # When all sources are plain workspace files, remapping ${pwd} (the exec
     # root) to remap_path_prefix (default ".") is enough.
@@ -1127,8 +1127,9 @@ def construct_arguments(
     # bazel-out/<config>/bin/... so they sit next to the generated files.  In
     # that case the crate root is no longer a source file and its path starts
     # with ctx.bin_dir.path (e.g. "bazel-out/k8-fastbuild/bin").  We detect
-    # this via crate_info.root.is_source and add a more specific remap that
-    # also strips the bin-dir component, giving clean workspace-relative paths.
+    # this via crate_info.root.is_source and use a more specific remap that
+    # also strips the bin-dir component, giving clean workspace-relative paths
+    # in panic messages and backtraces.
     if remap_path_prefix != None:
         if crate_info.root.is_source:
             rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
