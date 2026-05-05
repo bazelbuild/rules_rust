@@ -453,7 +453,7 @@ impl RunfilesMaker {
                 continue;
             }
 
-            if !self
+            if self
                 .filename_suffixes_to_retain
                 .iter()
                 .any(|suffix| dest.ends_with(suffix))
