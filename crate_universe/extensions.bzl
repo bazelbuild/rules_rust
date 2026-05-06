@@ -73,20 +73,21 @@ make sure you set the `CARGO_BAZEL_ISOLATED=false bazel build //...` environment
 will not be able to pull from your private registry.
 
 The generated crates_repository contains helper macros which make collecting dependencies for Bazel targets simpler.
-Notably, the all_crate_deps and aliases macros (
+Notably, the all_crate_deps, aliases, and crate_edition macros (
 see [Dependencies API](https://bazelbuild.github.io/rules_rust/crate_universe_workspace.html#dependencies-api)) commonly allow the
 Cargo.toml files to be the single source of truth for dependencies.
-Since these macros come from the generated repository, the dependencies and alias definitions
-they return will automatically update BUILD targets. In your BUILD files,
+Since these macros come from the generated repository, the dependency labels,
+alias definitions, and editions they return will automatically update BUILD targets. In your BUILD files,
 you use these macros for a Rust library as shown below:
 
 ```python
-load("@crates//:defs.bzl", "aliases", "all_crate_deps")
+load("@crates//:defs.bzl", "aliases", "all_crate_deps", "crate_edition")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "lib",
     aliases = aliases(),
+    edition = crate_edition(),
     deps = all_crate_deps(
         normal = True,
     ),
@@ -102,6 +103,7 @@ rust_test(
         normal_dev = True,
         proc_macro_dev = True,
     ),
+    edition = crate_edition(),
     deps = all_crate_deps(
         normal_dev = True,
     ),
@@ -118,6 +120,7 @@ in your build file:
 rust_binary(
     name = "bin",
     srcs = ["src/main.rs"],
+    edition = crate_edition(),
     deps = all_crate_deps(normal = True),
 )
 ```

@@ -141,6 +141,12 @@ def _rust_analyzer_aspect_impl(target, ctx):
     proc_macro_dylibs = [proc_macro_dylib] if proc_macro_dylib else None
     build_info_out_dirs = [build_info.out_dir] if build_info != None and build_info.out_dir != None else None
 
+    rust_generated_srcs = []
+    for attr in ["srcs", "deps", "proc_macro_deps"]:
+        for dep in getattr(ctx.rule.attr, attr, []):
+            if OutputGroupInfo in dep and hasattr(dep[OutputGroupInfo], "rust_generated_srcs"):
+                rust_generated_srcs.append(dep[OutputGroupInfo].rust_generated_srcs)
+
     rust_analyzer_info = write_rust_analyzer_spec_file(ctx, ctx.rule.attr, ctx.label, RustAnalyzerInfo(
         aliases = aliases,
         crate = crate_info,
@@ -160,6 +166,7 @@ def _rust_analyzer_aspect_impl(target, ctx):
             rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
             rust_analyzer_proc_macro_dylib = rust_analyzer_info.proc_macro_dylibs,
             rust_analyzer_src = rust_analyzer_info.build_info_out_dirs,
+            rust_generated_srcs = depset(transitive = rust_generated_srcs),
         ),
     ]
 
@@ -193,7 +200,7 @@ def find_proc_macro_dylib(toolchain, target):
     return None
 
 rust_analyzer_aspect = aspect(
-    attr_aspects = ["deps", "proc_macro_deps", "crate", "actual", "proto"],
+    attr_aspects = ["srcs", "deps", "proc_macro_deps", "crate", "actual", "proto"],
     implementation = _rust_analyzer_aspect_impl,
     toolchains = [str(Label("//rust:toolchain_type"))],
     doc = "Annotates rust rules with RustAnalyzerInfo later used to build a rust-project.json",
