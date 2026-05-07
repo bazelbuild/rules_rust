@@ -137,6 +137,12 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         .to_str()
         .ok_or_else(|| OptionError::Generic("current directory not utf-8".to_owned()))?
         .to_owned();
+    // ${output_base} has historically resolved to the sandbox's local cwd
+    // (parent of canonicalized `cwd/external`) rather than Bazel's real output_base.
+    // Downstream consumers — in particular the `--remap-path-prefix=${output_base}=.`
+    // flag emitted by rules_rust — rely on that sandbox-local value to fully
+    // strip the sandbox cwd prefix from paths embedded in rmeta/debuginfo.
+    // Leaving ${output_base} untouched preserves that behavior.
     let output_base = {
         let external = std::path::Path::new(&current_dir).join("external");
         match std::fs::canonicalize(external) {
@@ -157,12 +163,23 @@ pub(crate) fn options() -> Result<Options, OptionError> {
         }
     };
 
+    // ${exec_root} resolves to Bazel's real execroot, sandbox-invariant across
+    // all strategies. Derived by walking up `cwd` to the first ancestor that
+    // contains Bazel's `DO_NOT_BUILD_HERE` sentinel file (the real output_base)
+    // and appending `execroot/<workspace_name>`. Used by rules_rust to set
+    // `CARGO_MANIFEST_DIR` / `OUT_DIR` to a sandbox-invariant absolute path so
+    // that `env!()` values baked into SVH are identical across pipelined
+    // Rustc / RustcMetadata actions and across independent invocations.
     let exec_root = {
-        let workspace_name = std::path::Path::new(&current_dir)
+        let cwd_path = std::path::Path::new(&current_dir);
+        let workspace_name = cwd_path
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("_main");
-        format!("{}/execroot/{}", output_base, workspace_name)
+        match incremental_cache::find_output_base(cwd_path) {
+            Some(real_ob) => format!("{}/execroot/{}", real_ob.to_string_lossy(), workspace_name),
+            None => format!("{}/execroot/{}", output_base, workspace_name),
+        }
     };
 
     let subst_mappings = subst_mapping_raw
