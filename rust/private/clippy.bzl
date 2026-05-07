@@ -160,12 +160,14 @@ def rust_clippy_action(ctx, clippy_executable, process_wrapper, crate_info, conf
         crate_info_dict["rustc_output"] = clippy_diagnostics_file
         crate_info = rust_common.create_crate_info(**crate_info_dict)
 
+    clippy_tool_path = (toolchain.sysroot_path + "/bin/clippy-driver") if toolchain.sysroot_path else clippy_executable.path
+
     args, env = construct_arguments(
         ctx = ctx,
         attr = ctx.rule.attr,
         file = ctx.file,
         toolchain = toolchain,
-        tool_path = clippy_executable.path,
+        tool_path = clippy_tool_path,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,

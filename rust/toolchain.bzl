@@ -442,28 +442,43 @@ def _rust_toolchain_impl(ctx):
         rust_objcopy = ctx.file.rust_objcopy,
     )
 
-    # Determine the path and short_path of the sysroot
-    sysroot_path = sysroot.sysroot_anchor.dirname
-    sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
+    # Determine the path and short_path of the sysroot.
+    # When sysroot_path is set, use the system sysroot directly instead of the
+    # generated one. This avoids including sysroot files as action inputs.
+    if ctx.attr.sysroot_path:
+        sysroot_path = ctx.attr.sysroot_path
+        sysroot_short_path = ctx.attr.sysroot_path
+    else:
+        sysroot_path = sysroot.sysroot_anchor.dirname
+        sysroot_short_path, _, _ = sysroot.sysroot_anchor.short_path.rpartition("/")
+
+    # When sysroot_path is set, RUSTC/RUSTDOC should point to the system binaries
+    # rather than the generated sysroot symlinks.
+    if ctx.attr.sysroot_path:
+        rustc_path_str = ctx.attr.sysroot_path + "/bin/rustc"
+        rustdoc_path_str = ctx.attr.sysroot_path + "/bin/rustdoc"
+    else:
+        rustc_path_str = sysroot.rustc.path
+        rustdoc_path_str = sysroot.rustdoc.path
 
     # Variables for make variable expansion
     make_variables = {
-        "RUSTC": sysroot.rustc.path,
-        "RUSTDOC": sysroot.rustdoc.path,
+        "RUSTC": rustc_path_str,
+        "RUSTDOC": rustdoc_path_str,
         "RUST_DEFAULT_EDITION": ctx.attr.default_edition or "",
         "RUST_SYSROOT": sysroot_path,
         "RUST_SYSROOT_SHORT": sysroot_short_path,
     }
 
-    if sysroot.cargo:
-        make_variables.update({
-            "CARGO": sysroot.cargo.path,
-        })
+    if ctx.attr.sysroot_path:
+        make_variables.update({"CARGO": ctx.attr.sysroot_path + "/bin/cargo"})
+    elif sysroot.cargo:
+        make_variables.update({"CARGO": sysroot.cargo.path})
 
-    if sysroot.rustfmt:
-        make_variables.update({
-            "RUSTFMT": sysroot.rustfmt.path,
-        })
+    if ctx.attr.sysroot_path:
+        make_variables.update({"RUSTFMT": ctx.attr.sysroot_path + "/bin/rustfmt"})
+    elif sysroot.rustfmt:
+        make_variables.update({"RUSTFMT": sysroot.rustfmt.path})
 
     make_variable_info = platform_common.TemplateVariableInfo(make_variables)
 
@@ -579,10 +594,17 @@ def _rust_toolchain_impl(ctx):
             std,
         )
 
-    # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation
-    all_files_depsets = [sysroot.all_files]
-    if cc_toolchain and cc_toolchain.all_files:
-        all_files_depsets.append(cc_toolchain.all_files)
+    # Include C++ toolchain files to ensure tools like 'ar' are available for cross-compilation.
+    # When sysroot_path is set, exclude Rust sysroot files from action inputs since the
+    # execution environment has the toolchain pre-installed at the given path.
+    if ctx.attr.sysroot_path:
+        all_files_depsets = []
+        if cc_toolchain and cc_toolchain.all_files:
+            all_files_depsets.append(cc_toolchain.all_files)
+    else:
+        all_files_depsets = [sysroot.all_files]
+        if cc_toolchain and cc_toolchain.all_files:
+            all_files_depsets.append(cc_toolchain.all_files)
 
     toolchain = platform_common.ToolchainInfo(
         all_files = depset(transitive = all_files_depsets),
@@ -625,6 +647,7 @@ def _rust_toolchain_impl(ctx):
         per_crate_rustc_flags = ctx.attr.per_crate_rustc_flags,
         sysroot = sysroot_path,
         sysroot_short_path = sysroot_short_path,
+        sysroot_path = ctx.attr.sysroot_path,
         target_arch = target_arch,
         target_flag_value = target_json.path if target_json else target_triple.str,
         target_json = target_json,
@@ -860,6 +883,17 @@ rust_toolchain = rule(
                 "fastbuild": "none",
                 "opt": "debuginfo",
             },
+        ),
+        "sysroot_path": attr.string(
+            doc = (
+                "Absolute path to a system-installed Rust sysroot. When set, this path is " +
+                "passed as `--sysroot` to rustc and sysroot files are excluded from action " +
+                "inputs. This eliminates large toolchain file transfers when using remote " +
+                "execution with workers that have the Rust toolchain pre-installed. Typically " +
+                "set by the `rust_system_toolchain_repository` repository rule rather than " +
+                "manually."
+            ),
+            default = "",
         ),
         "target_json": attr.string(
             doc = ("Override the target_triple with a custom target specification. " +
