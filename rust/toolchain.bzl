@@ -633,6 +633,7 @@ def _rust_toolchain_impl(ctx):
         target_triple = target_triple,
         version = ctx.attr.version,
         require_explicit_unstable_features = _require_explicit_unstable_features(ctx),
+        use_default_shell_env = ctx.attr.use_default_shell_env,
 
         # Experimental and incompatible flags
         _rename_first_party_crates = rename_first_party_crates,
@@ -874,6 +875,10 @@ rust_toolchain = rule(
         "version": attr.string(
             doc = "The version of the Rust compiler (e.g. `1.94.1`).",
             default = "",
+        ),
+        "use_default_shell_env": attr.bool(
+            doc = "Controls whether rustc actions inherit the shell environment",
+            default = False,
         ),
         "_codegen_units": attr.label(
             default = Label("//rust/settings:codegen_units"),

@@ -145,6 +145,7 @@ def _rust_impl(module_ctx):
                 rustfmt_toolchain_triples = toolchain.rustfmt_toolchain_triples if toolchain.rustfmt_toolchain_triples else DEFAULT_TOOLCHAIN_TRIPLES,
                 target_settings = [str(v) for v in toolchain.target_settings],
                 extra_toolchain_infos = extra_toolchain_infos,
+                use_default_shell_env = use_default_shell_env,
             )
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
@@ -283,6 +284,10 @@ _RUST_TOOLCHAIN_TAG = tag_class(
                 "May be set to an empty list (`[]`) to inhibit `rules_rust` from registering toolchains."
             ),
             default = _RUST_TOOLCHAIN_VERSIONS,
+        ),
+        "use_default_shell_env": attr.bool(
+            doc = "Controls whether rustc actions inherit the shell environment",
+            default = False,
         ),
     } | _COMMON_TAG_KWARGS,
 )

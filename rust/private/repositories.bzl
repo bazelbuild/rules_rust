@@ -72,7 +72,8 @@ def rust_register_toolchains(
         toolchain_triples = DEFAULT_TOOLCHAIN_TRIPLES,
         rustfmt_toolchain_triples = DEFAULT_TOOLCHAIN_TRIPLES,
         target_settings = [],
-        extra_toolchain_infos = None):
+        extra_toolchain_infos = None,
+        use_default_shell_env = False):
     """Emits a default set of toolchains for Linux, MacOS, and Freebsd
 
     Skip this macro and call the `rust_repository_set` macros directly if you need a compiler for \
@@ -112,6 +113,7 @@ def rust_register_toolchains(
         rustfmt_toolchain_triples (dict[str, str], optional): Like toolchain_triples, but for rustfmt toolchains.
         target_settings (list of labels as strings, optional): A list of `config_settings` that must be satisfied by the target configuration in order for this toolchain to be selected during toolchain resolution.
         extra_toolchain_infos: (dict[str, dict], optional): Mapping of information about extra toolchains which were created outside of this call, which should be added to the hub repo.
+        use_default_shell_env (bool, optional): Whether rustc actions inherit the shell environment (defaults to False).
     """
     if not rustfmt_version:
         if len(versions) == 1:
@@ -185,6 +187,7 @@ def rust_register_toolchains(
             urls = urls,
             versions = versions,
             aliases = dict(aliases),
+            use_default_shell_env = use_default_shell_env,
         )
 
         for toolchain in _get_toolchain_repositories(
@@ -317,6 +320,10 @@ _RUST_TOOLCHAIN_REPOSITORY_ATTRS = {
     "version": attr.string(
         doc = "The version of the tool among \"nightly\", \"beta\", or an exact version.",
         mandatory = True,
+    ),
+    "use_default_shell_env": attr.bool(
+        doc = "Controls whether rustc actions inherit the shell environment",
+        default = False,
     ),
 }
 
@@ -480,6 +487,7 @@ def _rust_toolchain_tools_repository_impl(ctx):
         version = toolchain_version,
         channel = channel,
         iso_date = iso_date,
+        use_default_shell_env = ctx.attr.use_default_shell_env,
     ))
 
     # Not all target triples are expected to have dev components
@@ -593,7 +601,8 @@ def rust_toolchain_repository(
         urls = DEFAULT_STATIC_RUST_URL_TEMPLATES,
         auth = None,
         netrc = None,
-        auth_patterns = None):
+        auth_patterns = None,
+        use_default_shell_env = None):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration, and registers the toolchains.
 
@@ -628,6 +637,7 @@ def rust_toolchain_repository(
             See [repository_ctx.download](https://docs.bazel.build/versions/main/skylark/lib/repository_ctx.html#download) for more details.
         netrc (str, optional): .netrc file to use for authentication; mirrors the eponymous attribute from http_archive
         auth_patterns (list, optional): A list of patterns to match against urls for which the auth object should be used.
+        use_default_shell_env (bool, optional): Whether rustc actions inherit the shell environment (defaults to False).
 
     Returns:
         dict[str, str]: Information about the registerable toolchain created by this rule.
@@ -659,6 +669,7 @@ def rust_toolchain_repository(
         auth = auth,
         netrc = netrc,
         auth_patterns = auth_patterns,
+        use_default_shell_env = use_default_shell_env,
     )
 
     channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(channel)] if channel else []
@@ -995,7 +1006,8 @@ def rust_repository_set(
         exec_compatible_with = None,
         default_target_compatible_with = None,
         aliases = {},
-        compact_windows_names = _COMPACT_WINDOWS_NAMES):
+        compact_windows_names = _COMPACT_WINDOWS_NAMES,
+        use_default_shell_env = False):
     """Assembles a remote repository for the given toolchain params, produces a proxy repository \
     to contain the toolchain declaration.
 
@@ -1033,6 +1045,7 @@ def rust_repository_set(
         aliases (dict): Replacement names to use for toolchains created by this macro.
         compact_windows_names (bool): Whether or not to produce compact repository names for windows
             toolchains. This is to avoid MAX_PATH issues.
+        use_default_shell_env (bool, optional): Whether rustc actions inherit the shell environment (defaults to False).
 
     Returns:
         dict[str, dict]: A dict of information about all generated toolchains.
@@ -1082,6 +1095,7 @@ def rust_repository_set(
             auth = auth,
             netrc = netrc,
             auth_patterns = auth_patterns,
+            use_default_shell_env = use_default_shell_env,
         )
 
         channel_target_settings = ["@rules_rust//rust/toolchain/channel:{}".format(toolchain.channel.name)]
