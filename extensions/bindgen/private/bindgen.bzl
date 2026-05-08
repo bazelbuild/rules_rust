@@ -178,6 +178,7 @@ def _generate_cc_link_build_info(ctx, cc_lib):
     )
 
     return BuildInfo(
+        build_script_data = depset([]),
         compile_data = depset(compile_data),
         dep_env = None,
         flags = rustc_flags_file,

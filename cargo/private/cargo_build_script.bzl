@@ -688,7 +688,8 @@ def _cargo_build_script_impl(ctx):
             flags = flags_out,
             linker_flags = link_flags,
             link_search_paths = link_search_paths,
-            compile_data = depset([runfiles_dir] + extra_output, transitive = script_data),
+            build_script_data = depset(transitive = script_data),
+            compile_data = depset([runfiles_dir] + extra_output),
         ),
         OutputGroupInfo(
             **output_groups

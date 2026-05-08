@@ -2321,6 +2321,7 @@ def _process_build_scripts(
             direct_inputs.append(build_info.linker_flags)
 
         transitive_inputs.append(build_info.compile_data)
+        transitive_inputs.append(getattr(build_info, "build_script_data", depset()))
 
     # We include transitive dep build_infos because cargo build scripts may generate files which get linked into the final binary.
     # This should probably only actually be exposed to actions which link.
