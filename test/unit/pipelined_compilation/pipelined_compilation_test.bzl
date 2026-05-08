@@ -93,6 +93,65 @@ def _bin_test_impl(ctx):
 bin_test = analysistest.make(_bin_test_impl, config_settings = ENABLE_PIPELINING)
 second_lib_test = analysistest.make(_second_lib_test_impl, config_settings = ENABLE_PIPELINING)
 
+_GUARDRAIL_ATTRS = {
+    "expect_injected_allow_features": attr.bool(default = False),
+    "expected_bootstrap": attr.string(default = ""),
+    "expected_user_allow_features": attr.string(default = ""),
+}
+
+def _guardrail_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    tut = analysistest.target_under_test(env)
+    rlib_action = [act for act in tut.actions if act.mnemonic == "Rustc"][0]
+    metadata_action = [act for act in tut.actions if act.mnemonic == "RustcMetadata"][0]
+    expected_bootstrap = ctx.attr.expected_bootstrap or None
+
+    for action in (metadata_action, rlib_action):
+        asserts.equals(
+            env,
+            expected_bootstrap,
+            action.env.get("RUSTC_BOOTSTRAP"),
+            "expected RUSTC_BOOTSTRAP=" + repr(expected_bootstrap) + " in " + action.mnemonic + ", got " + repr(action.env.get("RUSTC_BOOTSTRAP")),
+        )
+        has_our_flag = "-Zallow-features=" in action.argv
+        if ctx.attr.expect_injected_allow_features:
+            asserts.true(
+                env,
+                has_our_flag,
+                "expected injected -Zallow-features= in " + action.mnemonic,
+            )
+        else:
+            asserts.false(
+                env,
+                has_our_flag,
+                "expected no injected -Zallow-features= in " + action.mnemonic,
+            )
+        if ctx.attr.expected_user_allow_features:
+            asserts.true(
+                env,
+                ctx.attr.expected_user_allow_features in action.argv,
+                "expected user's " + ctx.attr.expected_user_allow_features + " in " + action.mnemonic,
+            )
+
+    return analysistest.end(env)
+
+def _make_guardrail_test(config_settings):
+    return analysistest.make(
+        _guardrail_test_impl,
+        attrs = _GUARDRAIL_ATTRS,
+        config_settings = config_settings,
+    )
+
+guardrail_test = _make_guardrail_test(ENABLE_PIPELINING)
+
+_GLOBAL_ENV_CONFIG = dict(ENABLE_PIPELINING)
+_GLOBAL_ENV_CONFIG[str(Label("//rust/settings:extra_rustc_env"))] = ["RUSTC_BOOTSTRAP=global-value"]
+guardrail_global_env_optout_test = _make_guardrail_test(_GLOBAL_ENV_CONFIG)
+
+_GLOBAL_FLAG_CONFIG = dict(ENABLE_PIPELINING)
+_GLOBAL_FLAG_CONFIG[str(Label("//rust/settings:extra_rustc_flag"))] = ["-Zallow-features=let_chains"]
+guardrail_global_flag_optout_test = _make_guardrail_test(_GLOBAL_FLAG_CONFIG)
+
 def _pipelined_compilation_test():
     rust_proc_macro(
         name = "my_macro",
@@ -132,9 +191,86 @@ def _pipelined_compilation_test():
         target_compatible_with = _NO_WINDOWS,
     )
 
+    guardrail_test(
+        name = "guardrail_baseline_test",
+        target_under_test = ":second",
+        target_compatible_with = _NO_WINDOWS,
+        expect_injected_allow_features = True,
+        expected_bootstrap = "1",
+    )
+
+    rust_library(
+        name = "user_env_optout",
+        crate_name = "user_env_optout",
+        edition = "2021",
+        srcs = ["first.rs"],
+        rustc_env = {"RUSTC_BOOTSTRAP": "user-value"},
+    )
+    guardrail_test(
+        name = "guardrail_user_env_optout_test",
+        target_under_test = ":user_env_optout",
+        target_compatible_with = _NO_WINDOWS,
+        expected_bootstrap = "user-value",
+    )
+
+    # tags=["manual"] prevents `:all` from trying to compile this target
+    # end-to-end: the `-Z` flag would make rustc fail on stable without
+    # RUSTC_BOOTSTRAP=1, but the analysistest only needs the analysis
+    # phase (declared actions), which succeeds regardless.
+    rust_library(
+        name = "user_flag_optout",
+        crate_name = "user_flag_optout",
+        edition = "2021",
+        srcs = ["first.rs"],
+        rustc_flags = ["-Zallow-features=let_chains"],
+        tags = ["manual"],
+    )
+    guardrail_test(
+        name = "guardrail_user_flag_optout_test",
+        target_under_test = ":user_flag_optout",
+        target_compatible_with = _NO_WINDOWS,
+        expected_user_allow_features = "-Zallow-features=let_chains",
+    )
+
+    # See note above on user_flag_optout for why tags=["manual"] is used.
+    rust_library(
+        name = "space_form_optout",
+        crate_name = "space_form_optout",
+        edition = "2021",
+        srcs = ["first.rs"],
+        rustc_flags = ["-Z", "allow-features=let_chains"],
+        tags = ["manual"],
+    )
+    guardrail_test(
+        name = "guardrail_space_form_optout_test",
+        target_under_test = ":space_form_optout",
+        target_compatible_with = _NO_WINDOWS,
+    )
+
+    # Global env/flag escape hatches reuse the baseline target but run with
+    # a different config_settings dict (set inside the analysistest factory).
+    guardrail_global_env_optout_test(
+        name = "guardrail_global_env_optout_test",
+        target_under_test = ":second",
+        target_compatible_with = _NO_WINDOWS,
+        expected_bootstrap = "global-value",
+    )
+
+    guardrail_global_flag_optout_test(
+        name = "guardrail_global_flag_optout_test",
+        target_under_test = ":second",
+        target_compatible_with = _NO_WINDOWS,
+    )
+
     return [
         ":second_lib_test",
         ":bin_test",
+        ":guardrail_baseline_test",
+        ":guardrail_user_env_optout_test",
+        ":guardrail_user_flag_optout_test",
+        ":guardrail_space_form_optout_test",
+        ":guardrail_global_env_optout_test",
+        ":guardrail_global_flag_optout_test",
     ]
 
 def _is_metadata_file(path):
