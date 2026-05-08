@@ -35,6 +35,7 @@ def _cargo_dep_env_impl(ctx):
             link_search_paths = empty_file,
             out_dir = out_dir,
             rustc_env = empty_file,
+            build_script_data = depset([]),
             compile_data = depset([]),
         ))
     return [
@@ -54,6 +55,7 @@ def _cargo_dep_env_impl(ctx):
             link_search_paths = empty_file,
             out_dir = None,
             rustc_env = empty_file,
+            build_script_data = depset([]),
             compile_data = depset([]),
         ),
         # Information here is used directly by dependencies, and it is an error to have more than

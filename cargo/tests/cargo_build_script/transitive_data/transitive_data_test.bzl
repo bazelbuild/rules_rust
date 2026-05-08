@@ -1,6 +1,4 @@
-"""Tests documenting that cargo_build_script `data` files currently act as both
-compile_data and runtime data -- they appear in Rustc compile action inputs for
-both the direct library and transitive dependents.
+"""Tests for cargo_build_script `data` propagation into Rustc compile actions.
 
 See https://github.com/bazelbuild/rules_rust/issues/3609 for context."""
 
@@ -21,21 +19,20 @@ def _cbs_data_in_rustc_inputs_impl(ctx):
 
     asserts.false(env, rustc_action == None, "Expected a Rustc action")
 
-    # cargo_build_script `data` currently flows into BuildInfo.compile_data
-    # via script_data, so it appears in Rustc action inputs for both the
-    # direct dependent and transitive dependents. This documents that
-    # CBS `data` effectively acts as both compile_data and data today.
     data_inputs = [i for i in rustc_action.inputs.to_list() if "cbs_data_dep.txt" in i.path]
-    asserts.true(
+    asserts.equals(
         env,
+        ctx.attr.expected_present,
         len(data_inputs) > 0,
-        "Expected CBS data file to appear in Rustc action inputs (CBS data currently acts as compile_data)",
     )
 
     return analysistest.end(env)
 
 cbs_data_in_rustc_inputs_test = analysistest.make(
     _cbs_data_in_rustc_inputs_impl,
+    attrs = {
+        "expected_present": attr.bool(),
+    },
 )
 
 def _define_test_targets():
@@ -98,11 +95,13 @@ def transitive_cbs_data_test_suite(name):
 
     cbs_data_in_rustc_inputs_test(
         name = "cbs_data_in_lib_compile_inputs_test",
+        expected_present = True,
         target_under_test = ":lib",
     )
 
     cbs_data_in_rustc_inputs_test(
         name = "cbs_data_in_bin_compile_inputs_test",
+        expected_present = False,
         target_under_test = ":bin",
     )
 
