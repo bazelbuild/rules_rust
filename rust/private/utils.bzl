@@ -530,6 +530,23 @@ def transform_deps(deps):
         crate_group_info = dep[CrateGroupInfo] if CrateGroupInfo in dep else None,
     ) for dep in deps]
 
+def transform_link_deps(link_deps):
+    """Transforms a [Target] into [DepVariantInfo] for native symbol linkage.
+
+    Args:
+        link_deps (list of Targets): Dependencies coming from ctx.attr.link_deps
+
+    Returns:
+        list of DepVariantInfos with only CcInfo populated.
+    """
+    return [DepVariantInfo(
+        crate_info = None,
+        dep_info = None,
+        build_info = None,
+        cc_info = dep[CcInfo] if CcInfo in dep else None,
+        crate_group_info = None,
+    ) for dep in link_deps]
+
 def should_encode_label_in_crate_name(workspace_name, label, third_party_dir):
     """Determines if the crate's name should include the Bazel label, encoded.
 
