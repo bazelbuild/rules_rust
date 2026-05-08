@@ -14,7 +14,6 @@
 
 """Rust rule implementations"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":common.bzl", "COMMON_PROVIDERS", "rust_common")
@@ -56,6 +55,7 @@ load(
     "find_toolchain",
     "generate_output_diagnostics",
     "get_edition",
+    "metadata_output_path",
     "transform_deps",
     "transform_link_deps",
     "transform_sources",
@@ -189,7 +189,7 @@ def _rust_library_common(ctx, crate_type):
         disable_pipelining = getattr(ctx.attr, "disable_pipelining", False),
     ):
         rust_metadata = ctx.actions.declare_file(
-            paths.replace_extension(rust_lib_name, "_meta.rlib"),
+            metadata_output_path(toolchain, rust_lib_name),
             sibling = rust_lib,
         )
         rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rust_metadata)
@@ -266,7 +266,7 @@ def _rust_binary_impl(ctx):
     rustc_rmeta_output = None
     if can_build_metadata(toolchain, ctx, ctx.attr.crate_type):
         rust_metadata = ctx.actions.declare_file(
-            paths.replace_extension("lib" + crate_name, "_meta.rlib"),
+            metadata_output_path(toolchain, "lib" + crate_name),
             sibling = output,
         )
         rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rust_metadata)
@@ -370,7 +370,7 @@ def _rust_test_impl(ctx):
         rustc_rmeta_output = None
         if can_build_metadata(toolchain, ctx, crate_type):
             rust_metadata = ctx.actions.declare_file(
-                paths.replace_extension("lib" + crate_name, "_meta.rlib"),
+                metadata_output_path(toolchain, "lib" + crate_name),
                 sibling = output,
             )
             rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rust_metadata)
@@ -440,7 +440,7 @@ def _rust_test_impl(ctx):
         rustc_rmeta_output = None
         if can_build_metadata(toolchain, ctx, crate_type):
             rust_metadata = ctx.actions.declare_file(
-                paths.replace_extension("lib" + crate_name, "_meta.rlib"),
+                metadata_output_path(toolchain, "lib" + crate_name),
                 sibling = output,
             )
             rustc_rmeta_output = generate_output_diagnostics(ctx, toolchain, rust_metadata)
