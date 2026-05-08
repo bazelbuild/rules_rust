@@ -1211,8 +1211,19 @@ def construct_arguments(
             rustc_flags.add("--remap-path-prefix=${{pwd}}={}".format(remap_path_prefix))
             rustc_flags.add("--remap-path-prefix=${{exec_root}}={}".format(remap_path_prefix))
         else:
-            rustc_flags.add("--remap-path-prefix=${{pwd}}/{}={}".format(ctx.bin_dir.path, remap_path_prefix))
-            rustc_flags.add("--remap-path-prefix=${{exec_root}}/{}={}".format(ctx.bin_dir.path, remap_path_prefix))
+            # Use add_all with the crate root File and a map_each callback
+            # so Bazel's path mapping (--experimental_output_paths=strip)
+            # can rewrite the config portion of the bin-dir prefix.
+            rustc_flags.add_all(
+                [crate_info.root],
+                map_each = _get_bin_dir_prefix,
+                format_each = "--remap-path-prefix=${pwd}/%s=" + remap_path_prefix,
+            )
+            rustc_flags.add_all(
+                [crate_info.root],
+                map_each = _get_bin_dir_prefix,
+                format_each = "--remap-path-prefix=${exec_root}/%s=" + remap_path_prefix,
+            )
 
     emit_without_paths = []
     for kind in emit:
@@ -2726,6 +2737,22 @@ def _add_native_link_flags(
                     map_each = get_lib_name,
                     format_each = "-lstatic=%s",
                 )
+
+def _get_bin_dir_prefix(file):
+    """Returns the bin-dir prefix (without trailing slash) from a generated file.
+
+    For a generated file, file.path is "bazel-out/<config>/bin/<pkg>/<name>"
+    and file.short_path is "<pkg>/<name>".  The difference is the bin-dir
+    prefix.  Using the File object with add_all/map_each lets Bazel apply
+    path mapping (--experimental_output_paths=strip) to the config portion.
+
+    Args:
+        file (File): A generated file (e.g. the crate root).
+
+    Returns:
+        str: The bin-dir prefix, e.g. "bazel-out/k8-fastbuild/bin".
+    """
+    return file.path[:len(file.path) - len(file.short_path)].rstrip("/")
 
 def _get_dirname(file):
     """A helper function for `_add_native_link_flags`.
