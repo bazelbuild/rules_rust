@@ -9,7 +9,7 @@ load("//rust/private:providers.bzl", "BuildInfo", "CrateInfo", "DepInfo", "DepVa
 load("//rust/private:rustc.bzl", "rustc_compile_action")
 
 # buildifier: disable=bzl-visibility
-load("//rust/private:utils.bzl", "can_use_metadata_for_pipelining")
+load("//rust/private:utils.bzl", "can_use_metadata_for_pipelining", "metadata_output_path")
 
 _CONTENT = """\
 // crate_name: {}
@@ -40,12 +40,7 @@ def _wrap_impl(ctx):
         lib_hash = output_hash,
         extension = ".rlib",
     )
-    rust_metadata_name = "{prefix}{name}-{lib_hash}{extension}".format(
-        prefix = "lib",
-        name = crate_name,
-        lib_hash = output_hash,
-        extension = "_meta.rlib",
-    )
+    rust_metadata_name = metadata_output_path(toolchain, rust_lib_name)
 
     tgt = ctx.attr.target
     deps = [DepVariantInfo(

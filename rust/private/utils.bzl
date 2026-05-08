@@ -741,6 +741,14 @@ def _replace_all(string, substitutions):
 
     return string
 
+def metadata_output_path(_toolchain, base_name):
+    """Path for the pipelined metadata artifact, relative to the full rlib's dir.
+
+    Pipelined compilation writes a hollow rlib into a `_meta/` subdir to avoid
+    colliding with the full rlib under `-Ldependency=`.
+    """
+    return "_meta/" + paths.replace_extension(base_name, "_meta.rlib")
+
 def can_build_metadata(toolchain, ctx, crate_type, *, disable_pipelining = False):
     """Can we build metadata for the target built using this context?
 

@@ -120,7 +120,8 @@ def pipelined_compilation():
     increasing parallelism during compilation.
 
     Requires RUSTC_BOOTSTRAP=1, which is set automatically on both the metadata and full
-    actions for pipelined targets.
+    actions for pipelined targets (stable/beta rustc only; nightly toolchains skip the
+    bootstrap injection and the `-Zallow-features=` guardrail).
     """
     bool_flag(
         name = "pipelined_compilation",
