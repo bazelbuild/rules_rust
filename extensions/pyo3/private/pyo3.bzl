@@ -131,6 +131,7 @@ def _py_pyo3_library_impl(ctx):
     files.append(ext)
 
     stub = None
+    pyi_files = []
     if _stubs_enabled(ctx.attr.stubs, toolchain):
         stub = ctx.actions.declare_file(stub_relpath)
 
@@ -146,6 +147,7 @@ def _py_pyo3_library_impl(ctx):
             arguments = [args],
         )
         files.append(stub)
+        pyi_files.append(stub)
 
     providers = [
         DefaultInfo(
@@ -156,7 +158,9 @@ def _py_pyo3_library_impl(ctx):
             ).merge(ctx.attr.extension[DefaultInfo].default_runfiles),
         ),
         PyInfo(
+            direct_pyi_files = depset(direct = pyi_files),
             imports = _get_imports(ctx, ctx.attr.imports),
+            transitive_pyi_files = depset(direct = pyi_files),
             transitive_sources = depset(),
         ),
         coverage_common.instrumented_files_info(
