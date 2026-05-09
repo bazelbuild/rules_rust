@@ -21,6 +21,7 @@ toolchain_type(
 
 current_pyo3_toolchain(
     name = "current_pyo3_toolchain",
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 
