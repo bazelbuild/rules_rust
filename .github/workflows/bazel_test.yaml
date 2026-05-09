@@ -1,0 +1,79 @@
+name: Bazel Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  merge_group:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      BUILDBUDDY_API_KEY:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bazel-test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test:
+    name: bazel test //... (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+          - platform: macos
+            os: macos-latest
+          - platform: windows
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Mount Bazel repository cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel-repo
+          key: bazel-repo-${{ matrix.platform }}-${{ hashFiles('MODULE.bazel', 'MODULE.bazel.lock', '.bazelrc', '**/*.bzl', '**/BUILD', '**/BUILD.bazel') }}
+          restore-keys: |
+            bazel-repo-${{ matrix.platform }}-
+
+      - name: Configure Windows Bazel
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          'startup --output_user_root=C:/tmp/bazel' | Out-File -FilePath user.bazelrc -Encoding utf8
+          'startup --windows_enable_symlinks' | Out-File -FilePath user.bazelrc -Append -Encoding utf8
+
+      - name: bazel test //...
+        shell: bash
+        env:
+          USE_BAZEL_VERSION: 9.1.0
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        run: |
+          REMOTE_ARGS=()
+          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
+            REMOTE_ARGS+=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
+          else
+            echo "BUILDBUDDY_API_KEY is not set; using BuildBuddy remote cache without an auth header."
+          fi
+
+          bazel \
+            --bazelrc="$GITHUB_WORKSPACE/.github/github.bazelrc" \
+            test \
+            --config=remote \
+            "${REMOTE_ARGS[@]}" \
+            //...
