@@ -50,6 +50,22 @@ build:unpretty --output_groups=+rust_unpretty
 # https://github.com/rust-lang/rust/issues/43364
 build:unpretty --config=nightly
 
+# Use a shared repository cache location. GitHub Actions persists this path
+# between runs, and it is also a reasonable local default.
+common --repository_cache=~/.cache/bazel-repo
+common --repo_contents_cache=~/.cache/bazel-repo/contents
+
+# BuildBuddy remote cache / BES settings used by CI via `--config=remote`.
+common:remote --bes_backend=grpcs://remote.buildbuddy.io
+common:remote --bes_results_url=https://app.buildbuddy.io/invocation/
+common:remote --remote_cache=grpcs://remote.buildbuddy.io
+common:remote --remote_cache_compression
+common:remote --experimental_remote_downloader=grpcs://remote.buildbuddy.io
+common:remote --remote_download_outputs=minimal
+
+# Allows tests that shell out to Bazel/Bazelisk to find their cache directory.
+test --test_env=XDG_CACHE_HOME
+
 # Disable cc toolchains to test rust targets can be built without one.
 build:no_cc_toolchain --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build:no_cc_toolchain --repo_env=BAZEL_NO_APPLE_CPP_TOOLCHAIN=1
