@@ -162,7 +162,7 @@ def rustdoc_compile_action(
         if "SYSROOT" in env:
             env.update({"SYSROOT": "${{pwd}}/{}".format(toolchain.sysroot_short_path)})
         if "OUT_DIR" in env:
-            env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.short_path)})
+            env.update({"OUT_DIR": "${{pwd}}/{}".format(build_info.out_dir.path)})
 
     # Create the combined inputs including HTML customization files
     all_inputs = depset([crate_info.output], transitive = [compile_inputs, depset(html_input_files)])

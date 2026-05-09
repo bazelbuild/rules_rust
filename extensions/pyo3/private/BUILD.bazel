@@ -21,11 +21,13 @@ bzl_library(
 
 current_pyo3_toolchain(
     name = "current_pyo3_toolchain",
+    tags = ["manual"],
 )
 
 current_rust_pyo3_toolchain(
     name = "current_rust_pyo3_toolchain",
     tags = [
+        "manual",
         "no-clippy",
         "no-rustfmt",
     ],
@@ -35,6 +37,7 @@ current_rust_pyo3_toolchain(
 current_rust_pyo3_introspection_toolchain(
     name = "current_rust_pyo3_introspection_toolchain",
     tags = [
+        "manual",
         "no-clippy",
         "no-rustfmt",
     ],
@@ -45,5 +48,6 @@ rust_binary(
     name = "stubgen",
     srcs = ["stubgen.rs"],
     edition = "2021",
+    tags = ["manual"],
     deps = [":current_rust_pyo3_introspection_toolchain"],
 )

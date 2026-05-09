@@ -22,6 +22,12 @@ bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "apple_support", version = "1.24.1")
 bazel_dep(name = "llvm", version = "0.7.7")
 
+###############################################################################
+## Compatibility
+###############################################################################
+
+bazel_dep(name = "rules_rs", version = "0.0.76")
+
 osx = use_extension("@llvm//extensions:osx.bzl", "osx")
 use_repo(osx, "macos_sdk")
 

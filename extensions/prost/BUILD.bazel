@@ -13,6 +13,7 @@ toolchain_type(
 
 toolchain(
     name = "default_prost_toolchain",
+    tags = ["manual"],
     toolchain = "@rules_rs//rs/private/prost:default_prost_toolchain_impl",
     toolchain_type = ":toolchain_type",
 )
