@@ -3,21 +3,25 @@ load("//extensions/pyo3:defs.bzl", "pyo3_toolchain")
 alias(
     name = "rust_pyo3_toolchain",
     actual = "@rules_rs//rs/private/pyo3:rust_pyo3_toolchain",
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 
 toolchain(
     name = "rust_toolchain",
+    tags = ["manual"],
     toolchain = ":rust_pyo3_toolchain",
     toolchain_type = "//extensions/pyo3:rust_toolchain_type",
 )
 
 pyo3_toolchain(
     name = "pyo3_toolchain",
+    tags = ["manual"],
 )
 
 toolchain(
     name = "toolchain",
+    tags = ["manual"],
     toolchain = ":pyo3_toolchain",
     toolchain_type = "//extensions/pyo3:toolchain_type",
 )

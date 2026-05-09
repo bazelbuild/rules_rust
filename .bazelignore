@@ -4,4 +4,10 @@ crate_universe/private/bootstrap
 crate_universe/tests/integration
 docs
 examples
+extensions/bindgen
+extensions/mdbook
+extensions/prost/private/tests
+extensions/pyo3/test
+extensions/pyo3/tools
+extensions/wasm_bindgen
 test/integration
