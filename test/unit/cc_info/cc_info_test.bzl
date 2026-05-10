@@ -54,16 +54,32 @@ def _collect_user_link_flags(env, tut):
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
     return [f for i in linker_inputs for f in i.user_link_flags]
 
-def _collect_static_library_basenames(env, tut):
+def _library_artifact_basenames(library_to_link):
+    basenames = []
+    for artifact in [
+        library_to_link.static_library,
+        library_to_link.pic_static_library,
+        library_to_link.dynamic_library,
+        library_to_link.interface_library,
+    ]:
+        if artifact != None:
+            basenames.append(artifact.basename)
+    basenames.extend([artifact.basename for artifact in library_to_link.objects])
+    basenames.extend([artifact.basename for artifact in library_to_link.pic_objects])
+    return basenames
+
+def _collect_linker_input_artifacts_by_owner(env, tut):
     asserts.true(env, CcInfo in tut, "rust_library should provide CcInfo")
     cc_info = tut[CcInfo]
     linker_inputs = cc_info.linking_context.linker_inputs.to_list()
-    return [
-        library_to_link.static_library.basename
+    return {
+        linker_input.owner: [
+            artifact
+            for library_to_link in linker_input.libraries
+            for artifact in _library_artifact_basenames(library_to_link)
+        ]
         for linker_input in linker_inputs
-        for library_to_link in linker_input.libraries
-        if library_to_link.static_library != None
-    ]
+    }
 
 def _rlib_provides_cc_info_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -122,11 +138,12 @@ def _crate_group_info_provides_cc_info_test_impl(ctx):
         len(tut[rust_common.dep_info].transitive_noncrates.to_list()) == 1,
         "crate_group_info should provide 1 non-crate transitive dependency",
     )
-    static_library_basenames = _collect_static_library_basenames(env, tut)
+    artifacts_by_owner = _collect_linker_input_artifacts_by_owner(env, tut)
+    cc_lib_artifacts = artifacts_by_owner.get(Label("//test/unit/cc_info:cc_lib"), [])
     asserts.true(
         env,
-        "libcc_lib.a" in static_library_basenames,
-        "rust_library CcInfo should include static libraries from CrateGroupInfo deps, got {}".format(static_library_basenames),
+        cc_lib_artifacts,
+        "rust_library CcInfo should include linkable artifacts from CrateGroupInfo deps, got {}".format(artifacts_by_owner),
     )
     return analysistest.end(env)
 
