@@ -84,6 +84,13 @@ def _inputs_analysis_test_impl(ctx):
             "error: expected '{}' to be linked via -Clink-arg: '{}'".format(expected, action.argv),
         )
 
+    for expected in ctx.attr.expected_args:
+        asserts.true(
+            env,
+            expected in action.argv,
+            "error: expected '{}' in args: '{}'".format(expected, action.argv),
+        )
+
     for unexpected in ctx.attr.unexpected_args:
         asserts.false(
             env,
@@ -106,6 +113,7 @@ inputs_analysis_test = analysistest.make(
     doc = """An analysistest to examine the inputs of a library target.""",
     attrs = {
         "expected_inputs": attr.string_list(),
+        "expected_args": attr.string_list(),
         "expected_link_arg_inputs": attr.string_list(),
         "expected_runfiles": attr.string_list(),
         "unexpected_args": attr.string_list(),
@@ -160,9 +168,19 @@ def runtime_libs_test(name):
         name = "%s/shared_library" % name,
         target_under_test = "%s/_shared_library" % name,
         expected_inputs = ["dummy.so"],
-        expected_link_arg_inputs = ["dummy.so"],
+        expected_args = select({
+            "@platforms//os:windows": ["-ldylib=dummy"],
+            "//conditions:default": [],
+        }),
+        expected_link_arg_inputs = select({
+            "@platforms//os:windows": [],
+            "//conditions:default": ["dummy.so"],
+        }),
         expected_runfiles = ["dummy.so"],
-        unexpected_args = ["-ldylib=dummy"],
+        unexpected_args = select({
+            "@platforms//os:windows": [],
+            "//conditions:default": ["-ldylib=dummy"],
+        }),
     )
 
     rust_static_library(
