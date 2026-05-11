@@ -972,8 +972,7 @@ def construct_arguments(
         out_dir,
         build_env_files,
         build_flags_files,
-        tool_file = None,
-        tool_path = None,
+        tool_file,
         emit = ["link"],
         force_all_deps_direct = False,
         add_flags_for_binary = False,
@@ -1024,7 +1023,7 @@ def construct_arguments(
             When provided, the directory is handed to `process_wrapper`
             via an explicit `--out-dir <path>` arg sourced from a
             `File`-typed `Args` entry. `process_wrapper` then
-            materializes `OUT_DIR=${pwd}/<path>` in the child process's
+            materializes `OUT_DIR=${exec_root}/<path>` in the child process's
             environment. Routing the path through a `File`-typed arg lets
             Bazel's path mapping (`--experimental_output_paths=strip`)
             rewrite it to the `bazel-out/cfg/bin/...` prefix at argv-
@@ -1036,13 +1035,10 @@ def construct_arguments(
             the returned `env` dict themselves.
         build_env_files (list): Files containing rustc environment variables, for instance from `cargo_build_script` actions.
         build_flags_files (depset): The output files of a `cargo_build_script` actions containing rustc build flags
-        tool_path (str): Path to rustc. Used as a fallback when `tool_file` is
-            not provided. When `tool_file` is provided, this string is ignored.
-        tool_file (File, optional): The `File` representing the tool to invoke
-            (e.g. `toolchain.rustc`, `clippy_executable`). When provided, it is
-            added to the `Args` as a `File` so that Bazel's path mapping
+        tool_file (File): The tool to invoke (for example `toolchain.rustc`,
+            `toolchain.rust_doc`, or `clippy_executable`). It is added to the
+            `Args` as a `File` so Bazel's path mapping
             (`--experimental_output_paths=strip`) can rewrite its location.
-            Falls back to `tool_path` (a plain string) when `None`.
         emit (list): Values for the --emit flag to rustc.
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
             to the commandline as opposed to -L.
@@ -1141,15 +1137,11 @@ def construct_arguments(
             expand_directories = False,
         )
 
-    # Arguments for launching rustc from the process wrapper. When a `File` is
-    # provided via `tool_file`, add it directly so Bazel's path mapping can
-    # rewrite the location; otherwise fall back to the bare string `tool_path`.
+    # Arguments for launching the tool from the process wrapper. Add the tool as
+    # a `File` so Bazel's path mapping can rewrite the location.
     rustc_path = ctx.actions.args()
     rustc_path.add("--")
-    if tool_file != None:
-        rustc_path.add(tool_file)
-    else:
-        rustc_path.add(tool_path)
+    rustc_path.add(tool_file)
 
     # If we're emitting an object file, remove any `-Ccodegen-units=` flags.
     # The build rules expect to see a single object file, not the multiple
