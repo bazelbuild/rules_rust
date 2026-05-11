@@ -189,7 +189,6 @@ def _rust_unpretty_aspect_impl(target, ctx):
             attr = ctx.rule.attr,
             file = ctx.file,
             toolchain = toolchain,
-            tool_path = toolchain.rustc.path,
             tool_file = toolchain.rustc,
             cc_toolchain = cc_toolchain,
             feature_configuration = feature_configuration,
