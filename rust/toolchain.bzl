@@ -203,17 +203,27 @@ def _symlink_sysroot_bin(ctx, name, directory, target):
 
     return symlink
 
+def _default_runfiles_files(target):
+    if not target:
+        return None
+
+    return target[DefaultInfo].default_runfiles.files
+
 def _generate_sysroot(
         ctx,
         rustc,
         rustdoc,
         rustc_lib,
         cargo = None,
+        cargo_runfiles = None,
         clippy = None,
+        clippy_runfiles = None,
         cargo_clippy = None,
+        cargo_clippy_runfiles = None,
         llvm_tools = None,
         rust_std = None,
         rustfmt = None,
+        rustfmt_runfiles = None,
         linker = None,
         rust_objcopy = None):
     """Generate a rust sysroot from collection of toolchain components
@@ -224,11 +234,15 @@ def _generate_sysroot(
         rustdoc (File): The path to a `rustdoc` executable.
         rustc_lib (Target): A collection of Files containing dependencies of `rustc`.
         cargo (File, optional): The path to a `cargo` executable.
+        cargo_runfiles (depset[File], optional): Runtime files for `cargo`.
         cargo_clippy (File, optional): The path to a `cargo-clippy` executable.
+        cargo_clippy_runfiles (depset[File], optional): Runtime files for `cargo-clippy`.
         clippy (File, optional): The path to a `clippy-driver` executable.
+        clippy_runfiles (depset[File], optional): Runtime files for `clippy-driver`.
         llvm_tools (Target, optional): A collection of llvm tools used by `rustc`.
         rust_std (Target, optional): A collection of Files containing Rust standard library components.
         rustfmt (File, optional): The path to a `rustfmt` executable.
+        rustfmt_runfiles (depset[File], optional): Runtime files for `rustfmt`.
         linker (Target, optional): The linker target (e.g. `rust-lld`).
         rust_objcopy (File, optional): The path to a `rust-objcopy` executable.
 
@@ -260,24 +274,32 @@ def _generate_sysroot(
     if clippy:
         sysroot_clippy = _symlink_sysroot_bin(ctx, name, "bin", clippy)
         direct_files.append(sysroot_clippy)
+        if clippy_runfiles:
+            transitive_file_sets.append(clippy_runfiles)
 
     # Cargo
     sysroot_cargo = None
     if cargo:
         sysroot_cargo = _symlink_sysroot_bin(ctx, name, "bin", cargo)
         direct_files.append(sysroot_cargo)
+        if cargo_runfiles:
+            transitive_file_sets.append(cargo_runfiles)
 
     # Cargo-clippy
     sysroot_cargo_clippy = None
     if cargo_clippy:
         sysroot_cargo_clippy = _symlink_sysroot_bin(ctx, name, "bin", cargo_clippy)
         direct_files.append(sysroot_cargo_clippy)
+        if cargo_clippy_runfiles:
+            transitive_file_sets.append(cargo_clippy_runfiles)
 
     # Rustfmt
     sysroot_rustfmt = None
     if rustfmt:
         sysroot_rustfmt = _symlink_sysroot_bin(ctx, name, "bin", rustfmt)
         direct_files.append(sysroot_rustfmt)
+        if rustfmt_runfiles:
+            transitive_file_sets.append(rustfmt_runfiles)
 
     # Linker
     sysroot_linker = None
@@ -452,9 +474,13 @@ def _rust_toolchain_impl(ctx):
         rustc_lib = ctx.attr.rustc_lib,
         rust_std = rust_std,
         rustfmt = ctx.file.rustfmt,
+        rustfmt_runfiles = _default_runfiles_files(ctx.attr.rustfmt),
         clippy = ctx.file.clippy_driver,
+        clippy_runfiles = _default_runfiles_files(ctx.attr.clippy_driver),
         cargo = ctx.file.cargo,
+        cargo_runfiles = _default_runfiles_files(ctx.attr.cargo),
         cargo_clippy = ctx.file.cargo_clippy,
+        cargo_clippy_runfiles = _default_runfiles_files(ctx.attr.cargo_clippy),
         llvm_tools = ctx.attr.llvm_tools,
         linker = ctx.attr.linker,
         rust_objcopy = ctx.file.rust_objcopy,

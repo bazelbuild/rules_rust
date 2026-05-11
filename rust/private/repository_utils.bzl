@@ -43,13 +43,7 @@ TINYJSON_KWARGS = dict(
     build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
 )
 
-_build_file_for_compiler_template = """\
-filegroup(
-    name = "rustc",
-    srcs = ["bin/rustc{binary_ext}"],
-    visibility = ["//visibility:public"],
-)
-
+_build_file_for_rustc_lib_template = """\
 filegroup(
     name = "rustc_lib",
     srcs = glob(
@@ -62,6 +56,14 @@ filegroup(
         ],
         allow_empty = True,
     ),
+    visibility = ["//visibility:public"],
+)
+"""
+
+_build_file_for_compiler_template = """\
+filegroup(
+    name = "rustc",
+    srcs = ["bin/rustc{binary_ext}"],
     visibility = ["//visibility:public"],
 )
 
@@ -101,6 +103,21 @@ filegroup(
 )
 """
 
+def _BUILD_for_rustc_lib(target_triple):
+    return _build_file_for_rustc_lib_template.format(
+        dylib_ext = system_to_dylib_ext(target_triple.system),
+        target_triple = target_triple.str,
+    )
+
+def _data_attr(labels):
+    if not labels:
+        return ""
+
+    return "    data = [\n{}    ],\n".format("".join([
+        '        "{}",\n'.format(label)
+        for label in labels
+    ]))
+
 def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = False):
     """Emits a BUILD file the compiler archive.
 
@@ -112,12 +129,12 @@ def BUILD_for_compiler(target_triple, include_linker = False, include_objcopy = 
     Returns:
         str: The contents of a BUILD file
     """
-    content = [_build_file_for_compiler_template.format(
-        binary_ext = system_to_binary_ext(target_triple.system),
-        staticlib_ext = system_to_staticlib_ext(target_triple.system),
-        dylib_ext = system_to_dylib_ext(target_triple.system),
-        target_triple = target_triple.str,
-    )]
+    content = [
+        _build_file_for_compiler_template.format(
+            binary_ext = system_to_binary_ext(target_triple.system),
+        ),
+        _BUILD_for_rustc_lib(target_triple),
+    ]
 
     if include_linker:
         content.append(
@@ -186,34 +203,44 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 filegroup(
     name = "rustfmt_bin",
     srcs = ["bin/rustfmt{binary_ext}"],
-    visibility = ["//visibility:public"],
+{rustc_lib_data}    visibility = ["//visibility:public"],
 )
 
 sh_binary(
     name = "rustfmt",
     srcs = [":rustfmt_bin"],
-    visibility = ["//visibility:public"],
+{rustc_lib_data}    visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_rustfmt(target_triple):
+def BUILD_for_rustfmt(target_triple, rustc_lib = None, include_rustc_lib = False):
     """Emits a BUILD file the rustfmt archive.
 
     Args:
         target_triple (str): The triple of the target platform
+        rustc_lib (str, optional): Label for rustc runtime libraries used by rustfmt.
+        include_rustc_lib (bool): Whether to declare a local rustc_lib target.
 
     Returns:
         str: The contents of a BUILD file
     """
-    return _build_file_for_rustfmt_template.format(
+    if include_rustc_lib and rustc_lib == None:
+        rustc_lib = ":rustc_lib"
+
+    content = [_build_file_for_rustfmt_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-    )
+        rustc_lib_data = _data_attr([rustc_lib] if rustc_lib else []),
+    )]
+    if include_rustc_lib:
+        content.append(_BUILD_for_rustc_lib(target_triple))
+
+    return "\n".join(content)
 
 _build_file_for_rust_analyzer_proc_macro_srv = """\
 filegroup(
    name = "rust_analyzer_proc_macro_srv",
    srcs = ["libexec/rust-analyzer-proc-macro-srv{binary_ext}"],
-   visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"],
 )
 """
 
@@ -233,27 +260,37 @@ _build_file_for_clippy_template = """\
 filegroup(
     name = "clippy_driver_bin",
     srcs = ["bin/clippy-driver{binary_ext}"],
-    visibility = ["//visibility:public"],
+{rustc_lib_data}    visibility = ["//visibility:public"],
 )
 filegroup(
     name = "cargo_clippy_bin",
     srcs = ["bin/cargo-clippy{binary_ext}"],
-    visibility = ["//visibility:public"],
+{rustc_lib_data}    visibility = ["//visibility:public"],
 )
 """
 
-def BUILD_for_clippy(target_triple):
+def BUILD_for_clippy(target_triple, rustc_lib = None, include_rustc_lib = False):
     """Emits a BUILD file the clippy archive.
 
     Args:
         target_triple (str): The triple of the target platform
+        rustc_lib (str, optional): Label for rustc runtime libraries used by clippy.
+        include_rustc_lib (bool): Whether to declare a local rustc_lib target.
 
     Returns:
         str: The contents of a BUILD file
     """
-    return _build_file_for_clippy_template.format(
+    if include_rustc_lib and rustc_lib == None:
+        rustc_lib = ":rustc_lib"
+
+    content = [_build_file_for_clippy_template.format(
         binary_ext = system_to_binary_ext(target_triple.system),
-    )
+        rustc_lib_data = _data_attr([rustc_lib] if rustc_lib else []),
+    )]
+    if include_rustc_lib:
+        content.append(_BUILD_for_rustc_lib(target_triple))
+
+    return "\n".join(content)
 
 _build_file_for_llvm_tools = """\
 filegroup(
