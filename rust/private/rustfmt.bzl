@@ -321,11 +321,13 @@ def _rustfmt_toolchain_impl(ctx):
     if ctx.file.rustc:
         all_files.append(ctx.file.rustc)
 
+    transitive_files = [ctx.attr.rustfmt[DefaultInfo].default_runfiles.files]
+
     toolchain = platform_common.ToolchainInfo(
         rustfmt = ctx.file.rustfmt,
         rustc = ctx.file.rustc,
         rustc_lib = depset(ctx.files.rustc_lib),
-        all_files = depset(all_files),
+        all_files = depset(all_files, transitive = transitive_files),
         make_variables = make_variable_info,
     )
 
