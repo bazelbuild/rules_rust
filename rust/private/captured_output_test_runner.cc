@@ -41,9 +41,9 @@ int main(int argc, char **argv) {
     const std::string test_executable(argv[0]);
 
     bool ok = true;
-    ok = CopyFileToStream(test_executable + ".rustdoc_test.stdout", std::cout) && ok;
-    ok = CopyFileToStream(test_executable + ".rustdoc_test.stderr", std::cerr) && ok;
+    ok = CopyFileToStream(test_executable + ".stdout", std::cout) && ok;
+    ok = CopyFileToStream(test_executable + ".stderr", std::cerr) && ok;
 
-    const int exit_code = ReadExitCode(test_executable + ".rustdoc_test.exit_code");
+    const int exit_code = ReadExitCode(test_executable + ".exit_code");
     return ok && exit_code >= 0 ? exit_code : 1;
 }
