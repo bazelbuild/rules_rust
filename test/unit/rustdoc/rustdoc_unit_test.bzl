@@ -185,9 +185,9 @@ def _rustdoc_test_runs_in_build_action_test_impl(ctx):
     )
 
     runfile_basenames = [file.basename for file in tut[DefaultInfo].default_runfiles.files.to_list()]
-    asserts.true(env, "lib_doctest.rustdoc_test.stdout" in runfile_basenames)
-    asserts.true(env, "lib_doctest.rustdoc_test.stderr" in runfile_basenames)
-    asserts.true(env, "lib_doctest.rustdoc_test.exit_code" in runfile_basenames)
+    asserts.true(env, "lib_doctest.stdout" in runfile_basenames)
+    asserts.true(env, "lib_doctest.stderr" in runfile_basenames)
+    asserts.true(env, "lib_doctest.exit_code" in runfile_basenames)
 
     return analysistest.end(env)
 

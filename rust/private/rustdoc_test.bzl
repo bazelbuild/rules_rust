@@ -62,9 +62,9 @@ def _rust_doc_test_impl(ctx):
         test_runner_name += "." + ctx.executable._test_runner.extension
 
     test_runner = ctx.actions.declare_file(test_runner_name)
-    stdout_file = ctx.actions.declare_file(test_runner.basename + ".rustdoc_test.stdout", sibling = test_runner)
-    stderr_file = ctx.actions.declare_file(test_runner.basename + ".rustdoc_test.stderr", sibling = test_runner)
-    exit_code_file = ctx.actions.declare_file(test_runner.basename + ".rustdoc_test.exit_code", sibling = test_runner)
+    stdout_file = ctx.actions.declare_file(test_runner.basename + ".stdout", sibling = test_runner)
+    stderr_file = ctx.actions.declare_file(test_runner.basename + ".stderr", sibling = test_runner)
+    exit_code_file = ctx.actions.declare_file(test_runner.basename + ".exit_code", sibling = test_runner)
 
     # Add the current crate as an extern for the compile action
     rustdoc_flags = [
@@ -160,7 +160,7 @@ rust_doc_test = rule(
         "_test_runner": attr.label(
             doc = "A binary used for replaying rustdoc test build action results.",
             cfg = "exec",
-            default = Label("//rust/private/rustdoc:rustdoc_test_runner"),
+            default = Label("//rust/private:captured_output_test_runner"),
             executable = True,
         ),
     },
