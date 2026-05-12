@@ -1569,24 +1569,34 @@ def collect_extra_rustc_flags(ctx, toolchain, crate_root, crate_type):
 
     return flags
 
-def rustc_compile_action(
+def rustc_compile(
         *,
         ctx,
         attr,
-        toolchain,
+        rust_toolchain,
+        tool_file,
         rust_flags = [],
         output_hash = None,
         force_all_deps_direct = False,
         crate_info_dict = None,
         skip_expanding_rustc_env = False,
         include_coverage = True,
-        allowed_unstable_rust_features = None):
+        allowed_unstable_rust_features = None,
+        file = None,
+        files = None,
+        toolchain = "@rules_rust//rust:toolchain_type",
+        env = None,
+        mnemonic = "Rustc",
+        metadata_mnemonic = "RustcMetadata",
+        progress_message = None,
+        metadata_progress_message = None):
     """Create and run a rustc compile action based on the current rule's attributes
 
     Args:
         ctx (ctx): The rule's context object
         attr (struct): Attributes to use for the rust compile action
-        toolchain (rust_toolchain): The current `rust_toolchain`
+        rust_toolchain (rust_toolchain): The current `rust_toolchain`
+        tool_file (File): The rustc-like executable to invoke.
         output_hash (str, optional): The hashed path of the crate root. Defaults to None.
         rust_flags (list, optional): Additional flags to pass to rustc. Defaults to [].
         force_all_deps_direct (bool, optional): Whether to pass the transitive rlibs with --extern
@@ -1603,6 +1613,11 @@ def rustc_compile_action(
             - (DepInfo): The transitive dependencies of this crate.
             - (DefaultInfo): The output file for this crate, and its runfiles.
     """
+    file = file or ctx.file
+    files = files or ctx.files
+    extra_env = env or {}
+    crate_info_dict = dict(crate_info_dict)
+
     deps = crate_info_dict.pop("deps")
     proc_macro_deps = crate_info_dict.pop("proc_macro_deps")
     srcs = crate_info_dict.pop("srcs")
@@ -1623,13 +1638,13 @@ def rustc_compile_action(
     #  * or if experimental_use_cc_common_link is -1 and
     #    the toolchain experimental_use_cc_common_link is true.
     experimental_use_cc_common_link = False
-    if hasattr(ctx.attr, "experimental_use_cc_common_link"):
-        if ctx.attr.experimental_use_cc_common_link == 0:
+    if hasattr(attr, "experimental_use_cc_common_link"):
+        if attr.experimental_use_cc_common_link == 0:
             experimental_use_cc_common_link = False
-        elif ctx.attr.experimental_use_cc_common_link == 1:
+        elif attr.experimental_use_cc_common_link == 1:
             experimental_use_cc_common_link = True
-        elif ctx.attr.experimental_use_cc_common_link == -1:
-            experimental_use_cc_common_link = toolchain._experimental_use_cc_common_link
+        elif attr.experimental_use_cc_common_link == -1:
+            experimental_use_cc_common_link = rust_toolchain._experimental_use_cc_common_link
 
     dep_info, build_info, linkstamps = collect_deps(
         deps = deps,
@@ -1651,16 +1666,16 @@ def rustc_compile_action(
 
     # Add flags for any 'rustc' lints that are specified.
     lint_files = []
-    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
-        rust_flags = rust_flags + ctx.attr.lint_config[LintsInfo].rustc_lint_flags
-        lint_files = lint_files + ctx.attr.lint_config[LintsInfo].rustc_lint_files
+    if hasattr(attr, "lint_config") and attr.lint_config:
+        rust_flags = rust_flags + attr.lint_config[LintsInfo].rustc_lint_flags
+        lint_files = lint_files + attr.lint_config[LintsInfo].rustc_lint_files
 
     compile_inputs, out_dir, build_env_files, build_flags_files, linkstamp_outs, ambiguous_libs = collect_inputs(
         ctx = ctx,
-        file = ctx.file,
-        files = ctx.files,
+        file = file,
+        files = files,
         linkstamps = linkstamps,
-        toolchain = toolchain,
+        toolchain = rust_toolchain,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
         crate_info = crate_info,
@@ -1683,27 +1698,27 @@ def rustc_compile_action(
 
     # Determine whether to pass `--require-explicit-unstable-features true` to the process wrapper:
     require_explicit_unstable_features = False
-    if hasattr(ctx.attr, "require_explicit_unstable_features"):
-        if ctx.attr.require_explicit_unstable_features == 0:
+    if hasattr(attr, "require_explicit_unstable_features"):
+        if attr.require_explicit_unstable_features == 0:
             require_explicit_unstable_features = False
-        elif ctx.attr.require_explicit_unstable_features == 1:
+        elif attr.require_explicit_unstable_features == 1:
             require_explicit_unstable_features = True
-        elif ctx.attr.require_explicit_unstable_features == -1:
-            require_explicit_unstable_features = toolchain.require_explicit_unstable_features
+        elif attr.require_explicit_unstable_features == -1:
+            require_explicit_unstable_features = rust_toolchain.require_explicit_unstable_features
 
     # Build the env snapshot used to detect a user-managed RUSTC_BOOTSTRAP before
     # any rules_rust-injected values are added. Matches the merge order in the
     # main env assembly below.
     env_before_inject = dict(ctx.configuration.default_shell_env)
     env_before_inject.update(crate_info.rustc_env)
-    if hasattr(ctx.attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
+    if hasattr(attr, "_extra_rustc_env") and not is_exec_configuration(ctx):
         env_before_inject.update(
-            ctx.attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env,
+            attr._extra_rustc_env[ExtraRustcEnvInfo].extra_rustc_env,
         )
 
     collected_extra_flags = collect_extra_rustc_flags(
         ctx,
-        toolchain,
+        rust_toolchain,
         crate_info.root,
         crate_info.type,
     )
@@ -1716,15 +1731,15 @@ def rustc_compile_action(
     )
     inject_allow_features_guardrail = (
         not user_manages_bootstrap and
-        toolchain.channel != "nightly"
+        rust_toolchain.channel != "nightly"
     )
 
     args, env_from_args = construct_arguments(
         ctx = ctx,
         attr = attr,
-        file = ctx.file,
-        toolchain = toolchain,
-        tool_file = toolchain.rustc,
+        file = file,
+        toolchain = rust_toolchain,
+        tool_file = tool_file,
         cc_toolchain = cc_toolchain,
         emit = emit,
         feature_configuration = feature_configuration,
@@ -1742,7 +1757,7 @@ def rustc_compile_action(
         use_json_output = bool(build_metadata) or bool(rustc_output) or bool(rustc_rmeta_output),
         skip_expanding_rustc_env = skip_expanding_rustc_env,
         require_explicit_unstable_features = require_explicit_unstable_features,
-        always_use_param_file = toolchain._bootstrapping,
+        always_use_param_file = rust_toolchain._bootstrapping,
         inject_allow_features_guardrail = inject_allow_features_guardrail,
         allowed_unstable_rust_features = allowed_unstable_rust_features,
         runtime_libs = runtime_libs,
@@ -1754,9 +1769,9 @@ def rustc_compile_action(
         args_metadata, _ = construct_arguments(
             ctx = ctx,
             attr = attr,
-            file = ctx.file,
-            toolchain = toolchain,
-            tool_file = toolchain.rustc,
+            file = file,
+            toolchain = rust_toolchain,
+            tool_file = tool_file,
             cc_toolchain = cc_toolchain,
             emit = metadata_emit,
             feature_configuration = feature_configuration,
@@ -1792,6 +1807,7 @@ def rustc_compile_action(
         # user manages RUSTC_BOOTSTRAP or -Zallow-features themselves (escape
         # hatch).
         env["RUSTC_BOOTSTRAP"] = "1"
+    env.update(extra_env)
 
     if hasattr(attr, "version") and attr.version != "0.0.0":
         formatted_version = " v{}".format(attr.version)
@@ -1816,7 +1832,7 @@ def rustc_compile_action(
     # For a cdylib that might be added as a dependency to a cc_* target on Windows, it is important to include the
     # interface library that rustc generates in the output files.
     interface_library = None
-    if toolchain.target_os == "windows" and crate_info.type == "cdylib":
+    if rust_toolchain.target_os == "windows" and crate_info.type == "cdylib":
         # Rustc generates the import library with a `.dll.lib` extension rather than the usual `.lib` one that msvc
         # expects (see https://github.com/rust-lang/rust/pull/29520 for more context).
         interface_library = ctx.actions.declare_file(crate_info.output.basename + ".lib", sibling = crate_info.output)
@@ -1828,25 +1844,25 @@ def rustc_compile_action(
         action_outputs.append(rustc_output)
 
     # Get the compilation mode for the current target.
-    compilation_mode = get_compilation_mode_opts(ctx, toolchain)
+    compilation_mode = get_compilation_mode_opts(ctx, rust_toolchain)
 
     # Rustc generates a pdb file (on Windows) or a dsym folder (on macos) so provide it in an output group for crate
     # types that benefit from having debug information in a separate file.
     pdb_file = None
     dsym_folder = None
     if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
-        if toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
+        if rust_toolchain.target_abi == "msvc" and compilation_mode.strip_level == "none":
             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
             action_outputs.append(pdb_file)
-        elif toolchain.target_os in ["macos", "darwin"]:
+        elif rust_toolchain.target_os in ["macos", "darwin"]:
             dsym_folder = ctx.actions.declare_directory(crate_info.output.basename + ".dSYM", sibling = crate_info.output)
             action_outputs.append(dsym_folder)
 
-    process_wrapper = toolchain.process_wrapper
+    process_wrapper = rust_toolchain.process_wrapper
     if not process_wrapper:
         fail("No process wrapper was defined for {}".format(ctx.label))
 
-    if not toolchain._bootstrapping:
+    if not rust_toolchain._bootstrapping:
         # Run as normal
         ctx.actions.run(
             executable = process_wrapper,
@@ -1854,15 +1870,15 @@ def rustc_compile_action(
             outputs = action_outputs,
             env = env,
             arguments = args.all,
-            mnemonic = "Rustc",
-            progress_message = "Compiling Rust {} %{{label}}{} ({} file{})".format(
+            mnemonic = mnemonic,
+            progress_message = progress_message or "Compiling Rust {} %{{label}}{} ({} file{})".format(
                 crate_info.type,
                 formatted_version,
                 len(srcs),
                 "" if len(srcs) == 1 else "s",
             ),
-            toolchain = "@rules_rust//rust:toolchain_type",
-            resource_set = get_rustc_resource_set(toolchain),
+            toolchain = toolchain,
+            resource_set = get_rustc_resource_set(rust_toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
         if args_metadata:
@@ -1872,14 +1888,14 @@ def rustc_compile_action(
                 outputs = [build_metadata] + [x for x in [rustc_rmeta_output] if x],
                 env = env,
                 arguments = args_metadata.all,
-                mnemonic = "RustcMetadata",
-                progress_message = "Compiling Rust metadata {} %{{label}}{} ({} file{})".format(
+                mnemonic = metadata_mnemonic,
+                progress_message = metadata_progress_message or "Compiling Rust metadata {} %{{label}}{} ({} file{})".format(
                     crate_info.type,
                     formatted_version,
                     len(srcs),
                     "" if len(srcs) == 1 else "s",
                 ),
-                toolchain = "@rules_rust//rust:toolchain_type",
+                toolchain = toolchain,
                 execution_requirements = {"supports-path-mapping": ""} if args_metadata.supports_path_mapping else None,
             )
     else:
@@ -1892,15 +1908,15 @@ def rustc_compile_action(
             outputs = action_outputs,
             env = env,
             arguments = [args.rustc_path, args.rustc_flags],
-            mnemonic = "Rustc",
-            progress_message = "Compiling Rust (without process_wrapper) {} %{{label}}{} ({} file{})".format(
+            mnemonic = mnemonic,
+            progress_message = progress_message or "Compiling Rust (without process_wrapper) {} %{{label}}{} ({} file{})".format(
                 crate_info.type,
                 formatted_version,
                 len(srcs),
                 "" if len(srcs) == 1 else "s",
             ),
-            toolchain = "@rules_rust//rust:toolchain_type",
-            resource_set = get_rustc_resource_set(toolchain),
+            toolchain = toolchain,
+            resource_set = get_rustc_resource_set(rust_toolchain),
             execution_requirements = {"supports-path-mapping": ""} if args.supports_path_mapping else None,
         )
 
@@ -1913,13 +1929,13 @@ def rustc_compile_action(
             pic_objects = depset([output_o]),
         )
 
-        malloc_library = ctx.attr._custom_malloc or ctx.attr.malloc
+        malloc_library = attr._custom_malloc or attr.malloc
 
         # Collect the linking contexts of the standard library and dependencies.
         linking_contexts = [
             malloc_library[CcInfo].linking_context,
-            _get_std_and_alloc_info(ctx, toolchain, crate_info).linking_context,
-            toolchain.stdlib_linkflags.linking_context,
+            _get_std_and_alloc_info(ctx, rust_toolchain, crate_info).linking_context,
+            rust_toolchain.stdlib_linkflags.linking_context,
         ]
 
         for dep in crate_info.deps.to_list():
@@ -1954,7 +1970,7 @@ def rustc_compile_action(
         # a (lib)foo_bar output file.
         if crate_info.type == "cdylib":
             output_lib = crate_info.output.basename
-            if toolchain.target_os != "windows":
+            if rust_toolchain.target_os != "windows":
                 # Strip the leading "lib" prefix
                 output_lib = output_lib[3:]
 
@@ -1979,7 +1995,7 @@ def rustc_compile_action(
             linking_contexts = linking_contexts,
             compilation_outputs = compilation_outputs,
             name = output_relative_to_package,
-            stamp = ctx.attr.stamp,
+            stamp = attr.stamp,
             main_output = crate_info.output,
             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
             additional_outputs = additional_linker_outputs,
@@ -1988,27 +2004,27 @@ def rustc_compile_action(
         outputs = [crate_info.output]
 
     coverage_runfiles = []
-    if toolchain.coverage_supported and ctx.configuration.coverage_enabled and crate_info.is_test:
-        coverage_runfiles = [toolchain.llvm_cov, toolchain.llvm_profdata] + toolchain.llvm_lib
+    if rust_toolchain.coverage_supported and ctx.configuration.coverage_enabled and crate_info.is_test:
+        coverage_runfiles = [rust_toolchain.llvm_cov, rust_toolchain.llvm_profdata] + rust_toolchain.llvm_lib
         collect_cc_coverage = getattr(ctx.executable, "_collect_cc_coverage", None)
         if not collect_cc_coverage:
-            collect_cc_coverage = getattr(ctx.file, "_collect_cc_coverage", None)
+            collect_cc_coverage = getattr(file, "_collect_cc_coverage", None)
 
         if collect_cc_coverage:
             coverage_runfiles.append(collect_cc_coverage)
 
-    experimental_use_coverage_metadata_files = toolchain._experimental_use_coverage_metadata_files
+    experimental_use_coverage_metadata_files = rust_toolchain._experimental_use_coverage_metadata_files
 
     runfiles = ctx.runfiles(
-        files = getattr(ctx.files, "data", []) +
+        files = getattr(files, "data", []) +
                 ([] if experimental_use_coverage_metadata_files else coverage_runfiles),
     )
     transitive_runfiles = []
-    crate_attr = getattr(ctx.attr, "crate", None)
+    crate_attr = getattr(attr, "crate", None)
     for runfiles_attr in (
-        getattr(ctx.attr, "srcs", []),
-        getattr(ctx.attr, "deps", []),
-        getattr(ctx.attr, "data", []),
+        getattr(attr, "srcs", []),
+        getattr(attr, "deps", []),
+        getattr(attr, "data", []),
         [crate_attr] if crate_attr else [],
     ):
         if not runfiles_attr:
@@ -2018,7 +2034,7 @@ def rustc_compile_action(
     if crate_info.type in ["bin", "cdylib", "staticlib"]:
         dynamic_libraries = ctx.runfiles(files = [
             library_to_link.dynamic_library
-            for dep in getattr(ctx.attr, "deps", [])
+            for dep in getattr(attr, "deps", [])
             if CcInfo in dep
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list()
             for library_to_link in linker_input.libraries
@@ -2089,7 +2105,7 @@ def rustc_compile_action(
     else:
         providers.extend([crate_info, dep_info])
 
-    providers += establish_cc_info(ctx, attr, crate_info, toolchain, cc_toolchain, feature_configuration, interface_library)
+    providers += establish_cc_info(ctx, attr, crate_info, rust_toolchain, cc_toolchain, feature_configuration, interface_library)
 
     output_group_info = {}
 
@@ -2107,10 +2123,47 @@ def rustc_compile_action(
     if output_group_info:
         providers.append(OutputGroupInfo(**output_group_info))
 
+    return struct(
+        action_outputs = action_outputs,
+        compile_inputs = compile_inputs,
+        crate_info = crate_info,
+        dep_info = dep_info,
+        env = env,
+        outputs = outputs,
+        providers = providers,
+    )
+
+def rustc_compile_action(
+        *,
+        ctx,
+        attr,
+        toolchain,
+        rust_flags = [],
+        output_hash = None,
+        force_all_deps_direct = False,
+        crate_info_dict = None,
+        skip_expanding_rustc_env = False,
+        include_coverage = True,
+        allowed_unstable_rust_features = None):
+    result = rustc_compile(
+        ctx = ctx,
+        attr = attr,
+        rust_toolchain = toolchain,
+        tool_file = toolchain.rustc,
+        rust_flags = rust_flags,
+        output_hash = output_hash,
+        force_all_deps_direct = force_all_deps_direct,
+        crate_info_dict = crate_info_dict,
+        skip_expanding_rustc_env = skip_expanding_rustc_env,
+        include_coverage = include_coverage,
+        allowed_unstable_rust_features = allowed_unstable_rust_features,
+    )
+    providers = result.providers
+
     # A bit unfortunate, but sidecar the lints info so rustdoc can access the
     # set of lints from the target it is documenting.
-    if hasattr(ctx.attr, "lint_config") and ctx.attr.lint_config:
-        providers.append(ctx.attr.lint_config[LintsInfo])
+    if hasattr(attr, "lint_config") and attr.lint_config:
+        providers.append(attr.lint_config[LintsInfo])
 
     return providers
 
