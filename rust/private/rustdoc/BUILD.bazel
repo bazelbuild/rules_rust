@@ -1,8 +1,0 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-
-package(default_visibility = ["//visibility:public"])
-
-cc_binary(
-    name = "rustdoc_test_runner",
-    srcs = ["rustdoc_test_runner.cc"],
-)
