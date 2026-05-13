@@ -10,7 +10,7 @@ def _rust_test_impl(module_ctx):
 
     rbe_preconfig(
         name = "buildkite_config",
-        toolchain = "ubuntu1804-bazel-java11",
+        toolchain = "ubuntu2404",
     )
 
     deps.append(struct(repo = "buildkite_config"))
