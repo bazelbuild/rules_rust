@@ -48,6 +48,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "aarch64-linux-android": _support(std = True, host_tools = False),
     "aarch64-pc-windows-msvc": _support(std = True, host_tools = True),
     "aarch64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "aarch64-unknown-linux-musl": _support(std = True, host_tools = True),
     "aarch64-unknown-none": _support(std = True, host_tools = False),
     "aarch64-unknown-uefi": _support(std = True, host_tools = False),
     "arm-unknown-linux-gnueabi": _support(std = True, host_tools = True),
@@ -80,6 +81,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = {
     "x86_64-linux-android": _support(std = True, host_tools = False),
     "x86_64-unknown-freebsd": _support(std = True, host_tools = True),
     "x86_64-unknown-fuchsia": _support(std = True, host_tools = False),
+    "x86_64-unknown-linux-musl": _support(std = True, host_tools = True),
     "x86_64-unknown-none": _support(std = True, host_tools = False),
     "x86_64-unknown-uefi": _support(std = True, host_tools = False),
 }
