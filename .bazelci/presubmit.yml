@@ -575,6 +575,14 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
+  cu_integ_cargo_workspace_windows:
+    name: Crate Universe - cargo_workspace
+    platform: windows
+    working_directory: crate_universe/tests/integration/cargo_workspace
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
 
   # --- cargo_conditional_deps ---
   cu_integ_cargo_conditional_deps_ubuntu2204:
