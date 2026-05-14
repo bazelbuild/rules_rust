@@ -684,19 +684,19 @@ tasks:
     test_targets:
       - "//..."
 
-  # --- using_cxx (linux + macos only, C++ codegen platform issues) ---
-  cu_integ_using_cxx_ubuntu2204:
-    name: Crate Universe - using_cxx
+  # --- external_annotations (linux + macos only, C++ codegen platform issues) ---
+  cu_integ_ext_annotations_ubuntu2204:
+    name: Crate Universe - external_annotations
     platform: ubuntu2204
-    working_directory: crate_universe/tests/integration/using_cxx
+    working_directory: crate_universe/tests/integration/ext_annotations
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  cu_integ_using_cxx_macos:
-    name: Crate Universe - using_cxx
+  cu_integ_ext_annotations_macos:
+    name: Crate Universe - external_annotations
     platform: macos_arm64
-    working_directory: crate_universe/tests/integration/using_cxx
+    working_directory: crate_universe/tests/integration/ext_annotations
     build_targets:
       - "//..."
     test_targets:
