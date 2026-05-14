@@ -1341,9 +1341,9 @@ def construct_arguments(
             ):
                 if ld_is_direct_driver:
                     rustc_flags.add("--codegen=link-arg=-oso_prefix")
-                    rustc_flags.add("${pwd}/", format = "--codegen=link-arg=%s")
+                    rustc_flags.add("--codegen=link-arg=.")
                 else:
-                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,${pwd}/")
+                    rustc_flags.add("--codegen=link-arg=-Wl,-oso_prefix,.")
 
         # rustdoc tests compile doctest binaries through rustdoc instead of
         # rustc. That frontend accepts native libraries as linker args, not
