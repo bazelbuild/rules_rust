@@ -1,3 +1,0 @@
-load("//crate_universe/private:vendor_utils.bzl", "crates_vendor_deps_targets")
-
-crates_vendor_deps_targets()

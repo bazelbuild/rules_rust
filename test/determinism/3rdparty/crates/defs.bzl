@@ -318,16 +318,16 @@ _CRATE_EDITIONS = {
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "anyhow": Label("@rrtd//:anyhow-1.0.100"),
-            "blake3": Label("@rrtd//:blake3-1.8.2"),
-            "clap": Label("@rrtd//:clap-4.5.50"),
-            "serde": Label("@rrtd//:serde-1.0.228"),
-            "serde_json": Label("@rrtd//:serde_json-1.0.145"),
-            "tempfile": Label("@rrtd//:tempfile-3.23.0"),
-            "tokio": Label("@rrtd//:tokio-1.48.0"),
-            "tracing": Label("@rrtd//:tracing-0.1.41"),
-            "tracing-subscriber": Label("@rrtd//:tracing-subscriber-0.3.20"),
-            "walkdir": Label("@rrtd//:walkdir-2.5.0"),
+            "anyhow": Label("@rrtd__anyhow-1.0.100//:anyhow"),
+            "blake3": Label("@rrtd__blake3-1.8.2//:blake3"),
+            "clap": Label("@rrtd__clap-4.5.50//:clap"),
+            "serde": Label("@rrtd__serde-1.0.228//:serde"),
+            "serde_json": Label("@rrtd__serde_json-1.0.145//:serde_json"),
+            "tempfile": Label("@rrtd__tempfile-3.23.0//:tempfile"),
+            "tokio": Label("@rrtd__tokio-1.48.0//:tokio"),
+            "tracing": Label("@rrtd__tracing-0.1.41//:tracing"),
+            "tracing-subscriber": Label("@rrtd__tracing-subscriber-0.3.20//:tracing_subscriber"),
+            "walkdir": Label("@rrtd__walkdir-2.5.0//:walkdir"),
         },
     },
 }

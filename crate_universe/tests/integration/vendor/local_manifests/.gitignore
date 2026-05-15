@@ -1,3 +1,0 @@
-# Ignore everything but the `BUILD` files within the vendored directories
-crates/*/*
-!crates/*/BUILD.bazel
