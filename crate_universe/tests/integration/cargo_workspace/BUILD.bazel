@@ -1,4 +1,0 @@
-exports_files(
-    [".cargo/config.toml"],
-    visibility = ["//visibility:public"],
-)

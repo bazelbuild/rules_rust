@@ -1,4 +1,5 @@
 load("//rust:defs.bzl", "rust_library", "rust_test")
+load("@@rules_rs++rules_rust+rules_rust//rust:defs.bzl", _rules_rs_rust_library = "rust_library")
 
 rust_library(
     name = "label",
@@ -8,6 +9,19 @@ rust_library(
     ],
     edition = "2018",
     visibility = ["//:__subpackages__"],
+)
+
+_rules_rs_rust_library(
+    name = "label_rules_rs",
+    srcs = [
+        "label.rs",
+        "label_error.rs",
+    ],
+    crate_name = "label",
+    crate_root = "label.rs",
+    edition = "2018",
+    tags = ["manual"],
+    visibility = ["//tools/vscode:__pkg__"],
 )
 
 rust_test(

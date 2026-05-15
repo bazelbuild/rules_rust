@@ -1,6 +1,0 @@
-[workspace]
-members = [
-    "num_printer",
-    "printer",
-    "rng",
-]
