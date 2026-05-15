@@ -110,6 +110,7 @@ def pipelined_compilation():
     """
     bool_flag(
         name = "pipelined_compilation",
+        scope = "universal",
         build_setting_default = False,
     )
 
@@ -487,6 +488,7 @@ def extra_exec_rustc_flags():
     """
     _extra_exec_rustc_flags(
         name = "extra_exec_rustc_flags",
+        scope = "universal",
         build_setting_default = [],
     )
 
@@ -498,6 +500,7 @@ def extra_exec_rustc_flag():
     """
     _extra_exec_rustc_flag(
         name = "extra_exec_rustc_flag",
+        scope = "universal",
         build_setting_default = [],
     )
 
@@ -554,5 +557,6 @@ def collect_cfgs():
     """
     bool_flag(
         name = "collect_cfgs",
+        scope = "universal",
         build_setting_default = False,
     )

@@ -3,6 +3,7 @@ load(":channel.bzl", "rust_toolchain_channel_flag")
 rust_toolchain_channel_flag(
     name = "channel",
     build_setting_default = "stable",
+    scope = "universal",
     visibility = ["//visibility:public"],
 )
 
