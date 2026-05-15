@@ -295,8 +295,8 @@ def aliases(
 _NORMAL_DEPENDENCIES = {
     "": {
         _COMMON_CONDITION: {
-            "serde": Label("@rtvsc//:serde-1.0.228"),
-            "serde_json": Label("@rtvsc//:serde_json-1.0.149"),
+            "serde": Label("@rtvsc__serde-1.0.228//:serde"),
+            "serde_json": Label("@rtvsc__serde_json-1.0.149//:serde_json"),
         },
     },
 }

@@ -1,4 +1,4 @@
-load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@@rules_rs++rules_rust+rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 alias(
     name = "get_binary_path",
@@ -16,12 +16,12 @@ rust_library(
     ],
     edition = "2021",
     deps = [
-        "//tools/rust_analyzer/3rdparty/crates:anyhow",
-        "//tools/rust_analyzer/3rdparty/crates:camino",
-        "//tools/rust_analyzer/3rdparty/crates:log",
-        "//tools/rust_analyzer/3rdparty/crates:serde",
-        "//tools/rust_analyzer/3rdparty/crates:serde_json",
-        "//util/label",
+        "@@rules_rs++crate+rrra//:anyhow",
+        "@@rules_rs++crate+rrra//:camino",
+        "@@rules_rs++crate+rrra//:log",
+        "@@rules_rs++crate+rrra//:serde",
+        "@@rules_rs++crate+rrra//:serde_json",
+        "//util/label:label_rules_rs",
     ],
 )
 
@@ -37,11 +37,11 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":vscode",
-        "//tools/rust_analyzer/3rdparty/crates:anyhow",
-        "//tools/rust_analyzer/3rdparty/crates:camino",
-        "//tools/rust_analyzer/3rdparty/crates:clap",
-        "//tools/rust_analyzer/3rdparty/crates:env_logger",
-        "//tools/rust_analyzer/3rdparty/crates:log",
-        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+        "@@rules_rs++crate+rrra//:anyhow",
+        "@@rules_rs++crate+rrra//:camino",
+        "@@rules_rs++crate+rrra//:clap",
+        "@@rules_rs++crate+rrra//:env_logger",
+        "@@rules_rs++crate+rrra//:log",
+        "@@rules_rs++crate+rrra//:serde_json",
     ],
 )
