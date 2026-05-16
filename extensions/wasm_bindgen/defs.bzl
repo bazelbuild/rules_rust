@@ -30,16 +30,16 @@ Rules for doing so can be found at [rules_js_rust_wasm_bindgen](https://github.c
 """
 
 load(
-    "//:providers.bzl",
+    "//extensions/wasm_bindgen:providers.bzl",
     _RustWasmBindgenInfo = "RustWasmBindgenInfo",
 )
 load(
-    "//private:wasm_bindgen.bzl",
+    "//extensions/wasm_bindgen/private:wasm_bindgen.bzl",
     _rust_wasm_bindgen = "rust_wasm_bindgen",
     _rust_wasm_bindgen_toolchain = "rust_wasm_bindgen_toolchain",
 )
 load(
-    "//private:wasm_bindgen_test_wrapper.bzl",
+    "//extensions/wasm_bindgen/private:wasm_bindgen_test_wrapper.bzl",
     _rust_wasm_bindgen_test = "rust_wasm_bindgen_test",
 )
 

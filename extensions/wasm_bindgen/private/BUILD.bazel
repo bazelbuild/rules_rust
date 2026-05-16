@@ -1,5 +1,4 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 bzl_library(
     name = "bzl_lib",
@@ -9,26 +8,16 @@ bzl_library(
         "wasm_bindgen_test.bzl",
         "wasm_bindgen_test_wrapper.bzl",
     ],
-    visibility = ["//:__pkg__"],
+    visibility = ["//extensions/wasm_bindgen:__pkg__"],
     deps = [
         "@rules_rust//rust:bzl_lib",
     ],
 )
 
-rust_binary(
-    name = "wasm_bindgen_wrapper",
-    srcs = ["wasm_bindgen_wrapper.rs"],
-    edition = "2021",
-    visibility = ["//visibility:public"],
-)
-
-rust_binary(
-    name = "wasm_bindgen_test_runner",
-    srcs = ["wasm_bindgen_test_runner.rs"],
-    edition = "2021",
-    visibility = ["//visibility:public"],
-    deps = [
-        "@rrwbd//:serde_json",
-        "@rules_rust//rust/runfiles",
+exports_files(
+    [
+        "wasm_bindgen_test_runner.rs",
+        "wasm_bindgen_wrapper.rs",
     ],
+    visibility = ["//visibility:public"],
 )

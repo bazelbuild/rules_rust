@@ -9,5 +9,5 @@ extensions/mdbook
 extensions/prost/private/tests
 extensions/pyo3/test
 extensions/pyo3/tools
-extensions/wasm_bindgen
+extensions/wasm_bindgen/test
 test/integration
