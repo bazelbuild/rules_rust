@@ -1,8 +1,8 @@
 """Depednencies for `wasm_bindgen_test` rules"""
 
-load("//private/webdrivers/chrome:webdriver_chrome.bzl", "chrome_deps")
-load("//private/webdrivers/firefox:webdriver_firefox.bzl", "firefox_deps")
-load("//private/webdrivers/safari:webdriver_safari.bzl", "safari_deps")
+load("//extensions/wasm_bindgen/private/webdrivers/chrome:webdriver_chrome.bzl", "chrome_deps")
+load("//extensions/wasm_bindgen/private/webdrivers/firefox:webdriver_firefox.bzl", "firefox_deps")
+load("//extensions/wasm_bindgen/private/webdrivers/safari:webdriver_safari.bzl", "safari_deps")
 
 def webdriver_repositories():
     """Define webdriver repositories for bzlmod

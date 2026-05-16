@@ -28,7 +28,7 @@ rust_binary(
     edition = "2018",
     target_compatible_with = ["@platforms//cpu:wasm32"],
     deps = [
-        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
+        "@rules_rs//rs/private/wasm_bindgen",
     ],
 )
 
@@ -38,7 +38,7 @@ rust_shared_library(
     edition = "2018",
     target_compatible_with = ["@platforms//cpu:wasm32"],
     deps = [
-        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
+        "@rules_rs//rs/private/wasm_bindgen",
     ],
 )
 

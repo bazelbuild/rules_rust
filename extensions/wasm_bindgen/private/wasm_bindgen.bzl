@@ -4,7 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_analyzer_aspect", "rust_clippy_aspect",
 
 # buildifier: disable=bzl-visibility
 load("@rules_rust//rust/private:providers.bzl", "ClippyInfo", "RustAnalyzerGroupInfo", "RustAnalyzerInfo")
-load("//:providers.bzl", "RustWasmBindgenInfo")
+load("//extensions/wasm_bindgen:providers.bzl", "RustWasmBindgenInfo")
 load(":transitions.bzl", "wasm_bindgen_transition")
 
 def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags = []):
@@ -94,7 +94,7 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
         mnemonic = "RustWasmBindgen",
         progress_message = "Generating WebAssembly bindings for {}".format(progress_message_label),
         arguments = [args],
-        toolchain = str(Label("//:toolchain_type")),
+        toolchain = str(Label("//extensions/wasm_bindgen:toolchain_type")),
     )
 
     return RustWasmBindgenInfo(
@@ -106,7 +106,7 @@ def rust_wasm_bindgen_action(*, ctx, toolchain, wasm_file, target_output, flags 
     )
 
 def _rust_wasm_bindgen_impl(ctx):
-    toolchain = ctx.toolchains[Label("//:toolchain_type")]
+    toolchain = ctx.toolchains[Label("//extensions/wasm_bindgen:toolchain_type")]
 
     info = rust_wasm_bindgen_action(
         ctx = ctx,
@@ -184,7 +184,7 @@ WASM_BINDGEN_ATTR = {
     ),
     "_process_wrapper": attr.label(
         doc = "A process wrapper for ensuring tree artifacts are non-empty.",
-        default = Label("//private:wasm_bindgen_wrapper"),
+        default = Label("@rules_rs//rs/private/wasm_bindgen:wasm_bindgen_wrapper"),
         executable = True,
         cfg = "exec",
     ),
@@ -201,7 +201,7 @@ An example of this rule in use can be seen at [@rules_rust//examples/wasm](../ex
 """,
     attrs = WASM_BINDGEN_ATTR,
     toolchains = [
-        str(Label("//:toolchain_type")),
+        str(Label("//extensions/wasm_bindgen:toolchain_type")),
     ],
 )
 
@@ -259,7 +259,7 @@ a unique toolchain can be created as in the example below:
 load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen_toolchain")
 
 rust_wasm_bindgen_toolchain(
-    wasm_bindgen_cli = "//3rdparty/crates:wasm_bindgen_cli__bin",
+    wasm_bindgen_cli = "//tools:wasm-bindgen",
 )
 
 toolchain(

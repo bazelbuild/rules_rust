@@ -1,7 +1,7 @@
 """Depednencies for `wasm_bindgen_test` rules"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//private/webdrivers:webdriver_utils.bzl", "build_file_repository", "webdriver_repository")
+load("//extensions/wasm_bindgen/private/webdrivers:webdriver_utils.bzl", "build_file_repository", "webdriver_repository")
 
 _FIREFOX_WRAPPER_TEMPLATE_UNIX = """\
 #!/usr/bin/env bash
@@ -136,7 +136,7 @@ def firefox_deps():
     maybe(
         build_file_repository,
         name = "geckodriver",
-        build_file = Label("//private/webdrivers/firefox:BUILD.geckodriver.bazel"),
+        build_file = Label("//extensions/wasm_bindgen/private/webdrivers/firefox:BUILD.geckodriver.bazel"),
     )
 
     firefox_version = "136.0"
@@ -184,7 +184,7 @@ def firefox_deps():
     maybe(
         build_file_repository,
         name = "firefox",
-        build_file = Label("//private/webdrivers/firefox:BUILD.firefox.bazel"),
+        build_file = Label("//extensions/wasm_bindgen/private/webdrivers/firefox:BUILD.firefox.bazel"),
     )
 
     return direct_deps
