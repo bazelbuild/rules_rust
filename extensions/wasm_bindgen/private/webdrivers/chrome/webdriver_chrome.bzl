@@ -1,7 +1,7 @@
 """Depednencies for `wasm_bindgen_test` rules"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//private/webdrivers:webdriver_utils.bzl", "build_file_repository", "webdriver_repository")
+load("//extensions/wasm_bindgen/private/webdrivers:webdriver_utils.bzl", "build_file_repository", "webdriver_repository")
 
 # A snippet from https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json
 # but modified to included `integrity`
@@ -157,21 +157,21 @@ def chrome_deps():
     maybe(
         build_file_repository,
         name = "chromedriver",
-        build_file = Label("//private/webdrivers/chrome:BUILD.chromedriver.bazel"),
+        build_file = Label("//extensions/wasm_bindgen/private/webdrivers/chrome:BUILD.chromedriver.bazel"),
     )
 
     direct_deps.append(struct(repo = "chrome_headless_shell"))
     maybe(
         build_file_repository,
         name = "chrome_headless_shell",
-        build_file = Label("//private/webdrivers/chrome:BUILD.chrome_headless_shell.bazel"),
+        build_file = Label("//extensions/wasm_bindgen/private/webdrivers/chrome:BUILD.chrome_headless_shell.bazel"),
     )
 
     direct_deps.append(struct(repo = "chrome"))
     maybe(
         build_file_repository,
         name = "chrome",
-        build_file = Label("//private/webdrivers/chrome:BUILD.chrome.bazel"),
+        build_file = Label("//extensions/wasm_bindgen/private/webdrivers/chrome:BUILD.chrome.bazel"),
     )
 
     return direct_deps

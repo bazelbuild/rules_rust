@@ -19,8 +19,8 @@ load(
     "transform_deps",
     "transform_sources",
 )
-load("//:providers.bzl", "RustWasmBindgenInfo")
-load("//private:transitions.bzl", "opt_transition", "wasm_bindgen_transition")
+load("//extensions/wasm_bindgen:providers.bzl", "RustWasmBindgenInfo")
+load("//extensions/wasm_bindgen/private:transitions.bzl", "opt_transition", "wasm_bindgen_transition")
 
 WasmBindgenTestCrateInfo = provider(
     doc = "A provider encompassing the crate from a `rust_wasm_bindgen` target.",
@@ -57,7 +57,7 @@ def _rlocationpath(file, workspace_name):
     return "{}/{}".format(workspace_name, file.short_path)
 
 def _rust_wasm_bindgen_test_binary_impl(ctx):
-    wb_toolchain = ctx.toolchains[Label("//:toolchain_type")]
+    wb_toolchain = ctx.toolchains[Label("//extensions/wasm_bindgen:toolchain_type")]
     toolchain = find_toolchain(ctx)
 
     crate_type = "bin"
@@ -263,7 +263,7 @@ rust_wasm_bindgen_test_binary = rule(
     } | RUSTC_ATTRS,
     fragments = ["cpp"],
     toolchains = [
-        str(Label("//:toolchain_type")),
+        str(Label("//extensions/wasm_bindgen:toolchain_type")),
         "@rules_rust//rust:toolchain_type",
         config_common.toolchain_type("@bazel_tools//tools/cpp:toolchain_type", mandatory = False),
     ],
@@ -271,7 +271,7 @@ rust_wasm_bindgen_test_binary = rule(
 )
 
 def _rust_wasm_bindgen_test_impl(ctx):
-    wb_toolchain = ctx.toolchains[Label("//:toolchain_type")]
+    wb_toolchain = ctx.toolchains[Label("//extensions/wasm_bindgen:toolchain_type")]
     if not wb_toolchain.webdriver:
         fail("The currently registered wasm_bindgen_toolchain does not have a webdriver assigned. Tests are unavailable without one.")
 
@@ -362,11 +362,11 @@ rust_wasm_bindgen_test = rule(
             # Try to get as close to `exec` as possible.
             cfg = opt_transition,
             executable = True,
-            default = Label("//private:wasm_bindgen_test_runner"),
+            default = Label("@rules_rs//rs/private/wasm_bindgen:wasm_bindgen_test_runner_wrapper"),
         ),
     },
     toolchains = [
-        str(Label("//:toolchain_type")),
+        str(Label("//extensions/wasm_bindgen:toolchain_type")),
     ],
     test = True,
 )

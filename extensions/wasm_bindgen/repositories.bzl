@@ -14,11 +14,6 @@
 
 """Dependency definitions for wasm-bindgen rules"""
 
-load("//3rdparty/crates:crates.bzl", "crate_repositories")
-load("//private/webdrivers:webdriver_repositories.bzl", "webdriver_repositories")
-
-WASM_BINDGEN_VERSION = "0.2.121"
-
 # buildifier: disable=unnamed-macro
 def rust_wasm_bindgen_dependencies():
     """Declare dependencies needed for the `rules_rust` [wasm-bindgen][wb] rules.
@@ -31,7 +26,4 @@ def rust_wasm_bindgen_dependencies():
     """
 
     direct_deps = []
-
-    direct_deps.extend(crate_repositories())
-    direct_deps.extend(webdriver_repositories())
     return direct_deps
