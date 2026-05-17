@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+
+platform(
+    name = "local_gnu",
+    parents = ["@platforms//host"],
+    constraint_values = [
+        "@llvm//constraints/libc:gnu.2.28",
+    ],
+)
+
+platform(
+    name = "local_windows_msvc",
+    parents = ["@platforms//host"],
+    constraint_values = [
+        "@llvm//constraints/windows/abi:msvc",
+    ],
+)

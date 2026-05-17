@@ -16,11 +16,25 @@ if [[ -z "${PACKAGE_NAME:-}" ]]; then
     exit 1
 fi
 
+function module_dep_version() {
+    local module_name="$1"
+
+    sed -n "s/^[[:space:]]*bazel_dep(name = \"${module_name}\", version = \"\\([^\"]*\\)\".*/\\1/p" "${BUILD_WORKSPACE_DIRECTORY}/MODULE.bazel" | head -n 1
+}
+
 function generate_workspace() {
     local workspace_root="$1"
     local package_dir="$2"
     local temp_dir="$(mktemp -d -t rules_rust_test_vscode-XXXXXXXXXX)"
     local new_workspace="${temp_dir}/rules_rust_test_vscode"
+    local llvm_version="$(module_dep_version "llvm")"
+    local platforms_version="$(module_dep_version "platforms")"
+    local rules_rs_version="$(module_dep_version "rules_rs")"
+
+    if [[ -z "${llvm_version}" || -z "${platforms_version}" || -z "${rules_rs_version}" ]]; then
+        >&2 echo "Unable to determine rules_rs, llvm, or platforms version from MODULE.bazel"
+        exit 1
+    fi
 
     mkdir -p "${new_workspace}"
     cat <<EOF >"${new_workspace}/MODULE.bazel"
@@ -34,6 +48,9 @@ local_path_override(
     path = "${BUILD_WORKSPACE_DIRECTORY}",
 )
 
+bazel_dep(name = "llvm", version = "${llvm_version}")
+bazel_dep(name = "platforms", version = "${platforms_version}")
+bazel_dep(name = "rules_rs", version = "${rules_rs_version}")
 bazel_dep(
     name = "bazel_skylib",
     version = "1.8.2",
@@ -42,6 +59,14 @@ bazel_dep(
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
+
+rules_rs_toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains", dev_dependency = True)
+rules_rs_toolchains.toolchain(name = "default_rust_toolchains")
+use_repo(rules_rs_toolchains, "default_rust_toolchains")
+register_toolchains(
+    "@default_rust_toolchains//:all",
+    dev_dependency = True,
+)
 
 vscode_test = use_extension("//test/vscode/3rdparty:extensions.bzl", "vscode_test", dev_dependency = True)
 use_repo(
@@ -52,9 +77,14 @@ EOF
     echo ")" >> "${new_workspace}/MODULE.bazel"
 
     cat <<EOF >"${new_workspace}/.bazelrc"
+common --enable_platform_specific_config
+common:linux --host_platform=//platforms:local_gnu
+common:windows --host_platform=//platforms:local_windows_msvc
 build --keep_going
 test --test_output=errors
 EOF
+
+    cp -r "${workspace_root}/platforms" "${new_workspace}/platforms"
 
     if [[ -f "${workspace_root}/.bazelversion" ]]; then
         cp "${workspace_root}/.bazelversion" "${new_workspace}/.bazelversion"
