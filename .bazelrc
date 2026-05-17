@@ -10,6 +10,8 @@ build --nobuild_runfile_links
 
 # https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
 common --enable_platform_specific_config
+common:linux --host_platform=//platforms:local_gnu
+common:windows --host_platform=//platforms:local_windows_msvc
 
 # Enable the only currently supported report type
 # https://bazel.build/reference/command-line-reference#flag--combined_report
