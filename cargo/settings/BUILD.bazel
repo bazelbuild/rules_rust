@@ -3,6 +3,7 @@ load(
     ":settings.bzl",
     "cargo_manifest_dir_filename_suffixes_to_retain",
     "debug_std_streams_output_group",
+    "emit_build_script_warnings",
     "experimental_symlink_execroot",
     "out_dir_volatile_file_basenames",
     "use_default_shell_env",
@@ -30,3 +31,5 @@ experimental_symlink_execroot()
 use_default_shell_env()
 
 out_dir_volatile_file_basenames()
+
+emit_build_script_warnings()
