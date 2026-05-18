@@ -111,6 +111,9 @@ pub(crate) struct CargoBuildScript {
     pub(crate) data: Data,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) deps: SelectSet<Label>,
+    // Skip emitting when value matches the rule default (`True`).
+    #[serde(skip_serializing_if = "Clone::clone")]
+    pub(crate) emit_warnings: bool,
     #[serde(skip_serializing_if = "SelectSet::is_empty")]
     pub(crate) link_deps: SelectSet<Label>,
     pub(crate) edition: String,
