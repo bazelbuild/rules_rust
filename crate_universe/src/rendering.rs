@@ -610,6 +610,9 @@ impl Renderer {
                 ),
                 platforms,
             ),
+            // Match Cargo's default: registry/git crates are quiet unless the
+            // build fails or the user passes `-vv`.
+            emit_warnings: false,
             edition: krate.common_attrs.edition.clone(),
             linker_script: krate.common_attrs.linker_script.clone(),
             links: attrs.and_then(|attrs| attrs.links.clone()),
@@ -1241,6 +1244,11 @@ mod test {
         );
         assert!(
             !build_file_content.contains("use_default_shell_env ="),
+            "```\n{}```\n",
+            build_file_content
+        );
+        assert!(
+            build_file_content.contains("emit_warnings = False"),
             "```\n{}```\n",
             build_file_content
         );
