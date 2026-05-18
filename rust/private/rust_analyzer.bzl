@@ -163,15 +163,76 @@ def _rust_analyzer_aspect_impl(target, ctx):
         build_info = build_info,
     ))
 
+    output_groups = {
+        "rust_analyzer_crate_spec": rust_analyzer_info.crate_specs,
+        "rust_analyzer_proc_macro_dylib": rust_analyzer_info.proc_macro_dylibs,
+        "rust_analyzer_src": rust_analyzer_info.build_info_out_dirs,
+        "rust_generated_srcs": depset(transitive = rust_generated_srcs),
+    }
+
+    # Capture the Rustc action's argv + env so external tools (e.g. an editor
+    # flycheck shim) can replay a metadata-only typecheck of this crate
+    # directly, without paying a `bazel build` round-trip per save.
+    check_command_file = _write_check_command(ctx, target)
+    if check_command_file:
+        output_groups["rust_analyzer_check_command"] = depset([check_command_file])
+
     return [
         rust_analyzer_info,
-        OutputGroupInfo(
-            rust_analyzer_crate_spec = rust_analyzer_info.crate_specs,
-            rust_analyzer_proc_macro_dylib = rust_analyzer_info.proc_macro_dylibs,
-            rust_analyzer_src = rust_analyzer_info.build_info_out_dirs,
-            rust_generated_srcs = depset(transitive = rust_generated_srcs),
-        ),
+        OutputGroupInfo(**output_groups),
     ]
+
+def _write_check_command(ctx, target):
+    rustc_action = None
+    for action in target.actions:
+        if action.mnemonic == "Rustc":
+            rustc_action = action
+            break
+    if rustc_action == None:
+        return None
+
+    argv = rustc_action.argv
+    if argv == None:
+        return None
+
+    env = {k: v for k, v in rustc_action.env.items()} if rustc_action.env else {}
+
+    output = ctx.actions.declare_file(
+        "{}.rust_analyzer_check_command.json".format(ctx.label.name),
+    )
+    ctx.actions.write(
+        output = output,
+        content = json.encode_indent(
+            {
+                "argv": _transform_argv_for_check(argv),
+                "env": env,
+            },
+            indent = " " * 4,
+        ),
+    )
+    return output
+
+def _transform_argv_for_check(argv):
+    """Rewrite a build-mode rustc argv into a metadata-only typecheck argv.
+    """
+    transformed = []
+    skip = False
+    for arg in argv:
+        if skip:
+            skip = False
+            continue
+        if arg.startswith("--emit="):
+            transformed.append("--emit=metadata")
+            continue
+        if arg == "--emit":
+            transformed.append("--emit=metadata")
+            skip = True
+            continue
+        if arg == "--error-format=human" or arg.startswith("--error-format="):
+            transformed.append("--error-format=json")
+            continue
+        transformed.append(arg)
+    return transformed
 
 def find_proc_macro_dylib(toolchain, target):
     """Find the proc_macro_dylib of target. Returns None if target crate is not type proc-macro.

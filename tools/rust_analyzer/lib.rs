@@ -1,7 +1,7 @@
 mod aquery;
 mod rust_project;
 
-use std::{collections::BTreeMap, convert::TryInto, fs, process::Command};
+use std::{collections::BTreeMap, convert::TryInto, fs, path::Path, process::Command};
 
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -14,6 +14,57 @@ pub const WORKSPACE_ROOT_FILE_NAMES: &[&str] =
     &["MODULE.bazel", "REPO.bazel", "WORKSPACE.bazel", "WORKSPACE"];
 
 pub const BUILD_FILE_NAMES: &[&str] = &["BUILD.bazel", "BUILD"];
+
+/// Install a symlink at `<workspace>/.bazel_rust_flycheck` pointing at the
+/// bundled `flycheck` binary so rust-analyzer can invoke it directly via
+/// `check.overrideCommand`. The indirection sidesteps bzlmod
+/// canonical-repo-name fragility (the symlink target is resolved here, where
+/// canonical names are fully knowable).
+///
+/// Lives at workspace root rather than under `bazel-out` because the
+/// `bazel-out` convenience symlink retargets when a different bazel command
+/// runs against a different `--output_base`. Monorepos commonly run their IDE
+/// bazel under a dedicated output_base separate from CLI bazel, which would
+/// strand the symlink and break flycheck whenever a CLI build ran between
+/// discoveries. Workspace root is stable across output_base switches;
+/// consumers gitignore via their existing `.gitignore` entry.
+pub fn install_flycheck_symlink(
+    workspace: &Utf8Path,
+    flycheck_rlocationpath: &str,
+) -> anyhow::Result<()> {
+    let runfiles = Runfiles::create().context("failed to load runfiles")?;
+    let binary: Utf8PathBuf = runfiles
+        .rlocation(flycheck_rlocationpath)
+        .with_context(|| {
+            format!("flycheck binary runfile not found: {flycheck_rlocationpath}")
+        })?
+        .try_into()?;
+    let resolved = binary
+        .canonicalize_utf8()
+        .with_context(|| format!("failed to canonicalize {binary}"))?;
+    let symlink_path = workspace.join(".bazel_rust_flycheck");
+    match fs::remove_file(&symlink_path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("failed to remove {symlink_path}"));
+        }
+    }
+    symlink_to_file(resolved.as_std_path(), symlink_path.as_std_path())
+        .with_context(|| format!("failed to symlink {symlink_path} -> {resolved}"))?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn symlink_to_file(target: &Path, link: &Path) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(target, link)
+}
+
+#[cfg(windows)]
+fn symlink_to_file(target: &Path, link: &Path) -> std::io::Result<()> {
+    std::os::windows::fs::symlink_file(target, link)
+}
 
 #[allow(clippy::too_many_arguments)]
 pub fn generate_rust_project(
@@ -111,7 +162,7 @@ fn generate_crate_info(
         .arg(format!(
             "--aspects={rules_rust}//tools/rust_analyzer:defs.bzl%rust_analyzer_aspect"
         ))
-        .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src")
+        .arg("--output_groups=rust_analyzer_crate_spec,rust_generated_srcs,rust_analyzer_proc_macro_dylib,rust_analyzer_src,rust_analyzer_check_command")
         .args(targets)
         .output()?;
 

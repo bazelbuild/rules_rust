@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, Context};
 use camino::Utf8PathBuf;
 use clap::Parser;
-use gen_rust_project_lib::{bazel_info, generate_rust_project};
+use gen_rust_project_lib::{bazel_info, generate_rust_project, install_flycheck_symlink};
 
 fn write_rust_project() -> anyhow::Result<()> {
     let Config {
@@ -20,6 +20,10 @@ fn write_rust_project() -> anyhow::Result<()> {
     } = Config::parse()?;
 
     let rules_rust_name = env!("ASPECT_REPOSITORY");
+
+    if let Err(error) = install_flycheck_symlink(&workspace, env!("FLYCHECK_RLOCATIONPATH")) {
+        log::warn!("failed to install flycheck symlink: {error}");
+    }
 
     let rust_project = generate_rust_project(
         &bazel,
